@@ -638,27 +638,27 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE)
 				elif action == 'Initialize_CatM_module':
-					CiTestObj.InitializeCatM()
+					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
-					CiTestObj.TerminateCatM()
+					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM()
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC)
+					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC)
+					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':

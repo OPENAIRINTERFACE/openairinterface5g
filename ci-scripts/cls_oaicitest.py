@@ -311,7 +311,7 @@ class OaiCiTest():
 		for device_id in self.UEDevices:
 			p = Process(target = self.InitializeUE_common, args = (device_id,i,COTS_UE,))
 
-	def InitializeOAIUE(self,HTML,RAN,EPC):
+	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -533,7 +533,7 @@ class OaiCiTest():
 				HTML.htmlUEFailureMsg='nr-uesoftmodem did NOT synced'
 				HTML.CreateHtmlTestRow(self.air_interface + ' ' +  self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
 	def checkDevTTYisUnlocked(self):
 		SSH = sshconnection.SSHConnection()
@@ -589,7 +589,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
-	def TerminateCatM(self):
+	def TerminateCatM(self,HTML):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -611,7 +611,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
-	def AttachCatM(self):
+	def AttachCatM(self,HTML,RAN,COTS_UE):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -684,9 +684,9 @@ class OaiCiTest():
 			html_cell = '<pre style="background-color:white">CAT-M module Attachment Failed</pre>'
 			html_queue.put(html_cell)
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
-	def PingCatM(self,HTML,RAN,EPC):
+	def PingCatM(self,HTML,RAN,EPC,COTS_UE):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -695,7 +695,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		try:
 			statusQueue = SimpleQueue()
@@ -716,7 +716,7 @@ class OaiCiTest():
 					moduleIPAddr = result.group('ipaddr')
 				else:
 					HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-					self.AutoTerminateUEandeNB()
+					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 					return
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			device_id = 'catm'
@@ -780,7 +780,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', 1, statusQueue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', 1, statusQueue)
-				self.AutoTerminateUEandeNB()
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -881,7 +881,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		multi_jobs = []
 		status_queue = SimpleQueue()
@@ -900,7 +900,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		else:
 			attach_status = True
@@ -929,7 +929,7 @@ class OaiCiTest():
 					time.sleep(5)
 			else:
 				HTML.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB()
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
 	def DetachUE_common(self, device_id, idx,COTS_UE):
 		try:
@@ -962,7 +962,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		multi_jobs = []
 		cnt = 0
@@ -1224,7 +1224,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckStatusUE(self,HTML,RAN,EPC):
+	def CheckStatusUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -1271,7 +1271,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 		else:
 			check_status = True
 			html_queue = SimpleQueue()
@@ -1287,7 +1287,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB()
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
 	def GetAllUEIPAddresses(self):
 		SSH = sshconnection.SSHConnection()
@@ -1451,14 +1451,14 @@ class OaiCiTest():
 		html_queue.put(html_cell)
 		HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
 
-	def PingNoS1(self,HTML,RAN,EPC):
+	def PingNoS1(self,HTML,RAN,EPC,COTS_UE):
 		SSH=sshconnection.SSHConnection()
 		check_eNB = True
 		check_OAI_UE = True
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
@@ -1544,10 +1544,10 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def Ping(self,HTML,RAN,EPC):
+	def Ping(self,HTML,RAN,EPC,COTS_UE):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
-			self.PingNoS1(HTML,RAN,EPC)
+			self.PingNoS1(HTML,RAN,EPC,COTS_UE)
 			return
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
@@ -1560,12 +1560,12 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		multi_jobs = []
 		i = 0
@@ -1583,7 +1583,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 		else:
 			ping_status = True
 			html_queue = SimpleQueue()
@@ -1600,7 +1600,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB()
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
@@ -1634,8 +1634,7 @@ class OaiCiTest():
 			sys.exit(1)
 		return result
 
-	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC):
-		SSH = sshconnection.SSHConnection()
+	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC,SSH):
 		SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		SSH.command('awk -f /tmp/tcp_iperf_stats.awk ' + EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', SSH.getBefore())
@@ -1668,7 +1667,7 @@ class OaiCiTest():
 		result = re.search('-u', str(iperf_real_options))
 		if result is None:
 			logging.debug('Into Iperf_analyzeV2TCPOutput client')
-			response = self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC)
+			response = self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC,SSH)
 			logging.debug('Iperf_analyzeV2TCPOutput response returned value = ' + str(response))
 			return response
 
@@ -2187,7 +2186,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def IperfNoS1(self,HTML,RAN,EPC):
+	def IperfNoS1(self,HTML,RAN,EPC,COTS_UE):
 		SSH = sshconnection.SSHConnection()
 		if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
 			HELP.GenericHelp(CONST.Version)
@@ -2197,7 +2196,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
@@ -2295,12 +2294,12 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 		else:
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
-	def Iperf(self,HTML,RAN,EPC):
+	def Iperf(self,HTML,RAN,EPC,COTS_UE):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
-			self.IperfNoS1(HTML,RAN,EPC)
+			self.IperfNoS1(HTML,RAN,EPC,COTS_UE)
 			return
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
@@ -2313,13 +2312,13 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			logging.debug('going here')
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			return
 
 		self.dummyIperfVersion = '2.0.10'
@@ -2350,7 +2349,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB()
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 		else:
 			iperf_status = True
 			iperf_noperf = False
@@ -2372,7 +2371,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB()
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 
 	def CheckProcessExist(self, check_eNB, check_OAI_UE,RAN,EPC):
 		multi_jobs = []
@@ -2792,7 +2791,7 @@ class OaiCiTest():
 			job.join()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def TerminateOAIUE(self,HTML,RAN):
+	def TerminateOAIUE(self,HTML,RAN,COTS_UE):
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
@@ -2833,11 +2832,11 @@ class OaiCiTest():
 					# Not an error then
 					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB()
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 				else:
 					if (logStatus == CONST.OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB()
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Completed</b>\n' + HTML.htmlUEFailureMsg
@@ -2860,7 +2859,7 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of OAI-UE'
 			HTML.desc='Automatic Termination of OAI-UE'
 			self.ShowTestID()
-			self.TerminateOAIUE(HTML,RAN)
+			self.TerminateOAIUE(HTML,RAN,COTS_UE)
 		if (RAN.Initialize_eNB_args != ''):
 			self.testCase_id = 'AUTO-KILL-eNB'
 			HTML.testCase_id=self.testCase_id
