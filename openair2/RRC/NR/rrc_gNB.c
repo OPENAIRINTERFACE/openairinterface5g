@@ -1028,3 +1028,47 @@ rrc_gNB_generate_SecurityModeCommand(
                PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
+void
+rrc_gNB_generate_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t          *const ue_context_pP
+)
+//-----------------------------------------------------------------------------
+{
+  uint8_t                             buffer[100];
+  uint8_t                             size;
+  T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  size = do_NR_UECapabilityEnquiry(
+           ctxt_pP,
+           buffer,
+           rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  LOG_I(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size);
+  LOG_D(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (NR UECapabilityEnquiry MUI %d) --->[PDCP][RB %02d]\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size,
+        rrc_gNB_mui,
+        DCCH);
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_GNB,
+    MSC_RRC_UE,
+    buffer,
+    size,
+    MSC_AS_TIME_FMT" rrcNRUECapabilityEnquiry UE %x MUI %d size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    rrc_gNB_mui,
+    size);
+  rrc_data_req(
+    ctxt_pP,
+    DCCH,
+    rrc_gNB_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
+}
