@@ -786,10 +786,14 @@ uint8_t do_NR_SecurityModeCommand(
   asn_enc_rval_t enc_rval;
   memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
   dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1=CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
   dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_securityModeCommand;
+  dl_dcch_msg.message.choice.c1->choice.securityModeCommand = CALLOC(1, sizeof(struct NR_SecurityModeCommand));
   dl_dcch_msg.message.choice.c1->choice.securityModeCommand->rrc_TransactionIdentifier = Transaction_id;
   dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.present = NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand;
 
+  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand =
+		  CALLOC(1, sizeof(struct NR_SecurityModeCommand_IEs));
   // the two following information could be based on the mod_id
   dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
     = (NR_CipheringAlgorithm_t)cipheringAlgorithm;
@@ -930,5 +934,29 @@ uint8_t do_NR_UECapabilityEnquiry_nr( const protocol_ctxt_t *const ctxt_pP,
     return(-1);
   }
 
+  return((enc_rval.encoded+7)/8);
+}
+
+
+uint8_t do_NR_RRCConnectionRelease(uint8_t                            *buffer,
+                                  uint8_t                             Transaction_id) {
+  asn_enc_rval_t enc_rval;
+  NR_DL_DCCH_Message_t dl_dcch_msg;
+  NR_RRCRelease_t *rrcConnectionRelease;
+  memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
+  dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1=CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
+  dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_rrcRelease;
+  dl_dcch_msg.message.choice.c1->choice.rrcRelease = CALLOC(1, sizeof(struct NR_RRCRelease));
+  rrcConnectionRelease = dl_dcch_msg.message.choice.c1->choice.rrcRelease;
+  // RRCConnectionRelease
+  rrcConnectionRelease->rrc_TransactionIdentifier = Transaction_id;
+  rrcConnectionRelease->criticalExtensions.present = NR_RRCRelease__criticalExtensions_PR_rrcRelease;
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease = NULL;
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
+                                   NULL,
+                                   (void *)&dl_dcch_msg,
+                                   buffer,
+                                   RRC_BUF_SIZE);
   return((enc_rval.encoded+7)/8);
 }

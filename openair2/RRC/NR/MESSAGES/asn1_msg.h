@@ -98,3 +98,6 @@ uint8_t do_NR_SecurityModeCommand(
                     const uint8_t Transaction_id,
                     const uint8_t cipheringAlgorithm,
                     NR_IntegrityProtAlgorithm_t *integrityProtAlgorithm);
+
+uint8_t do_NR_RRCConnectionRelease(uint8_t *buffer,
+                                   uint8_t Transaction_id);

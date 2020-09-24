@@ -1097,7 +1097,7 @@ rrc_gNB_generate_SecurityModeCommand(
   size = do_NR_SecurityModeCommand(
            ctxt_pP,
            buffer,
-           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+           rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
            ue_context_pP->ue_context.ciphering_algorithm,
            &integrity_algorithm);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Security Mode Command\n");
@@ -1175,4 +1175,64 @@ rrc_gNB_generate_UECapabilityEnquiry(
     size,
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
+}
+
+//-----------------------------------------------------------------------------
+/*
+* Generate the RRC Connection Release to UE.
+* If received, UE should switch to RRC_IDLE mode.
+*/
+void
+rrc_gNB_generate_RRCConnectionRelease(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t *const ue_context_pP
+)
+//-----------------------------------------------------------------------------
+{
+  uint8_t buffer[RRC_BUF_SIZE];
+  uint16_t size = 0;
+
+  memset(buffer, 0, RRC_BUF_SIZE);
+
+  size = do_NR_RRCConnectionRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  ue_context_pP->ue_context.ue_reestablishment_timer = 0;
+  ue_context_pP->ue_context.ue_release_timer = 0;
+  LOG_I(NR_RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size);
+  LOG_D(NR_RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease MUI %d) --->[PDCP][RB %u]\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size,
+        rrc_gNB_mui,
+        DCCH);
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_GNB,
+    MSC_RRC_UE,
+    buffer,
+    size,
+    MSC_AS_TIME_FMT" LTE_RRCConnectionRelease UE %x MUI %d size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    rrc_gNB_mui,
+    size);
+
+  if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = buffer;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
+    itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
+  } else {
+    rrc_data_req(ctxt_pP,
+                 DCCH,
+                 rrc_gNB_mui++,
+                 SDU_CONFIRM_NO,
+                 size,
+                 buffer,
+                 PDCP_TRANSMISSION_MODE_CONTROL);
+  }
 }
