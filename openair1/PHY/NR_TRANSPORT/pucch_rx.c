@@ -1092,6 +1092,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   AssertFatal(pucch_pdu->nr_of_symbols==1 || pucch_pdu->nr_of_symbols==2,
 	      "Illegal number of symbols  for PUCCH 2 %d\n",pucch_pdu->nr_of_symbols);
 
+  AssertFatal((pucch_pdu->prb_start-((pucch_pdu->prb_start>>2)<<2))==0,
+              "Current pucch2 receiver implementation requires a PRB offset multiple of 4. The one selected is %d",
+              pucch_pdu->prb_start);
 
   //extract pucch and dmrs first
 
@@ -1210,7 +1213,11 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     printf("slot %d, start_symbol_index %d, dmrs_scrambling_id %d\n",
 	   slot,pucch_pdu->start_symbol_index,pucch_pdu->dmrs_scrambling_id);
 #endif
-    s = lte_gold_generic(&x1, &x2, 1);
+    int reset = 1;
+    for (int i=0; i<=(pucch_pdu->prb_start>>2); i++) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      reset = 0;
+    }
 
     for (int group=0;group<ngroup;group++) {
       // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
@@ -1472,7 +1479,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	
 	for (int aa=0;aa<Prx;aa++) {
 	  LOG_D(PHY,"pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
-		corr32_re[group][aa],corr32_im[0][aa],
+		corr32_re[group][aa],corr32_im[group][aa],
 		((int16_t*)(&prod_re[aa]))[0],
 		((int16_t*)(&prod_im[aa]))[0],
 		corr32_re[group][aa]+((int16_t*)(&prod_re[aa]))[0],
