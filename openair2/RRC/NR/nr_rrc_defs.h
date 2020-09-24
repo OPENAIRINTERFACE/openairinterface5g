@@ -277,7 +277,9 @@ typedef struct gNB_RRC_UE_s {
 
 
   NR_UE_NR_Capability_t*             UE_Capability_nr;
+  int                                UE_Capability_size;
   NR_UE_MRDC_Capability_t*           UE_Capability_MRDC;
+  int                                UE_MRDC_Capability_size;
 
   NR_CellGroupConfig_t               *secondaryCellGroup;
   NR_RRCReconfiguration_t            *reconfig;
