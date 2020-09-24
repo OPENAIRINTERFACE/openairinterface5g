@@ -59,6 +59,7 @@ void SGSauthenticationResp(void *msg, NRUEcontext_t *UE) {
 }
 
 void SGSsecurityModeComplete(void *msg, NRUEcontext_t *UE) {
+  
 }
 
 void SGSregistrationComplete(void *msg, NRUEcontext_t *UE) {
@@ -171,5 +172,20 @@ int authenticationRequest(void **msg, NRUEcontext_t *UE) {
 
 int securityModeCommand(void **msg, NRUEcontext_t *UE) {
   *msg=NULL;
+  myCalloc(req, securityModeCommand_t);
+  req->epd=SGSmobilitymanagementmessages;
+  req->sh=0;
+  req->mt=Securitymodecommand;
+
+  // integrity algo from 5G-IA0 (null algo) to 5G-IA7 in first 4 bits
+  unsigned int ia=0;
+  // cyphering algo from 5G-EA0 (null algo) to 5G-IA7 in MSB 4 bits
+  unsigned int ea=0;
+  // trace from commercial: 5G-IA0 (0) 128-5G-IA2 (2)
+  req->selectedNASsecurityalgorithms= ea<<4 | ia;
+
+  // KSI: N-NAS-int-alg 0x02
+  req->ngKSI=2;
+  
   return 0;
 }

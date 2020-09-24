@@ -310,7 +310,7 @@ typedef struct  __attribute__((packed)) {
 }
 authenticationrequestHeader_t;
 
-typedef struct {
+typedef struct  __attribute__((packed){
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
@@ -321,6 +321,26 @@ typedef struct {
 
 //AUTHENTICATION RESULT
 
+typedef struct  __attribute__((packed)) {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+
+  unsigned int selectedNASsecurityalgorithms;
+  unsigned int ngKSI:4; //ngKSI NAS key set identifier 9.11.3.32
+  unsigned int spare:4;
+  // LV 3-9 bytes Replayed UE security capabilities UE security capability 9.11.3.54
+  
+  /* optional
+     TV (E-, 1 byte) Oprional IMEISV request IMEISV request 9.11.3.28
+     TV (57, 2 bytes ) Selected EPS NAS security algorithms  EPS NAS security algorithms 9.11.3.25
+     TLV (36, 3 bytes) Additional 5G security information Additional 5G security information 9.11.3.12
+     TLV-E (78,, 7-1503 bytes) EAP message EAP message 9.11.2.2
+     TLV (38, 4-n)ABBA ABBA 9.11.3.10
+     TLV (19, 4-7) Replayed S1 UE security capabilities S1 UE security capability 9.11.3.48A
+  */
+
+} securityModeCommand_t;
 
 typedef struct {
   uicc_t *uicc;
