@@ -440,6 +440,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
+  for (int i=0; i<MAX_NUM_CORESET; i++)
+    RC.nrmac[module_idP]->UE_info.num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 
@@ -469,6 +471,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
+  RC.nrmac[module_idP]->current_slot=slot;
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
