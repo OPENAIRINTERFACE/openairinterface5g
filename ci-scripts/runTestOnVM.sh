@@ -276,6 +276,20 @@ function check_ping_result {
     fi
 }
 
+
+function check_ra_result {
+    local LOC_GNB_LOG=$2
+    local LOC_UE_LOG=$4
+
+    #gNB RA test
+    echo "egrep -c \"received correctly\" /home/ubuntu/tmp/cmake_targets/log/$LOC_GNB_LOG" > $1
+    echo "egrep -c \"now 5G connected\" /home/ubuntu/tmp/cmake_targets/log/$LOC_GNB_LOG" >> $1
+ 
+    #UE RA test
+    echo "egrep -c \"RA procedure succeeded\" /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG" > $3
+
+}
+
 # In DL: iperf server should be on UE side
 #                     -B oaitun_ue{j}-IP-Addr
 #        iperf client should be on EPC (S1) or eNB (noS1) side
@@ -1257,13 +1271,6 @@ function start_rf_sim_gnb {
         fi
     fi
 
-    #adding RA check
-    if [ $LOC_RA_TEST -eq 1 ] #check that the log file includes the expected RA mention
-        then
-            echo "egrep -c \"received correctly\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1   
-            echo "egrep -c \"now 5G connected\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1     
-        fi
-
 
     sleep 10
     echo "echo \"free -m\"" > $1
@@ -1364,11 +1371,6 @@ function start_rf_sim_nr_ue {
     fi
     sleep 10
 
-    #adding RA check
-    if [ $LOC_RA_TEST -eq 1 ] #check that the log file includes the expected RA mention
-        then
-            echo "egrep -c \"RA procedure succeeded\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1       
-        fi
 
 }
 
@@ -2198,6 +2200,15 @@ function run_test_on_vm {
                 try_cnt=$[$try_cnt+1]
                 continue
             fi
+
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "############################################################"
+            sleep 20
+
+            check_ra_result $GNB_VM_CMDS $CURRENT_GNB_LOG_FILE $NR_UE_VM_CMDS $CURRENT_NR_UE_LOG_FILE
+
 
             echo "############################################################"
             echo "${CN_CONFIG} : Terminate gNB/NR-UE simulators"
