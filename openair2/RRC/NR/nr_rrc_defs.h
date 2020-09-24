@@ -360,6 +360,10 @@ typedef struct gNB_RRC_UE_s {
   struct NR_MAC_CellGroupConfig                         *mac_CellGroupConfig;
   struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
 
+  /* Nas Pdu */
+  uint8_t                        nas_pdu_flag;
+  ngap_nas_pdu_t                 nas_pdu;
+
 } gNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

@@ -260,6 +260,12 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).gNB_ue_ngap_id;
         ue_context_p->ue_context.amf_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).amf_ue_ngap_id;
         
+        /* NAS PDU */
+        if (ue_context_p->ue_context.nas_pdu_flag == 1) {
+            ue_context_p->ue_context.nas_pdu.length = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.length;
+            ue_context_p->ue_context.nas_pdu.buffer = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.buffer;
+        }
+        
         /* TODO security */
         uint8_t send_security_mode_command = TRUE;
 

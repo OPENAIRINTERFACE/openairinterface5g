@@ -97,6 +97,11 @@ rrc_gNB_generate_SecurityModeCommand(
   rrc_gNB_ue_context_t          *const ue_context_pP
 );
 
+uint8_t
+rrc_gNB_get_next_transaction_identifier(
+    module_id_t gnb_mod_idP
+);
+
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_gnb_task(void *args_p);

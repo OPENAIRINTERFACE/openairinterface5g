@@ -101,3 +101,9 @@ uint8_t do_NR_SecurityModeCommand(
 
 uint8_t do_NR_RRCConnectionRelease(uint8_t *buffer,
                                    uint8_t Transaction_id);
+uint16_t do_RRCReconfiguration(
+                    const protocol_ctxt_t        *const ctxt_pP,
+                    rrc_gNB_ue_context_t         *const ue_context_pP,
+                    uint8_t                      *buffer,
+                    uint8_t                      Transaction_id,
+                    gNB_RRC_INST                 *gnb_rrc_inst);
