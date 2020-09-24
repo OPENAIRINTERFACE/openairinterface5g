@@ -2945,10 +2945,10 @@ AMFName ::= PrintableString (SIZE(1..150, ...))
 AMFPagingTarget ::= CHOICE {
 	globalRANNodeID			GlobalRANNodeID,
 	tAI						TAI,
-	choice-Extensions		ProtocolExtensionContainer { {AMFPagingTarget-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy {{ AMFPagingTarget-ExtIEs }}
 }
 
-AMFPagingTarget-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+AMFPagingTarget-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -3121,10 +3121,10 @@ BroadcastCancelledAreaList ::= CHOICE {
 	cellIDCancelledNR					CellIDCancelledNR,
 	tAICancelledNR						TAICancelledNR,
 	emergencyAreaIDCancelledNR			EmergencyAreaIDCancelledNR,
-	choice-Extensions		ProtocolExtensionContainer { {BroadcastCancelledAreaList-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {BroadcastCancelledAreaList-ExtIEs} }
 }
 
-BroadcastCancelledAreaList-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+BroadcastCancelledAreaList-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -3135,10 +3135,10 @@ BroadcastCompletedAreaList ::= CHOICE {
 	cellIDBroadcastNR					CellIDBroadcastNR,
 	tAIBroadcastNR						TAIBroadcastNR,
 	emergencyAreaIDBroadcastNR			EmergencyAreaIDBroadcastNR,
-	choice-Extensions		ProtocolExtensionContainer { {BroadcastCompletedAreaList-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {BroadcastCompletedAreaList-ExtIEs} }
 }
 
-BroadcastCompletedAreaList-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+BroadcastCompletedAreaList-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -3220,10 +3220,10 @@ Cause ::= CHOICE {
 	nas					CauseNas,
 	protocol			CauseProtocol,
 	misc				CauseMisc,
-	choice-Extensions		ProtocolExtensionContainer { {Cause-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {Cause-ExtIEs} }
 }
 
-Cause-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+Cause-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -3367,10 +3367,10 @@ CellIDCancelledNR-Item-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 CellIDListForRestart ::= CHOICE {
 	eUTRA-CGIListforRestart		EUTRA-CGIList,
 	nR-CGIListforRestart		NR-CGIList,
-	choice-Extensions		ProtocolExtensionContainer { {CellIDListForRestart-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {CellIDListForRestart-ExtIEs} }
 }
 
-CellIDListForRestart-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+CellIDListForRestart-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -3530,7 +3530,6 @@ CPTransportLayerInformation-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
-
 CriticalityDiagnostics ::= SEQUENCE {
 	procedureCode					ProcedureCode											OPTIONAL,
 	triggeringMessage				TriggeringMessage										OPTIONAL,
@@ -3627,10 +3626,10 @@ DRBsSubjectToStatusTransferItem-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 DRBStatusDL ::= CHOICE {
 	dRBStatusDL12			DRBStatusDL12,
 	dRBStatusDL18			DRBStatusDL18,
-	choice-Extensions		ProtocolExtensionContainer { {DRBStatusDL-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {DRBStatusDL-ExtIEs} }
 }
 
-DRBStatusDL-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+DRBStatusDL-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -3657,10 +3656,10 @@ DRBStatusDL18-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 DRBStatusUL ::= CHOICE {
 	dRBStatusUL12			DRBStatusUL12,
 	dRBStatusUL18			DRBStatusUL18,
-	choice-Extensions		ProtocolExtensionContainer { {DRBStatusUL-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {DRBStatusUL-ExtIEs} }
 }
 
-DRBStatusUL-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+DRBStatusUL-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -4012,19 +4011,19 @@ GlobalRANNodeID ::= CHOICE {
 	globalGNB-ID		GlobalGNB-ID,
 	globalNgENB-ID		GlobalNgENB-ID,
 	globalN3IWF-ID		GlobalN3IWF-ID,
-	choice-Extensions		ProtocolExtensionContainer { {GlobalRANNodeID-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {GlobalRANNodeID-ExtIEs} }
 }
 
-GlobalRANNodeID-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+GlobalRANNodeID-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
 GNB-ID ::= CHOICE {
 	gNB-ID		BIT STRING (SIZE(22..32)),
-	choice-Extensions		ProtocolExtensionContainer { {GNB-ID-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {GNB-ID-ExtIEs} }
 }
 
-GNB-ID-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+GNB-ID-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -4181,10 +4180,10 @@ LastVisitedCellInformation ::= CHOICE {
 	eUTRANCell		LastVisitedEUTRANCellInformation,
 	uTRANCell		LastVisitedUTRANCellInformation,
 	gERANCell		LastVisitedGERANCellInformation,
-	choice-Extensions		ProtocolExtensionContainer { {LastVisitedCellInformation-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {LastVisitedCellInformation-ExtIEs} }
 }
 
-LastVisitedCellInformation-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+LastVisitedCellInformation-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -4281,10 +4280,10 @@ MobilityRestrictionList-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 
 N3IWF-ID ::= CHOICE {
 	n3IWF-ID				BIT STRING (SIZE(16)),
-	choice-Extensions		ProtocolExtensionContainer { {N3IWF-ID-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {N3IWF-ID-ExtIEs} }
 }
 
-N3IWF-ID-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+N3IWF-ID-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -4311,20 +4310,20 @@ NgENB-ID ::= CHOICE {
 	macroNgENB-ID			BIT STRING (SIZE(20)),
 	shortMacroNgENB-ID		BIT STRING (SIZE(18)),
 	longMacroNgENB-ID		BIT STRING (SIZE(21)),
-	choice-Extensions		ProtocolExtensionContainer { {NgENB-ID-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {NgENB-ID-ExtIEs} }
 }
 
-NgENB-ID-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+NgENB-ID-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
 NGRAN-CGI ::= CHOICE {
 	nR-CGI			NR-CGI,
 	eUTRA-CGI		EUTRA-CGI,
-	choice-Extensions		ProtocolExtensionContainer { {NGRAN-CGI-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {NGRAN-CGI-ExtIEs} }
 }
 
-NGRAN-CGI-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+NGRAN-CGI-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -4407,10 +4406,10 @@ OverloadAction ::= ENUMERATED {
 
 OverloadResponse ::= CHOICE {
 	overloadAction			OverloadAction,
-	choice-Extensions		ProtocolExtensionContainer { {OverloadResponse-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {OverloadResponse-ExtIEs} }
 }
 
-OverloadResponse-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+OverloadResponse-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -5186,10 +5185,10 @@ PriorityLevelQos ::= INTEGER (1..127, ...)
 PWSFailedCellIDList ::= CHOICE {
 	eUTRA-CGI-PWSFailedList		EUTRA-CGIList,
 	nR-CGI-PWSFailedList		NR-CGIList,
-	choice-Extensions		ProtocolExtensionContainer { {PWSFailedCellIDList-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {PWSFailedCellIDList-ExtIEs} }
 }
 
-PWSFailedCellIDList-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+PWSFailedCellIDList-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -5198,10 +5197,10 @@ PWSFailedCellIDList-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 QosCharacteristics ::= CHOICE {
 	nonDynamic5QI		NonDynamic5QIDescriptor,
 	dynamic5QI			Dynamic5QIDescriptor,
-	choice-Extensions		ProtocolExtensionContainer { {QosCharacteristics-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {QosCharacteristics-ExtIEs} }
 }
 
-QosCharacteristics-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+QosCharacteristics-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -5507,10 +5506,10 @@ ResetAll ::= ENUMERATED {
 ResetType ::= CHOICE {
 	nG-Interface			ResetAll,
 	partOfNG-Interface		UE-associatedLogicalNG-connectionList,
-	choice-Extensions		ProtocolExtensionContainer { {ResetType-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {ResetType-ExtIEs} }
 }
 
-ResetType-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+ResetType-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -5693,10 +5692,10 @@ SONConfigurationTransfer-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 SONInformation ::= CHOICE {
 	sONInformationRequest		SONInformationRequest,
 	sONInformationReply			SONInformationReply,
-	choice-Extensions		ProtocolExtensionContainer { {SONInformation-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {SONInformation-ExtIEs} }
 }
 
-SONInformation-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+SONInformation-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -5897,10 +5896,10 @@ TargeteNB-ID-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 TargetID ::= CHOICE {
 	targetRANNodeID		TargetRANNodeID,
 	targeteNB-ID		TargeteNB-ID,
-	choice-Extensions		ProtocolExtensionContainer { {TargetID-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {TargetID-ExtIEs} }
 }
 
-TargetID-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+TargetID-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -6028,20 +6027,20 @@ UEHistoryInformation ::= SEQUENCE (SIZE(1..maxnoofCellsinUEHistoryInfo)) OF Last
 
 UEIdentityIndexValue ::= CHOICE {
 	indexLength10			BIT STRING (SIZE(10)),
-	choice-Extensions		ProtocolExtensionContainer { {UEIdentityIndexValue-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {UEIdentityIndexValue-ExtIEs} }
 }
 
-UEIdentityIndexValue-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+UEIdentityIndexValue-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
 UE-NGAP-IDs ::= CHOICE {
 	uE-NGAP-ID-pair		UE-NGAP-ID-pair,
 	aMF-UE-NGAP-ID		AMF-UE-NGAP-ID,
-	choice-Extensions		ProtocolExtensionContainer { {UE-NGAP-IDs-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {UE-NGAP-IDs-ExtIEs} }
 }
 
-UE-NGAP-IDs-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+UE-NGAP-IDs-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -6058,10 +6057,10 @@ UE-NGAP-ID-pair-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
 
 UEPagingIdentity ::= CHOICE {
 	fiveG-S-TMSI		FiveG-S-TMSI,
-	choice-Extensions		ProtocolExtensionContainer { {UEPagingIdentity-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {UEPagingIdentity-ExtIEs} }
 	}
 
-UEPagingIdentity-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+UEPagingIdentity-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -6150,10 +6149,10 @@ ULForwarding ::= ENUMERATED {
 
 UPTransportLayerInformation ::= CHOICE {
 	gTPTunnel				GTPTunnel,
-	choice-Extensions		ProtocolExtensionContainer { {UPTransportLayerInformation-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {UPTransportLayerInformation-ExtIEs} }
 }
 
-UPTransportLayerInformation-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+UPTransportLayerInformation-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -6187,10 +6186,10 @@ UserLocationInformation ::= CHOICE {
 	userLocationInformationEUTRA	UserLocationInformationEUTRA,
 	userLocationInformationNR		UserLocationInformationNR,
 	userLocationInformationN3IWF	UserLocationInformationN3IWF,
-	choice-Extensions		ProtocolExtensionContainer { {UserLocationInformation-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {UserLocationInformation-ExtIEs} }
 }
 
-UserLocationInformation-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+UserLocationInformation-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -6268,10 +6267,10 @@ WarningAreaList ::= CHOICE {
 	nR-CGIListForWarning			NR-CGIListForWarning,
 	tAIListForWarning				TAIListForWarning,
 	emergencyAreaIDList				EmergencyAreaIDList,
-	choice-Extensions		ProtocolExtensionContainer { {WarningAreaList-ExtIEs} }
+	choice-Extensions		ProtocolIE-SingleContainer-dummy { {WarningAreaList-ExtIEs} }
 }
 
-WarningAreaList-ExtIEs NGAP-PROTOCOL-EXTENSION ::= {
+WarningAreaList-ExtIEs NGAP-PROTOCOL-IES ::= {
 	...
 }
 
@@ -6813,11 +6812,18 @@ ProtocolIE-Container {NGAP-PROTOCOL-IES : IEsSetParam} ::=
 ProtocolIE-SingleContainer {NGAP-PROTOCOL-IES : IEsSetParam} ::= 
 	ProtocolIE-Field {{IEsSetParam}}
 
+ProtocolIE-SingleContainer-dummy {NGAP-PROTOCOL-IES : IEsSetParam} ::= SEQUENCE {
+	id				NGAP-PROTOCOL-IES.&id				({IEsSetParam}),
+	criticality		NGAP-PROTOCOL-IES.&criticality		({IEsSetParam}{@id}),
+	value			NGAP-PROTOCOL-IES.&Value			({IEsSetParam}{@id})
+}
+
 ProtocolIE-Field {NGAP-PROTOCOL-IES : IEsSetParam} ::= SEQUENCE {
 	id				NGAP-PROTOCOL-IES.&id				({IEsSetParam}),
 	criticality		NGAP-PROTOCOL-IES.&criticality		({IEsSetParam}{@id}),
 	value			NGAP-PROTOCOL-IES.&Value			({IEsSetParam}{@id})
 }
+
 
 -- **************************************************************
 --
