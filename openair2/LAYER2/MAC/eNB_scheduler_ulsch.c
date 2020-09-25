@@ -961,6 +961,13 @@ rx_sdu(const module_id_t enb_mod_idP,
                   rx_lcids[i],
                   UE_id);
           }
+        }else {
+          LOG_E(MAC, "[eNB %d/%d] frame %d received a invalid LCID of size %d ( sdu_len %d, lcid %d), dropping packet\n",
+                enb_mod_idP,
+                CC_idP,
+                frameP,
+                rx_lengths[i],
+                sdu_lenP,rx_lcids[i]);
         }
 
         break;
