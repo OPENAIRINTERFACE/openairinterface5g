@@ -1031,6 +1031,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   AssertFatal(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb > 0,
               "PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti);
 
+
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
     if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
       LOG_I(PHY,"rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
