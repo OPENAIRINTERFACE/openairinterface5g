@@ -19,6 +19,15 @@
  *      contact@openairinterface.org
  */
 
+/*! \file rrc_gNB_NGAP.h
+ * \brief rrc NGAP procedures for gNB
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \date 2020
+ * \version 0.1
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+ *         (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com) 
+ */
+
 #ifndef RRC_GNB_NGAP_H_
 #define RRC_GNB_NGAP_H_
 

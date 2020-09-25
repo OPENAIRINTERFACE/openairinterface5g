@@ -134,6 +134,8 @@ typedef enum UE_STATE_NR_e {
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
 #define NR_RRC_TRANSACTION_IDENTIFIER_NUMBER             3
 
+#define ENABLE_SECURITY 1
+
 typedef struct {
   unsigned short                                      transport_block_size;      /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
   unsigned short                                      max_transport_blocks;      /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */

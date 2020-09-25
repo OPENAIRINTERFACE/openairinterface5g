@@ -19,6 +19,15 @@
  *      contact@openairinterface.org
  */
 
+/*! \file rrc_gNB_NGAP.h
+ * \brief rrc NGAP procedures for gNB
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \date 2020
+ * \version 0.1
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+ *         (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com) 
+ */
+
 #include "rrc_gNB_NGAP.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_S1AP.h"
@@ -118,10 +127,10 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
 )
 //------------------------------------------------------------------------------
 {
-    gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+    // gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
     MessageDef         *message_p         = NULL;
     rrc_ue_ngap_ids_t  *rrc_ue_ngap_ids_p = NULL;
-    hashtable_rc_t      h_rc;
+    // hashtable_rc_t      h_rc;
 
     message_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_NAS_FIRST_REQ);
     memset(&message_p->ittiMsg.ngap_nas_first_req, 0, sizeof(ngap_nas_first_req_t));
@@ -267,32 +276,32 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         }
         
         /* TODO security */
+        rrc_gNB_process_security(&ctxt, ue_context_p, &(NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities));
+        
         uint8_t send_security_mode_command = TRUE;
 
-        /* TODO rrc_pdcp_config_security */
-        // rrc_pdcp_config_security(
-        //     &ctxt,
-        //     ue_context_p,
-        //     send_security_mode_command);
+        rrc_pdcp_config_security(
+            &ctxt,
+            ue_context_p,
+            send_security_mode_command);
 
         if (send_security_mode_command) {
             rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
             send_security_mode_command = FALSE;
 
-            /* TODO rrc_pdcp_config_security */
-            // rrc_pdcp_config_security(
-            //     &ctxt,
-            //     ue_context_p,
-            //     send_security_mode_command);
+            rrc_pdcp_config_security(
+                &ctxt,
+                ue_context_p,
+                send_security_mode_command);
         } else {
-            /* TODO rrc_gNB_generate_UECapabilityEnquiry */
-            // rrc_gNB_generate_UECapabilityEnquiry (&ctxt, ue_context_p);
+            /* rrc_gNB_generate_UECapabilityEnquiry */
+            rrc_gNB_generate_UECapabilityEnquiry(&ctxt, ue_context_p);
         }
 
         // in case, send the S1SP initial context response if it is not sent with the attach complete message
         if (ue_context_p->ue_context.Status == NR_RRC_RECONFIGURED) {
             LOG_I(NR_RRC, "Sending rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);
-            // rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
+            rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
         }
 
         return 0;
