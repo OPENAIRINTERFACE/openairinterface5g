@@ -84,10 +84,11 @@ int ngap_ue_context_release_complete(instance_t instance,
   /* Prepare the NGAP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-  pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_UEContextRelease;
-  pdu.choice.successfulOutcome.criticality = NGAP_Criticality_reject;
-  pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
-  out = &pdu.choice.successfulOutcome.value.choice.UEContextReleaseComplete;
+  pdu.choice.successfulOutcome = CALLOC(1, sizeof(struct NGAP_SuccessfulOutcome));
+  pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_UEContextRelease;
+  pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
+  pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
+  out = &pdu.choice.successfulOutcome->value.choice.UEContextReleaseComplete;
 
   /* mandatory */
   ie = (NGAP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseComplete_IEs_t));
@@ -178,10 +179,11 @@ int ngap_ue_context_release_req(instance_t instance,
   /* Prepare the NGAP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_UEContextReleaseRequest;
-  pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
-  pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_UEContextReleaseRequest;
-  out = &pdu.choice.initiatingMessage.value.choice.UEContextReleaseRequest;
+  pdu.choice.initiatingMessage = CALLOC(1, sizeof(struct NGAP_InitiatingMessage));
+  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_UEContextReleaseRequest;
+  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
+  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_UEContextReleaseRequest;
+  out = &pdu.choice.initiatingMessage->value.choice.UEContextReleaseRequest;
 
   /* mandatory */
   ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));

@@ -79,6 +79,11 @@
 #include "NGAP_PDUSessionResourceModifyRequestTransfer.h"
 #include "NGAP_QosFlowAddOrModifyRequestItem.h"
 #include "NGAP_TAIListForPagingItem.h"
+#include "NGAP_GNB-ID.h"
+#include "NGAP_GlobalGNB-ID.h"
+#include "NGAP_GTPTunnel.h"
+#include "NGAP_UE-NGAP-ID-pair.h"
+#include "NGAP_UserLocationInformationNR.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)

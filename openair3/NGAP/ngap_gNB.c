@@ -469,28 +469,30 @@ static int ngap_gNB_generate_ng_setup_request(
   /* Prepare the NGAP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_NGSetup;
-  pdu.choice.initiatingMessage.criticality = NGAP_Criticality_reject;
-  pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_NGSetupRequest;
-  out = &pdu.choice.initiatingMessage.value.choice.NGSetupRequest;
+  pdu.choice.initiatingMessage = CALLOC(1, sizeof(struct NGAP_InitiatingMessage));
+  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_NGSetup;
+  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_reject;
+  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_NGSetupRequest;
+  out = &pdu.choice.initiatingMessage->value.choice.NGSetupRequest;
   /* mandatory */
   ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_GlobalRANNodeID;
   ie->criticality = NGAP_Criticality_reject;
   ie->value.present = NGAP_NGSetupRequestIEs__value_PR_GlobalRANNodeID;
   ie->value.choice.GlobalRANNodeID.present = NGAP_GlobalRANNodeID_PR_globalGNB_ID;
+  ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID = CALLOC(1, sizeof(struct NGAP_GlobalGNB_ID));
   MCC_MNC_TO_PLMNID(instance_p->mcc[ngap_amf_data_p->broadcast_plmn_index[0]],
                     instance_p->mnc[ngap_amf_data_p->broadcast_plmn_index[0]],
                     instance_p->mnc_digit_length[ngap_amf_data_p->broadcast_plmn_index[0]],
-                    &ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.pLMNIdentity);
-  ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.present = NGAP_GNB_ID_PR_gNB_ID;
+                    &(ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->pLMNIdentity));
+  ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->gNB_ID.present = NGAP_GNB_ID_PR_gNB_ID;
   MACRO_GNB_ID_TO_BIT_STRING(instance_p->gNB_id,
-                             &ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID);
+                             &ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->gNB_ID.choice.gNB_ID);
   NGAP_INFO("%u -> %02x%02x%02x%02x\n", instance_p->gNB_id,
-            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[0],
-            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[1],
-            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[2],
-            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[3]);
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->gNB_ID.choice.gNB_ID.buf[0],
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->gNB_ID.choice.gNB_ID.buf[1],
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->gNB_ID.choice.gNB_ID.buf[2],
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID->gNB_ID.choice.gNB_ID.buf[3]);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */

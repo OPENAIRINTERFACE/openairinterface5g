@@ -229,11 +229,11 @@ int ngap_gNB_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage.procedureCode >= sizeof(ngap_messages_callback) / (3 * sizeof(
+  if (pdu.choice.initiatingMessage->procedureCode >= sizeof(ngap_messages_callback) / (3 * sizeof(
         ngap_message_decoded_callback))
       || (pdu.present > NGAP_NGAP_PDU_PR_unsuccessfulOutcome)) {
     NGAP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
-               assoc_id, pdu.choice.initiatingMessage.procedureCode, pdu.present);
+               assoc_id, pdu.choice.initiatingMessage->procedureCode, pdu.present);
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
     return -1;
   }
@@ -241,16 +241,16 @@ int ngap_gNB_handle_message(uint32_t assoc_id, int32_t stream,
   /* No handler present.
    * This can mean not implemented or no procedure for gNB (wrong direction).
    */
-  if (ngap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
+  if (ngap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
     NGAP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
-               assoc_id, pdu.choice.initiatingMessage.procedureCode,
+               assoc_id, pdu.choice.initiatingMessage->procedureCode,
                ngap_direction2String(pdu.present - 1));
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
     return -1;
   }
 
   /* Calling the right handler */
-  ret = (*ngap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
+  ret = (*ngap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
         (assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
   return ret;
@@ -264,7 +264,7 @@ int ngap_gNB_handle_ng_setup_failure(uint32_t               assoc_id,
   NGAP_NGSetupFailureIEs_t   *ie;
   ngap_gNB_amf_data_t        *amf_desc_p;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.unsuccessfulOutcome.value.choice.NGSetupFailure;
+  container = &pdu->choice.unsuccessfulOutcome->value.choice.NGSetupFailure;
 
   /* S1 Setup Failure == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
@@ -302,7 +302,7 @@ int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
   ngap_gNB_amf_data_t       *amf_desc_p;
   int i;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.successfulOutcome.value.choice.NGSetupResponse;
+  container = &pdu->choice.successfulOutcome->value.choice.NGSetupResponse;
 
   /* NG Setup Response == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
@@ -462,7 +462,7 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
   uint64_t                 amf_ue_ngap_id;
     
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.ErrorIndication;
+  container = &pdu->choice.initiatingMessage->value.choice.ErrorIndication;
 
   /* NG Setup Failure == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
@@ -845,7 +845,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   NGAP_RAN_UE_NGAP_ID_t    ran_ue_ngap_id;
   uint64_t                 amf_ue_ngap_id;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.InitialContextSetupRequest;
+  container = &pdu->choice.initiatingMessage->value.choice.InitialContextSetupRequest;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR("[SCTP %d] Received initial context setup request for non "
@@ -977,7 +977,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
           case NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLInformation:
             {
               NGAP_GTPTunnel_t  *gTPTunnel_p;
-              gTPTunnel_p = &pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
+              gTPTunnel_p = pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
               
               /* Set the transport layer address */
               memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.buffer,
@@ -1164,7 +1164,7 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
   NGAP_UEContextReleaseCommand_t     *container;
   NGAP_UEContextReleaseCommand_IEs_t *ie;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.UEContextReleaseCommand;
+  container = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseCommand;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR("[SCTP %d] Received UE context release command for non "
@@ -1178,8 +1178,8 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     switch (ie->value.choice.UE_NGAP_IDs.present) {
       case NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair:
-        gnb_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.rAN_UE_NGAP_ID;
-        asn_INTEGER2ulong(&(ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.aMF_UE_NGAP_ID), &amf_ue_ngap_id);
+        gnb_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair->rAN_UE_NGAP_ID;
+        asn_INTEGER2ulong(&(ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair->aMF_UE_NGAP_ID), &amf_ue_ngap_id);
         MSC_LOG_RX_MESSAGE(
           MSC_NGAP_GNB,
           MSC_NGAP_AMF,
@@ -1252,7 +1252,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   NGAP_PDUSessionResourceSetupRequest_t     *container;
   NGAP_PDUSessionResourceSetupRequestIEs_t  *ie;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.PDUSessionResourceSetupRequest;
+  container = &pdu->choice.initiatingMessage->value.choice.PDUSessionResourceSetupRequest;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR("[SCTP %d] Received pdu session resource setup request for non "
@@ -1361,7 +1361,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
           case NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLInformation:
           {
           	NGAP_GTPTunnel_t  *gTPTunnel_p;
-              gTPTunnel_p = &pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
+              gTPTunnel_p = pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
               /* The transport layer address for the IP packets */
               OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].gtp_teid);
               NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.length =
@@ -1449,7 +1449,7 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
   NGAP_Paging_t         *container;
   NGAP_PagingIEs_t      *ie;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.Paging;
+  container = &pdu->choice.initiatingMessage->value.choice.Paging;
   // received Paging Message from AMF
   NGAP_DEBUG("[SCTP %d] Received Paging Message From AMF\n",assoc_id);
 
@@ -1481,9 +1481,9 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
                              NGAP_ProtocolIE_ID_id_UEPagingIdentity, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    OCTET_STRING_TO_INT16(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI.aMFSetID, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id);
-    OCTET_STRING_TO_INT8(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI.aMFPointer, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer);
-    OCTET_STRING_TO_INT32(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI.fiveG_TMSI, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi);
+    OCTET_STRING_TO_INT16(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->aMFSetID, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id);
+    OCTET_STRING_TO_INT8(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->aMFPointer, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer);
+    OCTET_STRING_TO_INT32(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->fiveG_TMSI, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi);
 
     NGAP_DEBUG("[SCTP %d] Received Paging Identity amf_set_id %d, amf_pointer %d, m_tmsi %d\n",
                assoc_id,
@@ -1560,7 +1560,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   NGAP_RAN_UE_NGAP_ID_t         gnb_ue_ngap_id;
   uint64_t                      amf_ue_ngap_id;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.PDUSessionResourceModifyRequest;
+  container = &pdu->choice.initiatingMessage->value.choice.PDUSessionResourceModifyRequest;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR("[SCTP %d] Received PDUSession Resource modify request for non "
@@ -1763,7 +1763,7 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
   NGAP_RAN_UE_NGAP_ID_t           gnb_ue_ngap_id;
   uint64_t                        amf_ue_ngap_id;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.PDUSessionResourceReleaseCommand;
+  container = &pdu->choice.initiatingMessage->value.choice.PDUSessionResourceReleaseCommand;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR("[SCTP %d] Received E-RAB release command for non existing AMF context\n", assoc_id);
@@ -1870,7 +1870,7 @@ int ngap_gNB_handle_ng_path_switch_request_ack(uint32_t               assoc_id,
   NGAP_PDUSESSIONItemIEs_t  *e_RABItemIEs;
   NGAP_PDUSESSIONItem_t     *e_RABItem;
   DevAssert(pdu != NULL);
-  pathSwitchRequestAcknowledge = &pdu->choice.successfulOutcome.value.choice.PathSwitchRequestAcknowledge;
+  pathSwitchRequestAcknowledge = &pdu->choice.successfulOutcome->value.choice.PathSwitchRequestAcknowledge;
 
   /* Path Switch request == UE-related procedure -> stream !=0 */
   if (stream == 0) {
@@ -2030,7 +2030,7 @@ int ngap_gNB_handle_ng_path_switch_request_failure(uint32_t               assoc_
   NGAP_PathSwitchRequestFailure_t    *pathSwitchRequestFailure;
   NGAP_PathSwitchRequestFailureIEs_t *ie;
   DevAssert(pdu != NULL);
-  pathSwitchRequestFailure = &pdu->choice.unsuccessfulOutcome.value.choice.PathSwitchRequestFailure;
+  pathSwitchRequestFailure = &pdu->choice.unsuccessfulOutcome->value.choice.PathSwitchRequestFailure;
 
   if (stream != 0) {
     NGAP_ERROR("[SCTP %d] Received s1 path switch request failure on stream != 0 (%d)\n",
