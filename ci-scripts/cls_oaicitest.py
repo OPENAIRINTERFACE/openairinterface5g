@@ -280,6 +280,7 @@ class OaiCiTest():
 			#RH quick add-on to integrate cots control defined by yaml
 			#if device_id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
 			#otherwise we use the legacy procedure
+			logging.debug('Device id ' + str(device_id) + ', in COTS UE dict : ',str(COTS_UE.Check_Exists(device_id)))
 			if COTS_UE.Check_Exists(device_id):
 				#switch device to Airplane mode ON (ie Radio OFF) 
 				COTS_UE.Set_Airplane(device_id, 'ON')
@@ -1115,6 +1116,9 @@ class OaiCiTest():
 		if self.ADBCentralized:
 			SSH.command('adb devices', '\$', 15)
 			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
+			#report number and id of devices found
+			msg = "UEDevices found by GetAllUEDevices : " + " ".join(self.UEDevices)
+			logging.debug(msg)
 			SSH.close()
 		else:
 			if (os.path.isfile('./phones_list.txt')):
