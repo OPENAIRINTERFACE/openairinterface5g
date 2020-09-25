@@ -40,7 +40,7 @@ static int ngap_gNB_decode_initiating_message(NGAP_NGAP_PDU_t *pdu) {
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
-  switch(pdu->choice.initiatingMessage.procedureCode) {
+  switch(pdu->choice.initiatingMessage->procedureCode) {
     case NGAP_ProcedureCode_id_DownlinkNASTransport:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
@@ -88,9 +88,9 @@ static int ngap_gNB_decode_initiating_message(NGAP_NGAP_PDU_t *pdu) {
 
     default:
       NGAP_ERROR("Unknown procedure ID (%d) for initiating message\n",
-                 (int)pdu->choice.initiatingMessage.procedureCode);
+                 (int)pdu->choice.initiatingMessage->procedureCode);
       AssertFatal( 0, "Unknown procedure ID (%d) for initiating message\n",
-                   (int)pdu->choice.initiatingMessage.procedureCode);
+                   (int)pdu->choice.initiatingMessage->procedureCode);
       return -1;
   }
 
@@ -101,7 +101,7 @@ static int ngap_gNB_decode_successful_outcome(NGAP_NGAP_PDU_t *pdu) {
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
-  switch(pdu->choice.successfulOutcome.procedureCode) {
+  switch(pdu->choice.successfulOutcome->procedureCode) {
     case NGAP_ProcedureCode_id_NGSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
@@ -120,7 +120,7 @@ static int ngap_gNB_decode_successful_outcome(NGAP_NGAP_PDU_t *pdu) {
 
     default:
       NGAP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
-                 (int)pdu->choice.successfulOutcome.procedureCode);
+                 (int)pdu->choice.successfulOutcome->procedureCode);
       return -1;
   }
 
@@ -131,7 +131,7 @@ static int ngap_gNB_decode_unsuccessful_outcome(NGAP_NGAP_PDU_t *pdu) {
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
-  switch(pdu->choice.unsuccessfulOutcome.procedureCode) {
+  switch(pdu->choice.unsuccessfulOutcome->procedureCode) {
     case NGAP_ProcedureCode_id_NGSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
@@ -143,7 +143,7 @@ static int ngap_gNB_decode_unsuccessful_outcome(NGAP_NGAP_PDU_t *pdu) {
 
     default:
       NGAP_ERROR("Unknown procedure ID (%d) for unsuccessfull outcome message\n",
-                 (int)pdu->choice.unsuccessfulOutcome.procedureCode);
+                 (int)pdu->choice.unsuccessfulOutcome->procedureCode);
       return -1;
   }
 

@@ -68,10 +68,10 @@ int ngap_gNB_handle_nas_first_req(
     DevAssert(instance_p != NULL);
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_InitialUEMessage;
-    pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
-    pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_InitialUEMessage;
-    out = &pdu.choice.initiatingMessage.value.choice.InitialUEMessage;
+    pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_InitialUEMessage;
+    pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
+    pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_InitialUEMessage;
+    out = &pdu.choice.initiatingMessage->value.choice.InitialUEMessage;
 
     /* Select the AMF corresponding to the provided GUAMI. */
     if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_guami) {
@@ -218,7 +218,7 @@ int ngap_gNB_handle_nas_first_req(
 
     ie->value.choice.UserLocationInformation.present = NGAP_UserLocationInformation_PR_userLocationInformationNR;
 
-    userinfo_nr_p = &ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
+    userinfo_nr_p = ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
 
     /* Set nRCellIdentity. default userLocationInformationNR */
     MACRO_GNB_ID_TO_CELL_IDENTITY(instance_p->gNB_id,
@@ -350,7 +350,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
 
     ngap_gNB_instance = amf_desc_p->ngap_gNB_instance;
     /* Prepare the NGAP message to encode */
-    container = &pdu->choice.initiatingMessage.value.choice.DownlinkNASTransport;
+    container = &pdu->choice.initiatingMessage->value.choice.DownlinkNASTransport;
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_DownlinkNASTransport_IEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, true);
     asn_INTEGER2ulong(&(ie->value.choice.AMF_UE_NGAP_ID), &amf_ue_ngap_id);
@@ -460,10 +460,10 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_UplinkNASTransport;
-    pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
-    pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_UplinkNASTransport;
-    out = &pdu.choice.initiatingMessage.value.choice.UplinkNASTransport;
+    pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_UplinkNASTransport;
+    pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
+    pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_UplinkNASTransport;
+    out = &pdu.choice.initiatingMessage->value.choice.UplinkNASTransport;
     /* mandatory */
     ie = (NGAP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(NGAP_UplinkNASTransport_IEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -494,7 +494,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_UserLocationInformation;
 
     ie->value.choice.UserLocationInformation.present = NGAP_UserLocationInformation_PR_userLocationInformationNR;
-    userinfo_nr_p = &ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
+    userinfo_nr_p = ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
 
     /* Set nRCellIdentity. default userLocationInformationNR */
     MACRO_GNB_ID_TO_CELL_IDENTITY(ngap_gNB_instance_p->gNB_id,
@@ -570,10 +570,10 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_NASNonDeliveryIndication;
-    pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
-    pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_NASNonDeliveryIndication;
-    out = &pdu.choice.initiatingMessage.value.choice.NASNonDeliveryIndication;
+    pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_NASNonDeliveryIndication;
+    pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
+    pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_NASNonDeliveryIndication;
+    out = &pdu.choice.initiatingMessage->value.choice.NASNonDeliveryIndication;
     /* mandatory */
     ie = (NGAP_NASNonDeliveryIndication_IEs_t *)calloc(1, sizeof(NGAP_NASNonDeliveryIndication_IEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -676,10 +676,10 @@ int ngap_gNB_initial_ctxt_resp(
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_InitialContextSetup;
-    pdu.choice.successfulOutcome.criticality = NGAP_Criticality_reject;
-    pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse;
-    out = &pdu.choice.successfulOutcome.value.choice.InitialContextSetupResponse;
+    pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_InitialContextSetup;
+    pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
+    pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse;
+    out = &pdu.choice.successfulOutcome->value.choice.InitialContextSetupResponse;
     /* mandatory */
     ie = (NGAP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(NGAP_InitialContextSetupResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -716,23 +716,23 @@ int ngap_gNB_initial_ctxt_resp(
 
         pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
          
-        GTP_TEID_TO_ASN1(initial_ctxt_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.gTP_TEID);
+        GTP_TEID_TO_ASN1(initial_ctxt_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->gTP_TEID);
 
-        pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf = malloc(initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
+        pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf = malloc(initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
 
-        memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf,
+        memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf,
                initial_ctxt_resp_p->pdusessions[i].gNB_addr.buffer,
                initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
-        pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.size = initial_ctxt_resp_p->pdusessions[i].gNB_addr.length;
-        pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.bits_unused = 0;
+        pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size = initial_ctxt_resp_p->pdusessions[i].gNB_addr.length;
+        pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.bits_unused = 0;
 
         NGAP_DEBUG("initial_ctxt_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
                    item->pDUSessionID,
-                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[0],
-                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[1],
-                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[2],
-                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[3],
-                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.size);
+                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[0],
+                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[1],
+                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[2],
+                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[3],
+                   pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size);
 
         /* associatedQosFlowList. number of 1? */
         for(int j=0; j < initial_ctxt_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
@@ -894,10 +894,10 @@ int ngap_gNB_ue_capabilities(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_UERadioCapabilityInfoIndication;
-    pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
-    pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_UERadioCapabilityInfoIndication;
-    out = &pdu.choice.initiatingMessage.value.choice.UERadioCapabilityInfoIndication;
+    pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_UERadioCapabilityInfoIndication;
+    pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
+    pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_UERadioCapabilityInfoIndication;
+    out = &pdu.choice.initiatingMessage->value.choice.UERadioCapabilityInfoIndication;
     /* mandatory */
     ie = (NGAP_UERadioCapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UERadioCapabilityInfoIndicationIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -987,10 +987,10 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceSetup;
-    pdu.choice.successfulOutcome.criticality = NGAP_Criticality_reject;
-    pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse;
-    out = &pdu.choice.successfulOutcome.value.choice.PDUSessionResourceSetupResponse;
+    pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceSetup;
+    pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
+    pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse;
+    out = &pdu.choice.successfulOutcome->value.choice.PDUSessionResourceSetupResponse;
     /* mandatory */
     ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -1028,23 +1028,23 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
             pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
 
-            GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.gTP_TEID);
+            GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->gTP_TEID);
 
-            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf = malloc(pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf = malloc(pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
 
-            memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf,
+            memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf,
                    pdusession_setup_resp_p->pdusessions[i].gNB_addr.buffer,
                    pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
-            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.size = pdusession_setup_resp_p->pdusessions[i].gNB_addr.length;
-            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.bits_unused = 0;
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size = pdusession_setup_resp_p->pdusessions[i].gNB_addr.length;
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.bits_unused = 0;
 
             NGAP_DEBUG("pdusession_setup_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
                        item->pDUSessionID,
-                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[0],
-                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[1],
-                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[2],
-                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[3],
-                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.size);
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[0],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[1],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[2],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[3],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size);
 
             /* associatedQosFlowList. number of 1? */
             for(int j=0; j < pdusession_setup_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
@@ -1209,10 +1209,10 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceModify;
-    pdu.choice.successfulOutcome.criticality = NGAP_Criticality_reject;
-    pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceModifyResponse;
-    out = &pdu.choice.successfulOutcome.value.choice.PDUSessionResourceModifyResponse;
+    pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceModify;
+    pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
+    pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceModifyResponse;
+    out = &pdu.choice.successfulOutcome->value.choice.PDUSessionResourceModifyResponse;
     /* mandatory */
     ie = (NGAP_PDUSessionResourceModifyResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -1369,10 +1369,10 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceRelease;
-    pdu.choice.successfulOutcome.criticality = NGAP_Criticality_reject;
-    pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceReleaseResponse;
-    out = &pdu.choice.successfulOutcome.value.choice.PDUSessionResourceReleaseResponse;
+    pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceRelease;
+    pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
+    pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceReleaseResponse;
+    out = &pdu.choice.successfulOutcome->value.choice.PDUSessionResourceReleaseResponse;
     /* mandatory */
     ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
@@ -1524,10 +1524,10 @@ int ngap_gNB_path_switch_req(instance_t instance,
   /* Prepare the NGAP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_PathSwitchRequest;
-  pdu.choice.initiatingMessage.criticality = NGAP_Criticality_reject;
-  pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_PathSwitchRequest;
-  out = &pdu.choice.initiatingMessage.value.choice.PathSwitchRequest;
+  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_PathSwitchRequest;
+  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_reject;
+  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_PathSwitchRequest;
+  out = &pdu.choice.initiatingMessage->value.choice.PathSwitchRequest;
 
   /* mandatory */
   ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
@@ -1714,10 +1714,10 @@ int ngap_gNB_generate_PDUSESSION_Modification_Indication(
   // Prepare the NGAP message to encode 
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_PDUSESSIONModificationIndication;
-  pdu.choice.initiatingMessage.criticality = NGAP_Criticality_reject;
-  pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_PDUSESSIONModificationIndication;
-  out = &pdu.choice.initiatingMessage.value.choice.PDUSESSIONModificationIndication;
+  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_PDUSESSIONModificationIndication;
+  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_reject;
+  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_PDUSESSIONModificationIndication;
+  out = &pdu.choice.initiatingMessage->value.choice.PDUSESSIONModificationIndication;
   /* mandatory */
   ie = (NGAP_PDUSESSIONModificationIndicationIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONModificationIndicationIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;

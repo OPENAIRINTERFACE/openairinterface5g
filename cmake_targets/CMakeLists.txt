@@ -451,7 +451,7 @@ set(NGAP_ASN_DIR ${NGAP_DIR}/MESSAGES/ASN1/ASN1_files)
 set(NGAP_C_DIR ${asn1_generated_dir}/NGAP_${NGAP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}" "NGAP_" -fno-include-deps
+execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}" "NGAP_" -fno-include-deps -findirect-choice
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
