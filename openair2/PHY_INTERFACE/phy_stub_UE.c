@@ -1301,6 +1301,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     return out;
 }
 
+__attribute__((unused))
 static void print_rx_ind(nfapi_rx_indication_t *p)
 {
   printf("Printing RX_IND fields\n");

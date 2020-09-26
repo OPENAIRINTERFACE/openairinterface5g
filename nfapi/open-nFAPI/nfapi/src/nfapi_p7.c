@@ -37,6 +37,7 @@
 #include <nfapi.h>
 #include <debug.h>
 
+__attribute__((unused))
 static const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len)
 {
     char *p = out;
