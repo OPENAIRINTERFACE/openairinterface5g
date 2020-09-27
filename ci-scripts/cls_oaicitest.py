@@ -311,6 +311,16 @@ class OaiCiTest():
 		i = 0
 		for device_id in self.UEDevices:
 			p = Process(target = self.InitializeUE_common, args = (device_id,i,COTS_UE,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+			i += 1
+		for job in multi_jobs:
+			job.join()
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+
+
+
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -1068,7 +1078,7 @@ class OaiCiTest():
 		multi_jobs = []
 		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.DataDisableUE_common, args = (device_id,i))
+			p = Process(target = self.DataDisableUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
