@@ -70,7 +70,15 @@ typedef struct NR_UE_RRC_INST_s {
     NR_RadioBearerConfig_t *radio_bearer_config;
   
     NR_MIB_t *mib;
+
+    /* KeNB as computed from parameters within USIM card */
+    uint8_t kenb[32];
   
+    /* Used integrity/ciphering algorithms */
+    //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
+    NR_CipheringAlgorithm_t  cipheringAlgorithm;
+    e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
+
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList
     RRC_LIST_TYPE(NR_RLC_BearerConfig_t, NR_maxLC_ID) RLC_Bearer_Config_list;
