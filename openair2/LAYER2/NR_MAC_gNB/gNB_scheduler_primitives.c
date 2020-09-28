@@ -1824,12 +1824,25 @@ void nr_acknack_scheduling(int Mod_idP,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   NR_sched_pucch *curr_pucch;
-  int pucch_res,first_ul_slot_tdd,k,i,l;
+  int max_acknacks,pucch_res,first_ul_slot_tdd,k,i,l;
   uint8_t pdsch_to_harq_feedback[8];
   int found = 0;
   int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
+
+  bool csi_pres=false;
+  for (k=0; k<nr_ulmix_slots; k++) {
+    if(UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits>0)
+      csi_pres=true;
+  }
+
+  // As a preference always schedule ack nacks in PUCCH0 (max 2 per slots)
+  // Unless there is CSI meas reporting scheduled in the period to avoid conflicts in the same slot
+  if (csi_pres)
+    max_acknacks=10;
+  else
+    max_acknacks=2;
 
   // this is hardcoded for now as ue specific
   NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
@@ -1837,12 +1850,12 @@ void nr_acknack_scheduling(int Mod_idP,
 
   // for each possible ul or mixed slot
   for (k=0; k<nr_ulmix_slots; k++) {
-    for (l=0; l<2; l++) {
+    for (l=0; l<1; l++) { // scheduling 2 PUCCH in a single slot does not work with the phone, currently
       curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l];
       //if it is possible to schedule acknack in current pucch (no exclusive csi pucch)
       if ((curr_pucch->csi_bits == 0) || (curr_pucch->simultaneous_harqcsi==true)) {
         // if there is free room in current pucch structure
-        if (curr_pucch->dai_c<MAX_ACK_BITS) {
+        if (curr_pucch->dai_c<max_acknacks) {
           pucch_res = get_pucch_resource(UE_list,UE_id,k,l);
           if (pucch_res>-1){
             curr_pucch->resource_indicator = pucch_res;
