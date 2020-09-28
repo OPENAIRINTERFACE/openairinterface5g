@@ -366,18 +366,44 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
     }
   }
-  else {
+  else if (sduP != NULL) { // if the CRC passed
     // random access pusch with TC-RNTI
-    if (sduP != NULL) { // if the CRC passed
-      for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-        if (UE_info->tc_rnti[i] == current_rnti) {
-          // for now the only thing we are doing is set the UE as active
-          UE_info->active[i] = true;
-          LOG_W(MAC, "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly and UE_id %d is now 5G connected\n",
-                gnb_mod_idP, current_rnti, i);
-        }
-      }
+    NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[0];
+    if (ra->state != WAIT_Msg3) {
+      LOG_E(MAC,
+            "expected RA state WAIT_Msg3/%d (but is %d) for RA-RNTI %04x\n",
+            WAIT_Msg3,
+            ra->state,
+            ra->rnti);
+      return;
     }
+    if (ra->rnti != current_rnti) {
+      LOG_E(MAC,
+            "expected RA-RNTI %04x (C-RNTI %04x) to match current RNTI %04x\n",
+            ra->rnti,
+            ra->crnti,
+            current_rnti);
+      return;
+    }
+    free(ra->preambles.preamble_list);
+    ra->state = RA_IDLE;
+    LOG_I(MAC, "reset RA state information for RA-RNTI %04x\n", ra->rnti);
+    const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->crnti);
+    UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
+    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
+        ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+    AssertFatal(bwpList->list.count == 1,
+                "downlinkBWP_ToAddModList has %d BWP!\n",
+                bwpList->list.count);
+    const int bwp_id = 1;
+    UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+    LOG_W(MAC,
+          "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
+          "adding UE MAC Context UE_id %d/RNTI %04x\n",
+          gnb_mod_idP,
+          current_rnti,
+          UE_id,
+          ra->crnti);
   }
 }
 
