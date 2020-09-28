@@ -21,10 +21,12 @@
 
 /*! \file ngap_gNB_overload.c
  * \brief ngap procedures for overload messages within gNB
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2012
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \date 2020
  * \version 0.1
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
  */
+
 
 #include <stdio.h>
 #include <stdlib.h>

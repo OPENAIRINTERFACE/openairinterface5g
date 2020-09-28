@@ -236,10 +236,32 @@ typedef struct ccparams_nr_x2 {
 }
 
 
+/* SNSSAI ID configuration */
+
+#define GNB_CONFIG_STRING_SNSSAI_LIST                   "snssaiList"
+
+#define GNB_CONFIG_STRING_SLICE_SERIVE_TYPE             "sst"
+#define GNB_CONFIG_STRING_SLICE_DIFFERENTIATOR          "sd"
+
+#define GNB_SLICE_SERIVE_TYPE_IDX        0
+#define GNB_SLICE_DIFFERENTIATOR_IDX     1
 
 
+#define GNBSNSSAIPARAMS_DESC {                                                                  \
+/*   optname                               helpstr                 paramflags XXXptr     def val          type    numelt */ \
+  {GNB_CONFIG_STRING_SLICE_SERIVE_TYPE,    "slice serive type",            0, uptr:NULL, defuintval:1,    TYPE_UINT, 0},    \
+  {GNB_CONFIG_STRING_SLICE_DIFFERENTIATOR, "slice differentiator",         0, uptr:NULL, defuintval:0,    TYPE_UINT, 0},    \
+}
 
-/* MME configuration parameters section name */
+#define SLICE_SERIVE_TYPE_OKRANGES           {1,2,3,4}
+
+#define SNSSAIPARAMS_CHECK {                                           \
+  { .s1 = { config_check_intval, SLICE_SERIVE_TYPE_OKRANGES, 4 } },             \
+  { .s5 = { NULL } },             \
+}
+
+
+/* AMF configuration parameters section name */
 #define GNB_CONFIG_STRING_AMF_IP_ADDRESS                "amf_ip_address"
 
 /* SRB1 configuration parameters names   */

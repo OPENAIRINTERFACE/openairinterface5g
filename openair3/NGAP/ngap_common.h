@@ -19,11 +19,20 @@
  *      contact@openairinterface.org
  */
 
+/*! \file ngap_common.h
+ * \brief ngap procedures for both gNB and AMF
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ * \date 2020
+ * \version 0.1
+ */
+
 /** @defgroup _ngap_impl_ NGAP Layer Reference Implementation
  * @ingroup _ref_implementation_
  * @{
  */
 
+ 
 #if HAVE_CONFIG_H_
 # include "config.h"
 #endif

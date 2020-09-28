@@ -19,6 +19,15 @@
  *      contact@openairinterface.org
  */
 
+/*! \file ngap_gNB_management_procedures.h
+ * \brief NGAP gNB task 
+ * \author  Yoshio INOUE, Masayuki HARADA 
+ * \date 2020
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ * \version 1.0
+ * @ingroup _ngap
+ */
+
 #ifndef NGAP_GNB_MANAGEMENT_PROCEDURES_H_
 #define NGAP_GNB_MANAGEMENT_PROCEDURES_H_
 

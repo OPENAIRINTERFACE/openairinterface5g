@@ -19,6 +19,14 @@
  *      contact@openairinterface.org
  */
 
+/*
+ * ngap_messages_def.h
+ *
+ *  Created on: 2020
+ *      Author: Yoshio INOUE, Masayuki HARADA
+ *      Email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ */
+
 /* Messages for NGAP logging */
 MESSAGE_DEF(NGAP_UPLINK_NAS_LOG            , MESSAGE_PRIORITY_MED, IttiMsgText                      , ngap_uplink_nas_log)
 MESSAGE_DEF(NGAP_UE_CAPABILITY_IND_LOG     , MESSAGE_PRIORITY_MED, IttiMsgText                      , ngap_ue_capability_ind_log)
