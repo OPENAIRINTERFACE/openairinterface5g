@@ -212,6 +212,16 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *
 
     memcpy(new_instance->s_nssai, ngap_register_gNB->s_nssai, sizeof(ngap_register_gNB->s_nssai));
 
+    // config add? TBD
+    if(1) {
+      new_instance->num_nssai[0] = 1;
+      new_instance->s_nssai[0][0].sST = 1;
+      new_instance->s_nssai[0][0].sD_flag = 1;
+      new_instance->s_nssai[0][0].sD[0] = 1;
+      new_instance->s_nssai[0][0].sD[1] = 2;
+      new_instance->s_nssai[0][0].sD[2] = 3;
+    }
+    
     /* Add the new instance to the list of gNB (meaningfull in virtual mode) */
     ngap_gNB_insert_new_instance(new_instance);
     NGAP_INFO("Registered new gNB[%d] and %s gNB id %u\n",
