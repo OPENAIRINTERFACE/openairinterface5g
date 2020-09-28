@@ -279,6 +279,14 @@ typedef struct NR_UE_harq {
   uint16_t feedback_slot;
 } NR_UE_harq_t;
 
+typedef struct NR_UE_old_sched {
+  uint16_t rbSize;
+  int time_domain_allocation;
+  uint8_t mcsTableIdx;
+  uint8_t mcs;
+  uint8_t numDmrsCdmGrpsNoData;
+} NR_UE_ret_info_t;
+
 typedef enum {
   INACTIVE = 0,
   ACTIVE_NOT_SCHED,
@@ -323,6 +331,9 @@ typedef struct {
   uint8_t mcsTableIdx;
   uint8_t mcs;
   uint8_t numDmrsCdmGrpsNoData;
+
+  /// Retransmission-related information
+  NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
 
   uint16_t ta_timer;
   int16_t ta_update;
