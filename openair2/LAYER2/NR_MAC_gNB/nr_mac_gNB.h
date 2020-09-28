@@ -83,6 +83,11 @@ typedef enum {
   WAIT_Msg4_ACK = 4
 } RA_gNB_state_t;
 
+typedef struct NR_preamble_ue {
+  uint8_t num_preambles;
+  uint8_t *preamble_list;
+} NR_preamble_ue_t;
+
 /*! \brief gNB template for the Random access information */
 typedef struct {
   /// Flag to indicate this process is active
@@ -141,6 +146,12 @@ typedef struct {
   int msg4_mcs;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
+  /// secondaryCellGroup for UE in NSA that is to come
+  NR_CellGroupConfig_t *secondaryCellGroup;
+  /// Preambles for contention-free access
+  NR_preamble_ue_t preambles;
+  /// NSA: the UEs C-RNTI to use
+  rnti_t crnti;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -325,11 +336,6 @@ typedef struct {
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
 
-typedef struct NR_preamble_ue {
-  uint8_t num_preambles;
-  uint8_t *preamble_list;
-} NR_preamble_ue;
-
 typedef struct {
 
   int lc_bytes_tx[64];
@@ -361,8 +367,6 @@ typedef struct {
   int num_UEs;
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
-  rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
-  NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
