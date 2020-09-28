@@ -667,3 +667,39 @@ memset((void *)&ul_dcch_msg,0,sizeof(LTE_UL_DCCH_Message_t));
                  securityModeCommand->criticalExtensions.present);
 }
 
+//-----------------------------------------------------------------------------
+void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
+  uint8_t i=0,rv[6];
+
+  if(UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
+    // Get RRCConnectionRequest, fill random for now
+    // Generate random byte stream for contention resolution
+    for (i=0; i<6; i++) {
+#ifdef SMBV
+      // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
+      rv[i]=i;
+#else
+      rv[i]=taus()&0xff;
+#endif
+      LOG_T(RRC,"%x.",rv[i]);
+    }
+
+    LOG_T(RRC,"\n");
+    UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
+      do_RRCSetupRequest(
+        ctxt_pP->module_id,
+        (uint8_t *)UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+        rv);
+    LOG_I(RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, eNB %d)\n",
+          ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
+
+    for (i=0; i<UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
+      LOG_T(RRC,"%x.",UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
+    }
+
+    LOG_T(RRC,"\n");
+    /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
+    UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
+  }
+}
+
