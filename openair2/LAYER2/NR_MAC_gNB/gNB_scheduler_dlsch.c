@@ -698,6 +698,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
     if (harq->round == 0)
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
+    NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
+    retInfo->rbSize = sched_ctrl->rbSize;
+    retInfo->time_domain_allocation = sched_ctrl->time_domain_allocation;
+    retInfo->mcsTableIdx = sched_ctrl->mcsTableIdx;
+    retInfo->mcs = sched_ctrl->mcs;
+    retInfo->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
+
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
     nr_fill_nfapi_dl_pdu(module_id,
                          UE_id,
