@@ -67,7 +67,7 @@ int nr_find_pucch(uint16_t rnti,
   AssertFatal(gNB!=NULL,"gNB is null\n");
   int index = -1;
 
-  for (int i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
     AssertFatal(gNB->pucch[i]!=NULL,"gNB->pucch[%d] is null\n",i);
     if ((gNB->pucch[i]->active >0) &&
         (gNB->pucch[i]->pucch_pdu.rnti==rnti) &&
