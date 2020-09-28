@@ -1062,7 +1062,7 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
   /* look for the first resource set which supports uci_size number of bits for payload */
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
-      pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1;
+      pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadSize;
       if (uci_size <= (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
         NR_TST_PHY_PRINTF("PUCCH found resource set %d \n",  pucch_resource_set_id);
         return (pucch_resource_set_id);

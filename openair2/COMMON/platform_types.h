@@ -299,6 +299,12 @@ typedef struct protocol_ctxt_s {
   (CTXT_Pp)->module_id, \
   (CTXT_Pp)->rnti
 
+#define PROTOCOL_NR_CTXT_ARGS(CTXT_Pp) \
+  (CTXT_Pp)->frame, \
+  ((CTXT_Pp)->enb_flag == GNB_FLAG_YES) ? "gNB":" UE", \
+  (CTXT_Pp)->module_id, \
+  (CTXT_Pp)->rnti
+
 #define CHECK_CTXT_ARGS(CTXT_Pp)
 
 #define exit_fun(msg) exit_function(__FILE__,__FUNCTION__,__LINE__,msg)

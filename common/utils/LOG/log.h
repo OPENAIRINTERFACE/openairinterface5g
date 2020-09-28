@@ -226,6 +226,7 @@ typedef enum {
   X2AP,
   M2AP,
   M3AP,
+  NGAP,
   GNB_APP,
   NR_RRC,
   NR_MAC,

@@ -230,6 +230,7 @@ typedef struct IttiMsgText_s {
 #include <openair2/COMMON/sctp_messages_types.h>
 #include <openair2/COMMON/udp_messages_types.h>
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
+#include <openair2/COMMON/ngap_messages_types.h>
 #include <openair3/SCTP/sctp_eNB_task.h>
 #include <openair3/NAS/UE/nas_proc_defs.h>
 #include <openair3/NAS/UE/ESM/esmData.h>
@@ -312,6 +313,7 @@ void * rrc_enb_process_msg(void*);
   TASK_DEF(TASK_RRC_GNB,  TASK_PRIORITY_MED,  200, NULL,NULL)\
   TASK_DEF(TASK_RAL_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_S1AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_NGAP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_M2AP_ENB,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_M2AP_MCE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \

@@ -479,10 +479,10 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                     case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
                     case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
                     case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare7:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare6:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare5:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare4:
+                    case NR_DL_DCCH_MessageType__c1_PR_dlDedicatedMessageSegment_r16:
+                    case NR_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r16:
+                    case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransferMRDC_r16:
+                    case NR_DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r16:
                     case NR_DL_DCCH_MessageType__c1_PR_spare3:
                     case NR_DL_DCCH_MessageType__c1_PR_spare2:
                     case NR_DL_DCCH_MessageType__c1_PR_spare1:

@@ -39,6 +39,7 @@
 #include "platform_constants.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
+#include "ngap_messages_types.h"
 
 #ifdef CMAKER
 #include "rrc_messages_types.h"
@@ -102,7 +103,7 @@ extern void NRRCConfig(void);
 //void                          ru_config_display(void);
 
 void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
-int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i);
+int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i);
 
 #endif /* GNB_CONFIG_H_ */

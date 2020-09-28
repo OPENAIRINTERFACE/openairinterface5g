@@ -186,7 +186,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n310 = NR_RLF_TimersAndConstants__n310_n10;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n311 = NR_RLF_TimersAndConstants__n311_n1;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1 = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1));
-  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1->t311_v1530 = NR_RLF_TimersAndConstants__ext1__t311_v1530_ms30000;
+  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1->t311 = NR_RLF_TimersAndConstants__ext1__t311_ms30000;
   secondaryCellGroup->spCellConfig->rlmInSyncOutOfSyncThreshold                   = NULL;
   secondaryCellGroup->spCellConfig->spCellConfigDedicated = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->tdd_UL_DL_ConfigurationDedicated = NULL;
@@ -979,7 +979,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
  *pucchresset0id1=2;
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id1);
- pucchresset0->maxPayloadMinus1=NULL;
+ pucchresset0->maxPayloadSize=NULL;
 
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
 
@@ -990,7 +990,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
  *pucchresset1id1=4;
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id1);
- pucchresset1->maxPayloadMinus1=NULL;
+ pucchresset1->maxPayloadSize=NULL;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
 
  pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
