@@ -318,9 +318,8 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP) {
 
-  uint16_t O_uci;
-  uint16_t O_ack;
-  uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
+  uint16_t O_csi, O_ack, O_uci;
+  uint8_t O_sr = 0; // no SR in PUCCH implemented for now
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
@@ -336,8 +335,9 @@ void nr_schedule_pucch(int Mod_idP,
     for (int l=0; l<2; l++) {
       curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l];
       O_ack = curr_pucch->dai_c;
-      O_uci = O_ack + curr_pucch->csi_bits; // for now we are just sending acknacks in pucch
-      if ((O_uci>0 || SR_flag==1) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+      O_csi = curr_pucch->csi_bits;
+      O_uci = O_ack + O_csi + O_sr;
+      if ((O_uci>0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
         UL_tti_req->SFN = curr_pucch->frame;
         UL_tti_req->Slot = curr_pucch->ul_slot;
         UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
@@ -346,17 +346,17 @@ void nr_schedule_pucch(int Mod_idP,
         memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
         UL_tti_req->n_pdus+=1;
 
-        LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d with SR flag %d and (%d, %d) (ACK, CSI) bits\n",
-              frameP,slotP,SR_flag,O_ack,curr_pucch->csi_bits);
+        LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d with %d SR bits and (%d, %d) (ACK, CSI) bits\n",
+              frameP,slotP,O_sr,O_ack,curr_pucch->csi_bits);
 
         nr_configure_pucch(pucch_pdu,
                            scc,
                            ubwp,
                            UE_list->rnti[UE_id],
                            curr_pucch->resource_indicator,
-                           O_uci,
+                           O_csi,
                            O_ack,
-                           SR_flag);
+                           O_sr);
 
         memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l],
                0,

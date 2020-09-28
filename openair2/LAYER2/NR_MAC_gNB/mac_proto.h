@@ -215,9 +215,9 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_BWP_Uplink_t *bwp,
                         uint16_t rnti,
                         uint8_t pucch_resource,
-                        uint16_t O_uci,
+                        uint16_t O_csi,
                         uint16_t O_ack,
-                        uint8_t SR_flag);
+                        uint8_t O_sr);
 
 void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
@@ -285,6 +285,15 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int UE_id,
                      int m
                      );
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_tot,
+                                uint16_t O_csi,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl);
 
 void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_list, int UE_id);
 

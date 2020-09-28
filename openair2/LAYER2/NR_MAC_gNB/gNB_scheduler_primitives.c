@@ -545,9 +545,9 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_BWP_Uplink_t *bwp,
                         uint16_t rnti,
                         uint8_t pucch_resource,
-                        uint16_t O_uci,
+                        uint16_t O_csi,
                         uint16_t O_ack,
-                        uint8_t SR_flag) {
+                        uint8_t O_sr) {
 
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_Resource_t *pucchres;
@@ -561,6 +561,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   int res_found = 0;
 
   pucch_pdu->bit_len_harq = O_ack;
+
+  uint16_t O_uci = O_csi + O_ack;
 
   if (bwp) { // This is not the InitialBWP
 
@@ -661,7 +663,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
             pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format0->initialCyclicShift;
             pucch_pdu->nr_of_symbols = pucchres->format.choice.format0->nrofSymbols;
             pucch_pdu->start_symbol_index = pucchres->format.choice.format0->startingSymbolIndex;
-            pucch_pdu->sr_flag = SR_flag;
+            pucch_pdu->sr_flag = O_sr;
             break;
           case NR_PUCCH_Resource__format_PR_format1 :
             pucch_pdu->format_type = 1;
@@ -669,22 +671,23 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
             pucch_pdu->nr_of_symbols = pucchres->format.choice.format1->nrofSymbols;
             pucch_pdu->start_symbol_index = pucchres->format.choice.format1->startingSymbolIndex;
             pucch_pdu->time_domain_occ_idx = pucchres->format.choice.format1->timeDomainOCC;
-            pucch_pdu->sr_flag = SR_flag;
+            pucch_pdu->sr_flag = O_sr;
             break;
           case NR_PUCCH_Resource__format_PR_format2 :
             pucch_pdu->format_type = 2;
             pucch_pdu->nr_of_symbols = pucchres->format.choice.format2->nrofSymbols;
             pucch_pdu->start_symbol_index = pucchres->format.choice.format2->startingSymbolIndex;
-            pucch_pdu->prb_size = pucchres->format.choice.format2->nrofPRBs;
             pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
             pucch_pdu->dmrs_scrambling_id = id0!= NULL ? *id0 : *scc->physCellId;
-            pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
+            pucch_pdu->prb_size = compute_pucch_prb_size(2,pucchres->format.choice.format2->nrofPRBs,
+                                                         O_uci+O_sr,O_csi,pucch_Config->format2->choice.setup->maxCodeRate,
+                                                         2,pucchres->format.choice.format2->nrofSymbols,8);
+            pucch_pdu->bit_len_csi_part1 = O_csi;
             break;
           case NR_PUCCH_Resource__format_PR_format3 :
             pucch_pdu->format_type = 3;
             pucch_pdu->nr_of_symbols = pucchres->format.choice.format3->nrofSymbols;
             pucch_pdu->start_symbol_index = pucchres->format.choice.format3->startingSymbolIndex;
-            pucch_pdu->prb_size = pucchres->format.choice.format3->nrofPRBs;
             pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
             if (pucch_Config->format3 == NULL) {
               pucch_pdu->pi_2bpsk = 0;
@@ -695,7 +698,19 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
               pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
               pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
             }
-            pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
+            int f3_dmrs_symbols;
+            if (pucchres->format.choice.format3->nrofSymbols==4)
+              f3_dmrs_symbols = 1<<pucch_pdu->freq_hop_flag;
+            else {
+              if(pucchres->format.choice.format3->nrofSymbols<10)
+                f3_dmrs_symbols = 2;
+              else
+                f3_dmrs_symbols = 2<<pucch_pdu->add_dmrs_flag;
+            }
+            pucch_pdu->prb_size = compute_pucch_prb_size(3,pucchres->format.choice.format3->nrofPRBs,
+                                                         O_uci+O_sr,O_csi,pucch_Config->format3->choice.setup->maxCodeRate,
+                                                         2-pucch_pdu->pi_2bpsk,pucchres->format.choice.format3->nrofSymbols-f3_dmrs_symbols,12);
+            pucch_pdu->bit_len_csi_part1 = O_csi;
             break;
           case NR_PUCCH_Resource__format_PR_format4 :
             pucch_pdu->format_type = 4;
@@ -713,7 +728,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
               pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
               pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
             }
-            pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
+            pucch_pdu->bit_len_csi_part1 = O_csi;
             break;
           default :
             AssertFatal(1==0,"Undefined PUCCH format \n");
@@ -724,6 +739,84 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   }  
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PUCCH configuration\n");
+  }
+
+}
+
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_tot,
+                                uint16_t O_csi,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl) {
+
+  uint16_t O_crc;
+
+  if (O_tot<12)
+    O_crc = 0;
+  else{
+    if (O_tot<20)
+      O_crc = 6;
+    else {
+      if (O_tot<360)
+        O_crc = 11;
+      else
+        AssertFatal(1==0,"Case for segmented PUCCH not yet implemented");
+    }
+  }
+
+  int rtimes100;
+  switch(*maxCodeRate){
+    case NR_PUCCH_MaxCodeRate_zeroDot08 :
+      rtimes100 = 8;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot15 :
+      rtimes100 = 15;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot25 :
+      rtimes100 = 25;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot35 :
+      rtimes100 = 35;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot45 :
+      rtimes100 = 45;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot60 :
+      rtimes100 = 60;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot80 :
+      rtimes100 = 80;
+      break;
+  default :
+    AssertFatal(1==0,"Invalid MaxCodeRate");
+  }
+
+  float r = (float)rtimes100/100;
+
+  if (O_csi == O_tot) {
+    if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
+      AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
+                  r,O_tot,O_crc,nr_prbs);
+    else
+      return nr_prbs;
+  }
+
+  if (format==2){
+    // TODO fix this for multiple CSI reports
+    for (int i=1; i<=nr_prbs; i++){
+      if((O_tot+O_crc)<=(i*n_symb*Qm*n_re_ctrl*r) &&
+         (O_tot+O_crc)>((i-1)*n_symb*Qm*n_re_ctrl*r))
+        return i;
+    }
+    AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with at most %d PRBs",
+                r,O_tot,O_crc,nr_prbs);
+  }
+  else{
+    AssertFatal(1==0,"Not yet implemented");
   }
 
 }

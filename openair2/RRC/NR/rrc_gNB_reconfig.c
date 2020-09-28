@@ -911,7 +911,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres2->secondHopPRB=NULL;
  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
  pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
- pucchres2->format.choice.format2->nrofPRBs=16;
+ pucchres2->format.choice.format2->nrofPRBs=4;
  pucchres2->format.choice.format2->nrofSymbols=1;
  pucchres2->format.choice.format2->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
@@ -922,7 +922,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres3->secondHopPRB=NULL;
  pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;
  pucchres3->format.choice.format2=calloc(1,sizeof(*pucchres3->format.choice.format2));
- pucchres3->format.choice.format2->nrofPRBs=16;
+ pucchres3->format.choice.format2->nrofPRBs=4;
  pucchres3->format.choice.format2->nrofSymbols=1;
  pucchres3->format.choice.format2->startingSymbolIndex=12;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres3);
@@ -934,7 +934,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchfmt2->interslotFrequencyHopping=NULL;
  pucchfmt2->additionalDMRS=NULL;
  pucchfmt2->maxCodeRate=calloc(1,sizeof(*pucchfmt2->maxCodeRate));
- *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot15;
+ *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot25;
  pucchfmt2->nrofSlots=NULL;
  pucchfmt2->pi2BPSK=NULL;
  pucchfmt2->simultaneousHARQ_ACK_CSI=NULL;
