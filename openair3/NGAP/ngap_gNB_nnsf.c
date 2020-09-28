@@ -21,9 +21,10 @@
 
 /*! \file ngap_gNB_nnsf.c
  * \brief ngap NAS node selection functions
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2012
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \date 2020
  * \version 0.1
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
  */
 
 #include <stdio.h>

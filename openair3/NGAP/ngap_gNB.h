@@ -18,6 +18,15 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+ 
+/*! \file ngap_gNB.h
+ * \brief NGAP gNB task
+ * \author  Yoshio INOUE, Masayuki HARADA
+ * \date 2020
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ * \version 1.0
+ * @ingroup _ngap
+ */
 
 #include <stdio.h>
 #include <stdint.h>

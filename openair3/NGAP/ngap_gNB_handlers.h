@@ -18,7 +18,15 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
+ 
+/*! \file ngap_gNB_handlers.h
+ * \brief ngap messages handlers for gNB part
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ * \date 2020
+ * \version 0.1
+ */
+ 
 #ifndef NGAP_GNB_HANDLERS_H_
 #define NGAP_GNB_HANDLERS_H_
 

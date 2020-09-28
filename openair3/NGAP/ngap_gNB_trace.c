@@ -19,6 +19,14 @@
  *      contact@openairinterface.org
  */
 
+/*! \file ngap_gNB_trace.c
+ * \brief ngap trace procedures for gNB
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \date 2020
+ * \version 0.1
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ */
+
 #include <stdint.h>
 
 #include "assertions.h"

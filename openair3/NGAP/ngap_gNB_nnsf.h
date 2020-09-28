@@ -19,6 +19,14 @@
  *      contact@openairinterface.org
  */
 
+/*! \file ngap_gNB_nnsf.h
+ * \brief ngap NAS node selection functions
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \date 2020
+ * \version 0.1
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ */
+ 
 #ifndef NGAP_GNB_NNSF_H_
 #define NGAP_GNB_NNSF_H_
 

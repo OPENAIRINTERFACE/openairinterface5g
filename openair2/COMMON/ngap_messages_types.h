@@ -19,6 +19,14 @@
  *      contact@openairinterface.org
  */
 
+/*
+ * ngap_messages_types.h
+ *
+ *  Created on: 2020
+ *      Author: Yoshio INOUE, Masayuki HARADA
+ *      Email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ */
+
 #ifndef NGAP_MESSAGES_TYPES_H_
 #define NGAP_MESSAGES_TYPES_H_
 
@@ -413,7 +421,7 @@ typedef struct ngap_register_gnb_req_s {
   uint16_t              num_nssai[PLMN_LIST_MAX_SIZE];
   ngap_allowed_NSSAI_t  s_nssai[PLMN_LIST_MAX_SIZE][8];
 
-  /* Default Paging DRX of the gNB as defined in TS 36.304 */
+  /* Default Paging DRX of the gNB as defined in TS 38.304 */
   ngap_paging_drx_t default_drx;
 
   /* The gNB IP address to bind */

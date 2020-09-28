@@ -21,11 +21,12 @@
 
 /*! \file ngap_gNB_encoder.c
  * \brief ngap pdu encode procedures for gNB
- * \author Sebastien ROUX and Navid Nikaein
- * \email navid.nikaein@eurecom.fr
- * \date 2013 - 2015
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
+ * \date 2020
  * \version 0.1
  */
+
 
 #include <stdio.h>
 #include <string.h>

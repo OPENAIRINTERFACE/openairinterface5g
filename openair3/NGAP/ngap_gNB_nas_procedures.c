@@ -20,13 +20,15 @@
  */
 
 /*! \file ngap_gNB_nas_procedures.c
- * \brief NGAP eNb NAS procedure handler
- * \author  S. Roux and Navid Nikaein
- * \date 2010 - 2015
- * \email: navid.nikaein@eurecom.fr
+ * \brief NGAP gNb NAS procedure handler
+ * \author  Yoshio INOUE, Masayuki HARADA 
+ * \date 2020
+ * \email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com (yoshio.inoue%40fujitsu.com%2cmasayuki.harada%40fujitsu.com)
  * \version 1.0
  * @ingroup _ngap
  */
+
+ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
