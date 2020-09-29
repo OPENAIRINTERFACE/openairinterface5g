@@ -49,38 +49,7 @@ int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
                                    uint32_t         stream,
                                    NGAP_NGAP_PDU_t *pdu)
 {
-#if 0
-    ngap_gNB_amf_data_t     *amf_desc_p;
-    NGAP_OverloadStart_t    *container;
-    NGAP_OverloadStartIEs_t *ie;
-
-    DevAssert(pdu != NULL);
-
-    container = &pdu->choice.initiatingMessage.value.choice.OverloadStart;
-
-    NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_OverloadStartIEs_t, ie, container,
-                               NGAP_ProtocolIE_ID_id_OverloadResponse, true);
-    if (ie != NULL) {
-        DevCheck(ie->value.choice.OverloadResponse.present ==
-                 NGAP_OverloadResponse_PR_overloadAction,
-                 NGAP_OverloadResponse_PR_overloadAction, 0, 0);
-    }
-    /* Non UE-associated signalling -> stream 0 */
-    DevCheck(stream == 0, stream, 0, 0);
-
-    if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-        /* No AMF context associated */
-        return -1;
-    }
-
-    /* Mark the AMF as overloaded and set the overload state according to
-     * the value received.
-     */
-    amf_desc_p->state = NGAP_GNB_OVERLOAD;
-    amf_desc_p->overload_state =
-        ie->value.choice.OverloadResponse.choice.overloadAction;
-
-#endif
+    //TODO
     return 0;
 }
 

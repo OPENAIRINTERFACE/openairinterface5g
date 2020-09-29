@@ -370,7 +370,7 @@ int
 rrc_gNB_process_security(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_gNB_ue_context_t *const ue_context_pP,
-  security_capabilities_t *security_capabilities_pP
+  ngap_security_capabilities_t *security_capabilities_pP
 ) {
   boolean_t                                             changed = FALSE;
   NR_CipheringAlgorithm_t                               cipheringAlgorithm;
@@ -381,19 +381,19 @@ rrc_gNB_process_security(
   LOG_D(NR_RRC,
         "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
         ctxt_pP->module_id,
-        ue_context_pP->ue_context.security_capabilities.encryption_algorithms,
+        ue_context_pP->ue_context.security_capabilities.nRencryption_algorithms,
         (unsigned long)ue_context_pP->ue_context.ciphering_algorithm,
-        ue_context_pP->ue_context.security_capabilities.integrity_algorithms,
+        ue_context_pP->ue_context.security_capabilities.nRintegrity_algorithms,
         ue_context_pP->ue_context.integrity_algorithm);
   /* Select relevant algorithms */
-  cipheringAlgorithm = rrc_gNB_select_ciphering (ue_context_pP->ue_context.security_capabilities.encryption_algorithms);
+  cipheringAlgorithm = rrc_gNB_select_ciphering (ue_context_pP->ue_context.security_capabilities.nRencryption_algorithms);
 
   if (ue_context_pP->ue_context.ciphering_algorithm != cipheringAlgorithm) {
     ue_context_pP->ue_context.ciphering_algorithm = cipheringAlgorithm;
     changed = TRUE;
   }
 
-  integrityProtAlgorithm = rrc_gNB_select_integrity (ue_context_pP->ue_context.security_capabilities.integrity_algorithms);
+  integrityProtAlgorithm = rrc_gNB_select_integrity (ue_context_pP->ue_context.security_capabilities.nRintegrity_algorithms);
 
   if (ue_context_pP->ue_context.integrity_algorithm != integrityProtAlgorithm) {
     ue_context_pP->ue_context.integrity_algorithm = integrityProtAlgorithm;

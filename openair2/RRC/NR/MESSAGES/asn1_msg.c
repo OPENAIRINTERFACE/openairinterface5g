@@ -659,7 +659,6 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     NR_MAC_CellGroupConfig_t                         *mac_CellGroupConfig  = NULL;
 
     char masterCellGroup_buf[1000];
-    int size = 0;
     long *logicalChannelGroup = NULL;
 
     memset((void *)&dl_ccch_msg, 0, sizeof(NR_DL_CCCH_Message_t));
@@ -937,7 +936,6 @@ uint16_t do_RRCReconfiguration(
     NR_DRB_ToAddModList_t                            *DRB_configList       = NULL;
     NR_DRB_ToAddMod_t                                *DRB_config           = NULL;
     NR_SecurityConfig_t                              *security_config      = NULL;
-    NR_CellGroupConfig_t                             *secondaryCellGroup   = NULL;
     NR_DedicatedNAS_Message_t                        *dedicatedNAS_Message = NULL;
 
     memset(&dl_dcch_msg, 0, sizeof(NR_DL_DCCH_Message_t));
@@ -951,6 +949,7 @@ uint16_t do_RRCReconfiguration(
 
     uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
     /******************** Radio Bearer Config ********************/
+    ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
     ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
     
     /* Configure SRB2 */

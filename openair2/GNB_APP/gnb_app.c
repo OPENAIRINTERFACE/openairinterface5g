@@ -173,7 +173,7 @@ void *gNB_app_task(void *args_p)
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
   }
 
-  if (EPC_MODE_ENABLED) {
+  if (AMF_MODE_ENABLED) {
   /* Try to register each gNB */
   //registered_gnb = 0;
   __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);

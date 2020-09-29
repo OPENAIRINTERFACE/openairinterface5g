@@ -70,6 +70,9 @@ typedef struct NR_UE_RRC_INST_s {
     NR_RadioBearerConfig_t *radio_bearer_config;
   
     NR_MIB_t *mib;
+
+    /* KeNB as computed from parameters within USIM card */
+    uint8_t kgnb[32];
   
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList

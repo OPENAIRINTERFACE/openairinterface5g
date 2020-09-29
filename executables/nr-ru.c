@@ -1796,7 +1796,7 @@ void init_RU_proc(RU_t *ru) {
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   pthread_cond_init( &proc->cond_gNBs, NULL);
-  //threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
+  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
 
   if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
     threadCreate( &proc->pthread_FH1, ru_thread_tx, (void *)ru, "thread_FH1", -1, OAI_PRIORITY_RT );

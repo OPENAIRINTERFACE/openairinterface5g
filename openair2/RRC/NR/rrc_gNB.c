@@ -542,18 +542,18 @@ rrc_gNB_process_RRCReconfigurationComplete(
       return;
     }
 
-    /* Derive the keys from kenb */
+    /* Derive the keys from kgnb */
     if (DRB_configList != NULL) {
         derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                        ue_context_pP->ue_context.kenb,
+                        ue_context_pP->ue_context.kgnb,
                         &kUPenc);
     }
 
     derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                        ue_context_pP->ue_context.kenb,
+                        ue_context_pP->ue_context.kgnb,
                         &kRRCenc);
     derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                        ue_context_pP->ue_context.kenb,
+                        ue_context_pP->ue_context.kgnb,
                         &kRRCint);
 
     /* Refresh SRBs/DRBs */
