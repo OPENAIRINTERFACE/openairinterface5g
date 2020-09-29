@@ -483,7 +483,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
 
   pdsch_pdu_rel15->pduBitmap = 0;
   pdsch_pdu_rel15->rnti = UE_info->rnti[UE_id];
-  pdsch_pdu_rel15->pduIndex = 0;
+  pdsch_pdu_rel15->pduIndex = nr_mac->pdu_index[0]++;
 
   // BWP
   pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
@@ -635,6 +635,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         pdsch_pdu_rel15->NrOfCodewords,
         pdsch_pdu_rel15->mcsIndex[0],
         TBS);
+
+  dl_req->nPDUs += 2;
 }
 
 void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
