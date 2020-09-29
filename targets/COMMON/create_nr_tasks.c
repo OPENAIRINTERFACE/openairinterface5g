@@ -26,7 +26,7 @@
 
 # ifdef OPENAIR2
 #include "sctp_eNB_task.h"
-#include "s1ap_eNB.h"
+#include "ngap_gNB.h"
 #include "nas_ue_task.h"
 #include "udp_eNB_task.h"
 #include "gtpv1u_eNB_task.h"
@@ -59,7 +59,7 @@ int create_gNB_tasks(uint32_t gnb_nb)
   }
 
 
-  if (EPC_MODE_ENABLED) {
+  if (AMF_MODE_ENABLED) {
       if (gnb_nb > 0) {
         /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
           LOG_E(SCTP, "Create task for SCTP failed\n");

@@ -595,7 +595,7 @@ memset((void *)&ul_dcch_msg,0,sizeof(LTE_UL_DCCH_Message_t));
 
   if (h_rc == HASH_TABLE_OK) {
     LOG_D(RRC, "PDCP_COLL_KEY_VALUE() returns valid key = %ld\n", key);
-    LOG_D(RRC, "driving kRRCenc, kRRCint and kUPenc from KeNB="
+    LOG_D(RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
           "%02x%02x%02x%02x"
           "%02x%02x%02x%02x"
           "%02x%02x%02x%02x"
@@ -604,17 +604,17 @@ memset((void *)&ul_dcch_msg,0,sizeof(LTE_UL_DCCH_Message_t));
           "%02x%02x%02x%02x"
           "%02x%02x%02x%02x"
           "%02x%02x%02x%02x\n",
-          NR_UE_rrc_inst->kenb[0],  NR_UE_rrc_inst->kenb[1],  NR_UE_rrc_inst->kenb[2],  NR_UE_rrc_inst->kenb[3],
-          NR_UE_rrc_inst->kenb[4],  NR_UE_rrc_inst->kenb[5],  NR_UE_rrc_inst->kenb[6],  NR_UE_rrc_inst->kenb[7],
-          NR_UE_rrc_inst->kenb[8],  NR_UE_rrc_inst->kenb[9],  NR_UE_rrc_inst->kenb[10], NR_UE_rrc_inst->kenb[11],
-          NR_UE_rrc_inst->kenb[12], NR_UE_rrc_inst->kenb[13], NR_UE_rrc_inst->kenb[14], NR_UE_rrc_inst->kenb[15],
-          NR_UE_rrc_inst->kenb[16], NR_UE_rrc_inst->kenb[17], NR_UE_rrc_inst->kenb[18], NR_UE_rrc_inst->kenb[19],
-          NR_UE_rrc_inst->kenb[20], NR_UE_rrc_inst->kenb[21], NR_UE_rrc_inst->kenb[22], NR_UE_rrc_inst->kenb[23],
-          NR_UE_rrc_inst->kenb[24], NR_UE_rrc_inst->kenb[25], NR_UE_rrc_inst->kenb[26], NR_UE_rrc_inst->kenb[27],
-          NR_UE_rrc_inst->kenb[28], NR_UE_rrc_inst->kenb[29], NR_UE_rrc_inst->kenb[30], NR_UE_rrc_inst->kenb[31]);
-    derive_key_rrc_enc(NR_UE_rrc_inst->cipheringAlgorithm,NR_UE_rrc_inst->kenb, &kRRCenc);
-    derive_key_rrc_int(NR_UE_rrc_inst->integrityProtAlgorithm,NR_UE_rrc_inst->kenb, &kRRCint);
-    derive_key_up_enc(NR_UE_rrc_inst->cipheringAlgorithm,NR_UE_rrc_inst->kenb, &kUPenc);
+          NR_UE_rrc_inst->kgnb[0],  NR_UE_rrc_inst->kgnb[1],  NR_UE_rrc_inst->kgnb[2],  NR_UE_rrc_inst->kgnb[3],
+          NR_UE_rrc_inst->kgnb[4],  NR_UE_rrc_inst->kgnb[5],  NR_UE_rrc_inst->kgnb[6],  NR_UE_rrc_inst->kgnb[7],
+          NR_UE_rrc_inst->kgnb[8],  NR_UE_rrc_inst->kgnb[9],  NR_UE_rrc_inst->kgnb[10], NR_UE_rrc_inst->kgnb[11],
+          NR_UE_rrc_inst->kgnb[12], NR_UE_rrc_inst->kgnb[13], NR_UE_rrc_inst->kgnb[14], NR_UE_rrc_inst->kgnb[15],
+          NR_UE_rrc_inst->kgnb[16], NR_UE_rrc_inst->kgnb[17], NR_UE_rrc_inst->kgnb[18], NR_UE_rrc_inst->kgnb[19],
+          NR_UE_rrc_inst->kgnb[20], NR_UE_rrc_inst->kgnb[21], NR_UE_rrc_inst->kgnb[22], NR_UE_rrc_inst->kgnb[23],
+          NR_UE_rrc_inst->kgnb[24], NR_UE_rrc_inst->kgnb[25], NR_UE_rrc_inst->kgnb[26], NR_UE_rrc_inst->kgnb[27],
+          NR_UE_rrc_inst->kgnb[28], NR_UE_rrc_inst->kgnb[29], NR_UE_rrc_inst->kgnb[30], NR_UE_rrc_inst->kgnb[31]);
+    derive_key_rrc_enc(NR_UE_rrc_inst->cipheringAlgorithm,NR_UE_rrc_inst->kgnb, &kRRCenc);
+    derive_key_rrc_int(NR_UE_rrc_inst->integrityProtAlgorithm,NR_UE_rrc_inst->kgnb, &kRRCint);
+    derive_key_up_enc(NR_UE_rrc_inst->cipheringAlgorithm,NR_UE_rrc_inst->kgnb, &kUPenc);
 
     if (securityMode != 0xff) {
       pdcp_config_set_security(ctxt_pP, pdcp_p, 0, 0,

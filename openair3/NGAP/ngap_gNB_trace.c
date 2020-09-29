@@ -50,38 +50,7 @@ int ngap_gNB_handle_trace_start(uint32_t         assoc_id,
                                 uint32_t         stream,
                                 NGAP_NGAP_PDU_t *pdu)
 {
-#if 0
-    NGAP_TraceStart_t            *container;
-    NGAP_TraceStartIEs_t         *ie;
-    struct ngap_gNB_ue_context_s *ue_desc_p = NULL;
-    struct ngap_gNB_amf_data_s   *amf_ref_p;
-
-    DevAssert(pdu != NULL);
-
-    container = &pdu->choice.initiatingMessage.value.choice.TraceStart;
-
-    NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_TraceStartIEs_t, ie, container,
-                               NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, TRUE);
-    amf_ref_p = ngap_gNB_get_AMF(NULL, assoc_id, 0);
-    DevAssert(amf_ref_p != NULL);
-  if (ie != NULL) {
-    ue_desc_p = ngap_gNB_get_ue_context(amf_ref_p->ngap_gNB_instance,
-                                        ie->value.choice.GNB_UE_NGAP_ID);
-  }
-    if (ue_desc_p == NULL) {
-        /* Could not find context associated with this gNB_ue_ngap_id -> generate
-         * trace failure indication.
-         */
-        NGAP_E_UTRAN_Trace_ID_t trace_id;
-        NGAP_Cause_t cause;
-        memset(&trace_id, 0, sizeof(NGAP_E_UTRAN_Trace_ID_t));
-        memset(&cause, 0, sizeof(NGAP_Cause_t));
-        cause.present = NGAP_Cause_PR_radioNetwork;
-        cause.choice.radioNetwork = NGAP_CauseRadioNetwork_unknown_pair_ue_ngap_id;
-        ngap_gNB_generate_trace_failure(NULL, &trace_id, &cause);
-    }
-
-#endif
+    //TODO
     return 0;
 }
 

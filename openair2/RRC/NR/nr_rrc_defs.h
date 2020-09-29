@@ -290,9 +290,9 @@ typedef struct gNB_RRC_UE_s {
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
-  /* KeNB as derived from KASME received from EPC */
-  uint8_t kenb[32];
-  int8_t  kenb_ncc;
+  /* KgNB as derived from KASME received from EPC */
+  uint8_t kgnb[32];
+  int8_t  kgnb_ncc;
   uint8_t nh[32];
   int8_t  nh_ncc;
 #endif
@@ -322,7 +322,7 @@ typedef struct gNB_RRC_UE_s {
   uint64_t                           amf_ue_ngap_id:40;
   nr_rrc_guami_t                     ue_guami;
 
-  security_capabilities_t            security_capabilities;
+  ngap_security_capabilities_t       security_capabilities;
 
   /* Total number of e_rab already setup in the list */
   uint8_t                           setup_e_rabs;
