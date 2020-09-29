@@ -769,10 +769,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
       // padding param currently not in use
       //padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
 
+      const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
+      nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
+      /* pointer to directly generate the PDU into the nFAPI structure */
+      uint32_t *buf = tx_req->TLVs[0].value.direct;
+
       const int offset = nr_generate_dlsch_pdu(
           module_id,
           (unsigned char *)mac_sdus,
-          (unsigned char *)gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0],
+          (unsigned char *)buf,
           num_sdus, // num_sdus
           sdu_lengths,
           sdu_lcids,
@@ -783,8 +788,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
       // Padding: fill remainder of DLSCH with 0
       if (post_padding > 0) {
         for (int j = 0; j < TBS - offset; j++)
-          gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
+          buf[offset + j] = 0;
       }
+
+      /* the buffer has been filled by nr_generate_dlsch_pdu(), below we simply
+       * fill the remaining information */
+      tx_req->PDU_length = TBS;
+      tx_req->PDU_index  = gNB_mac->pdu_index[0]++;
+      tx_req->num_TLV = 1;
+      tx_req->TLVs[0].length = TBS + 2;
+      gNB_mac->TX_req[CC_id].Number_of_PDUs++;
+      gNB_mac->TX_req[CC_id].SFN = frame;
+      gNB_mac->TX_req[CC_id].Slot = slot;
 
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
@@ -794,15 +809,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
       retInfo->mcs = sched_ctrl->mcs;
       retInfo->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
 
-      nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
-      configure_fapi_dl_Tx(module_id,
-                           frame,
-                           slot,
-                           dl_req,
-                           tx_req,
-                           TBS,
-                           gNB_mac->pdu_index[CC_id]);
-
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       if (frame%100 == 0) {
         LOG_I(MAC,
@@ -811,10 +817,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
               slot,
               TBS);
         for(int i = 0; i < 10; i++)
-          LOG_I(MAC,
-                "byte %d: %x\n",
-                i,
-                ((uint8_t *)gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0])[i]);
+          LOG_I(MAC, "byte %d: %x\n", i, ((uint8_t *) buf)[i]);
       }
 #endif
     }
