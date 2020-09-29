@@ -552,35 +552,36 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
     // Time-domain allocation
     sched_ctrl->time_domain_allocation = 2;
 
-    // Freq-demain allocation
-    while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
-    int rbSize = 1;
-    while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize]) rbSize++;
-    DevAssert(rbSize >= 3); /* just ensure we have at least 3 RBs */
-    sched_ctrl->rbSize = rbSize;
-    sched_ctrl->rbStart = rbStart;
-
     // modulation scheme
     sched_ctrl->mcsTableIdx = 0;
     sched_ctrl->mcs = 9;
     sched_ctrl->numDmrsCdmGrpsNoData = 1;
 
+    // Freq-demain allocation
+    while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
+
     uint8_t N_PRB_DMRS =
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
     int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
                                      sched_ctrl->time_domain_allocation);
-    const uint32_t TBS =
-        nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                       nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                       sched_ctrl->rbSize,
-                       nrOfSymbols,
-                       N_PRB_DMRS, // FIXME // This should be multiplied by the
-                                   // number of dmrs symbols
-                       0 /* N_PRB_oh, 0 for initialBWP */,
-                       0 /* tb_scaling */,
-                       1 /* nrOfLayers */)
-        >> 3;
-    AssertFatal(TBS != 0, "TBS is zero but requested %d RBs!\n", sched_ctrl->rbSize);
+
+    int rbSize = 0;
+    uint32_t TBS = 0;
+    do {
+      rbSize++;
+      TBS = nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                           nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                           rbSize,
+                           nrOfSymbols,
+                           N_PRB_DMRS, // FIXME // This should be multiplied by the
+                                       // number of dmrs symbols
+                           0 /* N_PRB_oh, 0 for initialBWP */,
+                           0 /* tb_scaling */,
+                           1 /* nrOfLayers */)
+            >> 3;
+    } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes);
+    sched_ctrl->rbSize = rbSize;
+    sched_ctrl->rbStart = rbStart;
   }
 
   /* mark the corresponding RBs as used */
