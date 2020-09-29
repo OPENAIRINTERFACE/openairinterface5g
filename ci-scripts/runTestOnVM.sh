@@ -2027,30 +2027,6 @@ function run_test_on_vm {
 
         done
 
-        full_l2_sim_destroy
-
-        echo "############################################################"
-        echo "Checking run status"
-        echo "############################################################"
-
-        if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
-        if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
-        if [ $MBMS_STATUS -eq 0 ]
-        then
-            echo "LTE MBMS RFSIM seems OK"
-        else
-            echo "LTE MBMS RFSIM seems to FAIL"
-            STATUS=-1
-        fi
-        if [ $STATUS -eq 0 ]
-        then
-            echo "LTE RFSIM seems OK"
-            echo "LTE: TEST_OK" > $ARCHIVES_LOC/test_final_status.log
-        else
-            echo "LTE RFSIM seems to FAIL"
-            echo "LTE: TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-        fi
-
         ####################
         ## FeMBMS CASE noS1 ##
         ####################
@@ -2123,6 +2099,13 @@ function run_test_on_vm {
 
         if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
+        if [ $MBMS_STATUS -eq 0 ]
+        then
+            echo "LTE MBMS RFSIM seems OK"
+        else
+            echo "LTE MBMS RFSIM seems to FAIL"
+            STATUS=-1
+        fi
         if [ $FeMBMS_STATUS -eq 0 ]
         then
             echo "LTE FeMBMS RFSIM seems OK"
@@ -2153,7 +2136,7 @@ function run_test_on_vm {
         NR_STATUS=0
 
         ######### start of loop
-        while [ $try_cnt -lt 1 ]
+        while [ $try_cnt -lt 4 ]
         do
             SYNC_STATUS=0
             PING_STATUS=0
