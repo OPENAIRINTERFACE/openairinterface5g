@@ -331,12 +331,14 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
     @param csi_payload is updated with CSI
     @returns number of bits of CSI */
 
-int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
+int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
 
 /** \brief This dummy function sets current CSI for simulation
     @param csi_status
     @param csi_payload is updated with CSI
     @returns none */
+    
+uint16_t get_csi_bitlen(NR_UE_MAC_INST_t *mac);
 
 void set_csi_nr(int csi_status, uint32_t csi_payload);
 

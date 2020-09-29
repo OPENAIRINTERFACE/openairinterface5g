@@ -282,7 +282,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
   //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-	csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
+	csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
   //}
 
   O_CSI = cqi_status + ri_status + csi_status;
@@ -1299,15 +1299,57 @@ uint32_t dummy_csi_payload = 0;
 
 /* FFS TODO_NR code that should be developed */
 
-int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
+uint16_t get_csi_bitlen(NR_UE_MAC_INST_t *mac) {
+
+  uint16_t csi_bitlen =0;
+  uint16_t rsrp_bitlen = 0;
+  uint16_t diff_rsrp_bitlen = 0;
+  uint16_t nb_ssbri_cri = 0; 
+  uint16_t cri_ssbri_bitlen = 0;
+  
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList__nzp_CSI_RS_SSB * nzp_CSI_RS_SSB = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[0]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB;
+
+  uint16_t nb_csi_ssb_report = nzp_CSI_RS_SSB->csi_SSB_ResourceSetList!=NULL ? nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.count:0;
+  
+  if (0 != nb_csi_ssb_report){
+	  uint8_t nb_ssb_resources =0;
+	  
+  if (NULL != csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
+      nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+  else
+      nb_ssbri_cri = 1;
+  
+  nb_ssb_resources = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[0]->csi_SSB_ResourceList.list.count;
+  
+  if (nb_ssb_resources){
+	cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
+	rsrp_bitlen = 7;
+	diff_rsrp_bitlen = 4;
+	}
+  else{
+	cri_ssbri_bitlen =0;
+	rsrp_bitlen = 0;
+	diff_rsrp_bitlen = 0;
+	}
+  
+  csi_bitlen = ((cri_ssbri_bitlen * nb_ssbri_cri) + rsrp_bitlen +(diff_rsrp_bitlen *(nb_ssbri_cri -1 ))) *nb_csi_ssb_report;
+               
+               printf("get csi bitlen %d nb_ssbri_cri %d nb_csi_report %d nb_resources %d\n", csi_bitlen,nb_ssbri_cri ,nb_csi_ssb_report, nb_ssb_resources);
+  }
+  return csi_bitlen;
+}
+
+int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
 {
   VOID_PARAMETER ue;
   VOID_PARAMETER gNB_id;
   float rsrp_db[7];
   int nElem = 98;
   int rsrp_offset = 17;
-  int csi_status = 11;
+  int csi_status = 0;
   
+  csi_status = get_csi_bitlen(mac);
   rsrp_db[0] = get_nr_RSRP(0,0,0);
 
 
