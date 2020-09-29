@@ -1017,7 +1017,7 @@ uint16_t do_RRCReconfiguration(
 
     /******************** Secondary Cell Group ********************/
     rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
-    fill_default_secondaryCellGroup( carrier->ServingCellConfigCommon,
+    fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
                                      ue_context_pP->ue_context.secondaryCellGroup,
                                      1,
                                      1,
@@ -1074,7 +1074,7 @@ uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
   memset((void *)&ul_ccch_msg,0,sizeof(NR_UL_CCCH_Message_t));
   ul_ccch_msg.message.present           = NR_UL_CCCH_MessageType_PR_c1;
   ul_ccch_msg.message.choice.c1->present = NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest;
-  rrcSetupRequest          = &ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest;
+  rrcSetupRequest          = ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest;
 
 
   if (1) {

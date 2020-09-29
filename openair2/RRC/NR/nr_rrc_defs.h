@@ -134,8 +134,6 @@ typedef enum UE_STATE_NR_e {
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
 #define NR_RRC_TRANSACTION_IDENTIFIER_NUMBER             3
 
-#define ENABLE_SECURITY 1
-
 typedef struct {
   unsigned short                                      transport_block_size;      /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
   unsigned short                                      max_transport_blocks;      /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
@@ -289,13 +287,12 @@ typedef struct gNB_RRC_UE_s {
 
   ImsiMobileIdentity_t               imsi;
 
-#if defined(ENABLE_SECURITY)
   /* KgNB as derived from KASME received from EPC */
   uint8_t kgnb[32];
   int8_t  kgnb_ncc;
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
+
   /* Used integrity/ciphering algorithms */
   NR_CipheringAlgorithm_t            ciphering_algorithm;
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;

@@ -47,6 +47,7 @@
 
 #include "S1AP_NAS-PDU.h"
 #include "executables/softmodem-common.h"
+#include "UTIL/OSA/osa_defs.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -113,6 +114,75 @@ rrc_gNB_get_ue_context_from_ngap_ids(
     }
 
     return NULL;
+}
+
+//------------------------------------------------------------------------------
+void
+nr_rrc_pdcp_config_security(
+    const protocol_ctxt_t  *const ctxt_pP,
+    rrc_gNB_ue_context_t   *const ue_context_pP,
+    const uint8_t          send_security_mode_command
+)
+//------------------------------------------------------------------------------
+{
+    NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList;
+    uint8_t                            *kRRCenc = NULL;
+    uint8_t                            *kRRCint = NULL;
+    uint8_t                            *kUPenc = NULL;
+    pdcp_t                             *pdcp_p   = NULL;
+    static int                          print_keys= 1;
+    hashtable_rc_t                      h_rc;
+    hash_key_t                          key;
+
+    /* Derive the keys from kgnb */
+    if (SRB_configList != NULL) {
+        derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &kUPenc);
+    }
+
+    derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &kRRCenc);
+    derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &kRRCint);
+    if (!IS_SOFTMODEM_IQPLAYER) {
+        SET_LOG_DUMP(DEBUG_SECURITY) ;
+    }
+
+
+    if ( LOG_DUMPFLAG( DEBUG_SECURITY ) ) {
+        if (print_keys == 1 ) {
+        print_keys =0;
+        LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, ue_context_pP->ue_context.kgnb, 32,"\nKgNB:" );
+        LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, kRRCenc, 32,"\nKRRCenc:" );
+        LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, kRRCint, 32,"\nKRRCint:" );
+        }
+    }
+
+    key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
+    h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
+
+    if (h_rc == HASH_TABLE_OK) {
+        pdcp_config_set_security(
+        ctxt_pP,
+        pdcp_p,
+        DCCH,
+        DCCH+2,
+        (send_security_mode_command == TRUE)  ?
+        0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
+        (ue_context_pP->ue_context.ciphering_algorithm )         |
+        (ue_context_pP->ue_context.integrity_algorithm << 4),
+        kRRCenc,
+        kRRCint,
+        kUPenc);
+    } else {
+        LOG_E(NR_RRC,
+            PROTOCOL_NR_RRC_CTXT_UE_FMT"Could not get PDCP instance for SRB DCCH %u\n",
+            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+            DCCH);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -280,7 +350,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         
         uint8_t send_security_mode_command = TRUE;
 
-        rrc_pdcp_config_security(
+        nr_rrc_pdcp_config_security(
             &ctxt,
             ue_context_p,
             send_security_mode_command);
@@ -289,7 +359,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
             rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
             send_security_mode_command = FALSE;
 
-            rrc_pdcp_config_security(
+            nr_rrc_pdcp_config_security(
                 &ctxt,
                 ue_context_p,
                 send_security_mode_command);
