@@ -743,6 +743,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     }
 
     offset = nr_generate_dlsch_pdu(module_idP,
+                                   &UE_info->UE_sched_ctrl[UE_id],
                                    (unsigned char *) mac_sdus,
                                    (unsigned char *) gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0],
                                    num_sdus, //num_sdus

@@ -58,6 +58,7 @@
 //#define SIZE_OF_POINTER sizeof (void *)
 
 int nr_generate_dlsch_pdu(module_id_t module_idP,
+                          NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *sdus_payload,
                           unsigned char *mac_pdu,
                           unsigned char num_sdus,
@@ -74,12 +75,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
-  uint16_t UE_id = 0; //TODO need to get as a function parameter or need to invoke api to UE_id using module Id and RNTI
-  gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
-  NR_UE_info_t *UE_info = &gNB_mac->UE_info;
-  NR_UE_sched_ctrl_t *ue_sched_ctl = NULL;
-  //NR_CellGroupConfig_t *config = UE_info->secondaryCellGroup[UE_id];
-  ue_sched_ctl = &(UE_info->UE_sched_ctrl[UE_id]);
 
   // 1) Compute MAC CE and related subheaders
 
@@ -768,6 +763,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       const int offset = nr_generate_dlsch_pdu(
           module_id,
+          sched_ctrl,
           (unsigned char *)mac_sdus,
           (unsigned char *)buf,
           num_sdus, // num_sdus
