@@ -2202,12 +2202,24 @@ function run_test_on_vm {
             fi
 
 
+            #checking ping works with --do-ra option
             echo "############################################################"
-            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "${CN_CONFIG} : Pinging the gNB from NR-UE"
             echo "############################################################"
-            sleep 20
+            get_enb_noS1_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR
+            PING_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log
+            ping_epc_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $ENB_IP_ADDR $PING_LOG_FILE 1 0
+            scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
-            check_ra_result $GNB_VM_CMDS $CURRENT_GNB_LOG_FILE $NR_UE_VM_CMDS $CURRENT_NR_UE_LOG_FILE
+            echo "############################################################"
+            echo "${CN_CONFIG} : Pinging the NR-UE from gNB"
+            echo "############################################################"
+            get_ue_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 1
+            PING_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
+            ping_enb_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
+            scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
 
             echo "############################################################"
@@ -2217,13 +2229,19 @@ function run_test_on_vm {
             terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
             scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
-            if [ $IPERF_STATUS -ne 0 ]
-            then
-                echo "UL test not OK"
-                try_cnt=$[$try_cnt+1]
-            else
-                try_cnt=$[$try_cnt+10]
-            fi
+
+
+
+            #check RA marker in gNB and NR UE log files
+            echo "############################################################"
+            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "############################################################"
+
+            mv $ARCHIVES_LOC/RA_CHECK_$CURRENT_GNB_LOG_FILE
+            mv $ARCHIVES_LOC/RA_CHECK_$CURRENT_NR_UE_LOG_FILE            
+            #check_ra_result $GNB_VM_CMDS $CURRENT_GNB_LOG_FILE $NR_UE_VM_CMDS $CURRENT_NR_UE_LOG_FILE (function call to be fixed later)
+
+
             #end RA test
 
 
