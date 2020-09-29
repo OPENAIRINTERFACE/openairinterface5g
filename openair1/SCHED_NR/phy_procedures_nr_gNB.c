@@ -192,20 +192,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
-    nr_generate_pdsch(gNB->dlsch[i][0],
-                      gNB->nr_gold_pdsch_dmrs[slot],
-                      gNB->common_vars.txdataF,
-                      AMP, frame, slot, fp, 0,
-                      &gNB->dlsch_encoding_stats,
-                      &gNB->dlsch_scrambling_stats,
-                      &gNB->dlsch_modulation_stats,
-                      &gNB->tinput,
-                      &gNB->tprep,
-                      &gNB->tparity,
-                      &gNB->toutput,
-                      &gNB->dlsch_rate_matching_stats,
-                      &gNB->dlsch_interleaving_stats,
-                      &gNB->dlsch_segmentation_stats);
+    nr_generate_pdsch(gNB,frame, slot);
+    if ((frame&127) == 0) dump_pdsch_stats(gNB);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
@@ -251,7 +239,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);
   
-  AssertFatal(G>0,"G is 0 : rb_size %d, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
+  AssertFatal(G>0,"G is 0 : rb_size %u, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %u, nrOfLayer %u\n",
 	      pusch_pdu->rb_size,
 	      number_symbols,
 	      nb_re_dmrs,
@@ -598,5 +586,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       }
     }
   }
+  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
+  if ((frame_rx&127) == 0 && slot_rx==19) dump_pusch_stats(gNB);
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
 }

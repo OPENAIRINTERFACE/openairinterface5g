@@ -1659,9 +1659,9 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 }
 
 
-uint16_t get_csi_bitlen(int Mod_idP,
-                        int UE_id,
-                        uint8_t csi_report_id) {
+uint16_t nr_get_csi_bitlen(int Mod_idP,
+                           int UE_id,
+                           uint8_t csi_report_id) {
 
   uint16_t csi_bitlen =0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
@@ -1804,7 +1804,7 @@ void nr_csi_meas_reporting(int Mod_idP,
           }
         }
       }
-      curr_pucch->csi_bits += get_csi_bitlen(Mod_idP,UE_id,csi_report_id); // TODO function to compute CSI meas report bit size
+      curr_pucch->csi_bits += nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id); // TODO function to compute CSI meas report bit size
       curr_pucch->frame = frame;
       curr_pucch->ul_slot = sched_slot;
     }

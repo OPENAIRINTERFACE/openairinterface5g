@@ -62,6 +62,32 @@
 const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
+void clear_mac_stats(gNB_MAC_INST *gNB) {
+  memset((void*)gNB->UE_list.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
+}
+
+void dump_mac_stats(gNB_MAC_INST *gNB) {
+
+  NR_UE_list_t *UE_list = &gNB->UE_list;
+  NR_mac_stats_t *stats;
+  int lc_id;
+
+  for (int UE_id=0;UE_id<MAX_MOBILES_PER_GNB;UE_id++) {
+    if (UE_list->active[UE_id] == TRUE) {
+      LOG_I(MAC,"UE %x\n",UE_list->rnti[UE_id]);
+      stats = &UE_list->mac_stats[UE_id];
+      LOG_I(MAC,"dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",stats->dlsch_rounds[0],stats->dlsch_rounds[1],stats->dlsch_rounds[2],stats->dlsch_rounds[3],stats->dlsch_errors);
+      LOG_I(MAC,"dlsch_total_bytes %d\n",stats->dlsch_total_bytes);
+      LOG_I(MAC,"ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",stats->ulsch_rounds[0],stats->ulsch_rounds[1],stats->ulsch_rounds[2],stats->ulsch_rounds[3],stats->ulsch_errors);
+      LOG_I(MAC,"ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",stats->ulsch_total_bytes_scheduled,stats->ulsch_total_bytes_rx);
+      for (lc_id=0;lc_id<63;lc_id++) {
+	if (stats->lc_bytes_tx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes TX\n",lc_id,stats->lc_bytes_tx[lc_id]);
+	if (stats->lc_bytes_rx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes RX\n",lc_id,stats->lc_bytes_rx[lc_id]);
+      }
+    }
+  }
+}
+
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
                                 frame_t frameP,
@@ -409,6 +435,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   pdcp_run(&ctxt);
   //rrc_rx_tx(&ctxt, CC_id);
+  /* send tick to RLC every ms */
+  if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
+    void nr_rlc_tick(int frame, int subframe);
+    nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+  }
 
   dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
@@ -451,6 +482,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   */
 
+  if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
+
   // This schedules MIB
   if((slot == 0) && (frame & 7) == 0){
     schedule_nr_mib(module_idP, frame, slot);
@@ -472,8 +505,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
-  }
-  else
+  } else
     UE_list->fiveG_connected[UE_id] = true;
 
   if (UE_list->fiveG_connected[UE_id]) {

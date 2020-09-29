@@ -320,7 +320,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 0; // Point A
-    
+  UE_list->mac_stats[UE_id].dlsch_rounds[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round]++;
   pdsch_pdu_rel15->dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;  
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
@@ -454,6 +454,9 @@ int configure_fapi_dl_pdu(int Mod_idP,
 
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
+  if (UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round==0)
+    UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
+
   LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
 	pdsch_pdu_rel15->rbStart,
 	pdsch_pdu_rel15->rbSize,
@@ -751,14 +754,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         }
       #endif
     } else {
-      #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       if (frameP%100 == 0){
         LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
         for(int i = 0; i < 10; i++) {
-          LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]); //LOG_I(MAC, "%x. ", mac_payload[i]);
+          LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i]); //LOG_I(MAC, "%x. ", mac_payload[i]);
         }
       }
-      #endif
+#endif
     }
   }
   else {  // There is no data from RLC or MAC header, so don't schedule
@@ -1031,6 +1034,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                                                    0,
                                                    pusch_pdu->nrOfLayers)>>3;
 
+    UE_list->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;      
+    if (cur_harq->round == 0) UE_list->mac_stats[UE_id].ulsch_total_bytes_scheduled+=pusch_pdu->pusch_data.tb_size;      
 
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
     //pusch_pdu->pusch_data.cb_present_and_position;

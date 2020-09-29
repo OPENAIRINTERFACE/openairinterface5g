@@ -226,25 +226,19 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
                                  uint8_t is_dmrs_symbol,
-				 uint8_t is_ptrs_symbol,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms)
 {
 
   unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx;
-  uint8_t K_ptrs = 0;
   uint32_t rxF_ext_index = 0;
   uint32_t ul_ch0_ext_index = 0;
   uint32_t ul_ch0_index = 0;
-  uint32_t ul_ch0_ptrs_ext_index = 0;
-  uint32_t ul_ch0_ptrs_index = 0;
   uint8_t k_prime;
-  uint16_t n=0, num_ptrs_symbols;
+  uint16_t n;
   int16_t *rxF,*rxF_ext;
   int *ul_ch0,*ul_ch0_ext;
-  int *ul_ch0_ptrs,*ul_ch0_ptrs_ext;
-  uint16_t n_rnti = pusch_pdu->rnti;
   uint8_t delta = 0;
 
 #ifdef DEBUG_RB_EXT
@@ -253,8 +247,8 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
   printf("--------------------ch_ext_index = %d-----------------------\n", symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size);
 
 #endif
-  
-  uint8_t is_dmrs_re=0,is_ptrs_re=0;
+
+  uint8_t is_dmrs_re;
   start_re = (frame_parms->first_carrier_offset + (pusch_pdu->rb_start * NR_NB_SC_PER_RB))%frame_parms->ofdm_symbol_size;
   nb_re_pusch = NR_NB_SC_PER_RB * pusch_pdu->rb_size;
 #ifdef __AVX2__
@@ -263,10 +257,8 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
   int nb_re_pusch2 = nb_re_pusch;
 #endif
 
-  num_ptrs_symbols = 0;
-
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-    
+
     rxF       = (int16_t *)&rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
     rxF_ext   = (int16_t *)&pusch_vars->rxdataF_ext[aarx][symbol * nb_re_pusch2]; // [hna] rxdataF_ext isn't contiguous in order to solve an alignment problem ib llr computation in case of mod_order = 4, 6
 
@@ -274,20 +266,17 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
     ul_ch0_ext = &pusch_vars->ul_ch_estimates_ext[aarx][symbol*nb_re_pusch2];
 
-    ul_ch0_ptrs     = &pusch_vars->ul_ch_ptrs_estimates[aarx][pusch_vars->ptrs_symbol_index*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
-
-    ul_ch0_ptrs_ext = &pusch_vars->ul_ch_ptrs_estimates_ext[aarx][symbol*nb_re_pusch];
-
     n = 0;
     k_prime = 0;
 
-    if (is_dmrs_symbol == 0 && is_ptrs_symbol == 0) {
+    if (is_dmrs_symbol == 0) {
       //
       //rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
-      if (start_re + nb_re_pusch < frame_parms->ofdm_symbol_size) memcpy1((void*)rxF_ext,
-									 (void*)&rxF[start_re*2],
-									 nb_re_pusch*sizeof(int32_t));
-      else {
+      if (start_re + nb_re_pusch < frame_parms->ofdm_symbol_size) {
+        memcpy1((void*)rxF_ext,
+                (void*)&rxF[start_re*2],
+                nb_re_pusch*sizeof(int32_t));
+      } else {
 	int neg_length = frame_parms->ofdm_symbol_size-start_re;
 	int pos_length = nb_re_pusch-neg_length;
 
@@ -298,58 +287,36 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
     }
     else {
       for (re = 0; re < nb_re_pusch; re++) {
-	
-	if (is_dmrs_symbol) is_dmrs_re = (re == get_dmrs_freq_idx_ul(n, k_prime, delta, pusch_pdu->dmrs_config_type));
-	
-	if (is_ptrs_symbol) {
-	  K_ptrs = (pusch_pdu->pusch_ptrs.ptrs_freq_density)?4:2;
-	  is_ptrs_re = is_ptrs_subcarrier((start_re + re) % frame_parms->ofdm_symbol_size,
-					  n_rnti,
-					  aarx,
-					  pusch_pdu->dmrs_config_type,
-					  K_ptrs,
-					  pusch_pdu->rb_size,
-					  pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
-					  start_re,
-					  frame_parms->ofdm_symbol_size);
-	  
-	  num_ptrs_symbols+=is_ptrs_re;
-	  
-	}
-	
+
+        is_dmrs_re = (re == get_dmrs_freq_idx_ul(n, k_prime, delta, pusch_pdu->dmrs_config_type));
+
 #ifdef DEBUG_RB_EXT
-	printf("re = %d, kprime %d, n %d, is_ptrs_symbol = %d, symbol = %d\n", re, k_prime,n,is_ptrs_symbol, symbol);
+        printf("re = %d, kprime %d, n %d, is_dmrs_symbol = %d, symbol = %d\n", re, k_prime, n, is_dmrs_symbol, symbol);
 #endif
 
-	if ( is_dmrs_re == 0 && is_ptrs_re == 0) {
-	  
-	  rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
-	  rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
-	  ul_ch0_ext[ul_ch0_ext_index] = ul_ch0[ul_ch0_index];
-	  ul_ch0_ptrs_ext[ul_ch0_ptrs_ext_index] = ul_ch0_ptrs[ul_ch0_ptrs_index];
-	  
+        /* save only data and respective channel estimates */
+        if (is_dmrs_re == 0) {
+          rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
+          rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
+          ul_ch0_ext[ul_ch0_ext_index] = ul_ch0[ul_ch0_index];
+
 #ifdef DEBUG_RB_EXT
-	  printf("dmrs symb %d: rxF_ext[%d] = (%d,%d), ul_ch0_ext[%d] = (%d,%d)\n", 
-		 is_dmrs_symbol,rxF_ext_index>>1, rxF_ext[rxF_ext_index],rxF_ext[rxF_ext_index+1],
-		 ul_ch0_ext_index,  ((int16_t*)&ul_ch0_ext[ul_ch0_ext_index])[0],  ((int16_t*)&ul_ch0_ext[ul_ch0_ext_index])[1]);
+          printf("dmrs symb %d: rxF_ext[%d] = (%d,%d), ul_ch0_ext[%d] = (%d,%d)\n",
+                 is_dmrs_symbol,rxF_ext_index>>1, rxF_ext[rxF_ext_index],rxF_ext[rxF_ext_index+1],
+                 ul_ch0_ext_index,  ((int16_t*)&ul_ch0_ext[ul_ch0_ext_index])[0],  ((int16_t*)&ul_ch0_ext[ul_ch0_ext_index])[1]);
 #endif
-	  ul_ch0_ext_index++;
-	  ul_ch0_ptrs_ext_index++;
-	  rxF_ext_index +=2;
-	} else {
-	  k_prime++;
-	  k_prime&=1;
-	  n+=(k_prime)?0:1;
-	}
-	ul_ch0_index++;
-	ul_ch0_ptrs_index++;
+          ul_ch0_ext_index++;
+          rxF_ext_index +=2;
+        } else {
+          n += k_prime;
+          k_prime ^= 1;
+        }
+        ul_ch0_index++;
       }
-    } // is_dmrs_symbol ==0 && is_ptrs_symbol == 0
-  }  
-  pusch_vars->ptrs_sc_per_ofdm_symbol = num_ptrs_symbols;
-    
+    }
+  }
 }
-  
+
 void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
                             NR_gNB_ULSCH_t **ulsch_gNB,
@@ -1046,6 +1013,67 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
 }
 
+void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
+			    int32_t **rxdataF_comp,
+			    int32_t **ul_ch_mag,
+			    int32_t **ul_ch_magb,
+			    uint8_t symbol,
+			    uint16_t nb_rb) {
+  int n_rx = frame_parms->nb_antennas_rx;
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i *rxdataF_comp128[1+n_rx],*ul_ch_mag128[1+n_rx],*ul_ch_mag128b[1+n_rx];
+#elif defined(__arm__)
+  int16x8_t *rxdataF_comp128_0,*ul_ch_mag128_0,*ul_ch_mag128_0b;
+  int16x8_t *rxdataF_comp128_1,*ul_ch_mag128_1,*ul_ch_mag128_1b;
+#endif
+  int32_t i;
+
+#ifdef __AVX2__
+  int off = ((nb_rb&1) == 1)? 4:0;
+#else
+  int off = 0;
+#endif
+
+  if (frame_parms->nb_antennas_rx>1) {
+#if defined(__x86_64__) || defined(__i386__)
+    int nb_re = nb_rb*12;
+    for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+      rxdataF_comp128[aa]   = (__m128i *)&rxdataF_comp[aa][(symbol*(nb_re + off))];
+      ul_ch_mag128[aa]      = (__m128i *)&ul_ch_mag[aa][(symbol*(nb_re + off))];
+      ul_ch_mag128b[aa]     = (__m128i *)&ul_ch_magb[aa][(symbol*(nb_re + off))];
+      
+      // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
+      for (i=0; i<nb_rb*3; i++) {
+	rxdataF_comp128[0][i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128[aa][i],1),_mm_srai_epi16(rxdataF_comp128[aa][i],1));
+	ul_ch_mag128[0][i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128[aa][i],1),_mm_srai_epi16(ul_ch_mag128[aa][i],1));
+	ul_ch_mag128b[0][i]   = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128b[aa][i],1),_mm_srai_epi16(ul_ch_mag128b[aa][i],1));
+	//	rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
+      }
+    }
+#elif defined(__arm__)
+    rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_0      = (int16x8_t *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_1      = (int16x8_t *)&ul_ch_mag[1][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_0b     = (int16x8_t *)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_1b     = (int16x8_t *)&ul_ch_magb[1][symbol*frame_parms->N_RB_DL*12];
+      
+    // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
+    for (i=0; i<nb_rb*3; i++) {
+      rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+      ul_ch_mag128_0[i]    = vhaddq_s16(ul_ch_mag128_0[i],ul_ch_mag128_1[i]);
+      ul_ch_mag128_0b[i]   = vhaddq_s16(ul_ch_mag128_0b[i],ul_ch_mag128_1b[i]);
+      rxdataF_comp128_0[i] = vqaddq_s16(rxdataF_comp128_0[i],(*(int16x8_t *)&jitterc[0]));
+    }
+#endif
+  }
+
+#if defined(__x86_64__) || defined(__i386__)
+  _mm_empty();
+  _m_empty();
+#endif
+}
+
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t ulsch_id,
                 uint32_t frame,
@@ -1055,34 +1083,17 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 {
 
   uint8_t aarx, aatx, dmrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
-  uint8_t ptrs_symbol_flag; // a flag to indicate PTRS REs in current symbol
   uint32_t nb_re_pusch, bwp_start_subcarrier;
-  uint8_t L_ptrs = 0; // PTRS parameter
   int avgs;
   int avg[4];
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
 
   dmrs_symbol_flag = 0;
-  ptrs_symbol_flag = 0;
-
-  gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol = 0;
 
   if(symbol == rel15_ul->start_symbol_index){
-    gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = 0;
     gNB->pusch_vars[ulsch_id]->dmrs_symbol = 0;
     gNB->pusch_vars[ulsch_id]->cl_done = 0;
-    gNB->pusch_vars[ulsch_id]->ptrs_symbols = 0;
-
-    if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
-      L_ptrs = 1<<(rel15_ul->pusch_ptrs.ptrs_time_density);
-
-      set_ptrs_symb_idx(&gNB->pusch_vars[ulsch_id]->ptrs_symbols,
-                        rel15_ul->nr_of_symbols,
-                        rel15_ul->start_symbol_index,
-                        L_ptrs,
-                        rel15_ul->ul_dmrs_symb_pos);
-    }
   }
 
 
@@ -1109,13 +1120,6 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
   } else {
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
-  }
-
-  if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
-    if(is_ptrs_symbol(symbol, gNB->pusch_vars[ulsch_id]->ptrs_symbols)) {
-      gNB->pusch_vars[ulsch_id]->ptrs_symbol_index = symbol;
-      ptrs_symbol_flag = 1;
-    }
   }
 
   //----------------------------------------------------------
@@ -1145,15 +1149,20 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   if (nb_re_pusch > 0) {
 
+    gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] = nb_re_pusch;
+
     start_meas(&gNB->ulsch_rbs_extraction_stats);
     nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                                 gNB->pusch_vars[ulsch_id],
                                 symbol,
                                 dmrs_symbol_flag,
-				ptrs_symbol_flag,
                                 rel15_ul,
                                 frame_parms);
     stop_meas(&gNB->ulsch_rbs_extraction_stats);
+
+    //----------------------------------------------------------
+    //--------------------- Channel Scaling --------------------
+    //----------------------------------------------------------
 
     nr_ulsch_scale_channel(gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
                            frame_parms,
@@ -1183,6 +1192,10 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       gNB->pusch_vars[ulsch_id]->cl_done = 1;
     }
 
+    //----------------------------------------------------------
+    //--------------------- Channel Compensation ---------------
+    //----------------------------------------------------------
+
     start_meas(&gNB->ulsch_channel_compensation_stats);
     nr_ulsch_channel_compensation(gNB->pusch_vars[ulsch_id]->rxdataF_ext,
                                   gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
@@ -1198,34 +1211,66 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   gNB->pusch_vars[ulsch_id]->log2_maxh);
     stop_meas(&gNB->ulsch_channel_compensation_stats);
 
-
+    start_meas(&gNB->ulsch_mrc_stats);
+    nr_ulsch_detection_mrc(frame_parms,
+			   gNB->pusch_vars[ulsch_id]->rxdataF_comp,
+			   gNB->pusch_vars[ulsch_id]->ul_ch_mag,
+			   gNB->pusch_vars[ulsch_id]->ul_ch_magb,
+			   symbol,
+			   rel15_ul->rb_size);
+    stop_meas(&gNB->ulsch_mrc_stats);
 #ifdef NR_SC_FDMA
     nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
 #endif
 
-  //----------------------------------------------------------
-  //-------------------- LLRs computation --------------------
-  //----------------------------------------------------------
-    start_meas(&gNB->ulsch_llr_stats);
-    AssertFatal(gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order+nb_re_pusch*rel15_ul->qam_mod_order < (8*((3*8*6144)+12)) , "Mysterious llr buffer size check");
+
+    //----------------------------------------------------------
+    //--------------------- PTRS Processing --------------------
+    //----------------------------------------------------------
+
+    /* In case PTRS is enabled then LLR will be calculated after PTRS symbols are processed *
+     * otherwise LLR are calculated for each symbol based upon DMRS channel estimates only. */
+    if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS)
+    {
+      start_meas(&gNB->ulsch_ptrs_processing_stats);
+      nr_pusch_ptrs_processing(gNB,
+                               rel15_ul,
+                               ulsch_id,
+                               nr_tti_rx,
+                               dmrs_symbol_flag,
+                               symbol,
+                               nb_re_pusch);
+      stop_meas(&gNB->ulsch_ptrs_processing_stats);
+
+      /*  Subtract total PTRS RE's in the symbol from PUSCH RE's */
+      gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] -= gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol;
+    }
+
+    /*---------------------------------------------------------------------------------------------------- */
+    /*--------------------  LLRs computation  -------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------------*/
+    if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1))
+    {
 #ifdef __AVX2__
-    int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
+      int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
 #else
-    int off = 0;
+      int off = 0;
 #endif
-    nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][symbol * (off+(rel15_ul->rb_size * NR_NB_SC_PER_RB))],
-                         gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
-                         gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
-                         &gNB->pusch_vars[ulsch_id]->llr[gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                         rel15_ul->rb_size,
-                         nb_re_pusch,
-                         symbol,
-                         rel15_ul->qam_mod_order);
-    stop_meas(&gNB->ulsch_llr_stats);
-
+      uint32_t rxdataF_ext_offset = 0;
+      for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++) {
+        start_meas(&gNB->ulsch_llr_stats);
+        nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][i * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                             gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                             gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
+                             &gNB->pusch_vars[ulsch_id]->llr[rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                             rel15_ul->rb_size,
+                             gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i],
+                             i,
+                             rel15_ul->qam_mod_order);
+        stop_meas(&gNB->ulsch_llr_stats);
+        rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i];
+      }// symbol loop
+    }// last symbol check
   }
-
-  gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset +  nb_re_pusch;
   return (0);
-
 }

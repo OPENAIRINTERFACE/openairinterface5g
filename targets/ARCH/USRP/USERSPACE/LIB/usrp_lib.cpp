@@ -108,7 +108,8 @@ typedef struct {
   int64_t rx_count;
   int wait_for_first_pps;
   int use_gps;
-  int first_tx;
+  //int first_tx;
+  //int first_rx;
   //! timestamp of RX packet
   openair0_timestamp rx_timestamp;
 } usrp_state_t;
@@ -282,31 +283,28 @@ static int trx_usrp_start(openair0_device *device) {
   // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
   // (we use full duplex here, because our RX is on all the time - this might need to change later)
   s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
-  // set the output pins to 0
+  // set the output pins to 1
   s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
 
-  // init recv and send streaming
-  uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  LOG_I(HW,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
-  LOG_I(HW,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
-  
-  if (s->use_gps == 1 || device->openair0_cfg[0].time_source == external) {
-    s->wait_for_first_pps = 1;
-    cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);
-  } else {
-    s->wait_for_first_pps = 0;
-    cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.005);
-  }
-
-  cmd.stream_now = false; // start at constant delay
-  s->rx_stream->issue_stream_cmd(cmd);
-  /*s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
-  s->tx_md.has_time_spec = true;
-  s->tx_md.start_of_burst = true;
-  s->tx_md.end_of_burst = false;*/
+  s->wait_for_first_pps = 1;
   s->rx_count = 0;
   s->tx_count = 0;
+  //s->first_tx = 1;
+  //s->first_rx = 1;
   s->rx_timestamp = 0;
+
+  s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+  // wait for the pps to change
+  uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps();
+  while (time_last_pps == s->usrp->get_time_last_pps()) {
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+  }
+
+  uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+  cmd.time_spec = uhd::time_spec_t(1.0);    
+  cmd.stream_now = false; // start at constant delay
+  s->rx_stream->issue_stream_cmd(cmd);
+
   return 0;
 }
 /*! \brief Terminate operation of the USRP transceiver -- free all associated resources
@@ -635,7 +633,6 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   int16x8_t buff_tmp[2][nsamps2];
 #endif
 
-  if (device->type == USRP_B200_DEV) {
     if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
@@ -648,7 +645,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       samples_received=0;
 
       while (samples_received != nsamps) {
-        samples_received += s->rx_stream->recv(buff_tmp[0]+samples_received,
+        samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
                                                nsamps-samples_received, s->rx_md);
 
         if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
@@ -658,7 +655,6 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
           printf("sleep...\n"); //usleep(100);
         }
       }
-
       if (samples_received == nsamps) s->wait_for_first_pps=0;
     }
 
@@ -684,22 +680,10 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
       }
     }
-  } else if (device->type == USRP_X300_DEV) {
-    if (cc>1) {
-      // receive multiple channels (e.g. RF A and RF B)
-      std::vector<void *> buff_ptrs;
 
-      for (int i=0; i<cc; i++) buff_ptrs.push_back(buff[i]);
-
-      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md,1.0);
-    } else {
-      // receive a single channel (e.g. from connector RF A)
-      samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md,1.0);
+    if (samples_received < nsamps) {
+      LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
     }
-  }
-
-  if (samples_received < nsamps)
-    LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
 
   if ( s->rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
     LOG_E(HW, "%s\n", s->rx_md.to_pp_string(true).c_str());
@@ -834,6 +818,17 @@ rx_gain_calib_table_t calib_table_x310[] = {
   {816000000.0,85.0},
   {-1,0}
 };
+
+/*! \brief USRPB210 RX calibration table */
+rx_gain_calib_table_t calib_table_n310[] = {
+  {3500000000.0,0.0},
+  {2660000000.0,0.0},
+  {2300000000.0,0.0},
+  {1880000000.0,0.0},
+  {816000000.0, 0.0},
+  {-1,0}
+};
+
 
 /*! \brief Set RX gain offset
  * \param openair0_cfg RF frontend parameters set by application
@@ -984,7 +979,7 @@ extern "C" {
   
     if (device_adds[0].get("type") == "n3xx") {
       printf("Found USRP n300\n");
-      device->type=USRP_X300_DEV; //treat it as X300 for now
+      device->type=USRP_N300_DEV; 
       usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
       //args += ", send_buff_size=33554432";
@@ -1070,9 +1065,18 @@ extern "C" {
   
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
+    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; 
+  }
+
+  if (device->type==USRP_N300_DEV) {
+    openair0_cfg[0].rx_gain_calib_table = calib_table_n310;
+    std::cerr << "-- Using calibration table: calib_table_n310" << std::endl; 
+  }
+
+
+  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV) {
     LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
-  
+
     switch ((int)openair0_cfg[0].sample_rate) {
       case 122880000:
         // from usrp_time_offset

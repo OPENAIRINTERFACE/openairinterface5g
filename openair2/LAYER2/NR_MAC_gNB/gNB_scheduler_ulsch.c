@@ -211,7 +211,8 @@ void nr_process_mac_pdu(
                 }
 
                 LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
-
+		int UE_id = find_nr_UE_id(module_idP, rnti);
+		RC.nrmac[module_idP]->UE_list.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
@@ -264,6 +265,39 @@ void nr_process_mac_pdu(
     }
 }
 
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu) {
+
+  int max_harq_rounds = 4; // TODO define macro
+  uint8_t hrq_id = crc_pdu.harq_id;
+  NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
+  if (cur_harq->state==ACTIVE_SCHED) {
+    if (!crc_pdu.tb_crc_status) {
+      cur_harq->ndi ^= 1;
+      cur_harq->round = 0;
+      cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
+#ifdef UL_HARQ_PRINT
+      printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
+#endif
+    } else {
+      cur_harq->round++;
+      cur_harq->state = ACTIVE_NOT_SCHED;
+#ifdef UL_HARQ_PRINT
+      printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
+#endif
+    }
+
+    if (!(cur_harq->round<max_harq_rounds)) {
+      cur_harq->ndi ^= 1;
+      cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
+      cur_harq->round = 0;
+      LOG_D(MAC,"[HARQ HANDLER] RNTI %x: Ulharq id %d crc failed in all round, freeing it for scheduler\n",crc_pdu.rnti,hrq_id);
+      stats->ulsch_errors++;
+    }
+    return;
+  } else
+    LOG_E(MAC,"Incorrect ULSCH HARQ process %d or invalid state %d\n",hrq_id,cur_harq->state);
+}
+
 /*
 * When data are received on PHY and transmitted to MAC
 */
@@ -291,6 +325,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
 
+    UE_list->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
     LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
@@ -326,6 +361,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     if (sduP != NULL){
       LOG_D(MAC, "Received PDU at MAC gNB \n");
       nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
+    }
+    else {
+
     }
   }
   else {

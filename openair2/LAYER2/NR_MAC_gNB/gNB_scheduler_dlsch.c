@@ -38,6 +38,7 @@
 #include "NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 /*NFAPI*/
 #include "nfapi_nr_interface.h"
@@ -76,6 +77,8 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   //NR_CellGroupConfig_t *config = UE_list->secondaryCellGroup[UE_id];
   ue_sched_ctl = &(UE_list->UE_sched_ctrl[UE_id]);
 
+  NR_mac_stats_t *mac_stats = &(UE_list->mac_stats[UE_id]);
+
   // 1) Compute MAC CE and related subheaders
 
   // DRX command subheader (MAC CE size 0)
@@ -112,6 +115,8 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
     ce_ptr += mac_ce_size;
     mac_pdu_ptr += (unsigned char) mac_ce_size;
+
+
   }
 
   // Contention resolution fixed subheader and MAC CE
@@ -324,6 +329,8 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr += sdu_lengths[i];
     mac_pdu_ptr += sdu_lengths[i];
+
+    mac_stats->lc_bytes_tx[sdu_lcids[i]] += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
@@ -339,6 +346,95 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
   //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
   return offset;
+}
+
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10) {
+  // TODO
+  int max_harq_rounds = 4; // TODO define macro
+  int num_ucis = UL_info->uci_ind.num_ucis;
+  nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
+
+  for (int i = 0; i < num_ucis; i++) {
+    switch (uci_list[i].pdu_type) {
+      case NFAPI_NR_UCI_PUSCH_PDU_TYPE: break;
+
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+        // handle harq
+        int harq_idx_s = 0;
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+        // iterate over received harq bits
+        for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
+          // search for the right harq process
+          for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
+            // if the gNB received ack with a good confidence
+            if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+              if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) &&
+                  (uci_pdu->harq->harq_confidence_level == 0)) {
+                // toggle NDI and reset round
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+              }
+              else
+                sched_ctrl->harq_processes[harq_idx].round++;
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+              harq_idx_s = harq_idx + 1;
+              // if the max harq rounds was reached
+              if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+                stats->dlsch_errors++;
+              }
+              break;
+            }
+            // if feedback slot processing is aborted
+            else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                     (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+              sched_ctrl->harq_processes[harq_idx].round++;
+              if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+              }
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+            }
+          }
+        }
+        break;
+      }
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
+        int harq_idx_s = 0;
+        int acknack;
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+        // iterate over received harq bits
+        for (int harq_bit = 0; harq_bit < uci_pdu->harq.harq_bit_len; harq_bit++) {
+          acknack = ((uci_pdu->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
+          for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+            // if the gNB received ack with a good confidence or if the max harq rounds was reached
+            if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+              // TODO add some confidence level for when there is no CRC
+              if (((uci_pdu->harq.harq_crc != 1) && acknack) ||
+                  (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                // toggle NDI and reset round
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+              }
+              else
+                sched_ctrl->harq_processes[harq_idx].round++;
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+              harq_idx_s = harq_idx + 1;
+              break;
+            }
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  UL_info->uci_ind.num_ucis = 0;
 }
 
 /* functionalities of this function have been moved to nr_schedule_uss_dlsch_phytest */
