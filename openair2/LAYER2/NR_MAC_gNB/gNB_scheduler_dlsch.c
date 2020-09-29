@@ -81,8 +81,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   //NR_CellGroupConfig_t *config = UE_info->secondaryCellGroup[UE_id];
   ue_sched_ctl = &(UE_info->UE_sched_ctrl[UE_id]);
 
-  NR_mac_stats_t *mac_stats = &(UE_info->mac_stats[UE_id]);
-
   // 1) Compute MAC CE and related subheaders
 
   // DRX command subheader (MAC CE size 0)
@@ -333,8 +331,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr += sdu_lengths[i];
     mac_pdu_ptr += sdu_lengths[i];
-
-    mac_stats->lc_bytes_tx[sdu_lcids[i]] += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
@@ -757,12 +753,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
         num_sdus +=1;
       }
 
-      // there is at least one SDU or TA command
-      // if (num_sdus > 0 ){
-      if (ta_len + sdu_length_total + header_length_total == 0) {
-        // There is no data from RLC or MAC header, so don't schedule
-        return;
-      }
+      UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
+      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += sdu_length_total;
 
       // Check if there is data from RLC or CE
       const int post_padding = TBS >= 2 + header_length_total + sdu_length_total + ta_len;
@@ -800,8 +792,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
       gNB_mac->TX_req[CC_id].Number_of_PDUs++;
       gNB_mac->TX_req[CC_id].SFN = frame;
       gNB_mac->TX_req[CC_id].Slot = slot;
-
-      UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
       retInfo->rbSize = sched_ctrl->rbSize;
       retInfo->time_domain_allocation = sched_ctrl->time_domain_allocation;
