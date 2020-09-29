@@ -725,6 +725,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   }
 
+  UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += sdu_length_total;
+
   // there is at least one SDU or TA command
   // if (num_sdus > 0 ){
   if (ta_len + sdu_length_total + header_length_total > 0) {
