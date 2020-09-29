@@ -1736,7 +1736,7 @@ int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               as
     uint32_t               stream,
     S1AP_S1AP_PDU_t       *pdu){
 
-	LOG_W(S1AP, "Implementation of S1AP E-RAB Modification confirm handler is pending...\n");
+	LOG_I(S1AP, "Received S1AP E-RAB Modification confirm message \n");
 	return 0;
 }
 
