@@ -1016,7 +1016,7 @@ uint16_t do_RRCReconfiguration(
 
     /******************** Secondary Cell Group ********************/
     rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
-    fill_default_secondaryCellGroup( carrier->ServingCellConfigCommon,
+    fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
                                      ue_context_pP->ue_context.secondaryCellGroup,
                                      1,
                                      1,
@@ -1062,4 +1062,53 @@ uint16_t do_RRCReconfiguration(
     }
 
     return((enc_rval.encoded+7)/8);
+}
+
+
+uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
+  asn_enc_rval_t enc_rval;
+  uint8_t buf[5],buf2=0;
+  NR_UL_CCCH_Message_t ul_ccch_msg;
+  NR_RRCSetupRequest_t *rrcSetupRequest;
+  memset((void *)&ul_ccch_msg,0,sizeof(NR_UL_CCCH_Message_t));
+  ul_ccch_msg.message.present           = NR_UL_CCCH_MessageType_PR_c1;
+  ul_ccch_msg.message.choice.c1->present = NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest;
+  rrcSetupRequest          = ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest;
+
+
+  if (1) {
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.present = NR_InitialUE_Identity_PR_randomValue;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.size = 5;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.bits_unused = 0;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf = buf;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[0] = rv[0];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[1] = rv[1];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[2] = rv[2];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[3] = rv[3];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[4] = rv[4];
+  } else {
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.present = NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.size = 1;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.bits_unused = 0;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.buf = buf;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.buf[0] = 0x12;
+  }
+
+  rrcSetupRequest->rrcSetupRequest.establishmentCause = NR_EstablishmentCause_mo_Signalling; //EstablishmentCause_mo_Data;
+  rrcSetupRequest->rrcSetupRequest.spare.buf = &buf2;
+  rrcSetupRequest->rrcSetupRequest.spare.size=1;
+  rrcSetupRequest->rrcSetupRequest.spare.bits_unused = 7;
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)&ul_ccch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_CCCH_Message,
+                                   NULL,
+                                   (void *)&ul_ccch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(RRC,"[UE] RRCSetupRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+  return((enc_rval.encoded+7)/8);
 }

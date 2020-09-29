@@ -68,9 +68,7 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 
 #include "rrc_eNB_S1AP.h"
 #include "rrc_gNB_NGAP.h"
@@ -91,6 +89,28 @@
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
+
+extern boolean_t nr_rrc_pdcp_config_asn1_req(
+    const protocol_ctxt_t *const  ctxt_pP,
+    NR_SRB_ToAddModList_t  *const srb2add_list,
+    NR_DRB_ToAddModList_t  *const drb2add_list,
+    NR_DRB_ToReleaseList_t *const drb2release_list,
+    const uint8_t                   security_modeP,
+    uint8_t                  *const kRRCenc,
+    uint8_t                  *const kRRCint,
+    uint8_t                  *const kUPenc
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+    ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
+  #endif
+    ,rb_id_t                 *const defaultDRB,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 mui_t                               rrc_gNB_mui = 0;
 
@@ -570,6 +590,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                 kRRCint,
                                 kUPenc,
                                 NULL,
+                                NULL,
                                 NULL);
     /* Refresh SRBs/DRBs */
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
@@ -577,9 +598,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                             DRB_configList,
                             DRB_Release_configList2,
                             NULL,
-                            0,
-                            0
-                            );
+                            NULL);
 
     /* Loop through DRBs and establish if necessary */
     if (DRB_configList != NULL) {
