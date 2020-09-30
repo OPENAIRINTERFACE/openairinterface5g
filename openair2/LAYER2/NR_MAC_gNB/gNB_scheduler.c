@@ -514,20 +514,15 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   } else
     UE_list->fiveG_connected[UE_id] = true;
 
-  if (get_softmodem_params()->phy_test) {
-
+  if (UE_list->fiveG_connected[UE_id]) {
     // TbD once RACH is available, start ta_timer when UE is connected
     if (ue_sched_ctl->ta_timer)
       ue_sched_ctl->ta_timer--;
     if (ue_sched_ctl->ta_timer == 0) {
-      gNB->ta_command = ue_sched_ctl->ta_update;
+      ue_sched_ctl->ta_apply = true;
       /* if time is up, then set the timer to not send it for 5 frames
       // regardless of the TA value */
       ue_sched_ctl->ta_timer = 100;
-      /* reset ta_update */
-      ue_sched_ctl->ta_update = 31;
-      /* MAC CE flag indicating TA length */
-      gNB->ta_len = 2;
     }
   }
 
@@ -542,8 +537,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
     nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
     nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
-    // resetting ta flag
-    gNB->ta_len = 0;
+    ue_sched_ctl->ta_apply = false;
   }
 
   if (UE_list->fiveG_connected[UE_id])

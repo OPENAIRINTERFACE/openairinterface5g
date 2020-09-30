@@ -1465,6 +1465,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
+    UE_list->UE_sched_ctrl[UE_id].ta_timer = 100;
+    UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
     UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
     UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
