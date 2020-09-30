@@ -506,7 +506,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       abort();
     }
 
-    UE_id = find_nr_UE_id(module_idP, ra->rnti);
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     UE_list->tc_rnti[UE_id] = ra->rnti;
