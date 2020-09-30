@@ -1576,6 +1576,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             } // !NODE_IS_DU(node_type)
           }
 
+          RRC_CONFIGURATION_REQ (msg_p).nr_scg_ssb_freq = ccparams_lte.nr_scg_ssb_freq;
+
           if (!NODE_IS_DU(rrc->node_type)) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
             sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);

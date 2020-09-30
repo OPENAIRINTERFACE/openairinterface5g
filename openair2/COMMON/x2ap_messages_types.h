@@ -34,6 +34,7 @@ typedef enum {
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 
+
 #define X2AP_REGISTER_ENB_REQ(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_req
 #define X2AP_SETUP_REQ(mSGpTR)                                  (mSGpTR)->ittiMsg.x2ap_setup_req
 #define X2AP_SETUP_RESP(mSGpTR)                                 (mSGpTR)->ittiMsg.x2ap_setup_resp
@@ -51,6 +52,7 @@ typedef enum {
 #define X2AP_ENDC_SGNB_RELEASE_REQUIRED(mSGpTR)                 (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_release_required
 #define X2AP_ENDC_DC_PREP_TIMEOUT(mSGpTR)                       (mSGpTR)->ittiMsg.x2ap_ENDC_dc_prep_timeout
 #define X2AP_ENDC_DC_OVERALL_TIMEOUT(mSGpTR)                    (mSGpTR)->ittiMsg.x2ap_ENDC_dc_overall_timeout
+#define X2AP_ENDC_SETUP_REQ(mSGpTR)                             (mSGpTR)->ittiMsg.x2ap_ENDC_setup_req
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
@@ -300,10 +302,6 @@ typedef struct x2ap_senb_addition_req_s {
 
 }x2ap_senb_addition_req_t;
 
-
-
-
-//Panos: Have to see what should be the additional/different elements comparing to handover req ack
 typedef struct x2ap_senb_addition_req_ack_s {
 
   int MeNB_UE_X2_id;
@@ -324,6 +322,13 @@ typedef struct x2ap_senb_addition_req_ack_s {
   int rrc_buffer_size;
 
 } x2ap_senb_addition_req_ack_t;
+
+
+typedef struct x2ap_ENDC_setup_req_s {
+  uint32_t Nid_cell[MAX_NUM_CCs];
+  int num_cc;
+  uint32_t servedNrCell_band[MAX_NUM_CCs];
+} x2ap_ENDC_setup_req_t;
 
 typedef struct x2ap_ENDC_sgnb_addition_req_s {
   int ue_x2_id;
