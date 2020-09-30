@@ -2246,6 +2246,7 @@ function run_test_on_vm {
 
 
 
+
             SYNC_STATUS=0
             PING_STATUS=0
             IPERF_STATUS=0
