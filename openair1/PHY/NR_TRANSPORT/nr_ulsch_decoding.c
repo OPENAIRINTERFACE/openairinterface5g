@@ -577,13 +577,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       stats->current_RI = n_layers;
       stats->total_bytes_tx += harq_process->TBS;
     }
-    // This is a new packet, so compute quantities regarding segmentation
-    if (A > 3824)
-      harq_process->B = A+24;
-    else
-      harq_process->B = A+16;
+  }
+  if (A > 3824)
+    harq_process->B = A+24;
+  else
+    harq_process->B = A+16;
 
-  // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+// [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
   nr_segmentation(NULL,
                   NULL,
                   harq_process->B,
@@ -594,11 +594,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                   p_decParams->BG);
 
 #ifdef DEBUG_ULSCH_DECODING
-    printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
-    if (!frame%100)
-      printf("K %d C %d Z %d \n", harq_process->K, harq_process->C, harq_process->Z);
+  printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
+  if (!frame%100)
+    printf("K %d C %d Z %d \n", harq_process->K, harq_process->C, harq_process->Z);
 #endif
-  }
   Tbslbrm = nr_compute_tbslbrm(0,nb_rb,n_layers);
 
   p_decParams->Z = harq_process->Z;
