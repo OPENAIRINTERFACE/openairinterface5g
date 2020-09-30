@@ -109,7 +109,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l_prime[2], delta;
   uint16_t rnti, n_dmrs, code_rate, number_dmrs_symbols, nb_rb, k;
-  uint8_t dmrs_type, nb_dmrs_re_per_rb, number_of_symbols, mcs, Nl;
+  uint8_t dmrs_type, nb_dmrs_re_per_rb, number_of_symbols, mcs, Nl, mcs_table;
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
   uint16_t ul_dmrs_symb_pos;
@@ -156,9 +156,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*num_of_codewords;
 
     mcs            = harq_process_ul_ue->pusch_pdu.mcs_index;
+    mcs_table      = harq_process_ul_ue->pusch_pdu.mcs_table;
     Nl             = harq_process_ul_ue->pusch_pdu.nrOfLayers;
-    mod_order      = nr_get_Qm_ul(mcs, 0);
-    code_rate      = nr_get_code_rate_ul(mcs, 0);
+    mod_order      = nr_get_Qm_ul(mcs, mcs_table);
+    code_rate      = nr_get_code_rate_ul(mcs, mcs_table);
 
     harq_process_ul_ue->pusch_pdu.pusch_data.tb_size = nr_compute_tbs(mod_order,
                                              code_rate,

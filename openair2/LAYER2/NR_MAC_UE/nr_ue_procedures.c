@@ -792,19 +792,19 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t  nr_of_symbols      = ulcfg_pdu->pusch_config_pdu.nr_of_symbols;
       uint8_t  start_symbol_index = ulcfg_pdu->pusch_config_pdu.start_symbol_index;
       uint8_t  nrOfLayers         = 1;
-      uint8_t  mcs_table          = 0;
       uint8_t  mcs_index          = ulcfg_pdu->pusch_config_pdu.mcs_index;
+      uint8_t  mcs_table          = ulcfg_pdu->pusch_config_pdu.mcs_table;
       uint8_t  harq_process_id    = ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id;
       uint8_t  rv_index           = ulcfg_pdu->pusch_config_pdu.pusch_data.rv_index;
       uint16_t l_prime_mask       = get_l_prime(nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
       uint8_t  dmrs_config_type   = 0;
+      uint16_t pdu_bit_map        = PUSCH_PDU_BITMAP_PUSCH_DATA;
       // These should come from RRC config!!!
       uint8_t  ptrs_mcs1          = 2;
       uint8_t  ptrs_mcs2          = 4;
       uint8_t  ptrs_mcs3          = 10;
       uint16_t n_rb0              = 25;
       uint16_t n_rb1              = 75;
-      uint16_t pdu_bit_map        = PUSCH_PDU_BITMAP_PUSCH_DATA;
       uint8_t  ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, mcs_table);
       uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, rb_size);
       uint8_t  no_data_in_dmrs    = 1;
@@ -830,8 +830,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         else
           nb_dmrs_re_per_rb = ((dmrs_config_type == pusch_dmrs_type1) ? 6:4);
 
-        TBS = nr_compute_tbs(nr_get_Qm_ul(mcs_index, 0),
-                             nr_get_code_rate_ul(mcs_index, 0),
+        TBS = nr_compute_tbs(nr_get_Qm_ul(mcs_index, mcs_table),
+                             nr_get_code_rate_ul(mcs_index, mcs_table),
                              rb_size,
                              nr_of_symbols,
                              nb_dmrs_re_per_rb*number_dmrs_symbols,
@@ -2336,6 +2336,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
   LOG_D(MAC,"nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
 
   NR_PDSCH_Config_t *pdsch_config=mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
+  NR_PUSCH_Config_t *pusch_config=mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
 
   switch(dci_format){
   case NR_UL_DCI_FORMAT_0_0:
@@ -2442,6 +2443,23 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
       pusch_config_pdu_0_1->frequency_hopping = dci->frequency_hopping_flag.val;
     /* MCS */
     pusch_config_pdu_0_1->mcs_index = dci->mcs;
+    /* MCS TABLE */
+    if (pusch_config->transformPrecoder == NULL) {
+      if (mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
+        pusch_config_pdu_0_1->transform_precoding = 1;
+      else
+        pusch_config_pdu_0_1->transform_precoding = 0;
+    }
+    else
+      pusch_config_pdu_0_1->transform_precoding = *pusch_config->transformPrecoder;
+      
+    if (pusch_config_pdu_0_1->transform_precoding == transform_precoder_disabled) 
+      pusch_config_pdu_0_1->mcs_table = get_pusch_mcs_table(pusch_config->mcs_Table, 0,
+                                                 dci_format, NR_RNTI_C, NR_SearchSpace__searchSpaceType_PR_ue_Specific, false);
+    else
+      pusch_config_pdu_0_1->mcs_table = get_pusch_mcs_table(pusch_config->mcs_TableTransformPrecoder, 1,
+                                                 dci_format, NR_RNTI_C, NR_SearchSpace__searchSpaceType_PR_ue_Specific, false);
+    
     /* NDI */
     pusch_config_pdu_0_1->pusch_data.new_data_indicator = dci->ndi;
     /* RV */
