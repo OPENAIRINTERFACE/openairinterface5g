@@ -1000,12 +1000,12 @@ uint16_t do_RRCReconfiguration(
     ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
 
     /* Configure Security */
-    security_config    =  CALLOC(1, sizeof(NR_SecurityConfig_t));
-    security_config->securityAlgorithmConfig = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->securityAlgorithmConfig));
-    security_config->securityAlgorithmConfig->cipheringAlgorithm     = NR_CipheringAlgorithm_nea0;
-    security_config->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
-    security_config->keyToUse = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->keyToUse));
-    *security_config->keyToUse = NR_SecurityConfig__keyToUse_master;
+    // security_config    =  CALLOC(1, sizeof(NR_SecurityConfig_t));
+    // security_config->securityAlgorithmConfig = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->securityAlgorithmConfig));
+    // security_config->securityAlgorithmConfig->cipheringAlgorithm     = NR_CipheringAlgorithm_nea0;
+    // security_config->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
+    // security_config->keyToUse = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->keyToUse));
+    // *security_config->keyToUse = NR_SecurityConfig__keyToUse_master;
 
     ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
     ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));

@@ -55,6 +55,12 @@
 #include "NR_DL-DCCH-Message.h"
 
 #define NB_NR_UE_INST 1
+#define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
+#define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
+
+#define MAX_MEAS_OBJ 6
+#define MAX_MEAS_CONFIG 6
+#define MAX_MEAS_ID 6
 
 typedef uint32_t channel_t;
 
@@ -68,7 +74,23 @@ typedef struct NR_UE_RRC_INST_s {
     NR_MeasConfig_t        *meas_config;
     NR_CellGroupConfig_t   *cell_group_config;
     NR_RadioBearerConfig_t *radio_bearer_config;
-  
+
+    NR_MeasObjectToAddMod_t        *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
+    NR_ReportConfigToAddMod_t      *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
+    NR_QuantityConfig_t            *QuantityConfig[NB_CNX_UE];
+    NR_MeasIdToAddMod_t            *MeasId[NB_CNX_UE][MAX_MEAS_ID];
+    NR_MeasGapConfig_t             *measGapConfig[NB_CNX_UE];
+    NR_RSRP_Range_t                s_measure;
+    NR_SRB_ToAddMod_t              *SRB1_config[NB_CNX_UE];
+    NR_SRB_ToAddMod_t              *SRB2_config[NB_CNX_UE];
+    NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
+    rb_id_t                        *defaultDRB; // remember the ID of the default DRB
+
+    NR_SRB_INFO_TABLE_ENTRY        Srb1;
+    NR_SRB_INFO_TABLE_ENTRY        Srb2;
+
+    NR_UE_RRC_INFO                 Info[NB_SIG_CNX_UE];
+
     NR_MIB_t *mib;
 
     /* KeNB as computed from parameters within USIM card */
