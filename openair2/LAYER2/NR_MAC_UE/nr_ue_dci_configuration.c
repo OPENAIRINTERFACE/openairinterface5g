@@ -66,9 +66,9 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id, uint8_t dci_format){
 
-  uint16_t monitoringSymbolsWithinSlot;
+  uint16_t monitoringSymbolsWithinSlot = 0;
   uint8_t bwp_id = 1, coreset_id = 1;
-  int sps;
+  int sps = 0;
   def_dci_pdu_rel15 = calloc(1,sizeof(dci_pdu_rel15_t));
   AssertFatal(mac->scc != NULL, "scc is null\n");
   NR_ServingCellConfigCommon_t *scc = mac->scc;
@@ -184,7 +184,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
   int ss_id;
   uint8_t bwp_id = 1, coreset_id = 1;
-  NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
+  //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Downlink_t *bwp = mac->DLbwp[bwp_id - 1];
 
   #ifdef DEBUG_DCI
