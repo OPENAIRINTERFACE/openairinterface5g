@@ -442,7 +442,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   pdcp_run(&ctxt);
-  //rrc_rx_tx(&ctxt, CC_id);
+  nr_rrc_rx_tx(); //&ctxt, CC_id);
   /* send tick to RLC every ms */
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);

@@ -436,7 +436,7 @@ void OCPconfig_RU(RU_t *ru) {
 
   if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
     if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
-      ru->if_south                        = LOCAL_RF;
+      ru->if_south                        = REMOTE_IF5; //TBD: max value to avoid to call "ru" functions
       ru->function                        = gNodeB_3GPP;
       printf("Setting function for RU %d to gNodeB_3GPP\n",j);
     } else {
@@ -472,7 +472,7 @@ void OCPconfig_RU(RU_t *ru) {
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
-  NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
+  NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms; 
   nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
   int mu = gNB_config->ssb_config.scs_common.value;

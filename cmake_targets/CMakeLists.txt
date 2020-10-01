@@ -377,6 +377,7 @@ add_custom_target (
 
 add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source} 
     ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c
+    ${OPENAIR2_DIR}/RRC/NR/nr_rrc_gNB.c
     )
 add_dependencies(NR_RRC_LIB nr_rrc_flag)
 include_directories ("${NR_RRC_FULL_DIR}")

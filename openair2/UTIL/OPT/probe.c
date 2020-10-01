@@ -457,7 +457,7 @@ void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int p
 }
 
 /*---------------------------------------------------*/
-int init_opt(void) {
+int init_opt(void) { 
   in_type=malloc(200);
   in_ip=malloc(200);
   in_path=malloc(200);
@@ -476,11 +476,9 @@ int init_opt(void) {
   } else if (tmptype == OPT_PCAP && strlen(in_path) > 0) {
     opt_type = OPT_PCAP;
     opt_enabled=1;
-    LOG_I(OPT,"Enabling OPT for PCAP  with the following file %s \n",in_path);
   } else if (tmptype == OPT_WIRESHARK && strlen(in_ip) > 0) {
     opt_enabled=1;
     opt_type = OPT_WIRESHARK;
-    LOG_I(OPT,"Enabling OPT for wireshark for local interface %s\n",in_ip);
   } else {
     LOG_E(OPT,"Invalid OPT configuration\n");
     config_printhelp(opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
@@ -489,9 +487,9 @@ int init_opt(void) {
   // trace_mode
   switch (opt_type) {
     case OPT_WIRESHARK:
-
+      LOG_I(OPT,"mode Wireshark: ip %s port %d\n", in_ip, PACKET_MAC_LTE_DEFAULT_UDP_PORT);
       /* Create local server socket only if using localhost address */
-      if (strcmp(in_ip, "127.0.0.1") == 0) {
+      if (strncmp(in_ip, "127.0.0.1", 4) == 0) {
         opt_create_listener_socket(in_ip, PACKET_MAC_LTE_DEFAULT_UDP_PORT);
       }
 
@@ -510,6 +508,7 @@ int init_opt(void) {
       break;
 
     case OPT_PCAP:
+      LOG_I(OPT,"mode PCAB : path is %s \n",in_path);
       file_fd = fopen(in_path, "w");
 
       if (file_fd == NULL) {
@@ -528,19 +527,9 @@ int init_opt(void) {
 
     default:
       opt_type = OPT_NONE;
-      LOG_W(OPT, "supported Option\n");
+       LOG_E(OPT,"Unsupported or unknown mode %d \n", opt_type);
       break;
   }
-
-  if ( opt_type == OPT_WIRESHARK )
-    LOG_E(OPT,"mode Wireshark: ip %s port %d\n", in_ip, PACKET_MAC_LTE_DEFAULT_UDP_PORT);
-  else if (opt_type == OPT_PCAP)
-    LOG_E(OPT,"mode PCAB : path is %s \n",in_path);
-  else
-    LOG_E(OPT,"Unsupported or unknown mode %d \n", opt_type);
-
-  //  mac_info = (mac_info*)malloc16(sizeof(mac_lte_info));
-  // memset(mac_info, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
   return (1);
 }
 

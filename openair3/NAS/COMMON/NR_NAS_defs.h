@@ -310,7 +310,7 @@ typedef struct  __attribute__((packed)) {
 }
 authenticationrequestHeader_t;
 
-typedef struct  __attribute__((packed){
+typedef struct  __attribute__((packed)) {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;

@@ -20,18 +20,13 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+#include <openair2/RRC/LTE/MESSAGES/asn1_msg.h>
+#include <openair2/RRC/NR/nr_rrc_proto.h>
 
-rrc_gNB_send_NGAP_NAS_FIRST_REQ() {
-   // We are noCore only now
-   // create message that should come from 5GC
-  
-   // send it dow
-   rrc_gNB_process_NGAP_DOWNLINK_NAS()
-}
-
-rrc_gNB_process_NGAP_DOWNLINK_NAS () {
-   do_DLInformationTransfer();
+void rrc_gNB_process_NGAP_DOWNLINK_NAS (void ) {
+   do_DLInformationTransfer(0,NULL,0,0,NULL);
    // send it as DL data
+/*
     rrc_data_req (
       &ctxt,
       srb_id,
@@ -40,9 +35,23 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS () {
       length,
       buffer,
       PDCP_TRANSMISSION_MODE_CONTROL);
+*/
 
 }
 
+void rrc_gNB_send_NGAP_NAS_FIRST_REQ(void ) {
+   // We are noCore only now
+   // create message that should come from 5GC
+  
+   // send it dow
+   rrc_gNB_process_NGAP_DOWNLINK_NAS();
+}
 
-:q
+void nr_rrc_rx_tx() {
+  // check timers 
 
+  // check if UEs are lost, to remove them from upper layers
+
+  //
+
+}
