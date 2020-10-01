@@ -693,10 +693,10 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   *ptimestamp = s->rx_timestamp;
 
   // push GPIO bits 7-9 from flags_msb
-   s->usrp->set_command_time(uhd::time_spec_t::from_ticks((s->rx_timestamp+(2*nsamps)),s->sample_rate));
+   /*s->usrp->set_command_time(uhd::time_spec_t::from_ticks((s->rx_timestamp+(2*nsamps)),s->sample_rate));
    s->usrp->set_gpio_attr("FP0", "OUT", gpio789<<7, 0x380);
    s->usrp->clear_command_time();
-   gpio789 = (gpio789+1)&7;
+   gpio789 = (gpio789+1)&7;*/
 
   if (device->recplay_state != NULL) { // record mode
     // Copy subframes to memory (later dump on a file)

@@ -414,7 +414,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_I(PHY, "HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
+    LOG_D(PHY, "HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
           uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -429,7 +429,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_I(PHY, "HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
+    LOG_D(PHY, "HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
           uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
