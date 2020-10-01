@@ -854,7 +854,12 @@ uint64_t get_pdcp_optmask(void)
 boolean_t pdcp_remove_UE(
   const protocol_ctxt_t *const  ctxt_pP)
 {
-  TODO;
+  int rnti = ctxt_pP->rnti;
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager, rnti);
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
   return 1;
 }
 
@@ -897,9 +902,9 @@ printf("pdcp_data_req called size %d\n", sdu_buffer_size);
     rb = ue->drb[rb_id - 1];
 
   if (rb == NULL) {
-    LOG_E(PDCP, "%s:%d:%s: fatal: no DRB found (rnti %d, rb_id %ld)\n",
+    LOG_E(PDCP, "%s:%d:%s: no DRB found (rnti %d, rb_id %ld)\n",
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
-    exit(1);
+    return 0;
   }
 
   rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);

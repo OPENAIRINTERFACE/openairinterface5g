@@ -189,6 +189,7 @@ void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg)));
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg).rnti = ue_context_pP->ue_context.rnti;
+  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg).from_gnb = 0;
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg).num_erab = ue_context_pP->ue_context.nb_of_e_rabs;
   for (int e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {
     const rb_id_t gtp_ebi = ue_context_pP->ue_context.enb_gtp_ebi[e_rab];
