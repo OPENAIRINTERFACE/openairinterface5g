@@ -1299,7 +1299,7 @@ uint32_t dummy_csi_payload = 0;
 
 /* FFS TODO_NR code that should be developed */
 
-uint16_t get_csi_bitlen(NR_UE_MAC_INST_t *mac) {
+uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac) {
 
   uint16_t csi_bitlen =0;
   uint16_t rsrp_bitlen = 0;
@@ -1349,7 +1349,7 @@ int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32
   int rsrp_offset = 17;
   int csi_status = 0;
   
-  csi_status = get_csi_bitlen(mac);
+  csi_status = get_nr_csi_bitlen(mac);
   rsrp_db[0] = get_nr_RSRP(0,0,0);
 
 

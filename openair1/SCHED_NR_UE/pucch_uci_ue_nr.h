@@ -338,7 +338,7 @@ int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32
     @param csi_payload is updated with CSI
     @returns none */
     
-uint16_t get_csi_bitlen(NR_UE_MAC_INST_t *mac);
+uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac);
 
 void set_csi_nr(int csi_status, uint32_t csi_payload);
 
