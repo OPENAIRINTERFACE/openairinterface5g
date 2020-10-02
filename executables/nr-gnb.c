@@ -812,7 +812,7 @@ void init_gNB_proc(int inst) {
 
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  char ul_pool[] = "-1,-1,-1,-1,-1,-1,-1,-1";
+  char ul_pool[] = "-1,-1";
   initTpool(ul_pool, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
 }
