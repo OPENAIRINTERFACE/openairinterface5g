@@ -9503,7 +9503,6 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   return NULL;
 }
 
-// as there are race conditions, no rrc thread
 //-----------------------------------------------------------------------------
 void *
 rrc_enb_task(

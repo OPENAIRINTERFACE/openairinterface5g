@@ -720,7 +720,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
                     );
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
-
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
           //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
           for (int i=0; i < nsamps; i++) {//loop over nsamps
@@ -729,7 +728,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         		  out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
         	  } // end for a_tx
           } // end for i (number of samps)
-
         } // end of no channel modeling
       } // end for a (number of rx antennas)
     }

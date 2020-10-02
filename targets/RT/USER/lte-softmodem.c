@@ -444,7 +444,6 @@ int restart_L1L2(module_id_t enb_id) {
   init_UE_info(&RC.mac[enb_id]->UE_info);
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
 
-  // No more rrc thread, as many race conditions are hidden behind
   if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
     LOG_E(RRC, "Create task for RRC eNB failed\n");
     return -1;

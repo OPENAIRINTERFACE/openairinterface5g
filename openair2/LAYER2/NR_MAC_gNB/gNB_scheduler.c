@@ -563,13 +563,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (UE_list->UEcontext[UE_id].fiveG_connected )
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
 
-
     /*
     // Allocate CCEs for good after scheduling is done
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
       allocate_CCEs(module_idP, CC_id, subframeP, 0);
     */
-
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   
