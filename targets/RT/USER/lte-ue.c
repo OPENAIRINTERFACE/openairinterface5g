@@ -972,6 +972,16 @@ void ue_stub_rx_handler(unsigned int num_bytes,
   }
 }
 
+uint64_t clock_usec()
+{
+    struct timespec t;
+    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
+    {   
+        abort();
+    }
+    return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
+}
+
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.
@@ -1048,8 +1058,31 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
     last_sfn_sf = sfn_sf;
 
-    nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
+    nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
+    if (tx_request_pdu_list)
+    {
+      uint64_t deadline = clock_usec() + 1000;
+      if (!dl_config_req)
+      {
+        for (;;)
+        {
+          LOG_E(MAC, "Spinning and waiting for corresponding dl_config_req\n");
+          dl_config_req = get_queue(&dl_config_req_queue);
+          if (dl_config_req)
+          {
+            break;
+          }
+          if (clock_usec() >= deadline)
+          {
+            LOG_E(MAC, "Giving up waiting for dl_config_req\n");
+            break;
+          }
+          usleep(1);
+        }
+      }
+    }
+
     nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
     nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
 
