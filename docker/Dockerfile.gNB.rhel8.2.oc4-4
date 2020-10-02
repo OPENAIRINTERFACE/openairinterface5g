@@ -34,12 +34,13 @@ WORKDIR /oai-ran
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --gNB --ninja
+    ./build_oai --gNB --ninja -w USRP
 
 #debug
-RUN ldconfig -v && ldd /oai-ran/targets/bin/nr-softmodem.Rel15
-RUN ls /oai-ran/targets/bin
-RUN ls /oai-ran/cmake_targets/ran_build/build/*.so
+#RUN ldconfig -v
+#RUN ldd /oai-ran/targets/bin/nr-softmodem.Rel15
+#RUN ls -lst /oai-ran/targets/bin
+#RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-gnb
@@ -53,7 +54,8 @@ RUN yum repolist --disablerepo=* && \
         lksctp-tools \
         nettle \
         libyaml && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
 WORKDIR /opt/oai-gnb/bin
 COPY --from=gnb-build /oai-ran/targets/bin/nr-softmodem.Rel15 .
@@ -62,34 +64,57 @@ WORKDIR /usr/local/lib/
 COPY --from=gnb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
 COPY --from=gnb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
 COPY --from=gnb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-#COPY --from=gnb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
+COPY --from=gnb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
 COPY --from=gnb-build /oai-ran/targets/bin/libcoding.so .
 COPY --from=gnb-build /oai-ran/targets/bin/libparams_libconfig.so .
-#COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-#COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc.so .
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so .
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so .
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so .
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
-#RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
 RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
 COPY --from=gnb-build /usr/local/lib/libprotobuf-c.so.1 .
 
-WORKDIR /lib64
-COPY --from=gnb-build /lib64/libforms.so.2 .
-COPY --from=gnb-build /lib64/libblas.so.3 .
-COPY --from=gnb-build /lib64/liblapack.so.3 .
-COPY --from=gnb-build /lib64/liblapacke.so.3 .
+COPY --from=gnb-build /lib64/libconfig.so.9 /lib64
+COPY --from=gnb-build /lib64/libforms.so.2 /lib64
+COPY --from=gnb-build /lib64/libblas.so.3 /lib64
+COPY --from=gnb-build /lib64/liblapack.so.3 /lib64
+COPY --from=gnb-build /lib64/liblapacke.so.3 /lib64
+COPY --from=gnb-build /lib64/libboost_chrono.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_date_time.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_filesystem.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_program_options.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_serialization.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_thread.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_system.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_unit_test_framework.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_atomic.so.1.66.0 /lib64
+COPY --from=gnb-build /lib64/libboost_timer.so.1.66.0 /lib64
+COPY --from=gnb-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
 
-RUN ldconfig -v && ldd /opt/oai-gnb/bin/nr-softmodem.Rel15
+RUN ldconfig
+#debug
+RUN ldd /opt/oai-gnb/bin/nr-softmodem.Rel15
+RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
+RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
+RUN ldd /usr/local/lib/librfsimulator.so.Rel15
+RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
+RUN ldd /usr/local/lib/libcoding.so
+RUN ldd /usr/local/lib/libparams_libconfig.so
+RUN ldd /usr/local/lib/libdfts.so
+RUN ldd /usr/local/lib/libldpc.so
+RUN ldd /usr/local/lib/libldpc_optim.so
+RUN ldd /usr/local/lib/libldpc_optim8seg.so
+RUN ldd /usr/local/lib/libldpc_orig.so
 
 # Copy the relevant configuration files for gNB
 WORKDIR /opt/oai-gnb/etc
 COPY --from=gnb-build /oai-ran/ci-scripts/conf_files/gnb.* .
 
+WORKDIR /opt/oai-gnb
 #EXPOSE 2152/udp  # S1U, GTP/UDP
 #EXPOSE 22100/tcp # ?
 #EXPOSE 36412/udp # S1C, SCTP/UDP

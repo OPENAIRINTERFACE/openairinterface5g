@@ -34,12 +34,12 @@ WORKDIR /oai-ran
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --UE --ninja
+    ./build_oai --UE --ninja -w USRP
 
 # debug
-RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15
-RUN ls -lst /oai-ran/targets/bin
-RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
+#RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15
+#RUN ls -lst /oai-ran/targets/bin
+#RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-lte-ue
@@ -49,8 +49,11 @@ RUN yum update -y && \
         lksctp-tools \
         nettle \
         atlas \
+        iproute \
+        net-tools \
         libyaml && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
 WORKDIR /opt/oai-lte-ue/bin
 COPY --from=lte-ue-build /oai-ran/targets/bin/lte-uesoftmodem.Rel15 .
@@ -65,27 +68,54 @@ WORKDIR /usr/local/lib/
 COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-#COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
+COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/libcoding.so .
 COPY --from=lte-ue-build /oai-ran/targets/bin/libparams_libconfig.so .
 COPY --from=lte-ue-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
 COPY --from=lte-ue-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
-#RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
 RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
 
 COPY --from=lte-ue-build /usr/local/lib/libprotobuf-c.so.1 .
 
+COPY --from=lte-ue-build /lib64/libconfig.so.9 /lib64
 COPY --from=lte-ue-build /lib64/libblas.so.3 /lib64
 COPY --from=lte-ue-build /lib64/liblapack.so.3 /lib64
 COPY --from=lte-ue-build /lib64/liblapacke.so.3 /lib64
+COPY --from=lte-ue-build /lib64/libboost_chrono.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_date_time.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_filesystem.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_program_options.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_serialization.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_thread.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_system.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_unit_test_framework.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_atomic.so.1.66.0 /lib64
+COPY --from=lte-ue-build /lib64/libboost_timer.so.1.66.0 /lib64
+COPY --from=lte-ue-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
 
-RUN ldconfig -v && ldd /opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15
+RUN ldconfig
+
+#debug
+RUN ldd /opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15
+RUN ldd /opt/oai-lte-ue/bin/conf2uedata
+RUN ldd /opt/oai-lte-ue/bin/nvram
+RUN ldd /opt/oai-lte-ue/bin/usim
+RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
+RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
+RUN ldd /usr/local/lib/librfsimulator.so.Rel15
+RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
+RUN ldd /usr/local/lib/libcoding.so
+RUN ldd /usr/local/lib/libparams_libconfig.so
+RUN ldd /usr/local/lib/libSIMU.so
+RUN ldd /usr/local/lib/libdfts.so
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-lte-ue/etc
 COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
 
+WORKDIR /opt/oai-lte-ue
 #CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
 

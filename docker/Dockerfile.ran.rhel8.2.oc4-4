@@ -53,7 +53,8 @@ RUN rm /etc/rhsm-host && \
        git \
        #unzip is needed for protobuf
        unzip && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
 # In some network environments, GIT proxy is required
 RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
@@ -66,7 +67,7 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai -I 
+    ./build_oai -I -w USRP
 
 #as the image is public, we need to remove the subscription certificates
 RUN rm -Rf /etc/pki/entitlement/*.pem
