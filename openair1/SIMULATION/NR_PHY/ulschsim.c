@@ -104,6 +104,7 @@ int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
     }
     ulsch->last_iteration_cnt = rdata->decodeIterations;
+  return 0;
 }
 int main(int argc, char **argv)
 {
@@ -130,7 +131,7 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   double sigma;
   unsigned char qbits = 8;
-  int ret;
+  int ret=0;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;

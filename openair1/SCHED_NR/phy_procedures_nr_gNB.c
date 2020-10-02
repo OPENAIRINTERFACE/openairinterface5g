@@ -281,7 +281,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->ulsch_pdu;
   
-  uint8_t ret;
   uint8_t l, number_dmrs_symbols = 0;
   uint32_t G;
   uint16_t start_symbol, number_symbols, nb_re_dmrs;

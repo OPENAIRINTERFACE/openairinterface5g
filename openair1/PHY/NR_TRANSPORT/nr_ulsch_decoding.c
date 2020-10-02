@@ -52,9 +52,6 @@
 #define OAI_UL_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX = 68*384
 //#define PRINT_CRC_CHECK
 
-static uint64_t nb_total_decod =0;
-static uint64_t nb_error_decod =0;
-
 //extern double cpuf;
 
 void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr,uint8_t N_RB_UL)
@@ -286,7 +283,7 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
   static uint32_t prnt_crc_cnt = 0;
 #endif
 
-uint32_t nr_processULSegment(void* arg) {
+void nr_processULSegment(void* arg) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) arg;
   PHY_VARS_gNB *phy_vars_gNB = rdata->gNB;
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
@@ -467,7 +464,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint32_t G) {
 
   uint32_t A;
-  uint32_t ret;
   uint32_t r;
   uint32_t r_offset;
   uint32_t offset;
@@ -494,7 +490,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   if (!harq_process) {
     LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
-    return; 
+    return 1; 
   }
 
   double   Coderate = 0.0;
@@ -509,7 +505,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
    if (!ulsch_llr) {
     LOG_E(PHY,"ulsch_decoding.c: NULL ulsch_llr pointer\n");
-    return;
+    return 1;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
@@ -617,7 +613,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   if (harq_process->C > a_segments) {
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
-    return;
+    return 1;
   }
 #ifdef DEBUG_ULSCH_DECODING
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
@@ -625,13 +621,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
   offset = 0;
+  void (*nr_processULSegment_ptr)(void*) = &nr_processULSegment;
 
   for (r=0; r<harq_process->C; r++) {
 
     E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
 
     union ldpcReqUnion id = {.s={ulsch->rnti,frame,nr_tti_rx,0,0}};
-    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, phy_vars_gNB->respDecode, nr_processULSegment);
+    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, phy_vars_gNB->respDecode, nr_processULSegment_ptr);
     ldpcDecode_t * rdata=(ldpcDecode_t *) NotifiedFifoData(req);
 
     rdata->gNB = phy_vars_gNB;
@@ -659,5 +656,5 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////
   }
-  return;
+  return 1;
 }
