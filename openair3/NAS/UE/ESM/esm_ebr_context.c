@@ -196,7 +196,7 @@ int esm_ebr_context_create(
           char          *tmp          = NULL;
           char           ipv4_addr[INET_ADDRSTRLEN];
           //char           ipv6_addr[INET6_ADDRSTRLEN];
-          char          *netmask      = NULL;
+          int            netmask      = 32;
           char           broadcast[INET_ADDRSTRLEN];
           struct in_addr in_addr;
           char           command_line[500];
@@ -223,7 +223,7 @@ int esm_ebr_context_create(
               strcpy(ipv4_addr, tmp);
 
               if (IN_CLASSA(ntohl(in_addr.s_addr))) {
-                netmask = "255.0.0.0";
+                netmask = 8;
                 in_addr.s_addr = pdn->ip_addr[0] << 24 |
                                  ((255  << 16) & 0x00FF0000) |
                                  ((255 <<  8)  & 0x0000FF00) |
@@ -235,7 +235,7 @@ int esm_ebr_context_create(
                 //                                        in_addr.s_addr);
                 strcpy(broadcast, tmp);
               } else if (IN_CLASSB(ntohl(in_addr.s_addr))) {
-                netmask = "255.255.0.0";
+                netmask = 16;
                 in_addr.s_addr =  pdn->ip_addr[0] << 24 |
                                   ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
                                   ((255 <<  8)  & 0x0000FF00) |
@@ -247,7 +247,7 @@ int esm_ebr_context_create(
                 //                                        in_addr.s_addr);
                 strcpy(broadcast, tmp);
               } else if (IN_CLASSC(ntohl(in_addr.s_addr))) {
-                netmask = "255.255.255.0";
+                netmask = 24;
                 in_addr.s_addr = pdn->ip_addr[0] << 24 |
                                  ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
                                  ((pdn->ip_addr[2] <<  8) & 0x0000FF00) |
@@ -259,21 +259,24 @@ int esm_ebr_context_create(
                 //                                        in_addr.s_addr);
                 strcpy(broadcast, tmp);
               } else {
-                netmask = "255.255.255.255";
+                netmask = 32;
                 strcpy(broadcast, ipv4_addr);
               }
 
-                  res = sprintf(command_line,
-                                "ifconfig %s%d %s netmask %s broadcast %s up && "
-                                "ip rule add from %s/32 table %d && "
-                                "ip rule add to %s/32 table %d && "
-                                "ip route add default dev %s%d table %d",
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                ueid + 1, ipv4_addr, netmask, broadcast,
-                                ipv4_addr, ueid + 201,
-                                ipv4_addr, ueid + 201,
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                ueid + 1, ueid + 201);
+              uint8_t if_num = ueid % MAX_NUMBER_NETIF + 1;
+              res = sprintf(command_line,
+                            "ip address add %s/%d broadcast %s dev %s%d && "
+                            "ip link set %s%d up && "
+                            "ip rule add from %s/32 table %d && "
+                            "ip rule add to %s/32 table %d && "
+                            "ip route add default dev %s%d table %d",
+                            ipv4_addr, netmask, broadcast,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", if_num,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", if_num,
+                            ipv4_addr, ueid + 10000,
+                            ipv4_addr, ueid + 10000,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
+                            if_num, ueid + 10000);
 
               if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
