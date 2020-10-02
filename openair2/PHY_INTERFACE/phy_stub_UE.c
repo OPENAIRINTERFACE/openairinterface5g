@@ -397,6 +397,12 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       pdu->harq_indication_fdd_rel13.harq_tb_n[0] =
           1; // Assuming always an ACK (No NACK or DTX)
 
+      // TODO: Fix ack/dtx -- needed for 5G
+      // 1.) if received dl_config_req (with c-rnti) store this info and corresponding subframe.
+      // 2.) if receiving ul_config_req for uci ack/nack or ulsch ack/nak in subframe n
+      //     go look to see if dl_config_req (with c-rnti) was received in subframe (n - 4)
+      // 3.) if the answer to #2 is yes then send ACK IF NOT send DTX
+
     } else if ((harq_information->harq_information_rel9_fdd.ack_nack_mode == 0)
                && (harq_information->harq_information_rel9_fdd.harq_size
                    == 2)) {
@@ -714,7 +720,7 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t *req,
       handle_nfapi_ul_pdu_UE_MAC(
           Mod_id, pdu, sfn, sf, req->ul_config_request_body.srs_present, i, req);
     } else {
-      LOG_E(MAC, "UNKNOWN UL_CONFIG_REQ PDU_TYPE or RNTI not matching pdu type: %d\n", pdu_type);
+      LOG_D(MAC, "UNKNOWN UL_CONFIG_REQ PDU_TYPE or RNTI not matching pdu type: %d\n", pdu_type);
     }
   }
 
@@ -774,6 +780,8 @@ void dl_config_req_UE_MAC_dci(int sfn,
     return;
   }
 
+  LOG_D(MAC, "%s() rnti value: 0x%x rnti type: %d\n", __func__,
+        rnti, rnti_type);
   if (rnti_type == 1) { // C-RNTI (Normal DLSCH case)
     for (int ue_id = 0; ue_id < num_ue; ue_id++) {
       if (UE_mac_inst[ue_id].crnti == rnti) {

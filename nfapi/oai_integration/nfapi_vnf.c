@@ -1220,7 +1220,7 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   tx_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   tx_req->header.message_id = NFAPI_TX_REQUEST;
-  //LOG_D(PHY, "[VNF] %s() TX_REQ sfn_sf:%d number_of_pdus:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(tx_req->sfn_sf), tx_req->tx_request_body.number_of_pdus);
+  LOG_D(PHY, "[VNF] %s() TX_REQ sfn_sf:%d number_of_pdus:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(tx_req->sfn_sf), tx_req->tx_request_body.number_of_pdus);
   int retval = nfapi_vnf_p7_tx_req(p7_config, tx_req);
 
   if (retval!=0) {
@@ -1282,13 +1282,14 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   for (int i = 0; i < num_pdus; i++)
   {
     uint8_t pdu_type = pdu_list[i].pdu_type;
+
+    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
+          num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
+
     if (pdu_type != NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)
     {
       continue;
     }
-
-    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
-          num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
 
     for (int j = i + 1; j < num_pdus; j++)
     {

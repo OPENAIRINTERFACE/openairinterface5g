@@ -414,7 +414,7 @@ ue_send_sdu(module_id_t module_idP,
 
   if (payload_ptr != NULL) {
     for (i = 0; i < num_ce; i++) {
-      //    printf("ce %d : %d\n",i,rx_ces[i]);
+      LOG_D(MAC, "ce %d : %d\n",i,rx_ces[i]);
       switch (rx_ces[i]) {
         case UE_CONT_RES:
           LOG_I(MAC,

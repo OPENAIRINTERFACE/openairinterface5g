@@ -544,8 +544,8 @@ function main() {
       #fi
     fi
     echo_info "installing protobuf/protobuf-c for flexran agent support"
-    install_protobuf_from_source
-    install_protobuf_c_from_source
+   #install_protobuf_from_source
+   #install_protobuf_c_from_source
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
