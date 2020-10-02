@@ -55,10 +55,6 @@ Description Defines functions used to handle EPS bearer contexts.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef UESIM_EXPANSION
-  #include "openairinterface5g_limits.h"
-  extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -269,24 +265,6 @@ int esm_ebr_context_create(
 
               if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
                 // this is for L2 FAPI simulator.
-                // change for multiple UE's like 256UEs.
-                // if it's made too many tables , OS may crush so we use one table.
-                if(PDCP_USE_NETLINK) {
-#ifdef UESIM_EXPANSION
-                  uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
-                  res = sprintf(command_line,
-                                "ifconfig %s%d %s netmask %s broadcast %s up && "
-                                "ip rule add from %s/24 table %d && "
-                                "ip rule add to %s/24 table %d && "
-                                "ip route add default dev %s%d table %d",
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                inst_nic + 1, ipv4_addr, netmask, broadcast,
-                                ipv4_addr, 201,
-                                ipv4_addr, 201,
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                inst_nic + 1, 201);
-                  inst_pdcp_list[inst_nic] = ueid;
-#else
                   res = sprintf(command_line,
                                 "ifconfig %s%d %s netmask %s broadcast %s up && "
                                 "ip rule add from %s/32 table %d && "
@@ -298,8 +276,6 @@ int esm_ebr_context_create(
                                 ipv4_addr, ueid + 201,
                                 UE_NAS_USE_TUN?"oaitun_ue":"oip",
                                 ueid + 1, ueid + 201);
-#endif
-                } // PDCP_USE_NETLINK
               } else {
                 res = sprintf(command_line,
                               "ifconfig %s%d %s netmask %s broadcast %s up && "

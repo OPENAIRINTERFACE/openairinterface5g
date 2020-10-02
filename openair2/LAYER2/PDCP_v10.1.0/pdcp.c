@@ -996,17 +996,7 @@ pdcp_data_ind(
            * TODO: be sure of this
            */
           if (NFAPI_MODE == NFAPI_UE_STUB_PNF ) {
-#ifdef UESIM_EXPANSION
-
-            if (UE_NAS_USE_TUN) {
-              pdcpHead->inst  = ctxt_pP->module_id;
-            } else {
-              pdcpHead->inst  = 0;
-            }
-
-#else
             pdcpHead->inst  = ctxt_pP->module_id;
-#endif
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
               pdcpHead->inst  = ctxt_pP->module_id;
