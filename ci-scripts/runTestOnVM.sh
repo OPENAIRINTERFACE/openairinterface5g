@@ -282,11 +282,13 @@ function check_ra_result {
     local LOC_UE_LOG=$2
 
     #gNB RA test
-    echo "egrep -c \"received correctly\" $1" 
-    echo "egrep -c \"now 5G connected\" $1" 
+    echo "Checking gNB Log for RA success"
+    egrep "received correctly" $1 
+    egrep "now 5G connected" $1 
  
     #UE RA test
-    echo "egrep -c \"RA procedure succeeded\" $2" 
+    echo 'Checking UE Log for RA success'
+    egrep "RA procedure succeeded" $2
 
 }
 
@@ -2213,14 +2215,14 @@ function run_test_on_vm {
 
 
 
-            #check RA marker in gNB and NR UE log files
+            #check RA markers in gNB and NR UE log files
             echo "############################################################"
             echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
             echo "############################################################"
 
-            mv $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/RA_CHECK_$CURRENT_GNB_LOG_FILE
-            mv $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE  $ARCHIVES_LOC/RA_CHECK_$CURRENT_NR_UE_LOG_FILE          
-            check_ra_result $ARCHIVES_LOC/RA_CHECK_$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/RA_CHECK_$CURRENT_NR_UE_LOG_FILE
+            mv $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/ra_check_$CURRENT_GNB_LOG_FILE
+            mv $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE  $ARCHIVES_LOC/ra_check_$CURRENT_NR_UE_LOG_FILE
+            check_ra_result $ARCHIVES_LOC/ra_check_$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/ra_check_$CURRENT_NR_UE_LOG_FILE
 
 
             #end RA test
