@@ -278,15 +278,15 @@ function check_ping_result {
 
 
 function check_ra_result {
-    local LOC_GNB_LOG=$2
-    local LOC_UE_LOG=$4
+    local LOC_GNB_LOG=$1
+    local LOC_UE_LOG=$2
 
     #gNB RA test
-    echo "egrep -c \"received correctly\" /home/ubuntu/tmp/cmake_targets/log/$LOC_GNB_LOG" > $1
-    echo "egrep -c \"now 5G connected\" /home/ubuntu/tmp/cmake_targets/log/$LOC_GNB_LOG" >> $1
+    echo "egrep -c \"received correctly\" $1" 
+    echo "egrep -c \"now 5G connected\" $1" 
  
     #UE RA test
-    echo "egrep -c \"RA procedure succeeded\" /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG" > $3
+    echo "egrep -c \"RA procedure succeeded\" $2" 
 
 }
 
@@ -2202,29 +2202,10 @@ function run_test_on_vm {
             fi
 
 
-            #checking ping works with --do-ra option
-            echo "############################################################"
-            echo "${CN_CONFIG} : Pinging the gNB from NR-UE"
-            echo "############################################################"
-            get_enb_noS1_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR
-            PING_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log
-            ping_epc_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $ENB_IP_ADDR $PING_LOG_FILE 1 0
-            scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
-            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
-
-            echo "############################################################"
-            echo "${CN_CONFIG} : Pinging the NR-UE from gNB"
-            echo "############################################################"
-            get_ue_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 1
-            PING_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
-            ping_enb_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
-            scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
-            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
-
-
             echo "############################################################"
             echo "${CN_CONFIG} : Terminate gNB/NR-UE simulators"
             echo "############################################################"
+            sleep 20
             terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
             terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
             scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
@@ -2237,9 +2218,9 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
             echo "############################################################"
 
-            mv $ARCHIVES_LOC/RA_CHECK_$CURRENT_GNB_LOG_FILE
-            mv $ARCHIVES_LOC/RA_CHECK_$CURRENT_NR_UE_LOG_FILE            
-            #check_ra_result $GNB_VM_CMDS $CURRENT_GNB_LOG_FILE $NR_UE_VM_CMDS $CURRENT_NR_UE_LOG_FILE (function call to be fixed later)
+            mv $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/RA_CHECK_$CURRENT_GNB_LOG_FILE
+            mv $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE  $ARCHIVES_LOC/RA_CHECK_$CURRENT_NR_UE_LOG_FILE          
+            check_ra_result $ARCHIVES_LOC/RA_CHECK_$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/RA_CHECK_$CURRENT_NR_UE_LOG_FILE
 
 
             #end RA test

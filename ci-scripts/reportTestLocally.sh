@@ -765,6 +765,42 @@ function report_test {
                     echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB </td>" >> ./test_simulator_results.html
                 fi
                 echo "      </tr>" >> ./test_simulator_results.html
+
+                #RA test
+
+                #RH file names to be checked
+                RA_ENB_LOG=$ARCHIVES_LOC/RA_CHECK_${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
+                UE_LOG=`echo $ENB_LOG | sed -e "s#gnb#ue#"`
+                RA_UE_LOG=
+                
+                if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
+                then
+                    #RH file names to be checked
+                    NAME_ENB=`echo $ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>N/A</td>" >> ./test_simulator_results.html
+
+                    #gNB RA check
+                    GNB_RECEIVED=`egrep -c "received correctly" $RA_ENB_LOG`
+                    GNB_CONNECTED=`egrep -c "now 5G connected" $RA_ENB_LOG`
+                    #UE RA check
+                    UE_RA_PROC_OK=`egrep -c "RA procedure succeeded" $RA_UE_LOG`
+
+
+                    if [ $GNB_RECEIVED -gt 0 ] && [ $GNB_CONNECTED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+
+                #sync test
                 ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
                 UE_LOG=`echo $ENB_LOG | sed -e "s#gnb#ue#"`
                 if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
