@@ -479,7 +479,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 
   AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+dlul_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
   
-  //fp->threequarter_fs = openair0_cfg[0].threequarter_fs;
+  fp->threequarter_fs = openair0_cfg[0].threequarter_fs;
   LOG_I(PHY,"Configuring MIB for instance %d, : (Nid_cell %d,DL freq %llu, UL freq %llu)\n",
         Mod_id,
         gNB_config->cell_config.phy_cell_id.value,

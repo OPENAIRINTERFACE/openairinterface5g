@@ -346,7 +346,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *gNB,
     printf("ulsch_decoding.c: NULL ulsch_llr pointer\n");
     return (ulsch->max_ldpc_iterations + 1);
   }
-  //log_dump(PHY,ulsch_llr, 32, LOG_DUMP_CHAR, "ul llr");
+
   if (!frame_parms) {
     printf("ulsch_decoding.c: NULL frame_parms pointer\n");
     return (ulsch->max_ldpc_iterations + 1);

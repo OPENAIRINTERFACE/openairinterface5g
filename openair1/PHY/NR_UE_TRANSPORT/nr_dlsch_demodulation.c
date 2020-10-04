@@ -693,8 +693,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
 	     signal_energy(pdsch_vars[eNB_id]->rxdataF_comp0[0], 7*2*frame_parms->N_RB_DL*12));
-   //if (ue->current_thread_id[nr_tti_rx] ==0 )          
-   //phy_scope_nrUE(NULL, ue, 0, 0, 0);
+
+
              /*printf("compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,

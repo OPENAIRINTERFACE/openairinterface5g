@@ -93,6 +93,8 @@ time_stats_t softmodem_stats_hw; //  hw acquisition
 time_stats_t softmodem_stats_rxtx_sf; // total tx time
 time_stats_t nfapi_meas; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
+// not used but needed for link
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
