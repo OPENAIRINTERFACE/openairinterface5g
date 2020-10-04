@@ -40,6 +40,7 @@
 #include <executables/softmodem-common.h>
 #include <openair2/GNB_APP/gnb_app.h>
 #include <openair2/RRC/NR/nr_rrc_extern.h>
+#include <openair2/X2AP/x2ap_eNB.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_transport_proto.h>
 
 // should be in a shared lib
@@ -373,6 +374,9 @@ void init_main_gNB(void) {
   MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
   RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
   openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(ITTI_MSG_INSTANCE(msg_p)), &NRRRC_CONFIGURATION_REQ(msg_p));
+  //AssertFatal(itti_create_task(TASK_GNB_APP, gNB_app_task, NULL) >= 0, "");
+  AssertFatal(itti_create_task(TASK_RRC_GNB, rrc_gnb_task, NULL) >= 0, "");
+  //AssertFatal(itti_create_task(TASK_X2AP, x2ap_task, NULL) >= 0, "");
 }
 
 static  void wait_nfapi_init(char *thread_name) {
@@ -472,7 +476,7 @@ void OCPconfig_RU(RU_t *ru) {
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
-  NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms; 
+  NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
   nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
   int mu = gNB_config->ssb_config.scs_common.value;
@@ -850,7 +854,7 @@ static void *ru_thread( void *param ) {
           (unsigned long long int)proc->timestamp_rx,
           (int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
     int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,proc->frame_rx,proc->tti_rx);
-    
+
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
       nr_fep_full(ru,proc->tti_rx);
 
@@ -860,14 +864,13 @@ static void *ru_thread( void *param ) {
 
       LOG_D(PHY, "rxdataF energy: %d\n", signal_energy(ru->common.rxdataF[0], fp->symbols_per_slot*fp->ofdm_symbol_size));
     }
-    
+
     gNB_top(&RC.gNB[0][0].proc, ru);
     gNB_L1_rxtx_proc_t *L1_proc = &RC.gNB[0][0].proc.L1_proc;
-    
+
     if (ocp_rxtx(&RC.gNB[0][0],L1_proc) < 0)
       LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",RC.gNB[0][0].Mod_id,RC.gNB[0][0].CC_id);
 
-    
     // do TX front-end processing if needed (precoding and/or IDFTs)
     //ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
     nr_feptx_prec(ru,proc->frame_tx,proc->tti_tx);
@@ -886,7 +889,7 @@ static void *ru_thread( void *param ) {
             proc->frame_tx,proc->tti_tx,proc->timestamp_tx,dB_fixed(signal_energy((int32_t *)txdata,fp->get_samples_per_slot(
                   proc->tti_tx,fp))),dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
-    
+
     // do outgoing fronthaul (south) if needed
     tx_rf(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx+HW_to_logical_RxTSoffset);
     slot++;
@@ -1010,7 +1013,6 @@ int main( int argc, char **argv ) {
     scopeParms_t tmp= {&argc, argv, &ru, RC.gNB[0]};
     load_softscope("nr",&tmp);
   }
-
 
   while(!oai_exit)
     sleep(1);

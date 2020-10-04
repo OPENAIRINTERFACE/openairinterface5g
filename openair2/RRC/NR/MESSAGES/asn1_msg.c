@@ -575,7 +575,7 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 }
 
 
-int do_DLInformationTransfer_NR () {
+int do_DLInformationTransfer_NR (void * p) {
 	return 0;
 }
 

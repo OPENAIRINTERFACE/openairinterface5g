@@ -1454,7 +1454,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
         UE_list->num_UEs);
   dump_nr_ue_list(UE_list, 0);
 
-  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_list->active[i] == TRUE)
       continue;
 
@@ -1465,6 +1465,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
+    UE_list->UE_sched_ctrl[UE_id].ta_timer = 100;
+    UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
     UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
     UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
@@ -1492,6 +1494,48 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
   return -1;
 }
 
+/* hack data to remove UE in the phy */
+int rnti_to_remove[10];
+volatile int rnti_to_remove_count;
+pthread_mutex_t rnti_to_remove_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
+{
+  int UE_id;
+  int i;
+  NR_UE_list_t *UE_list = &RC.nrmac[mod_id]->UE_list;
+
+  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    if (UE_list->active[i] != TRUE)
+      continue;
+    if (UE_list->rnti[i] != rnti)
+      continue;
+
+    /* UE found, remove it */
+    UE_id = i;
+    UE_list->num_UEs--;
+    UE_list->UEcontext[UE_id].fiveG_connected = FALSE;
+    UE_list->active[UE_id] = FALSE;
+    UE_list->rnti[UE_id] = 0;
+    free(UE_list->UE_sched_ctrl[UE_id].sched_pucch);
+    free(UE_list->UE_sched_ctrl[UE_id].sched_pusch);
+    memset((void *) &UE_list->UE_sched_ctrl[UE_id],
+           0,
+           sizeof(NR_UE_sched_ctrl_t));
+    LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
+          mod_id,
+          UE_id,
+          rnti);
+
+    /* hack to remove UE in the phy */
+    if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+    if (rnti_to_remove_count == 10) exit(1);
+    rnti_to_remove[rnti_to_remove_count] = rnti;
+    LOG_W(MAC, "to remove in mac rnti_to_remove[%d]=%d\n", rnti_to_remove_count, rnti);
+    rnti_to_remove_count++;
+    if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
+  }
+}
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10

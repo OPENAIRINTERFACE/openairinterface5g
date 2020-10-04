@@ -60,7 +60,8 @@ typedef enum {
   NR_RNTI_INT,
   NR_RNTI_TPC_PUSCH,
   NR_RNTI_TPC_PUCCH,
-  NR_RNTI_TPC_SRS
+  NR_RNTI_TPC_SRS,
+  NR_RNTI_MCS_C,
 } nr_rnti_type_t;
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
@@ -99,6 +100,13 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
                                  uint8_t *N_dur);
+
+uint8_t get_pusch_mcs_table(long *mcs_Table,
+                            int is_tp,
+                            int dci_format,
+                            int rnti_type,
+                            int target_ss,
+                            bool config_grant);
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,

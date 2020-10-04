@@ -70,6 +70,16 @@ int x2ap_find_id_from_id_source(x2ap_id_manager *m, int id_source)
   return -1;
 }
 
+int x2ap_find_id_from_id_target(x2ap_id_manager *m, int id_target)
+{
+  int i;
+  for (i = 0; i < X2AP_MAX_IDS; i++)
+    if (m->ids[i].rnti != -1 &&
+        m->ids[i].id_target == id_target)
+      return i;
+  return -1;
+}
+
 int x2ap_find_id_from_rnti(x2ap_id_manager *m, int rnti)
 {
   int i;
@@ -105,6 +115,16 @@ void x2ap_set_reloc_prep_timer(x2ap_id_manager *m, int ue_id, uint64_t time)
 void x2ap_set_reloc_overall_timer(x2ap_id_manager *m, int ue_id, uint64_t time)
 {
   m->ids[ue_id].tx2_reloc_overall_start = time;
+}
+
+void x2ap_set_dc_prep_timer(x2ap_id_manager *m, int ue_id, uint64_t time)
+{
+  m->ids[ue_id].t_dc_prep_start = time;
+}
+
+void x2ap_set_dc_overall_timer(x2ap_id_manager *m, int ue_id, uint64_t time)
+{
+  m->ids[ue_id].t_dc_overall_start = time;
 }
 
 int x2ap_id_get_id_source(x2ap_id_manager *m, int ue_id)
