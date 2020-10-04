@@ -1847,11 +1847,9 @@ uint16_t Table_51312[28][2] = {{2,120},{2,193},{2,308},{2,449},{2,602},{4,378},{
 uint16_t Table_51313[29][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{4,340},
 		{4,378},{4,434},{4,490},{4,553},{4,616},{6,438},{6,466},{6,517},{6,567},{6,616},{6,666}, {6,719}, {6,772}};
 
-//Table 6.1.4.1-1 of 38.214 TODO fix for tp-pi2BPSK
 uint16_t Table_61411[28][2] = {{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},{4,340},{4,378},{4,434},{4,490},{4,553},{4,616},
 		{4,658},{6,466},{6,517},{6,567},{6,616},{6,666},{6,719},{6,772},{6,822},{6,873}, {6,910}, {6,948}};
 
-//Table 6.1.4.1-2 of 38.214 TODO fix for tp-pi2BPSK
 uint16_t Table_61412[28][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},
 		{4,378},{4,434},{4,490},{4,553},{4,616},{4,658},{4,699},{4,772},{6,567},{6,616},{6,666}, {6,772}};
 
@@ -2713,6 +2711,40 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
   }
   AssertFatal(1==0,"Shouldn't get here\n");
   return(-1);
+}
+
+uint8_t get_pusch_mcs_table(long *mcs_Table,
+                            int is_tp,
+                            int dci_format,
+                            int rnti_type,
+                            int target_ss,
+                            bool config_grant) {
+
+  // implementing 6.1.4.1 in 38.214
+  if (mcs_Table != NULL) {
+    if (config_grant || (rnti_type == NR_RNTI_CS)) {
+      if (*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256)
+        return 1;
+      else
+        return (2+(is_tp<<1));
+    }
+    else {
+      if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256) &&
+          (dci_format == NR_UL_DCI_FORMAT_0_1) &&
+          ((rnti_type == NR_RNTI_C ) || (rnti_type == NR_RNTI_SP_CSI)))
+        return 1;
+      // TODO take into account UE configuration
+      if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam64LowSE) &&
+          (target_ss == NR_SearchSpace__searchSpaceType_PR_ue_Specific) &&
+          ((rnti_type == NR_RNTI_C ) || (rnti_type == NR_RNTI_SP_CSI)))
+        return (2+(is_tp<<1));
+      if (rnti_type == NR_RNTI_MCS_C)
+        return (2+(is_tp<<1));
+      AssertFatal(1==0,"Invalid configuration to set MCS table");
+    }
+  }
+  else
+    return (0+(is_tp*3));
 }
 
 

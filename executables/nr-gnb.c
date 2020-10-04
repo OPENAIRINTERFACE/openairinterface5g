@@ -139,7 +139,6 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 //#define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
-
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
@@ -177,6 +176,59 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // ****************************************
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
+
+  /* hack to remove UEs */
+  extern int rnti_to_remove[10];
+  extern volatile int rnti_to_remove_count;
+  extern pthread_mutex_t rnti_to_remove_mutex;
+  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+  int up_removed = 0;
+  int down_removed = 0;
+  int pucch_removed = 0;
+  for (int i = 0; i < rnti_to_remove_count; i++) {
+    LOG_W(PHY, "to remove rnti %d\n", rnti_to_remove[i]);
+    void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
+    void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
+    int j;
+    for (j = 0; j < NUMBER_OF_NR_ULSCH_MAX; j++)
+      if (gNB->ulsch[j][0]->rnti == rnti_to_remove[i]) {
+        gNB->ulsch[j][0]->rnti = 0;
+        gNB->ulsch[j][0]->harq_mask = 0;
+        //clean_gNB_ulsch(gNB->ulsch[j][0]);
+        int h;
+        for (h = 0; h < NR_MAX_ULSCH_HARQ_PROCESSES; h++) {
+          gNB->ulsch[j][0]->harq_processes[h]->status = SCH_IDLE;
+          gNB->ulsch[j][0]->harq_processes[h]->round  = 0;
+          gNB->ulsch[j][0]->harq_processes[h]->handled = 0;
+        }
+        up_removed++;
+      }
+    for (j = 0; j < NUMBER_OF_NR_DLSCH_MAX; j++)
+      if (gNB->dlsch[j][0]->rnti == rnti_to_remove[i]) {
+        gNB->dlsch[j][0]->rnti = 0;
+        gNB->dlsch[j][0]->harq_mask = 0;
+        //clean_gNB_dlsch(gNB->dlsch[j][0]);
+        down_removed++;
+      }
+    for (j = 0; j < NUMBER_OF_NR_PUCCH_MAX; j++)
+      if (gNB->pucch[j]->active > 0 &&
+          gNB->pucch[j]->pucch_pdu.rnti == rnti_to_remove[i]) {
+        gNB->pucch[j]->active = 0;
+        gNB->pucch[j]->pucch_pdu.rnti = 0;
+        pucch_removed++;
+      }
+#if 0
+    for (j = 0; j < NUMBER_OF_NR_PDCCH_MAX; j++)
+      gNB->pdcch_pdu[j].frame = -1;
+    for (j = 0; j < NUMBER_OF_NR_PDCCH_MAX; j++)
+      gNB->ul_pdcch_pdu[j].frame = -1;
+    for (j = 0; j < NUMBER_OF_NR_PRACH_MAX; j++)
+      gNB->prach_vars.list[j].frame = -1;
+#endif
+  }
+  if (rnti_to_remove_count) LOG_W(PHY, "to remove rnti_to_remove_count=%d, up_removed=%d down_removed=%d pucch_removed=%d\n", rnti_to_remove_count, up_removed, down_removed, pucch_removed);
+  rnti_to_remove_count = 0;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
   /*
   // if this is IF5 or 3GPP_gNB
