@@ -895,7 +895,10 @@ int rr_ul_run(module_id_t Mod_id,
         &tx_power);
 
     UE_template->pre_assigned_mcs_ul = mcs;
-    rb_idx_required[UE_id] = rb_table_index;
+    /* rb_idx_given >= 22: apparently the PHY cannot support more than 48
+     * RBs in the uplink. Hence, we limit every UE to 48 RBs, which is at
+     * index 22 */
+    rb_idx_required[UE_id] = min(22, rb_table_index);
     //UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
     /* only print log when PHR changed */
     static int phr = 0;
