@@ -263,8 +263,6 @@ int esm_ebr_context_create(
                 strcpy(broadcast, ipv4_addr);
               }
 
-              if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
-                // this is for L2 FAPI simulator.
                   res = sprintf(command_line,
                                 "ifconfig %s%d %s netmask %s broadcast %s up && "
                                 "ip rule add from %s/32 table %d && "
@@ -276,19 +274,6 @@ int esm_ebr_context_create(
                                 ipv4_addr, ueid + 201,
                                 UE_NAS_USE_TUN?"oaitun_ue":"oip",
                                 ueid + 1, ueid + 201);
-              } else {
-                res = sprintf(command_line,
-                              "ifconfig %s%d %s netmask %s broadcast %s up && "
-                              "ip rule add from %s/32 table %d && "
-                              "ip rule add to %s/32 table %d && "
-                              "ip route add default dev %s%d table %d",
-                              UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                              ueid + 1, ipv4_addr, netmask, broadcast,
-                              ipv4_addr, ueid + 201,
-                              ipv4_addr, ueid + 201,
-                              UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                              ueid + 1, ueid + 201);
-              }
 
               if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
