@@ -886,6 +886,36 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     LOG_D(MAC, "Scheduling UE specific PUSCH\n");
     //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
 
+    int dci_formats[2];
+    int rnti_types[2];
+
+    NR_SearchSpace_t *ss;
+    int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+
+    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+                "searchPsacesToAddModList is empty\n");
+
+    int found=0;
+
+    for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
+      ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+      AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
+      AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
+      if (ss->searchSpaceType->present == target_ss) {
+        found=1;
+        break;
+      }
+    }
+    AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
+
+    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
+      dci_formats[0]  = NR_UL_DCI_FORMAT_0_1;
+    else
+      dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
+
+    rnti_types[0]   = NR_RNTI_C;
+
     //Resource Allocation in time domain
     int startSymbolAndLength=0;
     int StartSymbolIndex,NrOfSymbols,mapping_type;
@@ -905,12 +935,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     pusch_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pusch_pdu->subcarrier_spacing = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
-    //pusch information always include
-    //this informantion seems to be redundant. with hthe mcs_index and the modulation table, the mod_order and target_code_rate can be determined.
-    pusch_pdu->mcs_index = 9;
-    pusch_pdu->mcs_table = 0; //0: notqam256 [TS38.214, table 5.1.3.1-1] - corresponds to nr_target_code_rate_table1 in PHY
-    pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
-    pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
+
     if (pusch_Config->transformPrecoder == NULL) {
       if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
         pusch_pdu->transform_precoding = 1;
@@ -924,6 +949,23 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
+    pusch_pdu->mcs_index = 9;
+    if (pusch_pdu->transform_precoding)
+      pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table, 0,
+                                                 dci_formats[0], rnti_types[0], target_ss, false);
+    else
+      pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_TableTransformPrecoder, 1,
+                                                 dci_formats[0], rnti_types[0], target_ss, false);
+
+    pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
+    pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
+    if (pusch_Config->tp_pi2BPSK!=NULL) {
+      if(((pusch_pdu->mcs_table==3)&&(pusch_pdu->mcs_index<2)) ||
+         ((pusch_pdu->mcs_table==4)&&(pusch_pdu->mcs_index<6))) {
+        pusch_pdu->target_code_rate = pusch_pdu->target_code_rate>>1;
+        pusch_pdu->qam_mod_order = pusch_pdu->qam_mod_order<<1;
+      }
+    }
     pusch_pdu->nrOfLayers = 1;
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
@@ -1077,35 +1119,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
     UL_dci_req->numPdus+=1;
 
-    int dci_formats[2];
-    int rnti_types[2];
 
-    NR_SearchSpace_t *ss;
-    int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
-                "searchPsacesToAddModList is empty\n");
-
-    int found=0;
-
-    for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
-      ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
-      AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
-      AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
-      if (ss->searchSpaceType->present == target_ss) {
-        found=1;
-        break;
-      }
-    }
-    AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
-
-    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
-      dci_formats[0]  = NR_UL_DCI_FORMAT_0_1;
-    else
-      dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
-
-    rnti_types[0]   = NR_RNTI_C;
     LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
 
     uint8_t nr_of_candidates, aggregation_level;
