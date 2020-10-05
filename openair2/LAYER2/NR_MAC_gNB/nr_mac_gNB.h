@@ -152,6 +152,8 @@ typedef struct {
   NR_preamble_ue_t preambles;
   /// NSA: the UEs C-RNTI to use
   rnti_t crnti;
+  /// CFRA flag
+  bool cfra;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
