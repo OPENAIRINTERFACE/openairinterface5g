@@ -1117,10 +1117,24 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int16_t rd_im_ext[Prx2][4*pucch_pdu->nr_of_symbols*pucch_pdu->prb_size] __attribute__((aligned(32)));
   int16_t *r_re_ext_p,*r_im_ext_p,*rd_re_ext_p,*rd_im_ext_p;
 
-  int16_t *rp[Prx2];
+  int nb_re_pucch = 12*pucch_pdu->prb_size;
+
+  int16_t rp[Prx2][nb_re_pucch*2],*tmp_rp;
   __m64 dmrs_re,dmrs_im;
 
-  for (int aa=0;aa<Prx;aa++) rp[aa] = ((int16_t *)&rxdataF[aa][(l2*frame_parms->ofdm_symbol_size)+re_offset]);
+  for (int aa=0;aa<Prx;aa++){
+    tmp_rp = ((int16_t *)&rxdataF[aa][l2*frame_parms->ofdm_symbol_size]);
+
+    if (re_offset + nb_re_pucch < frame_parms->ofdm_symbol_size) {
+      memcpy1((void*)rp[aa],(void*)&tmp_rp[re_offset*2],nb_re_pucch*sizeof(int32_t));
+    }
+    else {
+      int neg_length = frame_parms->ofdm_symbol_size-re_offset;
+      int pos_length = nb_re_pucch-neg_length;
+      memcpy1((void*)rp[aa],(void*)&tmp_rp[re_offset*2],neg_length*sizeof(int32_t));
+      memcpy1((void*)&rp[aa][neg_length*2],(void*)tmp_rp,pos_length*sizeof(int32_t));
+    }
+  }
 
 #ifdef DEBUG_NR_PUCCH_RX
   printf("Decoding pucch2 for %d symbols, %d PRB\n",pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
@@ -1141,67 +1155,19 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	rd_re_ext_p=&rd_re_ext[aa][4*prb];
 	rd_im_ext_p=&rd_im_ext[aa][4*prb];
 
-	r_re_ext_p[0]=rp[aa][0];
-	r_im_ext_p[0]=rp[aa][1];
-	rd_re_ext_p[0]=rp[aa][2];
-	rd_im_ext_p[0]=rp[aa][3];
-	r_re_ext_p[1]=rp[aa][4];
-	r_im_ext_p[1]=rp[aa][5];
-
-	r_re_ext_p[2]=rp[aa][6];
-	r_im_ext_p[2]=rp[aa][7];
-	rd_re_ext_p[1]=rp[aa][8];
-	rd_im_ext_p[1]=rp[aa][9];
-	r_re_ext_p[3]=rp[aa][10];
-	r_im_ext_p[3]=rp[aa][11];
-
-	r_re_ext_p[4]=rp[aa][12];
-	r_im_ext_p[4]=rp[aa][13];
-	rd_re_ext_p[2]=rp[aa][14];
-	rd_im_ext_p[2]=rp[aa][15];
-	r_re_ext_p[5]=rp[aa][16];
-	r_im_ext_p[5]=rp[aa][17];
-
-	r_re_ext_p[6]=rp[aa][18];
-	r_im_ext_p[6]=rp[aa][19];
-	rd_re_ext_p[3]=rp[aa][20];
-	rd_im_ext_p[3]=rp[aa][21];
-	r_re_ext_p[7]=rp[aa][22];
-	r_im_ext_p[7]=rp[aa][23];
-
-	r_re_ext_p[8]=rp[aa][24];
-	r_im_ext_p[8]=rp[aa][25];
-	rd_re_ext_p[4]=rp[aa][26];
-	rd_im_ext_p[4]=rp[aa][27];
-	r_re_ext_p[9]=rp[aa][28];
-	r_im_ext_p[9]=rp[aa][29];
-
-	r_re_ext_p[10]=rp[aa][30];
-	r_im_ext_p[10]=rp[aa][31];
-	rd_re_ext_p[5]=rp[aa][32];
-	rd_im_ext_p[5]=rp[aa][33];
-	r_re_ext_p[11]=rp[aa][34];
-	r_im_ext_p[11]=rp[aa][35];
-
-	r_re_ext_p[12]=rp[aa][36];
-	r_im_ext_p[12]=rp[aa][37];
-	rd_re_ext_p[6]=rp[aa][38];
-	rd_im_ext_p[6]=rp[aa][39];
-	r_re_ext_p[13]=rp[aa][40];
-	r_im_ext_p[13]=rp[aa][41];
-
-	r_re_ext_p[14]=rp[aa][42];
-	r_im_ext_p[14]=rp[aa][43];
-	rd_re_ext_p[7]=rp[aa][44];
-	rd_im_ext_p[7]=rp[aa][45];
-	r_re_ext_p[15]=rp[aa][46];
-	r_im_ext_p[15]=rp[aa][47];
+        for (int idx=0; idx<8; idx++) {
+          r_re_ext_p[idx<<1]=rp[aa][prb*24+6*idx];
+          r_im_ext_p[idx<<1]=rp[aa][prb*24+1+6*idx];
+          rd_re_ext_p[idx]=rp[aa][prb*24+2+6*idx];
+          rd_im_ext_p[idx]=rp[aa][prb*24+3+6*idx];
+          r_re_ext_p[1+(idx<<1)]=rp[aa][prb*24+4+6*idx];
+          r_im_ext_p[1+(idx<<1)]=rp[aa][prb*24+5+6*idx];
+        }
 		  
 #ifdef DEBUG_NR_PUCCH_RX
 	for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext_p[i],rd_im_ext_p[i]);
 	for (int i=0;i<16;i++) printf("Ant %d PRB %d data[%d] -> (%d,%d)\n",aa,prb+(i>>3),i,r_re_ext_p[i],r_im_ext_p[i]);
 #endif
-	rp[aa]+=48;
       } // aa
     } // prb
 
@@ -1557,24 +1523,24 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  corr_re = ( corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
 	  corr_im = ( corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
 	  corr_tmp += corr_re*corr_re + corr_im*corr_im;
-	  /*	  
-	  LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
-		half_prb,cw,cw&15,cw>>4,aa,
-		((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
-		((int16_t*)&pucch2_polar_4bit[cw&15])[1],((int16_t*)&pucch2_polar_4bit[cw>>4])[1],
-		((int16_t*)&pucch2_polar_4bit[cw&15])[2],((int16_t*)&pucch2_polar_4bit[cw>>4])[2],
-		((int16_t*)&pucch2_polar_4bit[cw&15])[3],((int16_t*)&pucch2_polar_4bit[cw>>4])[3],
-		((int16_t*)&rp_re[aa][half_prb])[0],((int16_t*)&rp_im[aa][half_prb])[0],
-		((int16_t*)&rp_re[aa][half_prb])[1],((int16_t*)&rp_im[aa][half_prb])[1],
-		((int16_t*)&rp_re[aa][half_prb])[2],((int16_t*)&rp_im[aa][half_prb])[2],
-		((int16_t*)&rp_re[aa][half_prb])[3],((int16_t*)&rp_im[aa][half_prb])[3],
-		corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2),corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2),
-		((int16_t*)(&prod_re[aa]))[0],
-		((int16_t*)(&prod_im[aa]))[0],
-		corr_re,
-		corr_im,
-		corr_tmp);
-	  */	  
+          /*
+          LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
+                half_prb,cw,cw&15,cw>>4,aa,
+                ((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
+                ((int16_t*)&pucch2_polar_4bit[cw&15])[1],((int16_t*)&pucch2_polar_4bit[cw>>4])[1],
+                ((int16_t*)&pucch2_polar_4bit[cw&15])[2],((int16_t*)&pucch2_polar_4bit[cw>>4])[2],
+                ((int16_t*)&pucch2_polar_4bit[cw&15])[3],((int16_t*)&pucch2_polar_4bit[cw>>4])[3],
+                ((int16_t*)&rp_re[aa][half_prb])[0],((int16_t*)&rp_im[aa][half_prb])[0],
+                ((int16_t*)&rp_re[aa][half_prb])[1],((int16_t*)&rp_im[aa][half_prb])[1],
+                ((int16_t*)&rp_re[aa][half_prb])[2],((int16_t*)&rp_im[aa][half_prb])[2],
+                ((int16_t*)&rp_re[aa][half_prb])[3],((int16_t*)&rp_im[aa][half_prb])[3],
+                corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2),corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2),
+                ((int16_t*)(&prod_re[aa]))[0],
+                ((int16_t*)(&prod_im[aa]))[0],
+                corr_re,
+                corr_im,
+                corr_tmp);
+          */
 	}
 	corr16 = _mm_set1_epi16((int16_t)(corr_tmp>>8));
 	/*	
@@ -1628,7 +1594,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     } // half_prb
     // run polar decoder on llrs
     decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, currentPtr);
-    LOG_D(PHY,"UCI decoderState %d, payload[0] %llux\n",decoderState,(unsigned long long)decodedPayload[0]);
+    LOG_D(PHY,"UCI decoderState %d, payload[0] %llu\n",decoderState,(unsigned long long)decodedPayload[0]);
     if (decoderState>0) decoderState=1;
     corr_dB = dB_fixed64(corr);
     LOG_D(PHY,"metric %d dB\n",corr_dB);
