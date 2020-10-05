@@ -348,7 +348,15 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
     old_sf = sf;
     old_sfn = sfn;
 
-    if (old_sf == 0 && old_sfn % 100==0) LOG_W( PHY,"[eNB] sfn/sf:%d%d old_sfn/sf:%d%d proc[rx:%d%d]\n", sfn, sf, old_sfn, old_sf, proc->frame_rx, proc->subframe_rx);
+    if (old_sf == 0 && old_sfn % 100==0)
+      LOG_D(PHY,
+            "[eNB] sfn/sf:%d%d old_sfn/sf:%d%d proc[rx:%d%d]\n",
+            sfn,
+            sf,
+            old_sfn,
+            old_sf,
+            proc->frame_rx,
+            proc->subframe_rx);
   }
 
   ++L1_proc->instance_cnt;
