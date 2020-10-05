@@ -781,10 +781,10 @@ function report_test {
                     echo "        <td>Check if RA proc succeeded</td>" >> ./test_simulator_results.html
 
                     #gNB RA check
-                    GNB_RECEIVED=`egrep "received correctly" $RA_ENB_LOG`
-                    GNB_CONNECTED=`egrep "now 5G connected" $RA_ENB_LOG`
+                    GNB_RECEIVED=`egrep -c "received correctly" $RA_ENB_LOG`
+                    GNB_CONNECTED=`egrep -c "now 5G connected" $RA_ENB_LOG`
                     #UE RA check
-                    UE_RA_PROC_OK=`egrep "RA procedure succeeded" $RA_UE_LOG`
+                    UE_RA_PROC_OK=`egrep -c "RA procedure succeeded" $RA_UE_LOG`
 
 
                     if [ $GNB_RECEIVED -gt 0 ] && [ $GNB_CONNECTED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
