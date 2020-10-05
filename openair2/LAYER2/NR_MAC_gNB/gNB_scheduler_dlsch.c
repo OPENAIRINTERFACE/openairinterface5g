@@ -590,7 +590,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
-  const int ta_len = gNB_mac->ta_len;
   const int CC_id = 0;
 
   NR_UE_list_t *UE_list = &UE_info->list;
@@ -689,6 +688,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
        * from RLC, encode MAC CEs, or copy data to FAPI structures */
       LOG_W(MAC, "%d.%2d retransmission UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
     } else { /* initial transmission */
+
+      /* reserve space for timing advance of UE if necessary,
+       * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
+      const int ta_len = (sched_ctrl->ta_apply) ? 2 : 0;
+
       /* Get RLC data TODO: remove random data retrieval */
       int header_length_total = 0;
       int header_length_last = 0;
