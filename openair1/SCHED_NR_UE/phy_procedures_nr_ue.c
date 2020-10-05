@@ -1669,7 +1669,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)
     {
-      LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
       for (int i=1; i<4; i++) {
 
 	nr_slot_fep(ue,
@@ -1690,7 +1690,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
       if (ue->no_timing_correction==0) {
-        LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
+        LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
                            gNB_id,
