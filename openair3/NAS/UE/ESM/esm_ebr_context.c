@@ -263,7 +263,6 @@ int esm_ebr_context_create(
                 strcpy(broadcast, ipv4_addr);
               }
 
-              uint8_t if_num = ueid % MAX_NUMBER_NETIF + 1;
               res = sprintf(command_line,
                             "ip address add %s/%d broadcast %s dev %s%d && "
                             "ip link set %s%d up && "
@@ -271,12 +270,12 @@ int esm_ebr_context_create(
                             "ip rule add to %s/32 table %d && "
                             "ip route add default dev %s%d table %d",
                             ipv4_addr, netmask, broadcast,
-                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", if_num,
-                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", if_num,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", ueid + 1,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", ueid + 1,
                             ipv4_addr, ueid + 10000,
                             ipv4_addr, ueid + 10000,
                             UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
-                            if_num, ueid + 10000);
+                            ueid + 1, ueid + 10000);
 
               if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
