@@ -367,10 +367,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_RA_t *ra = &RC.nrmac[Mod_idP]->common_channels[CC_id].ra[0];
       ra->state = RA_IDLE;
       ra->secondaryCellGroup = secondaryCellGroup;
-      ra->crnti = rnti;
       if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
         if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
           ra->cfra = true;
+          ra->rnti = rnti;
           struct NR_CFRA cfra = *secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
           uint8_t num_preamble = cfra.resources.choice.ssb->ssb_ResourceList.list.count;
           ra->preambles.num_preambles = num_preamble;
