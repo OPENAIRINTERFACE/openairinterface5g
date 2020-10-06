@@ -245,8 +245,7 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
             nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms));
   else if (pdcch_pdu)
     return nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
-  else if (ul_dci_pdu)
+  else
     return nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
-
 }
 
