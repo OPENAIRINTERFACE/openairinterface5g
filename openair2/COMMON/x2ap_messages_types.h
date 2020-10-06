@@ -37,6 +37,7 @@
 #define X2AP_DEREGISTERED_ENB_IND(mSGpTR)       		(mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
 #define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         		(mSGpTR)->ittiMsg.x2ap_ue_context_release
 #define X2AP_HANDOVER_CANCEL(mSGpTR)            		(mSGpTR)->ittiMsg.x2ap_handover_cancel
+#define X2AP_ENDC_SETUP_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.x2ap_ENDC_setup_req
 #define X2AP_SENB_ADDITION_REQ(mSGpTR)              	(mSGpTR)->ittiMsg.x2ap_senb_addition_req
 #define X2AP_ENDC_SGNB_ADDITION_REQ(mSGpTR)         	(mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req
 #define X2AP_ENDC_SGNB_ADDITION_REQ_ACK(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req_ACK
@@ -288,10 +289,6 @@ typedef struct x2ap_senb_addition_req_s {
 
 }x2ap_senb_addition_req_t;
 
-
-
-
-//Panos: Have to see what should be the additional/different elements comparing to handover req ack
 typedef struct x2ap_senb_addition_req_ack_s {
 
   int MeNB_UE_X2_id;
@@ -312,6 +309,13 @@ typedef struct x2ap_senb_addition_req_ack_s {
   int rrc_buffer_size;
 
 } x2ap_senb_addition_req_ack_t;
+
+
+typedef struct x2ap_ENDC_setup_req_s {
+  uint32_t Nid_cell[MAX_NUM_CCs];
+  int num_cc;
+  uint32_t servedNrCell_band[MAX_NUM_CCs];
+} x2ap_ENDC_setup_req_t;
 
 typedef struct x2ap_ENDC_sgnb_addition_req_s {
   int ue_x2_id;

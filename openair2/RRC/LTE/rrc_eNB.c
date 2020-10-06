@@ -1282,10 +1282,14 @@ rrc_eNB_generate_UECapabilityEnquiry(
   uint8_t                             size;
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
-           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+           eutra_band,
+           nr_band);
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate UECapabilityEnquiry (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -1328,10 +1332,14 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   uint8_t                             size;
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
-           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+           eutra_band,
+           nr_band);
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -3283,8 +3291,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
     MeasObj2->measObjectId = 2;
     MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
-    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 641272;
-    //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = rrc_inst->nr_scg_ssb_freq; //641272; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
@@ -7029,6 +7036,8 @@ char openair_rrc_eNB_configuration(
     openair_rrc_top_init_eNB(RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag,0);
   }
 
+  RC.rrc[ctxt.module_id]->nr_scg_ssb_freq = configuration->nr_scg_ssb_freq;
+
   openair_rrc_on(&ctxt);
 
   /*
@@ -9032,6 +9041,27 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
 }
 
+void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m) {
+  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
+    LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+    return;
+  }
+
+  if (m->num_cc > MAX_NUM_CCs) {
+    LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+    return;
+  }
+
+  RC.rrc[mod_id]->num_neigh_cells++;
+  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+
+  for (int i=0; i<m->num_cc; i++) {
+    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
+    RC.rrc[mod_id]->nr_neigh_freq_band[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->servedNrCell_band[i];
+  }
+
+}
+
 void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
   NR_CG_Config_t *CG_Config = NULL;
   {
@@ -9420,6 +9450,10 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
       break;
     }
+
+    case X2AP_ENDC_SETUP_REQ:
+      rrc_eNB_process_ENDC_x2_setup_request(instance, &X2AP_ENDC_SETUP_REQ(msg_p));
+      break;
 
     case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
       rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
