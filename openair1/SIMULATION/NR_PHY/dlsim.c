@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 
   int frame=1,slot=1;
   int frame_length_complex_samples;
-  int frame_length_complex_samples_no_prefix;
+  //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   int pucch_tgt_snrx10 = 200;
   int loglvl=OAILOG_INFO;
 
-  float target_error_rate = 0.01;
+  //float target_error_rate = 0.01;
   int css_flag=0;
 
   cpuf = get_cpu_freq_GHz();
@@ -358,7 +358,7 @@ int main(int argc, char **argv)
       
     case 'I':
       run_initial_sync=1;
-      target_error_rate=0.1;
+      //target_error_rate=0.1;
       slot = 0;
       break;
 
@@ -584,7 +584,7 @@ int main(int argc, char **argv)
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
