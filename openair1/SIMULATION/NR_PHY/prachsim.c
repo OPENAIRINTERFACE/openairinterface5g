@@ -45,11 +45,13 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "nr_unitary_defs.h"
 #include "OCG_vars.h"
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -59,7 +61,6 @@ RAN_CONTEXT_t RC;
 RU_t *ru;
 double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
-uint16_t NB_UE_INST=1;
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint8_t nfapi_mode=0;
 int sl_ahead = 0;
@@ -114,6 +115,7 @@ int main(int argc, char **argv){
   uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
   uint64_t SSB_positions = 0x01, absoluteFrequencyPointA = 640000;
   double DS_TDL = .03;
+  NB_UE_INST=1;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;

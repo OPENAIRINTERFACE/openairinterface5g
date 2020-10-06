@@ -82,6 +82,7 @@
 
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include <openair2/X2AP/x2ap_eNB.h>
 
 //#define XER_PRINT
 

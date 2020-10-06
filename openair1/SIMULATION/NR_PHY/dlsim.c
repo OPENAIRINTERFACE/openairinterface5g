@@ -66,8 +66,9 @@
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -81,7 +82,6 @@ double cpuf;
 int sf_ahead=4 ;
 int sl_ahead=0;
 uint8_t nfapi_mode = 0;
-uint16_t NB_UE_INST = 1;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 // dummy functions
@@ -188,6 +188,7 @@ int main(int argc, char **argv)
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
+  NB_UE_INST = 1;
   //double pbch_sinr;
   //int pbch_tx_ant;
   int N_RB_DL=106,mu=1;
