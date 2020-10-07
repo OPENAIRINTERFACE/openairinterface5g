@@ -1215,3 +1215,28 @@ rrc_ue_decode_dcch(
     }
     return 0;
 }
+
+//-----------------------------------------------------------------------------
+void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index, const uint8_t Transaction_id ) {
+  uint8_t buffer[32], size;
+  size = do_NR_RRCReconfigurationComplete(ctxt_pP, buffer, Transaction_id);
+  LOG_I(RRC,PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel UL-DCCH (SRB1), Generating RRCReconfigurationComplete (bytes %d, gNB_index %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), size, gNB_index);
+  LOG_D(RLC,
+        "[FRAME %05d][RRC_UE][INST %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCReconfigurationComplete to gNB %d MUI %d) --->][PDCP][INST %02d][RB %02d]\n",
+        ctxt_pP->frame,
+        UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
+        size,
+        gNB_index,
+        rrc_mui,
+        UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
+        DCCH);
+  rrc_data_req_ue (
+    ctxt_pP,
+    DCCH,
+    rrc_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
+}
