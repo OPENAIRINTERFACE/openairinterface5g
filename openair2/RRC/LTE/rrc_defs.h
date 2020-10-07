@@ -271,7 +271,8 @@ typedef enum UE_STATE_e {
   RRC_RECONFIGURED,
   RRC_HO_EXECUTION,
   RRC_NR_NSA,
-  RRC_NR_NSA_RECONFIGURED
+  RRC_NR_NSA_RECONFIGURED,
+  RRC_NR_NSA_DELETED
 } UE_STATE_t;
 
 typedef enum HO_STATE_e {
@@ -591,6 +592,8 @@ typedef struct eNB_RRC_UE_s {
 
   uint8_t                            Status; // RRC status, type enum UE_STATE_t
   rnti_t                             rnti;
+  int                                gnb_rnti;     //RNTI of the UE at the gNB if in ENDC connection
+  int                                gnb_x2_assoc_id;
   uint64_t                           random_ue_identity;
 
 

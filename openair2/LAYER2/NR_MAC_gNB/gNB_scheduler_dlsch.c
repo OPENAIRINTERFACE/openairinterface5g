@@ -91,13 +91,13 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   // now TA is always send when ta_timer resets regardless of its value
   // this is done to avoid issues with the timeAlignmentTimer which is
   // supposed to monitor if the UE received TA or not */
-  if (gNB->ta_len) {
+  if (ue_sched_ctl->ta_apply) {
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_TA_COMMAND;
     //last_size = 1;
     mac_pdu_ptr++;
     // TA MAC CE (1 octet)
-    timing_advance_cmd = gNB->ta_command;
+    timing_advance_cmd = ue_sched_ctl->ta_update;
     AssertFatal(timing_advance_cmd < 64, "timing_advance_cmd %d > 63\n", timing_advance_cmd);
     ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
 

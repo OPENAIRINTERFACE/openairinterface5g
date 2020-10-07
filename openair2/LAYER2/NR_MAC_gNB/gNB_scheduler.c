@@ -428,11 +428,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   pdcp_run(&ctxt);
-  //rrc_rx_tx(&ctxt, CC_id);
-  /* send tick to RLC every ms */
+  /* send tick to RLC and RRC every ms */
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+    nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
   const uint64_t dlsch_in_slot_bitmap = (1 << 1);
@@ -474,20 +474,15 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
   }
 
-  if (get_softmodem_params()->phy_test) {
-
+  if (UE_list->fiveG_connected[UE_id]) {
     // TbD once RACH is available, start ta_timer when UE is connected
     if (ue_sched_ctl->ta_timer)
       ue_sched_ctl->ta_timer--;
     if (ue_sched_ctl->ta_timer == 0) {
-      gNB->ta_command = ue_sched_ctl->ta_update;
+      ue_sched_ctl->ta_apply = true;
       /* if time is up, then set the timer to not send it for 5 frames
       // regardless of the TA value */
       ue_sched_ctl->ta_timer = 100;
-      /* reset ta_update */
-      ue_sched_ctl->ta_update = 31;
-      /* MAC CE flag indicating TA length */
-      gNB->ta_len = 2;
     }
   }
 
@@ -511,6 +506,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
     // resetting ta flag
     gNB->ta_len = 0;
+    // TO BE CHECKED IF IT IS CORRECT TO KEEP THIS LINE!
+    ue_sched_ctl->ta_apply = false;
   }
 
   if (UE_info->active[UE_id])

@@ -62,6 +62,10 @@
 
 //#define DEBUG_ULSIM
 
+unsigned char NB_eNB_INST=0;
+LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
+rlc_info_t Rlc_info_um,Rlc_info_am_config;
+
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -86,20 +90,34 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char *ue_cont_res_id,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
-void pdcp_layer_init (void) {}
-boolean_t pdcp_data_ind(
+
+void
+rrc_data_ind(
   const protocol_ctxt_t *const ctxt_pP,
-  const srb_flag_t   srb_flagP,
-  const MBMS_flag_t  MBMS_flagP,
-  const rb_id_t      rb_idP,
-  const sdu_size_t   sdu_buffer_sizeP,
-  mem_block_t *const sdu_buffer_pP
-) { return(false);}
+  const rb_id_t                Srb_id,
+  const sdu_size_t             sdu_sizeP,
+  const uint8_t   *const       buffer_pP
+)
+{
+}
 
-void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
-void nr_DRB_preconfiguration(void){}
-int rrc_init_nr_global_param(void){return(0);}
+int
+gtpv1u_create_s1u_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP
+) {
+  return 0;
+}
 
+int
+rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+) {
+  return 0;
+}
 
 // needed for some functions
 uint16_t n_rnti = 0x1234;

@@ -337,6 +337,7 @@ typedef struct {
 
   uint16_t ta_timer;
   int16_t ta_update;
+  bool ta_apply;
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
@@ -397,10 +398,6 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_target_snrx10;
   /// Pucch target SNR
   int                             pucch_target_snrx10;
-  /// TA command
-  int                             ta_command;
-  /// MAC CE flag indicating TA length
-  int                             ta_len;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
