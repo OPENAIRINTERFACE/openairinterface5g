@@ -41,7 +41,7 @@ KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
 #check if we run inside a container
-IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup`
+IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup || true`
 #sudo is not needed inside a container
 if [ $IS_CONTAINER -eq 0 ]
 then
