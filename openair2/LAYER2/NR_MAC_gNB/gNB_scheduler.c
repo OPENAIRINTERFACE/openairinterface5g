@@ -474,7 +474,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
   }
 
-  if (UE_list->fiveG_connected[UE_id]) {
+  if (UE_info->active[UE_id]) {
     // TbD once RACH is available, start ta_timer when UE is connected
     if (ue_sched_ctl->ta_timer)
       ue_sched_ctl->ta_timer--;
@@ -504,9 +504,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     //nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
     //nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_info->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
-    // resetting ta flag
-    gNB->ta_len = 0;
-    // TO BE CHECKED IF IT IS CORRECT TO KEEP THIS LINE!
     ue_sched_ctl->ta_apply = false;
   }
 

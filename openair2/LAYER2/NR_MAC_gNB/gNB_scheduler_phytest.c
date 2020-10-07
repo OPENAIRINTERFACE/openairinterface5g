@@ -624,8 +624,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
  
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  uint16_t rnti = UE_list->rnti[UE_id];
-  NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  uint16_t rnti = UE_info->rnti[UE_id];
+  NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
 
   uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
   

@@ -1633,8 +1633,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
         UE_info->num_UEs);
   dump_nr_ue_list(&UE_info->list);
 
-  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_list->active[i] == TRUE)
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    if (UE_info->active[i])
       continue;
 
     int UE_id = i;
@@ -1645,11 +1645,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
-    UE_list->UE_sched_ctrl[UE_id].ta_timer = 100;
-    UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
-    UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
-    UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
-    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
+    UE_info->UE_sched_ctrl[UE_id].ta_timer = 100;
+    UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
+    UE_info->UE_sched_ctrl[UE_id].ul_rssi = 0;
+    UE_info->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+    UE_info->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
     for (int k=0; k<num_slots_ul; k++) {
       memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
@@ -1681,23 +1681,22 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 {
   int UE_id;
   int i;
-  NR_UE_list_t *UE_list = &RC.nrmac[mod_id]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_list->active[i] != TRUE)
+    if (UE_info->active[i] != TRUE)
       continue;
-    if (UE_list->rnti[i] != rnti)
+    if (UE_info->rnti[i] != rnti)
       continue;
 
     /* UE found, remove it */
     UE_id = i;
-    UE_list->num_UEs--;
-    UE_list->fiveG_connected[UE_id] = FALSE;
-    UE_list->active[UE_id] = FALSE;
-    UE_list->rnti[UE_id] = 0;
-    free(UE_list->UE_sched_ctrl[UE_id].sched_pucch);
-    free(UE_list->UE_sched_ctrl[UE_id].sched_pusch);
-    memset((void *) &UE_list->UE_sched_ctrl[UE_id],
+    UE_info->num_UEs--;
+    UE_info->active[UE_id] = FALSE;
+    UE_info->rnti[UE_id] = 0;
+    free(UE_info->UE_sched_ctrl[UE_id].sched_pucch);
+    free(UE_info->UE_sched_ctrl[UE_id].sched_pusch);
+    memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
     LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
