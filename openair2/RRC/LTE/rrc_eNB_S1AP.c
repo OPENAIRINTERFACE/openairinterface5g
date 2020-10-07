@@ -1751,6 +1751,7 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
       msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
       memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
       GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
 
       for(i = 0; i < NB_RB_MAX; i++) {
         if(xid == ue_context_p->ue_context.e_rab[i].xid) {
