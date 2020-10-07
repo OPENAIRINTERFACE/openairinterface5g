@@ -1055,7 +1055,7 @@ nr_rrc_ue_process_radioBearerConfig(
         }
 
         uint8_t *kUPenc = NULL;
-        derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
+        derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
                         NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
         MSC_LOG_TX_MESSAGE(
             MSC_RRC_UE,
@@ -1201,7 +1201,10 @@ rrc_ue_decode_dcch(
                 rrc_ue_process_rrcReconfiguration(ctxt_pP,
                                                     dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
                                                     gNB_indexP);
-                break;
+                nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
+                                            gNB_indexP,
+                                            dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+		break;
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
                 break;

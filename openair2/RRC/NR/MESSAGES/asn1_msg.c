@@ -62,6 +62,8 @@
 #include "NR_DRB-ToAddMod.h"
 #include "NR_DRB-ToAddModList.h"
 #include "NR_SecurityConfig.h"
+#include "NR_RRCReconfiguration-v1530-IEs.h"
+#include "NR_UL-DCCH-Message.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -1030,9 +1032,9 @@ uint16_t do_RRCReconfiguration(
     // lateNonCriticalExtension
     ie->lateNonCriticalExtension = NULL;
     // nonCriticalExtension
+    ie->nonCriticalExtension = calloc(1, sizeof(NR_RRCReconfiguration_v1530_IEs_t));
     dedicatedNAS_Message->buf  = ue_context_pP->ue_context.nas_pdu.buffer;
     dedicatedNAS_Message->size = ue_context_pP->ue_context.nas_pdu.length;
-    ie->nonCriticalExtension->dedicatedNAS_MessageList = CALLOC(1, sizeof(*ie->nonCriticalExtension->dedicatedNAS_MessageList));
     ASN_SEQUENCE_ADD(&ie->nonCriticalExtension->dedicatedNAS_MessageList->list, dedicatedNAS_Message);
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
@@ -1073,6 +1075,7 @@ uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
   NR_RRCSetupRequest_t *rrcSetupRequest;
   memset((void *)&ul_ccch_msg,0,sizeof(NR_UL_CCCH_Message_t));
   ul_ccch_msg.message.present           = NR_UL_CCCH_MessageType_PR_c1;
+  ul_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_UL_CCCH_MessageType__c1));
   ul_ccch_msg.message.choice.c1->present = NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest;
   rrcSetupRequest          = ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest;
 
@@ -1127,8 +1130,9 @@ do_NR_RRCReconfigurationComplete(
   NR_RRCReconfigurationComplete_t *rrcReconfigurationComplete;
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   ul_dcch_msg.message.present                     = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1                   = CALLOC(1, sizeof(struct NR_UL_DCCH_MessageType__c1));
   ul_dcch_msg.message.choice.c1->present           = NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete;
-  rrcReconfigurationComplete            = &ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete;
+  rrcReconfigurationComplete            = ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete;
   rrcReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
   rrcReconfigurationComplete->criticalExtensions.present =
 		  NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
