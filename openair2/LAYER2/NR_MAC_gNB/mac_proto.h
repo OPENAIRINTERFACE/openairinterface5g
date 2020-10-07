@@ -131,6 +131,11 @@ int configure_fapi_dl_pdu(int Mod_id,
                          uint16_t *rbSize,
                          uint16_t *rbStart);
 
+void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
+                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
+
 void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_pusch_pdu_t *pusch_pdu,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
