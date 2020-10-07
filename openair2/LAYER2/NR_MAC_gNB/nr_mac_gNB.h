@@ -393,7 +393,16 @@ typedef struct {
   uint8_t cri_ssbri_bitlen;
   uint8_t rsrp_bitlen;
   uint8_t diff_rsrp_bitlen;
-}CRI_SSBRI_RSRP_bitlen_t;
+}L1_RSRP_bitlen_t;
+
+typedef struct{
+  uint8_t cri_bitlen;
+  uint8_t ri_bitlen;
+  uint8_t li_bitlen;
+  uint8_t pmi_x1_bitlen;
+  uint8_t pmi_x2_bitlen;
+  uint8_t cqi_bitlen;
+} CSI_Meas_bitlen_t;
 
 
 #define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
@@ -402,11 +411,13 @@ typedef struct nr_csi_report {
   NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
   uint8_t nb_of_nzp_csi_report;
   uint8_t nb_of_csi_ssb_report;
-  CRI_SSBRI_RSRP_bitlen_t CSI_report_bitlen[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
+  L1_RSRP_bitlen_t CSI_report_bitlen;
+  CSI_Meas_bitlen_t csi_meas_bitlen;
 } nr_csi_report_t;
 
 
 /*! \brief scheduling control information set through an API */
+#define MAX_CSI_REPORTS 48
 typedef struct {
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
