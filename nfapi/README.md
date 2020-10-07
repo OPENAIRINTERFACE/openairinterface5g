@@ -81,7 +81,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 * Change the `vnf_handle_timing_info()` function that calls p7 message unpack fn and initializes the sfn and slot in `vnf_p7.c` file [x]
 * Change pack and unpack functions `pack_timing_info()` and `unpack_timing_info()` [x]
 * Change `nfapi_timing_info_t` structure to support P7 in NR [x]
-* Change packing functions to support NR P7 procedures. [x]
+* Change packing functions for timing info to support NR P7 procedures. [x]
 
 
 ### Testing

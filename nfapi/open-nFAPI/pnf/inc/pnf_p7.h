@@ -116,7 +116,7 @@ typedef struct {
 	uint16_t sfn_sf;
 	uint32_t sf_start_time_hr;
 	int32_t sfn_sf_shift;
-
+	
 	uint16_t sfn;
 	uint16_t slot;
 	uint16_t sfn_slot;

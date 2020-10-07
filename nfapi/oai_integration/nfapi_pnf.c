@@ -60,6 +60,7 @@ extern RAN_CONTEXT_t RC;
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "openair1/PHY/defs_gNB.h"
 
+
 #define NUM_P5_PHY 2
 
 #define _GNU_SOURCE
@@ -299,7 +300,7 @@ int pnf_param_request(nfapi_pnf_config_t *config, nfapi_pnf_param_request_t *req
       resp.pnf_phy.phy[i].excluded_rf_config[j].rf_config_index = pnf->phys[i].excluded_rfs[j];
     }
   }
-
+/*
   resp.pnf_rf.tl.tag = NFAPI_PNF_RF_TAG;
   resp.pnf_rf.number_of_rfs = 2;
 
@@ -400,7 +401,7 @@ int pnf_param_request(nfapi_pnf_config_t *config, nfapi_pnf_param_request_t *req
       resp.pnf_phy_rel13_nb_iot.phy[i].nmm_modes_supported = pnf->phys[i].nmm_modes_supported;
     }
   }
-
+*/
   nfapi_pnf_pnf_param_resp(config, &resp);
   return 0;
 }
@@ -642,7 +643,7 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
 
   nfapi_resp.nfapi_config.p7_pnf_port.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_PORT_TAG;
   nfapi_resp.num_tlv++;
-
+/*
   nfapi_resp.nfapi_config.dl_ue_per_sf.tl.tag =			 NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG;
   nfapi_resp.num_tlv++;
 
@@ -651,7 +652,9 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
 
   nfapi_resp.nfapi_config.rf_bands.tl.tag =			 NFAPI_NR_NFAPI_RF_BANDS_TAG;
   nfapi_resp.num_tlv++;
-
+  nfapi_resp.nfapi_config.max_transmit_power.tl.tag =			 NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG;
+  nfapi_resp.num_tlv++;
+*/
   nfapi_resp.nfapi_config.timing_window.tl.tag =			 NFAPI_NR_NFAPI_TIMING_WINDOW_TAG;
   nfapi_resp.num_tlv++;
 
@@ -659,9 +662,6 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   nfapi_resp.num_tlv++;
 
   nfapi_resp.nfapi_config.timing_info_period.tl.tag =			 NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG;
-  nfapi_resp.num_tlv++;
-
-  nfapi_resp.nfapi_config.max_transmit_power.tl.tag =			 NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG;
   nfapi_resp.num_tlv++;
   }
 
@@ -713,7 +713,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     phy_info->timing_info_mode = 0;
     printf("NO timing info mode provided\n");
   }
-
+  //TODO: Read the P7 message offset values
   if(req->nfapi_config.timing_info_period.tl.tag == NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG) {
     printf("timing info period provided value:%d\n", req->nfapi_config.timing_info_period.value);
     phy_info->timing_info_period = req->nfapi_config.timing_info_period.value;
@@ -737,7 +737,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     num_tlv++;
   }
 
-
+/*
   if(req->nfapi_config.rf_bands.tl.tag == NFAPI_NR_NFAPI_RF_BANDS_TAG) {
     pnf->rfs[0].band = req->nfapi_config.rf_bands.rf_band[0];
     fp->nr_band = req->nfapi_config.rf_bands.rf_band[0];
@@ -754,6 +754,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() nrarfcn:%u dl_carrierFreq:%u ul_CarrierFreq:%u band:%u N_RB_DL:%u\n",
                 __FUNCTION__, req->nfapi_config.nrarfcn.value, fp->dl_CarrierFreq, fp->ul_CarrierFreq, pnf->rfs[0].band, fp->N_RB_DL);
   }
+  */
 #if SUBFRAME // TODO: add subframe struct to nr config request struct
   if (req->subframe_config.duplex_mode.tl.tag == NFAPI_NR_SUBFRAME_CONFIG_DUPLEX_MODE_TAG) {
     fp->frame_type = req->subframe_config.duplex_mode.value==0 ? TDD : FDD;
@@ -994,7 +995,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   if (proc==NULL)
      proc = &gNB->proc.L1_proc;
-  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_request_body.dl_tti_pdu_list;
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_pdu_list;
 
   // TODO: NR_gNB_PDCCH not defined yet (check later)
 #if 0
@@ -1003,25 +1004,23 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   pdcch_vars->num_dci = 0;
 #endif
 
-  if (req->dl_tti_request_body.nPDUs)
+  if (req->nPDUs)
     NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
                 __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
                 req->SFN,
                 req->Slot,
-                req->dl_tti_request_body.nGroup,
-                req->dl_tti_request_body.nPDUs,
-                req->dl_tti_request_body.nUe,
-                req->dl_tti_request_body.PduIdx);
+                req->nGroup,
+                req->nPDUs,
+                req->nUe,
+                req->PduIdx);
 
-  for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
+  for (int i=0; i<req->nPDUs; i++) {
     // TODO: enable after adding gNB PDCCH:
     // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
 
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
-      //handle_nfapi_dci_dl_pdu(eNB,NFAPI_SFNSF2SFN(req->sfn_sf),NFAPI_SFNSF2SF(req->sfn_sf),proc,&dl_config_pdu_list[i]);
       handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i].pdcch_pdu);
-      dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
-      // pdcch_vars->num_dci++; // Is actually number of DCI PDUs
+      //dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
       // nfapi_dl_config_bch_pdu *bch_pdu = &dl_config_pdu_list[i].bch_pdu;
@@ -1029,14 +1028,13 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       // uint16_t pdu_index = bch_pdu->bch_pdu_rel8.pdu_index;
       uint16_t pdu_index = ssb_pdu->ssb_pdu_rel15.SsbBlockIndex;
       
-      if (tx_data_request[sfn][slot][pdu_index] != NULL) {
+     // if (tx_data_request[sfn][slot][pdu_index] != NULL) {
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PDU:%d BCH: pdu_index:%u pdu_length:%d sdu_length:%d BCH_SDU:%x,%x,%x\n", __FUNCTION__, i, pdu_index, bch_pdu->bch_pdu_rel8.length, tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_length, sdu[0], sdu[1], sdu[2]);
-        // handle_nfapi_bch_pdu(eNB, proc, &dl_config_pdu_list[i], tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_data);
         handle_nr_nfapi_ssb_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i]);
         gNB->pbch_configured=1;\
-      } else {
+      //} else {
         // NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() BCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), pdu_index);
-      }
+      //}
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE) {
       nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu = &dl_tti_pdu_list[i].pdsch_pdu;
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15_pdu = &pdsch_pdu->pdsch_pdu_rel15;
@@ -1046,9 +1044,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
         int UE_id = find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
         AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
         AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
-        //LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
         NR_gNB_DLSCH_t *dlsch0 = gNB->dlsch[UE_id][0];
-        //LTE_eNB_DLSCH_t *dlsch1 = eNB->dlsch[UE_id][1];
         int harq_pid = dlsch0->harq_ids[sfn%2][slot];
 
         if(harq_pid >= dlsch0->Mdlharq) {

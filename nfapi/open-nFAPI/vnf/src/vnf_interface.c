@@ -664,7 +664,7 @@ int nfapi_vnf_allocate_phy(nfapi_vnf_config_t* config, int p5_idx, uint16_t* phy
 	info->p5_idx = p5_idx;
 	info->phy_id = vnf->next_phy_id++;
 
-	info->timing_window = 30;       // This seems to override what gets set by the user - why???
+	info->timing_window = 30;       // This seems to override what gets set by the user - why??? //TODO: Change in NR in terms of microsecends,what should be the value?
 	info->timing_info_mode = 0x03;
 	info->timing_info_period = 128;
 

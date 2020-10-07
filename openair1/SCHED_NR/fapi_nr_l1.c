@@ -36,6 +36,9 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req);
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req);
+
 
 extern uint8_t nfapi_mode;
 
@@ -130,7 +133,7 @@ void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
 }
 
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
-
+  
   PHY_VARS_gNB *gNB;
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
@@ -141,12 +144,23 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
+  //Gokul
+  if(slot%2!=0)
+  {
+    printf("\n Odd Slot %d \n,slot");
+  }
+  else
+  {
+    printf("\n Even Slot \n");
+  }
+  
+
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
   gNB         = RC.gNB[Mod_id];
 
-  uint8_t number_dl_pdu             = DL_req->dl_tti_request_body.nPDUs;
+  uint8_t number_dl_pdu             = DL_req->nPDUs;
   //  uint8_t number_ul_pdu             = 0;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
 
@@ -163,12 +177,12 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB->pbch_configured=0;
 
   for (int i=0;i<number_dl_pdu;i++) {
-    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
+    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
 	gNB->pbch_configured=1;
-        // if (NFAPI_MODE!=NFAPI_MODE_VNF) ?
+        if(nfapi_mode != 2)
         handle_nr_nfapi_ssb_pdu(gNB,frame,slot,
                                 dl_tti_pdu);
 
@@ -176,7 +190,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
       case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
 	AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
-        // if (NFAPI_MODE!=NFAPI_MODE_VNF) ?
+        if(nfapi_mode != 2)
         handle_nfapi_nr_pdcch_pdu(gNB,
 				  frame, slot,
 				  &dl_tti_pdu->pdcch_pdu);
@@ -192,7 +206,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 	AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
 		    pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
         uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-        // if (NFAPI_MODE!=NFAPI_MODE_VNF) ?
+        if(nfapi_mode != 2)
         handle_nr_nfapi_pdsch_pdu(gNB,frame,slot,&dl_tti_pdu->pdsch_pdu, sdu);
       }
     }
@@ -201,15 +215,32 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   if (UL_tti_req!=NULL) 
     memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
-  // if (NFAPI_MODE!=NFAPI_MODE_VNF) //should we enclose the for in this?
+  if(nfapi_mode != 2)
   for (int i=0;i<number_ul_dci_pdu;i++) {
     handle_nfapi_nr_ul_dci_pdu(gNB,
 			      frame, slot,
 			      &UL_dci_req->ul_dci_pdu_list[i]);
   }
-
-  if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
-    oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req);   
+  if (nfapi_mode != 0 ) 
+  {
+    if (Sched_INFO->TX_req->Number_of_PDUs > 0)
+    {
+      Sched_INFO->TX_req->SFN = frame;
+      Sched_INFO->TX_req->Slot = slot;
+       oai_nfapi_tx_data_req(Sched_INFO->TX_req);
+    }
+    //if(Sched_INFO->DL_req->nPDUs > 0)
+   { 
+    Sched_INFO->DL_req->SFN = frame;
+    Sched_INFO->DL_req->Slot = slot;
+    oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req);
+   }
   }
-
+   
+  if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
+  {
+    Sched_INFO->UL_dci_req->SFN=frame;
+    Sched_INFO->UL_dci_req->Slot=slot;
+    oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
+  }
 }

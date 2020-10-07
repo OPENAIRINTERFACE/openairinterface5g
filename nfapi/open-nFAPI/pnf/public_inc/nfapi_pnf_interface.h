@@ -568,8 +568,8 @@ typedef struct
 	nfapi_nr_tx_data_request_t* tx_data_req;//nfapi_tx_request_t* tx_req;
 
 	//TODO: check these two later
-	nfapi_lbt_dl_config_request_t* lbt_dl_config_req;
-	nfapi_ue_release_request_t* ue_release_req;
+	//nfapi_lbt_dl_config_request_t* lbt_dl_config_req;
+	//nfapi_ue_release_request_t* ue_release_req;
 } nfapi_pnf_p7_slot_buffer_t;
 
 typedef struct nfapi_pnf_p7_config nfapi_pnf_p7_config_t;

@@ -79,8 +79,8 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;
-    DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
-    DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
+    DL_req[CC_idP].nPDUs             = 0;
+    DL_req[CC_idP].nGroup            = 0;
     //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
 
     UL_dci_req[CC_idP].SFN                         = frameP;
@@ -439,7 +439,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 #endif
 
   // Phytest scheduling
-  if (get_softmodem_params()->phy_test && slot_txP==1){
+  if (get_softmodem_params()->phy_test && slot_txP==3 ){
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, pucch_sched, NULL);
         // resetting ta flag
     gNB->ta_len = 0;
@@ -452,12 +452,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     */
 
   } //is_nr_DL_slot
-
+/*
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
     if (get_softmodem_params()->phy_test && slot_rxP==8){
       nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
     }
   }
+  */ //Testing only DL for now
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

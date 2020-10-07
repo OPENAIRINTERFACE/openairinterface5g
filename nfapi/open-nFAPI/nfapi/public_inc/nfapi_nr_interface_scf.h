@@ -24,13 +24,6 @@
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
-#define NFAPI_NR_DL_TTI_CSI_RS_REL_IISC     0x5551
-#define NFAPI_NR_DL_TTI_PDCCH_REL_IISC      0x5552
-#define NFAPI_NR_DL_TTI_PDSCH_REL_IISC      0x5553
-#define NFAPI_NR_DL_TTI_SSB_REL_IISC        0x5554
-#define NFAPI_NR_UL_TTI_PDU_LIST_REL_IISC   0x5555
-#define NFAPI_NR_UL_TTI_GROUP_LIST_REL_IISC 0x5555
-
 // Extension to the generic structures for single tlv values
 
 
@@ -730,7 +723,7 @@ typedef struct {
   ///Granularity of precoding [TS38.211 sec 7.3.2.2] Field Type Description 0: sameAsRegBundle 1: allContiguousRBs
   uint8_t precoderGranularity;
   ///Number of DCIs in this CORESET.Value: 0->MaxDciPerSlot
-  uint16_t numDlDci;
+  volatile uint16_t numDlDci;
   ///The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
   uint16_t RNTI[MAX_DCI_CORESET];
   ///For a UE-specific search space it equals the higher-layer parameter PDCCH-DMRSScrambling-ID if configured, otherwise it should be set to the phy cell ID. [TS38.211, sec 7.3.2.3] Value: 0->65535
@@ -993,6 +986,7 @@ typedef struct {
 } nfapi_nr_dl_tti_request_pdu_t;
 
 #define NFAPI_NR_MAX_DL_TTI_PDUS 32 
+/*
 typedef struct {
   /// Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
   uint8_t nPDUs;
@@ -1005,14 +999,25 @@ typedef struct {
   /// This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
   uint8_t PduIdx[256][12];
 } nfapi_nr_dl_tti_request_body_t;
+*/
 
 typedef struct {
   nfapi_p7_message_header_t header;
   /// System Frame Number (0-1023)
   uint16_t SFN;
-  /// Slot number (0-319)
+  /// Slot number (0-19)
   uint16_t Slot;
-  nfapi_nr_dl_tti_request_body_t dl_tti_request_body;
+  /// Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
+  uint8_t nPDUs;
+  /// Number of UEs in the Group included in this message. Value 0 -> 255
+  uint8_t nGroup;
+  /// List containing PDUs
+  nfapi_nr_dl_tti_request_pdu_t dl_tti_pdu_list[NFAPI_NR_MAX_DL_TTI_PDUS];
+  //nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list;
+  /// Number of UE in this group. For SU-MIMO, one group includes one UE only. For MU-MIMO, one group includes up to 12 UEs. Value 1 -> 12
+  uint8_t nUe[256];
+  /// This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
+  uint8_t PduIdx[256][12];
   nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_dl_tti_request_t;
 

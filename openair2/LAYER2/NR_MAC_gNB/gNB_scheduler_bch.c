@@ -61,7 +61,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   NR_COMMON_channels_t *cc;
   
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
-  nfapi_nr_dl_tti_request_body_t *dl_req;
+  
   nfapi_nr_dl_tti_request_pdu_t  *dl_config_pdu;
 
   int mib_sdu_length;
@@ -73,7 +73,6 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
     dl_tti_request = &gNB->DL_req[CC_id];
-    dl_req = &dl_tti_request->dl_tti_request_body;
     cc = &gNB->common_channels[CC_id];
 
     mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]); // not used in this case
@@ -82,16 +81,16 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
     if (mib_sdu_length > 0) {
 
-      LOG_I(MAC, "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n", frameP, slotP, dl_req->nPDUs, mib_sdu_length);
+      LOG_I(MAC, "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n", frameP, slotP, dl_tti_request->nPDUs, mib_sdu_length);
 
       if ((frameP & 1023) < 80){
         LOG_I(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);
       }
 
-      dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+      dl_config_pdu = &dl_tti_request->dl_tti_pdu_list[dl_tti_request->nPDUs];
       memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_config_pdu->PDUType      = NFAPI_NR_DL_TTI_SSB_PDU_TYPE;
-      dl_config_pdu->PDUSize      =2 + sizeof(nfapi_nr_dl_tti_ssb_pdu_rel15_t);
+      dl_config_pdu->PDUSize      = 2 + sizeof(nfapi_nr_dl_tti_ssb_pdu_rel15_t);
 
       AssertFatal(cc->ServingCellConfigCommon->physCellId!=NULL,"cc->ServingCellConfigCommon->physCellId is null\n");
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.PhysCellId          = *cc->ServingCellConfigCommon->physCellId;
@@ -136,7 +135,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12) - 10; // absoluteFrequencySSB is the center of SSB
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
-      dl_req->nPDUs++;
+      dl_tti_request->nPDUs++;
     }
   }
 }

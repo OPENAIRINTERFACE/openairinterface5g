@@ -84,7 +84,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 int configure_fapi_dl_pdu(int Mod_id,
                          int *CCEIndeces,
-                         nfapi_nr_dl_tti_request_body_t *dl_req,
+                         nfapi_nr_dl_tti_request_t *dl_tti_req,
                          NR_sched_pucch *pucch_sched,
                          uint8_t *mcsIndex,
                          uint16_t *rbSize,
@@ -95,7 +95,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
 void configure_fapi_dl_Tx(module_id_t Mod_idP,
                           frame_t       frameP,
                           sub_frame_t   slotP,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
+                          nfapi_nr_dl_tti_request_t *dl_tti_req,
                           nfapi_nr_pdu_t *tx_req,
                           int tbs_bytes,
                           int16_t pdu_index);

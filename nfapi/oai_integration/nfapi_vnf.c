@@ -312,7 +312,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_param_re
 
     pnf->phys[0] = phy;
   }
-
+/*
   for(int i = 0; i < resp->pnf_rf.number_of_rfs; ++i) {
     rf_info rf;
     memset(&rf,0,sizeof(rf));
@@ -320,7 +320,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_param_re
     printf("[VNF] (RF:%d) rf_config_idx:%d\n", i, resp->pnf_rf.rf[i].rf_config_index);
     pnf->rfs[0] = rf;
   }
-
+*/
   nfapi_pnf_config_request_t req;
   memset(&req, 0, sizeof(req));
   req.header.message_id = NFAPI_PNF_CONFIG_REQUEST;
@@ -364,6 +364,8 @@ int pnf_config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_config_
 }
 
 int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
+
+  //printf("\n wake_gNB_rxtx before assignment sfn:%d slot:%d",sfn,slot);
   gNB_L1_proc_t *proc=&gNB->proc;
   gNB_L1_rxtx_proc_t *L1_proc= (slot&1)? &proc->L1_proc : &proc->L1_proc_tx;
 
@@ -371,9 +373,10 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
   //printf("%s(eNB:%p, sfn:%d, sf:%d)\n", __FUNCTION__, eNB, sfn, sf);
   //int i;
   struct timespec wait;
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-
+  clock_gettime(CLOCK_REALTIME, &wait);
+  wait.tv_sec = 0;
+  wait.tv_nsec +=5000000L;
+  //wait.tv_nsec = 0;
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
@@ -390,7 +393,7 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
     // Try to be 1 frame back
     old_slot = slot;
     old_sfn = sfn;
-
+    //printf("\n wake_gNB_rxtx after assignment sfn:%d slot:%d",proc->frame_rx,proc->slot_rx);
     if (old_slot == 0 && old_sfn % 100 == 0) LOG_W( PHY,"[gNB] sfn/slot:%d%d old_sfn/slot:%d%d proc[rx:%d%d]\n", sfn, slot, old_sfn, old_slot, proc->frame_rx, proc->slot_rx);
   }
 
@@ -405,15 +408,15 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
   L1_proc->timestamp_tx = proc->timestamp_rx + (slot_ahead *fp->samples_per_tti);
   L1_proc->frame_rx     = proc->frame_rx;
   L1_proc->slot_rx      = proc->slot_rx;
-  L1_proc->frame_tx     = (L1_proc->slot_rx > (9-slot_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->frame_tx     = (L1_proc->slot_rx > (19-slot_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
   L1_proc->slot_tx      = (L1_proc->slot_rx + slot_ahead)%20;
 
   //LOG_D(PHY, "sfn/sf:%d%d proc[rx:%d%d] L1_proc[instance_cnt_rxtx:%d rx:%d%d] About to wake rxtx thread\n\n", sfn, sf, proc->frame_rx, proc->subframe_rx, L1_proc->instance_cnt_rxtx, L1_proc->frame_rx, L1_proc->subframe_rx);
-
+  //printf("\nEntering wake_gNB_rxtx sfn %d slot %d\n",L1_proc->frame_rx,L1_proc->slot_rx);
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
     LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB RXn-TXnp4 thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
+    exit_fun( "ERROR pthread_clond_signal" );
     return(-1);
   }
 
@@ -512,7 +515,7 @@ int phy_slot_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uin
   if (RC.gNB && RC.gNB[0]->configured) {
     // uint16_t sfn = NFAPI_SFNSF2SFN(sfn_sf);
     // uint16_t sf = NFAPI_SFNSF2SF(sfn_sf);
-    //LOG_D(PHY,"[VNF] subframe indication sfn_sf:%d sfn:%d sf:%d\n", sfn_sf, sfn, sf);
+    LOG_D(PHY,"[VNF] slot indication sfn:%d sf:%d\n", sfn, slot);
     wake_gNB_rxtx(RC.gNB[0], sfn, slot); // DONE: find NR equivalent
   } else {
     printf("[VNF] %s() RC.gNB:%p\n", __FUNCTION__, RC.gNB);
@@ -1119,7 +1122,7 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   req->header.message_id = NFAPI_CONFIG_REQUEST;
   req->header.phy_id = phy->id;
   printf("[VNF] Send NFAPI_CONFIG_REQUEST\n");
-  printf("\n NR bandP =%d\n",req->nfapi_config.rf_bands.rf_band[0]);
+  //printf("\n NR bandP =%d\n",req->nfapi_config.rf_bands.rf_band[0]);
 
   req->nfapi_config.p7_vnf_port.tl.tag = NFAPI_NR_NFAPI_P7_VNF_PORT_TAG;
   req->nfapi_config.p7_vnf_port.value = p7_vnf->local_port;
@@ -1147,7 +1150,12 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
       req->num_tlv++;
     }
   }
-  
+//TODO: Assign tag and value for P7 message offsets  
+req->nfapi_config.dl_tti_timing_offset.tl.tag = NFAPI_NR_NFAPI_DL_TTI_TIMING_OFFSET;
+req->nfapi_config.ul_tti_timing_offset.tl.tag = NFAPI_NR_NFAPI_UL_TTI_TIMING_OFFSET;
+req->nfapi_config.ul_dci_timing_offset.tl.tag = NFAPI_NR_NFAPI_UL_DCI_TIMING_OFFSET;
+req->nfapi_config.tx_data_timing_offset.tl.tag = NFAPI_NR_NFAPI_TX_DATA_TIMING_OFFSET;
+
   vendor_ext_tlv_2 ve2;
   memset(&ve2, 0, sizeof(ve2));
   ve2.tl.tag = VENDOR_EXT_TLV_2_TAG;
@@ -1249,7 +1257,8 @@ void configure_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   vnf.p7_vnfs[0].config = nfapi_vnf_p7_config_create();
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] %s() vnf.p7_vnfs[0].config:%p VNF ADDRESS:%s:%d\n", __FUNCTION__, vnf.p7_vnfs[0].config, vnf_addr, vnf_p5_port);
   strcpy(vnf.p7_vnfs[0].local_addr, vnf_addr);
-  vnf.p7_vnfs[0].local_port = vnf.p7_vnfs[0].local_port; // 50001; // TODO: remove hardcode
+  //vnf.p7_vnfs[0].local_port = vnf.p7_vnfs[0].local_port; // 50001; // TODO: remove hardcode
+  vnf.p7_vnfs[0].local_port = 32123;
   vnf.p7_vnfs[0].mac = (mac_t *)malloc(sizeof(mac_t));
   nfapi_vnf_config_t *config = nfapi_vnf_config_create();
   config->malloc = malloc;
@@ -1304,14 +1313,15 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
+  //printf("\nEntering oai_nfapi_nr_dl_config_req sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
    dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);
 
-  dl_config_req->dl_tti_request_body.nPDUs                          = 0;
-  dl_config_req->dl_tti_request_body.nGroup                       = 0;
+  dl_config_req->nPDUs                        = 0;
+  dl_config_req->nGroup                       = 0;
 
 
   if (retval!=0) {

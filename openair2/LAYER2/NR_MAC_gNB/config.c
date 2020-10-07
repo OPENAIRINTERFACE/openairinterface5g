@@ -337,41 +337,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     cfg->ssb_table.ssb_beam_id_list[0].beam_id->tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
     cfg->num_tlv++;
   }
-
-  // TODO: assign values to nfapi_config struct
-
-  cfg->nfapi_config.dl_ue_per_sf.tl.tag =			 NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.max_transmit_power.tl.tag =			 NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.nrarfcn.tl.tag =			 NFAPI_NR_NFAPI_NRARFCN_TAG;
-  cfg->nfapi_config.nrarfcn.value = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.p7_pnf_address_ipv4.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.p7_pnf_address_ipv6.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV6_TAG;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.p7_pnf_port.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_PORT_TAG;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.p7_vnf_address_ipv6.tl.tag =			 NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG;
-  cfg->num_tlv++;
-
-  cfg->nfapi_config.rf_bands.tl.tag =			 NFAPI_NR_NFAPI_RF_BANDS_TAG;
-  cfg->num_tlv++;
-  cfg->nfapi_config.rf_bands.rf_band[0] = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  
-
-  cfg->nfapi_config.ul_ue_per_sf.tl.tag =			 NFAPI_NR_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG;
-  cfg->num_tlv++;
-
-                                                        
-
+                                                
 }
 
 

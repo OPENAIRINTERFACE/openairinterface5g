@@ -298,7 +298,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
 	    sched_info->frame,
 	    sched_info->slot,
-	    sched_info->DL_req->dl_tti_request_body.nPDUs);
+	    sched_info->DL_req->nPDUs);
     }
   }
 }

@@ -31,7 +31,7 @@ nfapi_pnf_p7_config_t* nfapi_pnf_p7_config_create()
 	_this->_public.segment_size = 1400;
 	_this->max_num_segments = 8;
 	
-	_this->_public.subframe_buffer_size = 8;
+	_this->_public.subframe_buffer_size = 8;// TODO: Initialize the slot_buffer size
 	_this->_public.timing_info_mode_periodic = 1;
 	_this->_public.timing_info_period = 32;
 	_this->_public.timing_info_mode_aperiodic = 1;

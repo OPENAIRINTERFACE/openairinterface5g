@@ -156,15 +156,17 @@ nfapi_dl_config_request_t* allocate_nfapi_dl_config_request(pnf_p7_t* pnf_p7)
 void deallocate_nfapi_dl_tti_request(nfapi_nr_dl_tti_request_t* req, pnf_p7_t* pnf_p7) 
 { 
   //printf("%s() SFN/SF:%d %s req:%p pdu_list:%p\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), pnf_p7->_public.codec_config.deallocate ? "DEALLOCATE" : "FREE", req, req->dl_config_request_body.dl_config_pdu_list);
+	/*
 	if(pnf_p7->_public.codec_config.deallocate)
-	{
-		(pnf_p7->_public.codec_config.deallocate)(req->dl_tti_request_body.dl_tti_pdu_list);
+	{	
+		//nfapi_nr_dl_tti_request_pdu_t *temp = &req->dl_tti_pdu_list;
+		(pnf_p7->_public.codec_config.deallocate)(req); 
 	}
 	else
 	{
-		free(req->dl_tti_request_body.dl_tti_pdu_list);
+		free(req);
 	}
-
+*/
 	pnf_p7_free(pnf_p7, req);
 }
 
@@ -285,7 +287,7 @@ nfapi_tx_request_t* allocate_nfapi_tx_request(pnf_p7_t* pnf_p7)
 //TODO: Check if deallocate_nfapi_tx_data_request defn is proper
 void deallocate_nfapi_tx_data_request(nfapi_nr_tx_data_request_t* req, pnf_p7_t* pnf_p7) 
 {
-
+/*
 	if(pnf_p7->_public.codec_config.deallocate)
 	{
 		(pnf_p7->_public.codec_config.deallocate)(req->pdu_list);
@@ -294,7 +296,7 @@ void deallocate_nfapi_tx_data_request(nfapi_nr_tx_data_request_t* req, pnf_p7_t*
 	{
 		free(req->pdu_list);
 	}
-
+*/
 	pnf_p7_free(pnf_p7, req);
 }
 
@@ -497,9 +499,9 @@ void pnf_p7_rx_reassembly_queue_remove_old_msgs(pnf_p7_t* pnf_p7, pnf_p7_rx_reas
 }
 
 
-static uint32_t get_sf_time(uint32_t now_hr, uint32_t sf_start_hr)
+static uint32_t get_slot_time(uint32_t now_hr, uint32_t slot_start_hr)
 {
-	if(now_hr < sf_start_hr)
+	if(now_hr < slot_start_hr)
 	{
 		//NFAPI_TRACE(NFAPI_TRACE_INFO, "now is earlier than start of subframe now_hr:%u sf_start_hr:%u\n", now_hr, sf_start_hr);
 		return 0;
@@ -507,15 +509,15 @@ static uint32_t get_sf_time(uint32_t now_hr, uint32_t sf_start_hr)
 	else
 	{
 		uint32_t now_us = TIMEHR_USEC(now_hr);
-		uint32_t sf_start_us = TIMEHR_USEC(sf_start_hr);
+		uint32_t slot_start_us = TIMEHR_USEC(slot_start_hr);
 
 		// if the us have wrapped adjust for it
-		if(now_hr < sf_start_us)
+		if(now_hr < slot_start_us)
 		{
-			now_us += 1000000;
+			now_us += 500000; // changed from 1e6 - gokul
 		}
 
-		return now_us - sf_start_us;
+		return now_us - slot_start_us;
 	}
 }
 
@@ -525,9 +527,9 @@ int pnf_p7_send_message(pnf_p7_t* pnf_p7, uint8_t* msg, uint32_t len)
 	struct sockaddr_in remote_addr;
 	memset((char*)&remote_addr, 0, sizeof(struct sockaddr_in));
 	remote_addr.sin_family = AF_INET;
-	remote_addr.sin_port = 32123;//htons(pnf_p7->_public.remote_p7_port); //hardcoding for now
-	//remote_addr.sin_addr.s_addr = inet_addr(pnf_p7->_public.remote_p7_addr);
-
+	remote_addr.sin_port = htons(32123);//htons(pnf_p7->_public.remote_p7_port); //hardcoding for now
+	//remote_addr.sin_addr.s_addr = inet_addr(pnf_p7->_public.remote_p7_addr); 
+	//remote_addr.sin_port = 0; // hardcoded by Gokul
 	
 	if(inet_aton(pnf_p7->_public.remote_p7_addr, &remote_addr.sin_addr) == -1)
 	{
@@ -538,7 +540,9 @@ int pnf_p7_send_message(pnf_p7_t* pnf_p7, uint8_t* msg, uint32_t len)
 	socklen_t remote_addr_len = sizeof(struct sockaddr_in);
 	
 	int sendto_result;
+	
 	if ((sendto_result = sendto((int)pnf_p7->p7_sock, (const char*)msg, len, 0, (const struct sockaddr*)&remote_addr, remote_addr_len)) < 0)
+//if ((sendto_result = sendto((int)pnf_p7->p7_sock,"hello", 6, 0, (const struct sockaddr*)&remote_addr, remote_addr_len)) < 0)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s %s:%d sendto(%d, %p, %d) %d failed errno: %d\n", __FUNCTION__, pnf_p7->_public.remote_p7_addr, pnf_p7->_public.remote_p7_port, (int)pnf_p7->p7_sock, (const char*)msg, len, remote_addr_len,  errno);
 		return -1;
@@ -731,12 +735,14 @@ void send_dummy_slot(pnf_p7_t* pnf_p7, uint16_t sfn, uint16_t slot)
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "Dummy hi_dci0 - enter\n");
 		(pnf_p7->_public.ul_dci_req_fn)(NULL, &pnf_p7->_public, pnf_p7->_public.dummy_slot.ul_dci_req);
 	}
+	#if 0
 	if(pnf_p7->_public.lbt_dl_config_req && pnf_p7->_public.dummy_subframe.lbt_dl_config_req) // TODO: Change later
 	{
 		pnf_p7->_public.dummy_slot.lbt_dl_config_req->sfn_sf = sfn;
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "Dummy lbt - enter\n");
 		(pnf_p7->_public.lbt_dl_config_req)(&pnf_p7->_public, pnf_p7->_public.dummy_slot.lbt_dl_config_req);
 	}
+	#endif
 }
 
 
@@ -935,7 +941,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				(pnf_p7->_public.ul_dci_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_dci_req);
 			}
 		}
-
+    #if 0
 		if(tx_slot_buffer->ue_release_req != 0) // TODO: check later if needed
 		{
 			if(pnf_p7->_public.ue_release_req)
@@ -951,7 +957,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				(pnf_p7->_public.ue_release_req)(&(pnf_p7->_public), pnf_p7->_public.dummy_slot.ue_release_req);
 			}
 		}
-
+    #endif
 		// TODO: add deallocate fns for the new structs
 		if(tx_slot_buffer->dl_tti_req != 0)
 		{
@@ -970,12 +976,12 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			deallocate_nfapi_ul_dci_request(tx_slot_buffer->ul_dci_req, pnf_p7);
 			tx_slot_buffer->ul_dci_req = 0;
 		}
-
+    #if 0
 		if(tx_slot_buffer->ue_release_req != 0){
 			deallocate_nfapi_ue_release_request(tx_slot_buffer->ue_release_req, pnf_p7);
 			tx_slot_buffer->ue_release_req = 0;
 		}
-		
+	#endif	
 		else
 		{
 				// If we ever need to "send" a dummy ul_config this won't work!!!
@@ -1006,7 +1012,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 					(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_tti_req);
 				}
 			}
-
+        #if 0
 			if(slot_buffer->lbt_dl_config_req != 0)
 			{
 				if(pnf_p7->_public.lbt_dl_config_req)
@@ -1024,7 +1030,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				} //Change later
 
 			}
-
+		#endif
 			//if(subframe_buffer->dl_config_req != 0)
 			//deallocate_nfapi_dl_config_request(subframe_buffer->dl_config_req, pnf_p7);
 			//if(subframe_buffer->tx_req != 0)
@@ -1035,21 +1041,21 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				slot_buffer->ul_tti_req = 0;
 
 			}
-			//if(subframe_buffer->hi_dci0_req != 0)
-				//deallocate_nfapi_hi_dci0_request(subframe_buffer->hi_dci0_req, pnf_p7);
+			#if 0
 			if(slot_buffer->lbt_dl_config_req != 0)
 			{
 				deallocate_nfapi_lbt_dl_config_request(slot_buffer->lbt_dl_config_req, pnf_p7);
 				slot_buffer->lbt_dl_config_req = 0;
 			}
-		} // sfn_sf match
+			#endif
+		} // sfn_slot match
 
 
 		if ( slot_buffer->dl_tti_req == 0 &&
 			 slot_buffer->tx_data_req == 0 && 
-			 slot_buffer->ul_tti_req == 0 && 
-			 slot_buffer->lbt_dl_config_req == 0 && 
-			 slot_buffer->ue_release_req == 0)
+			 slot_buffer->ul_tti_req == 0)
+			 //slot_buffer->lbt_dl_config_req == 0 && 
+			 //slot_buffer->ue_release_req == 0)
 		{
 			memset(&(pnf_p7->slot_buffer[buffer_index]), 0, sizeof(nfapi_pnf_p7_slot_buffer_t));
 			pnf_p7->slot_buffer[buffer_index].sfn = -1;
@@ -1548,6 +1554,7 @@ void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
                       req->dl_config_request_body.transmission_power_pcfich
                       );
 #endif
+
                 if(is_nr_p7_request_in_window(req->SFN,req->Slot, "dl_tti_request", pnf_p7))
                 {
                   uint32_t sfn_slot_dec = NFAPI_SFNSLOT2DEC(req->SFN,req->Slot);
@@ -1556,7 +1563,7 @@ void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
                         struct timespec t;
                         clock_gettime(CLOCK_MONOTONIC, &t);
 
-                  NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE DL_TTI_REQ sfn_sf:%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, sfn_slot_dec, buffer_index);
+                  NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE DL_TTI_REQ sfn_slot:%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, sfn_slot_dec, buffer_index);
 
 			// if there is already an dl_config_req make sure we free it.
 			if(pnf_p7->slot_buffer[buffer_index].dl_tti_req != 0)
@@ -2022,7 +2029,7 @@ void pnf_handle_tx_data_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7
 				//			pMyPhyInfo->sfnSf, bufferIdx,
 				//			SFNSF2SFN(dreq->sfn_sf), SFNSF2SF(dreq->sfn_sf));
 
-				deallocate_nfapi_tx_request(pnf_p7->subframe_buffer[buffer_index].tx_req, pnf_p7);
+				deallocate_nfapi_tx_data_request(pnf_p7->slot_buffer[buffer_index].tx_data_req, pnf_p7);
 			}
 
 			pnf_p7->slot_buffer[buffer_index].sfn = req->SFN;
@@ -2297,7 +2304,8 @@ void pnf_handle_ue_release_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf
         deallocate_nfapi_ue_release_request(req, pnf_p7);
     }
 }
-
+/*
+#if 0
 uint32_t calculate_t2(uint32_t now_time_hr, uint16_t sfn_sf, uint32_t sf_start_time_hr)
 {
 	uint32_t sf_time_us = get_sf_time(now_time_hr, sf_start_time_hr);
@@ -2320,20 +2328,46 @@ uint32_t calculate_t2(uint32_t now_time_hr, uint16_t sfn_sf, uint32_t sf_start_t
 
 	return t2;
 }
+#endif
+*/
+uint32_t calculate_t2(uint32_t now_time_hr, uint16_t sfn,uint16_t slot, uint32_t slot_start_time_hr)
+{
+	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
+	uint32_t t2 = (NFAPI_SFNSLOT2DEC(sfn, slot) * 500) + slot_time_us;
 
-uint32_t calculate_t3(uint16_t sfn_sf, uint32_t sf_start_time_hr)
+        if (0)
+        {
+          static uint32_t prev_t2 = 0;
+
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s(now_time_hr:%u sfn:%d slot:%d slot_start_time_Hr:%u) slot_time_us:%u t2:%u prev_t2:%u diff:%u\n",
+              __FUNCTION__,
+              now_time_hr, NFAPI_SFNSLOT2DEC(sfn, slot), slot_start_time_hr,
+              slot_time_us,
+              t2,
+              prev_t2,
+              t2-prev_t2);
+
+          prev_t2 = t2;
+        }
+
+	return t2;
+}
+
+uint32_t calculate_t3(uint16_t sfn, uint16_t slot, uint32_t slot_start_time_hr)
 {
 	uint32_t now_time_hr = pnf_get_current_time_hr();
 
-	uint32_t sf_time_us = get_sf_time(now_time_hr, sf_start_time_hr);
+	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
 
-	uint32_t t3 = (NFAPI_SFNSF2DEC(sfn_sf) * 1000) + sf_time_us;
+	uint32_t t3 = (NFAPI_SFNSLOT2DEC(sfn, slot) * 500) + slot_time_us;
 
 	return t3;
 }
 
 void pnf_handle_dl_node_sync(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7, uint32_t rx_hr_time)
-{
+{	
+	//printf("Received DL node sync");
+
 	nfapi_dl_node_sync_t dl_node_sync;
 
 	//NFAPI_TRACE(NFAPI_TRACE_INFO, "DL_NODE_SYNC Received\n");
@@ -2358,11 +2392,11 @@ void pnf_handle_dl_node_sync(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7, u
 	}
 
 
-	if (dl_node_sync.delta_sfn_sf != 0)
+	if (dl_node_sync.delta_sfn_slot != 0)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "Will shift SF timing by %d on next subframe\n", dl_node_sync.delta_sfn_sf);
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "Will shift Slot timing by %d on next slot\n", dl_node_sync.delta_sfn_slot);
 
-		pnf_p7->sfn_sf_shift = dl_node_sync.delta_sfn_sf;
+		pnf_p7->slot_shift = dl_node_sync.delta_sfn_slot;
 	}
 
 	nfapi_ul_node_sync_t ul_node_sync;
@@ -2370,8 +2404,10 @@ void pnf_handle_dl_node_sync(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7, u
 	ul_node_sync.header.message_id = NFAPI_UL_NODE_SYNC;
 	ul_node_sync.header.phy_id = dl_node_sync.header.phy_id;
 	ul_node_sync.t1 = dl_node_sync.t1;
-	ul_node_sync.t2 = calculate_t2(rx_hr_time, pnf_p7->sfn_sf, pnf_p7->sf_start_time_hr);
-	ul_node_sync.t3 = calculate_t3(pnf_p7->sfn_sf, pnf_p7->sf_start_time_hr);
+	ul_node_sync.t2 = calculate_t2(rx_hr_time, pnf_p7->sfn,pnf_p7->slot, pnf_p7->slot_start_time_hr);
+	ul_node_sync.t3 = calculate_t3(pnf_p7->sfn,pnf_p7->slot, pnf_p7->slot_start_time_hr);
+//	ul_node_sync.t2 = ul_node_sync.t1 + 10;
+//	ul_node_sync.t3 = ul_node_sync.t2 + 10; // hardcoded - gokul 
 
 	if(pthread_mutex_unlock(&(pnf_p7->mutex)) != 0)
 	{
@@ -2380,6 +2416,7 @@ void pnf_handle_dl_node_sync(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7, u
 	}
 
 	pnf_p7_pack_and_send_p7_message(pnf_p7, &(ul_node_sync.header), sizeof(ul_node_sync));
+	//printf("\nSSent UL Node Sync sfn:%d,slot:%d\n",pnf_p7->sfn,pnf_p7->slot);
 }
 
 void pnf_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7,  uint32_t rx_hr_time)
@@ -2414,6 +2451,7 @@ void pnf_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7,  
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
+		printf("\nEntering pnf_handle_dl_tti_request sfn=%d,slot=%d \n",pnf_p7->sfn,pnf_p7->slot);
 			pnf_handle_dl_tti_request(pRecvMsg, recvMsgLen, pnf_p7);
 			break;
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
@@ -2576,6 +2614,7 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 	int recvfrom_result = 0;
 	struct sockaddr_in remote_addr;
 	socklen_t remote_addr_size = sizeof(remote_addr);
+	remote_addr.sin_family = 2; // Gokul - hardcoded
 
 	do
 	{
@@ -2605,6 +2644,7 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 			if(recvfrom_result > 0)
 			{
 				pnf_handle_p7_message(pnf_p7->rx_message_buffer, recvfrom_result, pnf_p7, now_hr_time);
+				printf("\npnf_handle_p7_message sfn=%d,slot=%d\n",pnf_p7->sfn,pnf_p7->slot);
 			}
 		}
 		else if(recvfrom_result == 0)
@@ -2683,7 +2723,8 @@ int pnf_p7_message_pump(pnf_p7_t* pnf_p7)
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(pnf_p7->_public.local_p7_port);
+	//addr.sin_port = htons(pnf_p7->_public.local_p7_port); Gokul
+	addr.sin_port = pnf_p7->_public.local_p7_port;
 
 	if(pnf_p7->_public.local_p7_addr == 0)
 	{
@@ -2724,6 +2765,9 @@ int pnf_p7_message_pump(pnf_p7_t* pnf_p7)
 
 		uint32_t now_hr_time = pnf_get_current_time_hr();
 
+		
+		
+
 		if(selectRetval == 0)
 		{	
 			// timeout
@@ -2742,7 +2786,8 @@ int pnf_p7_message_pump(pnf_p7_t* pnf_p7)
 			continue;
 		}
 
-		if(FD_ISSET(pnf_p7->p7_sock, &rfds))
+		if(FD_ISSET(pnf_p7->p7_sock, &rfds)) 
+
 		{
 			pnf_nfapi_p7_read_dispatch_message(pnf_p7, now_hr_time);
 		}

@@ -66,7 +66,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   uint8_t  CC_id;
   gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
   NR_COMMON_channels_t              *cc = &nr_mac->common_channels[0];
-  nfapi_nr_dl_tti_request_body_t    *dl_req;
   nfapi_nr_dl_tti_request_pdu_t     *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t     *dl_tti_pdsch_pdu;
   nfapi_nr_pdu_t        *TX_req;
@@ -92,15 +91,13 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     LOG_D(MAC, "Scheduling common search space DCI type 1 dlBWP BW.firstRB %d.%d\n",
 	  dlBWP_carrier_bandwidth,
 	  NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275));
-    
-    
-    dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
-    dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+  
+    dl_tti_pdcch_pdu = &nr_mac->DL_req[CC_id].dl_tti_pdu_list[nr_mac->DL_req[CC_id].nPDUs];
     memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
     dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     
-    dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+    dl_tti_pdsch_pdu = &nr_mac->DL_req[CC_id].dl_tti_pdu_list[nr_mac->DL_req[CC_id].nPDUs+1];
     memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
     dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
@@ -235,7 +232,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  pdsch_pdu_rel15->mcsIndex[0]);
     */
     
-    dl_req->nPDUs+=2;
+    nr_mac->DL_req[CC_id].nPDUs+=2;
     
     TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     TX_req->PDU_length = 6;
@@ -255,7 +252,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 int configure_fapi_dl_pdu(int Mod_idP,
                           int *CCEIndex,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
+                          nfapi_nr_dl_tti_request_t *dl_tti_req,
 			  NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
                           uint16_t *rbSize,
@@ -278,12 +275,12 @@ int configure_fapi_dl_pdu(int Mod_idP,
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
 
 
-  dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+  dl_tti_pdcch_pdu = &dl_tti_req->dl_tti_pdu_list[dl_tti_req->nPDUs];
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   
-  dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+  dl_tti_pdsch_pdu = &dl_tti_req->dl_tti_pdu_list[dl_tti_req->nPDUs+1];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
   dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
@@ -456,14 +453,14 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
 void configure_fapi_dl_Tx(module_id_t Mod_idP,
                           frame_t       frameP,
                           sub_frame_t   slotP,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
+                          nfapi_nr_dl_tti_request_t *dl_tti_req,
                           nfapi_nr_pdu_t *tx_req,
                           int tbs_bytes,
                           int16_t pdu_index){
 
   int CC_id = 0;
 
-  nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+  nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_tti_req->dl_tti_pdu_list[dl_tti_req->nPDUs+1];
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
   gNB_MAC_INST *nr_mac  = RC.nrmac[Mod_idP];
 
@@ -477,7 +474,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
         pdsch_pdu_rel15->mcsIndex[0],
         tbs_bytes);
 
-  dl_req->nPDUs+=2;
+  dl_tti_req->nPDUs+=2;
 
   tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
   tx_req->PDU_index  = nr_mac->pdu_index[0]++;
@@ -506,7 +503,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   //NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
-  nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
+  nfapi_nr_dl_tti_request_t *dl_tti_req = &gNB_mac->DL_req[CC_id];
   nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
 
   mac_rlc_status_resp_t rlc_status;
@@ -541,7 +538,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     CCEIndices,
-                                    dl_req,
+                                    dl_tti_req,
 				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
@@ -666,7 +663,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0; // mac_pdu[offset + j] = 0;
     }
 
-    configure_fapi_dl_Tx(module_idP, frameP, slotP, dl_req, tx_req, TBS_bytes, gNB_mac->pdu_index[CC_id]);
+    configure_fapi_dl_Tx(module_idP, frameP, slotP, dl_tti_req, tx_req, TBS_bytes, gNB_mac->pdu_index[CC_id]);
 
     if(IS_SOFTMODEM_NOS1){
       #if defined(ENABLE_MAC_PAYLOAD_DEBUG)

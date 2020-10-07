@@ -74,9 +74,12 @@ typedef struct nfapi_vnf_p7_connection_info {
 	uint16_t min_sync_cycle_count;
 	uint32_t latency[8];
 	uint32_t average_latency;
-	int32_t sf_offset_filtered;
-	int32_t sf_offset_trend;
-	int32_t sf_offset;
+	//int32_t sf_offset_filtered;
+	//int32_t sf_offset_trend;
+	//int32_t sf_offset;
+	int32_t slot_offset;
+	int32_t slot_offset_trend;
+	int32_t slot_offset_filtered;
 	uint16_t zero_count;
 	int32_t adjustment;
 	int32_t insync_minor_adjustment;
@@ -84,8 +87,8 @@ typedef struct nfapi_vnf_p7_connection_info {
 
 	uint32_t previous_t1;
 	uint32_t previous_t2;
-	int32_t previous_sf_offset_filtered;
-
+	//int32_t previous_sf_offset_filtered;
+	int32_t previous_slot_offset_filtered;
 	int sfn_sf;
 	int sfn;
 	int slot;
@@ -112,7 +115,8 @@ typedef struct {
 	uint8_t terminate;
 	nfapi_vnf_p7_connection_info_t* p7_connections;
 	int socket;
-	uint32_t sf_start_time_hr;
+//	uint32_t sf_start_time_hr;
+	uint32_t slot_start_time_hr;
 	uint8_t* rx_message_buffer; // would this be better put in the p7 conenction info?
 	uint16_t rx_message_buffer_size;
 	

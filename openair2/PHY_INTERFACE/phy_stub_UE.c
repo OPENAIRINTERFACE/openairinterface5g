@@ -30,6 +30,10 @@
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "common/config/config_load_configmodule.h"
 #include "common/config/config_userapi.h"
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
+#include "openair1/PHY/defs_gNB.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_common.h"
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,
@@ -1120,3 +1124,23 @@ int l1_north_init_eNB(void) {
 
 void init_eNB_afterRU(void) {
 }
+
+void nr_phy_config_request(NR_PHY_Config_t *gNB){}
+
+void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu){}
+        
+void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu){}
+
+void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
+                             nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu){}
+
+int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type){}
+void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
+                            nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
+                            uint8_t *sdu){
+                            }
+int l1_north_init_gNB(void){}

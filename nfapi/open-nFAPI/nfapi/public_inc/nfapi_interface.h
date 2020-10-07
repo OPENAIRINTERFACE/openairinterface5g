@@ -126,6 +126,8 @@ typedef struct {
 
 #define NFAPI_SFNSLOT2SFN(_sfnslot) ((_sfnslot) >> 6)
 #define NFAPI_SFNSLOT2SLOT(_sfnslot) ((_sfnslot) & 0x3F)
+#define NFAPI_SFNSLOTDEC2SFN(_sfnslot_dec) ((_sfnslot_dec) / 20)
+#define NFAPI_SFNSLOTDEC2SLOT(_sfnslot_dec) ((_sfnslot_dec) % 20)
 
 #define NFAPI_MAX_SFNSLOTDEC 1024*20 // 20 is for numerology 1
 
@@ -1123,6 +1125,7 @@ typedef struct {
 	uint32_t error_code;
 	nfapi_pnf_param_general_t pnf_param_general;
 	nfapi_pnf_phy_t pnf_phy;
+	/*
 	nfapi_pnf_rf_t pnf_rf;
 	nfapi_pnf_phy_rel10_t pnf_phy_rel10;
 	nfapi_pnf_phy_rel11_t pnf_phy_rel11;
@@ -1130,11 +1133,13 @@ typedef struct {
 	nfapi_pnf_phy_rel13_t pnf_phy_rel13;
 	nfapi_pnf_phy_rel13_nb_iot_t pnf_phy_rel13_nb_iot;
   nfapi_pnf_phy_rel15_t pnf_phy_rel15;
+  */
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_pnf_param_response_t;
 
 typedef struct {
 	nfapi_p4_p5_message_header_t header;
+	uint8_t num_tlvs;
 	nfapi_pnf_phy_rf_config_t pnf_phy_rf_config;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_pnf_config_request_t;
@@ -2495,7 +2500,8 @@ typedef struct {
 typedef struct {
 	nfapi_p7_message_header_t header;
 	uint32_t t1;
-	int32_t delta_sfn_sf;
+	//int32_t delta_sfn_sf;
+	int32_t delta_sfn_slot;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_dl_node_sync_t;
 
@@ -3708,22 +3714,30 @@ typedef struct
   nfapi_ipv4_address_t p7_pnf_address_ipv4;
   nfapi_ipv6_address_t p7_pnf_address_ipv6;
   nfapi_uint16_tlv_t p7_pnf_port;
+
+  nfapi_uint8_tlv_t timing_window; //Value: 0 → 30,000 microseconds 
+  nfapi_uint8_tlv_t timing_info_mode;
+  nfapi_uint8_tlv_t timing_info_period;
+
+  nfapi_uint32_tlv_t dl_tti_timing_offset;
+  nfapi_uint32_tlv_t ul_tti_timing_offset;
+  nfapi_uint32_tlv_t ul_dci_timing_offset;
+  nfapi_uint32_tlv_t tx_data_timing_offset;
   
-  // // These TLVs are used to setup the transport connection between VNF and PNF
+   // These TLVs are used to setup the transport connection between VNF and PNF
+  /*
   nfapi_uint8_tlv_t dl_ue_per_sf;
   nfapi_uint8_tlv_t ul_ue_per_sf;
 
   // These TLVs are used by PNF to report its RF capabilities to the VNF software
   nfapi_rf_bands_t rf_bands;
-
+*/
   // These TLVs are used by the VNF to configure the synchronization with the PNF.
-  nfapi_uint8_tlv_t timing_window;
-  nfapi_uint8_tlv_t timing_info_mode;
-  nfapi_uint8_tlv_t timing_info_period;
+ 
 
   // These TLVs are used by the VNF to configure the RF in the PNF
-  nfapi_uint16_tlv_t max_transmit_power;
-  nfapi_uint32_tlv_t nrarfcn;
+  //nfapi_uint16_tlv_t max_transmit_power;
+  //nfapi_uint32_tlv_t nrarfcn;
 
   // nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
   // nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;

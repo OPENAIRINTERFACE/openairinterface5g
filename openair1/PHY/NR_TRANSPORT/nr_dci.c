@@ -152,7 +152,7 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-
+/*
 uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 			    nfapi_nr_ul_dci_request_pdus_t    *ul_dci_pdu,
                             uint32_t **gold_pdcch_dmrs,
@@ -164,7 +164,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
-  /*First iteration: single DCI*/
+  //First iteration: single DCI
 
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15=NULL;
 
@@ -191,11 +191,12 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   } else
     cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
 
-  for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
-    /*The coreset is initialised
-     * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
-     * or the rb_offset for other coresets
-     * in time: by its first slot and its first symbol*/
+  volatile int temp = pdcch_pdu_rel15->numDlDci;
+  for (volatile int d=0;d < temp;d++) {
+    //The coreset is initialised
+     //in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
+     //or the rb_offset for other coresets
+     //in time: by its first slot and its first symbol
 
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
@@ -271,11 +272,11 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     if (cset_start_sc >= frame_parms.ofdm_symbol_size)
       cset_start_sc -= frame_parms.ofdm_symbol_size;
     
-    /*Reorder REG list for a freq first mapping*/
+    //Reorder REG list for a freq first mapping
     uint8_t nb_regs = pdcch_pdu_rel15->AggregationLevel[d]*NR_NB_REG_PER_CCE;
     uint8_t reg_idx0 = pdcch_pdu_rel15->CceIndex[d]*NR_NB_REG_PER_CCE;
 
-    /*Mapping the encoded DCI along with the DMRS */
+    //Mapping the encoded DCI along with the DMRS 
     for (int reg_idx=reg_idx0; reg_idx<(nb_regs+reg_idx0); reg_idx++) {
       k = cset_start_sc + (12*reg_idx/cset_nsymb);
       
@@ -324,4 +325,180 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
   return 0;
 }
+*/
 
+
+uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
+			    nfapi_nr_ul_dci_request_pdus_t    *ul_dci_pdu,
+                            uint32_t **gold_pdcch_dmrs,
+                            int32_t *txdataF,
+                            int16_t amp,
+                            NR_DL_FRAME_PARMS frame_parms) {
+
+  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
+  uint16_t cset_start_sc;
+  uint8_t cset_start_symb, cset_nsymb;
+  int k,l,k_prime,dci_idx, dmrs_idx;
+  /*First iteration: single DCI*/
+
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15=NULL;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *temp;
+  temp = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t *)malloc(sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t));
+  int s = sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t);
+  
+  // find coreset descriptor
+    
+  int rb_offset;
+  int n_rb;
+
+  AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
+  AssertFatal(pdcch_pdu==NULL || ul_dci_pdu==NULL,"Can't handle both DL and UL DCI in same slot\n");
+
+
+  if (pdcch_pdu) pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
+  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
+
+  get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
+
+  // compute rb_offset and n_prb based on frequency allocation
+
+  if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
+    cset_start_sc = frame_parms.first_carrier_offset + (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB +
+							rb_offset)*NR_NB_SC_PER_RB;
+  } else
+    cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
+  
+  memcpy(temp, pdcch_pdu_rel15,sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t));
+  for (volatile int d=0;d < temp->numDlDci;d++) {
+    /*The coreset is initialised
+     * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
+     * or the rb_offset for other coresets
+     * in time: by its first slot and its first symbol*/
+
+    cset_start_symb = temp->StartSymbolIndex;
+    cset_nsymb = temp->DurationSymbols;
+    dci_idx = 0;
+    LOG_D(PHY, "Coreset rb_offset %d, nb_rb %d\n",rb_offset,n_rb);
+    LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+    // DMRS length is per OFDM symbol
+    AssertFatal(temp->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED,
+		"Interleaved CCE REG MAPPING not supported\n");
+    uint32_t dmrs_length = (temp->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED)?
+      (n_rb*6) : (temp->AggregationLevel[d]*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
+    uint32_t encoded_length = temp->AggregationLevel[d]*108; //2(QPSK)*9(per RB)*6(REG per CCE)
+    LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d)\n", dmrs_length, encoded_length,temp->precoderGranularity,temp->CceRegMappingType);
+    dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
+      
+    /// DMRS QPSK modulation
+    for (int symb=cset_start_symb; symb<cset_start_symb + temp->DurationSymbols; symb++) {
+      
+      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
+      
+#ifdef DEBUG_PDCCH_DMRS
+      
+      for (int i=0; i<dmrs_length>>1; i++)
+	printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
+	       gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
+      
+#endif
+    }
+    
+    /// DCI payload processing
+    // CRC attachment + Scrambling + Channel coding + Rate matching
+    uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
+    uint16_t n_RNTI = temp->RNTI[d];
+    uint16_t Nid    = temp->ScramblingId[d];
+    
+    t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
+						   temp->PayloadSizeBits[d], 
+						   temp->AggregationLevel[d],
+						   0,NULL);
+    polar_encoder_fast((uint64_t*)temp->Payload[d], encoder_output, n_RNTI,1,currentPtr);
+#ifdef DEBUG_CHANNEL_CODING
+    printf("polar rnti %x,length %d, L %d\n",n_RNTI, temp->PayloadSizeBits[d],temp->AggregationLevel[d]);
+    printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
+	   ((uint64_t*)temp->Payload[d])[0], ((uint64_t*)temp->Payload[d])[1]);
+    printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
+    
+    for (int i=0; i<encoded_length>>5; i++)
+      printf("[%d]->0x%08x \t", i,encoder_output[i]);    
+
+    printf("\n");
+#endif
+    /// Scrambling
+    uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD]= {0};
+    nr_pdcch_scrambling(encoder_output, encoded_length, Nid, n_RNTI, scrambled_output);
+#ifdef DEBUG_CHANNEL_CODING
+    printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\t [4]->0x%08x\t [5]->0x%08x\t \
+[6]->0x%08x \t [7]->0x%08x \t [8]->0x%08x \t [9]->0x%08x\t [10]->0x%08x\t [11]->0x%08x\n",
+	   scrambled_output[0], scrambled_output[1], scrambled_output[2], scrambled_output[3], scrambled_output[4],scrambled_output[5],
+	   scrambled_output[6], scrambled_output[7], scrambled_output[8], scrambled_output[9], scrambled_output[10],scrambled_output[11] );
+#endif
+    /// QPSK modulation
+    int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
+    nr_modulation(scrambled_output, encoded_length, DMRS_MOD_ORDER, mod_dci); //Qm = 2 as DMRS is QPSK modulated
+#ifdef DEBUG_DCI
+    
+    for (int i=0; i<encoded_length>>1; i++)
+      printf("i %d mod_dci %d %d\n", i, mod_dci[i<<1], mod_dci[(i<<1)+1] );
+    
+#endif
+    
+    /// Resource mapping
+    
+    if (cset_start_sc >= frame_parms.ofdm_symbol_size)
+      cset_start_sc -= frame_parms.ofdm_symbol_size;
+    
+    /*Reorder REG list for a freq first mapping*/
+    uint8_t nb_regs = temp->AggregationLevel[d]*NR_NB_REG_PER_CCE;
+    uint8_t reg_idx0 = temp->CceIndex[d]*NR_NB_REG_PER_CCE;
+
+    /*Mapping the encoded DCI along with the DMRS */
+    for (int reg_idx=reg_idx0; reg_idx<(nb_regs+reg_idx0); reg_idx++) {
+      k = cset_start_sc + (12*reg_idx/cset_nsymb);
+      
+      if (k >= frame_parms.ofdm_symbol_size)
+	k -= frame_parms.ofdm_symbol_size;
+      
+      l = cset_start_symb + ((reg_idx/cset_nsymb)%cset_nsymb);
+      
+      // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
+      if (temp->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
+	dmrs_idx = (reg_idx/cset_nsymb)*3;
+      else
+	dmrs_idx = ((reg_idx/cset_nsymb)+rb_offset)*3;
+      
+      k_prime = 0;
+      
+      for (int m=0; m<NR_NB_SC_PER_RB; m++) {
+	if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
+	  if (temp->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
+	    ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (2*amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+	    ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (2*amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+#ifdef DEBUG_PDCCH_DMRS
+	    printf("PDCCH DMRS: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
+		   ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+#endif
+	    dmrs_idx++;
+	  }
+	  
+	  k_prime++;
+	} else { // DCI payload
+	  ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dci[dci_idx<<1]) >> 15;
+	  ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dci[(dci_idx<<1) + 1]) >> 15;
+#ifdef DEBUG_DCI
+	  printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
+		 ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+#endif
+	  dci_idx++;
+	}
+	
+	k++;
+	
+	if (k >= frame_parms.ofdm_symbol_size)
+	  k -= frame_parms.ofdm_symbol_size;
+      } // m
+    } // reg_idx
+  } // for (int d=0;d<temp->numDlDci;d++)
+  return 0;
+}
