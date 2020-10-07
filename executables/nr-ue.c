@@ -176,7 +176,7 @@ static void UE_synch(void *arg) {
   PHY_VARS_NR_UE *UE = syncD->UE;
   sync_mode_t sync_mode = pbch;
   int CC_id = UE->CC_id;
-  int freq_offset=0;
+  static int freq_offset=0;
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
