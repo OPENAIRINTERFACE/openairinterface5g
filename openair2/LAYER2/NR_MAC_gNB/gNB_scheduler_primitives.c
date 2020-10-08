@@ -1624,19 +1624,18 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   return -1;
 }
 
-void set_Y(NR_UE_list_t *UE_list, int UE_id) {
-  int A[3] = {39827,39829,39839};
-  int D = 65537;
-  int s = 0;
+void set_Y(int Y[3][160], rnti_t rnti) {
+  const int A[3] = {39827, 39829, 39839};
+  const int D = 65537;
 
-  UE_list->Y[UE_id][0][s] = (A[0]*UE_list->rnti[UE_id]) % D;
-  UE_list->Y[UE_id][1][s] = (A[1]*UE_list->rnti[UE_id]) % D;
-  UE_list->Y[UE_id][2][s] = (A[2]*UE_list->rnti[UE_id]) % D;
+  Y[0][0] = (A[0] * rnti) % D;
+  Y[1][0] = (A[1] * rnti) % D;
+  Y[2][0] = (A[2] * rnti) % D;
 
-  for (s=1; s<160; s++) {
-    UE_list->Y[UE_id][0][s] = (A[0]*UE_list->Y[UE_id][0][s-1]) % D;
-    UE_list->Y[UE_id][1][s] = (A[1]*UE_list->Y[UE_id][1][s-1]) % D;
-    UE_list->Y[UE_id][2][s] = (A[2]*UE_list->Y[UE_id][2][s-1]) % D;
+  for (int s = 1; s < 160; s++) {
+    Y[0][s] = (A[0] * Y[0][s - 1]) % D;
+    Y[1][s] = (A[1] * Y[1][s - 1]) % D;
+    Y[2][s] = (A[2] * Y[2][s - 1]) % D;
   }
 }
 
@@ -1663,7 +1662,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->active[UE_id] = true;
     UE_info->rnti[UE_id] = rntiP;
     add_nr_ue_list(&UE_info->list, UE_id);
-    set_Y(UE_info, UE_id);
+    set_Y(UE_info->Y[UE_id], rntiP);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
