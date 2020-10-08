@@ -167,6 +167,8 @@ int main(int argc, char **argv){
   int prachOccasion = 0;
   double DS_TDL = .03;
   NB_UE_INST=1;
+  uint16_t RA_sfn_index = -1;
+  uint8_t N_RA_slot,config_period = 1;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
