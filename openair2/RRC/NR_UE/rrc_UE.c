@@ -1243,3 +1243,39 @@ void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 }
+/*--------------------------------------------------*/
+static void rrc_ue_generate_RRCSetupComplete(
+    const protocol_ctxt_t *const ctxt_pP,
+    const uint8_t gNb_index,
+    const uint8_t Transaction_id,
+    uint8_t sel_plmn_id){
+        uint8_t buffer[100];
+        uint8_t size;
+        const char *nas_msg;
+        int   nas_msg_length;
+        /*
+         if (EPC_MODE_ENABLED) {
+            nas_msg         = (char *) UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
+            nas_msg_length  = UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+             } else {
+            nas_msg         = nas_attach_req_imsi;
+            nas_msg_length  = sizeof(nas_attach_req_imsi);
+            }
+        */
+       size = do_RRCSetupComplete(ctxt_pP->module_id,buffer,Transaction_id,sel_plmn_id,nas_msg_length,nas_msg);
+       LOG_I(RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, gNB %d)\n",
+        ctxt_pP->module_id,ctxt_pP->frame, size, gNB_index);
+       LOG_D(RLC,
+            "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to gNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
+            ctxt_pP->frame, ctxt_pP->module_id+NB_RN_INST, size, gNB_index, rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
+        ctxt_pP_local.rnti = ctxt_pP->rnti;
+        rrc_data_req_ue(
+            ctxt_pP,
+            DCCH,
+            rrc_mui++,
+            SDU_CONFIRM_NO,
+            size,
+            buffer,
+            PDCP_TRANSMISSION_MODE_CONTROL);
+    }
+

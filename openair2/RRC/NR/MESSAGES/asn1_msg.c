@@ -1153,3 +1153,38 @@ do_NR_RRCReconfigurationComplete(
   return((enc_rval.encoded+7)/8);
 }
 
+uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS){
+  asn_enc_rval_t enc_rval;
+  
+  NR_UL_DCCH_Message_t  ul_dcch_msg;
+  NR_RRCSetupComplete_t *RrcSetupComplete;
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1 = CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
+  ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete;
+  RrcSetupComplete                       = ul_dcch_msg.message.choice.c1->choice.rrcSetupComplete;
+  RrcSetupComplete->rrc_TransactionIdentifier    = Transaction_id;
+  RrcSetupComplete->criticalExtensions.present   = NR_RRCSetupComplete__criticalExtensions_PR_rrcSetupComplete;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->nonCriticalExtension = CALLOC(1,
+    sizeof(*RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->nonCriticalExtension));
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->selectedPLMN_Identity = sel_plmn_id;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->registeredAMF = NULL;
+ memset(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,0,sizeof(OCTET_STRING_t));
+ OCTET_STRING_fromBuf(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,dedicatedInfoNAS,dedicatedInfoNASLength);
+if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&ul_dcch_msg);
+}
+
+enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
+                                 NULL,
+                                 (void *)&ul_dcch_msg,
+                                 buffer,
+                                 100);
+
+  AssertFatal(enc_rval.encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
+              enc_rval.failed_type->name,enc_rval.encoded);
+  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+
+  return((enc_rval.encoded+7)/8);
+}
+
