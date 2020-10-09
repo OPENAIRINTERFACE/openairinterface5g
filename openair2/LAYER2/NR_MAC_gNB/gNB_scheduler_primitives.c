@@ -728,7 +728,6 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
         }
         else N2 = N3;
       }
-      LOG_I(MAC, "UCI resource id = %ld\n", *resource_id);
     }
 
     AssertFatal(resource_id!=NULL,"Couldn-t find any matching PUCCH resource in the PUCCH resource sets");
