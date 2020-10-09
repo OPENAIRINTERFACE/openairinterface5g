@@ -353,10 +353,6 @@ static void get_options(void) {
 
   if (dumpframe  > 0)  mode = rx_dump_frame;
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-  }
-
   UE_scan=0;
 
   if (tddflag > 0) {
@@ -544,15 +540,24 @@ void init_openair0(void) {
     openair0_cfg[card].rx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
 
     for (i=0; i<4; i++) {
-      if (i<openair0_cfg[card].tx_num_channels)
-        openair0_cfg[card].tx_freq[i] = frame_parms[0]->ul_CarrierFreq;
-      else
-        openair0_cfg[card].tx_freq[i]=0.0;
 
-      if (i<openair0_cfg[card].rx_num_channels)
-        openair0_cfg[card].rx_freq[i] = frame_parms[0]->dl_CarrierFreq;
+      if (i<openair0_cfg[card].rx_num_channels){
+        if (downlink_frequency[0][0])
+          openair0_cfg[card].rx_freq[i] = downlink_frequency[0][0];
+        else
+          openair0_cfg[card].rx_freq[i] = frame_parms[0]->dl_CarrierFreq;
+      }
       else
         openair0_cfg[card].rx_freq[i]=0.0;
+
+      if (i<openair0_cfg[card].tx_num_channels){
+        if (uplink_frequency_offset[0][0])
+          openair0_cfg[card].tx_freq[i] = openair0_cfg[card].rx_freq[i] + uplink_frequency_offset[0][0];
+        else
+          openair0_cfg[card].tx_freq[i] = frame_parms[0]->ul_CarrierFreq;
+      }
+      else
+        openair0_cfg[card].tx_freq[i]=0.0;
 
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
@@ -687,10 +692,10 @@ int main( int argc, char **argv ) {
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
 
     // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0) {
-      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
-    }
+    // if (downlink_frequency[0][0]!=0) {
+    //   frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+    //   frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    // }
    
     init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);

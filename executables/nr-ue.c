@@ -170,6 +170,8 @@ typedef struct syncData_s {
   PHY_VARS_NR_UE *UE;
 } syncData_t;
 
+extern const char *duplex_mode[];
+
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
   int i, hw_slot_offset;
@@ -180,19 +182,23 @@ static void UE_synch(void *arg) {
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
-    LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu64", UL %"PRIu64" (oai_exit %d, rx_num_channels %d)\n",
-           UE->frame_parms.dl_CarrierFreq, UE->frame_parms.ul_CarrierFreq,
-           oai_exit, openair0_cfg[0].rx_num_channels);
 
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-      openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = UE->frame_parms.dl_CarrierFreq;
-      openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = UE->frame_parms.ul_CarrierFreq;
-      openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
 
-      if (UE->frame_parms.frame_type == FDD) 
+      if (UE->frame_parms.frame_type == FDD)
         openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_FDD;
-      else 
+      else
         openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_TDD;
+
+      LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f duplex mode %s (RF card %d, oai_exit %d, channel %d,  rx_num_channels %d)\n",
+        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i],
+        openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i],
+        duplex_mode[openair0_cfg[UE->rf_map.card].duplex_mode],
+        UE->rf_map.card,
+        oai_exit,
+        i,
+        openair0_cfg[0].rx_num_channels);
+
     }
 
     sync_mode = pbch;
@@ -251,13 +257,6 @@ static void UE_synch(void *arg) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
-        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %lu, UL %lu), UE_scan_carrier %d\n",
-              hw_slot_offset,
-              freq_offset,
-              UE->rx_total_gain_dB,
-              UE->frame_parms.dl_CarrierFreq+freq_offset,
-              UE->frame_parms.ul_CarrierFreq+freq_offset,
-              UE->UE_scan_carrier );
 
         // rerun with new cell parameters and frequency-offset
         for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
@@ -268,10 +267,23 @@ static void UE_synch(void *arg) {
           else
             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(freq_offset);
 
+          if (uplink_frequency_offset[0][0])
+          openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
+            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] + uplink_frequency_offset[0][0];
+          else
           openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+(UE->frame_parms.ul_CarrierFreq-UE->frame_parms.dl_CarrierFreq);
-          UE->frame_parms.dl_CarrierFreq = openair0_cfg[CC_id].rx_freq[i];
+
+          //UE->frame_parms.dl_CarrierFreq = openair0_cfg[CC_id].rx_freq[i];
         }
+
+        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %f Hz, UL %f Hz), UE_scan_carrier %d\n",
+              hw_slot_offset,
+              freq_offset,
+              UE->rx_total_gain_dB,
+              openair0_cfg[UE->rf_map.card].rx_freq[0],
+              openair0_cfg[UE->rf_map.card].tx_freq[0],
+              UE->UE_scan_carrier);
 
         // reconfigure for potentially different bandwidth
         switch(UE->frame_parms.N_RB_DL) {
