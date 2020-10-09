@@ -708,6 +708,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     rlc_BearerConfig->servedRadioBearer->present                     = NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
     rlc_BearerConfig->servedRadioBearer->choice.srb_Identity         = 1;
     rlc_BearerConfig->reestablishRLC                                 = NULL;
+    rlc_Config = calloc(1, sizeof(NR_RLC_Config_t));
     rlc_Config->present                                              = NR_RLC_Config_PR_am;
     rlc_Config->choice.am                                            = calloc(1, sizeof(*rlc_Config->choice.am));
     *(rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
@@ -952,8 +953,6 @@ uint16_t do_RRCReconfiguration(
 
     uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
     /******************** Radio Bearer Config ********************/
-    ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
-    ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
     
     /* Configure SRB2 */
     SRB2_configList = ue_context_pP->ue_context.SRB_configList2[xid];
@@ -1033,6 +1032,7 @@ uint16_t do_RRCReconfiguration(
     ie->lateNonCriticalExtension = NULL;
     // nonCriticalExtension
     ie->nonCriticalExtension = calloc(1, sizeof(NR_RRCReconfiguration_v1530_IEs_t));
+    dedicatedNAS_Message = calloc(1, sizeof(NR_DedicatedNAS_Message_t));
     dedicatedNAS_Message->buf  = ue_context_pP->ue_context.nas_pdu.buffer;
     dedicatedNAS_Message->size = ue_context_pP->ue_context.nas_pdu.length;
     ASN_SEQUENCE_ADD(&ie->nonCriticalExtension->dedicatedNAS_MessageList->list, dedicatedNAS_Message);
