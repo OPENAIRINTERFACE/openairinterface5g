@@ -1122,7 +1122,7 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
 
 uint8_t get_nr_prach_duration(uint8_t prach_format){
 
-switch(prach_format){
+  switch(prach_format){
 
       case 0:  // format 0
          return 0;
@@ -1170,7 +1170,7 @@ switch(prach_format){
          AssertFatal(1==0,"Invalid Prach format\n");
          break;
 
-}
+  }
 
 }
 
@@ -1202,38 +1202,39 @@ int get_nr_prach_info_from_index(uint8_t index,
     if ( (frame%x)==y || (frame%x)==y2 ) {
       slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
-        if ((s_map >> slot_60khz) & 0x01 ) {
-		      for(int i = 0; i <= slot_60khz ;i++) {
-            if ( (s_map >> i) & 0x01) {
-              (*RA_sfn_index)++;
-				    }
+      if ((s_map >> slot_60khz) & 0x01 ) {
+        for(int i = 0; i <= slot_60khz ;i++) {
+          if ( (s_map >> i) & 0x01) {
+            (*RA_sfn_index)++;
           }
         }
+      }
       if ( ((s_map>>slot_60khz)&0x01) ) {
-         *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
+        *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
         if (mu == 3) {
           if ( (*N_RA_slot == 1) && (slot%2 == 0) )
             return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
         }
         if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
-				  *config_period = x;
+          *config_period = x;
           *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];
           *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
           *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
           if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
             format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
           *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
-          LOG_I(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u\n", frame,
-            slot,
-            index,
-            pointa,
-            mu,
-            unpaired,
-            *start_symbol,
-            *N_t_slot,
-            *N_dur,
-						*N_RA_slot,
-						*RA_sfn_index);
+          LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u\n",
+                frame,
+                slot,
+                index,
+                pointa,
+                mu,
+                unpaired,
+                *start_symbol,
+                *N_t_slot,
+                *N_dur,
+                *N_RA_slot,
+                *RA_sfn_index);
         }
         return 1;
       }
@@ -1252,10 +1253,10 @@ int get_nr_prach_info_from_index(uint8_t index,
         subframe = slot >> mu;
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
         if ((s_map >> subframe) & 0x01 ) {
-		      for(int i = 0; i <= subframe ;i++) {
+          for(int i = 0; i <= subframe ;i++) {
             if ( (s_map >> i) & 0x01) {
               (*RA_sfn_index)++;
-				    }
+            }
           }
         }
         if ( (s_map>>subframe)&0x01 ) {
@@ -1265,24 +1266,26 @@ int get_nr_prach_info_from_index(uint8_t index,
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
           } 
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
-				    *config_period = x;
+            *config_period = x;
             *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
             *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
             *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_I(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n", frame,
-              slot,
-              index, table_6_3_3_2_3_prachConfig_Index[index][6],
-              pointa,
-              mu,
-              unpaired,
-              *start_symbol,
-              *N_t_slot,
-              *N_dur,
-							*N_RA_slot,
-							*RA_sfn_index);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n",
+                  frame,
+                  slot,
+                  index,
+                  table_6_3_3_2_3_prachConfig_Index[index][6],
+                  pointa,
+                  mu,
+                  unpaired,
+                  *start_symbol,
+                  *N_t_slot,
+                  *N_dur,
+                  *N_RA_slot,
+                  *RA_sfn_index);
           }
           return 1;
         }
@@ -1310,15 +1313,16 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_2_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_2_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-              slot,
-              index,
-              pointa,
-              mu,
-              unpaired,
-              *start_symbol,
-              *N_t_slot,
-              *N_dur);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n",
+                  frame,
+                  slot,
+                  index,
+                  pointa,
+                  mu,
+                  unpaired,
+                  *start_symbol,
+                  *N_t_slot,
+                  *N_dur);
           }
           return 1;
         }
