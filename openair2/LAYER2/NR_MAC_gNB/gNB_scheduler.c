@@ -435,7 +435,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1);
+  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
@@ -500,7 +500,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
-      && (!get_softmodem_params()->phy_test || slot == 1)
       && slot < 10) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
     //int pucch_sched;
