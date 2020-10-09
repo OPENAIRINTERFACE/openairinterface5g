@@ -68,7 +68,7 @@ int dump_list(void) {
   return len;
 }
 
-void ajout(char *regex, int dl, int ul) {
+void add(char *regex, int dl, int ul) {
   slist_data_t *datap = malloc(sizeof(slist_data_t));
   if (!datap) {
     LOG_E(FLEXRAN_AGENT, "cannot allocate memory for slist_data_t\n");
@@ -155,7 +155,7 @@ Protocol__FlexranMessage *matching_tick(
   reconfig = false;
   return NULL;
 }
-void ajout_param(Protocol__FlexAgentReconfigurationSubsystem__ParamsEntry **p, int n_p) {
+void add_param(Protocol__FlexAgentReconfigurationSubsystem__ParamsEntry **p, int n_p) {
   char s[30];
   reconfig = true;
   bool supp=false;
@@ -196,7 +196,7 @@ void ajout_param(Protocol__FlexAgentReconfigurationSubsystem__ParamsEntry **p, i
   else {
     if (supp==true)
       remove_(s);
-    ajout(s,dl,ul);
+    add(s,dl,ul);
   }
   /* re-verify all UEs again */
   for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
@@ -224,7 +224,7 @@ int imsi_reconfig(mid_t mod_id,
                   Protocol__FlexAgentReconfigurationSubsystem__ParamsEntry **p,
                   int n_p)
 { 
-  ajout_param(p, n_p);
+  add_param(p, n_p);
   return 0;
 }
 
