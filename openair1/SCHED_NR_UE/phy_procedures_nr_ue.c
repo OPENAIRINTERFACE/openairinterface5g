@@ -894,6 +894,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        int *dlsch_errors,
        runmode_t mode) {
 
+  if (dlsch0==NULL)
+    AssertFatal(0,"dlsch0 should be defined at this level \n");
+
   int harq_pid = dlsch0->current_harq_pid;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
@@ -920,9 +923,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint32_t t_subframe = 1; // subframe duration of 1 msec
   uint16_t bw_scaling, start_symbol;
   float tc_factor;
-
-  if (dlsch0==NULL)
-    AssertFatal(0,"dlsch0 should be defined at this level \n");
 
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
@@ -1352,9 +1352,9 @@ void *UE_thread_slot1_dl_processing(void *arg) {
   CPU_ZERO(&cpuset);
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.slot1_proc_one != -1 )
     CPU_SET(threads.slot1_proc_one, &cpuset);
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.slot1_proc_two != -1 )
+  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.slot1_proc_two != -1 )
     CPU_SET(threads.slot1_proc_two, &cpuset);
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.slot1_proc_three != -1 )
+  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.slot1_proc_three != -1 )
     CPU_SET(threads.slot1_proc_three, &cpuset);
 
   init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
