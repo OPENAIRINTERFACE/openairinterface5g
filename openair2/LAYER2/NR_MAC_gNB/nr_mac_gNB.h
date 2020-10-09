@@ -83,6 +83,11 @@ typedef enum {
   WAIT_Msg4_ACK = 4
 } RA_gNB_state_t;
 
+typedef struct NR_preamble_ue {
+  uint8_t num_preambles;
+  uint8_t *preamble_list;
+} NR_preamble_ue_t;
+
 /*! \brief gNB template for the Random access information */
 typedef struct {
   /// Flag to indicate this process is active
@@ -141,6 +146,12 @@ typedef struct {
   int msg4_mcs;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
+  /// secondaryCellGroup for UE in NSA that is to come
+  NR_CellGroupConfig_t *secondaryCellGroup;
+  /// Preambles for contention-free access
+  NR_preamble_ue_t preambles;
+  /// NSA: the UEs C-RNTI to use
+  rnti_t crnti;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -172,9 +183,9 @@ typedef struct {
   /// Template for RA computations
   NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels
-  uint8_t vrb_map[100];
+  uint8_t vrb_map[275];
   /// VRB map for common channels and retransmissions by PHICH
-  uint8_t vrb_map_UL[100];
+  uint8_t vrb_map_UL[275];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
@@ -268,6 +279,14 @@ typedef struct NR_UE_harq {
   uint16_t feedback_slot;
 } NR_UE_harq_t;
 
+typedef struct NR_UE_old_sched {
+  uint16_t rbSize;
+  int time_domain_allocation;
+  uint8_t mcsTableIdx;
+  uint8_t mcs;
+  uint8_t numDmrsCdmGrpsNoData;
+} NR_UE_ret_info_t;
+
 typedef enum {
   INACTIVE = 0,
   ACTIVE_NOT_SCHED,
@@ -283,12 +302,42 @@ typedef struct NR_UE_ul_harq {
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
-  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
-  uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+  /// total amount of data awaiting for this UE
+  uint32_t num_total_bytes;
+  /// per-LC status data
+  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
+
+  /// the currently active BWP in DL
+  NR_BWP_Downlink_t *active_bwp;
   NR_sched_pucch *sched_pucch;
+  /// selected PUCCH index, if scheduled
+  int pucch_sched_idx;
   NR_sched_pusch *sched_pusch;
+
+  /// CCE index and aggregation, should be coherent with cce_list
+  NR_SearchSpace_t *search_space;
+  NR_ControlResourceSet_t *coreset;
+  int cce_index;
+  uint8_t aggregation_level;
+
+  /// RB allocation within active BWP
+  uint16_t rbSize;
+  uint16_t rbStart;
+
+  // time-domain allocation for scheduled RBs
+  int time_domain_allocation;
+
+  /// MCS-related infos
+  uint8_t mcsTableIdx;
+  uint8_t mcs;
+  uint8_t numDmrsCdmGrpsNoData;
+
+  /// Retransmission-related information
+  NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
+
   uint16_t ta_timer;
   int16_t ta_update;
+  bool ta_apply;
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
@@ -298,11 +347,6 @@ typedef struct {
   int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
-
-typedef struct NR_preamble_ue {
-  uint8_t num_preambles;
-  uint8_t *preamble_list;
-} NR_preamble_ue;
 
 typedef struct {
 
@@ -317,25 +361,26 @@ typedef struct {
   int ulsch_total_bytes_rx;
 } NR_mac_stats_t;
 
+
+/*! \brief UNR_E_list_t is a "list" of users within UE_info_t. Especial useful in
+ * the scheduler and to keep "classes" of users. */
+typedef struct {
+  int head;
+  int next[MAX_MOBILES_PER_GNB];
+} NR_UE_list_t;
+
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
-  int next[MAX_MOBILES_PER_GNB];
-  int head;
-  int next_ul[MAX_MOBILES_PER_GNB];
-  int head_ul;
-  int avail;
+  NR_UE_list_t list;
   int num_UEs;
-  boolean_t active[MAX_MOBILES_PER_GNB];
-  boolean_t fiveG_connected[MAX_MOBILES_PER_GNB];
+  bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
-  rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
-  NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
-} NR_UE_list_t;
+} NR_UE_info_t;
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -353,10 +398,6 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_target_snrx10;
   /// Pucch target SNR
   int                             pucch_target_snrx10;
-  /// TA command
-  int                             ta_command;
-  /// MAC CE flag indicating TA length
-  int                             ta_len;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
@@ -373,7 +414,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
 
-  NR_UE_list_t UE_list;
+  NR_UE_info_t UE_info;
 
   /// UL handle
   uint32_t ul_handle;

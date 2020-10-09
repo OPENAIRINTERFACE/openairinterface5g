@@ -99,6 +99,7 @@
 
 
 #include "intertask_interface.h"
+#include "NR_FreqBandList.h"
 
 
 #include "common/ran_context.h"
@@ -3199,9 +3200,13 @@ uint8_t do_SecurityModeCommand(
 //------------------------------------------------------------------------------
 uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                 uint8_t               *const buffer,
-                                const uint8_t                Transaction_id)
+                                const uint8_t                Transaction_id,
+                                int16_t              eutra_band,
+                                uint32_t              nr_band)
 //------------------------------------------------------------------------------
 {
+  NR_FreqBandList_t *nsa_band_list;
+  NR_FreqBandInformation_t *nsa_band;
   LTE_DL_DCCH_Message_t dl_dcch_msg;
   LTE_RAT_Type_t rat=LTE_RAT_Type_eutra;
   asn_enc_rval_t enc_rval;
@@ -3238,8 +3243,36 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   /* TODO: no hardcoded values here */
 
+  nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+  nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  if(nr_band > 0)
+    nsa_band->choice.bandInformationNR->bandNR = nr_band;
+  else
+    nsa_band->choice.bandInformationNR->bandNR = 78;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
   OCTET_STRING_t req_freq;
-  unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+  //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+  unsigned char req_freq_buf[1024];
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
+                              NULL,
+                              (void *)nsa_band_list,
+                              req_freq_buf,
+                              1024);
+
+  xer_fprint(stdout, &asn_DEF_NR_FreqBandList, (void *)nsa_band_list);
+
+
+
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x08, 0x18 };  // bands 7 & nr260
 
   //unsigned char req_freq_buf[13] = { 0x00, 0xc0, 0x18, 0x01, 0x01, 0x30, 0x4b, 0x04, 0x0e, 0x08, 0x24, 0x04, 0xd0 };
@@ -3248,7 +3281,7 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //  };
 
   req_freq.buf = req_freq_buf;
-  req_freq.size = 5;
+  req_freq.size = (enc_rval.encoded+7)/8;
 //  req_freq.size = 21;
 
   r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
@@ -3287,9 +3320,13 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //------------------------------------------------------------------------------
 uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
-                                   const uint8_t                Transaction_id)
+                                   const uint8_t                Transaction_id,
+                                   int16_t              eutra_band,
+                                   uint32_t             nr_band)
 //------------------------------------------------------------------------------
 {
+  NR_FreqBandList_t *nsa_band_list;
+  NR_FreqBandInformation_t *nsa_band;
   LTE_DL_DCCH_Message_t dl_dcch_msg;
   LTE_RAT_Type_t rat_nr=LTE_RAT_Type_nr;
   LTE_RAT_Type_t rat_eutra_nr=LTE_RAT_Type_eutra_nr;
@@ -3329,8 +3366,32 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   /* TODO: no hardcoded values here */
 
+  nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+  nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  if(nr_band > 0)
+    nsa_band->choice.bandInformationNR->bandNR = nr_band;
+  else
+    nsa_band->choice.bandInformationNR->bandNR = 78;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
   OCTET_STRING_t req_freq;
-  unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+  //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+  unsigned char req_freq_buf[100];
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
+      NULL,
+      (void *)nsa_band_list,
+      req_freq_buf,
+      1024);
+
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x08, 0x18 };  // bands 7 & nr260
 
   //unsigned char req_freq_buf[13] = { 0x00, 0xc0, 0x18, 0x01, 0x01, 0x30, 0x4b, 0x04, 0x0e, 0x08, 0x24, 0x04, 0xd0 };
@@ -3339,7 +3400,7 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //  };
 
   req_freq.buf = req_freq_buf;
-  req_freq.size = 5;
+  req_freq.size = (enc_rval.encoded+7)/8;
 //  req_freq.size = 21;
 
   r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;

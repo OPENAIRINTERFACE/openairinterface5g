@@ -399,9 +399,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     }
 
 
-    for(i=0; i<buffer_len; ++i){
-        printf("[RRC] MIB PDU : %d\n", bufferP[i]);
-    }
+    //for(i=0; i<buffer_len; ++i){
+    //    printf("[RRC] MIB PDU : %d\n", bufferP[i]);
+    //}
 
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                                                     &asn_DEF_NR_BCCH_BCH_Message,
