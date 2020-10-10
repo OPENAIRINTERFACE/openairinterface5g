@@ -132,7 +132,7 @@ uint16_t ue_process_rar(const module_id_t module_idP, const int CC_id, const fra
   }
 
   // move the selected RAR to the front of the RA_PDSCH buffer
-  memcpy(selected_rar_buffer + 0, (uint8_t *) rarh, 1);
-  memcpy(selected_rar_buffer + 1, (uint8_t *) rar, 6);
+  memmove(selected_rar_buffer + 0, (uint8_t *) rarh, 1);
+  memmove(selected_rar_buffer + 1, (uint8_t *) rar, 6);
   return ret;
 }
