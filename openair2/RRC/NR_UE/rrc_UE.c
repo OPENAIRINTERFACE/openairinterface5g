@@ -1290,5 +1290,41 @@ static void rrc_ue_generate_RRCSetupComplete(
             size,
             buffer,
             PDCP_TRANSMISSION_MODE_CONTROL);
+}
+
+//-----------------------------------------------------------------------------
+void *rrc_nrue_task( void *args_p ) {
+  MessageDef   *msg_p;
+  instance_t    instance;
+  unsigned int  ue_mod_id;
+  int           result;
+  itti_mark_task_ready (TASK_RRC_NRUE);
+
+  while(1) {
+    // Wait for a message
+    itti_receive_msg (TASK_RRC_NRUE, &msg_p);
+    instance = ITTI_MSG_INSTANCE (msg_p);
+    ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
+
+    switch (ITTI_MSG_ID(msg_p)) {
+      case TERMINATE_MESSAGE:
+        LOG_W(RRC, " *** Exiting RRC thread\n");
+        itti_exit_task ();
+        break;
+
+      case MESSAGE_TEST:
+        LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        break;
+
+      default:
+        LOG_E(RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        break;
     }
+
+    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+    msg_p = NULL;
+  }
+}
+
 
