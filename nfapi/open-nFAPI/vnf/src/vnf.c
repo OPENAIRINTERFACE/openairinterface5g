@@ -939,6 +939,7 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 		
 		uint32_t header_buffer_size = NFAPI_HEADER_LENGTH;
 		uint8_t header_buffer[header_buffer_size];
+		memset(header_buffer, 0, header_buffer_size);
 
 		uint32_t stack_buffer_size = 32; //should it be the size of then sctp_notificatoin structure
 		uint8_t stack_buffer[stack_buffer_size];
@@ -949,6 +950,7 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 		uint32_t message_size = 0;
 
 		struct sockaddr_in addr;
+		memset(&addr, 0, sizeof(addr));
 		socklen_t addr_len = sizeof(addr);
 
 		struct sctp_sndrcvinfo sndrcvinfo;
