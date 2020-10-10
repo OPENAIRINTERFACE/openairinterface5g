@@ -53,6 +53,7 @@
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
+#include "../NR/nr_rrc_defs.h"
 
 #define NB_NR_UE_INST 1
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
@@ -86,8 +87,9 @@ typedef struct NR_UE_RRC_INST_s {
     NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
     rb_id_t                        *defaultDRB; // remember the ID of the default DRB
 
-    NR_SRB_INFO_TABLE_ENTRY        Srb1;
-    NR_SRB_INFO_TABLE_ENTRY        Srb2;
+    NR_SRB_INFO Srb0[NB_SIG_CNX_UE];
+    NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
+    NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     NR_UE_RRC_INFO                 Info[NB_SIG_CNX_UE];
 

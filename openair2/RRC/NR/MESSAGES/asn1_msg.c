@@ -41,6 +41,7 @@
 #include <per_encoder.h>
 
 #include "asn1_msg.h"
+#include "../nr_rrc_proto.h"
 #include "RRC/NR/nr_rrc_extern.h"
 #include "NR_DL-CCCH-Message.h"
 #include "NR_UL-CCCH-Message.h"
@@ -951,11 +952,11 @@ uint16_t do_RRCReconfiguration(
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier = Transaction_id;
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
 
-    uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
+    // uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
     /******************** Radio Bearer Config ********************/
     
     /* Configure SRB2 */
-    SRB2_configList = ue_context_pP->ue_context.SRB_configList2[xid];
+    SRB2_configList = ue_context_pP->ue_context.SRB_configList2[Transaction_id];
 
     if (SRB2_configList) {
         free(SRB2_configList);
@@ -1017,13 +1018,13 @@ uint16_t do_RRCReconfiguration(
     ie->radioBearerConfig->drb_ToReleaseList = NULL;
 
     /******************** Secondary Cell Group ********************/
-    rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
-    fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
-                                     ue_context_pP->ue_context.secondaryCellGroup,
-                                     1,
-                                     1,
-                                     carrier->pdsch_AntennaPorts,
-                                     carrier->initial_csi_index[gnb_rrc_inst->Nb_ue]);
+    // rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
+    // fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
+    //                                  ue_context_pP->ue_context.secondaryCellGroup,
+    //                                  1,
+    //                                  1,
+    //                                  carrier->pdsch_AntennaPorts,
+    //                                  carrier->initial_csi_index[gnb_rrc_inst->Nb_ue]);
 
     /******************** Meas Config ********************/
     // measConfig
