@@ -343,20 +343,34 @@ static void UE_synch(void *arg) {
         // initial sync failed
         // calculate new offset and try again
         if (UE->UE_scan_carrier == 1) {
+
+          uint64_t dl_carrier, ul_carrier;
+
           if (freq_offset >= 0)
             freq_offset += 100;
 
           freq_offset *= -1;
-          LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %lu, UL %lu)\n",
-                freq_offset,
-                UE->rx_total_gain_dB,
-                UE->frame_parms.dl_CarrierFreq+freq_offset,
-                UE->frame_parms.ul_CarrierFreq+freq_offset );
+
+          if (downlink_frequency[0][0])
+            dl_carrier = downlink_frequency[0][0];
+          else
+            dl_carrier = UE->frame_parms.dl_CarrierFreq;
+
+          if (uplink_frequency_offset[0][0])
+            ul_carrier = dl_carrier + uplink_frequency_offset[0][0];
+          else
+            ul_carrier = dl_carrier + UE->frame_parms.ul_CarrierFreq - UE->frame_parms.dl_CarrierFreq;
 
           for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = UE->frame_parms.dl_CarrierFreq+freq_offset;
-            openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = UE->frame_parms.ul_CarrierFreq+freq_offset;
+            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = dl_carrier + freq_offset;
+            openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = ul_carrier + freq_offset;
             openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+
+          LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %f, UL %f)\n",
+                freq_offset,
+                UE->rx_total_gain_dB,
+                openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i],
+                openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i]);
 
             if (UE->UE_scan_carrier==1)
               openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
