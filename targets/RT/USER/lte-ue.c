@@ -972,7 +972,7 @@ void ue_stub_rx_handler(unsigned int num_bytes,
   }
 }
 
-uint64_t clock_usec()
+uint64_t clock_usec(void)
 {
     struct timespec t;
     if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
