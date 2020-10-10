@@ -313,6 +313,7 @@ schedule_SR (module_id_t module_idP,
   nfapi_ul_config_request_body_t *ul_req_body = NULL;
   LTE_SchedulingRequestConfig_t  *SRconfig = NULL;
   nfapi_ul_config_sr_information sr;
+  memset(&sr, 0, sizeof(sr));
 
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     eNB->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
