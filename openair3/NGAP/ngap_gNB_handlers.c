@@ -1859,165 +1859,7 @@ static
 int ngap_gNB_handle_ng_path_switch_request_ack(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
-#if 0
-  ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
-  ngap_gNB_ue_context_t *ue_desc_p        = NULL;
-  MessageDef            *message_p        = NULL;
-  NGAP_PathSwitchRequestAcknowledge_t *pathSwitchRequestAcknowledge;
-  NGAP_PathSwitchRequestAcknowledgeIEs_t *ie;
-  NGAP_PDUSESSIONToBeSwitchedULItemIEs_t *ngap_PDUSESSIONToBeSwitchedULItemIEs;
-  NGAP_PDUSESSIONToBeSwitchedULItem_t *ngap_PDUSESSIONToBeSwitchedULItem;
-  NGAP_PDUSESSIONItemIEs_t  *e_RABItemIEs;
-  NGAP_PDUSESSIONItem_t     *e_RABItem;
-  DevAssert(pdu != NULL);
-  pathSwitchRequestAcknowledge = &pdu->choice.successfulOutcome->value.choice.PathSwitchRequestAcknowledge;
-
-  /* Path Switch request == UE-related procedure -> stream !=0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received s1 path switch request ack on stream (%d)\n",
-               assoc_id, stream);
-    //return -1;
-  }
-
-  if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received S1 path switch request ack for non existing "
-               "AMF context\n", assoc_id);
-    return -1;
-  }
-
-  // send a message to RRC
-  message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_PATH_SWITCH_REQ_ACK);
-  /* mandatory */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, true);
-  if (ie == NULL) {
-    NGAP_ERROR("[SCTP %d] Received path switch request ack for non "
-               "ie context is NULL\n", assoc_id);
-    return -1;
-  }
-
-  NGAP_PATH_SWITCH_REQ_ACK(message_p).gNB_ue_ngap_id = ie->value.choice.GNB_UE_NGAP_ID;
-
-  if ((ue_desc_p = ngap_gNB_get_ue_context(amf_desc_p->ngap_gNB_instance,
-                   ie->value.choice.GNB_UE_NGAP_ID)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received path switch request ack for non "
-               "existing UE context 0x%06lx\n", assoc_id,
-               ie->value.choice.GNB_UE_NGAP_ID);
-    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    return -1;
-  }
-
-  NGAP_PATH_SWITCH_REQ_ACK(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
-  /* mandatory */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, true);
-
-  if (ie == NULL) {
-    NGAP_ERROR("[SCTP %d] Received path switch request ack for non "
-               "ie context is NULL\n", assoc_id);
-    return -1;
-  }
-
-  NGAP_PATH_SWITCH_REQ_ACK(message_p).amf_ue_ngap_id = ie->value.choice.AMF_UE_NGAP_ID;
-
-  if ( ue_desc_p->amf_ue_ngap_id != ie->value.choice.AMF_UE_NGAP_ID) {
-    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%d != %ld)",
-              ue_desc_p->amf_ue_ngap_id, ie->value.choice.AMF_UE_NGAP_ID);
-  }
-
-  /* mandatory */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_SecurityContext, true);
-
-  if (ie == NULL) {
-    NGAP_ERROR("[SCTP %d] Received path switch request ack for non "
-               "ie context is NULL\n", assoc_id);
-    return -1;
-  }
-
-  NGAP_PATH_SWITCH_REQ_ACK(message_p).next_hop_chain_count =
-    ie->value.choice.SecurityContext.nextHopChainingCount;
-  memcpy(&NGAP_PATH_SWITCH_REQ_ACK(message_p).next_security_key,
-         ie->value.choice.SecurityContext.nextHopParameter.buf,
-         ie->value.choice.SecurityContext.nextHopParameter.size);
-  /* optional */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_uEaggregateMaximumBitrate, false);
-
-  if (ie) {
-    OCTET_STRING_TO_INT32 (
-      &ie->value.choice.UEAggregateMaximumBitrate.uEaggregateMaximumBitRateUL,
-      NGAP_PATH_SWITCH_REQ_ACK(message_p).ue_ambr.br_ul
-    );
-    OCTET_STRING_TO_INT32 (
-      &ie->value.choice.UEAggregateMaximumBitrate.uEaggregateMaximumBitRateDL,
-      NGAP_PATH_SWITCH_REQ_ACK(message_p).ue_ambr.br_dl
-    );
-  } else {
-    NGAP_WARN("UEAggregateMaximumBitrate not supported\n");
-    NGAP_PATH_SWITCH_REQ_ACK(message_p).ue_ambr.br_ul = 0;
-    NGAP_PATH_SWITCH_REQ_ACK(message_p).ue_ambr.br_dl = 0;
-  }
-
-  /* optional */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_PDUSESSIONToBeSwitchedULList, false);
-
-  if (ie) {
-    NGAP_PATH_SWITCH_REQ_ACK(message_p).nb_pdusessions_tobeswitched = ie->value.choice.PDUSESSIONToBeSwitchedULList.list.count;
-
-    for (int i = 0; i < ie->value.choice.PDUSESSIONToBeSwitchedULList.list.count; i++) {
-      ngap_PDUSESSIONToBeSwitchedULItemIEs = (NGAP_PDUSESSIONToBeSwitchedULItemIEs_t *)ie->value.choice.PDUSESSIONToBeSwitchedULList.list.array[i];
-      ngap_PDUSESSIONToBeSwitchedULItem = &ngap_PDUSESSIONToBeSwitchedULItemIEs->value.choice.PDUSESSIONToBeSwitchedULItem;
-      NGAP_PATH_SWITCH_REQ_ACK (message_p).pdusessions_tobeswitched[i].pdusession_id = ngap_PDUSESSIONToBeSwitchedULItem->e_RAB_ID;
-      memcpy(NGAP_PATH_SWITCH_REQ_ACK (message_p).pdusessions_tobeswitched[i].sgw_addr.buffer,
-             ngap_PDUSESSIONToBeSwitchedULItem->transportLayerAddress.buf, ngap_PDUSESSIONToBeSwitchedULItem->transportLayerAddress.size);
-      NGAP_PATH_SWITCH_REQ_ACK (message_p).pdusessions_tobeswitched[i].sgw_addr.length =
-        ngap_PDUSESSIONToBeSwitchedULItem->transportLayerAddress.size * 8 - ngap_PDUSESSIONToBeSwitchedULItem->transportLayerAddress.bits_unused;
-      OCTET_STRING_TO_INT32(&ngap_PDUSESSIONToBeSwitchedULItem->gTP_TEID,
-                            NGAP_PATH_SWITCH_REQ_ACK (message_p).pdusessions_tobeswitched[i].gtp_teid);
-    }
-  } else {
-    NGAP_WARN("PDUSESSIONToBeSwitchedULList not supported\n");
-    NGAP_PATH_SWITCH_REQ_ACK(message_p).nb_pdusessions_tobeswitched = 0;
-  }
-
-  /* optional */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_PDUSESSIONToBeReleasedList, false);
-
-  if (ie) {
-    NGAP_PATH_SWITCH_REQ_ACK(message_p).nb_pdusessions_tobereleased = ie->value.choice.PDUSESSIONList.list.count;
-
-    for (int i = 0; i < ie->value.choice.PDUSESSIONList.list.count; i++) {
-      e_RABItemIEs = (NGAP_PDUSESSIONItemIEs_t *)ie->value.choice.PDUSESSIONList.list.array[i];
-      e_RABItem =  &e_RABItemIEs->value.choice.PDUSESSIONItem;
-      NGAP_PATH_SWITCH_REQ_ACK (message_p).pdusessions_tobereleased[i].pdusession_id = e_RABItem->e_RAB_ID;
-    }
-  } else {
-    NGAP_WARN("PDUSESSIONToBeReleasedList not supported\n");
-    NGAP_PATH_SWITCH_REQ_ACK(message_p).nb_pdusessions_tobereleased = 0;
-  }
-
-  /* optional */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_CriticalityDiagnostics, false);
-
-  if(!ie) {
-    NGAP_WARN("Critical Diagnostic not supported\n");
-  }
-
-  /* optional */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
-                             NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID_2, false);
-
-  if(!ie) {
-    NGAP_WARN("AMF_UE_NGAP_ID_2 flag not supported\n");
-  }
-
-  // TODO continue
-  itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
-#endif
+  // TODO
   return 0;
 }
 
@@ -2025,68 +1867,8 @@ static
 int ngap_gNB_handle_ng_path_switch_request_failure(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
-#if 0
-  ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
-  NGAP_PathSwitchRequestFailure_t    *pathSwitchRequestFailure;
-  NGAP_PathSwitchRequestFailureIEs_t *ie;
-  DevAssert(pdu != NULL);
-  pathSwitchRequestFailure = &pdu->choice.unsuccessfulOutcome->value.choice.PathSwitchRequestFailure;
 
-  if (stream != 0) {
-    NGAP_ERROR("[SCTP %d] Received s1 path switch request failure on stream != 0 (%d)\n",
-               assoc_id, stream);
-    return -1;
-  }
-
-  if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received S1 path switch request failure for non existing "
-               "AMF context\n", assoc_id);
-    return -1;
-  }
-
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestFailureIEs_t, ie, pathSwitchRequestFailure,
-                             NGAP_ProtocolIE_ID_id_Cause, true);
-
-  if (ie == NULL) {
-    NGAP_ERROR("[SCTP %d] Received S1 path switch request failure for non existing "
-               "ie context is NULL\n", assoc_id);
-    return -1;
-  }
-
-  switch(ie->value.choice.Cause.present) {
-    case NGAP_Cause_PR_NOTHING:
-      NGAP_WARN("Received S1 Error indication cause NOTHING\n");
-      break;
-
-    case NGAP_Cause_PR_radioNetwork:
-      NGAP_WARN("Radio Network Layer Cause Failure\n");
-      break;
-
-    case NGAP_Cause_PR_transport:
-      NGAP_WARN("Transport Layer Cause Failure\n");
-      break;
-
-    case NGAP_Cause_PR_nas:
-      NGAP_WARN("NAS Cause Failure\n");
-      break;
-
-    case NGAP_Cause_PR_misc:
-      NGAP_WARN("Miscelaneous Cause Failure\n");
-      break;
-
-    default:
-      NGAP_WARN("Received an unknown S1 Error indication cause\n");
-      break;
-  }
-
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PathSwitchRequestFailureIEs_t, ie, pathSwitchRequestFailure,
-                             NGAP_ProtocolIE_ID_id_CriticalityDiagnostics, false);
-
-  if(!ie) {
-    NGAP_WARN("Critical Diagnostic not supported\n");
-  }
-#endif
-  // TODO continue
+  // TODO
   return 0;
 }
 
@@ -2095,7 +1877,7 @@ int ngap_gNB_handle_ng_ENDC_pdusession_modification_confirm(uint32_t            
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu){
 
-	LOG_W(NGAP, "Implementation of NGAP E-RAB Modification confirm handler is pending...\n");
+	LOG_W(NGAP, "Implementation of NGAP Pdusession Modification confirm handler is pending...\n");
 	return 0;
 }
 
