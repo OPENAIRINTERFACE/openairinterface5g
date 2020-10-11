@@ -95,6 +95,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "NB_IoT_interface.h"
 #include <executables/split_headers.h>
 
+#if USING_GPROF
+#  include "sys/gmon.h"
+#endif
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -738,6 +741,14 @@ int main ( int argc, char **argv )
   if(IS_SOFTMODEM_DOFORMS)
      load_softscope("enb");
   itti_wait_tasks_end();
+
+#if USING_GPROF
+  // Save the gprof data now (rather than via atexit) in case we crash while shutting down
+  fprintf(stderr, "Recording gprof data...\n");
+  _mcleanup();
+  fprintf(stderr, "Recording gprof data...done\n");
+#endif // USING_GPROF
+
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
