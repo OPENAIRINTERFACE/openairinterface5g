@@ -517,7 +517,8 @@ void logMinimal(int comp, int level, const char *format, ...)
         buf[len++] = '\n';
     }
 
-    write(STDOUT_FILENO, buf, len);
+    __attribute__((unused))
+    int unused = write(STDOUT_FILENO, buf, len);
 }
 #endif // LOG_MINIMAL
 
