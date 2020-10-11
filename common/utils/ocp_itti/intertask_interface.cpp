@@ -416,9 +416,22 @@ task_list_t tasks[TASK_MAX];
   void itti_send_terminate_message(task_id_t task_id) {
   }
 
+  static volatile bool shutting_down;
+
+  static void catch_sigterm(int) {
+    static const char msg[] = "\n** Caught SIGTERM, shutting down\n";
+    __attribute__((unused))
+    int unused = write(STDOUT_FILENO, msg, sizeof(msg) - 1);
+    shutting_down = true;
+  }
+
   void itti_wait_tasks_end(void) {
-    while(1)
-      sleep(24*3600);
+    shutting_down = false;
+    signal(SIGTERM, catch_sigterm);
+    while (! shutting_down)
+    {
+      sleep(24 * 3600);
+    }
   }
 
   void itti_update_lte_time(uint32_t frame, uint8_t slot) {}
