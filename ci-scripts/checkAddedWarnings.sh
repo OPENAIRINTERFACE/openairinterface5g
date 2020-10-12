@@ -110,7 +110,7 @@ MODIFIED_FILES=`git log $TARGET_INIT_COMMIT..$MERGE_COMMMIT --oneline --name-sta
 NB_WARNINGS_FILES=0
 
 # Retrieve list of warnings 
-LIST_WARNING_FILES=`egrep "error:|warning:" archives/*/*.Rel15.txt archives/*/basic_simulator_*txt | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto" | sed -e "s#^.*/home/ubuntu/tmp/##" -e "s#^.*/tmp/CI-eNB/##" -e "s#common/utils/.*/itti#common/utils/itti#" | awk -F ":" '{print $1}' | sort | uniq`
+LIST_WARNING_FILES=`egrep "error:|warning:" archives/*/*.Rel15.txt | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto" | sed -e "s#^.*/home/ubuntu/tmp/##" -e "s#^.*/tmp/CI-eNB/##" -e "s#common/utils/.*/itti#common/utils/itti#" | awk -F ":" '{print $1}' | sort | uniq`
 
 echo ""
 echo "List of files that have been modified by the Merge Request AND"

@@ -44,12 +44,14 @@
 #include <common/utils/assertions.h>
 #include <common/utils/LOG/log.h>
 #include <common/utils/load_module_shlib.h>
+#include <common/utils/telnetsrv/telnetsrv.h>
 #include <common/config/config_userapi.h>
 #include "common_lib.h"
 #include <openair1/PHY/defs_eNB.h>
 #include "openair1/PHY/defs_UE.h"
 #define CHANNELMOD_DYNAMICLOAD
 #include <openair1/SIMULATION/TOOLS/sim.h>
+#include <targets/ARCH/rfsimulator/rfsimulator.h>
 
 #define PORT 4043 //default TCP port for this simulator
 #define CirSize 307200 // 100ms is enough
@@ -77,11 +79,25 @@ extern RAN_CONTEXT_t RC;
 #define RFSIMULATOR_PARAMS_DESC {\
     {"serveraddr",             "<ip address to connect to>\n",          0,         strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
     {"serverport",             "<port to connect to>\n",                0,         u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
-    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0},\
+    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0 },\
     {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
-    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 }\
+    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
+    {"ploss",                  "<channel path loss in dB>\n",           0,         dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"forgetfact",             "<channel forget factor ((0 to 1)>\n",   0,         dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"offset",                 "<channel offset in samps>\n",           0,         iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
   };
 
+
+
+static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
+static telnetshell_cmddef_t rfsimu_cmdarray[] = {
+  {"setmodel","<model name>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},  
+  {"","",NULL},
+};
+
+static telnetshell_vardef_t rfsimu_vardef[] = {
+  {"",0,NULL}
+};  
 pthread_mutex_t Sockmutex;
 
 typedef struct complex16 sample_t; // 2*16 bits complex number
@@ -113,6 +129,11 @@ typedef struct {
   double sample_rate;
   double tx_bw;
   int channelmod;
+  double chan_pathloss;
+  double chan_forgetfact;
+  int    chan_offset;
+  void *telnetcmd_qid;
+  poll_telnetcmdq_func_t poll_telnetcmdq;
 } rfsimulator_state_t;
 
 
@@ -146,13 +167,29 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
     // Legacy changes directlty the variable channel_model->path_loss_dB place to place
     // while calling new_channel_desc_scm() with path losses = 0
+    static bool init_done=false;
+
+    if (!init_done) {
+	  uint64_t rand;
+	  FILE *h=fopen("/dev/random","r");
+      if ( 1 != fread(&rand,sizeof(rand),1,h) )
+        LOG_W(HW, "Simulator can't read /dev/random\n");
+	  fclose(h);
+      randominit(rand);
+      tableNor(rand);
+      init_done=true;
+    }
+
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
                                             bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
-                                            0.0, // forgetting_factor
-                                            0, // maybe used for TA
-                                            0); // path_loss in dB
+                                            30e-9,  // TDL delay-spread parameter
+                                            bridge->chan_forgetfact, // forgetting_factor
+                                            bridge->chan_offset, // maybe used for TA
+                                            bridge->chan_pathloss); // path_loss in dB
+    set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
+
     random_channel(ptr->channel_model,false);
   }
 }
@@ -279,6 +316,42 @@ void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
     rfsimulator->typeStamp = UE_MAGICDL_FDD;
 }
 
+static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg) {
+  char *modelname=NULL; 
+  int s = sscanf(buff,"%ms\n",&modelname);
+  if (s == 1) {
+    int channelmod=modelid_fromname(modelname);
+    if (channelmod<0)
+      prnt("ERROR: model %s unknown\n",modelname);
+    else {
+  	  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  	  for (int i=0; i<FD_SETSIZE; i++) {
+        buffer_t *b=&t->buf[i];
+        if (b->conn_sock >= 0 ) {
+          channel_desc_t *newmodel=new_channel_desc_scm(t->tx_num_channels,t->rx_num_channels,
+                                                channelmod,
+                                                t->sample_rate,
+                                                t->tx_bw,
+                                                30e-9,  // TDL delay-spread parameter
+                                                t->chan_forgetfact, // forgetting_factor
+                                                t->chan_offset, // maybe used for TA
+                                                t->chan_pathloss); // path_loss in dB
+          set_channeldesc_owner(newmodel, RFSIMU_MODULEID);
+          random_channel(newmodel,false);
+          channel_desc_t *oldmodel=b->channel_model;
+          b->channel_model=newmodel;
+          free_channel_desc_scm(oldmodel);
+          prnt("New model %s applied to channel connected to sock %d\n",modelname,i);
+        }
+      }
+    }
+  } else {
+  	  prnt("ERROR: no model specified\n");  
+  }
+  free(modelname);
+  return CMDSTATUS_FOUND;
+}
+
 int server_start(openair0_device *device) {
   rfsimulator_state_t *t = (rfsimulator_state_t *) device->priv;
   t->typeStamp=ENB_MAGICDL_FDD;
@@ -368,6 +441,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (t->lastWroteTS > timestamp+nsamps)
     LOG_E(HW,"Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
               t->lastWroteTS, timestamp);
+
   t->lastWroteTS=timestamp+nsamps;
 
   if (!alreadyLocked)
@@ -385,7 +459,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
 static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initial) {
   // Process all incoming events on sockets
   // store the data in lists
-  struct epoll_event events[FD_SETSIZE]= {0};
+  struct epoll_event events[FD_SETSIZE]= {{0}};
   int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
 
   if ( nfds==-1 ) {
@@ -469,16 +543,21 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 	  b->trashingPacket=true;
 	} else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
-	  
+
+          if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
           for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
             for (int a=0; a < nbAnt; a++) {
               b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
               b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
             }
           }
+          } else {
+	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
+	  }
 
           if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
+
           b->lastReceivedTS=b->th.timestamp;
 	  
         } else if ( b->lastReceivedTS > b->th.timestamp && b->th.size == 1 ) {
@@ -497,7 +576,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
           LOG_E(HW,"UEsock: %d Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, t->lastWroteTS, b->lastReceivedTS);
 
         pthread_mutex_unlock(&Sockmutex);
-        b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
+        b->transferPtr=(char *)&b->circularBuf[(b->lastReceivedTS*b->th.nbAnt)%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
 
@@ -561,6 +640,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       pthread_mutex_unlock(&Sockmutex);
       usleep(10000);
       pthread_mutex_lock(&Sockmutex);
+
       if ( t->lastWroteTS < t->nextTimestamp ) {
         // Assuming Tx is not done fully in another thread
         // We can never write is the past from the received time
@@ -574,6 +654,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
         for ( int i=0; i < t->tx_num_channels; i++)
           samplesVoid[i]=(void *)&v;
+
 	LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
 	      t->lastWroteTS, t->nextTimestamp);
         rfsimulator_write_internal(t, t->nextTimestamp,
@@ -625,8 +706,10 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       // it seems legacy behavior is: never in UL, each frame in DL
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
+      if (t->poll_telnetcmdq)
+      	  t->poll_telnetcmdq(t->telnetcmd_qid,t);
 
-      for (int a=0; a<nbAnt; a++) {
+      for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
         if ( ptr->channel_model != NULL ) // apply a channel model
           rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
                       a,
@@ -637,13 +720,16 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
                     );
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
-
-          for ( int i=0; i < nsamps; i++ ) {
-            out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].r;
-            out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].i;
-          }
+          int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
+          //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
+          for (int i=0; i < nsamps; i++) {//loop over nsamps
+        	  for (int a_tx=0; a_tx<nbAnt_tx; a_tx++){//sum up signals from nbAnt_tx antennas
+        		  out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
+        		  out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
+        	  } // end for a_tx
+          } // end for i (number of samps)
         } // end of no channel modeling
-      } // end for a...
+      } // end for a (number of rx antennas)
     }
   }
 
@@ -716,7 +802,20 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->rx_num_channels=openair0_cfg->rx_num_channels;
   rfsimulator->sample_rate=openair0_cfg->sample_rate;
   rfsimulator->tx_bw=openair0_cfg->tx_bw;
-  randominit(0);
+  //randominit(0);
   set_taus_seed(0);
+   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
+  add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
+ 
+  if (addcmd != NULL) {
+    rfsimulator->poll_telnetcmdq =  (poll_telnetcmdq_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_POLLCMDQ_FNAME);  
+    addcmd("rfsimu",rfsimu_vardef,rfsimu_cmdarray);
+    for(int i=0; rfsimu_cmdarray[i].cmdfunc != NULL; i++) {
+      if (	rfsimu_cmdarray[i].qptr != NULL) {
+        rfsimulator->telnetcmd_qid = rfsimu_cmdarray[i].qptr;
+        break;
+      }
+    }    
+  } 
   return 0;
 }

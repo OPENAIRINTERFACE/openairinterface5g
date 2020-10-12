@@ -804,7 +804,37 @@ void dl_config_req_UE_MAC_dci(int sfn,
           UE_mac_inst[ue_id].first_ULSCH_Tx = 1;
         }
       }
-    } else {
+    } 
+    //else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE) {
+    //  // BCH case: Last parameter is 1 if first time synchronization and zero
+    //  // otherwise.  Not sure which value to put for our case.
+    //  if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED){
+    //    dl_phy_sync_success(Mod_id, sfn, 0, 1);
+    //    LOG_E(MAC,
+    //          "%s(): Received MIB: UE_mode: %d, sfn/sf: %d.%d\n",
+    //          __func__,
+    //          UE_mac_inst[Mod_id].UE_mode[0],
+    //          sfn,
+    //          sf);
+    //    UE_mac_inst[Mod_id].UE_mode[0] = PRACH;
+    //  } else {
+    //    dl_phy_sync_success(Mod_id, sfn, 0, 0);
+    //  }
+    //} else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE){
+    //    if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED) {
+    //       /* this check is in the code before refactoring, but I don't know
+    //        * why. Leave it in here for the moment */
+    //       continue;
+    //    }
+    //    nfapi_dl_config_request_pdu_t *dl_config_pdu_tmp = &dl_config_pdu_list[i];
+    //    const int pdu_index = dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
+    //    ue_send_mch_sdu(Mod_id, 0, sfn,
+    //        tx_request_pdu_list[pdu_index].segments[0].segment_data,
+    //        tx_request_pdu_list[pdu_index].segments[0].segment_length,
+    //        0,0);
+
+    //} 
+    else {
       LOG_W(MAC, "can not handle special RNTI %x\n", rnti);
     }
   }

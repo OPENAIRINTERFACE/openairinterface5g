@@ -32,6 +32,7 @@
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/harq_nr.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
@@ -42,6 +43,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 //#define DEBUG_DLSCH_DECODING
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
@@ -66,7 +68,7 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
   if (dlsch) {
     if (N_RB_DL != 273) {
       a_segments = a_segments*N_RB_DL;
-      a_segments = a_segments/273;
+      a_segments = a_segments/273 +1;
     }  
  
 
@@ -132,6 +134,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     memset(dlsch,0,sizeof(NR_UE_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
+    dlsch->number_harq_processes_for_pdsch = Mdlharq;
     dlsch->Nsoft = Nsoft;
     dlsch->Mlimit = 4;
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
@@ -142,6 +145,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(NR_DL_UE_HARQ_t));
+        init_downlink_harq_status(dlsch->harq_processes[i]);
         dlsch->harq_processes[i]->first_tx=1;
         dlsch->harq_processes[i]->b = (uint8_t*)malloc16(dlsch_bytes);
 
@@ -214,16 +218,16 @@ void nr_dlsch_unscrambling(int16_t* llr,
 }
 
 uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-                         uint16_t nb_symb_sch,
-                         uint8_t nr_tti_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag)
+			   short *dlsch_llr,
+			   NR_DL_FRAME_PARMS *frame_parms,
+			   NR_UE_DLSCH_t *dlsch,
+			   NR_DL_UE_HARQ_t *harq_process,
+			   uint32_t frame,
+			   uint16_t nb_symb_sch,
+			   uint8_t nr_tti_rx,
+			   uint8_t harq_pid,
+			   uint8_t is_crnti,
+			   uint8_t llr8_flag)
 {
 
 #if UE_TIMING_TRACE
@@ -262,8 +266,14 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   double Coderate;// = 0.0;
 
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
-  AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
-  uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4;
+  AssertFatal(dmrs_Type == 0 || dmrs_Type == 1, "Illegal dmrs_type %d\n", dmrs_Type);
+  uint8_t nb_re_dmrs;
+  if (dmrs_Type==NFAPI_NR_DMRS_TYPE1) {
+    nb_re_dmrs = 6*harq_process->n_dmrs_cdm_groups;
+  }
+  else {
+    nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
+  }
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
   AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
 
@@ -273,7 +283,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   __m128i *pl = (__m128i*)&l;
   
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
-
+  
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
 
   if (!dlsch_llr) {
@@ -317,7 +327,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
 
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, 0, harq_process->Nl);
 
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
@@ -326,7 +336,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  LOG_D(PHY,"DLSCH Decoding, harq_pid %d TBS %d G %d nb_re_dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nb_re_dmrs,harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
+  LOG_D(PHY,"DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,A/8,G, nb_re_dmrs,harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
   if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
@@ -405,7 +415,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   if (harq_process->C > a_segments) {
@@ -580,6 +590,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
         LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
+	if (r==0)
+	  for (int i=0;i<10;i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t*)llrProcBuf)[i]);
+
         //Temporary hack
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
@@ -653,9 +666,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
     harq_process->errors[harq_process->round]++;
-    // harq_process->round++; // [hna] uncomment this line when HARQ is implemented
 
-    //    printf("Rate: [UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
+    //    printf("Rate: [UE %d] DLSCH: Setting NACK for slot %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,nr_tti_rx,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
@@ -801,8 +813,13 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
   //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
 
-  uint8_t nb_re_dmrs = (dmrs_type==1)?6:4;
-  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
+  uint8_t nb_re_dmrs;
+  if (dmrs_Type == NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*harq_process->n_dmrs_cdm_groups;
+  else
+    nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
+
+  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
 
   uint32_t i,j;
 //  int nbDlProcessing =0;
@@ -854,7 +871,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
 
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, 0, harq_process->Nl);
 
   A = harq_process->TBS;
 
@@ -943,7 +960,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   if (harq_process->C > a_segments) {
@@ -1431,7 +1448,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
 
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, 0, harq_process->Nl);
 
   A = harq_process->TBS; //2072 for QPSK 1/3
 
@@ -1521,7 +1538,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   if (harq_process->C > a_segments) {
@@ -1697,10 +1714,10 @@ void nr_dlsch_decoding_process(void *arg)
         }
 
         no_iteration_ldpc = nrLDPC_decoder(p_decParams,
-               (int8_t*)&pl[0],
-               llrProcBuf,
-                           p_nrLDPC_procBuf,                
-               p_procTime);
+                                           (int8_t*)&pl[0],
+                                           llrProcBuf,
+                                           p_nrLDPC_procBuf,
+                                           p_procTime);
 
         // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
         if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {

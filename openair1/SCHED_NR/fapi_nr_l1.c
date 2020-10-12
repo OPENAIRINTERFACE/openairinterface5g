@@ -49,7 +49,7 @@ void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
   AssertFatal(dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag== 1, "bchPayloadFlat %d != 1\n",
               dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag);
 
-  LOG_I(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
+  LOG_D(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
   memcpy((void*)&gNB->ssb_pdu,&dl_tti_pdu->ssb_pdu,sizeof(dl_tti_pdu->ssb_pdu));
 }
 
@@ -99,9 +99,9 @@ void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Frame %d, Slot %d: DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, pdcch_pdu->pdcch_pdu_rel15.numDlDci);
 
   // copy dci configuration into gNB structure
-  gNB->pdcch_pdu = pdcch_pdu;
+  //  gNB->pdcch_pdu = pdcch_pdu;
 
-  nr_fill_dci(gNB,frame,slot);
+  nr_fill_dci(gNB,frame,slot,pdcch_pdu);
 
 
 
@@ -114,11 +114,9 @@ void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Frame %d, Slot %d: UL DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci);
 
   // copy dci configuration into gNB structure
-  gNB->ul_dci_pdu = ul_dci_request_pdu;
+  //  gNB->ul_dci_pdu = ul_dci_request_pdu;
 
-  nr_fill_ul_dci(gNB,frame,slot);
-
-
+  nr_fill_ul_dci(gNB,frame,slot,ul_dci_request_pdu);
 
 }
 
@@ -154,17 +152,22 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_dl_pdu             = DL_req->nPDUs;
   //  uint8_t number_ul_pdu             = 0;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
+  uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
 
-  //  if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
-
-  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
-        frame,slot,
-        DL_req->SFN,DL_req->Slot,number_dl_pdu,
-        TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs);
+  if (DL_req != NULL && TX_req!=NULL)
+    LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d DL_req:SFN/SLO:%04d/%d:dl_pdu:%d tx_req:SFN/SLOT:%04d/%d:pdus:%d;ul_dci %d ul_tti %d\n",
+	  frame,slot,
+	  DL_req->SFN,DL_req->Slot,number_dl_pdu,
+	  TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs,
+	  number_ul_dci_pdu,number_ul_tti_pdu);
 
   int pdcch_received=0;
-  gNB->num_pdsch_rnti=0;
-  gNB->pdcch_pdu = NULL;
+  gNB->num_pdsch_rnti[slot]=0;
+  for (int i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
+    gNB->dlsch[i][0]->rnti=0;
+    gNB->dlsch[i][0]->harq_mask=0;
+  }
+
   gNB->pbch_configured=0;
 
   for (int i=0;i<number_dl_pdu;i++) {
@@ -192,6 +195,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
 
       {
+        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
         nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdu->pdsch_pdu.pdsch_pdu_rel15;
         uint16_t pduIndex = pdsch_pdu_rel15->pduIndex;
 	AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
@@ -203,14 +207,11 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     }
   }
 
-  if (UL_tti_req!=NULL) 
-    memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
+  //  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
   if(nfapi_mode != 2)
   for (int i=0;i<number_ul_dci_pdu;i++) {
-    handle_nfapi_nr_ul_dci_pdu(gNB,
-			      frame, slot,
-			      &UL_dci_req->ul_dci_pdu_list[i]);
+    handle_nfapi_nr_ul_dci_pdu(gNB, frame, slot, &UL_dci_req->ul_dci_pdu_list[i]);
   }
   if (nfapi_mode != 0 ) 
   {

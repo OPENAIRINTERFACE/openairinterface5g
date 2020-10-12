@@ -679,7 +679,11 @@ void rx_rf(RU_t *ru,
     resynch=1;
   }
 
-  proc->timestamp_rx = ts-ru->ts_offset;
+  if(get_softmodem_params()->emulate_rf) {
+    proc->timestamp_rx = old_ts + fp->samples_per_tti;
+  } else {
+    proc->timestamp_rx = ts-ru->ts_offset;
+  }
 
   //  AssertFatal(rxs == fp->samples_per_tti,
   //        "rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
@@ -2337,19 +2341,22 @@ void init_RU_proc(RU_t *ru) {
     LOG_I(PHY,"%s() DJP - added creation of pthread_prach\n", __FUNCTION__);
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void *)ru );
     ru->state=RU_RUN;
-    fill_rf_config(ru,ru->rf_config_file);
-    init_frame_parms(ru->frame_parms,1);
-    ru->frame_parms->nb_antennas_rx = ru->nb_rx;
-    phy_init_RU(ru);
-    ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-    if (ret < 0) {
-       LOG_I(PHY,"Exiting, cannot load device. Make sure that your SDR board is connected!\n");
-       exit(1);
-    }
+    if(!get_softmodem_params()->emulate_rf)
+    {
+      fill_rf_config(ru,ru->rf_config_file);
+      init_frame_parms(ru->frame_parms,1);
+      ru->frame_parms->nb_antennas_rx = ru->nb_rx;
+      phy_init_RU(ru);
+      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+      if (ret < 0) {
+         LOG_I(PHY,"Exiting, cannot load device. Make sure that your SDR board is connected!\n");
+         exit(1);
+      }
 
-    if (setup_RU_buffers(ru)!=0) {
-      LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
-      exit(1);
+      if (setup_RU_buffers(ru)!=0) {
+        LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
+        exit(1);
+      }
     }
   }
 
@@ -2666,6 +2673,15 @@ void set_function_spec_param(RU_t *ru) {
       if (ret<0) {
         printf("Exiting, cannot initialize transport protocol\n");
         exit(-1);
+      }
+
+      if (ru->ifdevice.get_internal_parameter != NULL) {
+        void *t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_in");
+        if (t != NULL)
+          ru->fh_south_in = t;
+        t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
+        if (t != NULL)
+          ru->fh_south_out = t;
       }
 
       malloc_IF4p5_buffer(ru);

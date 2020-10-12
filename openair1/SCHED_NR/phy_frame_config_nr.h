@@ -76,9 +76,9 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
  *  @param frame_parms NR DL Frame parameters
  *  @param nr_frame : frame number
  *  @param nr_tti   : slot number
-    @returns nr_slot_t : downlink or uplink */
+    @returns int : downlink, uplink or mixed slot type*/
 
-nr_slot_t nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti);
+int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters

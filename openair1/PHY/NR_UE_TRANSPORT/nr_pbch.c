@@ -505,7 +505,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
           return(-1);
         }
     */
-    if (symbol==1) {
+    if (symbol==2) {
       nr_pbch_quantize(pbch_e_rx,
                        (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
                        144);

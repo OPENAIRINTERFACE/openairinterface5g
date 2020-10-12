@@ -62,9 +62,17 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
  *  @param frame_parms NR DL Frame parameters
  *  @param nr_frame : frame number
  *  @param nr_tti   : slot number
-    @returns nr_slot_t : downlink or uplink */
+    @returns int : downlink or uplink */
 
 int slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti);
+
+/** \brief This function checks nr UE slot direction : downlink or uplink
+ *  @param cfg      : FAPI Config Request
+ *  @param nr_frame : frame number
+ *  @param nr_tti   : slot number
+    @returns int : downlink, uplink or mixed slot type */
+
+int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_frame, int nr_tti);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters
@@ -78,6 +86,5 @@ void free_tdd_configuration_nr(NR_DL_FRAME_PARMS *frame_parms);
 
 void free_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
 
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mod);
 #endif  /* PHY_FRAME_CONFIG_NR_H */
 

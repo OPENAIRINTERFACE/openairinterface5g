@@ -526,7 +526,7 @@ uint32_t pullarray8(uint8_t **in, uint8_t out[], uint32_t max_len, uint32_t len,
 		return 0;
 	}
 
-	if((end - out) >= sizeof(uint8_t) * len)
+	if((end - (*in)) >= sizeof(uint8_t) * len)
 	{
 		memcpy(out, (*in), len);
 		(*in)+=len;

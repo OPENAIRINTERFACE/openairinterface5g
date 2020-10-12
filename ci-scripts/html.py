@@ -82,73 +82,14 @@ class HTMLManagement():
 #-----------------------------------------------------------
 # Setters and Getters
 #-----------------------------------------------------------
-	def SethtmlUEFailureMsg(self,huefa):
-		self.htmlUEFailureMsg = huefa
-	def GethtmlUEFailureMsg(self):
-		return self.htmlUEFailureMsg
-	def SetHmleNBFailureMsg(self, msg):
-		self.htmleNBFailureMsg = msg
-
-	def Setdesc(self, dsc):
-		self.desc = dsc
-
-	def SetstartTime(self, sttime):
-		self.startTime = sttime
-
-	def SettestCase_id(self, tcid):
-		self.testCase_id = tcid
-	def GettestCase_id(self):
-		return self.testCase_id
-
-	def SetranRepository(self, repository):
-		self.ranRepository = repository
-	def SetranAllowMerge(self, merge):
-		self.ranAllowMerge = merge
-	def SetranBranch(self, branch):
-		self.ranBranch = branch
-	def SetranCommitID(self, commitid):
-		self.ranCommitID = commitid
-	def SetranTargetBranch(self, tbranch):
-		self.ranTargetBranch = tbranch
-
+	
 	def SethtmlUEConnected(self, nbUEs):
 		if nbUEs > 0:
 			self.htmlUEConnected = nbUEs
 		else:
 			self.htmlUEConnected = 1
-	def SethtmlNb_Smartphones(self, nbUEs):
-		self.htmlNb_Smartphones = nbUEs
-	def SethtmlNb_CATM_Modules(self, nbUEs):
-		self.htmlNb_CATM_Modules = nbUEs
+	
 
-	def SetnbTestXMLfiles(self, nb):
-		self.nbTestXMLfiles = nb
-	def GetnbTestXMLfiles(self):
-		return self.nbTestXMLfiles
-
-	def SettestXMLfiles(self, xmlFile):
-		self.testXMLfiles.append(xmlFile)
-	def SethtmlTabRefs(self, tabRef):
-		self.htmlTabRefs.append(tabRef)
-	def SethtmlTabNames(self, tabName):
-		self.htmlTabNames.append(tabName)
-	def SethtmlTabIcons(self, tabIcon):
-		self.htmlTabIcons.append(tabIcon)
-
-	def SetOsVersion(self, version, idx):
-		self.OsVersion[idx] = version
-	def SetKernelVersion(self, version, idx):
-		self.KernelVersion[idx] = version
-	def SetUhdVersion(self, version, idx):
-		self.UhdVersion[idx] = version
-	def SetUsrpBoard(self, version, idx):
-		self.UsrpBoard[idx] = version
-	def SetCpuNb(self, nb, idx):
-		self.CpuNb[idx] = nb
-	def SetCpuModel(self, model, idx):
-		self.CpuModel[idx] = model
-	def SetCpuMHz(self, freq, idx):
-		self.CpuMHz[idx] = freq
 
 #-----------------------------------------------------------
 # HTML structure creation functions
@@ -326,7 +267,7 @@ class HTMLManagement():
 					continue
 
 				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <th colspan=8>' + str('eNB') + ' Server Characteristics</th>\n')
+				self.htmlFile.write('        <th colspan=8>' + str(machine) + ' Server Characteristics</th>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td>OS Version</td>\n')

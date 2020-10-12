@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEFINE_VARIABLES_PSS_NR_H
 #include "PHY/NR_REFSIG/pss_nr.h"
@@ -267,7 +268,6 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
 
   unsigned int  k = fp->first_carrier_offset + fp->ssb_start_subcarrier + 56; //and
   if (k>= fp->ofdm_symbol_size) k-=fp->ofdm_symbol_size;
-
 
 
   for (int i=0; i < LENGTH_PSS_NR; i++) {
@@ -672,6 +672,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
   int **rxdata = NULL;
   int fo_flag = PHY_vars_UE->UE_fo_compensation;  // flag to enable freq offset estimation and compensation
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SYNCHRO_NR, VCD_FUNCTION_IN);
 #ifdef DBG_PSS_NR
 
   LOG_M("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], frame_parms->samples_per_frame, 1, 1);
@@ -710,6 +711,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 
 #endif
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SEARCH_TIME_NR, VCD_FUNCTION_IN);
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
 					fo_flag,
@@ -717,6 +719,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
                                         (int *)&PHY_vars_UE->common_vars.eNb_id,
 					(int *)&PHY_vars_UE->common_vars.freq_offset);
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SEARCH_TIME_NR, VCD_FUNCTION_OUT);
 
 #if TEST_SYNCHRO_TIMING_PSS
 
@@ -749,6 +752,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
   }
 #endif
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SYNCHRO_NR, VCD_FUNCTION_OUT);
   return synchro_position;
 }
 

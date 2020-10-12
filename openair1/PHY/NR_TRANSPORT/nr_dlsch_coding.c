@@ -36,7 +36,7 @@
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/CODING/nrLDPC_extern.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
@@ -49,7 +49,7 @@
 //#define DEBUG_DLSCH_FREE 1
 
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
 {
   int i;
   int r;
@@ -61,7 +61,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
 
     if (N_RB != 273) {
       a_segments = a_segments*N_RB;
-      a_segments = a_segments/273;
+      a_segments = a_segments/273 +1;
     }  
 
 
@@ -130,7 +130,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
     }
 
     free16(dlsch,sizeof(NR_gNB_DLSCH_t));
-    dlsch = NULL;
+    *dlschptr = NULL;
   }
 
 }
@@ -150,7 +150,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   if (N_RB != 273) {
     a_segments = a_segments*N_RB;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
@@ -309,7 +309,8 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-int nr_dlsch_encoding(unsigned char *a,
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
+		      unsigned char *a,
                       int frame,
                       uint8_t slot,
                       NR_gNB_DLSCH_t *dlsch,
@@ -326,7 +327,8 @@ int nr_dlsch_encoding(unsigned char *a,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
   uint8_t nb_symb_sch = rel15->NrOfSymbols;
-  uint32_t A, Z, Kb, F=0;
+  uint32_t A, Kb, F=0;
+  static uint32_t Z = 0;
   uint32_t *Zc = &Z;
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t Kr=0,r;
@@ -335,16 +337,46 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nb_re_dmrs = rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1 ? 6:4;
+  uint8_t nb_re_dmrs;
+
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
+  else
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+
   uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+  dlsch->harq_processes[harq_pid]->round = nr_rv_round_map[rel15->rvIndex[0]];
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
 
+  NR_gNB_SCH_STATS_t *stats=NULL;
+  int first_free=-1;
+  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++) {
+    if (gNB->dlsch_stats[i].rnti == 0 && first_free == -1) {
+      first_free = i;
+      stats=&gNB->dlsch_stats[i];
+    }
+    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+      stats=&gNB->dlsch_stats[i];
+      break;
+    }
+  }
+
+  if (stats) {
+    stats->round_trials[dlsch->harq_processes[harq_pid]->round]++;
+    stats->rnti = dlsch->rnti;
+    if (dlsch->harq_processes[harq_pid]->round == 0){
+      stats->total_bytes_tx += rel15->TBSize[0];
+      stats->current_RI   = rel15->nrOfLayers;
+      stats->current_Qm   = rel15->qamModOrder[0];
+    }
+  }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
@@ -459,6 +491,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
   }
 
+    F = dlsch->harq_processes[harq_pid]->F;
+
+    Kr = dlsch->harq_processes[harq_pid]->K;
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     if (F>0) {
@@ -530,7 +565,7 @@ int nr_dlsch_encoding(unsigned char *a,
     r_offset += E;
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return 0;
 }

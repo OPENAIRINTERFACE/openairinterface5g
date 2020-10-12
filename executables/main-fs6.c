@@ -401,7 +401,7 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   hULUE(newUDPheader)->O_ACK=eNB->ulsch[UE_id]->harq_processes[harq_pid]->O_ACK;
   memcpy(hULUE(newUDPheader)->o_ACK, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
-  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
+  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o));
@@ -917,7 +917,7 @@ void phy_procedures_eNB_TX_fromsplit(uint8_t *bufferZone, int nbBlocks, PHY_VARS
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     if (is_pmch_subframe(frame,subframe,fp)) {
-      pmch_procedures(eNB,proc);
+      pmch_procedures(eNB,proc,0);
     } else {
       // this is not a pmch subframe, so generate PSS/SSS/PBCH
       common_signal_procedures(eNB,frame, subframe);

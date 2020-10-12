@@ -620,6 +620,101 @@ function report_test {
             #IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${CN_CONFIG}_iperf_ul*client*txt | grep -v mbms 2> /dev/null`
             #analyzeIperfFiles
         done
+
+        # FeMBMS Case
+        CN_CONFIG="noS1"
+        TMODE="fdd"
+        BW_CASES=(05)
+        for BW in ${BW_CASES[@]}
+        do
+            echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
+            echo "          <td align = \"center\" colspan = 4 >Test FeMBMS without EPC (aka noS1): ${TMODE} -- ${BW}MHz </td>" >> ./test_simulator_results.html
+            echo "      </tr>" >> ./test_simulator_results.html
+            ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_${CN_CONFIG}_enb_fembms.log
+            UE_LOG=`echo $ENB_LOG | sed -e "s#enb#ue#"`
+            if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
+            then
+                NAME_ENB=`echo $ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                NAME_UE=`echo $UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                echo "      <tr>" >> ./test_simulator_results.html
+                echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                echo "        <td>N/A</td>" >> ./test_simulator_results.html
+                #NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
+                NB_ENB_TUNNEL_UP=`egrep -c "Interface oaitun_enb1 successfully configured" $ENB_LOG`
+                NB_ENB_MTUNNEL_UP=`egrep -c "Interface oaitun_enm1 successfully configured" $ENB_LOG`
+                #NB_UE_GOT_SYNC=`egrep -c "rfsimulator: Success" $UE_LOG`
+                #NB_ENB_SYNCED_WITH_UE=`egrep -c "Generating RRCConnectionReconfigurationComplete" $UE_LOG`
+                NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfully configured" $UE_LOG`
+                NB_UE_MTUNNEL_UP=`egrep -c "Interface oaitun_uem1 successfully configured" $UE_LOG`
+                NB_UE_MBMS_PUSH_MSG=`egrep -c "TRIED TO PUSH MBMS DATA TO" $UE_LOG`
+                #if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 0 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ] && [ $NB_UE_MBMS_PUSH_MSG -gt 0 ]
+                if  [ $NB_UE_MBMS_PUSH_MSG -gt 0 ]
+                then
+                    echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                else
+                    echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                fi
+                echo "        <td><pre>" >> ./test_simulator_results.html
+                #if [ $NB_ENB_GOT_SYNC -gt 0 ]
+                #then
+                #    echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
+                #else
+                #    echo "<font color = \"red\"><b>- eNB NEVER got sync</b></font>" >> ./test_simulator_results.html
+                #fi
+                if [ $NB_ENB_TUNNEL_UP -gt 0 ]
+                then
+                    echo "<font color = \"blue\">- eNB mounted oaitun_enb1 interface</font>" >> ./test_simulator_results.html
+                else
+                    echo "<font color = \"red\"><b>- eNB NEVER mounted oaitun_enb1 interface</b></font>" >> ./test_simulator_results.html
+                fi
+                if [ $NB_ENB_MTUNNEL_UP -gt 0 ]
+                then
+                    echo "<font color = \"blue\">- eNB mounted oaitun_enm1 interface</font>" >> ./test_simulator_results.html
+                else
+                    echo "<font color = \"red\"><b>- eNB NEVER mounted oaitun_enm1 interface</b></font>" >> ./test_simulator_results.html
+                fi
+                #if [ $NB_UE_GOT_SYNC -gt 0 ]
+                #then
+                #    echo "<font color = \"blue\">- LTE UE --> got sync</font>" >> ./test_simulator_results.html
+                #else
+                #    echo "<font color = \"red\"><b>- LTE UE NEVER got sync</b></font>" >> ./test_simulator_results.html
+                #fi
+                #if [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
+                #then
+                #    echo "<font color = \"blue\">- LTE UE attached to eNB</font>" >> ./test_simulator_results.html
+                #else
+                #    echo "<font color = \"red\"><b>- LTE UE NEVER attached to eNB</b></font>" >> ./test_simulator_results.html
+                #fi
+                if [ $NB_UE_TUNNEL_UP -gt 0 ]
+                then
+                    echo "<font color = \"blue\">- LTE UE mounted oaitun_ue1 interface</font>" >> ./test_simulator_results.html
+                else
+                    echo "<font color = \"red\"><b>- LTE UE NEVER mounted oaitun_ue1 interface</b></font>" >> ./test_simulator_results.html
+                fi
+                if [ $NB_UE_MTUNNEL_UP -gt 0 ]
+                then
+                    echo "<font color = \"blue\">- LTE UE mounted oaitun_uem1 interface</font>" >> ./test_simulator_results.html
+                else
+                    echo "<font color = \"red\"><b>- LTE UE NEVER mounted oaitun_uem1 interface</b></font>" >> ./test_simulator_results.html
+                fi
+                if [ $NB_UE_MBMS_PUSH_MSG -gt 0 ]
+                then
+                    echo "<font color = \"blue\">- LTE UE tried to push ${NB_UE_MBMS_PUSH_MSG} MBMS DATA</font>" >> ./test_simulator_results.html
+                else
+                    echo "<font color = \"red\"><b>- LTE UE NEVER pushed MBMS DATA</b></font>" >> ./test_simulator_results.html
+                fi
+                echo "        </pre></td>" >> ./test_simulator_results.html
+                echo "      </tr>" >> ./test_simulator_results.html
+            fi
+            #PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${CN_CONFIG}_ping*.log 2> /dev/null`
+            #analyzePingFiles
+
+            #IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${CN_CONFIG}_iperf_dl*client*txt | grep -v mbms 2> /dev/null`
+            #analyzeIperfFiles
+
+            #IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${CN_CONFIG}_iperf_ul*client*txt | grep -v mbms 2> /dev/null`
+            #analyzeIperfFiles
+        done
         echo "   </table>" >> ./test_simulator_results.html
         echo "   </div>" >> ./test_simulator_results.html
 
@@ -724,8 +819,8 @@ function report_test {
                     echo "        </pre></td>" >> ./test_simulator_results.html
                     echo "      </tr>" >> ./test_simulator_results.html
                 fi
-                #PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping*.log 2> /dev/null`
-                #analyzePingFiles
+                PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_ping*.log 2> /dev/null`
+                analyzePingFiles
 
                 IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_iperf_dl*client*txt 2> /dev/null`
                 analyzeIperfFiles

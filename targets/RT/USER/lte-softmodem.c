@@ -170,6 +170,7 @@ extern void init_eNB_afterRU(void);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -437,9 +438,6 @@ int restart_L1L2(module_id_t enb_id) {
   }
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this eNB */
-  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
@@ -555,6 +553,8 @@ int main ( int argc, char **argv )
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
+  // to make a graceful exit when ctrl-c is pressed
+  set_softmodem_sighandler();
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
@@ -659,6 +659,7 @@ int main ( int argc, char **argv )
          initTpool("n", L1proc->threadPool, true);
       initNotifiedFIFO(L1proc->respEncode);
       initNotifiedFIFO(L1proc->respDecode);
+      RC.eNB[x][CC_id]->proc.L1_proc_tx.threadPool = L1proc->threadPool;
     }
 
 
@@ -711,9 +712,12 @@ int main ( int argc, char **argv )
     sync_var=0;
     pthread_cond_broadcast(&sync_cond);
     pthread_mutex_unlock(&sync_mutex);
+    create_tasks_mbms(1);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
-  create_tasks_mbms(1);
+  else
+    create_tasks_mbms(1);
+  //create_tasks_mbms(1);
 
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
@@ -723,7 +727,7 @@ int main ( int argc, char **argv )
   // end of CI modifications
   //getchar();
   if(IS_SOFTMODEM_DOFORMS)
-     load_softscope("enb");
+     load_softscope("enb",NULL);
   itti_wait_tasks_end();
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);

@@ -33,11 +33,11 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "SCHED_NR/sched_nr.h"
@@ -55,9 +55,13 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 // needed for some functions
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
+
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
 int main(int argc, char **argv)
 {
@@ -76,15 +80,15 @@ int main(int argc, char **argv)
   //int freq_offset;
   //int subframe_offset;
   //char fname[40], vname[40];
-  int trial,n_trials=100,n_errors=0,ack_nack_errors=0;
+  int trial,n_trials=100,n_errors=0,ack_nack_errors=0,sr_errors=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
-  channel_desc_t *gNB2UE;
+  channel_desc_t *UE2gNB;
   int format=0;
   //uint8_t extended_prefix_flag=0;
   FILE *input_fd=NULL;
-  uint8_t nacktoack_flag=0;
+  //uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
   int nr_tti_tx=0; 
   uint64_t actual_payload=0,payload_received;
@@ -96,6 +100,8 @@ int main(int argc, char **argv)
   uint16_t nrofPRB=2;
   uint8_t timeDomainOCC=0;
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
+
+  double DS_TDL = .03;
   
   int N_RB_DL=273,mu=1;
   float target_error_rate=0.001;
@@ -158,6 +164,20 @@ int main(int argc, char **argv)
       case 'G':
         channel_model=ETU;
         break;
+      case 'H':
+        channel_model = TDL_C;
+	DS_TDL = .030; // 30 ns
+	break;
+  
+      case 'I':
+	channel_model = TDL_C;
+	DS_TDL = .3;  // 300ns
+        break;
+     
+      case 'J':
+	channel_model=TDL_D;
+	DS_TDL = .03;
+	break;
 
       default:
         printf("Unsupported channel model!\n");
@@ -283,7 +303,7 @@ int main(int argc, char **argv)
       actual_payload=atoi(optarg);
       break;
     case 'T':
-      nacktoack_flag=(uint8_t)atoi(optarg);
+      //nacktoack_flag=(uint8_t)atoi(optarg);
       target_error_rate=0.001;
       break;
     default:
@@ -336,7 +356,7 @@ int main(int argc, char **argv)
   }
 
   AssertFatal(((format < 2)&&(nr_bit<3)&&(actual_payload<4)) ||
-	      ((format == 2)&&(nr_bit>2)&&(nr_bit<12)),"illegal combination format %d, nr_bit %d\n",
+	      ((format == 2)&&(nr_bit>2)&&(nr_bit<65)),"illegal combination format %d, nr_bit %d\n",
 	      format,nr_bit);
 
   actual_payload &= ((1<<nr_bit)-1);
@@ -398,9 +418,9 @@ int main(int argc, char **argv)
 	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
   }
 
-  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, 0, 0, 0);
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0);
 
-  if (gNB2UE==NULL) {
+  if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
@@ -457,24 +477,31 @@ int main(int argc, char **argv)
   pucch_GroupHopping_t PUCCH_GroupHopping=UE->pucch_config_common_nr->pucch_GroupHopping;
   uint32_t hopping_id=UE->pucch_config_common_nr->hoppingId;
   uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
+  //t_nrPolar_params *currentPtr;
+
+  int shift = 0;
+
   if(format==0){
-  // for now we are not considering SR just HARQ-ACK
+    if (sr_flag)
+      shift = 1<<nr_bit;
     if (nr_bit ==0) 
       mcs=table1_mcs[0];
     else if(nr_bit==1)
-      mcs=table1_mcs[actual_payload];
+      mcs=table1_mcs[actual_payload+shift];
     else if(nr_bit==2)
-      mcs=table2_mcs[actual_payload];
+      mcs=table2_mcs[actual_payload+shift];
     else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n", nr_bit, sr_flag);
   }
-
+  else if (format == 2 && nr_bit > 11) gNB->uci_polarParams = nr_polar_params(2, nr_bit, nrofPRB, 1, NULL);
+  
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     ack_nack_errors=0;
+    sr_errors=0;
     n_errors = 0;
     for (trial=0; trial<n_trials; trial++) {
       bzero(txdataF[aa],frame_parms->ofdm_symbol_size*sizeof(int));
       if(format==0){
-        nr_generate_pucch0(UE,txdataF,frame_parms,UE->pucch_config_dedicated,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
+        nr_generate_pucch0(UE,txdataF,frame_parms,PUCCH_GroupHopping,hopping_id,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
       }
       else if (format == 1){
         nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	
@@ -498,7 +525,16 @@ int main(int argc, char **argv)
       }
       int rxlev = signal_energy(&rxdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
 				frame_parms->ofdm_symbol_size);
-      //      printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
+
+      // noise measurement
+      gNB->ulmask_symb = startingSymbolIndex;
+      for (int rb=0; rb<nrofPRB; rb++) {
+        int rb2 = rb+startingPRB;
+        gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+      }
+      gNB_I0_measurements(gNB);
+
+      if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
 	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
 	nfapi_nr_pucch_pdu_t pucch_pdu;
@@ -506,6 +542,8 @@ int main(int argc, char **argv)
 	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
 	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
 	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.bit_len_csi_part1     = 0;
+	pucch_pdu.bit_len_csi_part2     = 0;
 	pucch_pdu.sr_flag               = sr_flag;
 	pucch_pdu.nr_of_symbols         = nrofSymbols;
 	pucch_pdu.hopping_id            = hopping_id;
@@ -513,15 +551,23 @@ int main(int argc, char **argv)
 	pucch_pdu.start_symbol_index    = startingSymbolIndex;
 	pucch_pdu.prb_start             = startingPRB;
         nr_decode_pucch0(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
-        if(nr_bit==1)
-          ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
-        else
-          ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
-	free(uci_pdu.harq->harq_list);
+        if(sr_flag==1){
+          if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
+            sr_errors+=1;
+        }
+        if(nr_bit>0){
+          if(nr_bit==1)
+            ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
+          else
+            ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
+	  free(uci_pdu.harq->harq_list);
+        }
       }
       else if (format==1) {
-	
-        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
+        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,
+                         &(payload_received),frame_parms,amp,nr_tti_tx,
+                         m0,nrofSymbols,startingSymbolIndex,startingPRB,
+                         startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
         if(nr_bit==1)
           ack_nack_errors+=((actual_payload^payload_received)&1);
         else
@@ -534,7 +580,9 @@ int main(int argc, char **argv)
 	pucch_pdu.subcarrier_spacing    = 1;
 	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
 	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
-	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.bit_len_csi_part1     = nr_bit;
+	pucch_pdu.bit_len_harq          = 0;
+	pucch_pdu.bit_len_csi_part2     = 0;
 	pucch_pdu.sr_flag               = 0;
 	pucch_pdu.nr_of_symbols         = nrofSymbols;
 	pucch_pdu.hopping_id            = hopping_id;
@@ -545,20 +593,24 @@ int main(int argc, char **argv)
 	pucch_pdu.dmrs_scrambling_id    = dmrs_scrambling_id;
 	pucch_pdu.data_scrambling_id    = data_scrambling_id;
         nr_decode_pucch2(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
-	int harq_bytes=pucch_pdu.bit_len_harq>>3;
-	if ((pucch_pdu.bit_len_harq&7) > 0) harq_bytes++;
-	for (int i=0;i<harq_bytes;i++)
-	  if (uci_pdu.harq.harq_payload[i] != ((int8_t*)&actual_payload)[i]) {
+	int csi_part1_bytes=pucch_pdu.bit_len_csi_part1>>3;
+	if ((pucch_pdu.bit_len_csi_part1&7) > 0) csi_part1_bytes++;
+	for (int i=0;i<csi_part1_bytes;i++) {
+	  if (uci_pdu.csi_part1.csi_part1_payload[i] != ((uint8_t*)&actual_payload)[i]) {
 	    ack_nack_errors++;
 	    break;
 	  }
-	free(uci_pdu.harq.harq_payload);
+	}
+	free(uci_pdu.csi_part1.csi_part1_payload);
 
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
-    printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
-    if((float)ack_nack_errors/(float)(n_trials)<=target_error_rate){
+    if (sr_flag == 1)
+      printf("SR: SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,sr_errors);
+    if(nr_bit > 0)
+      printf("ACK/NACK: SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
+    if((float)(ack_nack_errors+sr_errors)/(float)(n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");
       break;
     }

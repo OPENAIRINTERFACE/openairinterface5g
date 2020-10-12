@@ -48,11 +48,15 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned short p,
                      unsigned char lp,
                      unsigned short nb_pusch_rb,
+                     uint32_t re_offset,
                      uint8_t dmrs_type);
 
 void init_scrambling_luts(void);
 
+void nr_generate_modulation_table(void);
+
 extern __m64 byte2m64_re[256];
 extern __m64 byte2m64_im[256];
+extern __m128i byte2m128i[256];
 
 #endif

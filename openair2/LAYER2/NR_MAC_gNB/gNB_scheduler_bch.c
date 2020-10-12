@@ -31,9 +31,9 @@
  */
 
 #include "assertions.h"
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_gNB/nr_mac_gNB.h"
+#include "NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"

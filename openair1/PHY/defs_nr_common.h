@@ -111,6 +111,9 @@
 #define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (14*273*12)
 
+extern const uint8_t nr_rv_round_map[4]; 
+extern const uint8_t nr_rv_round_map_ue[4]; 
+
 typedef enum {
   NR_MU_0=0,
   NR_MU_1,
@@ -198,30 +201,34 @@ typedef struct {
   nr_reg_t reg_list[NR_NB_REG_PER_CCE];
 } nr_cce_t;
 
-
-/// PRACH-ConfigInfo from 38.331 RRC spec
 typedef struct {
-  /// Parameter: prach-ConfigurationIndex, see TS 38.211 (6.3.3.2). 
-  uint8_t prach_ConfigIndex;
-  /// Parameter: High-speed-flag, see TS 38.211 (6.3.3.1). 1 corresponds to Restricted set and 0 to Unrestricted set.
-  uint8_t highSpeedFlag;
-  /// Restricted Set Config (type A=0 , type B=1) TS 38.211 (6.3.3.1)
-  uint8_t restrictedSetConfig;
-  /// 38.211 (NCS 38.211 6.3.3.1). 
-  uint8_t zeroCorrelationZoneConfig;
-  /// see TS 38.211 (6.3.3.2). 
-  uint8_t msg1_frequencystart;
-} NR_PRACH_CONFIG_INFO;
-
-/// PRACH-ConfigSIB or PRACH-Config
-typedef struct {
-  /// Parameter: prach-rootSequenceIndex, see TS 38.211 (6.3.3.2).
-  uint16_t rootSequenceIndex;
-  /// prach_Config_enabled=1 means enabled.}
-  uint8_t prach_Config_enabled;
-  /// PRACH Configuration Information
-  NR_PRACH_CONFIG_INFO prach_ConfigInfo;
-} NR_PRACH_CONFIG_COMMON;
+  /// PRACH format retrieved from prach_ConfigIndex
+  uint16_t prach_format;
+  /// Preamble index for PRACH (0-63)
+  uint8_t ra_PreambleIndex;
+  /// RACH MaskIndex
+  uint8_t ra_RACH_MaskIndex;
+  /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
+  int ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
+  uint8_t ra_TDD_map_index;
+  /// RA Preamble Power Ramping Step in dB
+  uint32_t RA_PREAMBLE_POWER_RAMPING_STEP;
+  ///
+  uint8_t RA_PREAMBLE_BACKOFF;
+  ///
+  uint8_t RA_SCALING_FACTOR_BI;
+  ///
+  uint8_t RA_PCMAX;
+  /// Corresponding RA-RNTI for UL-grant
+  uint16_t ra_RNTI;
+  /// Pointer to Msg3 payload for UL-grant
+  uint8_t *Msg3;
+  /// Frame of last completed synch
+  uint8_t sync_frame;
+  /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
+  uint8_t init_msg1;
+} NR_PRACH_RESOURCES_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
@@ -313,10 +320,10 @@ struct NR_DL_FRAME_PARMS {
   uint8_t nb_antennas_rx;
   /// Number of common transmit antenna ports in eNodeB (1 or 2)
   uint8_t nb_antenna_ports_gNB;
-  /// PRACH_CONFIG
-  NR_PRACH_CONFIG_COMMON prach_config_common;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
+  /// sequence which is computed based on carrier frequency and numerology to rotate/derotate each OFDM symbol according to Section 5.3 in 38.211
+  int16_t symbol_rotation[224*2];
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
@@ -350,8 +357,9 @@ struct NR_DL_FRAME_PARMS {
   uint8_t ssb_index;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
-
 };
+
+
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)
