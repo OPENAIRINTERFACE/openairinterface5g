@@ -1326,5 +1326,3 @@ void *rrc_nrue_task( void *args_p ) {
     msg_p = NULL;
   }
 }
-
-
