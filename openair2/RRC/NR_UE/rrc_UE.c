@@ -34,6 +34,7 @@
 #define RRC_UE_C
 
 #include "NR_DL-DCCH-Message.h"     //asn_DEF_NR_DL_DCCH_Message
+#include "NR_DL-CCCH-Message.h"     //asn_DEF_NR_DL_CCCH_Message
 #include "NR_BCCH-BCH-Message.h"    //asn_DEF_NR_BCCH_BCH_Message
 #include "NR_CellGroupConfig.h"     //asn_DEF_NR_CellGroupConfig
 #include "NR_BWP-Downlink.h"        //asn_DEF_NR_BWP_Downlink
@@ -50,6 +51,8 @@
 #include "executables/softmodem-common.h"
 #include "pdcp.h"
 #include "UTIL/OSA/osa_defs.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 mui_t nr_rrc_mui=0;
 
@@ -458,6 +461,140 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     }
     
     return 0;
+}
+
+//-----------------------------------------------------------------------------
+void
+nr_rrc_ue_process_masterCellGroup(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t gNB_index,
+  OCTET_STRING_t *masterCellGroup
+)
+//-----------------------------------------------------------------------------
+{
+    NR_CellGroupConfig_t *cellGroupConfig = (NR_CellGroupConfig_t *)masterCellGroup;
+    if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
+	    //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
+	    //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
+    }
+
+    if( cellGroupConfig->rlc_BearerToReleaseList != NULL){
+      //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
+    }
+
+    if( cellGroupConfig->rlc_BearerToAddModList != NULL){
+      //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
+    }
+
+    if( cellGroupConfig->mac_CellGroupConfig != NULL){
+      //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
+    }
+
+    if( cellGroupConfig->sCellToReleaseList != NULL){
+      //TODO (perform SCell release as specified in 5.3.5.5.8)
+    }
+
+    if( cellGroupConfig->spCellConfig != NULL){
+      //TODO (configure the SpCell as specified in 5.3.5.5.7)
+    }
+
+    if( cellGroupConfig->sCellToAddModList != NULL){
+      //TODO (perform SCell addition/modification as specified in 5.3.5.5.9)
+    }
+
+    if( cellGroupConfig->ext2->bh_RLC_ChannelToReleaseList_r16 != NULL){
+      //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
+    }
+
+    if( cellGroupConfig->ext2->bh_RLC_ChannelToAddModList_r16 != NULL){
+      //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
+    }
+
+}
+
+int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *const Srb_info, const uint8_t gNB_index ){
+    NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    int rval=0;
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
+    //    LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",ue_mod_idP,Srb_info->Rx_buffer.payload_size,
+    //    NR_UE_rrc_inst[ue_mod_idP].Info[gNB_index].State);
+    dec_rval = uper_decode(NULL,
+                           &asn_DEF_NR_DL_CCCH_Message,
+                           (void **)&dl_ccch_msg,
+                           (uint8_t *)Srb_info->Rx_buffer.Payload,
+                           100,0,0);
+    
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
+    }
+    
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+      LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
+      return -1;
+    }
+    
+    if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
+      if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == RRC_SI_RECEIVED) {
+        switch (dl_ccch_msg->message.choice.c1->present) {
+          case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
+            LOG_I(RRC, "[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",
+                  ctxt_pP->module_id,
+                  ctxt_pP->frame);
+            rval = 0;
+            break;
+    
+          case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
+            LOG_I(RRC,
+                  "[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",
+                  ctxt_pP->module_id,
+                  ctxt_pP->frame);
+            rval = 0;
+            break;
+    
+          case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
+            LOG_I(RRC,
+                  "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n",
+                  ctxt_pP->module_id,
+                  ctxt_pP->frame,
+                  ctxt_pP->rnti);
+            // Get configuration
+            // Release T300 timer
+            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
+            
+            nr_rrc_ue_process_masterCellGroup(
+              ctxt_pP,
+              gNB_index,
+              &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
+            nr_rrc_ue_process_radioBearerConfig(
+              ctxt_pP,
+              gNB_index,
+              &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+            //nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
+            //nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
+            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
+            /*rrc_ue_generate_RRCSetupComplete(
+              ctxt_pP,
+              gNB_index,
+              dl_ccch_msg->message.choice.c1.choice.rrcSetup.rrc_TransactionIdentifier,
+              NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);*/
+            rval = 0;
+            break;
+    
+          default:
+            LOG_E(RRC, "[UE%d] Frame %d : Unknown message\n",
+                  ctxt_pP->module_id,
+                  ctxt_pP->frame);
+            rval = -1;
+            break;
+        }
+      }
+    }
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
+    return rval;
+
 }
 
 
@@ -964,16 +1101,23 @@ nr_rrc_ue_process_radioBearerConfig(
     long SRB_id, DRB_id;
     int i, cnt;
 
-    if (radioBearerConfig->securityConfig != NULL) {
-        if (*radioBearerConfig->securityConfig->keyToUse == NR_SecurityConfig__keyToUse_master) {
-            NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm =
-                radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
-            NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
-                *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
-        }
+    if( radioBearerConfig->srb3_ToRelease != NULL){
+      if( *radioBearerConfig->srb3_ToRelease == TRUE){
+        //TODO (release the PDCP entity and the srb-Identity of the SRB3.)
+      }
     }
 
     if (radioBearerConfig->srb_ToAddModList != NULL) {
+
+        if (radioBearerConfig->securityConfig != NULL) {
+            if (*radioBearerConfig->securityConfig->keyToUse == NR_SecurityConfig__keyToUse_master) {
+                NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm =
+                    radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
+                NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
+                    *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
+            }
+        }
+
         uint8_t *kRRCenc = NULL;
         uint8_t *kRRCint = NULL;
         derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
@@ -1298,6 +1442,8 @@ void *rrc_nrue_task( void *args_p ) {
   instance_t    instance;
   unsigned int  ue_mod_id;
   int           result;
+  NR_SRB_INFO   *srb_info_p;
+  protocol_ctxt_t  ctxt;
   itti_mark_task_ready (TASK_RRC_NRUE);
 
   while(1) {
@@ -1314,6 +1460,24 @@ void *rrc_nrue_task( void *args_p ) {
 
       case MESSAGE_TEST:
         LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        break;
+
+      case RRC_MAC_CCCH_DATA_IND:
+        LOG_D(RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
+              ue_mod_id,
+              RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
+              ITTI_MSG_NAME (msg_p),
+              RRC_MAC_CCCH_DATA_IND (msg_p).frame,
+              RRC_MAC_CCCH_DATA_IND (msg_p).enb_index);
+        srb_info_p = &NR_UE_rrc_inst[ue_mod_id].Srb0[RRC_MAC_CCCH_DATA_IND (msg_p).enb_index];
+        memcpy (srb_info_p->Rx_buffer.Payload, RRC_MAC_CCCH_DATA_IND (msg_p).sdu,
+                RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size);
+        srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size;
+        //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, RRC_MAC_CCCH_DATA_IND (msg_p).rnti, RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, RRC_MAC_CCCH_DATA_IND (msg_p).rnti, RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0, RRC_MAC_CCCH_DATA_IND (msg_p).enb_index);
+        nr_rrc_ue_decode_ccch (&ctxt,
+                            srb_info_p,
+                            RRC_MAC_CCCH_DATA_IND (msg_p).enb_index);
         break;
 
       default:
