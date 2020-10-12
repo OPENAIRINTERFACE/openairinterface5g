@@ -64,7 +64,7 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-uint8_t nr_generate_dci(PHY_VARS_gNB *gNB,
+void nr_generate_dci(PHY_VARS_gNB *gNB,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         uint32_t **gold_pdcch_dmrs,
                         int32_t *txdataF,
@@ -227,10 +227,9 @@ uint8_t nr_generate_dci(PHY_VARS_gNB *gNB,
     } // reg_idx
     
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
-  return 0;
 }
 
-uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
+void nr_generate_dci_top(PHY_VARS_gNB *gNB,
 			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
                             uint32_t **gold_pdcch_dmrs,
@@ -240,12 +239,13 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
 
   AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
 
-  if (pdcch_pdu && ul_dci_pdu)
-    return (nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms) ||
-            nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms));
+  if (pdcch_pdu && ul_dci_pdu) {
+    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  }
   else if (pdcch_pdu)
-    return nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
   else
-    return nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
 
