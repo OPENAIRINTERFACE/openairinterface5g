@@ -226,6 +226,10 @@ typedef struct {
   uint32_t RA_tx_frame;
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
+  /// Scheduled TX frame for RA Msg3
+  frame_t msg3_frame;
+  /// Scheduled TX slot for RA Msg3
+  slot_t msg3_slot;
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
   /// Random-access variable for backoff (subframe of last change in backoff counter)
@@ -248,13 +252,11 @@ typedef struct {
   uint8_t generate_nr_prach;
 
   ////	FAPI-like interface message
-  fapi_nr_tx_request_t tx_request;
   fapi_nr_ul_config_request_t ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;
 
   ///     Interface module instances
   nr_ue_if_module_t       *if_module;
-  nr_scheduled_response_t scheduled_response;
   nr_phy_config_t         phy_config;
 
   /// BSR report flag management

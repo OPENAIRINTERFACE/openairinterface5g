@@ -53,11 +53,9 @@ int16_t nr_dlsch_demod_shift = 0;
 //int16_t interf_unaw_shift = 13;
 
 //#define DEBUG_HARQ
-
-//#define DEBUG_PHY 1
-//#define DEBUG_DLSCH_DEMOD 1
-
-
+//#define DEBUG_PHY
+//#define DEBUG_DLSCH_DEMOD
+//#define DEBUG_PDSCH_RX
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 //unsigned char offset_mumimo_llr_drange_fix=0;
@@ -188,7 +186,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   if (dlsch0_harq && dlsch1_harq){
 
-    //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
 
     if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status == ACTIVE)){
@@ -1042,42 +1039,30 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
+
 // Please keep it: useful for debugging
-#if 0
-  if( (symbol == 13) && (nr_tti_rx==0) && (dlsch0_harq->Qm == 6) /*&& (nb_rb==25)*/)
-  {
-      LOG_E(PHY,"Dump Phy Chan Est \n");
-      if(1)
-      {
-#if 1
-      write_output("rxdataF0.m"    , "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("rxdataF1.m"    , "rxdataF1",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      write_output("dl_ch_estimates00.m", "dl_ch_estimates00",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id][0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates01.m", "dl_ch_estimates01",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id][1][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates10.m", "dl_ch_estimates10",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id][2][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates11.m", "dl_ch_estimates11",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id][3][0],14*frame_parms->ofdm_symbol_size,1,1);
+#ifdef DEBUG_PDSCH_RX
+  char filename[40];
+  uint8_t aa = 0;
 
+  snprintf(filename, 40, "rxdataF0_symb_%d_nr_tti_rx_%d.m", symbol, nr_tti_rx);
+  write_output(filename, "rxdataF0", &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
 
-      //write_output("rxdataF_ext00.m"    , "rxdataF_ext00",       &pdsch_vars[eNB_id]->rxdataF_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_ext01.m"    , "rxdataF_ext01",       &pdsch_vars[eNB_id]->rxdataF_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_ext10.m"    , "rxdataF_ext10",       &pdsch_vars[eNB_id]->rxdataF_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_ext11.m"    , "rxdataF_ext11",       &pdsch_vars[eNB_id]->rxdataF_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("dl_ch_estimates_ext00.m", "dl_ch_estimates_ext00", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("dl_ch_estimates_ext01.m", "dl_ch_estimates_ext01", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("dl_ch_estimates_ext10.m", "dl_ch_estimates_ext10", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("dl_ch_estimates_ext11.m", "dl_ch_estimates_ext11", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp00.m","rxdataF_comp00",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][0],14*frame_parms->N_RB_DL*12,1,1);
-#endif
-      write_output("llr0.m","llr0",  &pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
-      //write_output("llr1.m","llr1",  &pdsch_vars[eNB_id]->llr[1][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
+  snprintf(filename, 40, "dl_ch_estimates0%d_symb_%d_nr_tti_rx_%d.m", aa, symbol, nr_tti_rx);
+  write_output(filename, "dl_ch_estimates", &pdsch_vars[eNB_id]->dl_ch_estimates[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
 
+  snprintf(filename, 40, "rxdataF_ext0%d_symb_%d_nr_tti_rx_%d.m", aa, symbol, nr_tti_rx);
+  write_output(filename, "rxdataF_ext", &pdsch_vars[eNB_id]->rxdataF_ext[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->N_RB_DL*NR_NB_SC_PER_RB, 1, 1);
 
-      AssertFatal(0," ");
-      }
+  snprintf(filename, 40, "dl_ch_estimates_ext0%d_symb_%d_nr_tti_rx_%d.m", aa, symbol, nr_tti_rx);
+  write_output(filename, "dl_ch_estimates_ext00", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->N_RB_DL*NR_NB_SC_PER_RB, 1, 1);
 
+  snprintf(filename, 40, "rxdataF_comp0%d_symb_%d_nr_tti_rx_%d.m", aa, symbol, nr_tti_rx);
+  write_output(filename, "rxdataF_comp00", &pdsch_vars[eNB_id]->rxdataF_comp0[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->N_RB_DL*NR_NB_SC_PER_RB, 1, 1);
+
+  for (int i=0; i < 2; i++){
+    snprintf(filename, 40,  "llr%d_symb_%d_nr_tti_rx_%d.m", i, symbol, nr_tti_rx);
+    write_output(filename,"llr",  &pdsch_vars[eNB_id]->llr[i][0], (NR_SYMBOLS_PER_SLOT*nb_rb*NR_NB_SC_PER_RB*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm), 1, 0);
   }
 #endif
 
@@ -2572,51 +2557,51 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t nr_tti_rx,unsigned int *
   char fname[32],vname[32];
   int N_RB_DL=ue->frame_parms.N_RB_DL;
 
-  sprintf(fname,"dlsch%d_rxF_r%d_ext0.m",eNB_id,round);
-  sprintf(vname,"dl%d_rxF_r%d_ext0",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_rxF_r%d_ext0.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_rxF_r%d_ext0",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[0],12*N_RB_DL*nsymb,1,1);
 
   if (ue->frame_parms.nb_antennas_rx >1) {
-    sprintf(fname,"dlsch%d_rxF_r%d_ext1.m",eNB_id,round);
-    sprintf(vname,"dl%d_rxF_r%d_ext1",eNB_id,round);
+    snprintf(fname, 32, "dlsch%d_rxF_r%d_ext1.m",eNB_id,round);
+    snprintf(vname, 32, "dl%d_rxF_r%d_ext1",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[1],12*N_RB_DL*nsymb,1,1);
   }
 
-  sprintf(fname,"dlsch%d_ch_r%d_ext00.m",eNB_id,round);
-  sprintf(vname,"dl%d_ch_r%d_ext00",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_ch_r%d_ext00.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_ch_r%d_ext00",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
 
   if (ue->transmission_mode[eNB_id]==7){
-    sprintf(fname,"dlsch%d_bf_ch_r%d.m",eNB_id,round);
-    sprintf(vname,"dl%d_bf_ch_r%d",eNB_id,round);
+    snprintf(fname, 32, "dlsch%d_bf_ch_r%d.m",eNB_id,round);
+    snprintf(vname, 32, "dl%d_bf_ch_r%d",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_bf_ch_estimates[0],512*nsymb,1,1);
     //write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0],512,1,1);
 
-    sprintf(fname,"dlsch%d_bf_ch_r%d_ext00.m",eNB_id,round);
-    sprintf(vname,"dl%d_bf_ch_r%d_ext00",eNB_id,round);
+    snprintf(fname, 32, "dlsch%d_bf_ch_r%d_ext00.m",eNB_id,round);
+    snprintf(vname, 32, "dl%d_bf_ch_r%d_ext00",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_bf_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
   }
 
   if (ue->frame_parms.nb_antennas_rx == 2) {
-    sprintf(fname,"dlsch%d_ch_r%d_ext01.m",eNB_id,round);
-    sprintf(vname,"dl%d_ch_r%d_ext01",eNB_id,round);
+    snprintf(fname, 32, "dlsch%d_ch_r%d_ext01.m",eNB_id,round);
+    snprintf(vname, 32, "dl%d_ch_r%d_ext01",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
   }
 
   if (ue->frame_parms.nb_antenna_ports_gNB == 2) {
-    sprintf(fname,"dlsch%d_ch_r%d_ext10.m",eNB_id,round);
-    sprintf(vname,"dl%d_ch_r%d_ext10",eNB_id,round);
+    snprintf(fname, 32, "dlsch%d_ch_r%d_ext10.m",eNB_id,round);
+    snprintf(vname, 32, "dl%d_ch_r%d_ext10",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
 
     if (ue->frame_parms.nb_antennas_rx == 2) {
-      sprintf(fname,"dlsch%d_ch_r%d_ext11.m",eNB_id,round);
-      sprintf(vname,"dl%d_ch_r%d_ext11",eNB_id,round);
+      snprintf(fname, 32, "dlsch%d_ch_r%d_ext11.m",eNB_id,round);
+      snprintf(vname, 32, "dl%d_ch_r%d_ext11",eNB_id,round);
       write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
     }
   }
 
-  sprintf(fname,"dlsch%d_rxF_r%d_uespec0.m",eNB_id,round);
-  sprintf(vname,"dl%d_rxF_r%d_uespec0",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_rxF_r%d_uespec0.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_rxF_r%d_uespec0",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_uespec_pilots[0],12*N_RB_DL,1,1);
 
   /*
@@ -2624,33 +2609,33 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t nr_tti_rx,unsigned int *
     write_output("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
     write_output("dlsch%d_ch_ext11.m","dl11_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
   */
-  sprintf(fname,"dlsch%d_r%d_rho.m",eNB_id,round);
-  sprintf(vname,"dl_rho_r%d_%d",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_r%d_rho.m",eNB_id,round);
+  snprintf(vname, 32, "dl_rho_r%d_%d",eNB_id,round);
 
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_rho_ext[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
 
-  sprintf(fname,"dlsch%d_r%d_rho2.m",eNB_id,round);
-  sprintf(vname,"dl_rho2_r%d_%d",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_r%d_rho2.m",eNB_id,round);
+  snprintf(vname, 32, "dl_rho2_r%d_%d",eNB_id,round);
 
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_rho2_ext[0],12*N_RB_DL*nsymb,1,1);
 
-  sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
-  sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_rxF_r%d_comp0",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb,1,1);
   if (ue->frame_parms.nb_antenna_ports_gNB == 2) {
-    sprintf(fname,"dlsch%d_rxF_r%d_comp1.m",eNB_id,round);
-    sprintf(vname,"dl%d_rxF_r%d_comp1",eNB_id,round);
+    snprintf(fname, 32, "dlsch%d_rxF_r%d_comp1.m",eNB_id,round);
+    snprintf(vname, 32, "dl%d_rxF_r%d_comp1",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp1[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
   }
 
-  sprintf(fname,"dlsch%d_rxF_r%d_llr.m",eNB_id,round);
-  sprintf(vname,"dl%d_r%d_llr",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_rxF_r%d_llr.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_r%d_llr",eNB_id,round);
   write_output(fname,vname, ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],coded_bits_per_codeword[0],1,0);
-  sprintf(fname,"dlsch%d_r%d_mag1.m",eNB_id,round);
-  sprintf(vname,"dl%d_r%d_mag1",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_r%d_mag1.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_r%d_mag1",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_mag0[0],12*N_RB_DL*nsymb,1,1);
-  sprintf(fname,"dlsch%d_r%d_mag2.m",eNB_id,round);
-  sprintf(vname,"dl%d_r%d_mag2",eNB_id,round);
+  snprintf(fname, 32, "dlsch%d_r%d_mag2.m",eNB_id,round);
+  snprintf(vname, 32, "dl%d_r%d_mag2",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_magb0[0],12*N_RB_DL*nsymb,1,1);
 
   //  printf("log2_maxh = %d\n",ue->pdsch_vars[eNB_id]->log2_maxh);

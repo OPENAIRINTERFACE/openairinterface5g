@@ -100,13 +100,37 @@ Some other useful paramters of the UE are
  - --clock-source: sets the clock-source (internal or external). 
  - --time-source: sets the time-source (internal or external). 
 
-
 ## noS1 setup with OAI UE
 
 Instead of randomly generated payload, in the phy-test mode we can also inject/receive user-plane traffic over a TUN interface. This is the so-called noS1 mode. 
 
 This setup is described in the [rfsimulator page](../targets/ARCH/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
 
+## do-ra setup with OAI
+
+The do-ra flag is used to ran the NR Random Access procedures in contention-free mode. Currently OAI implements the RACH process from Msg1 to Msg3. 
+
+In order to run the RA, the following flag is needed for both the gNB and the UE:
+
+`--do-ra`
+
+### Run OAI in do-ra mode
+
+From the `cmake_targets/ran_build/build` folder:
+
+gNB on machine 1:
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra`
+
+UE on machine 2:
+
+`sudo ./nr-uesoftmodem --do-ra`
+
+With the RF simulator (on the same machine):
+
+`sudo RFSIMULATOR=gnb ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
+
+`sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
 
 
 [oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

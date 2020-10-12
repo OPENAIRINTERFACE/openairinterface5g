@@ -415,8 +415,14 @@ typedef struct {
   uint8_t number_of_candidates;
   uint16_t CCE[64];
   uint8_t L[64];
-  uint8_t dci_length;
-  uint8_t dci_format;
+  // 3GPP TS 38.212 Sec. 7.3.1.0, 3GPP TS 138.131 sec. 6.3.2 (SearchSpace)
+  // The maximum number of DCI lengths allowed by the spec are 4, with max 3 for C-RNTI.
+  // But a given search space may only support a maximum of 2 DCI formats at a time
+  // depending on its search space type configured by RRC. Hence for blind decoding, UE
+  // needs to monitor only upto 2 DCI lengths for a given search space.
+  uint8_t num_dci_options;  // Num DCIs the UE actually needs to decode (1 or 2)
+  uint8_t dci_length_options[2];
+  uint8_t dci_format_options[2];
 } fapi_nr_dl_config_dci_dl_pdu_rel15_t;
 
 typedef struct {

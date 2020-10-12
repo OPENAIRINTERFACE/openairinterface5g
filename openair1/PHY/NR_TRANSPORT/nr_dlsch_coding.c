@@ -527,7 +527,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     if (rel15->nrOfLayers < Nl)
       Nl = rel15->nrOfLayers;
 
-    Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
+    Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
 
     start_meas(dlsch_rate_matching_stats);
     nr_rate_matching_ldpc(Ilbrm,
