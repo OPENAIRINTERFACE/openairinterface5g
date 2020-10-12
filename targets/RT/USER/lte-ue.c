@@ -976,10 +976,19 @@ uint64_t clock_usec(void)
 {
     struct timespec t;
     if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
-    {   
+    {
         abort();
     }
     return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
+}
+
+static void reset_queue(queue_t *q)
+{
+  void *p;
+  while ((p = get_queue(q)) != NULL)
+  {
+    free(p);
+  }
 }
 
 /*!
@@ -1041,6 +1050,12 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   int num_pairs = 0;
   int num_lone = 0;
   int last_sfn_sf = -1;
+
+  LOG_I(MAC, "Clearing Queues\n");
+  reset_queue(&dl_config_req_queue);
+  reset_queue(&ul_config_req_queue);
+  reset_queue(&tx_req_pdu_queue);
+  reset_queue(&hi_dci0_req_queue);
 
   while (!oai_exit) {
     bool sent_any = false;
@@ -1173,7 +1188,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     for (ue_index = 0; ue_index < ue_num; ue_index++) {
-      ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index;
+      ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index; // Always 0 in standalone pnf mode
       UE = PHY_vars_UE_g[ue_Mod_id][0];
 
 #if UE_TIMING_TRACE
@@ -1205,6 +1220,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       // Prepare the future Tx data
       if ((subframe_select(&UE->frame_parms, NFAPI_SFNSF2SF(sfn_sf)) == SF_UL) ||
           (UE->frame_parms.frame_type == FDD))
+      {
         if (UE->mode != loop_through_memory)
         {
           // We make the start of RA between consecutive UEs differ by 20 frames
@@ -1218,42 +1234,55 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
           if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH)
           { //&& ue_Mod_id == next_Mod_id) {
             next_ra_frame++;
-            if (next_ra_frame > 500) {
-            // check if we have PRACH opportunity
-            if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1)
+            if (next_ra_frame > 500)
             {
-              // The one working strangely...
-              //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
-              PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
-              if (prach_resources != NULL)
+              // check if we have PRACH opportunity
+              if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1)
               {
-                LOG_I(MAC, "preamble_received_tar_power: %d\n",
-                      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER);
-                UE_mac_inst[ue_Mod_id].ra_frame = NFAPI_SFNSF2SFN(sfn_sf); // Is this why RACH comes in late to proxy? - Andrew
-                LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
-                fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
-                sent_any = true;
-                Msg1_transmitted(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0);
-                UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
-                next_Mod_id = ue_Mod_id + 1;
-                //next_ra_frame = (rx_frame + 20)%1000;
-                next_ra_frame = 0;
+                // The one working strangely...
+                //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
+                PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
+                if (prach_resources != NULL)
+                {
+                  LOG_I(MAC, "preamble_received_tar_power: %d\n",
+                        prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER);
+                  UE_mac_inst[ue_Mod_id].ra_frame = NFAPI_SFNSF2SFN(sfn_sf); // Is this why RACH comes in late to proxy? - Andrew
+                  LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
+                  fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
+                  sent_any = true;
+                  Msg1_transmitted(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0);
+                  UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
+                  next_Mod_id = ue_Mod_id + 1;
+                  //next_ra_frame = (rx_frame + 20)%1000;
+                  next_ra_frame = 0;
+                }
+                //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
               }
-              //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
-            }
             }
           } // mode is PRACH
 
           // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
           // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
           // Generate UL_indications which correspond to UL traffic.
-          if (ul_config_req != NULL) { //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
+          if (ul_config_req != NULL)
+          { //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
             ul_config_req_UE_MAC(ul_config_req, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), ue_Mod_id);
           }
         }
 
-      phy_procedures_UE_SL_RX(UE, proc);
-    }  //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
+        phy_procedures_UE_SL_RX(UE, proc);
+      }
+      else
+      {
+        LOG_I(MAC, "Skipping subframe select statement proxy SFN.SF: %d.%d\n",
+        NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
+        if (ul_config_req != NULL)
+        {
+          LOG_I(MAC, "Skipping subframe select statement ul_config_req SFN.SF: %d.%d\n",
+          NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf));
+        }
+      }
+    } //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
 
     if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs > 0) {
       //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));

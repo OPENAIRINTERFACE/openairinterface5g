@@ -516,7 +516,7 @@ int main ( int argc, char **argv )
 {
   struct sched_param param =
   {
-    .sched_priority = sched_get_priority_max(SCHED_RR)
+    .sched_priority = 1
   };
   if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
   {

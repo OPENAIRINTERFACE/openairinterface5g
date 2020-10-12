@@ -963,8 +963,38 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
   return 0;
 }
 
-int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
+static bool is_my_ul_config_req(nfapi_ul_config_request_t *req)
 {
+  bool is_my_rnti = false;
+  const rnti_t rnti = UE_mac_inst[0].crnti; // 0 for standalone pnf mode - Andrew
+  for (int i = 0; i < req->ul_config_request_body.number_of_pdus; i++)
+  {
+    nfapi_ul_config_request_pdu_t *pdu = &req->ul_config_request_body.ul_config_pdu_list[i];
+    const int pdu_type = pdu->pdu_type;
+    if ((pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE && pdu->ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
+        (pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE && pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
+        (pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE && pdu->ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
+        (pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE && pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
+        (pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE && pdu->uci_cqi_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+        (pdu_type == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE && pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+        (pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE && pdu->uci_cqi_sr_harq_pdu.ue_information.ue_information_rel8.rnti == rnti))
+    {
+      is_my_rnti = true;
+      break;
+    }
+    else
+    {
+      LOG_D(MAC, "UNKNOWN UL_CONFIG_REQ PDU_TYPE: %d or RNTI is not mine \n", pdu_type);
+    }
+  }
+
+  return is_my_rnti;
+}
+
+int memcpy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req)
+{
+  if (!is_my_ul_config_req(req)) return 0;
+
   nfapi_ul_config_request_t *p = malloc(sizeof(nfapi_ul_config_request_t));
 
   p->sfn_sf = req->sfn_sf;
@@ -980,14 +1010,17 @@ int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, n
   p->ul_config_request_body.ul_config_pdu_list =
       calloc(req->ul_config_request_body.number_of_pdus,
              sizeof(nfapi_ul_config_request_pdu_t));
-  for (int i = 0; i < p->ul_config_request_body.number_of_pdus; i++) {
+  for (int i = 0; i < p->ul_config_request_body.number_of_pdus; i++)
+  {
     p->ul_config_request_body.ul_config_pdu_list[i] =
         req->ul_config_request_body.ul_config_pdu_list[i];
   }
 
-  if (!put_queue(&ul_config_req_queue, p)) {
+  if (!put_queue(&ul_config_req_queue, p))
+  {
     free(p);
   }
+
   return 0;
 }
 
@@ -1224,6 +1257,8 @@ void *ue_standalone_pnf_task(void *context)
         else
         {
           // check to see if dl_config_req is null
+          LOG_D(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
+                dl_config_req.sfn_sf & 15);
           memcpy_dl_config_req(NULL, NULL, &dl_config_req);
         }
         break;
@@ -1240,6 +1275,8 @@ void *ue_standalone_pnf_task(void *context)
         else
         {
           // check to see if tx_req is null
+          LOG_D(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
+                tx_req.sfn_sf & 15);
           memcpy_tx_req(NULL, &tx_req);
         }
         break;
