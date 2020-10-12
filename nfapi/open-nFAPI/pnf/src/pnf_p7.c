@@ -2451,7 +2451,7 @@ void pnf_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7,  
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
-		printf("\nEntering pnf_handle_dl_tti_request sfn=%d,slot=%d \n",pnf_p7->sfn,pnf_p7->slot);
+		//printf("\nEntering pnf_handle_dl_tti_request sfn=%d,slot=%d \n",pnf_p7->sfn,pnf_p7->slot);
 			pnf_handle_dl_tti_request(pRecvMsg, recvMsgLen, pnf_p7);
 			break;
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
@@ -2644,7 +2644,7 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 			if(recvfrom_result > 0)
 			{
 				pnf_handle_p7_message(pnf_p7->rx_message_buffer, recvfrom_result, pnf_p7, now_hr_time);
-				printf("\npnf_handle_p7_message sfn=%d,slot=%d\n",pnf_p7->sfn,pnf_p7->slot);
+				//printf("\npnf_handle_p7_message sfn=%d,slot=%d\n",pnf_p7->sfn,pnf_p7->slot);
 			}
 		}
 		else if(recvfrom_result == 0)

@@ -144,15 +144,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
-  //Gokul
-  if(slot%2!=0)
-  {
-    printf("\n Odd Slot %d \n,slot");
-  }
-  else
-  {
-    printf("\n Even Slot \n");
-  }
   
 
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");

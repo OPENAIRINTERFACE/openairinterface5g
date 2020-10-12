@@ -712,13 +712,13 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
 		    pack_tlv(NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG, &(pNfapiMsg->carrier_config.dl_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_DL_FREQUENCY_TAG, &(pNfapiMsg->carrier_config.dl_frequency), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
-			pack_tlv(NFAPI_NR_CONFIG_DL_GRID_SIZE_TAG, &(pNfapiMsg->carrier_config.dl_grid_size), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_NR_CONFIG_DL_K0_TAG, &(pNfapiMsg->carrier_config.dl_k0), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_DL_GRID_SIZE_TAG, &(pNfapiMsg->carrier_config.dl_grid_size[1]), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_DL_K0_TAG, &(pNfapiMsg->carrier_config.dl_k0[1]), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_FREQUENCY_SHIFT_7P5KHZ_TAG, &(pNfapiMsg->carrier_config.frequency_shift_7p5khz), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_NUM_RX_ANT_TAG, &(pNfapiMsg->carrier_config.num_rx_ant), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_NUM_TX_ANT_TAG, &(pNfapiMsg->carrier_config.num_tx_ant), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_NR_CONFIG_UL_GRID_SIZE_TAG, &(pNfapiMsg->carrier_config.ul_grid_size), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_NR_CONFIG_UL_K0_TAG, &(pNfapiMsg->carrier_config.ul_k0), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_UL_GRID_SIZE_TAG, &(pNfapiMsg->carrier_config.ul_grid_size[1]), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_UL_K0_TAG, &(pNfapiMsg->carrier_config.ul_k0[1]), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_UPLINK_BANDWIDTH_TAG, &(pNfapiMsg->carrier_config.uplink_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_UPLINK_FREQUENCY_TAG, &(pNfapiMsg->carrier_config.uplink_frequency), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
 			
@@ -743,7 +743,9 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_NR_CONFIG_MULTIPLE_CELLS_SS_PBCH_IN_A_CARRIER_TAG, &(pNfapiMsg->ssb_table.multiple_cells_ss_pbch_in_a_carrier), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SS_PBCH_MULTIPLE_CARRIERS_IN_A_BAND_TAG, &(pNfapiMsg->ssb_table.ss_pbch_multiple_carriers_in_a_band), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			// pack_tlv(NFAPI_NR_CONFIG_BEAM_ID_TAG, &(pNfapiMsg->ssb_table.ssb_beam_id_list[0].beam_id), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_NR_CONFIG_SSB_MASK_TAG, &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_SSB_MASK_TAG, &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_SSB_MASK_TAG, &(pNfapiMsg->ssb_table.ssb_mask_list[1].ssb_mask), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
+
 			pack_tlv(NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG, &(pNfapiMsg->ssb_table.ssb_offset_point_a), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SSB_PERIOD_TAG, &(pNfapiMsg->ssb_table.ssb_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG, &(pNfapiMsg->ssb_table.ssb_subcarrier_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
@@ -1668,13 +1670,13 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 	{
 		{ NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG,  &(pNfapiMsg->carrier_config.dl_bandwidth),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_DL_FREQUENCY_TAG,  &(pNfapiMsg->carrier_config.dl_frequency),  &unpack_uint32_tlv_value},
-		{ NFAPI_NR_CONFIG_DL_GRID_SIZE_TAG,  &(pNfapiMsg->carrier_config.dl_grid_size),  &unpack_uint16_tlv_value},
-		{ NFAPI_NR_CONFIG_DL_K0_TAG,  &(pNfapiMsg->carrier_config.dl_k0),  &unpack_uint16_tlv_value},
+		{ NFAPI_NR_CONFIG_DL_GRID_SIZE_TAG,  &(pNfapiMsg->carrier_config.dl_grid_size[1]),  &unpack_uint16_tlv_value},
+		{ NFAPI_NR_CONFIG_DL_K0_TAG,  &(pNfapiMsg->carrier_config.dl_k0[1]),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_FREQUENCY_SHIFT_7P5KHZ_TAG,  &(pNfapiMsg->carrier_config.frequency_shift_7p5khz),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_NUM_RX_ANT_TAG,  &(pNfapiMsg->carrier_config.num_rx_ant),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_NUM_TX_ANT_TAG,  &(pNfapiMsg->carrier_config.num_tx_ant),  &unpack_uint16_tlv_value},
-		{ NFAPI_NR_CONFIG_UL_GRID_SIZE_TAG,  &(pNfapiMsg->carrier_config.ul_grid_size),  &unpack_uint16_tlv_value},
-		{ NFAPI_NR_CONFIG_UL_K0_TAG,  &(pNfapiMsg->carrier_config.ul_k0),  &unpack_uint16_tlv_value},
+		{ NFAPI_NR_CONFIG_UL_GRID_SIZE_TAG,  &(pNfapiMsg->carrier_config.ul_grid_size[1]),  &unpack_uint16_tlv_value},
+		{ NFAPI_NR_CONFIG_UL_K0_TAG,  &(pNfapiMsg->carrier_config.ul_k0[1]),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_UPLINK_BANDWIDTH_TAG,  &(pNfapiMsg->carrier_config.uplink_bandwidth),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_UPLINK_FREQUENCY_TAG,  &(pNfapiMsg->carrier_config.uplink_frequency),  &unpack_uint32_tlv_value},
 		{ NFAPI_NR_CONFIG_FRAME_DUPLEX_TYPE_TAG,  &(pNfapiMsg->cell_config.frame_duplex_type),  &unpack_uint8_tlv_value},
@@ -1694,7 +1696,9 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		{ NFAPI_NR_CONFIG_MULTIPLE_CELLS_SS_PBCH_IN_A_CARRIER_TAG,  &(pNfapiMsg->ssb_table.multiple_cells_ss_pbch_in_a_carrier),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SS_PBCH_MULTIPLE_CARRIERS_IN_A_BAND_TAG,  &(pNfapiMsg->ssb_table.ss_pbch_multiple_carriers_in_a_band),  &unpack_uint8_tlv_value},
 		// { NFAPI_NR_CONFIG_BEAM_ID_TAG,  &(pNfapiMsg->ssb_table.ssb_beam_id_list[0].beam_id),  &unpack_uint16_tlv_value},
-		{ NFAPI_NR_CONFIG_SSB_MASK_TAG,  &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask),  &unpack_uint16_tlv_value},
+		{ NFAPI_NR_CONFIG_SSB_MASK_TAG,  &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask),  &unpack_uint32_tlv_value},
+		{ NFAPI_NR_CONFIG_SSB_MASK_TAG,  &(pNfapiMsg->ssb_table.ssb_mask_list[1].ssb_mask),  &unpack_uint32_tlv_value},
+
 		{ NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG,  &(pNfapiMsg->ssb_table.ssb_offset_point_a),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_PERIOD_TAG,  &(pNfapiMsg->ssb_table.ssb_period),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG,  &(pNfapiMsg->ssb_table.ssb_subcarrier_offset),  &unpack_uint8_tlv_value},

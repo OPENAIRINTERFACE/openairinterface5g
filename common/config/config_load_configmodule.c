@@ -44,7 +44,7 @@
 #include "../utils/LOG/log.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
 
-extern uint8_t nfapi_mode=0;
+extern uint8_t nfapi_mode;
 
 int load_config_sharedlib(configmodule_interface_t *cfgptr) {
   void *lib_handle;

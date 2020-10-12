@@ -1144,3 +1144,4 @@ void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             uint8_t *sdu){
                             }
 int l1_north_init_gNB(void){}
+uint8_t nfapi_mode;
