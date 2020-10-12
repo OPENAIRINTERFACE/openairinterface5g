@@ -75,9 +75,19 @@ void nr_ulsch_unscrambling(int16_t* llr,
                          uint32_t n_RNTI);
 
 
+void nr_ulsch_unscrambling_optim(int16_t* llr,
+				 uint32_t size,
+				 uint8_t q,
+				 uint32_t Nid,
+				 uint32_t n_RNTI);
+
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                          int frame_rx,
                          int slot_rx,
                          int UE_id,
                          uint8_t harq_pid);
 int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
+
+void dump_pusch_stats(PHY_VARS_gNB *gNB);
+
+void clear_pusch_stats(PHY_VARS_gNB *gNB);

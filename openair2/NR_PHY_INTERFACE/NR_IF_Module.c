@@ -38,8 +38,10 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
+#include "executables/softmodem-common.h"
 
 #define MAX_IF_MODULES 100
+//#define UL_HARQ_PRINT
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
@@ -62,92 +64,22 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
     if (UL_info->rach_ind.pdu_list[0].num_preamble>0)
     AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
 		"More than 1 preamble not supported\n");
-
-    /*nr_initiate_ra_proc(UL_info->module_id,
+    
+    nr_initiate_ra_proc(UL_info->module_id,
                         UL_info->CC_id,
                         UL_info->rach_ind.sfn,
                         UL_info->rach_ind.slot,
                         UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
                         UL_info->rach_ind.pdu_list[0].freq_index,
                         UL_info->rach_ind.pdu_list[0].symbol_index,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);*/
+                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);
 
   }
 }
 
 
-void handle_nr_sr(NR_UL_IND_t *UL_info) {
+void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
 
-
- /* if (nfapi_mode == 1)  // PNF
-  {
-    if (UL_info->sr_ind.sr_indication_body.number_of_srs>0)
-    {
-      //      oai_nfapi_sr_indication(&UL_info->sr_ind);
-    }
-  }
-  else
-  {
-
-    
-    for (int i=0;i<UL_info->sr_ind.sr_indication_body.number_of_srs;i++)
-      SR_indication(UL_info->module_id,
-          UL_info->CC_id,
-          UL_info->frame,
-          UL_info->slot,
-          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].rx_ue_information.rnti,
-          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].ul_cqi_information.ul_cqi);
-
-
-
-  }
-
-  UL_info->sr_ind.sr_indication_body.number_of_srs=0;*/
-}
-
-void handle_nr_cqi(NR_UL_IND_t *UL_info) {
-
-    /*
-    for (int i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
-      cqi_indication(UL_info->module_id,
-          UL_info->CC_id,
-          UL_info->frame,
-          UL_info->slot,
-          UL_info->cqi_ind.cqi_pdu_list[i].rx_ue_information.rnti,
-          &UL_info->cqi_ind.cqi_pdu_list[i].cqi_indication_rel9,
-          UL_info->cqi_ind.cqi_raw_pdu_list[i].pdu,
-          &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
-    
-    UL_info->cqi_ind.number_of_cqis=0;*/
-
-}
-
-void handle_nr_harq(NR_UL_IND_t *UL_info) {
- /*  if (nfapi_mode == 1 && UL_info->harq_ind.harq_indication_body.number_of_harqs>0) { // PNF
-    //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
-       int retval = oai_nfapi_harq_indication(&UL_info->harq_ind);
-
-    if (retval!=0) {
-      LOG_E(PHY, "Failed to encode NFAPI HARQ_IND retval:%d\n", retval);
-    }
-    
-    UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
-  }
-  else
-  {
-    
-    for (int i=0;i<UL_info->harq_ind.harq_indication_body.number_of_harqs;i++)
-      harq_indication(UL_info->module_id,
-          UL_info->CC_id,
-          NFAPI_SFNSF2SFN(UL_info->harq_ind.sfn_sf),
-          NFAPI_SFNSF2SF(UL_info->harq_ind.sfn_sf),
-          &UL_info->harq_ind.harq_indication_body.harq_pdu_list[i]);
-    
-    UL_info->harq_ind.harq_indication_body.number_of_harqs=0;
-  }*/
-}
-
-void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
   if(nfapi_mode == 1) {
     if (UL_info->crc_ind.number_crcs>0) {
       //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
@@ -174,6 +106,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
               UL_info->rx_ind.pdu_list[i].rnti) {
             LOG_D(PHY, "UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].crc_indication_rel8.crc_flag:%d\n", j, UL_info->crc_ind.crc_list[j].tb_crc_status);
 
+            handle_nr_ul_harq(UL_info->slot, sched_ctrl, stats, UL_info->crc_ind.crc_list[j]);
+
             if (UL_info->crc_ind.crc_list[j].tb_crc_status == 1) { // CRC error indication
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->slot);
 
@@ -185,7 +119,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
                         (uint8_t *)NULL,
                         UL_info->rx_ind.pdu_list[i].pdu_length,
                         UL_info->rx_ind.pdu_list[i].timing_advance,
-                        UL_info->rx_ind.pdu_list[i].ul_cqi);
+                        UL_info->rx_ind.pdu_list[i].ul_cqi,
+                        UL_info->rx_ind.pdu_list[i].rssi);
             } else {
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->slot);
               nr_rx_sdu(UL_info->module_id,
@@ -196,7 +131,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
                         UL_info->rx_ind.pdu_list[i].pdu,
                         UL_info->rx_ind.pdu_list[i].pdu_length,
                         UL_info->rx_ind.pdu_list[i].timing_advance,
-                        UL_info->rx_ind.pdu_list[i].ul_cqi);
+                        UL_info->rx_ind.pdu_list[i].ul_cqi,
+                        UL_info->rx_ind.pdu_list[i].rssi);
             }
             break;
           }
@@ -224,9 +160,9 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d crcs:%d]\n",
+  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
-        module_id,CC_id,
+        module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
   if (nfapi_mode != 1) {
@@ -244,12 +180,11 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_sr(UL_info);
-  handle_nr_cqi(UL_info);
-  handle_nr_harq(UL_info);
+  
+  handle_nr_uci(UL_info,&mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0],mac->pucch_target_snrx10);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info);
+  handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0]);
 
   if (nfapi_mode != 1) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
@@ -261,8 +196,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
-				UL_info->frame,
-				UL_info->slot,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
 				(UL_info->slot+sl_ahead)%spf);
       
@@ -274,13 +207,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
-      if ((mac->common_channels[CC_id].ServingCellConfigCommon->tdd_UL_DL_ConfigurationCommon==NULL) ||
-          (is_nr_UL_slot(mac->common_channels[CC_id].ServingCellConfigCommon,UL_info->slot)>0)) {
-	//printf("NR_UL_indication: this is an UL slot. UL_info: frame %d, slot %d. UL_tti_req: frame %d, slot %d\n",UL_info->frame,UL_info->slot,mac->UL_tti_req[CC_id].SFN,mac->UL_tti_req[CC_id].Slot);
-        sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
-      }
-      else
-        sched_info->UL_tti_req      = NULL;
+      sched_info->UL_tti_req  = &mac->UL_tti_req[CC_id];
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
 #ifdef DUMP_FAPI

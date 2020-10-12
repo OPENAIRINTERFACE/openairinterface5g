@@ -54,7 +54,8 @@
 #include "common/config/config_userapi.h"
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_gNB/mac_proto.h"
+
 #include "NR_asn_constant.h"
 #include "executables/thread-common.h"
 #include "NR_SCS-SpecificCarrier.h"
@@ -254,10 +255,9 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
      scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA = NULL;
   }
 
-  // fix libconfig (asn1c uses long) 
-  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower-=((long)1<<32); 
-  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant-=((long)1<<32);
-  *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal-=((long)1<<32);
+  // default value for msg3 precoder is NULL (0 means enabled)
+  if (*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder!=0)
+    scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder = NULL;
 
   // fix DL and UL Allocation lists
   
@@ -520,17 +520,11 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
-  int ssb_SubcarrierOffset = 31;
-  int pdsch_AntennaPorts = 1;
   uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
-  paramdef_t SSBsParams[] = SSBPARAMS_DESC;
-  paramlist_def_t SSBsParamList = {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET, NULL, 0};
-  paramdef_t PDSCHANTENNAParams[] = PDSCHANTENNAPARAMS_DESC;
-  paramlist_def_t PDSCHANTENNAParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
    ////////// Physical parameters
 
 
@@ -579,12 +573,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     }
 
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
-    config_getlist(&SSBsParamList, NULL, 0, aprefix);
-    if (SSBsParamList.numelt > 0) config_get(SSBsParams,sizeof(SSBsParams)/sizeof(paramdef_t),aprefix);
-
-    config_getlist(&PDSCHANTENNAParamList, NULL, 0, aprefix);
-    if (PDSCHANTENNAParamList.numelt > 0) config_get(PDSCHANTENNAParams,sizeof(PDSCHANTENNAParams)/sizeof(paramdef_t),aprefix);
-
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);
     if (SCCsParamList.numelt > 0) {    
@@ -660,15 +648,16 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 		      (NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l]);
 	}
-	
-        // Parse optional physical parameters
-        sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
+        printf("SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
+        printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
+        printf("pusch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr;
+        printf("pucch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pucch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr;
+        NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
 
-        printf("SSB SCO %d\n",ssb_SubcarrierOffset);
-	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
-        printf("pdsch_AntennaPorts %d\n",pdsch_AntennaPorts);
-	NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = pdsch_AntennaPorts;
-	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
     }//End for (k=0; k <num_gnbs ; k++)
@@ -714,10 +703,14 @@ int RCconfig_nr_gtpu(void ) {
     if (address) {
       MessageDef *message;
       AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, GTPV1U_ENB_S1_REQ))!=NULL,"");
-      IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-      LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
-      GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
-      itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+     // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+     // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
+
+
+     IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+     LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
+     GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
+     itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
     } else
     LOG_E(GTPU,"invalid address for S1U\n");
 
@@ -773,11 +766,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   if (GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt>0) {
     // Output a list of all gNBs.
        config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
-    
-    
-      
-      
-    
+
     if (GNBParamList.numelt > 0) {
       for (k = 0; k < GNBParamList.numelt; k++) {
 	if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {

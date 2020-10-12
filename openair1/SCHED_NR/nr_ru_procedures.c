@@ -87,14 +87,29 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                  CYCLIC_PREFIX);
   else {
     if (fp->numerology_index != 0) {
+      
+      if (!(slot%(fp->slots_per_subframe/2))&&(first_symbol==0)) { // case where first symbol in slot has longer prefix
+	apply_nr_rotation(fp,
+			  (int16_t*)&ru->common.txdataF_BF[aa][slot_offsetF],
+			  slot,
+			  0,
+			  1,
+			  fp->ofdm_symbol_size);
 
-      if (!(slot%(fp->slots_per_subframe/2))&&(first_symbol==0)) {
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
                      (int*)&ru->common.txdata[aa][slot_offset],
                      fp->ofdm_symbol_size,
                      1,
                      fp->nb_prefix_samples0,
                      CYCLIC_PREFIX);
+
+	apply_nr_rotation(fp,
+			  (int16_t*)&ru->common.txdataF_BF[aa][slot_offsetF+fp->ofdm_symbol_size],
+			  slot,
+			  1,
+			  num_symbols-1,
+			  fp->ofdm_symbol_size);
+
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF+fp->ofdm_symbol_size],
                      (int*)&ru->common.txdata[aa][slot_offset+fp->nb_prefix_samples0+fp->ofdm_symbol_size],
                      fp->ofdm_symbol_size,
@@ -102,7 +117,13 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       }
-      else {
+      else { // all symbols in slot have shorter prefix
+	apply_nr_rotation(fp,
+			  (int16_t*)&ru->common.txdataF_BF[aa][slot_offsetF],
+			  slot,
+			  first_symbol,
+			  num_symbols,
+			  fp->ofdm_symbol_size);
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
                      (int*)&ru->common.txdata[aa][slot_offset],
                      fp->ofdm_symbol_size,
@@ -110,9 +131,8 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       }
-    }
-
-    else {
+    } // numerology_index!=0
+    else { //numerology_index == 0
       for (uint16_t idx_sym=abs_first_symbol; idx_sym<abs_first_symbol+num_symbols; idx_sym++) {
         if (idx_sym%0x7) {
           PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
@@ -121,6 +141,12 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                        1,
                        fp->nb_prefix_samples,
                        CYCLIC_PREFIX);
+	  apply_nr_rotation(fp,
+			    (int16_t*)&ru->common.txdata[aa][slot_offset],
+			    slot,
+			    idx_sym,
+			    1,
+			    fp->ofdm_symbol_size+fp->nb_prefix_samples);
           slot_offset += fp->nb_prefix_samples+fp->ofdm_symbol_size;
         }
         else {
@@ -130,6 +156,12 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                        1,
                        fp->nb_prefix_samples0,
                        CYCLIC_PREFIX);
+	  apply_nr_rotation(fp,
+			    (int16_t*)&ru->common.txdata[aa][slot_offset],
+			    slot,
+			    0,
+			    1,
+			    fp->ofdm_symbol_size+fp->nb_prefix_samples0);
           slot_offset += fp->nb_prefix_samples0+fp->ofdm_symbol_size;
         }
       }
@@ -520,7 +552,7 @@ void nr_fep0(RU_t *ru, int first_half) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     0,
+                     ru->N_TA_offset,
                      0);
     }
   }
@@ -642,6 +674,8 @@ void nr_fep_full(RU_t *ru, int slot) {
   // if ((fp->frame_type == TDD) && 
      // (subframe_select(fp,proc->tti_rx) != NR_UPLINK_SLOT)) return;
 
+  LOG_D(PHY,"In fep_full for slot = %d\n", proc->tti_rx);
+
   start_meas(&ru->ofdm_demod_stats);
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
@@ -655,7 +689,7 @@ void nr_fep_full(RU_t *ru, int slot) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     0,
+                     ru->N_TA_offset,
                      0);
     }
   }

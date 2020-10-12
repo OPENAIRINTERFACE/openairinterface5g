@@ -44,7 +44,7 @@
 #include "SCHED_NR/phy_frame_config_nr.h"
 
 #include "NR_MIB.h"
-#include "nr_mac_common.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
@@ -121,13 +121,23 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     }
   }
 
+  lte_frame_type_t frame_type;
+  uint16_t band;
+  int32_t offset;
+
+  get_band((cfg->carrier_config.dl_frequency.value)*1000,
+           &band,
+           &offset,
+           &frame_type);
+
+  RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
 
   // Cell configuration
   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
   cfg->cell_config.phy_cell_id.tl.tag = NFAPI_NR_CONFIG_PHY_CELL_ID_TAG;
   cfg->num_tlv++;
 
-  cfg->cell_config.frame_duplex_type.value = 1;
+  cfg->cell_config.frame_duplex_type.value = frame_type;
   cfg->cell_config.frame_duplex_type.tl.tag = NFAPI_NR_CONFIG_FRAME_DUPLEX_TYPE_TAG;
   cfg->num_tlv++;
 
@@ -143,7 +153,11 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 
   // PRACH configuration
 
-  cfg->prach_config.prach_sequence_length.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present;
+  uint8_t nb_preambles = 64;
+  if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
+     nb_preambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
+
+  cfg->prach_config.prach_sequence_length.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1;
   cfg->prach_config.prach_sequence_length.tl.tag = NFAPI_NR_CONFIG_PRACH_SEQUENCE_LENGTH_TAG;
   cfg->num_tlv++;  
 
@@ -153,7 +167,6 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     cfg->prach_config.prach_sub_c_spacing.value = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   cfg->prach_config.prach_sub_c_spacing.tl.tag = NFAPI_NR_CONFIG_PRACH_SUB_C_SPACING_TAG;
   cfg->num_tlv++;
-
   cfg->prach_config.restricted_set_config.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig;
   cfg->prach_config.restricted_set_config.tl.tag = NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG;
   cfg->num_tlv++;
@@ -192,13 +205,17 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf.tl.tag = NFAPI_NR_CONFIG_PRACH_ZERO_CORR_CONF_TAG;
     cfg->num_tlv++;
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.value = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,
+                                                                                                    nb_preambles, frame_type);
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.tl.tag = NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG;
+    cfg->num_tlv++;
     //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = ???
   }
 
-  cfg->prach_config.ssb_per_rach.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
+  cfg->prach_config.ssb_per_rach.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
   cfg->prach_config.ssb_per_rach.tl.tag = NFAPI_NR_CONFIG_SSB_PER_RACH_TAG;
   cfg->num_tlv++;
- 
+
   // SSB Table Configuration
   int scs_scaling = 1<<(cfg->ssb_config.scs_common.value);
   if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
@@ -275,8 +292,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
-                  );
+                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
   if (return_tdd !=0){
      LOG_E(PHY,"TDD configuration can not be done\n");
@@ -284,72 +300,18 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   else LOG_I(PHY,"TDD has been properly configurated\n");
   }
 
-/*
-  // PDCCH-ConfigCommon
-  cfg->pdcch_config.controlResourceSetZero.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
-  cfg->pdcch_config.searchSpaceZero.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
-
-  // PDSCH-ConfigCommon
-  cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
-  cfg->pdsch_config.dmrs_TypeA_Position.value = scc->dmrs_TypeA_Position;
-  AssertFatal(cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value<=NFAPI_NR_PDSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value);
-  for (int i=0;i<cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value;i++) {
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_k0[i].value=*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[i].value=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[i].value=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
-  }
-
-  // PUSCH-ConfigCommon
-  cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count;
-  cfg->pusch_config.dmrs_TypeA_Position.value = scc->dmrs_TypeA_Position+2;
-  AssertFatal(cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value<=NFAPI_NR_PUSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value);
-  for (int i=0;i<cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value;i++) {
-    cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[i].value=*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2;
-  }*/
-
-
-
-  cfg->carrier_config.frequency_shift_7p5khz.tl.tag =			 NFAPI_NR_CONFIG_FREQUENCY_SHIFT_7P5KHZ_TAG;
-  cfg->num_tlv++;
-
-  cfg->measurement_config.rssi_measurement.tl.tag =			    NFAPI_NR_CONFIG_RSSI_MEASUREMENT_TAG;
-  cfg->num_tlv++;
-
-  cfg->prach_config.prach_multiple_carriers_in_a_band.tl.tag =             NFAPI_NR_CONFIG_PRACH_MULTIPLE_CARRIERS_IN_A_BAND_TAG;
-  cfg->num_tlv++;
-
-  cfg->ssb_config.bch_payload.tl.tag = NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG;
-  cfg->num_tlv++;
-
-  cfg->ssb_table.beta_pss.tl.tag =			 NFAPI_NR_CONFIG_BETA_PSS_TAG;
-  cfg->num_tlv++;
-
-  cfg->ssb_table.MIB.tl.tag =			 NFAPI_NR_CONFIG_MIB_TAG;
-  cfg->num_tlv++;
-
-  cfg->ssb_table.multiple_cells_ss_pbch_in_a_carrier.tl.tag =			 NFAPI_NR_CONFIG_MULTIPLE_CELLS_SS_PBCH_IN_A_CARRIER_TAG;
-  cfg->num_tlv++;
-
-  cfg->ssb_table.ss_pbch_multiple_carriers_in_a_band.tl.tag =			 NFAPI_NR_CONFIG_SS_PBCH_MULTIPLE_CARRIERS_IN_A_BAND_TAG;
-  cfg->num_tlv++;
-
-  if(cfg->ssb_table.ssb_beam_id_list!=NULL)
-  {
-    cfg->ssb_table.ssb_beam_id_list[0].beam_id->tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
-    cfg->num_tlv++;
-  }
-                                                
 }
 
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
+                           int pusch_tgt_snrx10,
+                           int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int add_ue,
 			   uint32_t rnti,
-			   NR_CellGroupConfig_t *secondaryCellGroup
-                           ){
+			   NR_CellGroupConfig_t *secondaryCellGroup){
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -370,7 +332,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
     }
   
-  
+    RC.nrmac[Mod_idP]->pusch_target_snrx10 = pusch_tgt_snrx10;
+    RC.nrmac[Mod_idP]->pucch_target_snrx10 = pucch_tgt_snrx10;
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
     phycfg.CC_id  = 0;
@@ -390,6 +353,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (add_ue == 1) {
       UE_id = add_new_nr_ue(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
+      UE_list->preambles[UE_id].num_preambles = num_preamble;
+      UE_list->preambles[UE_id].preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
+      for (int i=0; i<num_preamble; i++) {
+        UE_list->preambles[UE_id].preamble_list[i] = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+      }
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     }
     else { // secondaryCellGroup has been updated

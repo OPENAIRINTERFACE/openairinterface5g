@@ -51,6 +51,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/INIT/phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
@@ -118,6 +119,7 @@ uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
+extern int usrp_tx_thread;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -179,6 +181,17 @@ int attach_rru(RU_t *ru)
         ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
   AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),
               "RU %d failed send configuration to remote radio\n",ru->idx);
+
+  if ((len = ru->ifdevice.trx_ctlrecv_func(&ru->ifdevice,
+             &rru_config_msg,
+             msg_len))<0) {
+    LOG_I(PHY,"Waiting for RRU %d\n",ru->idx);
+  } else if (rru_config_msg.type == RRU_config_ok) {
+    LOG_I(PHY, "RRU_config_ok received\n");
+  } else {
+    LOG_E(PHY,"Received incorrect message %d from RRU %d\n",rru_config_msg.type,ru->idx);
+  }
+
   return 0;
 }
 
@@ -290,7 +303,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 // southbound IF4p5 fronthaul
 void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
-  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
@@ -501,7 +514,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   RU_proc_t *proc        = &ru->proc;
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full=0;
@@ -698,7 +711,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   void *txp[ru->nb_tx];
   unsigned int txs;
   int i,txsymb;
@@ -771,8 +784,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 					siglen+sf_extension,
 					ru->nb_tx,
 					flags);
-      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d\n",ru->idx,
-	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
+      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %di, returned %d\n",ru->idx,
+	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
@@ -790,7 +803,7 @@ void *ru_thread_asynch_rxtx( void *param ) {
   static int ru_thread_asynch_rxtx_status;
   RU_t *ru         = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
-  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   int slot=0, frame=0;
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
   wait_sync("ru_thread_asynch_rxtx");
@@ -1035,11 +1048,11 @@ int wakeup_prach_ru(RU_t *ru) {
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
-  nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
+  nfapi_nr_config_request_scf_t *config = &ru->config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
-  int mu = gNB_config->ssb_config.scs_common.value;
-  int N_RB = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
-  N_RB = 106; // TODO: hard coding (change later)
+  int mu = config->ssb_config.scs_common.value;
+  int N_RB = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
+
   if (mu == NR_MU_0) { //or if LTE
     if(N_RB == 100) {
       if (fp->threequarter_fs) {
@@ -1123,7 +1136,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
   }
 
-  if (gNB_config->cell_config.frame_duplex_type.value==TDD)
+  if (config->cell_config.frame_duplex_type.value==TDD)
     cfg->duplex_mode = duplex_mode_TDD;
   else //FDD
     cfg->duplex_mode = duplex_mode_FDD;
@@ -1162,7 +1175,7 @@ int setup_RU_buffers(RU_t *ru) {
   int card,ant;
   //uint16_t N_TA_offset = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  //nfapi_nr_config_request_t *gNB_config = ru->gNB_list[0]->gNB_config; //tmp index
+  nfapi_nr_config_request_scf_t *config = &ru->config;
 
   if (ru) {
     frame_parms = ru->nr_frame_parms;
@@ -1171,12 +1184,54 @@ int setup_RU_buffers(RU_t *ru) {
     printf("ru pointer is NULL\n");
     return(-1);
   }
+  int mu = config->ssb_config.scs_common.value;
+  int N_RB = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
 
-  /*  if (frame_parms->frame_type == TDD) {
-      if      (frame_parms->N_RB_DL == 100) ru->N_TA_offset = 624;
-      else if (frame_parms->N_RB_DL == 50)  ru->N_TA_offset = 624/2;
-      else if (frame_parms->N_RB_DL == 25)  ru->N_TA_offset = 624/4;
-    } */
+
+  if (config->cell_config.frame_duplex_type.value == TDD) {
+    int N_TA_offset =  config->carrier_config.uplink_frequency.value < 6000000 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
+
+    double factor=1;
+
+    switch (mu) {
+    case 0: //15 kHz scs
+      AssertFatal(N_TA_offset == 400,"scs_common 15kHz only for FR1\n");
+      if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
+      else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
+      else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
+      else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
+      else AssertFatal(1==0,"Too many PRBS for mu=0\n");
+      break;
+    case 1: //30 kHz sc
+      AssertFatal(N_TA_offset == 400,"scs_common 30kHz only for FR1\n");
+      if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
+      else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
+      break;
+    case 2: //60 kHz scs
+      AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+      break;
+    case 3: //120 kHz scs
+      AssertFatal(N_TA_offset == 431,"scs_common 120kHz only for FR2\n");
+      break;
+    case 4: //240 kHz scs
+      AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+      if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
+      else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
+      else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
+      break;
+
+      if      (N_RB == 100) ru->N_TA_offset = 624;
+      else if (N_RB == 50)  ru->N_TA_offset = 624/2;
+      else if (N_RB == 25)  ru->N_TA_offset = 624/4;
+    }
+    if (frame_parms->threequarter_fs == 1) factor = factor*.75;
+    ru->N_TA_offset = (int)(N_TA_offset * factor);
+    LOG_I(PHY,"RU %d Setting N_TA_offset to %d samples (factor %f, UL Freq %d, N_RB %d)\n",ru->idx,ru->N_TA_offset,factor,
+	  config->carrier_config.uplink_frequency.value, N_RB);
+  }
+  else ru->N_TA_offset = 0;
+
+  
   if (ru->openair0_cfg.mmapped_dma == 1) {
     // replace RX signal buffers with mmaped HW versions
     for (i=0; i<ru->nb_rx; i++) {
@@ -1389,7 +1444,7 @@ void *ru_thread( void *param ) {
   int                i = 0;
   int                aa;
 
-  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   
   // set default return value
   ru_thread_status = 0;
@@ -1399,9 +1454,11 @@ void *ru_thread( void *param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
+  memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
+
   if(emulate_rf) {
     fill_rf_config(ru,ru->rf_config_file);
-    nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
+    nr_init_frame_parms(&ru->config, fp);
     nr_dump_frame_parms(fp);
     nr_phy_init_RU(ru);
 
@@ -1422,7 +1479,7 @@ void *ru_thread( void *param ) {
     }
 
     if (ru->if_south == LOCAL_RF) { // configure RF parameters only
-      nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
+      nr_init_frame_parms(&ru->config, fp);
       nr_dump_frame_parms(fp);
       fill_rf_config(ru,ru->rf_config_file);
       nr_phy_init_RU(ru);
@@ -1466,12 +1523,14 @@ void *ru_thread( void *param ) {
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
     // start trx write thread
-    if (ru->start_write_thread){
-      if(ru->start_write_thread(ru) != 0){
-        LOG_E(HW,"Could not start tx write thread\n");
-      }
-      else{
-        LOG_I(PHY,"tx write thread ready\n");
+    if(usrp_tx_thread == 1){
+      if (ru->start_write_thread){
+        if(ru->start_write_thread(ru) != 0){
+          LOG_E(HW,"Could not start tx write thread\n");
+        }
+        else{
+          LOG_I(PHY,"tx write thread ready\n");
+        }
       }
     }
   }
@@ -1524,7 +1583,8 @@ void *ru_thread( void *param ) {
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
     //if (proc->tti_rx==8) {
 
-      if (ru->feprx) ru->feprx(ru,proc->tti_rx);
+      if (ru->feprx) {
+      ru->feprx(ru,proc->tti_rx);
       //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
 
       LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
@@ -1533,6 +1593,18 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
+
+      // Do PRACH RU processing
+      int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
+      if (prach_id>=0) {
+	rx_nr_prach_ru(ru,
+		       ru->prach_list[prach_id].fmt,
+		       ru->prach_list[prach_id].numRA,
+		       ru->prach_list[prach_id].prachStartSymbol,
+		       proc->frame_rx,proc->tti_rx);
+	free_nr_ru_prach_entry(ru,prach_id);
+      }
+      }
     }
 
     // At this point, all information for subframe has been received on FH interface
@@ -1904,7 +1976,7 @@ void configure_ru(int idx,
   RU_t               *ru           = RC.ru[idx];
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t *)arg;
-  nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   int ret;
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -1927,15 +1999,15 @@ void configure_ru(int idx,
   //config->tdd_config_S[0]        = ru->nr_frame_parms->tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
-  config->N_RB_DL[0]             = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
-  config->N_RB_UL[0]             = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
+  config->N_RB_DL[0]             = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
+  config->N_RB_UL[0]             = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
   config->threequarter_fs[0]     = ru->nr_frame_parms->threequarter_fs;
   /*  if (ru->if_south==REMOTE_IF4p5) {
       config->prach_FreqOffset[0]  = ru->nr_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;
       config->prach_ConfigIndex[0] = ru->nr_frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
       LOG_I(PHY,"REMOTE_IF4p5: prach_FrequOffset %d, prach_ConfigIndex %d\n",
       config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);*/
-  nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, ru->nr_frame_parms);
+  nr_init_frame_parms(&ru->config, ru->nr_frame_parms);
   nr_phy_init_RU(ru);
 }
 
@@ -1943,23 +2015,23 @@ void configure_rru(int idx,
                    void *arg) {
   RRU_config_t *config     = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
-  nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
   ru->nr_frame_parms->nr_band                                             = config->band_list[0];
   ru->nr_frame_parms->dl_CarrierFreq                                      = config->tx_freq[0];
   ru->nr_frame_parms->ul_CarrierFreq                                      = config->rx_freq[0];
 
   if (ru->nr_frame_parms->dl_CarrierFreq == ru->nr_frame_parms->ul_CarrierFreq) {
-    gNB_config->cell_config.frame_duplex_type.value                       = TDD;
+    cfg->cell_config.frame_duplex_type.value                       = TDD;
     //ru->nr_frame_parms->tdd_config                                        = config->tdd_config[0];
     //ru->nr_frame_parms->tdd_config_S                                      = config->tdd_config_S[0];
   } else
-    gNB_config->cell_config.frame_duplex_type.value                       = FDD;
+    cfg->cell_config.frame_duplex_type.value                       = FDD;
 
   ru->att_tx                                                              = config->att_tx[0];
   ru->att_rx                                                              = config->att_rx[0];
-  int mu = gNB_config->ssb_config.scs_common.value;
-  gNB_config->carrier_config.dl_grid_size[mu].value                       = config->N_RB_DL[0];
-  gNB_config->carrier_config.dl_grid_size[mu].value                       = config->N_RB_UL[0];
+  int mu = cfg->ssb_config.scs_common.value;
+  cfg->carrier_config.dl_grid_size[mu].value                       = config->N_RB_DL[0];
+  cfg->carrier_config.dl_grid_size[mu].value                       = config->N_RB_UL[0];
   ru->nr_frame_parms->threequarter_fs                                     = config->threequarter_fs[0];
 
   //ru->nr_frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
@@ -1974,7 +2046,7 @@ void configure_rru(int idx,
   }
 
   fill_rf_config(ru,ru->rf_config_file);
-  nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, ru->nr_frame_parms);
+  nr_init_frame_parms(&ru->config, ru->nr_frame_parms);
   nr_phy_init_RU(ru);
 }
 
@@ -2073,26 +2145,29 @@ void set_function_spec_param(RU_t *ru) {
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->nr_start_if          = NULL;                    // no if interface
         ru->rfdevice.host_type   = RAU_HOST;
+
+	// FK this here looks messed up. The following lines should be part of the  if (ru->function == gNodeB_3GPP), shouldn't they?
+
+	ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
+	ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
+	ru->start_rf               = start_rf;                            // need to start the local RF interface
+	ru->stop_rf                = stop_rf;
+	ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
+	printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
       }
 
-      ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-      ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-      ru->start_rf               = start_rf;                            // need to start the local RF interface
-      ru->stop_rf                = stop_rf;
-      ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
-      printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
       /*
-          if (ru->function == gNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
-            fill_rf_config(ru,rf_config_file);
-            init_frame_parms(&ru->frame_parms,1);
-            nr_phy_init_RU(ru);
-          }
+	printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
+	fill_rf_config(ru,rf_config_file);
+	init_frame_parms(&ru->frame_parms,1);
+	nr_phy_init_RU(ru);
 
-          ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-          if (setup_RU_buffers(ru)!=0) {
-            printf("Exiting, cannot initialize RU Buffers\n");
-            exit(-1);
-          }*/
+	ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+	if (setup_RU_buffers(ru)!=0) {
+	   printf("Exiting, cannot initialize RU Buffers\n");
+	   exit(-1);
+	}
+      */
       break;
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
@@ -2143,6 +2218,15 @@ void set_function_spec_param(RU_t *ru) {
       if (ret<0) {
         printf("Exiting, cannot initialize transport protocol\n");
         exit(-1);
+      }
+
+      if (ru->ifdevice.get_internal_parameter != NULL) {
+        void *t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_in");
+        if (t != NULL)
+          ru->fh_south_in = t;
+        t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
+        if (t != NULL)
+          ru->fh_south_out = t;
       }
 
       malloc_IF4p5_buffer(ru);

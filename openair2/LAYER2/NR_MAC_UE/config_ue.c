@@ -31,12 +31,9 @@
  */
 
 //#include "mac_defs.h"
-#include "mac_proto.h"
-
+#include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
-
-#include "../NR_MAC_gNB/nr_mac_common.h"
-#include "SCHED_NR/phy_frame_config_nr.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                          int mu,
@@ -151,8 +148,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
   int i;
 
-    mac->phy_config.Mod_id = module_id;
-    mac->phy_config.CC_id = cc_idP;    
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_idP;
   
   // carrier config
 
@@ -203,12 +200,20 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     }
   }
 
+  lte_frame_type_t frame_type;
+  uint16_t band;
+  int32_t offset;
+
+  get_band((cfg->carrier_config.dl_frequency)*1000,
+           &band,
+           &offset,
+           &frame_type);
+
 
   // cell config
 
   cfg->cell_config.phy_cell_id = *scc->physCellId;
-  cfg->cell_config.frame_duplex_type = 1;
-
+  cfg->cell_config.frame_duplex_type = frame_type;
 
   // SSB config
   cfg->ssb_config.ss_pbch_power = scc->ss_PBCH_BlockPower;
@@ -270,7 +275,132 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       LOG_I(PHY,"TDD has been properly configurated\n");
   }
 
+  // PRACH configuration
 
+  uint8_t nb_preambles = 64;
+  if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
+     nb_preambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
+
+  cfg->prach_config.prach_sequence_length = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1;
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+    cfg->prach_config.prach_sub_c_spacing = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+  else 
+    cfg->prach_config.prach_sub_c_spacing = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+
+  cfg->prach_config.restricted_set_config = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig;
+
+  switch (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM) {
+    case 0 :
+      cfg->prach_config.num_prach_fd_occasions = 1;
+      break;
+    case 1 :
+      cfg->prach_config.num_prach_fd_occasions = 2;
+      break;
+    case 2 :
+      cfg->prach_config.num_prach_fd_occasions = 4;
+      break;
+    case 3 :
+      cfg->prach_config.num_prach_fd_occasions = 8;
+      break;
+    default:
+      AssertFatal(1==0,"msg1 FDM identifier %ld undefined (0,1,2,3) \n", scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM);
+  }
+
+  cfg->prach_config.num_prach_fd_occasions_list = (fapi_nr_num_prach_fd_occasions_t *) malloc(cfg->prach_config.num_prach_fd_occasions*sizeof(fapi_nr_num_prach_fd_occasions_t));
+  for (i=0; i<cfg->prach_config.num_prach_fd_occasions; i++) {
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
+    if (cfg->prach_config.prach_sequence_length)
+      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
+    else
+      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
+
+    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
+    cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, frame_type);
+    //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
+  }
+
+  cfg->prach_config.ssb_per_rach = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
+
+}
+
+/** \brief This function is relavant for the UE procedures for control. It loads the search spaces, the BWPs and the CORESETs into the MAC instance and
+    \brief performs assert checks on the relevant RRC configuration.
+    @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
+    @returns void
+    */
+void config_control_ue(NR_UE_MAC_INST_t *mac){
+
+  uint8_t bwp_id = 1, coreset_id = 1, ss_id;
+  NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
+  AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
+  AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
+
+  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Common;
+  AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
+
+  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Dedicated;
+  AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
+
+  NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
+  AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
+
+  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
+  AssertFatal(pdcch_ConfigCommon != NULL, "pdcch_ConfigCommon is null\n");
+  AssertFatal(pdcch_ConfigCommon->choice.setup->ra_SearchSpace != NULL, "ra_SearchSpace must be available in DL BWP\n");
+
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+  AssertFatal(commonSearchSpaceList != NULL, "commonSearchSpaceList is null\n");
+  AssertFatal(commonSearchSpaceList->list.count > 0, "PDCCH CSS list has 0 elements\n");
+
+  struct NR_PDCCH_Config__controlResourceSetToAddModList *controlResourceSetToAddModList = pdcch_Config->choice.setup->controlResourceSetToAddModList;
+  AssertFatal(controlResourceSetToAddModList != NULL, "controlResourceSetToAddModList is null\n");
+  AssertFatal(controlResourceSetToAddModList->list.count == 1, "controlResourceSetToAddModList->list.count=%d\n", controlResourceSetToAddModList->list.count);
+  AssertFatal(controlResourceSetToAddModList->list.array[0] != NULL, "coreset[0][0] is null\n");
+
+  struct NR_PDCCH_Config__searchSpacesToAddModList *searchSpacesToAddModList = pdcch_Config->choice.setup->searchSpacesToAddModList;
+  AssertFatal(searchSpacesToAddModList != NULL, "searchSpacesToAddModList is null\n");
+  AssertFatal(searchSpacesToAddModList->list.count > 0, "list of UE specifically configured Search Spaces is empty\n");
+  AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS_PER_CORESET, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
+
+  struct NR_UplinkConfig__uplinkBWP_ToAddModList *uplinkBWP_ToAddModList = scd->uplinkConfig->uplinkBWP_ToAddModList;
+  AssertFatal(uplinkBWP_ToAddModList != NULL, "uplinkBWP_ToAddModList is null\n");
+  AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
+
+  // check pdcch_Config, pdcch_ConfigCommon and DL BWP
+  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
+  mac->coreset[bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
+
+  // Check dedicated UL BWP and pass to MAC
+  mac->ULbwp[0] = uplinkBWP_ToAddModList->list.array[0];
+  AssertFatal(mac->ULbwp[0]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
+
+  // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
+  // note: the network configures at most 10 Search Spaces per BWP per cell (including UE-specific and common Search Spaces).
+  for (ss_id = 0; ss_id < searchSpacesToAddModList->list.count; ss_id++) {
+    NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
+    AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
+    AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
+    AssertFatal(*ss->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
+    AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
+    mac->SSpace[0][0][ss_id] = ss;
+  }
+
+  // Check available CSSs in the commonSearchSpaceList (list of additional common search spaces)
+  // note: commonSearchSpaceList SIZE(1..4)
+  for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
+    NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
+    AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
+    AssertFatal(*css->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(css->searchSpaceId != 0, "css->searchSpaceId is 0\n");
+    AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
+    AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
+    AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
+    mac->SSpace[0][0][ss_id] = css;
+    ss_id++;
+  }
 }
 
 int nr_rrc_mac_config_req_ue(
@@ -281,28 +411,27 @@ int nr_rrc_mac_config_req_ue(
     //    NR_ServingCellConfigCommon_t    *sccP,
     //    NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
     //    NR_PhysicalCellGroupConfig_t    *phy_cell_group_configP,
-    NR_SpCellConfig_t               *spCell_ConfigP ){
+    NR_CellGroupConfig_t            *cell_group_config ){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-    //    NR_ServingCellConfig_t *serving_cell_config = spcell_configP->spCellConfigDedicated;
     //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
-
 
     if(mibP != NULL){
       mac->mib = mibP;    //  update by every reception
     }
-    
-    
-    if(spCell_ConfigP != NULL ){
-      mac->servCellIndex = *spCell_ConfigP->servCellIndex;
-      if (spCell_ConfigP->reconfigurationWithSync) {
-	mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
+
+    if(cell_group_config != NULL ){
+      mac->scg = cell_group_config;
+      mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
+      config_control_ue(mac);
+      if (cell_group_config->spCellConfig->reconfigurationWithSync) {
+        mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
 	config_common_ue(mac,module_id,cc_idP);
-	mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
+	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
 	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
-      mac->scd = spCell_ConfigP->spCellConfigDedicated;
 
       /*      
       if(mac_cell_group_configP != NULL){
@@ -367,8 +496,8 @@ int nr_rrc_mac_config_req_ue(
 	}
       }
       */
-    }   
-    
+    }
+
     return 0;
 
 }

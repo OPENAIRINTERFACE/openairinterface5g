@@ -236,13 +236,12 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
     }
     */
 
-  int j2=0;
   fp=f;
   switch (Qm) {
   case 2:
     e0=e;
     e1=e0+EQm;
-    for (int j = 0; j< EQm; j++,j2+=2){
+    for (int j = 0, j2 = 0; j< EQm; j++,j2+=2){
       fp=&f[j2];
       fp[0] = e0[j];
       fp[1] = e1[j];
@@ -253,7 +252,7 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
     e1=e0+EQm;
     e2=e1+EQm;
     e3=e2+EQm;
-    for (int j = 0; j< EQm; j++,j2+=4){
+    for (int j = 0, j2 = 0; j< EQm; j++,j2+=4){
       fp=&f[j2];
       fp[0] = e0[j];
       fp[1] = e1[j];
@@ -287,7 +286,7 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
     e5=e4+EQm;
     e6=e5+EQm;
     e7=e6+EQm;
-    for (int j = 0; j< EQm; j++,j2+=8){
+    for (int j = 0, j2 = 0; j< EQm; j++,j2+=8){
       fp=&f[j2];
       fp[0] = e0[j];
       fp[1] = e1[j];
@@ -310,15 +309,67 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 {
 
-  uint32_t EQm;
-
-  EQm = E/Qm;
-
-  for (int j = 0; j< EQm; j++){
-	  for (int i = 0; i< Qm; i++){
-		  e[(i*EQm + j)] = f[(i+j*Qm)];
-	  }
+  int16_t *e1,*e2,*e3,*e4,*e5,*e6,*e7;
+  switch(Qm) {
+  case 2:
+    e1=e+(E/2);
+    for (int j = 0,j2=0; j< E/2; j+=2,j2+=4){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e[j+1]  = f[j2+2];
+      e1[j+1] = f[j2+3];
+    }
+    break;
+  case 4:
+    e1=e+(E/4);
+    e2=e1+(E/4);
+    e3=e2+(E/4);
+    for (int j = 0,j2=0; j< E/4; j++,j2+=4){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e2[j] = f[j2+2];
+      e3[j] = f[j2+3];
+    }
+    break;
+  case 6:
+    e1=e+(E/6);
+    e2=e1+(E/6);
+    e3=e2+(E/6);
+    e4=e3+(E/6);
+    e5=e4+(E/6);
+    for (int j = 0,j2=0; j< E/6; j++,j2+=6){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e2[j] = f[j2+2];
+      e3[j] = f[j2+3];
+      e4[j] = f[j2+4];
+      e5[j] = f[j2+5];
+    }
+    break;
+  case 8:
+    e1=e+(E/6);
+    e2=e1+(E/6);
+    e3=e2+(E/6);
+    e4=e3+(E/6);
+    e5=e4+(E/6);
+    e6=e5+(E/6);
+    e7=e6+(E/6);
+    for (int j = 0,j2=0; j< E/8; j++,j2+=8){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e2[j] = f[j2+2];
+      e3[j] = f[j2+3];
+      e4[j] = f[j2+4];
+      e5[j] = f[j2+5];
+      e6[j] = f[j2+6];
+      e7[j] = f[j2+7];
+    }
+    break;
+  default:
+    AssertFatal(1==0,"Should not get here : Qm %d\n",Qm);
+    break;
   }
+
 }
 
 
@@ -364,8 +415,8 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   if (ind < Foffset) { // case where we have some bits before the filler and the rest after
     memcpy((void*)e,(void*)(w+ind),Foffset-ind);
 
-    if (E + F <= Ncb) { // E+F doesn't contain all coded bits
-      memcpy((void*)(e+Foffset-ind),(void*)(w+Foffset+F-ind),E-Foffset+ind);
+    if (E + F <= Ncb-ind) { // E+F doesn't contain all coded bits
+      memcpy((void*)(e+Foffset-ind),(void*)(w+Foffset+F),E-Foffset+ind);
       k=E;
     }
     else {
@@ -375,11 +426,12 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   }
   else {
     if (E + F <= Ncb-ind) { //E+F doesn't contain all coded bits
-      memcpy((void*)(e+Foffset-ind),(void*)(w+Foffset+F-ind),E-Foffset+ind);
+      memcpy((void*)(e),(void*)(w+ind),E);
       k=E;
     }
     else {
-
+      memcpy((void*)(e),(void*)(w+ind),Ncb-ind);
+      k=Ncb-ind;
     }
   }
 

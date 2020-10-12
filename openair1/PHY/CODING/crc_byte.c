@@ -90,7 +90,9 @@ static unsigned int        crc24bTable[256];
 static unsigned int        crc24cTable[256];
 static unsigned short      crc16Table[256];
 static unsigned short      crc12Table[256];
+static unsigned short      crc11Table[256];
 static unsigned char       crc8Table[256];
+static unsigned char       crc6Table[256];
 
 void crcTableInit (void)
 {
@@ -102,7 +104,9 @@ void crcTableInit (void)
     crc24cTable[c] = crcbit (&c, 1, poly24c);
     crc16Table[c] = (unsigned short) (crcbit (&c, 1, poly16) >> 16);
     crc12Table[c] = (unsigned short) (crcbit (&c, 1, poly12) >> 16);
+    crc11Table[c] = (unsigned short) (crcbit (&c, 1, poly11) >> 16);
     crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
+    crc6Table[c] = (unsigned char) (crcbit (&c, 1, poly6) >> 24);
   } while (++c);
 }
 
@@ -208,6 +212,24 @@ crc12 (unsigned char * inptr, int bitlen)
 }
 
 unsigned int
+crc11 (unsigned char * inptr, int bitlen)
+{
+  int             octetlen, resbit;
+  unsigned int             crc = 0;
+  octetlen = bitlen / 8;        /* Change in octets */
+  resbit = (bitlen % 8);
+
+  while (octetlen-- > 0) {
+    crc = (crc << 8) ^ (crc11Table[(*inptr++) ^ (crc >> 24)] << 16);
+  }
+
+  if (resbit > 0)
+    crc = (crc << resbit) ^ (crc11Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 16);
+
+  return crc;
+}
+
+unsigned int
 crc8 (unsigned char * inptr, int bitlen)
 {
   int             octetlen, resbit;
@@ -217,6 +239,24 @@ crc8 (unsigned char * inptr, int bitlen)
 
   while (octetlen-- > 0) {
     crc = crc8Table[(*inptr++) ^ (crc >> 24)] << 24;
+  }
+
+  if (resbit > 0)
+    crc = (crc << resbit) ^ (crc8Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 24);
+
+  return crc;
+}
+
+unsigned int
+crc6 (unsigned char * inptr, int bitlen)
+{
+  int             octetlen, resbit;
+  unsigned int             crc = 0;
+  octetlen = bitlen / 8;        /* Change in octets */
+  resbit = (bitlen % 8);
+
+  while (octetlen-- > 0) {
+    crc = crc6Table[(*inptr++) ^ (crc >> 24)] << 24;
   }
 
   if (resbit > 0)
@@ -283,6 +323,7 @@ int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
     default:
       AssertFatal(1,"Invalid crc_type \n");
     }
+
 
     if (crc == oldcrc)
       return(1);

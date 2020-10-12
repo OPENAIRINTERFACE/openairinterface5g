@@ -22,6 +22,7 @@
 #include "phy_init.h"
 #include "SCHED/sched_common.h"
 #include "PHY/phy_extern.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "SIMULATION/TOOLS/sim.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -44,9 +45,11 @@ int nr_phy_init_RU(RU_t *ru) {
   nfapi_nr_config_request_scf_t *cfg;
   ru->nb_log_antennas=0;
   for (int n=0;n<RC.nb_nr_L1_inst;n++) {
-    cfg = &RC.gNB[n]->gNB_config;
+    cfg = &ru->config;
     if (cfg->carrier_config.num_tx_ant.value > ru->nb_log_antennas) ru->nb_log_antennas = cfg->carrier_config.num_tx_ant.value;   
   }
+  // copy configuration from gNB[0] in to RU, assume that all gNB instances sharing RU use the same configuration (at least the parts that are needed by the RU, numerology and PRACH)
+
   AssertFatal(ru->nb_log_antennas > 0 && ru->nb_log_antennas < 13, "ru->nb_log_antennas %d ! \n",ru->nb_log_antennas);
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals 
     // Time-domain signals
@@ -107,7 +110,8 @@ int nr_phy_init_RU(RU_t *ru) {
     ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
 
     for (i=0; i<ru->nb_rx; i++) {
-      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+      // largest size for PRACH FFT is 4x98304 (16*24576)
+      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( 4*98304*2*sizeof(int16_t) );
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
     }
     
@@ -117,9 +121,9 @@ int nr_phy_init_RU(RU_t *ru) {
     LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
     
     int beam_count = 0;
-    if (ru->nb_log_antennas>1) {
+    if (ru->nb_tx>1) {//Enable beamforming when nb_tx > 1
       for (p=0;p<ru->nb_log_antennas;p++) {
-        if ((fp->L_ssb >> p) & 0x01)
+        if ((fp->L_ssb >> (63-p)) & 0x01)//64 bit-map with the MSB @2⁶³ corresponds to SSB ssb_index 0
           beam_count++;
       }
       AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
@@ -127,7 +131,7 @@ int nr_phy_init_RU(RU_t *ru) {
       int l_ind = 0;
       for (i=0; i<RC.nb_nr_L1_inst; i++) {
         for (p=0;p<ru->nb_log_antennas;p++) {
-          if ((fp->L_ssb >> p) & 0x01)  {
+          if ((fp->L_ssb >> (63-p)) & 0x01)  {
 	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	    for (j=0; j<ru->nb_tx; j++) {
 	      ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
@@ -143,6 +147,8 @@ int nr_phy_init_RU(RU_t *ru) {
   } // !=IF5
 
   ru->common.sync_corr = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_subframe_wCP );
+
+  init_prach_ru_list(ru);
 
   return(0);
 }

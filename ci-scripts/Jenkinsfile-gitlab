@@ -66,7 +66,8 @@ pipeline {
             "Test-IF4p5-TDD-Band38-Multi-RRU",
             "Test-eNB-OAI-UE-FDD-Band7",
             "Test-Mono-FDD-Band13-X2-HO",
-            "Test-TDD-Band78-gNB-NR-UE"
+            "Test-TDD-Band78-gNB-NR-UE",
+            "Test-OCP-FDD-Band7"
         ])
         ansiColor('xterm')
     }
@@ -674,6 +675,25 @@ pipeline {
                         always {
                             script {
                                 finalizeSlaveJob('gNB-nrUE-MONO-TDD-Band78-N300')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI OCP-eNB - FDD - Band 7 - B210") {
+                    steps {
+                        script {
+                            triggerSlaveJob ('OCPeNB-FDD-Band7-B210', 'Test-OCP-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('OCPeNB-FDD-Band7-B210')
                             }
                         }
                         failure {

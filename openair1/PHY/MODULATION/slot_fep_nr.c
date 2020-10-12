@@ -133,8 +133,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_FEP
       //  if (ue->frame <100)
-    /*LOG_I(PHY,*/printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, slot_offset %u, sample_offset %d,rx_offset %u, frame_length_samples %u\n",
-    		ue->proc.proc_rxtx[(Ns)&1].frame_rx, Ns, symbol, nb_prefix_samples, nb_prefix_samples0, slot_offset, sample_offset, rx_offset, frame_length_samples);
+    /*LOG_I(PHY,*/printf("slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, slot_offset %u, sample_offset %d,rx_offset %u, frame_length_samples %u\n",
+			 Ns, symbol, nb_prefix_samples, nb_prefix_samples0, slot_offset, sample_offset, rx_offset, frame_length_samples);
 #endif
 
     abs_symbol = Ns * frame_parms->symbols_per_slot + symbol;
@@ -198,12 +198,22 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
     }
 
-    #ifdef DEBUG_FEP
-        //  if (ue->frame <100)
-        printf("slot_fep: frame %d: symbol %d rx_offset %u\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx, symbol, rx_offset);
-    #endif
+#ifdef DEBUG_FEP
+    //  if (ue->frame <100)
+    printf("slot_fep: symbol %d rx_offset %u\n", symbol, rx_offset);
+#endif
+    
+    int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+    int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
+    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      (int16_t*)&rot2,
+		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      frame_parms->ofdm_symbol_size,
+		      15);
+    
   }
-
+  
 
 #ifdef DEBUG_FEP
   printf("slot_fep: done\n");
@@ -212,10 +222,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 }
 
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
-                unsigned char symbol,
-                unsigned char Ns,
-                int sample_offset,
-                int no_prefix)
+                          unsigned char symbol,
+                          unsigned char Ns,
+                          int sample_offset,
+                          int no_prefix)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -308,8 +318,8 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_FEP
       //  if (ue->frame <100)
-    /*LOG_I(PHY,*/printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, slot_offset %u, sample_offset %d,rx_offset %u, frame_length_samples %u\n",
-    		ue->proc.proc_rxtx[(Ns)&1].frame_rx, Ns, symbol, nb_prefix_samples, nb_prefix_samples0, slot_offset, sample_offset, rx_offset, frame_length_samples);
+    /*LOG_I(PHY,*/printf("slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, slot_offset %u, sample_offset %d,rx_offset %u, frame_length_samples %u\n",
+    		Ns, symbol, nb_prefix_samples, nb_prefix_samples0, slot_offset, sample_offset, rx_offset, frame_length_samples);
 #endif
 
     abs_symbol = Ns * frame_parms->symbols_per_slot + symbol;
@@ -339,7 +349,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 #endif
 
 
-        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][rx_offset],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
@@ -363,7 +373,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
         dft(dftsize,(int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
-        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][rx_offset],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE
@@ -373,10 +383,22 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 
     }
 
-    #ifdef DEBUG_FEP
-        //  if (ue->frame <100)
-        printf("slot_fep: frame %d: symbol %d rx_offset %u\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx, symbol, rx_offset);
-    #endif
+    int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+    int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
+    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+
+#ifdef DEBUG_FEP
+    //  if (ue->frame <100)
+    printf("slot_fep: slot %d, symbol %d rx_offset %u, rotation symbol %d %d.%d\n", Ns,symbol, rx_offset,
+	   symbol+symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+#endif
+
+    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      (int16_t*)&rot2,
+		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      frame_parms->ofdm_symbol_size,
+		      15);
+    
   }
 
 
@@ -395,12 +417,13 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
                    int sample_offset,
                    int no_prefix)
 {
-  uint32_t slot_offset;
-  uint32_t rxdata_offset;
+  int32_t slot_offset, rxdata_offset;
 
   unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   
+  int tmp_dft_in[8192] __attribute__ ((aligned (32)));
+
   dft_size_idx_t dftsize;
 
   switch (frame_parms->ofdm_symbol_size) {
@@ -443,14 +466,38 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   
   slot_offset   = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
 
-  
   if(symbol == 0)
     rxdata_offset = slot_offset + nb_prefix_samples0 - SOFFSET;
   else
     rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
 
-  dft(dftsize,(int16_t *)&rxdata[rxdata_offset],
-       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+  if(sample_offset>rxdata_offset) {
+    memcpy1((void *)tmp_dft_in,
+           (void *) &rxdata[frame_parms->samples_per_frame-sample_offset+rxdata_offset],
+           (sample_offset-rxdata_offset)*sizeof(int));
 
+    memcpy1((void *)&tmp_dft_in[sample_offset-rxdata_offset],
+           (void *) &rxdata[0],
+           (frame_parms->ofdm_symbol_size-sample_offset+rxdata_offset)*sizeof(int));
+
+    dft(dftsize,(int16_t *)&tmp_dft_in,
+        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+  }
+  else
+    dft(dftsize,(int16_t *)&rxdata[rxdata_offset-sample_offset],
+        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+
+  // clear DC carrier from OFDM symbols
+  rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
+
+  int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+  uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
+  ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+  LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",Ns,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+  rotate_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+		    (int16_t*)&rot2,
+		    (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+		    frame_parms->ofdm_symbol_size,
+		    15);
   return(0);
 }
