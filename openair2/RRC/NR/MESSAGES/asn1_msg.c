@@ -726,6 +726,10 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
     ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
 
+    cellGroupConfig->rlc_BearerToReleaseList = NULL;
+    cellGroupConfig->sCellToAddModList       = NULL;
+    cellGroupConfig->sCellToReleaseList      = NULL;
+
     /* mac CellGroup Config */
     mac_CellGroupConfig                                                     = calloc(1, sizeof(NR_MAC_CellGroupConfig_t));
     mac_CellGroupConfig->bsr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
@@ -932,9 +936,11 @@ uint16_t do_RRCReconfiguration(
     NR_DL_DCCH_Message_t                             dl_dcch_msg;
     asn_enc_rval_t                                   enc_rval;
     NR_RRCReconfiguration_IEs_t                      *ie;
-    NR_SRB_ToAddModList_t                            *SRB2_configList      = NULL;
+    NR_SRB_ToAddModList_t                            *SRB_configList       = NULL;
+    NR_SRB_ToAddModList_t                            *SRB_configList2      = NULL;
     NR_SRB_ToAddMod_t                                *SRB2_config          = NULL;
     NR_DRB_ToAddModList_t                            *DRB_configList       = NULL;
+    NR_DRB_ToAddModList_t                            *DRB_configList2      = NULL;
     NR_DRB_ToAddMod_t                                *DRB_config           = NULL;
     NR_SecurityConfig_t                              *security_config      = NULL;
     NR_DedicatedNAS_Message_t                        *dedicatedNAS_Message = NULL;
@@ -948,25 +954,40 @@ uint16_t do_RRCReconfiguration(
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier = Transaction_id;
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
 
-    uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
     /******************** Radio Bearer Config ********************/
-    
     /* Configure SRB2 */
-    SRB2_configList = ue_context_pP->ue_context.SRB_configList2[xid];
+    SRB_configList2 = ue_context_pP->ue_context.SRB_configList2[Transaction_id];
+    SRB_configList = ue_context_pP->ue_context.SRB_configList;
+    SRB_configList = CALLOC(1, sizeof(*SRB_configList));
+    memset(SRB_configList, 0, sizeof(*SRB_configList));
 
-    if (SRB2_configList) {
-        free(SRB2_configList);
+    if (SRB_configList2) {
+        free(SRB_configList2);
     }
 
-    SRB2_configList = CALLOC(1, sizeof(*SRB2_configList));
-    memset(SRB2_configList, 0, sizeof(*SRB2_configList));
+    SRB_configList2 = CALLOC(1, sizeof(*SRB_configList2));
+    memset(SRB_configList2, 0, sizeof(*SRB_configList2));
     SRB2_config = CALLOC(1, sizeof(*SRB2_config));
     SRB2_config->srb_Identity = 2;
-    ASN_SEQUENCE_ADD(&SRB2_configList->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList2->list, SRB2_config);
 
     /* Configure DRB */
+    DRB_configList = ue_context_pP->ue_context.DRB_configList;
+    if (DRB_configList) {
+        free(DRB_configList);
+    }
+
     DRB_configList = CALLOC(1, sizeof(*DRB_configList));
     memset(DRB_configList, 0, sizeof(*DRB_configList));
+
+    DRB_configList2 = ue_context_pP->ue_context.DRB_configList2[Transaction_id];
+    if (DRB_configList2) {
+        free(DRB_configList2);
+    }
+    DRB_configList2 = CALLOC(1, sizeof(*DRB_configList2));
+    memset(DRB_configList2, 0, sizeof(*DRB_configList2));
+
     DRB_config = CALLOC(1, sizeof(*DRB_config));
     DRB_config->drb_Identity = 1;
     DRB_config->cnAssociation = CALLOC(1, sizeof(*DRB_config->cnAssociation));
@@ -996,6 +1017,7 @@ uint16_t do_RRCReconfiguration(
     DRB_config->pdcp_Config->ext1 = NULL;
 
     ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+    ASN_SEQUENCE_ADD(&DRB_configList2->list, DRB_config);
 
     /* Configure Security */
     security_config    =  CALLOC(1, sizeof(NR_SecurityConfig_t));
@@ -1007,7 +1029,7 @@ uint16_t do_RRCReconfiguration(
 
     ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
     ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
-    ie->radioBearerConfig->srb_ToAddModList  = SRB2_configList;
+    ie->radioBearerConfig->srb_ToAddModList  = SRB_configList;
     ie->radioBearerConfig->drb_ToAddModList  = DRB_configList;
     ie->radioBearerConfig->securityConfig    = security_config;
     ie->radioBearerConfig->srb3_ToRelease    = NULL;
