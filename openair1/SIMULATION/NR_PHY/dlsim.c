@@ -1038,7 +1038,7 @@ int main(int argc, char **argv)
     }
 
     //if ((float)n_errors/(float)n_trials <= target_error_rate) {
-    if (effRate >= (eff_tp_check*TBS)) {
+    if (effRate > (eff_tp_check*TBS)) {
       printf("PDSCH test OK\n");
       break;
     }
