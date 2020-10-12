@@ -330,9 +330,11 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       for (csi_ssb_idx = 0; csi_ssb_idx < sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri ; csi_ssb_idx++) {
 	if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
 
-          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = *(UE_list->csi_report_template[UE_id][csi_report_id].SSB_Index_list [(*payload) & ~(~1<<(cri_ssbri_bitlen-1))]);
+          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
+		  *(UE_list->csi_report_template[UE_id][csi_report_id].SSB_Index_list [cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	else
-          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = *(UE_list->csi_report_template[UE_id][csi_report_id].CSI_Index_list [(*payload) & ~(~1<<(cri_ssbri_bitlen-1))]);
+          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
+		  *(UE_list->csi_report_template[UE_id][csi_report_id].CSI_Index_list [cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	  
         *payload >>= cri_ssbri_bitlen;
       }
