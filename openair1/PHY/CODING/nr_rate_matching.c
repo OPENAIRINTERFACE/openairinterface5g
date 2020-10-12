@@ -425,7 +425,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
     }
   }
   else {
-    if (E + F <= Ncb-ind) { //E+F doesn't contain all coded bits
+    if (E <= Ncb-ind) { //E+F doesn't contain all coded bits
       memcpy((void*)(e),(void*)(w+ind),E);
       k=E;
     }

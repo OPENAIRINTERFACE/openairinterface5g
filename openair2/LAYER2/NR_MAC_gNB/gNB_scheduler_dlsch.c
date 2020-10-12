@@ -32,6 +32,7 @@
 /*PHY*/
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/defs_nr_common.h"
+#include "common/utils/nr/nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*MAC*/
 #include "NR_MAC_COMMON/nr_mac.h"
@@ -45,6 +46,9 @@
 /*TAG*/
 #include "NR_TAG-Id.h"
 
+/*Softmodem params*/
+#include "executables/softmodem-common.h"
+
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
 ////////////////////////////////////////////////////////
@@ -54,6 +58,7 @@
 //#define SIZE_OF_POINTER sizeof (void *)
 
 int nr_generate_dlsch_pdu(module_id_t module_idP,
+                          NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *sdus_payload,
                           unsigned char *mac_pdu,
                           unsigned char num_sdus,
@@ -70,14 +75,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
-  uint16_t UE_id = 0; //TODO need to get as a function parameter or need to invoke api to UE_id using module Id and RNTI
-  gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
-  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
-  NR_UE_sched_ctrl_t *ue_sched_ctl = NULL;
-  //NR_CellGroupConfig_t *config = UE_list->secondaryCellGroup[UE_id];
-  ue_sched_ctl = &(UE_list->UE_sched_ctrl[UE_id]);
-
-  NR_mac_stats_t *mac_stats = &(UE_list->mac_stats[UE_id]);
 
   // 1) Compute MAC CE and related subheaders
 
@@ -329,8 +326,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr += sdu_lengths[i];
     mac_pdu_ptr += sdu_lengths[i];
-
-    mac_stats->lc_bytes_tx[sdu_lcids[i]] += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
@@ -412,6 +407,409 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_
   UL_info->uci_ind.num_ucis = 0;
 }
 
-/* functionalities of this function have been moved to nr_schedule_uss_dlsch_phytest */
-void nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
+int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda) {
+  struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count,
+              "time_domain_allocation %d>=%d\n",
+              tda,
+              tdaList->list.count);
+
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  return nrOfSymbols;
+}
+
+nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp) {
+  return bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+}
+
+uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
+  const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(bwp);
+  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    return numDmrsCdmGrpsNoData * 6;
+  } else {
+    return numDmrsCdmGrpsNoData * 4;
+  }
+}
+
+void nr_simple_dlsch_preprocessor(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot,
+                                  int num_slots_per_tdd) {
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+
+  AssertFatal(UE_info->num_UEs <= 1,
+              "%s() cannot handle more than one UE, but found %d\n",
+              __func__,
+              UE_info->num_UEs);
+  if (UE_info->num_UEs == 0)
+    return;
+
+  const int UE_id = 0;
+  const int CC_id = 0;
+
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  sched_ctrl->rbSize = 0;
+
+  /* Retrieve amount of data to send for this UE */
+  sched_ctrl->num_total_bytes = 0;
+  const int lcid = DL_SCH_LCID_DTCH;
+  const uint16_t rnti = UE_info->rnti[UE_id];
+  sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+                                                    rnti,
+                                                    module_id,
+                                                    frame,
+                                                    slot,
+                                                    ENB_FLAG_YES,
+                                                    MBMS_FLAG_NO,
+                                                    lcid,
+                                                    0,
+                                                    0);
+  sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+  if (sched_ctrl->num_total_bytes == 0 && !get_softmodem_params()->phy_test)
+    return;
+  LOG_D(MAC,
+        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
+        frame,
+        slot,
+        lcid,
+        sched_ctrl->rlc_status[lcid].bytes_in_buffer);
+
+  /* Find a free CCE */
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  uint8_t nr_of_candidates;
+  find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  sched_ctrl->coreset = get_coreset(
+      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                  sched_ctrl->active_bwp,
+                                  sched_ctrl->coreset,
+                                  sched_ctrl->aggregation_level,
+                                  UE_info->rnti[UE_id],
+                                  0); // m
+  if (sched_ctrl->cce_index < 0) {
+    LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
+    return;
+  }
+
+  /* Find PUCCH occasion */
+  nr_update_pucch_scheduling(
+      module_id, UE_id, frame, slot, num_slots_per_tdd, &sched_ctrl->pucch_sched_idx);
+  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+
+  uint8_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
+  const int current_harq_pid = sched_ctrl->current_harq_pid;
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+  NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+
+  if (harq->round != 0) { /* retransmission */
+    sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
+
+    /* ensure that there is a free place for RB allocation */
+    int rbSize = 0;
+    while (rbSize < retInfo->rbSize) {
+      rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
+      rbSize = 0;
+      while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
+      if (rbStart >= bwpSize) {
+        LOG_E(MAC,
+              "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
+              UE_id,
+              rnti);
+        return;
+      }
+      while (rbStart + rbSize < bwpSize
+             && !vrb_map[rbStart + rbSize]
+             && rbSize < retInfo->rbSize)
+        rbSize++;
+    }
+    sched_ctrl->rbSize = retInfo->rbSize;
+    sched_ctrl->rbStart = rbStart;
+
+    /* MCS etc: just reuse from previous scheduling opportunity */
+    sched_ctrl->mcsTableIdx = retInfo->mcsTableIdx;
+    sched_ctrl->mcs = retInfo->mcs;
+    sched_ctrl->numDmrsCdmGrpsNoData = retInfo->numDmrsCdmGrpsNoData;
+  } else {
+    // Time-domain allocation
+    sched_ctrl->time_domain_allocation = 2;
+
+    // modulation scheme
+    sched_ctrl->mcsTableIdx = 0;
+    sched_ctrl->mcs = 9;
+    sched_ctrl->numDmrsCdmGrpsNoData = 1;
+
+    // Freq-demain allocation
+    while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
+
+    uint8_t N_PRB_DMRS =
+        getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
+    int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
+                                     sched_ctrl->time_domain_allocation);
+
+    int rbSize = 0;
+    uint32_t TBS = 0;
+    do {
+      rbSize++;
+      TBS = nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                           nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                           rbSize,
+                           nrOfSymbols,
+                           N_PRB_DMRS, // FIXME // This should be multiplied by the
+                                       // number of dmrs symbols
+                           0 /* N_PRB_oh, 0 for initialBWP */,
+                           0 /* tb_scaling */,
+                           1 /* nrOfLayers */)
+            >> 3;
+    } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes);
+    sched_ctrl->rbSize = rbSize;
+    sched_ctrl->rbStart = rbStart;
+  }
+
+  /* mark the corresponding RBs as used */
+  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
+    vrb_map[rb + sched_ctrl->rbStart] = 1;
+}
+
+void nr_schedule_ue_spec(module_id_t module_id,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int num_slots_per_tdd) {
+  /* PREPROCESSOR */
+  nr_simple_dlsch_preprocessor(module_id, frame, slot, num_slots_per_tdd);
+
+  gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
+  NR_UE_info_t *UE_info = &gNB_mac->UE_info;
+
+  const int CC_id = 0;
+
+  NR_UE_list_t *UE_list = &UE_info->list;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->rbSize <= 0 && !get_softmodem_params()->phy_test)
+      continue;
+
+    const rnti_t rnti = UE_info->rnti[UE_id];
+
+    /* POST processing */
+    struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+      sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    AssertFatal(sched_ctrl->time_domain_allocation < tdaList->list.count,
+                "time_domain_allocation %d>=%d\n",
+                sched_ctrl->time_domain_allocation,
+                tdaList->list.count);
+
+    const int startSymbolAndLength =
+      tdaList->list.array[sched_ctrl->time_domain_allocation]->startSymbolAndLength;
+    int startSymbolIndex, nrOfSymbols;
+    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+
+    uint8_t N_PRB_DMRS =
+        getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
+    const uint32_t TBS =
+        nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                       nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                       sched_ctrl->rbSize,
+                       nrOfSymbols,
+                       N_PRB_DMRS, // FIXME // This should be multiplied by the
+                                   // number of dmrs symbols
+                       0 /* N_PRB_oh, 0 for initialBWP */,
+                       0 /* tb_scaling */,
+                       1 /* nrOfLayers */)
+        >> 3;
+
+    const int current_harq_pid = sched_ctrl->current_harq_pid;
+    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    NR_sched_pucch *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx];
+    harq->feedback_slot = pucch->ul_slot;
+    harq->is_waiting = 1;
+    UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
+
+    nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
+    nr_fill_nfapi_dl_pdu(module_id,
+                         UE_id,
+                         sched_ctrl->active_bwp->bwp_Id,
+                         sched_ctrl->search_space,
+                         sched_ctrl->coreset,
+                         dl_req,
+                         pucch,
+                         1 /* nrOfLayers */,
+                         sched_ctrl->mcs,
+                         sched_ctrl->rbSize,
+                         sched_ctrl->rbStart,
+                         sched_ctrl->numDmrsCdmGrpsNoData,
+                         getDmrsConfigType(sched_ctrl->active_bwp),
+                         sched_ctrl->mcsTableIdx,
+                         nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                         nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                         TBS,
+                         sched_ctrl->time_domain_allocation,
+                         startSymbolIndex,
+                         nrOfSymbols,
+                         sched_ctrl->aggregation_level,
+                         sched_ctrl->cce_index,
+                         current_harq_pid,
+                         harq->ndi,
+                         harq->round);
+
+    NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
+    if (harq->round != 0) { /* retransmission */
+      if (sched_ctrl->rbSize != retInfo->rbSize)
+        LOG_W(MAC,
+              "retransmission uses different rbSize (%d vs. orig %d)\n",
+              sched_ctrl->rbSize,
+              retInfo->rbSize);
+      if (sched_ctrl->time_domain_allocation != retInfo->time_domain_allocation)
+        LOG_W(MAC,
+              "retransmission uses different time_domain_allocation (%d vs. orig %d)\n",
+              sched_ctrl->time_domain_allocation,
+              retInfo->time_domain_allocation);
+      if (sched_ctrl->mcs != retInfo->mcs
+          || sched_ctrl->mcsTableIdx != retInfo->mcsTableIdx
+          || sched_ctrl->numDmrsCdmGrpsNoData != retInfo->numDmrsCdmGrpsNoData)
+        LOG_W(MAC,
+              "retransmission uses different table/MCS/numDmrsCdmGrpsNoData (%d/%d/%d vs. orig %d/%d/%d)\n",
+              sched_ctrl->mcsTableIdx,
+              sched_ctrl->mcs,
+              sched_ctrl->numDmrsCdmGrpsNoData,
+              retInfo->mcsTableIdx,
+              retInfo->mcs,
+              retInfo->numDmrsCdmGrpsNoData);
+      /* we do not have to do anything, since we do not require to get data
+       * from RLC, encode MAC CEs, or copy data to FAPI structures */
+      LOG_W(MAC, "%d.%2d retransmission UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+    } else { /* initial transmission */
+
+      /* reserve space for timing advance of UE if necessary,
+       * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
+      const int ta_len = (sched_ctrl->ta_apply) ? 2 : 0;
+
+      /* Get RLC data TODO: remove random data retrieval */
+      int header_length_total = 0;
+      int header_length_last = 0;
+      int sdu_length_total = 0;
+      int num_sdus = 0;
+      uint16_t sdu_lengths[NB_RB_MAX] = {0};
+      uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
+      unsigned char sdu_lcids[NB_RB_MAX] = {0};
+      const int lcid = DL_SCH_LCID_DTCH;
+      if (sched_ctrl->num_total_bytes > 0) {
+        LOG_D(MAC,
+              "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
+              "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
+              module_id,
+              frame,
+              TBS - ta_len - header_length_total - sdu_length_total - 3,
+              lcid,
+              header_length_total,
+              TBS);
+
+        sdu_lengths[num_sdus] = mac_rlc_data_req(module_id,
+            rnti,
+            module_id,
+            frame,
+            ENB_FLAG_YES,
+            MBMS_FLAG_NO,
+            lcid,
+            TBS - ta_len - header_length_total - sdu_length_total - 3,
+            (char *)&mac_sdus[sdu_length_total],
+            0,
+            0);
+
+        LOG_D(MAC,
+              "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
+              module_id,
+              sdu_lengths[num_sdus],
+              lcid);
+
+        sdu_lcids[num_sdus] = lcid;
+        sdu_length_total += sdu_lengths[num_sdus];
+        header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
+        header_length_total += header_length_last;
+
+        num_sdus++;
+
+        //ue_sched_ctl->uplane_inactivity_timer = 0;
+      }
+      else if (get_softmodem_params()->phy_test) {
+        LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
+        // fill dlsch_buffer with random data
+        for (int i = 0; i < TBS; i++)
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        sdu_lcids[0] = 0x3f; // DRB
+        sdu_lengths[0] = TBS - ta_len - 3;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        sdu_length_total += sdu_lengths[0];
+        num_sdus +=1;
+      }
+
+      UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
+      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += sdu_length_total;
+
+      // Check if there is data from RLC or CE
+      const int post_padding = TBS >= 2 + header_length_total + sdu_length_total + ta_len;
+      // padding param currently not in use
+      //padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
+
+      const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
+      nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
+      /* pointer to directly generate the PDU into the nFAPI structure */
+      uint32_t *buf = tx_req->TLVs[0].value.direct;
+
+      const int offset = nr_generate_dlsch_pdu(
+          module_id,
+          sched_ctrl,
+          (unsigned char *)mac_sdus,
+          (unsigned char *)buf,
+          num_sdus, // num_sdus
+          sdu_lengths,
+          sdu_lcids,
+          255, // no drx
+          NULL, // contention res id
+          post_padding);
+
+      // Padding: fill remainder of DLSCH with 0
+      if (post_padding > 0) {
+        for (int j = 0; j < TBS - offset; j++)
+          buf[offset + j] = 0;
+      }
+
+      /* the buffer has been filled by nr_generate_dlsch_pdu(), below we simply
+       * fill the remaining information */
+      tx_req->PDU_length = TBS;
+      tx_req->PDU_index  = gNB_mac->pdu_index[0]++;
+      tx_req->num_TLV = 1;
+      tx_req->TLVs[0].length = TBS + 2;
+      gNB_mac->TX_req[CC_id].Number_of_PDUs++;
+      gNB_mac->TX_req[CC_id].SFN = frame;
+      gNB_mac->TX_req[CC_id].Slot = slot;
+
+      retInfo->rbSize = sched_ctrl->rbSize;
+      retInfo->time_domain_allocation = sched_ctrl->time_domain_allocation;
+      retInfo->mcsTableIdx = sched_ctrl->mcsTableIdx;
+      retInfo->mcs = sched_ctrl->mcs;
+      retInfo->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
+
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+      if (frame%100 == 0) {
+        LOG_I(MAC,
+              "%d.%d, first 10 payload bytes, TBS size: %d \n",
+              frame,
+              slot,
+              TBS);
+        for(int i = 0; i < 10; i++)
+          LOG_I(MAC, "byte %d: %x\n", i, ((uint8_t *) buf)[i]);
+      }
+#endif
+    }
+  }
 }

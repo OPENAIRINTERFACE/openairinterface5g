@@ -27,7 +27,8 @@
 
 #ifndef MILENAGE_H
 #define MILENAGE_H
-#include <openair3/NAS/COMMON/aes.h>
+#include <openssl/aes.h>
+
 
 #define u8 uint8_t
 /**
@@ -41,6 +42,14 @@
    @mac_s: Buffer for MAC-S = 64-bit resync authentication code, or %NULL
    Returns: true on success, false on failure
 */
+
+void aes_128_encrypt_block(const u8* key, const u8* in, u8* out) {
+   AES_KEY k;
+  u8 tmp[16];
+  AES_set_encrypt_key(key, 128, &k);
+  AES_encrypt(in, tmp, &k); 
+  memcpy(out, tmp, sizeof(tmp));
+}
 static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
                  const u8 *sqn, const u8 *amf, u8 *mac_a, u8 *mac_s) {
   u8 tmp1[16], tmp2[16], tmp3[16];
@@ -51,6 +60,10 @@ static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
     tmp1[i] = _rand[i] ^ opc[i];
 
   aes_128_encrypt_block(k, tmp1, tmp1);
+  AES_KEY kTab;
+  uint8_t cyphered[16];
+  AES_set_encrypt_key(k, 128, &kTab);
+  AES_encrypt(tmp1, cyphered, &kTab);
   /* tmp2 = IN1 = SQN || AMF || SQN || AMF */
   memcpy(tmp2, sqn, 6);
   memcpy(tmp2 + 6, amf, 2);
