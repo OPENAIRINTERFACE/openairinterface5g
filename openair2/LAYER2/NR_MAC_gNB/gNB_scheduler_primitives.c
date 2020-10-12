@@ -1531,6 +1531,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
       pos+=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization.val&0x1)<<(dci_size-pos);
     }
+    LOG_D(MAC, "DCI index %d has %d bits and the payload is %lx\n", d, dci_size, *dci_pdu);
   }
 }
 
