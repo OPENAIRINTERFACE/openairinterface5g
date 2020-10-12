@@ -1,5 +1,5 @@
 #ifndef AES_H
-#define EAS_H
+#define AES_H
 
 // Implemented from Wikipedia description and OpenAir HSS
 
