@@ -1,6 +1,8 @@
 /*
-   Adpatatipn of SW from hereafter license
+   Adaptatipn of SW from hereafter license
    Author: laurent.thomas@open-cells.com
+   The OpenAirInterface project uses this copy under the terms of BSD
+   license.
 */
 /*
    3GPP AKA - Milenage algorithm (3GPP TS 35.205, .206, .207, .208)
