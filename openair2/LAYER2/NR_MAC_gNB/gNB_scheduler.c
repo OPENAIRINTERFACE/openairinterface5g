@@ -470,18 +470,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
   }
 
-  if (UE_info->active[UE_id]) {
-    // TbD once RACH is available, start ta_timer when UE is connected
-    if (ue_sched_ctl->ta_timer)
-      ue_sched_ctl->ta_timer--;
-    if (ue_sched_ctl->ta_timer == 0) {
-      ue_sched_ctl->ta_apply = true;
-      /* if time is up, then set the timer to not send it for 5 frames
-      // regardless of the TA value */
-      ue_sched_ctl->ta_timer = 100;
-    }
-  }
-
   // This schedules the DCI for Uplink and subsequently PUSCH
   // The decision about whether to schedule is done for each UE independently
   // inside
@@ -499,7 +487,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     //nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
     //nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_info->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
-    ue_sched_ctl->ta_apply = false;
   }
 
   if (UE_info->active[UE_id])
