@@ -1514,3 +1514,24 @@ void *rrc_nrue_task( void *args_p ) {
     msg_p = NULL;
   }
 }
+void *nr_rrc_ue_process_sidelink_radioResourceConfig(
+  module_id_t                                Mod_idP,
+  uint8_t                                    gNB_index,
+  NR_SetupRelease_SL_ConfigDedicatedNR_r16_t  *sl_ConfigDedicatedNR
+)
+{
+  //process sl_CommConfig, configure MAC/PHY for transmitting SL communication (RRC_CONNECTED)
+  if (sl_ConfigDedicatedNR != NULL) {
+      switch (sl_ConfigDedicatedNR->present){
+      case NR_SetupRelease_SL_ConfigDedicatedNR_r16_PR_setup:
+          //TODO
+          break;
+      case NR_SetupRelease_SL_ConfigDedicatedNR_r16_PR_release:
+          break;
+      case NR_SetupRelease_SL_ConfigDedicatedNR_r16_PR_NOTHING:
+          break;
+      default:
+          break;
+      }
+  }
+}
