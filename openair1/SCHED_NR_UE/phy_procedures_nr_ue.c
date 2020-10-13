@@ -53,7 +53,7 @@
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define DEBUG_PHY_PROC
-//#define NR_PDCCH_SCHED
+#define NR_PDCCH_SCHED
 //#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
