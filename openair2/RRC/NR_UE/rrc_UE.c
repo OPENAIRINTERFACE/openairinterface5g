@@ -567,7 +567,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_IN
               ctxt_pP,
               gNB_index,
               &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
-            nr_rrc_ue_process_radioBearerConfig(
+            nr_sa_rrc_ue_process_radioBearerConfig(
               ctxt_pP,
               gNB_index,
               &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
@@ -1091,7 +1091,7 @@ nr_rrc_ue_process_measConfig(
 
 //-----------------------------------------------------------------------------
 void
-nr_rrc_ue_process_radioBearerConfig(
+nr_sa_rrc_ue_process_radioBearerConfig(
     const protocol_ctxt_t *const       ctxt_pP,
     const uint8_t                      gNB_index,
     NR_RadioBearerConfig_t *const      radioBearerConfig
@@ -1274,7 +1274,7 @@ rrc_ue_process_rrcReconfiguration(
 
         if (ie->radioBearerConfig != NULL) {
             LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
-            nr_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+            nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
         }
 
         /* Check if there is dedicated NAS information to forward to NAS */
@@ -1478,6 +1478,30 @@ void *rrc_nrue_task( void *args_p ) {
         nr_rrc_ue_decode_ccch (&ctxt,
                             srb_info_p,
                             RRC_MAC_CCCH_DATA_IND (msg_p).enb_index);
+        break;
+
+      /* PDCP messages */
+      case NR_RRC_DCCH_DATA_IND:
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, NR_RRC_DCCH_DATA_IND (msg_p).module_id, GNB_FLAG_NO, NR_RRC_DCCH_DATA_IND (msg_p).rnti, NR_RRC_DCCH_DATA_IND (msg_p).frame, 0,NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
+              NR_RRC_DCCH_DATA_IND (msg_p).module_id,
+              ITTI_MSG_NAME (msg_p),
+              NR_RRC_DCCH_DATA_IND (msg_p).frame,
+              NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
+              NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        LOG_D(NR_RRC, PROTOCOL_RRC_CTXT_UE_FMT"Received %s DCCH %d, gNB %d\n",
+              PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),
+              ITTI_MSG_NAME (msg_p),
+              NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
+              NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        nr_rrc_ue_decode_dcch (
+          &ctxt,
+          NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
+          NR_RRC_DCCH_DATA_IND (msg_p).sdu_p,
+          NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        // Message buffer has been processed, free it now.
+        result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), NR_RRC_DCCH_DATA_IND (msg_p).sdu_p);
+        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
 
       default:
