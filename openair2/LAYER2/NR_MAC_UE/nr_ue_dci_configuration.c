@@ -64,7 +64,7 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 }
 
-void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id, uint8_t dci_format){
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id){
 
   uint16_t monitoringSymbolsWithinSlot = 0;
   uint8_t bwp_id = 1, coreset_id = 1;
@@ -75,9 +75,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_BWP_DownlinkCommon_t *bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
   NR_SearchSpace_t *ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
-
-  // DCI format configuration
-  rel15->dci_format = dci_format;
 
   // CORESET configuration
   NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
@@ -123,7 +120,9 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
     rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
     rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
-    rel15->dci_length = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format, NR_RNTI_C, rel15->BWPSize, bwp_id);
+    for (int i = 0; i < rel15->num_dci_options; i++) {
+      rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
+    }
     break;
     case NR_RNTI_RA:
     // we use the initial DL BWP
@@ -133,7 +132,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
     rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); //NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-    rel15->dci_length = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format, NR_RNTI_RA, rel15->BWPSize, bwp_id);
+    rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
     break;
     case NR_RNTI_P:
     break;
@@ -177,14 +176,13 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   #endif
   // add DCI
   dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-  dl_config->number_pdus = dl_config->number_pdus + 1;
+  dl_config->number_pdus += 1;
 }
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot) {
 
   int ss_id;
   uint8_t bwp_id = 1, coreset_id = 1;
-  //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Downlink_t *bwp = mac->DLbwp[bwp_id - 1];
 
   #ifdef DEBUG_DCI
@@ -215,7 +213,9 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
             LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space\n");
             switch(mac->ra_state){
               case WAIT_RAR:
-              config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id, NR_DL_DCI_FORMAT_1_0);
+              rel15->num_dci_options = 1;
+              rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+              config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id);
               fill_dci_search_candidates(ss, rel15);
               break;
               case WAIT_CONTENTION_RESOLUTION:
@@ -286,7 +286,10 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
           // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
           if (get_softmodem_params()->phy_test == 1 && mac->crnti > 0) {
             LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
-            config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id, NR_DL_DCI_FORMAT_1_1);
+            rel15->num_dci_options = 2;
+            rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
+            rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
+            config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
             fill_dci_search_candidates(ss, rel15);
 
             #ifdef DEBUG_DCI

@@ -182,10 +182,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
   
-  handle_nr_uci(UL_info,&mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0],mac->pucch_target_snrx10);
+  handle_nr_uci(UL_info,&mac->UE_info.UE_sched_ctrl[0],&mac->UE_info.mac_stats[0],mac->pucch_target_snrx10);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0]);
+  handle_nr_ulsch(UL_info, &mac->UE_info.UE_sched_ctrl[0],&mac->UE_info.mac_stats[0]);
 
   if (nfapi_mode != 1) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {

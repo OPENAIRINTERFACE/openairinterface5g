@@ -431,9 +431,9 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-    printf("!!!!!!! deliver_sdu_drb (drb %d) sending message to gtp size %d: ", rb_id, size);
-    //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
-    printf("\n");
+      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
+      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
+      //printf("\n");
       itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
 
   }
@@ -474,9 +474,9 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-printf("!!!!!!! deliver_pdu_drb (srb %d) calling rlc_data_req size %d: ", rb_id, size);
-//for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
-printf("\n");
+  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
+  //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
 }
 
@@ -877,7 +877,7 @@ static boolean_t pdcp_data_req_drb(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer)
 {
-printf("pdcp_data_req called size %d\n", sdu_buffer_size);
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
   int rnti = ctxt_pP->rnti;
