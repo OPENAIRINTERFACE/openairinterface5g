@@ -670,6 +670,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     rrcSetup = dl_ccch_msg.message.choice.c1->choice.rrcSetup;
     rrcSetup->criticalExtensions.present = NR_RRCSetup__criticalExtensions_PR_rrcSetup;
     rrcSetup->rrc_TransactionIdentifier  = transaction_id;
+    rrcSetup->criticalExtensions.choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_IEs_t));
     ie = rrcSetup->criticalExtensions.choice.rrcSetup;
 
     /****************************** radioBearerConfig ******************************/
@@ -703,15 +704,18 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     cellGroupConfig->rlc_BearerToAddModList                          = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
     rlc_BearerConfig                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
     rlc_BearerConfig->logicalChannelIdentity                         = 1;
+    rlc_BearerConfig->servedRadioBearer                              = calloc(1, sizeof(*rlc_BearerConfig->servedRadioBearer));
     rlc_BearerConfig->servedRadioBearer->present                     = NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
     rlc_BearerConfig->servedRadioBearer->choice.srb_Identity         = 1;
     rlc_BearerConfig->reestablishRLC                                 = NULL;
     rlc_Config = calloc(1, sizeof(NR_RLC_Config_t));
     rlc_Config->present                                              = NR_RLC_Config_PR_am;
     rlc_Config->choice.am                                            = calloc(1, sizeof(*rlc_Config->choice.am));
+    rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength                  = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
     *(rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
     rlc_Config->choice.am->dl_AM_RLC.t_Reassembly                    = NR_T_Reassembly_ms35;
     rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit                = NR_T_StatusProhibit_ms0;
+    rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength                  = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
     *(rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
     rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit                = NR_T_PollRetransmit_ms45;
     rlc_Config->choice.am->ul_AM_RLC.pollPDU                         = NR_PollPDU_infinity;
@@ -719,6 +723,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
     rlc_BearerConfig->rlc_Config                                     = rlc_Config;
     logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+    logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
     logicalChannelConfig->ul_SpecificParameters->priority            = 1;
     logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
     logicalChannelGroup                                              = CALLOC(1, sizeof(long));
