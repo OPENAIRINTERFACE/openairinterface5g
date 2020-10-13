@@ -1337,6 +1337,7 @@ nr_rrc_ue_decode_dcch(
 {
     asn_dec_rval_t                      dec_rval;
     NR_DL_DCCH_Message_t                *dl_dcch_msg  = NULL;
+    MessageDef *msg_p;
 
     if (Srb_id != 1) {
         LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
@@ -1381,6 +1382,18 @@ nr_rrc_ue_decode_dcch(
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
             case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
+              msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_RELEASE_IND);
+
+              if((dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.present == NR_RRCRelease__criticalExtensions_PR_rrcRelease) &&
+                   (dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_rrcRelease)){
+                    dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationTimer =
+                    NR_RRCRelease_IEs__deprioritisationReq__deprioritisationTimer_min5;
+                    dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationType =
+                    NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
+                }
+
+                 itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+                 break;
             case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
             case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
             case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
