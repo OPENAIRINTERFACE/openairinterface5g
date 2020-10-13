@@ -669,6 +669,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     dl_ccch_msg.message.present            = NR_DL_CCCH_MessageType_PR_c1;
     dl_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_DL_CCCH_MessageType__c1));
     dl_ccch_msg.message.choice.c1->present = NR_DL_CCCH_MessageType__c1_PR_rrcSetup;
+    dl_ccch_msg.message.choice.c1->choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_t));
 
     rrcSetup = dl_ccch_msg.message.choice.c1->choice.rrcSetup;
     rrcSetup->criticalExtensions.present = NR_RRCSetup__criticalExtensions_PR_rrcSetup;
