@@ -82,6 +82,8 @@ void mac_top_init_gNB(void)
         
       RC.nrmac[i]->ul_handle = 0;
 
+      RC.nrmac[i]->pre_processor_dl = nr_simple_dlsch_preprocessor;
+
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
