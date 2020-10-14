@@ -483,7 +483,6 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   const int CC_id = 0;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  sched_ctrl->rbSize = 0;
 
   /* Retrieve amount of data to send for this UE */
   sched_ctrl->num_total_bytes = 0;
@@ -874,5 +873,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       }
 #endif
     }
+
+    /* mark UE as scheduled */
+    sched_ctrl->rbSize = 0;
   }
 }
