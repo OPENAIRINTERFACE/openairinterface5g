@@ -879,6 +879,7 @@ add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION w
 add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
+add_boolean_option(ITTI_SIM                 False         "enable itti simulator")
 
 ########################
 # Include order
@@ -2911,7 +2912,7 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
+  RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
@@ -3211,7 +3212,7 @@ if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-uesoftmodem nr-softmodem 
-        nr-uesoftmodem dlsim dlsim_tm4 dlsim_tm7 
+        nr-uesoftmodem dlsim dlsim_tm4 dlsim_tm7 nr-ittisim
         ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim
         syncsim nr_ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
@@ -3297,6 +3298,60 @@ add_executable(rb_tool
   ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/RB_TOOL/rb_tool.c
 )
 target_include_directories(rb_tool PRIVATE ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/)
+
+# nr-ittisim
+###################################################
+
+add_executable(nr-ittisim
+  ${rrc_h}
+  ${nr_rrc_h}
+  ${OPENAIR2_DIR}/GNB_APP/gnb_app.c
+  ${OPENAIR2_DIR}/GNB_APP/gnb_config.c
+  ${OPENAIR_DIR}/executables/nr-gnb.c
+  ${OPENAIR_DIR}/executables/nr-ru.c
+  ${OPENAIR2_DIR}/SIMULATION/NR_RRC/itti_sim.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${GTPU_need_ITTI}
+  ${XFORMSINTERFACE_SOURCE}
+  ${T_SOURCE}
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
+  )
+
+#target_link_libraries (nr-ittisim
+#  -Wl,--start-group
+#  UTIL HASHTABLE SCTP_CLIENT UDP LFDS NR_GTPV1U SECU_CN SECU_OSA
+#  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
+#  NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB
+#  X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
+#  -Wl,--end-group z dl)
+
+target_link_libraries (nr-ittisim
+  -Wl,--start-group
+  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
+  NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
+  NR_L2_UE
+  -Wl,--end-group z dl)
+
+target_link_libraries (nr-ittisim ${LIBXML2_LIBRARIES})
+target_link_libraries (nr-ittisim pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (nr-ittisim ${LIB_LMS_LIBRARIES})
+target_link_libraries (nr-ittisim ${T_LIB})
+
+add_dependencies( nr-ittisim ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 
 # ???
 ####################

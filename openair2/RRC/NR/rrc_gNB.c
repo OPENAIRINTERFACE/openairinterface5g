@@ -347,7 +347,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-    LOG_I(RRC, "rrc_gNB_generate_RRCSetup \n");
+    LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
     NR_SRB_ToAddModList_t        *SRB_configList = NULL;
 
     // T(T_GNB_RRC_SETUP,
@@ -357,7 +357,7 @@ rrc_gNB_generate_RRCSetup(
     //   T_INT(ctxt_pP->rnti));
     gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
     SRB_configList = ue_p->SRB_configList;
-    do_RRCSetup(ctxt_pP,
+    ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ctxt_pP,
                 ue_context_pP,
                 CC_id,
                 (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
@@ -420,6 +420,13 @@ rrc_gNB_generate_RRCSetup(
     ue_context_pP->ue_context.ue_release_timer_thres = 1000;
     /* init timers */
     //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, GNB_RRC_CCCH_DATA_IND);
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
 }
 
 void

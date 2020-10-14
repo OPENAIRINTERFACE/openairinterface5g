@@ -91,6 +91,10 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
+    NR_SIB1_t                      *sib1[NB_CNX_UE];
+    NR_SystemInformation_t         *si[NB_CNX_UE];
+    plmn_t                         plmnID;
+
     NR_UE_RRC_INFO                 Info[NB_SIG_CNX_UE];
 
     NR_MIB_t *mib;
@@ -150,7 +154,10 @@ typedef struct NR_UE_RRC_INST_s {
     RRC_LIST_TYPE(NR_CSI_ResourceConfig_t, NR_maxNrofCSI_ResourceConfigurations) CSI_ResourceConfig_list;
     //  CellGroupConfig.spCellConfig.spCellConfigDedicated
     RRC_LIST_TYPE(NR_CSI_ReportConfig_t, NR_maxNrofCSI_ReportConfigurations) CSI_ReportConfig_list;
-  
+
+    long               selected_plmn_identity;
+    Rrc_State_NR_t     nrRrcState;
+    Rrc_Sub_State_NR_t nrRrcSubState;
 } NR_UE_RRC_INST_t;
 
 #endif
