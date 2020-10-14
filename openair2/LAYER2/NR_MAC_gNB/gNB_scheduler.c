@@ -483,9 +483,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
       && slot < 10) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
-    //int pucch_sched;
-    //nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
-    //nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_info->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
   }
 

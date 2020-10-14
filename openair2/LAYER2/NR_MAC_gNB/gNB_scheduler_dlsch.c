@@ -785,8 +785,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
         header_length_total += header_length_last;
         num_sdus++;
-
-        //ue_sched_ctl->uplane_inactivity_timer = 0;
       }
       else if (get_softmodem_params()->phy_test) {
         LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
@@ -803,10 +801,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
       UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += sdu_length_total;
 
-      // Check if there is data from RLC or CE
       const int post_padding = TBS >= 2 + header_length_total + sdu_length_total + ta_len;
-      // padding param currently not in use
-      //padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
 
       const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];

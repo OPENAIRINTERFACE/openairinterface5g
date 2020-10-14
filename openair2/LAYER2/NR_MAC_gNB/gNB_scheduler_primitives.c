@@ -525,7 +525,6 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
 
-  //  k0 = *bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
   pdsch_pdu_rel15->dlDmrsSymbPos =
       fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                      scc->dmrs_TypeA_Position,
@@ -617,17 +616,6 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
         pdcch_pdu_rel15->StartSymbolIndex,
         pdcch_pdu_rel15->DurationSymbols);
-
-  // I don't know why the following is not needed, but in this case we don't
-  // need additional calculations:
-  //const uint16_t N_RE_prime = NR_NB_SC_PER_RB * N_sh_symb - N_PRB_DMRS - N_PRB_oh;
-  //LOG_D(MAC,
-  //      "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n",
-  //      N_RE_prime,
-  //      N_sh_symb,
-  //      N_PRB_DMRS,
-  //      N_PRB_oh);
-  //pdsch_pdu_rel15->nb_mod_symbols = N_RE_prime*pdsch_pdu_rel15->n_prb*pdsch_pdu_rel15->nb_codewords;
 
   LOG_D(MAC,
         "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d "
