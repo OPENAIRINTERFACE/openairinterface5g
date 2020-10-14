@@ -93,6 +93,7 @@ typedef struct NR_UE_RRC_INST_s {
 
     NR_SIB1_t                      *sib1[NB_CNX_UE];
     NR_SystemInformation_t         *si[NB_CNX_UE];
+    plmn_t                         plmnID;
 
     NR_UE_RRC_INFO                 Info[NB_SIG_CNX_UE];
 

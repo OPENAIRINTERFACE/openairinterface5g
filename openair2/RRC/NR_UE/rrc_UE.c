@@ -33,6 +33,8 @@
 #define RRC_UE
 #define RRC_UE_C
 
+#include "asn1_conversions.h"
+
 #include "NR_DL-DCCH-Message.h"        //asn_DEF_NR_DL_DCCH_Message
 #include "NR_DL-CCCH-Message.h"        //asn_DEF_NR_DL_CCCH_Message
 #include "NR_BCCH-BCH-Message.h"       //asn_DEF_NR_BCCH_BCH_Message
@@ -52,6 +54,7 @@
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
+#include "plmn_data.h"
 #include "pdcp.h"
 #include "UTIL/OSA/osa_defs.h"
 #include "common/utils/LOG/log.h"
@@ -514,11 +517,220 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     
     return 0;
 }
-int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
+
+const char siWindowLength[9][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
+const char siWindowLength_int[8] = {1,2,5,10,15,20,40,80};
+
+const char SIBType[12][6] = {"SIB3","SIB4","SIB5","SIB6","SIB7","SIB8","SIB9","SIB10","SIB11","SIB12","SIB13","Spare"};
+const char SIBPeriod[8][6]= {"rf8","rf16","rf32","rf64","rf128","rf256","rf512","ERR"};
+int siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
+
+const char *SIBreserved( long value ) {
+  if (value < 0 || value > 1)
+    return "ERR";
+
+  if (value)
+    return "notReserved";
+
+  return "reserved";
+}
+const char *SIBbarred( long value ) {
+  if (value < 0 || value > 1)
+    return "ERR";
+
+  if (value)
+    return "notBarred";
+
+  return "barred";
+}
+const char *SIBallowed( long value ) {
+  if (value < 0 || value > 1)
+    return "ERR";
+
+  if (value)
+    return "notAllowed";
+
+  return "allowed";
+}
+
+int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
   return 0;
 }
 
-int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t rsrq, const uint8_t rsrp ) {
+int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index, const uint8_t rsrq, const uint8_t rsrp ) {
+  NR_SIB1_t *sib1 = NR_UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index];
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_IN );
+  LOG_I( RRC, "[UE %d] : Dumping SIB 1\n", ctxt_pP->module_id );
+  const int n = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count;
+  for (int i = 0; i < n; ++i) {
+    NR_PLMN_Identity_t *PLMN_identity = &sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[i]->plmn_IdentityList.list.array[0];
+    int mccdigits = PLMN_identity->mcc->list.count;
+    int mncdigits = PLMN_identity->mnc.list.count;
+
+    int mcc;
+    if (mccdigits == 2) {
+      mcc = *PLMN_identity->mcc->list.array[0]*10 + *PLMN_identity->mcc->list.array[1];
+    } else {
+      mcc = *PLMN_identity->mcc->list.array[0]*100 + *PLMN_identity->mcc->list.array[1]*10 + *PLMN_identity->mcc->list.array[2];
+    }
+
+    int mnc;
+    if (mncdigits == 2) {
+      mnc = *PLMN_identity->mnc.list.array[0]*10 + *PLMN_identity->mnc.list.array[1];
+    } else {
+      mnc = *PLMN_identity->mnc.list.array[0]*100 + *PLMN_identity->mnc.list.array[1]*10 + *PLMN_identity->mnc.list.array[2];
+    }
+
+    LOG_I( RRC, "PLMN %d MCC %0*d, MNC %0*d\n", i + 1, mccdigits, mcc, mncdigits, mnc);
+    // search internal table for provider name
+    int plmn_ind = 0;
+
+    while (plmn_data[plmn_ind].mcc > 0) {
+      if ((plmn_data[plmn_ind].mcc == mcc) && (plmn_data[plmn_ind].mnc == mnc)) {
+        LOG_I( RRC, "Found %s (name from internal table)\n", plmn_data[plmn_ind].oper_short );
+        break;
+      }
+
+      plmn_ind++;
+    }
+  }
+  LOG_I( RRC, "TAC 0x%04x\n",
+         ((sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->size == 2)?((sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->buf[0]<<8) + sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->buf[1]):0));
+  LOG_I( RRC, "cellReservedForOperatorUse                 : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse,
+         SIBreserved(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse) );
+
+  LOG_I( RRC, "cellAccessRelatedInfo.cellIdentity         : raw:%"PRIu32" decoded:%02x.%02x.%02x.%02x\n",
+         BIT_STRING_to_uint32( &sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity ),
+         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[0],
+         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[1],
+         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[2],
+         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[3] >> sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.bits_unused);
+  //LOG_I( RRC, "cellAccessRelatedInfo.cellBarred           : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.cellBarred, SIBbarred(sib1->cellAccessRelatedInfo.cellBarred) );
+  //LOG_I( RRC, "cellAccessRelatedInfo.intraFreqReselection : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.intraFreqReselection, SIBallowed(sib1->cellAccessRelatedInfo.intraFreqReselection) );
+  //LOG_I( RRC, "cellAccessRelatedInfo.csg_Indication       : %d\n", sib1->cellAccessRelatedInfo.csg_Indication );
+
+  //if (sib1->cellAccessRelatedInfo.csg_Identity)
+  //  LOG_I( RRC, "cellAccessRelatedInfo.csg_Identity         : %"PRIu32"\n", BIT_STRING_to_uint32(sib1->cellAccessRelatedInfo.csg_Identity) );
+  //else
+  //  LOG_I( RRC, "cellAccessRelatedInfo.csg_Identity         : not defined\n" );
+
+  LOG_I( RRC, "cellSelectionInfo.q_RxLevMin               : %ld\n", sib1->cellSelectionInfo->q_RxLevMin );
+
+  if (sib1->cellSelectionInfo->q_RxLevMinOffset)
+    LOG_I( RRC, "cellSelectionInfo.q_RxLevMinOffset         : %ld\n", *sib1->cellSelectionInfo->q_RxLevMinOffset );
+  else
+    LOG_I( RRC, "cellSelectionInfo.q_RxLevMinOffset         : not defined\n" );
+
+  //if (sib1->p_Max)
+  //  LOG_I( RRC, "p_Max                                      : %ld\n", *sib1->p_Max );
+  //else
+  //  LOG_I( RRC, "p_Max                                      : not defined\n" );
+
+  //LOG_I( RRC, "freqBandIndicator                          : %ld\n", sib1->freqBandIndicator );
+
+  if (sib1->si_SchedulingInfo->schedulingInfoList.list.count > 0) {
+    for (int i=0; i<sib1->si_SchedulingInfo->schedulingInfoList.list.count; i++) {
+      LOG_I( RRC, "si_Periodicity[%d]                          : %s\n", i, SIBPeriod[min(sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->si_Periodicity,7)]);
+
+      if (sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count > 0) {
+        char temp[32 * sizeof(SIBType[0])] = {0}; // maxSIB==32
+
+        for (int j=0; j<sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count; j++) {
+          sprintf( temp + j*sizeof(SIBType[0]), "%*s ", (int)sizeof(SIBType[0])-1, SIBType[min(sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0]->type,11)] );
+        }
+
+        LOG_I( RRC, "siSchedulingInfoSIBType[%d]                 : %s\n", i, temp );
+      } else {
+        LOG_I( RRC, "mapping list %d is null\n", i );
+      }
+    }
+  } else {
+    LOG_E( RRC, "siSchedulingInfoPeriod[0]                  : PROBLEM!!!\n" );
+    return -1;
+  }
+
+  //if (sib1->tdd_Config) {
+  //  LOG_I( RRC, "TDD subframeAssignment                     : %ld\n", sib1->tdd_Config->subframeAssignment );
+  //  LOG_I( RRC, "TDD specialSubframePatterns                : %ld\n", sib1->tdd_Config->specialSubframePatterns );
+  //}
+
+  LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1->si_SchedulingInfo->si_WindowLength,8)] );
+  //LOG_I( RRC, "systemInfoValueTag                         : %ld\n", sib1->systemInfoValueTag );
+  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIperiod     = siPeriod_int[sib1->si_SchedulingInfo->schedulingInfoList.list.array[0]->si_Periodicity];
+  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIwindowsize = siWindowLength_int[sib1->si_SchedulingInfo->si_WindowLength];
+  LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+         ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
+  //rrc_mac_config_req_ue
+  LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
+  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus = 1;
+  //NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
+
+  if (AMF_MODE_ENABLED) {
+    int cell_valid = 0;
+
+    //if (sib1->cellAccessRelatedInfo.cellBarred == LTE_SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred) {
+      /* Cell is not barred */
+      int plmn;
+      int plmn_number;
+      plmn_number = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count;
+
+      /* Compare requested PLMN and PLMNs from SIB1*/
+      for (plmn = 0; plmn < plmn_number; plmn++) {
+        NR_PLMN_Identity_t *plmn_Identity;
+        plmn_Identity = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[plmn]->plmn_IdentityList.list.array[0];
+
+        if (
+          (
+            (plmn_Identity->mcc == NULL)
+            ||
+            (
+              (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MCCdigit1 == *(plmn_Identity->mcc->list.array[0])) &&
+              (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MCCdigit2 == *(plmn_Identity->mcc->list.array[1])) &&
+              (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MCCdigit3 == *(plmn_Identity->mcc->list.array[2]))
+            )
+          )
+          &&
+          (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit1 == *(plmn_Identity->mnc.list.array[0]))
+          &&
+          (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit2 == *(plmn_Identity->mnc.list.array[1]))
+          &&
+          (
+            ((NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit3 == 0xf) && (plmn_Identity->mnc.list.count == 2))
+            ||
+            (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit3 == *(plmn_Identity->mnc.list.array[2]))
+          )
+        ) {
+          /* PLMN match, send a confirmation to NAS */
+          MessageDef  *msg_p;
+          msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CELL_SELECTION_CNF);
+          NAS_CELL_SELECTION_CNF (msg_p).errCode = AS_SUCCESS;
+          NAS_CELL_SELECTION_CNF (msg_p).cellID = BIT_STRING_to_uint32(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity);
+          NAS_CELL_SELECTION_CNF (msg_p).tac = BIT_STRING_to_uint16(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode);
+          NAS_CELL_SELECTION_CNF (msg_p).rat = 0xFF;
+          NAS_CELL_SELECTION_CNF (msg_p).rsrq = rsrq;
+          NAS_CELL_SELECTION_CNF (msg_p).rsrp = rsrp;
+          itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+          cell_valid = 1;
+          NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity = plmn + 1;
+          break;
+        }
+      }
+    //}
+
+    if (cell_valid == 0) {
+      /* Cell can not be used, ask PHY to try the next one */
+      MessageDef  *msg_p;
+      msg_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_NEXT_CELL_REQ);
+      itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
+      LOG_E(RRC,
+            "Synched with a cell, but PLMN doesn't match our SIM "
+            "(selected_plmn_identity %d), the message PHY_FIND_NEXT_CELL_REQ "
+            "is sent but lost in current UE implementation!\n",
+            NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
+    }
+  }
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_OUT );
   return 0;
 }
 int nr_decode_BCCH_DLSCH_Message(
