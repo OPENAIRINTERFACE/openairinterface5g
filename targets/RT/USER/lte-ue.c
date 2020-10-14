@@ -1230,7 +1230,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
           {
             UE_mac_inst[ue_Mod_id].UE_mode[0] = PRACH;
           }
-          LOG_I(MAC, "UE_mode: %d\n", UE_mac_inst[ue_Mod_id].UE_mode[0]);
+          LOG_D(MAC, "UE_mode: %d\n", UE_mac_inst[ue_Mod_id].UE_mode[0]);
           if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH)
           { //&& ue_Mod_id == next_Mod_id) {
             next_ra_frame++;
@@ -1246,7 +1246,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
                 {
                   LOG_I(MAC, "preamble_received_tar_power: %d\n",
                         prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER);
-                  UE_mac_inst[ue_Mod_id].ra_frame = NFAPI_SFNSF2SFN(sfn_sf); // Is this why RACH comes in late to proxy? - Andrew
+                  UE_mac_inst[ue_Mod_id].ra_frame = NFAPI_SFNSF2SFN(sfn_sf);
                   LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
                   fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
                   sent_any = true;

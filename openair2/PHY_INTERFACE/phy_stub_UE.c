@@ -928,11 +928,58 @@ void hi_dci0_req_UE_MAC(int sfn,
   }
 }
 
+// TODO: Find a way to drop more un-wanted dl_config_reqs & tx_reqs
+// In the current state we let alot of unecessary packets through
+// during the ra-rnti/pi-rnti/si-rnti in the startup state before a c-rnti is assigned
+// Right now we are just accepting all dl_config_req and tx_reqs
+// when the c-rnti is 0 - Andrew
+static bool is_my_dl_config_req(nfapi_dl_config_request_t *req)
+{
+  bool is_my_rnti = true;
+  const rnti_t my_rnti = UE_mac_inst[0].crnti; // 0 for standalone pnf mode. TODO: Make this more clear - Andrew
+
+  for (int i = 0; i < req->dl_config_request_body.number_pdu; i++)
+  {
+    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
+    const int pdu_type = pdu->pdu_type;
+    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
+    {
+      const rnti_t dci_rnti = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
+      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+      if (rnti_type == 1 && dci_rnti != my_rnti)
+      {
+        is_my_rnti = false;
+        LOG_I(MAC, "RNTI is not mine for pdu_type: %d my_rnti: 0x%x dci_rnti: 0x%x\n",
+                pdu_type, my_rnti, dci_rnti);
+      }
+      else
+      {
+        is_my_rnti = true;
+        break;
+      }
+    }
+  }
+
+  return is_my_rnti;
+}
+
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
 int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
+
+  if (!is_my_dl_config_req(req))
+  {
+    // TODO: Add in some kind of log or check to identify that what is being removed from the queue is correct. - Andrew
+    // Need to remove corresponding tx_req (comes before dl_config_req always)
+    void *p = unqueue(&tx_req_pdu_queue);
+    if (p)
+    {
+      free(p);
+    }
+    return 0;
+  }
 
   nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -966,7 +1013,7 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 static bool is_my_ul_config_req(nfapi_ul_config_request_t *req)
 {
   bool is_my_rnti = false;
-  const rnti_t rnti = UE_mac_inst[0].crnti; // 0 for standalone pnf mode - Andrew
+  const rnti_t rnti = UE_mac_inst[0].crnti; // 0 for standalone pnf mode. TODO: Make this more clear - Andrew
   for (int i = 0; i < req->ul_config_request_body.number_of_pdus; i++)
   {
     nfapi_ul_config_request_pdu_t *pdu = &req->ul_config_request_body.ul_config_pdu_list[i];

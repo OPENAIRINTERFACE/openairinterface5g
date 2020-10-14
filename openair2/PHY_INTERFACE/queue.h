@@ -43,3 +43,4 @@ typedef struct queue_t {
 void init_queue(queue_t *q);
 bool put_queue(queue_t *q, void *item);
 void *get_queue(queue_t *q);
+void *unqueue(queue_t *q);
