@@ -46,3 +46,21 @@ void *get_queue(queue_t *q) {
   pthread_mutex_unlock(&q->mutex);
   return item;
 }
+
+void *unqueue(queue_t *q)
+{
+  void *item = NULL;
+  if (pthread_mutex_lock(&q->mutex) != 0) {
+    LOG_E(PHY, "remove_from_back_of_queue mutex_lock failed\n");
+    return NULL;
+  }
+
+  if (q->num_items > 0) {
+    q->write_index = (q->write_index + MAX_QUEUE_SIZE - 1) % MAX_QUEUE_SIZE;
+    item = q->items[q->write_index];
+    q->num_items--;
+  }
+
+  pthread_mutex_unlock(&q->mutex);
+  return item;
+}
