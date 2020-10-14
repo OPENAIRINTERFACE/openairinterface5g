@@ -500,7 +500,6 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
   if (sched_ctrl->num_total_bytes == 0
-      && !get_softmodem_params()->phy_test
       && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
     return;
   LOG_D(MAC,
@@ -645,7 +644,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     if (frame >= (sched_ctrl->ta_frame + 10) % 1023)
       sched_ctrl->ta_apply = true; /* the timer is reset once TA CE is scheduled */
 
-    if (sched_ctrl->rbSize <= 0 && !get_softmodem_params()->phy_test)
+    if (sched_ctrl->rbSize <= 0)
       continue;
 
     const rnti_t rnti = UE_info->rnti[UE_id];
@@ -743,7 +742,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
        * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
       const int ta_len = (sched_ctrl->ta_apply) ? 2 : 0;
 
-      /* Get RLC data TODO: remove random data retrieval */
+      /* Get RLC data */
       int header_length_total = 0;
       int header_length_last = 0;
       int sdu_length_total = 0;

@@ -130,6 +130,13 @@ uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 
 /////// Phy test scheduler ///////
 
+/* \brief preprocessor for phytest: schedules UE_id 0 with fixed MCS on all
+ * freq resources */
+void nr_preprocessor_phytest(module_id_t module_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             int num_slots_per_tdd);
+
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);

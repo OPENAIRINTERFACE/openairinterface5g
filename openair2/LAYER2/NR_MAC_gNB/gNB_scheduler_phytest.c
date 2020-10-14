@@ -252,6 +252,106 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
+/* schedules whole bandwidth for first user, all the time */
+void nr_preprocessor_phytest(module_id_t module_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             int num_slots_per_tdd)
+{
+  if (slot != 1)
+    return; /* only schedule in slot 1 for now */
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  const int UE_id = 0;
+  const int CC_id = 0;
+  AssertFatal(UE_info->active[UE_id],
+              "%s(): expected UE %d to be active\n",
+              __func__,
+              UE_id);
+
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  /* find largest unallocated chunk */
+  const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  int rbStart = 0;
+  int tStart = 0;
+  int rbSize = 0;
+  uint8_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
+  /* find largest unallocated RB region */
+  do {
+    /* advance to first free RB */
+    while (tStart < bwpSize && vrb_map[tStart])
+      tStart++;
+    /* find maximum rbSize at current rbStart */
+    int tSize = 1;
+    while (tStart + tSize < bwpSize && !vrb_map[tStart + tSize])
+      tSize++;
+    if (tSize > rbSize) {
+      rbStart = tStart;
+      rbSize = tSize;
+    }
+    tStart += tSize;
+  } while (tStart < bwpSize);
+
+  sched_ctrl->num_total_bytes = 0;
+  const int lcid = DL_SCH_LCID_DTCH;
+  const uint16_t rnti = UE_info->rnti[UE_id];
+  /* update sched_ctrl->num_total_bytes so that postprocessor schedules data,
+   * if available */
+  sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+                                                    rnti,
+                                                    module_id,
+                                                    frame,
+                                                    slot,
+                                                    ENB_FLAG_YES,
+                                                    MBMS_FLAG_NO,
+                                                    lcid,
+                                                    0,
+                                                    0);
+  sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  uint8_t nr_of_candidates;
+  find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  sched_ctrl->coreset = get_coreset(
+      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = UE_info->Y[UE_id][cid][RC.nrmac[module_id]->current_slot];
+  const int m = UE_info->num_pdcch_cand[UE_id][cid];
+  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                  sched_ctrl->active_bwp,
+                                  sched_ctrl->coreset,
+                                  sched_ctrl->aggregation_level,
+                                  Y,
+                                  m,
+                                  nr_of_candidates);
+  AssertFatal(sched_ctrl->cce_index >= 0,
+              "%s(): could not find CCE for UE %d\n",
+              __func__,
+              UE_id);
+
+  nr_acknack_scheduling(module_id,
+                        UE_id,
+                        frame,
+                        slot,
+                        num_slots_per_tdd,
+                        &sched_ctrl->pucch_sched_idx,
+                        &sched_ctrl->pucch_occ_idx);
+  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+
+  sched_ctrl->rbStart = rbStart;
+  sched_ctrl->rbSize = rbSize;
+  sched_ctrl->time_domain_allocation = 2;
+  sched_ctrl->mcsTableIdx = 0;
+  sched_ctrl->mcs = 9;
+  sched_ctrl->numDmrsCdmGrpsNoData = 1;
+
+  /* mark the corresponding RBs as used */
+  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
+    vrb_map[rb + sched_ctrl->rbStart] = 1;
+}
+
 int configure_fapi_dl_pdu_phytest(int Mod_idP,
                                   nfapi_nr_dl_tti_request_body_t *dl_req,
                                   NR_sched_pucch *pucch_sched,
