@@ -57,7 +57,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 			     uint8_t symbol) {
   
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_COMMON_channels_t *cc = &gNB->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
@@ -134,7 +134,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(module_id_t module_idP) {
 
 	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_COMMON_channels_t *cc = &gNB->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
@@ -167,14 +167,12 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   uint64_t L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
 	uint32_t total_RA_occasions = N_RA_sfn * N_t_slot * N_RA_slot * fdm;
 
-	/*
-	  for(int i = 0;i < 64;i++) {
-	  if ((L_ssb >> (63-i)) & 0x01) { // only if the bit of L_ssb at current ssb index is 1
-	  gNB->SSB_list[num_active_ssb].ssb_index = i; 
-	  num_active_ssb++;
-	  }
-	  }
-	*/	
+	for(int i = 0;i < 64;i++) {
+    if ((L_ssb >> (63-i)) & 0x01) { // only if the bit of L_ssb at current ssb index is 1
+      cc->ssb_index[num_active_ssb] = i; 
+		  num_active_ssb++;
+    }
+	}	
 
 	for(int i = 1; (1 << (i-1)) <= max_association_period;i++) {
     if(total_RA_occasions >= (int) (num_active_ssb/num_ssb_per_RO)) {
@@ -430,8 +428,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-	NR_RA_t *ra = &cc->ra[0];
-
+  NR_RA_t *ra = &cc->ra[0];
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
   int pr_found=0;
@@ -446,7 +443,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           module_idP, preamble_index);
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
   }
-
   // This should be handled differently when we use the initialBWP for RA
   ra->bwp_id=1;
   NR_BWP_Downlink_t *bwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
@@ -457,13 +453,12 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   if (ra->state == RA_IDLE) {
 
-    uint8_t index = ssb_index_from_prach(module_idP,
-					 frameP,
-					 slotP,
-					 preamble_index,
-					 freq_index,
-					 symbol);
-
+    uint8_t beam_index = ssb_index_from_prach(module_idP,
+		                              frameP,
+					      slotP,
+					      preamble_index,
+					      freq_index,
+					      symbol);
     int loop = 0;
     LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;
@@ -485,13 +480,13 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                                               &monitoring_slot_period,
                                               &monitoring_offset);
 
-    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,index,cc->num_active_ssb);
+    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,beam_index,cc->num_active_ssb);
 
     ra->Msg2_frame = msg2_frame;
     ra->Msg2_slot = msg2_slot;
 
     LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-
+    if(pr_found)
     do {
       ra->rnti = (taus() % 65518) + 1;
       loop++;
@@ -504,16 +499,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
-    ra->ssb_id = index;
+    ra->beam_id = beam_index;
 
     LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB index %u\n",
-	  module_idP,
-	  CC_id,
-	  frameP,
-	  ra->Msg2_frame,
-	  ra->Msg2_slot,
-	  ra->RA_rnti,
-	  ra->ssb_id);
+      module_idP,
+      CC_id,
+      frameP,
+      ra->Msg2_frame,
+      ra->Msg2_slot,
+      ra->RA_rnti,
+      cc->ssb_index[beam_index]);
 
     return;
   }
@@ -728,8 +723,8 @@ void nr_generate_Msg2(module_id_t module_idP,
   int dci_formats[2], rnti_types[2], mcsIndex;
   int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
-  NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[0];
-  NR_RA_t                               *ra = &cc->ra[0];
+  NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
+  NR_RA_t                               *ra = &cc->ra[CC_id];
   NR_SearchSpace_t *ss = ra->ra_ss;
 
   uint16_t RA_rnti = ra->RA_rnti;

@@ -389,8 +389,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     ra->state = RA_IDLE;
     LOG_I(MAC, "reset RA state information for RA-RNTI %04x\n", ra->rnti);
     const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->crnti);
-    UE_info->UE_ssb_index[UE_id] = ra->ssb_id;
     UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
+    UE_info->UE_beam_index[UE_id] = ra->beam_id;
     struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
         ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
     AssertFatal(bwpList->list.count == 1,
