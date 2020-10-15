@@ -91,6 +91,25 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
+    uint8_t                        MBMS_flag;
+
+    NR_SystemInformation_t         *si[NB_CNX_UE];
+    NR_SIB1_t                      *sib1[NB_CNX_UE];
+    NR_SIB2_t                      *sib2[NB_CNX_UE];
+    NR_SIB3_t                      *sib3[NB_CNX_UE];
+    NR_SIB4_t                      *sib4[NB_CNX_UE];
+    NR_SIB5_t                      *sib5[NB_CNX_UE];
+    NR_SIB6_t                      *sib6[NB_CNX_UE];
+    NR_SIB7_t                      *sib7[NB_CNX_UE];
+    NR_SIB8_t                      *sib8[NB_CNX_UE];
+    NR_SIB9_t                      *sib9[NB_CNX_UE];
+    NR_SIB10_r16_t                 *sib10[NB_CNX_UE];
+    NR_SIB11_r16_t                 *sib11[NB_CNX_UE];
+    NR_SIB12_r16_t                 *sib12[NB_CNX_UE];
+    NR_SIB13_r16_t                 *sib13[NB_CNX_UE];
+    NR_SIB14_r16_t                 *sib14[NB_CNX_UE];
+    plmn_t                         plmnID;
+
     NR_UE_RRC_INFO                 Info[NB_SIG_CNX_UE];
 
     NR_MIB_t *mib;
@@ -150,7 +169,10 @@ typedef struct NR_UE_RRC_INST_s {
     RRC_LIST_TYPE(NR_CSI_ResourceConfig_t, NR_maxNrofCSI_ResourceConfigurations) CSI_ResourceConfig_list;
     //  CellGroupConfig.spCellConfig.spCellConfigDedicated
     RRC_LIST_TYPE(NR_CSI_ReportConfig_t, NR_maxNrofCSI_ReportConfigurations) CSI_ReportConfig_list;
-  
+
+    long               selected_plmn_identity;
+    Rrc_State_NR_t     nrRrcState;
+    Rrc_Sub_State_NR_t nrRrcSubState;
 } NR_UE_RRC_INST_t;
 
 #endif

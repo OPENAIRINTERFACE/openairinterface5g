@@ -420,6 +420,13 @@ rrc_gNB_generate_RRCSetup(
     ue_context_pP->ue_context.ue_release_timer_thres = 1000;
     /* init timers */
     //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, GNB_RRC_CCCH_DATA_IND);
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
 }
 
 void
