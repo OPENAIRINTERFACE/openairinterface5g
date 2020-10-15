@@ -478,9 +478,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
 
     if ((harq_process->Nl)<4)
-      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl,harq_process->C);
+      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl);
     else
-      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,4,harq_process->C);
+      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,4);
 
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
@@ -1069,7 +1069,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     if (harq_process->Nl < Nl)
       Nl = harq_process->Nl;
 
-    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl,harq_process->C);
+    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
@@ -1610,9 +1610,9 @@ void nr_dlsch_decoding_process(void *arg)
 #endif
 
     if (Nl<4)
-      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,Nl,harq_process->C);
+      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,Nl);
     else
-      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,4,harq_process->C);
+      Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,4);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,

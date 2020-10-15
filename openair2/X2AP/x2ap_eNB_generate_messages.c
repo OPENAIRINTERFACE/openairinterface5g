@@ -1317,7 +1317,7 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
             freq_band = calloc(1, sizeof(X2AP_FreqBandNrItem_t));
             if (freq_band == NULL)
                exit(1);
-            freq_band->freqBandIndicatorNr = 1; /* TODO: put correct value */
+            freq_band->freqBandIndicatorNr = instance_p->eutra_band[0];
 
             SULFreqBandItem = calloc(1, sizeof(X2AP_SupportedSULFreqBandItem_t));
             SULFreqBandItem->freqBandIndicatorNr=80; /* TODO: put correct value */
@@ -1668,8 +1668,6 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 		uint32_t  len;
 		int       ret = 0;
 
-		int MeNB_UE_X2AP_id = x2ap_sgnb_addition_req_ACK->MeNB_ue_x2_id;
-		int SgNB_UE_X2AP_id = ue_id;
 		int e_rabs_admitted_tobeadded = x2ap_sgnb_addition_req_ACK->nb_e_rabs_admitted_tobeadded;
 		long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 		long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
@@ -1694,7 +1692,7 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 		ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
 		ie->criticality= X2AP_Criticality_reject;
 		ie->value.present = X2AP_SgNBAdditionRequestAcknowledge_IEs__value_PR_UE_X2AP_ID;
-		ie->value.choice.UE_X2AP_ID = MeNB_UE_X2AP_id; //x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+		ie->value.choice.UE_X2AP_ID = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
 		ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 		// SgNB_UE_X2AP_id
@@ -1702,7 +1700,7 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 		ie->id = X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID;
 		ie->criticality= X2AP_Criticality_reject;
 		ie->value.present = X2AP_SgNBAdditionRequestAcknowledge_IEs__value_PR_SgNB_UE_X2AP_ID;
-		ie->value.choice.UE_X2AP_ID = SgNB_UE_X2AP_id; //x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+		ie->value.choice.UE_X2AP_ID = x2ap_id_get_id_target(&instance_p->id_manager, ue_id);
 		ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 		ie = (X2AP_SgNBAdditionRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequestAcknowledge_IEs_t));
@@ -1792,7 +1790,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(
 	ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
 	ie->criticality= X2AP_Criticality_reject;
 	ie->value.present = X2AP_SgNBReconfigurationComplete_IEs__value_PR_UE_X2AP_ID;
-	ie->value.choice.UE_X2AP_ID = ue_id; //x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+	ie->value.choice.UE_X2AP_ID = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
 	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 	ie = (X2AP_SgNBReconfigurationComplete_IEs_t *)calloc(1, sizeof(X2AP_SgNBReconfigurationComplete_IEs_t));
@@ -1820,4 +1818,227 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(
 
 	return ret;
 
+}
+
+int x2ap_eNB_generate_ENDC_x2_SgNB_release_request(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+  int x2_id_source, int x2_id_target, x2ap_cause_t cause)
+{
+  X2AP_X2AP_PDU_t                        pdu;
+  X2AP_SgNBReleaseRequest_t     *out;
+  X2AP_SgNBReleaseRequest_IEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = X2AP_ProcedureCode_id_meNBinitiatedSgNBRelease;
+  pdu.choice.initiatingMessage.criticality = X2AP_Criticality_ignore;
+  pdu.choice.initiatingMessage.value.present = X2AP_InitiatingMessage__value_PR_SgNBReleaseRequest;
+  out = &pdu.choice.initiatingMessage.value.choice.SgNBReleaseRequest;
+
+  ie = (X2AP_SgNBReleaseRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_reject;
+  ie->value.present = X2AP_SgNBReleaseRequest_IEs__value_PR_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = x2_id_source;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2_id_target != -1) {
+    ie = (X2AP_SgNBReleaseRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequest_IEs_t));
+    ie->id = X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID;
+    ie->criticality= X2AP_Criticality_reject;
+    ie->value.present = X2AP_SgNBReleaseRequest_IEs__value_PR_SgNB_UE_X2AP_ID;
+    ie->value.choice.SgNB_UE_X2AP_ID = x2_id_target;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  ie = (X2AP_SgNBReleaseRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_Cause;
+  ie->criticality= X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SgNBReleaseRequest_IEs__value_PR_Cause;
+  switch (cause) {
+  case X2AP_CAUSE_T_DC_PREP_TIMEOUT:
+    ie->value.choice.Cause.present = X2AP_Cause_PR_radioNetwork;
+    ie->value.choice.Cause.choice.radioNetwork = X2AP_CauseRadioNetwork_tDCprep_expiry;
+    break;
+  case X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST:
+    ie->value.choice.Cause.present = X2AP_Cause_PR_radioNetwork;
+    ie->value.choice.Cause.choice.radioNetwork = X2AP_CauseRadioNetwork_radio_connection_with_UE_lost;
+    break;
+  default:
+    X2AP_ERROR("%s: unhandled cause %d\n", __FUNCTION__, cause);
+    exit(1);
+  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode ENDC X2 SgNB_release_request message\n");
+    return -1;
+  }
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+  return ret;
+}
+
+int x2ap_gNB_generate_ENDC_x2_SgNB_release_request_acknowledge(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+  int menb_ue_x2ap_id, int sgnb_ue_x2ap_id)
+{
+  X2AP_X2AP_PDU_t                          pdu;
+  X2AP_SgNBReleaseRequestAcknowledge_t     *out;
+  X2AP_SgNBReleaseRequestAcknowledge_IEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  x2ap_eNB_data_p->state = X2AP_ENB_STATE_WAITING;
+
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
+  pdu.choice.successfulOutcome.procedureCode = X2AP_ProcedureCode_id_meNBinitiatedSgNBRelease;
+  pdu.choice.successfulOutcome.criticality = X2AP_Criticality_ignore;
+  pdu.choice.successfulOutcome.value.present = X2AP_SuccessfulOutcome__value_PR_SgNBReleaseRequestAcknowledge;
+  out = &pdu.choice.successfulOutcome.value.choice.SgNBReleaseRequestAcknowledge;
+
+  ie = (X2AP_SgNBReleaseRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequestAcknowledge_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SgNBReleaseRequestAcknowledge_IEs__value_PR_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = menb_ue_x2ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (X2AP_SgNBReleaseRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequestAcknowledge_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SgNBReleaseRequestAcknowledge_IEs__value_PR_SgNB_UE_X2AP_ID;
+  ie->value.choice.SgNB_UE_X2AP_ID = sgnb_ue_x2ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode ENDC X2 SgNB Release Request Acknowledge\n");
+    return -1;
+  }
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+  return ret;
+}
+
+int x2ap_eNB_generate_ENDC_x2_SgNB_release_required(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+  int x2_id_source, int x2_id_target, x2ap_cause_t cause)
+{
+  X2AP_X2AP_PDU_t                pdu;
+  X2AP_SgNBReleaseRequired_t     *out;
+  X2AP_SgNBReleaseRequired_IEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  /* Prepare the X2AP message to encode */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = X2AP_ProcedureCode_id_sgNBinitiatedSgNBRelease;
+  pdu.choice.initiatingMessage.criticality = X2AP_Criticality_reject;
+  pdu.choice.initiatingMessage.value.present = X2AP_InitiatingMessage__value_PR_SgNBReleaseRequired;
+  out = &pdu.choice.initiatingMessage.value.choice.SgNBReleaseRequired;
+
+  ie = (X2AP_SgNBReleaseRequired_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequired_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_reject;
+  ie->value.present = X2AP_SgNBReleaseRequired_IEs__value_PR_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = x2_id_source;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (X2AP_SgNBReleaseRequired_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequired_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_reject;
+  ie->value.present = X2AP_SgNBReleaseRequired_IEs__value_PR_SgNB_UE_X2AP_ID;
+  ie->value.choice.SgNB_UE_X2AP_ID = x2_id_target;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (X2AP_SgNBReleaseRequired_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseRequired_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_Cause;
+  ie->criticality= X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SgNBReleaseRequired_IEs__value_PR_Cause;
+  switch (cause) {
+  case X2AP_CAUSE_T_DC_OVERALL_TIMEOUT:
+    ie->value.choice.Cause.present = X2AP_Cause_PR_radioNetwork;
+    ie->value.choice.Cause.choice.radioNetwork = X2AP_CauseRadioNetwork_tDCoverall_expiry;
+    break;
+  default:
+    X2AP_ERROR("%s: unhandled cause %d\n", __FUNCTION__, cause);
+    exit(1);
+  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode ENDC X2 SgNB_release_request message\n");
+    return -1;
+  }
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+  return ret;
+}
+
+int x2ap_gNB_generate_ENDC_x2_SgNB_release_confirm(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+  int menb_ue_x2ap_id, int sgnb_ue_x2ap_id)
+{
+  X2AP_X2AP_PDU_t               pdu;
+  X2AP_SgNBReleaseConfirm_t     *out;
+  X2AP_SgNBReleaseConfirm_IEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
+  pdu.choice.successfulOutcome.procedureCode = X2AP_ProcedureCode_id_sgNBinitiatedSgNBRelease;
+  pdu.choice.successfulOutcome.criticality = X2AP_Criticality_reject;
+  pdu.choice.successfulOutcome.value.present = X2AP_SuccessfulOutcome__value_PR_SgNBReleaseConfirm;
+  out = &pdu.choice.successfulOutcome.value.choice.SgNBReleaseConfirm;
+
+  ie = (X2AP_SgNBReleaseConfirm_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseConfirm_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SgNBReleaseConfirm_IEs__value_PR_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = menb_ue_x2ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (X2AP_SgNBReleaseConfirm_IEs_t *)calloc(1, sizeof(X2AP_SgNBReleaseConfirm_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID;
+  ie->criticality= X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SgNBReleaseConfirm_IEs__value_PR_SgNB_UE_X2AP_ID;
+  ie->value.choice.SgNB_UE_X2AP_ID = sgnb_ue_x2ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode ENDC X2 SgNB Release Request Acknowledge\n");
+    return -1;
+  }
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+  return ret;
 }
