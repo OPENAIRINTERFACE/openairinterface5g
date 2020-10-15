@@ -502,6 +502,33 @@ void nr_schedule_ulsch(module_id_t module_id,
   const int slot_idx = (slot + K2) % num_slots_per_tdd;
   if (is_xlsch_in_slot(ulsch_in_slot_bitmap, slot_idx)
         && (!get_softmodem_params()->phy_test || slot_idx == 8)) {
+
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    NR_SearchSpace_t *ss = get_searchspace(bwp, target_ss);
+    uint8_t nr_of_candidates, aggregation_level;
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
+    const int cid = coreset->controlResourceSetId;
+    const uint16_t Y = UE_info->Y[UE_id][cid][nr_mac->current_slot];
+    const int m = UE_info->num_pdcch_cand[UE_id][cid];
+    int CCEIndex = allocate_nr_CCEs(nr_mac,
+                                    bwp,
+                                    coreset,
+                                    aggregation_level,
+                                    Y,
+                                    m,
+                                    nr_of_candidates);
+    if (CCEIndex < 0) {
+      LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
+      return;
+    }
+    UE_info->num_pdcch_cand[UE_id][cid]++;
+
+    const uint8_t mcs = 9;
+    const uint16_t rbStart = 0;
+    const uint16_t rbSize = get_softmodem_params()->phy_test ?
+      50 : NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+
     nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[module_id]->UL_dci_req[0];
     UL_dci_req->SFN = frame;
     UL_dci_req->Slot = slot;
@@ -518,9 +545,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     LOG_D(MAC, "Scheduling UE specific PUSCH\n");
     //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
 
-
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    NR_SearchSpace_t *ss = get_searchspace(bwp, target_ss);
 
     int dci_formats[2];
     if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
@@ -560,7 +584,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
-    pusch_pdu->mcs_index = 9;
+    pusch_pdu->mcs_index = mcs;
     if (pusch_pdu->transform_precoding)
       pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
                                                  0,
@@ -592,12 +616,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
-    pusch_pdu->rb_start = 0;
-    if (get_softmodem_params()->phy_test)
-      pusch_pdu->rb_size = 50;
-    else
-      pusch_pdu->rb_size = pusch_pdu->bwp_size;
-
+    pusch_pdu->rb_start = rbStart;
+    pusch_pdu->rb_size = rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
 
     if (pusch_Config->frequencyHopping==NULL)
@@ -738,28 +758,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
     UL_dci_req->numPdus+=1;
 
-
     LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
-
-    uint8_t nr_of_candidates, aggregation_level;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
-    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
-    int cid = coreset->controlResourceSetId;
-    const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-    const int m = UE_info->num_pdcch_cand[UE_id][cid];
-    int CCEIndex = allocate_nr_CCEs(nr_mac,
-                                    bwp,
-                                    coreset,
-                                    aggregation_level,
-                                    Y,
-                                    m,
-                                    nr_of_candidates);
-    if (CCEIndex < 0) {
-      LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-      pusch_sched->active = false;
-      return;
-    }
-    UE_info->num_pdcch_cand[UE_id][cid]++;
 
     nr_configure_pdcch(nr_mac,
                        pdcch_pdu_rel15,
