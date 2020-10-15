@@ -281,8 +281,16 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
+  
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  
+  uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+
   //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-	csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
+	  if (report_slot_csi == proc->nr_tti_tx)
+		csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
+	  else
+	    csi_status = 0;
   //}
 
   O_CSI = cqi_status + ri_status + csi_status;
@@ -1335,7 +1343,7 @@ uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac) {
   
   csi_bitlen = ((cri_ssbri_bitlen * nb_ssbri_cri) + rsrp_bitlen +(diff_rsrp_bitlen *(nb_ssbri_cri -1 ))) *nb_csi_ssb_report;
                
-               printf("get csi bitlen %d nb_ssbri_cri %d nb_csi_report %d nb_resources %d\n", csi_bitlen,nb_ssbri_cri ,nb_csi_ssb_report, nb_ssb_resources);
+  //printf("get csi bitlen %d nb_ssbri_cri %d nb_csi_report %d nb_resources %d\n", csi_bitlen,nb_ssbri_cri ,nb_csi_ssb_report, nb_ssb_resources);
   }
   return csi_bitlen;
 }
