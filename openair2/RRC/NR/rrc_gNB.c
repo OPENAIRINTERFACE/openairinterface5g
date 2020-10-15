@@ -347,7 +347,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-    LOG_I(RRC, "rrc_gNB_generate_RRCSetup \n");
+    LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
     NR_SRB_ToAddModList_t        *SRB_configList = NULL;
 
     // T(T_GNB_RRC_SETUP,
@@ -357,7 +357,7 @@ rrc_gNB_generate_RRCSetup(
     //   T_INT(ctxt_pP->rnti));
     gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
     SRB_configList = ue_p->SRB_configList;
-    do_RRCSetup(ctxt_pP,
+    ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ctxt_pP,
                 ue_context_pP,
                 CC_id,
                 (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
