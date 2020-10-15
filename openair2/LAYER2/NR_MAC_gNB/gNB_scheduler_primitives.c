@@ -1633,7 +1633,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
         UE_info->num_UEs);
   dump_nr_ue_list(&UE_info->list);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_info->active[i])
       continue;
 
@@ -1684,7 +1684,8 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (!UE_info->active[i])
+
+    if (UE_info->active[i] != TRUE)
       continue;
     if (UE_info->rnti[i] != rnti)
       continue;

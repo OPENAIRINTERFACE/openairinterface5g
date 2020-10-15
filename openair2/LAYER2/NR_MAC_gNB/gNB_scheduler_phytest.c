@@ -864,7 +864,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
    * conditions might exclude each other and never be true */
   const int slot_idx = (slotP + K2) % num_slots_per_tdd;
   if (is_xlsch_in_slot(ulsch_in_slot_bitmap, slot_idx)
-        && (!get_softmodem_params()->phy_test || slotP == 6)) {
+      && (!get_softmodem_params()->phy_test || slot_idx == 8)) {
+
     nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[Mod_idP]->UL_dci_req[0];
     UL_dci_req->SFN = frameP;
     UL_dci_req->Slot = slotP;
@@ -976,7 +977,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
       if (get_softmodem_params()->phy_test==1)
         pusch_pdu->rb_size = 50;
       else
-        pusch_pdu->rb_size = 5;
+        pusch_pdu->rb_size = pusch_pdu->bwp_size;
     }
     else
       AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");

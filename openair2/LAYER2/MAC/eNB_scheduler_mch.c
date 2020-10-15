@@ -211,7 +211,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			msi_pos++;
 		   while((non_mbsfn_SubframeConfig & (0x100 >> msi_pos)) == (0x100>>msi_pos))
 			msi_pos++;
-		   	mbms_mch_i=0;
+		   mbms_mch_i=0;
 
 		   if((subframeP==0)){
 		   	x=0;

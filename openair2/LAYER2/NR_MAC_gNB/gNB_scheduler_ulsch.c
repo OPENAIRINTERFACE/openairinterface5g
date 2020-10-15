@@ -357,9 +357,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     return;
   }
 
-
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
+
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
     LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,

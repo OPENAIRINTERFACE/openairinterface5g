@@ -392,6 +392,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     encoder_implemparams_t impp;
     impp.n_segments=harq_process->C;
     impp.macro_num=0;
+    impp.tinput  = NULL;
+    impp.tprep   = NULL;
+    impp.tparity = NULL;
+    impp.toutput = NULL;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
     
@@ -439,7 +443,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     E = nr_get_E(G, harq_process->C, mod_order, harq_process->pusch_pdu.nrOfLayers, r);
 
-    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->pusch_pdu.nrOfLayers,harq_process->C);
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->pusch_pdu.nrOfLayers);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     nr_rate_matching_ldpc(Ilbrm,
