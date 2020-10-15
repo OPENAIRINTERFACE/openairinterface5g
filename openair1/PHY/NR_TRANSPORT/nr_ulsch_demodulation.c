@@ -1147,9 +1147,9 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
 
-  if (nb_re_pusch > 0) {
+  gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] = nb_re_pusch;
 
-    gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] = nb_re_pusch;
+  if (nb_re_pusch > 0) {
 
     start_meas(&gNB->ulsch_rbs_extraction_stats);
     nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,

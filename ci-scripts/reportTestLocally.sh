@@ -765,6 +765,59 @@ function report_test {
                     echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB </td>" >> ./test_simulator_results.html
                 fi
                 echo "      </tr>" >> ./test_simulator_results.html
+
+                #RA test (--do-ra option)
+
+                #build log files names
+                RA_ENB_LOG=$ARCHIVES_LOC/ra_check_${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
+                RA_UE_LOG=$ARCHIVES_LOC/ra_check_${TMODE}_${BW}prb_${CN_CONFIG}_ue.log
+                if [ -f $RA_ENB_LOG ] && [ -f $RA_UE_LOG ]
+                then
+                    #get rid of full path
+                    NAME_ENB=`echo $RA_ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $RA_UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>Check if RA proc succeeded</td>" >> ./test_simulator_results.html
+
+                    #gNB RA check
+                    GNB_RECEIVED=`egrep -c "received correctly" $RA_ENB_LOG`
+                    GNB_CONNECTED=`egrep -c "now 5G connected" $RA_ENB_LOG`
+                    #UE RA check
+                    UE_RA_PROC_OK=`egrep -c "RA procedure succeeded" $RA_UE_LOG`
+
+
+                    if [ $GNB_RECEIVED -gt 0 ] && [ $GNB_CONNECTED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+
+                    echo "        <td><pre>" >> ./test_simulator_results.html
+                    if [ $GNB_RECEIVED -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- gNB --> RA received</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- gNB RA NOT RECEIVED</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $GNB_CONNECTED -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- gNB --> 5G connected</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- gNB NOT 5G CONNECTED</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- NR UE  --> RA procedure succeded</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- NR UE RA procedure failed</b></font>" >> ./test_simulator_results.html
+                    fi
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+
+                #SYNC test
                 ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
                 UE_LOG=`echo $ENB_LOG | sed -e "s#gnb#ue#"`
                 if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
