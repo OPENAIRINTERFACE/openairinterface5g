@@ -35,21 +35,6 @@
 #include "mac.h"
 #include "COMMON/mac_rrc_primitives.h"
 
-
-#define table_38213_13_1_num_indexes 15
-#define table_38213_13_2_num_indexes 14
-#define table_38213_13_3_num_indexes 9
-#define table_38213_13_4_num_indexes 16
-#define table_38213_13_5_num_indexes 9
-#define table_38213_13_6_num_indexes 10
-#define table_38213_13_7_num_indexes 12
-#define table_38213_13_8_num_indexes 8
-#define table_38213_13_9_num_indexes 4
-#define table_38213_13_10_num_indexes 8
-#define table_38213_13_11_num_indexes 16
-#define table_38213_13_12_num_indexes 14
-
-
 const uint32_t BSR_TABLE[BSR_TABLE_SIZE] = {
   0, 10, 12, 14, 17, 19, 22, 26, 31, 36, 42, 49, 57, 67, 78, 91,
   105, 125, 146, 171, 200, 234, 274, 321, 376, 440, 515, 603, 706, 826,

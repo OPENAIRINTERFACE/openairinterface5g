@@ -35,6 +35,20 @@
 #include "NR_PDSCH-Config.h"
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
+#include  "openair1/PHY/impl_defs_nr.h"
+
+#define TABLE_38213_13_1_NUM_INDEXES 15
+#define TABLE_38213_13_2_NUM_INDEXES 14
+#define TABLE_38213_13_3_NUM_INDEXES 9
+#define TABLE_38213_13_4_NUM_INDEXES 16
+#define TABLE_38213_13_5_NUM_INDEXES 9
+#define TABLE_38213_13_6_NUM_INDEXES 10
+#define TABLE_38213_13_7_NUM_INDEXES 12
+#define TABLE_38213_13_8_NUM_INDEXES 8
+#define TABLE_38213_13_9_NUM_INDEXES 4
+#define TABLE_38213_13_10_NUM_INDEXES 8
+#define TABLE_38213_13_11_NUM_INDEXES 16
+#define TABLE_38213_13_12_NUM_INDEXES 14
 
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
@@ -63,6 +77,26 @@ typedef enum {
   NR_RNTI_TPC_SRS,
   NR_RNTI_MCS_C,
 } nr_rnti_type_t;
+
+typedef enum channel_bandwidth_e {
+    bw_5MHz   = 0x1,
+    bw_10MHz  = 0x2,
+    bw_20MHz  = 0x4,
+    bw_40MHz  = 0x8,
+    bw_80MHz  = 0x16,
+    bw_100MHz = 0x32
+} channel_bandwidth_t;
+
+typedef enum frequency_range_e {
+    FR1 = 0,
+    FR2
+} frequency_range_t;
+
+typedef enum nr_ssb_and_cset_mux_pattern_type_e {
+    NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
+    NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+    NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+} nr_ssb_and_cset_mux_pattern_type_t;
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 

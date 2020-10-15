@@ -278,20 +278,6 @@ typedef enum subcarrier_spacing_e {
     scs_240kHz = 0x16
 } subcarrier_spacing_t;
 
-typedef enum channel_bandwidth_e {
-    bw_5MHz   = 0x1,
-    bw_10MHz  = 0x2,
-    bw_20MHz  = 0x4,
-    bw_40MHz  = 0x8,
-    bw_80MHz  = 0x16,
-    bw_100MHz = 0x32
-} channel_bandwidth_t;
-
-typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
-} frequency_range_t;
-
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:
   uint8_t carrier_ind                     ; // 1  CARRIER_IND: 0 or 3 bits, as defined in Subclause x.x of [5, TS38.213]

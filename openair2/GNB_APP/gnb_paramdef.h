@@ -78,7 +78,6 @@ typedef enum {
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE              "none"
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING          "annoying"
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO              "info"
- 
 
 /* global parameters, not under a specific section   */
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"

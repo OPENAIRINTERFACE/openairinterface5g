@@ -49,6 +49,7 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC_UE/mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "common/utils/nr/nr_common.h"
 
 /* PHY */
@@ -311,18 +312,19 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     }
   }
 
-#ifdef DEBUG_MIB
+//#ifdef DEBUG_MIB
   LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
   LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
   LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
   LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
   LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
-  LOG_I(MAC,"pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
+  LOG_I(MAC,"pdcch config sib1.controlResourceSetZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
+  LOG_I(MAC,"pdcch config sib1.searchSpaceZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
   LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-  LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+  //LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
   LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
-#endif
+//#endif
 
   subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
   //const uint32_t scs_index = 0;

@@ -146,4 +146,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   }
 }
 
+void schedule_nr_sib1(){
+
+}
+
 
