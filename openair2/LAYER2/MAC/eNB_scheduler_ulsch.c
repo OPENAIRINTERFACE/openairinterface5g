@@ -972,8 +972,13 @@ rx_sdu(const module_id_t enb_mod_idP,
 
         break;
     }
-
-    payload_ptr += rx_lengths[i];
+    if((sdu_lenP - (payload_ptr - sduP)) >= rx_lengths[i]){
+     payload_ptr += rx_lengths[i];
+    }else{
+      LOG_E(MAC,"[eNB %d/%d] frame %d subframe %d rnti %x sdu_len %d  remain_len %d rx_lengths %d\n",
+                 enb_mod_idP,CC_idP,frameP,subframeP,rntiP,sdu_lenP,(uint16_t)(payload_ptr - sduP), rx_lengths[i]);
+      return;
+    }
   }
 
   /* CDRX UL HARQ timers */
