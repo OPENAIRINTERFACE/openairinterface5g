@@ -46,6 +46,9 @@
 #include "NR_MIB.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
+/* Softmodem params */
+#include "executables/softmodem-common.h"
+
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
 extern void mac_top_init_gNB(void);
@@ -360,22 +363,33 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   
   if (secondaryCellGroup) {
 
-    NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-    int UE_id;
-    if (add_ue == 1) {
-      UE_id = add_new_nr_ue(Mod_idP,rnti);
-      UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
-      uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
-      UE_list->preambles[UE_id].num_preambles = num_preamble;
-      UE_list->preambles[UE_id].preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
-      for (int i=0; i<num_preamble; i++) {
-        UE_list->preambles[UE_id].preamble_list[i] = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
-      }
+    NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+    if (add_ue == 1 && get_softmodem_params()->phy_test) {
+      const int UE_id = add_new_nr_ue(Mod_idP,rnti);
+      UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
+          secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+      AssertFatal(bwpList->list.count == 1,
+                  "downlinkBWP_ToAddModList has %d BWP!\n",
+                  bwpList->list.count);
+      const int bwp_id = 1;
+      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
-    }
-    else { // secondaryCellGroup has been updated
-      UE_id = find_nr_UE_id(Mod_idP,rnti);
-      UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+    } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
+      const int CC_id = 0;
+      NR_RA_t *ra = &RC.nrmac[Mod_idP]->common_channels[CC_id].ra[0];
+      ra->state = RA_IDLE;
+      ra->secondaryCellGroup = secondaryCellGroup;
+      ra->crnti = rnti;
+      uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
+      ra->preambles.num_preambles = num_preamble;
+      ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
+      for (int i = 0; i < num_preamble; i++)
+        ra->preambles.preamble_list[i] = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+      LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);
+    } else { // secondaryCellGroup has been updated
+      const int UE_id = find_nr_UE_id(Mod_idP,rnti);
+      UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
       LOG_I(PHY,"Modified UE_id %d/%x with secondaryCellGroup\n",UE_id,rnti);
     }
   }

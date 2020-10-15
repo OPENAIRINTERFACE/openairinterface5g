@@ -57,7 +57,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 			     uint8_t symbol) {
   
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_COMMON_channels_t *cc = &gNB->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
@@ -134,7 +134,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(module_id_t module_idP) {
 
 	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_COMMON_channels_t *cc = &gNB->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
@@ -169,7 +169,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
 
 	for(int i = 0;i < 64;i++) {
     if ((L_ssb >> (63-i)) & 0x01) { // only if the bit of L_ssb at current ssb index is 1
-    gNB->SSB_list[num_active_ssb].ssb_index = i; 
+      cc->ssb_index[num_active_ssb] = i; 
 		  num_active_ssb++;
     }
 	}	
@@ -421,38 +421,31 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
   NR_SearchSpace_t *ss;
-  int UE_id = 0;
   // ra_rnti from 5.1.3 in 38.321
   uint16_t ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
 
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
-  NR_UE_list_t *UE_list = &nr_mac->UE_list;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-	NR_RA_t *ra = &cc->ra[0];
-
+  NR_RA_t *ra = &cc->ra[0];
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
   int pr_found=0;
-  for (int i=0;i<UE_list->preambles[UE_id].num_preambles;i++) {
-    if (preamble_index == UE_list->preambles[UE_id].preamble_list[i]) {
+  for (int i = 0; i < ra->preambles.num_preambles; i++) {
+    if (preamble_index == ra->preambles.preamble_list[i]) {
       pr_found=1;
       break;
     }
   }
-  if (pr_found)
-    UE_list->fiveG_connected[UE_id] = false;
-  else {
-    LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated for UE_id %d\n",
-          module_idP, preamble_index, UE_id);
+  if (!pr_found) {
+    LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
+          module_idP, preamble_index);
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
   }
-
   // This should be handled differently when we use the initialBWP for RA
   ra->bwp_id=1;
-  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+  NR_BWP_Downlink_t *bwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
@@ -460,14 +453,12 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   if (ra->state == RA_IDLE) {
 
-    uint8_t index = ssb_index_from_prach(module_idP,
-					 frameP,
-					 slotP,
-					 preamble_index,
-					 freq_index,
-					 symbol);
-
-    NR_SSB_list_t *SSB_list = &nr_mac->SSB_list[index];
+    uint8_t beam_index = ssb_index_from_prach(module_idP,
+		                              frameP,
+					      slotP,
+					      preamble_index,
+					      freq_index,
+					      symbol);
     int loop = 0;
     LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;
@@ -489,13 +480,13 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                                               &monitoring_slot_period,
                                               &monitoring_offset);
 
-    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,index,cc->num_active_ssb);
+    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,beam_index,cc->num_active_ssb);
 
     ra->Msg2_frame = msg2_frame;
     ra->Msg2_slot = msg2_slot;
 
     LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-
+    if(pr_found)
     do {
       ra->rnti = (taus() % 65518) + 1;
       loop++;
@@ -508,21 +499,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
-    UE_list->tc_rnti[UE_id] = ra->rnti;
-    UE_list->UE_ssb_index[UE_id] = SSB_list->ssb_index;
-    SSB_list->SSB_UE_list[UE_id].tc_rnti = ra->rnti;
-    SSB_list->SSB_UE_list[UE_id].active = true;
-    SSB_list->num_UEs += 1;
+    ra->beam_id = beam_index;
 
-    LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB index %u UE_id %u\n",
+    LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB index %u\n",
       module_idP,
       CC_id,
       frameP,
       ra->Msg2_frame,
       ra->Msg2_slot,
       ra->RA_rnti,
-			SSB_list->ssb_index,
-			UE_id);
+      cc->ssb_index[beam_index]);
 
     return;
   }
@@ -618,7 +604,6 @@ void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frame
       ul_req->pdus_list[ul_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
       ul_req->pdus_list[ul_req->n_pdus].pusch_pdu = ra->pusch_pdu;
       ul_req->n_pdus+=1;
-      ra->state = RA_IDLE;
     }
   }
 }
@@ -629,8 +614,6 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_COMMON_channels_t                            *cc = &mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t                   *scc = cc->ServingCellConfigCommon;
   NR_RA_t                                         *ra = &cc->ra[0];
-  NR_UE_list_t                               *UE_list = &mac->UE_list;
-  int UE_id = 0;
 
   if (ra->state == RA_IDLE) {
     LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
@@ -642,14 +625,13 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &ra->pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
 
-
-  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n", UE_id);
-
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-  AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-    "downlinkBWP_ToAddModList has %d BWP!\n", secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
-  LOG_I(MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
+  AssertFatal(ra->secondaryCellGroup,
+              "no secondaryCellGroup for RNTI %04x\n",
+              ra->crnti);
+  AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+    "downlinkBWP_ToAddModList has %d BWP!\n", ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+  NR_BWP_Uplink_t *ubwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+  LOG_D(MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
     frameP,
     slotP,
     ra->Msg3_frame,
@@ -738,17 +720,14 @@ void nr_generate_Msg2(module_id_t module_idP,
                       sub_frame_t slotP,
 											NR_RA_t *ra){
 
-  int UE_id = 0, dci_formats[2], rnti_types[2], mcsIndex;
+  int dci_formats[2], rnti_types[2], mcsIndex;
   int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
-//  NR_RA_t                               *ra = &cc->ra[0];
-  NR_UE_list_t                     *UE_list = &nr_mac->UE_list;
   NR_SearchSpace_t *ss = ra->ra_ss;
 
   uint16_t RA_rnti = ra->RA_rnti;
   long locationAndBandwidth;
-  // uint8_t *vrb_map = cc[CC_id].vrb_map, CC_id;
 
   // check if UE is doing RA on CORESET0 , InitialBWP or configured BWP from SCD
   // get the BW of the PDCCH for PDCCH size and RAR PDSCH size
@@ -793,11 +772,13 @@ void nr_generate_Msg2(module_id_t module_idP,
     // This code from this point on will not work on initialBWP or CORESET0
     AssertFatal(ra->bwp_id>0,"cannot work on initialBWP for now\n");
 
-    NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-    AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-      "downlinkBWP_ToAddModList has %d BWP!\n", secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-    NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-    NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+    AssertFatal(ra->secondaryCellGroup,
+                "no secondaryCellGroup for RNTI %04x\n",
+                ra->crnti);
+    AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+      "downlinkBWP_ToAddModList has %d BWP!\n", ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+    NR_BWP_Downlink_t *bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+    NR_BWP_Uplink_t *ubwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
     LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
 
@@ -877,7 +858,30 @@ void nr_generate_Msg2(module_id_t module_idP,
 	  dci_pdu_rel15[0].mcs,
 	  dci_pdu_rel15[0].tb_scaling);
 
-    nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, RA_rnti, 0, ss, scc, bwp);
+    uint8_t nr_of_candidates, aggregation_level;
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0 /* common */);
+    int CCEIndex = allocate_nr_CCEs(
+        nr_mac,
+        bwp,
+        coreset,
+        aggregation_level,
+        0, /* n_RNTI 0: common search space */
+        0); // m
+
+    if (CCEIndex < 0) {
+      LOG_E(MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      return;
+    }
+    nr_configure_pdcch(nr_mac,
+                       pdcch_pdu_rel15,
+                       RA_rnti,
+                       ss,
+                       coreset,
+                       scc,
+                       bwp,
+                       aggregation_level,
+                       CCEIndex);
 
     LOG_I(MAC, "Frame %d: Subframe %d : Adding common DL DCI for RA_RNTI %x\n", frameP, slotP, RA_rnti);
 
@@ -892,7 +896,7 @@ void nr_generate_Msg2(module_id_t module_idP,
       pdcch_pdu_rel15->StartSymbolIndex,
       pdcch_pdu_rel15->DurationSymbols);
 
-    fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types,dci10_bw,ra->bwp_id);
+    fill_dci_pdu_rel15(scc,ra->secondaryCellGroup,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types,dci10_bw,ra->bwp_id);
 
     dl_req->nPDUs+=2;
 
@@ -915,6 +919,11 @@ void nr_generate_Msg2(module_id_t module_idP,
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
     memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length);
+
+    /* mark the corresponding RBs as used */
+    uint8_t *vrb_map = cc[CC_id].vrb_map;
+    for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
+      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
   }
 }
 
