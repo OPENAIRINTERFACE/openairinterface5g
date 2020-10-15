@@ -1188,6 +1188,14 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Trans
   NR_UL_DCCH_Message_t  ul_dcch_msg;
   NR_RRCSetupComplete_t *RrcSetupComplete;
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+
+  uint8_t buf[6];
+  uint8_t rv[6];  
+  int i;
+  for (i=0; i<6; i++) {
+      rv[i]=taus()&0xff;
+  }
+
   ul_dcch_msg.message.present = NR_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1 = CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
   ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete;
@@ -1198,6 +1206,16 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Trans
     sizeof(*RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->nonCriticalExtension));
   RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->selectedPLMN_Identity = sel_plmn_id;
   RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->registeredAMF = NULL;
+
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size = 6;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf = buf;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[0] = rv[0];
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[1] = rv[1];
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[2] = rv[2];
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[3] = rv[3];
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[4] = rv[4];
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[5] = rv[5];
+
  memset(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,0,sizeof(OCTET_STRING_t));
  OCTET_STRING_fromBuf(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,dedicatedInfoNAS,dedicatedInfoNASLength);
 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
