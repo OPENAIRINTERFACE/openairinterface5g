@@ -432,27 +432,17 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 void nr_fill_nfapi_dl_pdu(int Mod_idP,
-                          int UE_id,
-                          int bwp_id,
-                          NR_SearchSpace_t *ss,
-                          NR_ControlResourceSet_t *coreset,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
+                          rnti_t rnti,
+                          NR_CellGroupConfig_t *secondaryCellGroup,
+                          NR_UE_sched_ctrl_t *sched_ctrl,
                           NR_sched_pucch *pucch_sched,
-                          int nrOfLayers,
-                          uint8_t mcs,
-                          uint16_t rbSize,
-                          uint16_t rbStart,
-                          uint8_t numDmrsCdmGrpsNoData,
                           nfapi_nr_dmrs_type_e dmrsConfigType,
-                          uint8_t table_idx,
                           uint16_t R,
                           uint8_t Qm,
                           uint32_t TBS,
-                          int time_domain_assignment,
                           int StartSymbolIndex,
                           int NrOfSymbols,
-                          uint8_t aggregation_level,
-                          int CCEIndex,
                           int harq_pid,
                           int ndi,
                           int round) {
@@ -460,9 +450,10 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  const int bwp_id = sched_ctrl->active_bwp->bwp_Id;
+  const int nrOfLayers = 1;
+  const int mcs = sched_ctrl->mcs;
 
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
@@ -487,7 +478,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
 
 
   pdsch_pdu_rel15->pduBitmap = 0;
-  pdsch_pdu_rel15->rnti = UE_info->rnti[UE_id];
+  pdsch_pdu_rel15->rnti = rnti;
   pdsch_pdu_rel15->pduIndex = nr_mac->pdu_index[0]++;
 
   // BWP
@@ -512,16 +503,16 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
-  pdsch_pdu_rel15->numDmrsCdmGrpsNoData = numDmrsCdmGrpsNoData;
+  pdsch_pdu_rel15->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
   pdsch_pdu_rel15->dmrsPorts = 1;
   pdsch_pdu_rel15->resourceAlloc = 1;
-  pdsch_pdu_rel15->rbStart = rbStart;
-  pdsch_pdu_rel15->rbSize = rbSize;
+  pdsch_pdu_rel15->rbStart = sched_ctrl->rbStart;
+  pdsch_pdu_rel15->rbSize = sched_ctrl->rbSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
   pdsch_pdu_rel15->targetCodeRate[0] = R;
   pdsch_pdu_rel15->qamModOrder[0] = Qm;
   pdsch_pdu_rel15->TBSize[0] = TBS;
-  pdsch_pdu_rel15->mcsTable[0] = table_idx;
+  pdsch_pdu_rel15->mcsTable[0] = sched_ctrl->mcsTableIdx;
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
 
@@ -549,8 +540,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
                      275));
   else
     AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
-  // time domain assignment
-  dci_pdu_rel15[0].time_domain_assignment.val = time_domain_assignment; // row index used here instead of SLIV;
+  // time domain assignment: row index used instead of SLIV
+  dci_pdu_rel15[0].time_domain_assignment.val = sched_ctrl->time_domain_allocation;
   // mcs and rv
   dci_pdu_rel15[0].mcs = mcs;
   dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
@@ -561,7 +552,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
 
   // TPC for PUCCH
-  dci_pdu_rel15[0].tpc = UE_info->UE_sched_ctrl[UE_id].tpc1; // table 7.2.1-1 in 38.213
+  dci_pdu_rel15[0].tpc = sched_ctrl->tpc1; // table 7.2.1-1 in 38.213
   // PUCCH resource indicator
   dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
   // PDSCH to HARQ TI
@@ -586,18 +577,18 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
 
   nr_configure_pdcch(nr_mac,
                      pdcch_pdu_rel15,
-                     UE_info->rnti[UE_id],
-                     ss,
-                     coreset,
+                     rnti,
+                     sched_ctrl->search_space,
+                     sched_ctrl->coreset,
                      scc,
                      bwp,
-                     aggregation_level,
-                     CCEIndex);
+                     sched_ctrl->aggregation_level,
+                     sched_ctrl->cce_index);
 
   int dci_formats[2];
   int rnti_types[2];
 
-  if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
+  if (sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats)
     dci_formats[0]  = NR_DL_DCI_FORMAT_1_1;
   else
     dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
