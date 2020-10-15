@@ -470,6 +470,42 @@ int8_t nr_ue_process_spcell_config(NR_SpCellConfig_t *spcell_config){
     return 0;
 }
 
+//-----------------------------------------------------------------------------
+void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
+  uint8_t i=0,rv[6];
+
+  if(NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
+    // Get RRCConnectionRequest, fill random for now
+    // Generate random byte stream for contention resolution
+    for (i=0; i<6; i++) {
+#ifdef SMBV
+      // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
+      rv[i]=i;
+#else
+      rv[i]=taus()&0xff;
+#endif
+      LOG_T(RRC,"%x.",rv[i]);
+    }
+
+    LOG_T(RRC,"\n");
+    NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
+      do_RRCSetupRequest(
+        ctxt_pP->module_id,
+        (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+        rv);
+    LOG_I(RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, gNB %d)\n",
+          ctxt_pP->module_id, ctxt_pP->frame, NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
+
+    for (i=0; i<NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
+      LOG_T(RRC,"%x.",NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
+    }
+
+    LOG_T(RRC,"\n");
+    /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
+    UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
+  }
+}
+
 /*brief decode BCCH-BCH (MIB) message*/
 int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     const module_id_t module_id,
@@ -518,14 +554,14 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     return 0;
 }
 
-const char siWindowLength[9][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
-const char siWindowLength_int[8] = {1,2,5,10,15,20,40,80};
+static const char siWindowLength[10][5] = {"5s", "10s", "20s", "40s", "80s", "160s", "320s", "640s", "1280s","ERR"};// {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
+static const char siWindowLength_int[9] = {5,10,20,40,80,160,320,640,1280};//{1,2,5,10,15,20,40,80};
 
-const char SIBType[12][6] = {"SIB3","SIB4","SIB5","SIB6","SIB7","SIB8","SIB9","SIB10","SIB11","SIB12","SIB13","Spare"};
-const char SIBPeriod[8][6]= {"rf8","rf16","rf32","rf64","rf128","rf256","rf512","ERR"};
-int siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
+static const char SIBType[12][6] = {"SIB3","SIB4","SIB5","SIB6","SIB7","SIB8","SIB9","SIB10","SIB11","SIB12","SIB13","Spare"};
+static const char SIBPeriod[8][6]= {"rf8","rf16","rf32","rf64","rf128","rf256","rf512","ERR"};
+static int siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
 
-const char *SIBreserved( long value ) {
+const char *nr_SIBreserved( long value ) {
   if (value < 0 || value > 1)
     return "ERR";
 
@@ -534,26 +570,434 @@ const char *SIBreserved( long value ) {
 
   return "reserved";
 }
-const char *SIBbarred( long value ) {
-  if (value < 0 || value > 1)
-    return "ERR";
 
-  if (value)
-    return "notBarred";
+void nr_dump_sib2( NR_SIB2_t *sib2 ){
+//cellReselectionInfoCommon
+  //nrofSS_BlocksToAverage
+  if( sib2->cellReselectionInfoCommon.nrofSS_BlocksToAverage)
+    LOG_I( RRC, "cellReselectionInfoCommon.nrofSS_BlocksToAverage : %ld\n",
+           *sib2->cellReselectionInfoCommon.nrofSS_BlocksToAverage );
+  else
+    LOG_I( RRC, "cellReselectionInfoCommon->nrofSS_BlocksToAverage : not defined\n" );
 
-  return "barred";
+  //absThreshSS_BlocksConsolidation
+  if( sib2->cellReselectionInfoCommon.absThreshSS_BlocksConsolidation){
+    LOG_I( RRC, "absThreshSS_BlocksConsolidation.thresholdRSRP : %ld\n",
+           *sib2->cellReselectionInfoCommon.absThreshSS_BlocksConsolidation->thresholdRSRP );
+    LOG_I( RRC, "absThreshSS_BlocksConsolidation.thresholdRSRQ : %ld\n",
+           *sib2->cellReselectionInfoCommon.absThreshSS_BlocksConsolidation->thresholdRSRQ );
+    LOG_I( RRC, "absThreshSS_BlocksConsolidation.thresholdSINR : %ld\n",
+           *sib2->cellReselectionInfoCommon.absThreshSS_BlocksConsolidation->thresholdSINR );
+  } else
+    LOG_I( RRC, "cellReselectionInfoCommon->absThreshSS_BlocksConsolidation : not defined\n" );
+
+  //q_Hyst
+  LOG_I( RRC, "cellReselectionInfoCommon.q_Hyst : %ld\n",
+           sib2->cellReselectionInfoCommon.q_Hyst );
+
+  //speedStateReselectionPars
+  if( sib2->cellReselectionInfoCommon.speedStateReselectionPars){
+    LOG_I( RRC, "speedStateReselectionPars->mobilityStateParameters.t_Evaluation : %ld\n",
+           sib2->cellReselectionInfoCommon.speedStateReselectionPars->mobilityStateParameters.t_Evaluation);
+    LOG_I( RRC, "speedStateReselectionPars->mobilityStateParameters.t_HystNormal  : %ld\n",
+           sib2->cellReselectionInfoCommon.speedStateReselectionPars->mobilityStateParameters.t_HystNormal);
+    LOG_I( RRC, "speedStateReselectionPars->mobilityStateParameters.n_CellChangeMedium : %ld\n",
+           sib2->cellReselectionInfoCommon.speedStateReselectionPars->mobilityStateParameters.n_CellChangeMedium);
+    LOG_I( RRC, "speedStateReselectionPars->mobilityStateParameters.n_CellChangeHigh : %ld\n",
+           sib2->cellReselectionInfoCommon.speedStateReselectionPars->mobilityStateParameters.n_CellChangeHigh);
+    LOG_I( RRC, "speedStateReselectionPars->q_HystSF.sf_Medium : %ld\n",
+           sib2->cellReselectionInfoCommon.speedStateReselectionPars->q_HystSF.sf_Medium);
+    LOG_I( RRC, "speedStateReselectionPars->q_HystSF.sf_High : %ld\n",
+           sib2->cellReselectionInfoCommon.speedStateReselectionPars->q_HystSF.sf_High);
+  } else
+    LOG_I( RRC, "cellReselectionInfoCommon->speedStateReselectionPars : not defined\n" );
+
+//cellReselectionServingFreqInfo
+  if( sib2->cellReselectionServingFreqInfo.s_NonIntraSearchP)
+    LOG_I( RRC, "cellReselectionServingFreqInfo.s_NonIntraSearchP : %ld\n",
+           *sib2->cellReselectionServingFreqInfo.s_NonIntraSearchP );
+  else
+    LOG_I( RRC, "cellReselectionServingFreqInfo->s_NonIntraSearchP : not defined\n" );
+ 
+  if( sib2->cellReselectionServingFreqInfo.s_NonIntraSearchQ)
+    LOG_I( RRC, "cellReselectionServingFreqInfo.s_NonIntraSearchQ : %ld\n",
+           *sib2->cellReselectionServingFreqInfo.s_NonIntraSearchQ );
+  else
+    LOG_I( RRC, "cellReselectionServingFreqInfo->s_NonIntraSearchQ : not defined\n" );
+  
+  LOG_I( RRC, "cellReselectionServingFreqInfo.threshServingLowP : %ld\n",
+         sib2->cellReselectionServingFreqInfo.threshServingLowP );
+  
+  if( sib2->cellReselectionServingFreqInfo.threshServingLowQ)
+    LOG_I( RRC, "cellReselectionServingFreqInfo.threshServingLowQ : %ld\n",
+           *sib2->cellReselectionServingFreqInfo.threshServingLowQ );
+  else
+    LOG_I( RRC, "cellReselectionServingFreqInfo->threshServingLowQ : not defined\n" );
+  
+  LOG_I( RRC, "cellReselectionServingFreqInfo.cellReselectionPriority : %ld\n",
+         sib2->cellReselectionServingFreqInfo.cellReselectionPriority );
+  if( sib2->cellReselectionServingFreqInfo.cellReselectionSubPriority)
+    LOG_I( RRC, "cellReselectionServingFreqInfo.cellReselectionSubPriority : %ld\n",
+           *sib2->cellReselectionServingFreqInfo.cellReselectionSubPriority );
+  else
+    LOG_I( RRC, "cellReselectionServingFreqInfo->cellReselectionSubPriority : not defined\n" );
+
+//intraFreqCellReselectionInfo
+  LOG_I( RRC, "intraFreqCellReselectionInfo.q_RxLevMin : %ld\n",
+         sib2->intraFreqCellReselectionInfo.q_RxLevMin );
+  
+  if( sib2->intraFreqCellReselectionInfo.q_RxLevMinSUL)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.q_RxLevMinSUL : %ld\n",
+           *sib2->intraFreqCellReselectionInfo.q_RxLevMinSUL );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->q_RxLevMinSUL : not defined\n" );
+  
+  if( sib2->intraFreqCellReselectionInfo.q_QualMin)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.q_QualMin : %ld\n",
+           *sib2->intraFreqCellReselectionInfo.q_QualMin );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->q_QualMin : not defined\n" );
+  
+  LOG_I( RRC, "intraFreqCellReselectionInfo.s_IntraSearchP : %ld\n",
+         sib2->intraFreqCellReselectionInfo.s_IntraSearchP );
+  
+  if( sib2->intraFreqCellReselectionInfo.s_IntraSearchQ)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.s_IntraSearchQ : %ld\n",
+           *sib2->intraFreqCellReselectionInfo.s_IntraSearchQ );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->s_IntraSearchQ : not defined\n" );
+  
+  LOG_I( RRC, "intraFreqCellReselectionInfo.t_ReselectionNR : %ld\n",
+         sib2->intraFreqCellReselectionInfo.t_ReselectionNR );
+
+  if( sib2->intraFreqCellReselectionInfo.frequencyBandList)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.frequencyBandList : %p\n",
+           sib2->intraFreqCellReselectionInfo.frequencyBandList );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->frequencyBandList : not defined\n" );
+ 
+  if( sib2->intraFreqCellReselectionInfo.frequencyBandListSUL)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.frequencyBandListSUL : %p\n",
+           sib2->intraFreqCellReselectionInfo.frequencyBandListSUL );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->frequencyBandListSUL : not defined\n" );
+  
+  if( sib2->intraFreqCellReselectionInfo.p_Max)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.p_Max : %ld\n",
+           *sib2->intraFreqCellReselectionInfo.p_Max );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->p_Max : not defined\n" );
+ 
+  if( sib2->intraFreqCellReselectionInfo.smtc)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.smtc : %p\n",
+           sib2->intraFreqCellReselectionInfo.smtc );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->smtc : not defined\n" );
+ 
+  if( sib2->intraFreqCellReselectionInfo.ss_RSSI_Measurement)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.ss_RSSI_Measurement : %p\n",
+           sib2->intraFreqCellReselectionInfo.ss_RSSI_Measurement );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->ss_RSSI_Measurement : not defined\n" );
+
+  if( sib2->intraFreqCellReselectionInfo.ssb_ToMeasure)
+    LOG_I( RRC, "intraFreqCellReselectionInfo.ssb_ToMeasure : %p\n",
+           sib2->intraFreqCellReselectionInfo.ssb_ToMeasure );
+  else
+    LOG_I( RRC, "intraFreqCellReselectionInfo->ssb_ToMeasure : not defined\n" );
+  
+  LOG_I( RRC, "intraFreqCellReselectionInfo.deriveSSB_IndexFromCell : %d\n",
+         sib2->intraFreqCellReselectionInfo.deriveSSB_IndexFromCell );
+
 }
-const char *SIBallowed( long value ) {
-  if (value < 0 || value > 1)
-    return "ERR";
 
-  if (value)
-    return "notAllowed";
+void nr_dump_sib3( NR_SIB3_t *sib3 ) {
+//intraFreqNeighCellList
+  if( sib3->intraFreqNeighCellList){
+    LOG_I( RRC, "intraFreqNeighCellList : %p\n",
+           sib3->intraFreqNeighCellList );    
+    const int n = sib3->intraFreqNeighCellList->list.count;
+    for (int i = 0; i < n; ++i){
+      LOG_I( RRC, "intraFreqNeighCellList->physCellId : %ld\n",
+             sib3->intraFreqNeighCellList->list.array[i]->physCellId );
+      LOG_I( RRC, "intraFreqNeighCellList->q_OffsetCell : %ld\n",
+             sib3->intraFreqNeighCellList->list.array[i]->q_OffsetCell );
 
-  return "allowed";
+      if( sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCell)
+        LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCell : %ld\n",
+               *sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCell );
+      else
+        LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCell : not defined\n" );
+      
+      if( sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCellSUL)
+        LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCellSUL : %ld\n",
+               *sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCellSUL );
+      else
+        LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCellSUL : not defined\n" );
+      
+      if( sib3->intraFreqNeighCellList->list.array[i]->q_QualMinOffsetCell)
+        LOG_I( RRC, "intraFreqNeighCellList->q_QualMinOffsetCell : %ld\n",
+               *sib3->intraFreqNeighCellList->list.array[i]->q_QualMinOffsetCell );
+      else
+        LOG_I( RRC, "intraFreqNeighCellList->q_QualMinOffsetCell : not defined\n" );
+    }
+  } else{
+    LOG_I( RRC, "intraFreqCellReselectionInfo : not defined\n" );
+  }
+
+//intraFreqBlackCellList
+  if( sib3->intraFreqBlackCellList){
+    LOG_I( RRC, "intraFreqBlackCellList : %p\n",
+           sib3->intraFreqBlackCellList );    
+    const int n = sib3->intraFreqBlackCellList->list.count;
+    for (int i = 0; i < n; ++i){
+      LOG_I( RRC, "intraFreqBlackCellList->start : %ld\n",
+             sib3->intraFreqBlackCellList->list.array[i]->start );
+
+      if( sib3->intraFreqBlackCellList->list.array[i]->range)
+        LOG_I( RRC, "intraFreqBlackCellList->range : %ld\n",
+             *sib3->intraFreqBlackCellList->list.array[i]->range );
+      else
+        LOG_I( RRC, "intraFreqBlackCellList->range : not defined\n" );
+    }
+   } else{
+    LOG_I( RRC, "intraFreqBlackCellList : not defined\n" );
+   }
+
+//lateNonCriticalExtension
+  if( sib3->lateNonCriticalExtension)
+    LOG_I( RRC, "lateNonCriticalExtension : %p\n",
+           sib3->lateNonCriticalExtension );
+  else
+    LOG_I( RRC, "lateNonCriticalExtension : not defined\n" );
 }
 
 int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
+  NR_SystemInformation_t **si = &NR_UE_rrc_inst[ctxt_pP->module_id].si[gNB_index];
+  int new_sib = 0;
+  NR_SIB1_t *sib1 = NR_UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index];
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_IN );
+
+  // Dump contents
+  if ((*si)->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_systemInformation ||
+      (*si)->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_criticalExtensionsFuture_r16) {
+    LOG_D( RRC, "[UE] (*si)->criticalExtensions.choice.NR_SystemInformation_t->sib_TypeAndInfo.list.count %d\n",
+           (*si)->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count );
+  } else {
+    LOG_D( RRC, "[UE] Unknown criticalExtension version (not Rel16)\n" );
+    return -1;
+  }
+
+  for (int i=0; i<(*si)->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count; i++) {
+    SystemInformation_IEs__sib_TypeAndInfo__Member *typeandinfo;
+    typeandinfo = (*si)->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.array[i];
+
+    switch(typeandinfo->present) {
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib2:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&2) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=2;
+          //new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib2[gNB_index], &typeandinfo->choice.sib2, sizeof(NR_SIB2_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB2 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          nr_dump_sib2( NR_UE_rrc_inst[ctxt_pP->module_id].sib2[gNB_index] );
+          LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB2 params  gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+                 ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
+          //TODO rrc_mac_config_req_ue
+
+          // After SI is received, prepare RRCConnectionRequest
+          if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
+            if (AMF_MODE_ENABLED) {
+              rrc_ue_generate_RRCSetupRequest( ctxt_pP, gNB_index );
+            }
+
+          if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_IDLE) {
+            LOG_I( RRC, "[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n", ctxt_pP->module_id );
+            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_SI_RECEIVED;
+#if ENABLE_RAL
+ /* TODO          {
+              MessageDef                            *message_ral_p = NULL;
+              rrc_ral_system_information_ind_t       ral_si_ind;
+              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, RRC_RAL_SYSTEM_INFORMATION_IND);
+              memset(&ral_si_ind, 0, sizeof(rrc_ral_system_information_ind_t));
+              ral_si_ind.plmn_id.MCCdigit2 = '0';
+              ral_si_ind.plmn_id.MCCdigit1 = '2';
+              ral_si_ind.plmn_id.MNCdigit3 = '0';
+              ral_si_ind.plmn_id.MCCdigit3 = '8';
+              ral_si_ind.plmn_id.MNCdigit2 = '9';
+              ral_si_ind.plmn_id.MNCdigit1 = '9';
+              ral_si_ind.cell_id        = 1;
+              ral_si_ind.dbm            = 0;
+              //ral_si_ind.dbm            = fifo_dump_emos_UE.PHY_measurements->rx_rssi_dBm[gNB_index];
+              // TO DO
+              ral_si_ind.sinr           = 0;
+              //ral_si_ind.sinr           = fifo_dump_emos_UE.PHY_measurements->subband_cqi_dB[gNB_index][phy_vars_ue->lte_frame_parms.nb_antennas_rx][0];
+              // TO DO
+              ral_si_ind.link_data_rate = 0;
+              memcpy (&message_ral_p->ittiMsg, (void *) &ral_si_ind, sizeof(rrc_ral_system_information_ind_t));
+#warning "ue_mod_idP ? for instance ?"
+              itti_send_msg_to_task (TASK_RAL_UE, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_ral_p);
+            }*/
+#endif
+          }
+        }
+
+        break; // case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&4) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=4;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib3[gNB_index], &typeandinfo->choice.sib3, sizeof(LTE_SystemInformationBlockType3_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB3 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          nr_dump_sib3( NR_UE_rrc_inst[ctxt_pP->module_id].sib3[gNB_index] );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib4:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&8) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=8;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib4[gNB_index], typeandinfo->choice.sib4, sizeof(NR_SIB4_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB4 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib5:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&16) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=16;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib5[gNB_index], typeandinfo->choice.sib5, sizeof(NR_SIB5_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB5 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          //dump_sib5(NR_UE_rrc_inst[ctxt_pP->module_id].sib5[gNB_index]);
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib6:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&32) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=32;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib6[gNB_index], typeandinfo->choice.sib6, sizeof(NR_SIB6_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib7:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&64) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=64;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib7[gNB_index], typeandinfo->choice.sib7, sizeof(NR_SIB7_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB7 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib8:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&128) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=128;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib8[gNB_index], typeandinfo->choice.sib8, sizeof(NR_SIB8_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB8 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib9:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&256) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=256;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib9[gNB_index], typeandinfo->choice.sib9, sizeof(NR_SIB9_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB9 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib10_v1610:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&512) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=512;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib10[gNB_index], typeandinfo->choice.sib10_v1610, sizeof(NR_SIB10_r16_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB10 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib11_v1610:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&1024) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=1024;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib11[gNB_index], typeandinfo->choice.sib11_v1610, sizeof(NR_SIB11_r16_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB11 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib12_v1610:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&2048) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=2048;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib12[gNB_index], typeandinfo->choice.sib12_v1610, sizeof(NR_SIB12_r16_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB12 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib13_v1610:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&4096) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=4096;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib13[gNB_index], typeandinfo->choice.sib13_v1610, sizeof(NR_SIB13_r16_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          //dump_sib13( NR_UE_rrc_inst[ctxt_pP->module_id].sib13[gNB_index] );
+          // adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
+          LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+                 ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
+          // TODO rrc_mac_config_req_ue
+        }
+        break;
+
+      case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib14_v1610:
+        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&8192) == 0) {
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=8192;
+          new_sib=1;
+          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib12[gNB_index], typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB14 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        }
+      
+      break;
+
+      default:
+        break;
+    }
+    if (new_sib == 1) {
+      NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt++;
+  
+      if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
+        nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
+  
+      LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
+            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
+            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt,
+            sib1->si_SchedulingInfo->schedulingInfoList.list.count);
+    }
+  }
+
+  //if (new_sib == 1) {
+  //  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt++;
+
+  //  if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->schedulingInfoList.list.count)
+  //    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
+
+  //  LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
+  //        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
+  //        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt,
+  //        sib1->schedulingInfoList.list.count);
+  //}
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_OUT);
   return 0;
 }
 
@@ -597,7 +1041,7 @@ int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_inde
   LOG_I( RRC, "TAC 0x%04x\n",
          ((sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->size == 2)?((sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->buf[0]<<8) + sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->buf[1]):0));
   LOG_I( RRC, "cellReservedForOperatorUse                 : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse,
-         SIBreserved(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse) );
+         nr_SIBreserved(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse) );
 
   LOG_I( RRC, "cellAccessRelatedInfo.cellIdentity         : raw:%"PRIu32" decoded:%02x.%02x.%02x.%02x\n",
          BIT_STRING_to_uint32( &sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity ),
@@ -649,16 +1093,15 @@ int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_inde
     return -1;
   }
 
-  //if (sib1->tdd_Config) {
-  //  LOG_I( RRC, "TDD subframeAssignment                     : %ld\n", sib1->tdd_Config->subframeAssignment );
-  //  LOG_I( RRC, "TDD specialSubframePatterns                : %ld\n", sib1->tdd_Config->specialSubframePatterns );
-  //}
+  if (sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon) {
+      //TODO
+  }
 
   LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1->si_SchedulingInfo->si_WindowLength,8)] );
   //LOG_I( RRC, "systemInfoValueTag                         : %ld\n", sib1->systemInfoValueTag );
   NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIperiod     = siPeriod_int[sib1->si_SchedulingInfo->schedulingInfoList.list.array[0]->si_Periodicity];
   NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIwindowsize = siWindowLength_int[sib1->si_SchedulingInfo->si_WindowLength];
-  LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+  LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
   //rrc_mac_config_req_ue
   LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
@@ -1091,7 +1534,7 @@ nr_rrc_ue_process_securityModeCommand(
   NR_UL_DCCH_Message_t ul_dcch_msg;
   uint8_t buffer[200];
   int i, securityMode;
-  LOG_I(RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), Processing securityModeCommand (eNB %d)\n",
+  LOG_I(RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), Processing securityModeCommand (gNB %d)\n",
         ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index);
 
   switch (securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm) {
@@ -1204,7 +1647,7 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.present = NR_SecurityModeComplete__criticalExtensions_PR_securityModeComplete;
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
-    LOG_I(RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d), rrc_TransactionIdentifier: %ld\n",
+    LOG_I(RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (gNB %d), rrc_TransactionIdentifier: %ld\n",
           ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index, securityModeCommand->rrc_TransactionIdentifier);
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
                                      NULL,
@@ -1238,42 +1681,6 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
 }
 
 //-----------------------------------------------------------------------------
-void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
-  uint8_t i=0,rv[6];
-
-  if(NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
-    // Get RRCConnectionRequest, fill random for now
-    // Generate random byte stream for contention resolution
-    for (i=0; i<6; i++) {
-#ifdef SMBV
-      // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
-      rv[i]=i;
-#else
-      rv[i]=taus()&0xff;
-#endif
-      LOG_T(RRC,"%x.",rv[i]);
-    }
-
-    LOG_T(RRC,"\n");
-    NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
-      do_RRCSetupRequest(
-        ctxt_pP->module_id,
-        (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-        rv);
-    LOG_I(RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, eNB %d)\n",
-          ctxt_pP->module_id, ctxt_pP->frame, NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
-
-    for (i=0; i<NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
-      LOG_T(RRC,"%x.",NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
-    }
-
-    LOG_T(RRC,"\n");
-    /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
-    UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
-  }
-}
-
-//-----------------------------------------------------------------------------
 int32_t
 nr_rrc_ue_establish_srb1(
     module_id_t       ue_mod_idP,
@@ -1287,13 +1694,7 @@ nr_rrc_ue_establish_srb1(
     NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
     NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
     NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
-    // copy default configuration for now
-    //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-    //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
     LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
-    //rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD, lchan_id,UNDEF_SECURITY_MODE);
-    //  rrc_rlc_config_req(ue_mod_idP+NB_eNB_INST,frameP,0,CONFIG_ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
-    //  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
     return(0);
 }
 
@@ -1311,13 +1712,7 @@ nr_rrc_ue_establish_srb2(
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
-  // copy default configuration for now
-  //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-  //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
-  //rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD, lchan_id, UNDEF_SECURITY_MODE);
-  //  rrc_rlc_config_req(ue_mod_idP+NB_eNB_INST,frameP,0,CONFIG_ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
-  //  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
   return(0);
 }
 
@@ -1651,7 +2046,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
     }
 
     NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_CONNECTED;
-    LOG_I(NR_RRC,"[UE %d] State = NR_RRC_CONNECTED (eNB %d)\n", ctxt_pP->module_id, gNB_index);
+    LOG_I(NR_RRC,"[UE %d] State = NR_RRC_CONNECTED (gNB %d)\n", ctxt_pP->module_id, gNB_index);
 }
 
 //-----------------------------------------------------------------------------
