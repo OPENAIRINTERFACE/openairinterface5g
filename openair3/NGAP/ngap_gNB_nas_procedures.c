@@ -76,8 +76,8 @@ int ngap_gNB_handle_nas_first_req(
     out = &pdu.choice.initiatingMessage->value.choice.InitialUEMessage;
 
     /* Select the AMF corresponding to the provided GUAMI. */
-    //TODO
-    /*if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_guami) {
+    //TODO have not be test. it's should be test
+    if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_guami) {
         amf_desc_p = ngap_gNB_nnsf_select_amf_by_guami(
                          instance_p,
                          ngap_nas_first_req_p->establishment_cause,
@@ -94,12 +94,12 @@ int ngap_gNB_handle_nas_first_req(
                       ngap_nas_first_req_p->ue_identity.guami.amf_set_id,
                       ngap_nas_first_req_p->ue_identity.guami.amf_pointer);
         }
-    }*/
+    }
 
     if (amf_desc_p == NULL) {
         /* Select the AMF corresponding to the provided s-TMSI. */
-        //TODO
-        /*if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_FiveG_s_tmsi) {
+        //TODO have not be test. it's should be test
+        if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_FiveG_s_tmsi) {
             amf_desc_p = ngap_gNB_nnsf_select_amf_by_amf_setid(
                              instance_p,
                              ngap_nas_first_req_p->establishment_cause,
@@ -116,14 +116,14 @@ int ngap_gNB_handle_nas_first_req(
                           instance_p->mcc[ngap_nas_first_req_p->selected_plmn_identity],
                           instance_p->mnc[ngap_nas_first_req_p->selected_plmn_identity]);
             }
-        }*/
+        }
     }
 
     if (amf_desc_p == NULL) {
         /* Select AMF based on the selected PLMN identity, received through RRC
          * Connection Setup Complete */
-        //TODO
-        /*amf_desc_p = ngap_gNB_nnsf_select_amf_by_plmn_id(
+        //TODO have not be test. it's should be test
+        amf_desc_p = ngap_gNB_nnsf_select_amf_by_plmn_id(
                          instance_p,
                          ngap_nas_first_req_p->establishment_cause,
                          ngap_nas_first_req_p->selected_plmn_identity);
@@ -136,7 +136,7 @@ int ngap_gNB_handle_nas_first_req(
                       ngap_nas_first_req_p->selected_plmn_identity,
                       instance_p->mcc[ngap_nas_first_req_p->selected_plmn_identity],
                       instance_p->mnc[ngap_nas_first_req_p->selected_plmn_identity]);
-        }*/
+        }
     }
 
     if (amf_desc_p == NULL) {
@@ -144,8 +144,8 @@ int ngap_gNB_handle_nas_first_req(
          * If no AMF corresponds to the GUAMI, the s-TMSI, or the selected PLMN
          * identity, selects the AMF with the highest capacity.
          */
-        //TODO
-        /*amf_desc_p = ngap_gNB_nnsf_select_amf(
+        //TODO have not be test. it's should be test
+        amf_desc_p = ngap_gNB_nnsf_select_amf(
                          instance_p,
                          ngap_nas_first_req_p->establishment_cause);
 
@@ -154,7 +154,7 @@ int ngap_gNB_handle_nas_first_req(
                       instance,
                       amf_desc_p->amf_name,
                       amf_desc_p->assoc_id);
-        }*/
+        }
     }
 
     if (amf_desc_p == NULL) {
