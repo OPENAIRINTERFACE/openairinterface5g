@@ -1685,6 +1685,21 @@ inline void add_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
   *cur = UE_id;
 }
 
+/*
+ * Remove a UE from NR_UE_list listP
+ */
+inline int remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
+  int *cur = &listP->head;
+  while (*cur != -1 && *cur != UE_id)
+    cur = &listP->next[*cur];
+  if (*cur == -1)
+    return 0;
+  int *next = &listP->next[*cur];
+  *cur = listP->next[*cur];
+  *next = -1;
+  return 1;
+}
+
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
@@ -1819,6 +1834,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     UE_info->num_UEs--;
     UE_info->active[UE_id] = FALSE;
     UE_info->rnti[UE_id] = 0;
+    remove_nr_ue_list(&UE_info->list, UE_id);
     free(UE_info->UE_sched_ctrl[UE_id].sched_pucch);
     free(UE_info->UE_sched_ctrl[UE_id].sched_pusch);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
