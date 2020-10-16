@@ -820,9 +820,9 @@ uint8_t do_NR_SecurityModeCommand(
   dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
     = integrityProtAlgorithm;
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-  }
+  //}
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                    NULL,

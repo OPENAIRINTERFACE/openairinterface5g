@@ -1089,9 +1089,9 @@ rrc_gNB_decode_dcch(
                       DCCH,
                       sdu_sizeP);
 
-                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+//                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
                   xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
-                }
+//                }
                 break;
 
             case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
@@ -1420,6 +1420,14 @@ rrc_gNB_generate_SecurityModeCommand(
     size);
 
   LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
+#ifdef ITTI_SIM
+			MessageDef *message_p;
+			message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+			GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+			GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+			GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+			itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
   rrc_data_req(ctxt_pP,
                DCCH,
                rrc_gNB_mui++,
@@ -1427,6 +1435,8 @@ rrc_gNB_generate_SecurityModeCommand(
                size,
                buffer,
                PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
+
 }
 
 void

@@ -1618,10 +1618,11 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   }
 
   if (securityModeCommand->criticalExtensions.present == NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand) {
-
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_t));
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.present = NR_SecurityModeComplete__criticalExtensions_PR_securityModeComplete;
-    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_IEs_t));
+	ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
     LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d), rrc_TransactionIdentifier: %ld\n",
           ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index, securityModeCommand->rrc_TransactionIdentifier);
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
@@ -1632,9 +1633,9 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                  enc_rval.failed_type->name, enc_rval.encoded);
 
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+//    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
       xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-    }
+//    }
 
     LOG_D(NR_RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
 
@@ -1643,6 +1644,19 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
     }
 
     LOG_T(NR_RRC, "\n");
+#ifdef ITTI_SIM
+		MessageDef *message_p;
+		uint8_t *message_buffer;
+		message_buffer = itti_malloc (TASK_RRC_UE_SIM,TASK_RRC_GNB_SIM,
+						   (enc_rval.encoded + 7) / 8);
+		memcpy (message_buffer, buffer, (enc_rval.encoded + 7) / 8);
+
+		message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, UE_RRC_CCCH_DATA_IND);
+		GNB_RRC_DCCH_DATA_IND (message_p).rbid  = DCCH;
+		GNB_RRC_DCCH_DATA_IND (message_p).sdu   = buffer;
+		GNB_RRC_DCCH_DATA_IND (message_p).size	= (enc_rval.encoded + 7) / 8;
+		itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+#else
     rrc_data_req (
       ctxt_pP,
       DCCH,
@@ -1651,6 +1665,7 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
       (enc_rval.encoded + 7) / 8,
       buffer,
       PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
   } else LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
                  securityModeCommand->criticalExtensions.present);
 }
@@ -2225,6 +2240,13 @@ nr_rrc_ue_decode_dcch(
             case NR_DL_DCCH_MessageType__c1_PR_spare1:
                 break;
             case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
+				LOG_I(RRC, "[UE %d] Received securityModeCommand (gNB %d)\n",
+					  ctxt_pP->module_id, gNB_indexP);
+				nr_rrc_ue_process_securityModeCommand(
+				  ctxt_pP,
+				  dl_dcch_msg->message.choice.c1->choice.securityModeCommand,
+				  gNB_indexP);
+
                 break;
         }
     }
