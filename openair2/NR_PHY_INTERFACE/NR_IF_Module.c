@@ -131,8 +131,8 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
                               ) {
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   uint8_t idx = 0;
-  uint8_t payload_size = ceil(uci_pdu->csi_part1.csi_part1_bit_len/8);
-  uint16_t *payload = calloc (1, payload_size);
+  uint8_t payload_size = ceil((double)uci_pdu->csi_part1.csi_part1_bit_len/8);
+  uint8_t *payload = calloc (payload_size, sizeof(uint8_t));
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
   NR_UE_list_t *UE_list = &(RC.nrmac[Mod_idP]->UE_list);
   long periodicity;
@@ -161,7 +161,6 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       uint8_t diff_rsrp_idx = 0;
       uint8_t cri_ssbri_bitlen = UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen.cri_ssbri_bitlen;
 
-      LOG_I(MAC,"csi_payload = %d, cri_ssbri_bitlen = %d\n",payload_size, cri_ssbri_bitlen);
     /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report
      * the number of CSI_report will depend on number of CSI resource sets that are configured in CSI-ResourceConfig RRC IE
      * From spec 38.331 from the IE CSI-ResourceConfig for SSB RSRP reporting we can configure only one resource set
@@ -187,12 +186,13 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
 	if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
 
           sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
-		  *(UE_list->csi_report_template[UE_id][csi_report_id].SSB_Index_list [cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
+		  *(UE_list->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	else
           sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
-		  *(UE_list->csi_report_template[UE_id][csi_report_id].CSI_Index_list [cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
+		  *(UE_list->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	  
         *payload >>= cri_ssbri_bitlen;
+	LOG_I(PHY,"SSB_index = %d",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
       }
 
       sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP = (*payload) & 0x7f;
@@ -203,6 +203,7 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
         *payload >>= 4;
       }
       UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
+      LOG_I(MAC,"csi_payload = %d, rsrp = %d\n",payload_size, sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
     }
   }
 
