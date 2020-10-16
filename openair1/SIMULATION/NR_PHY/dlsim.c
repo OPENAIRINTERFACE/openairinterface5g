@@ -203,7 +203,7 @@ int main(int argc, char **argv)
 
   int frame=1,slot=1;
   int frame_length_complex_samples;
-  int frame_length_complex_samples_no_prefix;
+  //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
@@ -211,12 +211,11 @@ int main(int argc, char **argv)
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int run_initial_sync=0;
-  int do_pdcch_flag=1;
   int pusch_tgt_snrx10 = 200;
   int pucch_tgt_snrx10 = 200;
   int loglvl=OAILOG_INFO;
 
-  float target_error_rate = 0.01;
+  //float target_error_rate = 0.01;
   int css_flag=0;
 
   cpuf = get_cpu_freq_GHz();
@@ -378,7 +377,7 @@ int main(int argc, char **argv)
       
     case 'I':
       run_initial_sync=1;
-      target_error_rate=0.1;
+      //target_error_rate=0.1;
       slot = 0;
       break;
 
@@ -604,7 +603,7 @@ int main(int argc, char **argv)
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -717,7 +716,7 @@ int main(int argc, char **argv)
   
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
-  NR_UE_list_t *UE_list = &RC.nrmac[0]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
   snrRun = 0;
 
@@ -778,11 +777,11 @@ int main(int argc, char **argv)
         memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
+        UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
 
 
-        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;   
-        UE_list->UE_sched_ctrl[0].current_harq_pid = harq_pid;
+        UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
+        UE_info->UE_sched_ctrl[0].current_harq_pid = harq_pid;
         gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
       
         if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&pucch_sched,&dlsch_config);
@@ -902,7 +901,6 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               do_pdcch_flag,
                                normal_txrx);
         
         //printf("dlsim round %d ends\n",round);

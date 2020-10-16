@@ -420,7 +420,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+    phy_procedures_nrUE_RX( UE, proc, 0, UE->mode);
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
@@ -839,6 +839,23 @@ void init_NR_UE(int nb_inst, char* rrc_config_path) {
     AssertFatal((rrc_inst = nr_l3_init_ue(rrc_config_path)) != NULL, "can not initialize RRC module\n");
     AssertFatal((mac_inst = nr_l2_init_ue(rrc_inst)) != NULL, "can not initialize L2 module\n");
     AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
+
+    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+    if (mac_inst->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+      pusch_TimeDomainAllocationList = mac_inst->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
+    }
+    else if (mac_inst->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+      pusch_TimeDomainAllocationList = mac_inst->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+    }
+    	
+    if (pusch_TimeDomainAllocationList) {
+      for(int i = 0; i < pusch_TimeDomainAllocationList->list.count; i++) {
+        AssertFatal(*pusch_TimeDomainAllocationList->list.array[i]->k2 >= DURATION_RX_TO_TX, 
+                    "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d)\n", 
+                    *pusch_TimeDomainAllocationList->list.array[i]->k2,
+                    DURATION_RX_TO_TX);
+      }
+    }
   }
 }
 

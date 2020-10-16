@@ -31,6 +31,7 @@
 */
 
 #include "PHY/defs_gNB.h"
+#include "common/utils/threadPool/thread-pool.h"
 
 void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch,uint8_t N_RB_UL);
 
