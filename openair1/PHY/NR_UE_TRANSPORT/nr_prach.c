@@ -48,8 +48,7 @@ extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
-extern const char *prachfmt[9];
-extern const char *prachfmt03[4];
+extern const char *prachfmt[];
 
 // Note:
 // - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt

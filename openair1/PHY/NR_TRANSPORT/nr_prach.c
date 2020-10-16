@@ -37,7 +37,7 @@
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
-extern const char *prachfmt[9];
+extern const char *prachfmt[];
 
 void init_prach_list(PHY_VARS_gNB *gNB) {
 
