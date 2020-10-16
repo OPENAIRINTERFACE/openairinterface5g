@@ -422,7 +422,7 @@ rrc_gNB_generate_RRCSetup(
     //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 #ifdef ITTI_SIM
     MessageDef *message_p;
-    message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, GNB_RRC_CCCH_DATA_IND);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
     GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
     GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
     itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
@@ -481,7 +481,11 @@ rrc_gNB_process_RRCSetupComplete(
     //     T_INT(ctxt_pP->subframe),
     //     T_INT(ctxt_pP->rnti));
 
-    rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
+    // if (AMF_MODE_ENABLED) {
+    //     rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
+    // } else {
+        rrc_gNB_generate_SecurityModeCommand(ctxt_pP, ue_context_pP);
+    // }
 }
 
 //-----------------------------------------------------------------------------
@@ -890,6 +894,7 @@ rrc_gNB_decode_dcch(
                     sdu_sizeP,
                     0,
                     0);
+    xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
 
     {
         for (i = 0; i < sdu_sizeP; i++) {
@@ -981,43 +986,50 @@ rrc_gNB_decode_dcch(
                 if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.present == 
                         NR_RRCSetupComplete__criticalExtensions_PR_rrcSetupComplete) {
                     if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
-                        rrcSetupComplete->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI_Part2) {
-                        // ng-5G-S-TMSI-Part2                  BIT STRING (SIZE (9))
+                        rrcSetupComplete->ng_5G_S_TMSI_Value != NULL) {
                         if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
-                            rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2.size != 2) {
-                            LOG_E(NR_RRC, "wrong ng_5G_S_TMSI_Part2 size, expected 2, provided %lu",
-                                        (long unsigned int)ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
-                                        criticalExtensions.choice.rrcSetupComplete->
-                                        ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2.size);
-                            return -1;
-                        }
+                            rrcSetupComplete->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI_Part2) {
+                            // ng-5G-S-TMSI-Part2                  BIT STRING (SIZE (9))
+                            if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
+                                rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2.size != 2) {
+                                LOG_E(NR_RRC, "wrong ng_5G_S_TMSI_Part2 size, expected 2, provided %lu",
+                                            (long unsigned int)ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
+                                            criticalExtensions.choice.rrcSetupComplete->
+                                            ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2.size);
+                                return -1;
+                            }
 
-                        if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 != 0) {
-                            ue_context_p->ue_context.ng_5G_S_TMSI_Part2 =
-                                            BIT_STRING_to_uint16(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
-                                                criticalExtensions.choice.rrcSetupComplete->
-                                                ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2);
-                        }
+                            if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 != 0) {
+                                ue_context_p->ue_context.ng_5G_S_TMSI_Part2 =
+                                                BIT_STRING_to_uint16(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
+                                                    criticalExtensions.choice.rrcSetupComplete->
+                                                    ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2);
+                            }
 
-                        /* TODO */
-                    } else if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
-                        rrcSetupComplete->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI) {
-                        // NG-5G-S-TMSI ::=                         BIT STRING (SIZE (48))
-                        if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
-                            rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size != 6) {
-                            LOG_E(NR_RRC, "wrong ng_5G_S_TMSI size, expected 6, provided %lu",
-                                        (long unsigned int)ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
-                                        criticalExtensions.choice.rrcSetupComplete->
-                                        ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size);
-                            return -1;
-                        }
+                            /* TODO */
+                        } else if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
+                            rrcSetupComplete->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI) {
+                            // NG-5G-S-TMSI ::=                         BIT STRING (SIZE (48))
+                            if (ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->criticalExtensions.choice.
+                                rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size != 6) {
+                                LOG_E(NR_RRC, "wrong ng_5G_S_TMSI size, expected 6, provided %lu",
+                                            (long unsigned int)ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
+                                            criticalExtensions.choice.rrcSetupComplete->
+                                            ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size);
+                                return -1;
+                            }
 
-                        uint64_t fiveg_s_TMSI = BIT_STRING_to_uint16(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
-                                criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
-                        if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
-                            ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id = fiveg_s_TMSI >> 38;
-                            ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer = (fiveg_s_TMSI >> 32) & 0x3F;
-                            ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi = (uint32_t)fiveg_s_TMSI;
+                            uint64_t fiveg_s_TMSI = BIT_STRING_to_uint64(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
+                                    criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
+                            LOG_I(NR_RRC, "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%d), amf_pointer: 0x%lX(%d), 5g TMSI: 0x%lX \n",
+                                fiveg_s_TMSI, fiveg_s_TMSI >> 38, fiveg_s_TMSI >> 38,
+                                (fiveg_s_TMSI >> 32) & 0x3F, (fiveg_s_TMSI >> 32) & 0x3F,
+                                (uint32_t)fiveg_s_TMSI);
+                            if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+                                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id = fiveg_s_TMSI >> 38;
+                                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer = (fiveg_s_TMSI >> 32) & 0x3F;
+                                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi = (uint32_t)fiveg_s_TMSI;
+                            }
                         }
                     }
 
