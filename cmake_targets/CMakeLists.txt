@@ -2145,6 +2145,11 @@ set (GTPV1U_SRC
 add_library(GTPV1U ${GTPV1U_SRC})
 add_dependencies(GTPV1U rrc_flag)
 
+add_library (GTPV1U_OCP
+${OPENAIR3_DIR}/ocp-gtp/gtp_itf.cpp
+)
+include_directories(${OPENAIR3_DIR}/ocp-gtp)
+
 #NR case
 set (NR_GTPV1U_SRC
   ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c

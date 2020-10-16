@@ -258,6 +258,12 @@ void init_gNB_proc(int inst) {
   proc->RU_mask_tx               = (1<<gNB->num_RU)-1;
   proc->RU_mask_prach            =0;
   pthread_mutex_init( &gNB->UL_INFO_mutex, NULL);
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  char ul_pool[] = "-1,-1";
+  initTpool(ul_pool, gNB->threadPool, false);
+  initNotifiedFIFO(gNB->respDecode);
+
 }
 
 /// eNB kept in function name for nffapi calls, TO FIX
