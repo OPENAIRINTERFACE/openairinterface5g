@@ -86,6 +86,9 @@
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 
+#include "BIT_STRING.h"
+#include "assertions.h"
+
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
@@ -111,6 +114,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
 
 mui_t                               rrc_gNB_mui = 0;
 
@@ -773,7 +778,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                             return -1;
                         }
 
-                        uint64_t s_tmsi_part1 = BIT_STRING_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
+                        uint64_t s_tmsi_part1 = bitStr_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
 
                         // memcpy(((uint8_t *) & random_value) + 3,
                         //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.buf,
@@ -857,6 +862,29 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
     return 0;
 }
 
+/*! \fn uint64_t bitStr_to_uint64(BIT_STRING_t *)
+ *\brief  This function extract at most a 64 bits value from a BIT_STRING_t object, the exact bits number depend on the BIT_STRING_t contents.
+ *\param[in] pointer to the BIT_STRING_t object.
+ *\return the extracted value.
+ */
+static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn) {
+  uint64_t result = 0;
+  int index;
+  int shift;
+
+  DevCheck ((asn->size > 0) && (asn->size <= 8), asn->size, 0, 0);
+
+  shift = ((asn->size - 1) * 8) - asn->bits_unused;
+  for (index = 0; index < (asn->size - 1); index++) {
+    result |= (uint64_t)asn->buf[index] << shift;
+    shift -= 8;
+  }
+
+  result |= asn->buf[index] >> asn->bits_unused;
+
+  return result;
+}
+
 //-----------------------------------------------------------------------------
 int
 rrc_gNB_decode_dcch(
@@ -894,7 +922,7 @@ rrc_gNB_decode_dcch(
                     sdu_sizeP,
                     0,
                     0);
-    xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+    // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
 
     {
         for (i = 0; i < sdu_sizeP; i++) {
@@ -1019,9 +1047,9 @@ rrc_gNB_decode_dcch(
                                 return -1;
                             }
 
-                            uint64_t fiveg_s_TMSI = BIT_STRING_to_uint64(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
+                            uint64_t fiveg_s_TMSI = bitStr_to_uint64(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
                                     criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
-                            LOG_I(NR_RRC, "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%d), amf_pointer: 0x%lX(%d), 5g TMSI: 0x%lX \n",
+                            LOG_I(NR_RRC, "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%d), amf_pointer: 0x%lX(%d), 5g TMSI: 0x%X \n",
                                 fiveg_s_TMSI, fiveg_s_TMSI >> 38, fiveg_s_TMSI >> 38,
                                 (fiveg_s_TMSI >> 32) & 0x3F, (fiveg_s_TMSI >> 32) & 0x3F,
                                 (uint32_t)fiveg_s_TMSI);
