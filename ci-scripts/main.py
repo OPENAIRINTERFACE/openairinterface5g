@@ -360,13 +360,6 @@ py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj
 if py_param_file_present == True:
 	AssignParams(py_params)
 
-#for debug
-#print(RAN.__dict__) 
-#print(CiTestObj.__dict__) 
-#print(HTML.__dict__) 
-#print(ldpc.__dict__) 
-#for debug
-
 
 #-----------------------------------------------------------
 # COTS UE instanciation
