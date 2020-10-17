@@ -416,7 +416,7 @@ pipeline {
                         stage ("Test RF simulator") {
                             steps {
                                 script {
-                                    timeout (time: 30, unit: 'MINUTES') {
+                                    timeout (time: 40, unit: 'MINUTES') {
                                         try {
                                             gitlabCommitStatus(name: "Test RF-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
