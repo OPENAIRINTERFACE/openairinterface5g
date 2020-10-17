@@ -72,13 +72,6 @@
 /*!\brief value for indicating BSR Timer is not running */
 #define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
-
-typedef enum {
-    SFN_C_MOD_2_EQ_0, 
-    SFN_C_MOD_2_EQ_1,
-    SFN_C_IMPOSSIBLE
-} SFN_C_TYPE;
-
 // LTE structure, might need to be adapted for NR
 typedef struct {
   /// buffer status for each lcgid
@@ -260,6 +253,9 @@ typedef struct {
 
   /// PHR
   uint8_t PHR_reporting_active;
+
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {
@@ -269,14 +265,6 @@ typedef enum seach_space_mask_e {
     type2_pdcch  = 0x8,
     type3_pdcch  = 0x10
 } search_space_mask_t;
-
-typedef enum subcarrier_spacing_e {
-    scs_15kHz  = 0x1,
-    scs_30kHz  = 0x2,
-    scs_60kHz  = 0x4,
-    scs_120kHz = 0x8,
-    scs_240kHz = 0x16
-} subcarrier_spacing_t;
 
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:

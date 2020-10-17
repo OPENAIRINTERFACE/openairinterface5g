@@ -112,12 +112,6 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
 
 }
 
-uint32_t get_ssb_slot(uint32_t ssb_index){
-  //  this function now only support f <= 3GHz
-  return ssb_index & 0x3 ;
-
-  //  return first_symbol(case, freq, ssb_index) / 14
-}
 
 uint8_t table_9_2_2_1[16][8]={
   {0,12,2, 0, 0,3,0,0},
@@ -287,10 +281,59 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
+  // fill in the elements in config request inside P5 message
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_id;
+
   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
-  //if(mac->mib != NULL){
+
+//#ifdef DEBUG_MIB
+  LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
+  //LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
+  LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
+  //LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
+  LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
+  LOG_I(MAC,"pdcch config sib1.controlResourceSetZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
+  LOG_I(MAC,"pdcch config sib1.searchSpaceZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
+  LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
+  LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
+  //LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+  //LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+//#endif
+
+  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config, mac->mib, extra_bits, ssb_length, ssb_index);
+
+  ssb_index = mac->type0_PDCCH_CSS_config.ssb_index; //  TODO: ssb_index should obtain from L1 in case Lssb != 64
+  mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
+  mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
+  mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
+  mac->dl_config_request.sfn = mac->type0_PDCCH_CSS_config.frame;
+  mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
+
+
+  printf("extra_bits = %i\n", extra_bits);
+
+  printf("mac->type0_PDCCH_CSS_config.num_rbs = %i\n", mac->type0_PDCCH_CSS_config.num_rbs);
+  printf("mac->type0_PDCCH_CSS_config.num_symbols = %i\n", mac->type0_PDCCH_CSS_config.num_symbols);
+  printf("mac->type0_PDCCH_CSS_config.rb_offset = %i\n", mac->type0_PDCCH_CSS_config.rb_offset);
+  printf("mac->type0_pdcch_ss_mux_pattern = %i\n", mac->type0_pdcch_ss_mux_pattern);
+  printf("mac->type0_PDCCH_CSS_config.frame = %i\n", mac->type0_PDCCH_CSS_config.frame);
+  printf("mac->type0_pdcch_ss_sfn_c = %i\n", mac->type0_pdcch_ss_sfn_c);
+  printf("mac->type0_pdcch_ss_n_c = %i\n", mac->type0_pdcch_ss_n_c);
+  printf("mac->type0_PDCCH_CSS_config.number_of_search_space_per_slot = %i\n", mac->type0_PDCCH_CSS_config.number_of_search_space_per_slot);
+  printf("mac->type0_PDCCH_CSS_config.first_symbol_index = %i\n", mac->type0_PDCCH_CSS_config.first_symbol_index);
+  printf("mac->type0_PDCCH_CSS_config.search_space_duration = %i\n", mac->type0_PDCCH_CSS_config.search_space_duration);
+  printf("mac->type0_PDCCH_CSS_config.ssb_length = %i\n", mac->type0_PDCCH_CSS_config.ssb_length);
+  printf("ssb_index = %i\n", ssb_index);
+
+  printf("mac->dl_config_request.sfn = %i\n", mac->dl_config_request.sfn);
+  printf("mac->dl_config_request.slot = %i\n", mac->dl_config_request.slot);
+
+  printf("\n\n\n");
+
+  /*//if(mac->mib != NULL){
   uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
   uint16_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)
@@ -312,19 +355,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     }
   }
 
-//#ifdef DEBUG_MIB
-  LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
-  LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
-  LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
-  LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
-  LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
-  LOG_I(MAC,"pdcch config sib1.controlResourceSetZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
-  LOG_I(MAC,"pdcch config sib1.searchSpaceZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
-  LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
-  LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-  //LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
-//#endif
+
 
   subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
   //const uint32_t scs_index = 0;
@@ -479,18 +510,18 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     mask = mask | 0x100000000000;
   }
   //LOG_I(MAC,">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
-  /*
-    mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
-    mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
 
-    //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
-    mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
-    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
-    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
-    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
-    mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
-    mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
-  */
+//    mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
+//    mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
+//
+//    //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
+//    mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+//    mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
+
 
 
   // type0-pdcch search space
@@ -637,18 +668,18 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   }
 
   AssertFatal(number_of_search_space_per_slot!=UINT_MAX,"");
-  /*
-  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
-    mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
-    mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
-    mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
-    mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
-    mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
-    mac->type0_pdcch_dci_config.duration = search_space_duration;
-    mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
-    AssertFatal(first_symbol_index!=UINT_MAX,"");
-    mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
-  */
+
+//  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
+//    mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
+//    mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
+//    mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
+//    mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
+//    mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
+//    mac->type0_pdcch_dci_config.duration = search_space_duration;
+//    mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
+//    AssertFatal(first_symbol_index!=UINT_MAX,"");
+//    mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
+
   AssertFatal(sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(n_c!=UINT_MAX,"");
   mac->type0_pdcch_ss_sfn_c = sfn_c;
@@ -659,8 +690,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   mac->phy_config.CC_id = cc_id;
 
   mac->dl_config_request.sfn = frame;
-  mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS 
-
+  mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
+*/
   //}
   return 0;
 

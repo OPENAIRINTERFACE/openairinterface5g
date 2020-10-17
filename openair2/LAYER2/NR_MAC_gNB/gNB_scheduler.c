@@ -457,6 +457,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_mib(module_idP, frame, slot);
   }
 
+  // This schedules SIB1
+  if(slot  == 15){
+    schedule_nr_sib1(module_idP, frame, slot);
+  }
+
+
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0)
     schedule_nr_prach(module_idP, frame, slot);

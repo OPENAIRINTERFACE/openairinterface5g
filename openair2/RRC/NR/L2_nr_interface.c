@@ -158,14 +158,12 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     LOG_D(RRC, "[eNB %d] mac_rrc_data_req to SRB ID=%ld\n", Mod_idP, Srb_id);
 #endif
 
-    gNB_RRC_INST *rrc;
     rrc_gNB_carrier_data_t *carrier;
     NR_BCCH_BCH_Message_t *mib;
     NR_SRB_INFO *srb_info;
     char payload_size, *payload_pP;
 
-    rrc = RC.nrrrc[Mod_idP];
-    carrier = &rrc->carrier;
+    carrier = &RC.nrrrc[Mod_idP]->carrier;
     mib = &carrier->mib;
     srb_info = &carrier->Srb0;
 
@@ -178,10 +176,13 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
         // Uncomment this function for a dynamic pdcch_ConfigSIB1.
         // TODO: Update this static value
         //channel_bandwidth_t min_channel_bw = bw_10MHz; // Must be obtained based on TS 38.101-1 Table 5.3.5-1
-        //generate_pdcch_ConfigSIB1( &mib->message.choice.mib->pdcch_ConfigSIB1,
+        //generate_pdcch_ConfigSIB1(carrier->pdcch_ConfigSIB1,
         //                          *carrier->servingcellconfigcommon->ssbSubcarrierSpacing,
-        //                          mib->message.choice.mib->subCarrierSpacingCommon,
+        //                          carrier->mib.message.choice.mib->subCarrierSpacingCommon,
         //                          min_channel_bw);
+
+        mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = carrier->pdcch_ConfigSIB1->controlResourceSetZero;
+        mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = carrier->pdcch_ConfigSIB1->searchSpaceZero;
 
         mib->message.choice.mib->systemFrameNumber.buf[0] = sfn_msb << 2;
         enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message,
@@ -202,6 +203,19 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     }
 
   /* TODO BCCH SIB1 SIBs */
+  if ((Srb_id & RAB_OFFSET ) == BCCH) {
+//      memcpy(&buffer_pP[0],
+//             RC.rrc[Mod_idP]->carrier[CC_id].SIB1_MBMS,
+//             RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS);
+//
+//    return RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS;
+
+    memcpy(&buffer_pP[0],
+           RC.nrrrc[Mod_idP]->carrier.SIB1,
+           RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1);
+
+    return RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1;
+  }
 
   /* CCCH */
   if( (Srb_id & RAB_OFFSET ) == CCCH) {

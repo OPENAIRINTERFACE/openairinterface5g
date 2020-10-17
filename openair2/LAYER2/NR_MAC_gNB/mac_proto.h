@@ -83,6 +83,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          int num_slots_per_tdd);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
