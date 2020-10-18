@@ -595,11 +595,10 @@ typedef struct
 typedef struct
 {
   uint16_t pm_idx;//Index to precoding matrix (PM) pre-stored at cell configuration. Note: If precoding is not used this parameter should be set to 0. Value: 0->65535.
-  nfapi_nr_dig_bf_interface_t* dig_bf_interface_list;
+  nfapi_nr_dig_bf_interface_t dig_bf_interface_list[255];//max dig_bf_interfaces
 
 }nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t;
 
-/*
 //table 3-43
 typedef struct 
 {
@@ -607,21 +606,11 @@ typedef struct
   uint16_t prg_size;//Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
   //watchout: dig_bf_interfaces here, in table 3-53 it's dig_bf_interface
   uint8_t  dig_bf_interfaces;//Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t* prgs_list;//
+  nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t prgs_list[275];//max prg_size
 
 }nfapi_nr_tx_precoding_and_beamforming_t;
-*/
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nfapi_nr_tx_precoding_and_beamforming_t;
+// 3.4.2 
 
 //table 3-37 
 
@@ -657,16 +646,6 @@ typedef struct {
 
 } nfapi_nr_dl_dci_pdu_t;
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nr_beamforming_t;
 
 typedef struct {
   ///Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP,Value: 1->275

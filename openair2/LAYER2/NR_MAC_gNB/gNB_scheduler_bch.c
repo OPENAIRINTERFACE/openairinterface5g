@@ -67,6 +67,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
   int mib_sdu_length;
   int CC_id;
+  uint8_t beam_index = 0;
+  
   AssertFatal(slotP == 0, "Subframe must be 0\n");
   AssertFatal((frameP & 7) == 0, "Frame must be a multiple of 8\n");
 
@@ -146,6 +148,11 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12) - 10;/*cfg->ssb_table.ssb_offset_point_a.value;*/ // absoluteFrequencySSB is the center of SSB
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.num_prgs=1;
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.prg_size=275; //1 PRG of max size for analogue beamforming
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.dig_bf_interfaces=1;
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.prgs_list[0].pm_idx = 0;
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = beam_index;
       dl_req->nPDUs++;
 
       uint8_t *vrb_map = cc[CC_id].vrb_map;
