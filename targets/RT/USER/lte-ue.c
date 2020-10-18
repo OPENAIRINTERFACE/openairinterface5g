@@ -437,6 +437,7 @@ void init_UE_standalone_thread()
   if (pthread_create(&thread, NULL, ue_standalone_pnf_task, NULL) != 0) {
     LOG_E(MAC, "pthread_create failed for calling ue_standalone_pnf_task");
   }
+  pthread_setname_np(thread, "oai:ue-stand");
 }
 
 void init_UE_stub(int nb_inst,
@@ -1001,7 +1002,21 @@ static void reset_queue(queue_t *q)
 
 static void *UE_phy_stub_standalone_pnf_task(void *arg)
 {
+#if 1
+  {
+    struct sched_param sparam =
+    {
+      .sched_priority = 79,
+    };
+    if (pthread_setschedparam(pthread_self(), SCHED_RR, &sparam) != 0)
+    {
+      LOG_E(PHY,"pthread_setschedparam: %s\n", strerror(errno));
+    }
+  }
+#else
   thread_top_init("UE_phy_stub_thread_rxn_txnp4", 1, 870000L, 1000000L, 1000000L);
+#endif
+
   // for multipule UE's L2-emulator
   //module_id_t Mod_id = 0;
   //int init_ra_UE = -1; // This counter is used to initiate the RA of each UE in different SFrames
@@ -2467,6 +2482,7 @@ void init_UE_single_thread_stub(int nb_inst)
       UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
       printf("Init_UE_threads rtd %d proc %d nb_threads %d i %d\n",rtd->proc->sub_frame_start, UE->proc.proc_rxtx[i].sub_frame_start,nb_threads, i);
       pthread_create(&UE->proc.proc_rxtx[i].pthread_rxtx, NULL, task_func, rtd);
+      pthread_setname_np(UE->proc.proc_rxtx[i].pthread_rxtx, "oai:ue-phy");
     }
   }
 

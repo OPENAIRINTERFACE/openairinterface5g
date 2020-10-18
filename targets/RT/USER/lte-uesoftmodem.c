@@ -545,15 +545,12 @@ void init_pdcp(void) {
 int main( int argc, char **argv ) {
   struct sched_param param =
   {
-    .sched_priority = 1
+    .sched_priority = 79
   };
   if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
   {
     fprintf(stderr,"error setting scheduler ... are you root?\n");
-  }
-  else
-  {
-    fprintf(stderr,"selected rt scheduler\n");
+    return EXIT_FAILURE;
   }
 
   int CC_id;

@@ -397,8 +397,20 @@ static void *L1_thread( void *param ) {
   // set default return value
   eNB_thread_rxtx_status = 0;
   sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.L1_proc == proc ? 0 : 1);
+#if 1
+  {
+    struct sched_param sparam =
+    {
+      .sched_priority = 79,
+    };
+    if (pthread_setschedparam(pthread_self(), SCHED_RR, &sparam) != 0)
+    {
+      LOG_E(PHY,"pthread_setschedparam: %s\n", strerror(errno));
+    }
+  }
+#else
   thread_top_init(thread_name,1,470000,500000,500000);
-  pthread_setname_np( pthread_self(),"rxtx processing");
+#endif
   LOG_I(PHY,"thread rxtx created id=%ld\n", syscall(__NR_gettid));
 
   while (!oai_exit) {
@@ -919,8 +931,18 @@ void init_eNB_proc(int inst) {
       // Original Code from Fujitsu w/ old structure/field name
       //pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       //pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+
       pthread_create( &L1_proc->pthread, attr0, L1_thread, L1_proc );
+      if (pthread_setname_np(L1_proc->pthread, "oai:enb-L1-rx") != 0)
+      {
+          LOG_E(PHY, "pthread_setname_np: %s\n", strerror(errno));
+      }
+
       pthread_create( &L1_proc_tx->pthread, attr1, L1_thread, L1_proc_tx);
+      if (pthread_setname_np(L1_proc_tx->pthread, "oai:enb-L1-tx") != 0)
+      {
+          LOG_E(PHY, "pthread_setname_np: %s\n", strerror(errno));
+      }
     }
 
     if (NFAPI_MODE!=NFAPI_MODE_VNF) {
@@ -930,7 +952,10 @@ void init_eNB_proc(int inst) {
 
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
-    if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
+    if (opp_enabled == 1)
+    {
+      pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
+    }
   }
 
   //for multiple CCs: setup master and slaves
