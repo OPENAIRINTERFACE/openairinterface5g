@@ -177,7 +177,7 @@ static void UE_synch(void *arg) {
   int i, hw_slot_offset;
   PHY_VARS_NR_UE *UE = syncD->UE;
   sync_mode_t sync_mode = pbch;
-  int CC_id = UE->CC_id;
+  //int CC_id = UE->CC_id;
   static int freq_offset=0;
   UE->is_synchronized = 0;
 
@@ -327,7 +327,6 @@ static void UE_synch(void *arg) {
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
           //UE->rfdevice.trx_stop_func(&UE->rfdevice);
           // sleep(1);
-          //nr_init_frame_parms_ue(&UE->frame_parms);
           /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
             LOG_E(HW,"Could not start the device\n");
             oai_exit=1;

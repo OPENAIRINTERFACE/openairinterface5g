@@ -27,8 +27,6 @@
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
 
-
-
 int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 {
 

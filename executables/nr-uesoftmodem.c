@@ -363,31 +363,6 @@ static void get_options(void) {
   if (vcdflag > 0)
     ouput_vcd = 1;
 
-  /*if (frame_parms[0]->N_RB_DL !=0) {
-      if ( frame_parms[0]->N_RB_DL < 6 ) {
-       frame_parms[0]->N_RB_DL = 6;
-       printf ( "%i: Invalid number of resource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
-      }
-      if ( frame_parms[0]->N_RB_DL > 100 ) {
-       frame_parms[0]->N_RB_DL = 100;
-       printf ( "%i: Invalid number of resource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
-      }
-      if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
-       frame_parms[0]->N_RB_DL = 50;
-       printf ( "%i: Invalid number of resource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
-      }
-      if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
-       frame_parms[0]->N_RB_DL = 25;
-       printf ( "%i: Invalid number of resource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
-      }
-      UE_scan = 0;
-      frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
-      for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
-        frame_parms[CC_id]->N_RB_DL=frame_parms[0]->N_RB_DL;
-        frame_parms[CC_id]->N_RB_UL=frame_parms[0]->N_RB_UL;
-      }
-  }*/
-
   for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
     tx_max_power[CC_id]=tx_max_power[0];
     rx_gain[0][CC_id] = rx_gain[0][0];
@@ -428,7 +403,6 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     // NR: Init to legacy LTE 20Mhz params
     frame_parms[CC_id]->numerology_index  = 0;
     frame_parms[CC_id]->ttis_per_subframe = 1;
-    frame_parms[CC_id]->slots_per_tti   = 2;
   }
 }
 
@@ -769,7 +743,6 @@ int main( int argc, char **argv ) {
   if(IS_SOFTMODEM_DOFORMS) { 
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
-  number_of_cards = 1;
 
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
