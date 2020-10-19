@@ -83,6 +83,9 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 
 void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
 {
+
+  fp->ttis_per_subframe = 1;
+
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
@@ -313,9 +316,21 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
-			   fapi_nr_config_request_t* config, 
-			   int Ncp) 
+                           fapi_nr_config_request_t* config,
+                           uint16_t nr_band)
 {
+
+  uint8_t nb_ant_ports_gNB  = 1;
+  uint8_t tdd_cfg           = 3;
+  uint8_t Nid_cell          = 0;
+  int     Ncp               = NORMAL;
+
+  // default values until overwritten by RRCConnectionReconfiguration
+  fp->nb_antenna_ports_gNB = nb_ant_ports_gNB;
+  fp->tdd_config           = tdd_cfg;
+  fp->Nid_cell             = Nid_cell;
+  fp->nr_band              = nr_band;
+  LOG_I(PHY, "Initializing frame parms: set nb_rx_antenna %d , nb_tx_antenna %d nb_antenna_ports_gNB %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->nb_antenna_ports_gNB);
 
   uint64_t dl_bw_khz = (12*config->carrier_config.dl_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + config->carrier_config.dl_frequency)*1000 ;
@@ -352,11 +367,6 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   set_scs_parameters(fp,fp->numerology_index,config->carrier_config.dl_bandwidth);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
-
-  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
-
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;

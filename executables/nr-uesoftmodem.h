@@ -48,13 +48,12 @@
     {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL, iptr:&UE_scan_carrier,              defintval:0,           TYPE_INT,      0},     \
     {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL, iptr:&UE_fo_compensation,           defintval:0,           TYPE_INT,      0},     \
     {"ue-max-power",             NULL,                   0,              iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,      0},     \
-    {"r"  ,                      CONFIG_HLP_PRB,         0,              iptr:&(frame_parms[0]->N_RB_DL),    defintval:25,          TYPE_UINT,     0},     \
-    {"dlsch-demod-shift",        CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&dlsch_demod_shift, defintval:0,           TYPE_INT,      0},     \
+    {"r"  ,                      CONFIG_HLP_PRB,         0,              iptr:&(N_RB_DL),                    defintval:25,          TYPE_UINT,     0},     \
     {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,              strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0}      \
   }
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters common to eNodeB and UE                                                         */
+/*                                            command line parameters common to gNB and UE                                                            */
 /*   optname                helpstr                 paramflags      XXXptr                                 defXXXval              type         numelt */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_UE {  \
@@ -62,21 +61,15 @@
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
   {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \
   {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, iptr:&threequarter_fs,                 defintval:0,           TYPE_INT,    0}, \
-  {"m" ,                    CONFIG_HLP_DLMCS,       0,              uptr:&target_dl_mcs,                   defintval:0,           TYPE_UINT,   0}, \
-  {"t" ,                    CONFIG_HLP_ULMCS,       0,              uptr:&target_ul_mcs,                   defintval:0,           TYPE_UINT,   0}, \
   {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
   {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"s" ,                    CONFIG_HLP_SNR,         0,              dblptr:&snr_dB,                        defdblval:25,          TYPE_DOUBLE, 0}, \
-  {"nbiot-disable",         CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL, iptr:&nonbiotflag,                     defintval:0,           TYPE_INT,    0}, \
   {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}, \
   {"rrc_config_path",       CONFIG_HLP_RRC_CFG_PATH,0,              strptr:(char **)&rrc_config_path,      defstrval:"./",        TYPE_STRING, 0} \
 }
 
-
 extern int T_port;
 extern int T_nowait;
 extern int T_dont_fork;
-
 
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
@@ -86,7 +79,7 @@ extern void init_NR_UE_threads(int);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);
-void init_nr_ue_vars(PHY_VARS_NR_UE *ue, NR_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
+void init_nr_ue_vars(PHY_VARS_NR_UE *ue, uint8_t UE_id, uint8_t abstraction_flag);
 extern tpool_t *Tpool;
 extern tpool_t *Tpool_dl;
 #endif

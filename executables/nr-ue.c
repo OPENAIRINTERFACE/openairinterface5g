@@ -135,17 +135,15 @@ typedef enum {
 
 
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
-                     NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
 {
 
   int nb_connected_gNB = 1, gNB_id;
 
-  memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
-
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
+  ue->if_inst     = nr_ue_if_module_init(0);
 
   // Setting UE mode to NOT_SYNCHED by default
   for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
