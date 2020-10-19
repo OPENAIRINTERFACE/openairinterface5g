@@ -1430,6 +1430,7 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
     
     int32_t i;
     NR_DL_DCCH_Message_t *nr_dl_dcch_msg = NULL;
+    MessageDef *msg_p;
 
     asn_dec_rval_t dec_rval = uper_decode(  NULL,
                                             &asn_DEF_NR_DL_DCCH_Message,    
@@ -1460,6 +1461,16 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                     case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
                     case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
                     case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
+                        msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_RELEASE_IND);
+
+                        if((nr_dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.present == NR_RRCRelease__criticalExtensions_PR_rrcRelease) &&
+                           (nr_dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_rrcRelease)){
+                             nr_dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationTimer =
+                             NR_RRCRelease_IEs__deprioritisationReq__deprioritisationTimer_min5;
+                             nr_dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationType =
+                             NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
+                           }
+                        break;
                     case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
                     case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
                     case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
