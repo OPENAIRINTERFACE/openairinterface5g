@@ -224,7 +224,7 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
    \param pduP      pointer to pdu*/
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
 
-int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_indication_pdu_t *dci);
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 #endif
 
