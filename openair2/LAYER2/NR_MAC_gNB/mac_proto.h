@@ -314,8 +314,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
                      int aggregation,
-                     uint16_t n_RNTI,
-                     int m);
+                     uint16_t Y,
+                     int m,
+                     int nr_of_candidates);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 

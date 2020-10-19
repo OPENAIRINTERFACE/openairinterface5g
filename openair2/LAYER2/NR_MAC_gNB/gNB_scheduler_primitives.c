@@ -172,8 +172,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
                      int aggregation,
-                     uint16_t n_RNTI,
-                     int m) {
+                     uint16_t Y,
+                     int m,
+                     int nr_of_candidates) {
   // uncomment these when we allocate for common search space
   //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -189,15 +190,19 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   n_rb*=6;
 
   uint16_t N_reg = n_rb * coreset->duration;
-  uint16_t n_CI=0;
-  const uint32_t A[3]={39827,39829,39839};
-  /* if n_RNTI is zero, this results in zero, too! */
-  uint16_t Y = (A[0]*n_RNTI)%65537; // Candidate 0, antenna port 0
+  uint16_t n_CI = 0;
 
-  uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
+  const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
+  const uint16_t M_s_max = nr_of_candidates;
 
-  uint16_t M_s_max = (aggregation==4)?4:(aggregation==8)?2:1;
-  int first_cce = aggregation * (( Y + (m*N_cce)/(aggregation*M_s_max) + n_CI ) % CEILIDIV(N_cce,aggregation));
+  AssertFatal(m < nr_of_candidates,
+              "PDCCH candidate index %d in CORESET %d exceeds the maximum "
+              "number of PDCCH candidates (%d)\n",
+              m,
+              coreset_id,
+              nr_of_candidates);
+
+  int first_cce = aggregation * (( Y + CEILIDIV((m*N_cce),(aggregation*M_s_max)) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
   for (int i=0;i<aggregation;i++)
     if (cce_list[first_cce+i] != 0) return(-1);
@@ -1526,6 +1531,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
       pos+=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization.val&0x1)<<(dci_size-pos);
     }
+    LOG_D(MAC, "DCI index %d has %d bits and the payload is %lx\n", d, dci_size, *dci_pdu);
   }
 }
 
@@ -1619,6 +1625,21 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   return -1;
 }
 
+void set_Y(int Y[3][160], rnti_t rnti) {
+  const int A[3] = {39827, 39829, 39839};
+  const int D = 65537;
+
+  Y[0][0] = (A[0] * rnti) % D;
+  Y[1][0] = (A[1] * rnti) % D;
+  Y[2][0] = (A[2] * rnti) % D;
+
+  for (int s = 1; s < 160; s++) {
+    Y[0][s] = (A[0] * Y[0][s - 1]) % D;
+    Y[1][s] = (A[1] * Y[1][s - 1]) % D;
+    Y[2][s] = (A[2] * Y[2][s - 1]) % D;
+  }
+}
+
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
@@ -1642,6 +1663,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->active[UE_id] = true;
     UE_info->rnti[UE_id] = rntiP;
     add_nr_ue_list(&UE_info->list, UE_id);
+    set_Y(UE_info->Y[UE_id], rntiP);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));

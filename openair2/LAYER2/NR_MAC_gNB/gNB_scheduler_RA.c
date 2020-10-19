@@ -675,13 +675,13 @@ void nr_generate_Msg2(module_id_t module_idP,
     uint8_t nr_of_candidates, aggregation_level;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
     NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0 /* common */);
-    int CCEIndex = allocate_nr_CCEs(
-        nr_mac,
-        bwp,
-        coreset,
-        aggregation_level,
-        0, /* n_RNTI 0: common search space */
-        0); // m
+    int CCEIndex = allocate_nr_CCEs(nr_mac,
+                                    bwp,
+                                    coreset,
+                                    aggregation_level,
+                                    0, // Y
+                                    0, // m
+                                    nr_of_candidates);
 
     if (CCEIndex < 0) {
       LOG_E(MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);

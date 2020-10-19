@@ -417,18 +417,23 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
   uint8_t nr_of_candidates, aggregation_level;
   find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
   NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
-  int CCEIndex = allocate_nr_CCEs(
-      nr_mac,
-      bwp,
-      coreset,
-      aggregation_level,
-      UE_info->rnti[UE_id],
-      0); // m
+  const int cid = coreset->controlResourceSetId;
+  const uint16_t Y = UE_info->Y[UE_id][cid][nr_mac->current_slot];
+  const int m = UE_info->num_pdcch_cand[UE_id][cid];
+  int CCEIndex = allocate_nr_CCEs(nr_mac,
+                                  bwp,
+                                  coreset,
+                                  aggregation_level,
+                                  Y,
+                                  m,
+                                  nr_of_candidates);
   if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PDSCH\n", __func__);
     free(dci_pdu_rel15);
     return 0;
   }
+  UE_info->num_pdcch_cand[UE_id][cid]++;
+
   nr_configure_pdcch(nr_mac,
                      pdcch_pdu_rel15,
                      UE_info->rnti[UE_id],
@@ -1127,19 +1132,23 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     uint8_t nr_of_candidates, aggregation_level;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
     NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
-    int CCEIndex = allocate_nr_CCEs(
-        nr_mac,
-        bwp,
-        coreset,
-        aggregation_level,
-        UE_info->rnti[UE_id],
-        0); // m
+    const int cid = coreset->controlResourceSetId;
+    const uint16_t Y = UE_info->Y[UE_id][cid][nr_mac->current_slot];
+    const int m = UE_info->num_pdcch_cand[UE_id][cid];
+    int CCEIndex = allocate_nr_CCEs(nr_mac,
+                                    bwp,
+                                    coreset,
+                                    aggregation_level,
+                                    Y,
+                                    m,
+                                    nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
       pusch_sched->active = false;
       return;
     }
     else {
+      UE_info->num_pdcch_cand[UE_id][cid]++;
       nr_configure_pdcch(nr_mac,
                          pdcch_pdu_rel15,
                          UE_info->rnti[UE_id],
