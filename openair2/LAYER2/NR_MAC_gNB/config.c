@@ -125,15 +125,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
 
   lte_frame_type_t frame_type;
-  uint16_t band;
-  int32_t offset;
-
-  get_band((cfg->carrier_config.dl_frequency.value)*1000,
-           (cfg->carrier_config.uplink_frequency.value)*1000,
-           &band,
-           &offset,
-           &frame_type);
-
+  get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
   RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
 
   // Cell configuration

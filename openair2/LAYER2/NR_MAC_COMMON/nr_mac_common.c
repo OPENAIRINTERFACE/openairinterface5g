@@ -1473,8 +1473,8 @@ nr_bandentry_t nr_bandtable[] = {
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  {48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  {48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
+  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
   {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
@@ -1559,28 +1559,18 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
-// Computes the duplex spacing (either positive or negative) in KHz
-void get_delta_duplex(int nr_table_idx, int32_t *delta_duplex){
-
-  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
-  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
-
-  for(int i = 0; i < s; i++){
-    if (nr_table_idx == supplementary_bands[i])
-      AssertFatal(0 == 1, "Band %d is a supplementary band. This is not supported yet.\n", nr_table_idx);
-  }
-
-  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
-
-  LOG_D(PHY, "NR band duplex spacing %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
-
-}
-
 // Returns the corresponding row index of the NR table
 int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
 
+  int i, j;
   int scs_khz = 15 << scs_index;
-  int i;
+  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
+  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
+
+  for(j = 0; j < s; j++){
+    if (nr_bandP == supplementary_bands[j])
+      AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
+  }
 
   AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
   for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
@@ -1589,52 +1579,37 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
   if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
     i++;
 
-  LOG_D(PHY, "NR band table index %d (Band %d)\n", i, nr_bandtable[i].band);
+  LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
 
 }
 
-void get_band(uint64_t downlink_frequency,
-              uint64_t ul_frequency,
-              uint16_t *current_band,
-              int32_t *current_offset,
-              lte_frame_type_t *current_type)
-{
-    int ind;
-    uint64_t center_frequency_khz;
-    uint64_t center_freq_diff_khz;
-    uint64_t dl_freq_khz = downlink_frequency/1000;
-    uint64_t ul_freq_khz = ul_frequency/1000;
+// Computes the duplex spacing (either positive or negative) in KHz
+void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
 
-    center_freq_diff_khz = 999999999999999999; // 2^64
-    *current_band = 0;
+  int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
 
-    for ( ind=0;
-          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
-          ind++) {
+  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
-      if (nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz && nr_bandtable[ind].ul_min <= ul_freq_khz && nr_bandtable[ind].ul_max >= ul_freq_khz) {
+}
 
-        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-          *current_band = nr_bandtable[ind].band;
-          get_delta_duplex(ind, current_offset);
-          *current_offset *= 1000;
-          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-          if (*current_offset == 0)
-            *current_type = TDD;
-          else
-            *current_type = FDD;
-        }
-      }
-    }
+void get_frame_type(uint16_t current_band,
+                    uint8_t scs_index,
+                    lte_frame_type_t *current_type){
 
-    LOG_I(PHY, "DL frequency %"PRIu64" Hz, UL frequency %"PRIu64" Hz: band %d, uldl offset %d Hz, duplex mode %s\n", downlink_frequency, ul_frequency, *current_band, *current_offset, duplex_mode[*current_type]);
+  int32_t current_offset;
+  get_delta_duplex(current_band, scs_index, &current_offset);
 
-    AssertFatal(*current_band != 0, "Can't find NR band for frequency %lu\n", downlink_frequency);
+  current_offset *= 1000;
+  if (current_offset == 0)
+    *current_type = TDD;
+  else
+    *current_type = FDD;
+
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
 
 }
 
@@ -1806,7 +1781,7 @@ uint64_t from_nrarfcn(int nr_bandP,
   if (nrarfcn > 2016666 && nrarfcn < 3279166)
     deltaFglobal = 60;
 
-  get_delta_duplex(i, &delta_duplex);
+  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
 
   if (delta_duplex <= 0){ // DL band >= UL band
     if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL

@@ -330,10 +330,14 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->N_RB_DL = config->carrier_config.dl_grid_size[fp->numerology_index];
 
   int32_t uplink_frequency_offset = 0;
+  get_delta_duplex(fp->nr_band, fp->numerology_index, &uplink_frequency_offset);
+  get_frame_type(fp->nr_band, fp->numerology_index, &fp->frame_type);
+  uplink_frequency_offset *= 1000;
 
-  get_band(fp->dl_CarrierFreq, fp->ul_CarrierFreq, &fp->nr_band, &uplink_frequency_offset, &fp->frame_type);
+  LOG_I(PHY, "DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, uplink_frequency_offset);
 
   AssertFatal(fp->frame_type==config->cell_config.frame_duplex_type, "Invalid duplex type in config request file for band %d\n", fp->nr_band);
+
   AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + uplink_frequency_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + uplink_frequency_offset);
 
 #if DISABLE_LOG_X
