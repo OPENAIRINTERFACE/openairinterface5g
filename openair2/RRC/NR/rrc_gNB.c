@@ -535,6 +535,14 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                         ue_context_pP->ue_context.rnti,
                         rrc_gNB_mui,
                         size);
+#ifdef ITTI_SIM
+      MessageDef *message_p;
+      message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+      GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+      GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
     rrc_data_req(ctxt_pP,
                 DCCH,
                 rrc_gNB_mui++,
@@ -542,7 +550,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                 size,
                 buffer,
                 PDCP_TRANSMISSION_MODE_CONTROL);
-
+#endif
     // rrc_pdcp_config_asn1_req
     // rrc_rlc_config_asn1_req
 }
@@ -571,12 +579,12 @@ rrc_gNB_process_RRCReconfigurationComplete(
     rnti_t rnti = ue_context_pP->ue_id_rnti;
     module_id_t module_id = ctxt_pP->module_id;
 
-    int UE_id_mac = find_UE_id(module_id, rnti);
+    // int UE_id_mac = find_UE_id(module_id, rnti);
 
-    if (UE_id_mac == -1) {
-      LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
-      return;
-    }
+    // if (UE_id_mac == -1) {
+    //   LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
+    //   return;
+    // }
 
     /* Derive the keys from kgnb */
     if (DRB_configList != NULL) {
@@ -597,24 +605,24 @@ rrc_gNB_process_RRCReconfigurationComplete(
                      MSC_AS_TIME_ARGS(ctxt_pP),
                      ue_context_pP->ue_context.rnti);
 
-    nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-                                SRB_configList, // NULL,
-                                DRB_configList,
-                                DRB_Release_configList2,
-                                0xff, // already configured during the securitymodecommand
-                                kRRCenc,
-                                kRRCint,
-                                kUPenc,
-                                NULL,
-                                NULL,
-                                NULL);
-    /* Refresh SRBs/DRBs */
-    nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                            SRB_configList, // NULL,
-                            DRB_configList,
-                            DRB_Release_configList2,
-                            NULL,
-                            NULL);
+    // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+    //                             SRB_configList, // NULL,
+    //                             DRB_configList,
+    //                             DRB_Release_configList2,
+    //                             0xff, // already configured during the securitymodecommand
+    //                             kRRCenc,
+    //                             kRRCint,
+    //                             kUPenc,
+    //                             NULL,
+    //                             NULL,
+    //                             NULL);
+    // /* Refresh SRBs/DRBs */
+    // nr_rrc_rlc_config_asn1_req(ctxt_pP,
+    //                         SRB_configList, // NULL,
+    //                         DRB_configList,
+    //                         DRB_Release_configList2,
+    //                         NULL,
+    //                         NULL);
 
     /* Loop through DRBs and establish if necessary */
     if (DRB_configList != NULL) {
@@ -1092,6 +1100,8 @@ rrc_gNB_decode_dcch(
 //                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
                   xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
 //                }
+
+                rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
                 break;
 
             case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
@@ -1281,13 +1291,6 @@ void *rrc_gnb_task(void *args_p) {
                             NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_p,
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
-        // Message buffer has been processed, free it now.
-        result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), NR_RRC_DCCH_DATA_IND(msg_p).sdu_p);
-
-        if (result != EXIT_SUCCESS) {
-            LOG_I(NR_RRC, "Failed to free memory (%d)!\n", result);
-            break;
-        }
 
         break;
 

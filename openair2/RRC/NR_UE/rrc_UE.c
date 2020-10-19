@@ -1663,11 +1663,30 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
 						   (enc_rval.encoded + 7) / 8);
 		memcpy (message_buffer, buffer, (enc_rval.encoded + 7) / 8);
 
-		message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, UE_RRC_CCCH_DATA_IND);
+		message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, UE_RRC_DCCH_DATA_IND);
 		GNB_RRC_DCCH_DATA_IND (message_p).rbid  = DCCH;
 		GNB_RRC_DCCH_DATA_IND (message_p).sdu   = buffer;
 		GNB_RRC_DCCH_DATA_IND (message_p).size	= (enc_rval.encoded + 7) / 8;
 		itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+
+    asn_dec_rval_t                      dec_rval;
+    NR_UL_DCCH_Message_t                *ul_dcch_msg  = NULL;
+
+    dec_rval = uper_decode(
+                    NULL,
+                    &asn_DEF_NR_UL_DCCH_Message,
+                    (void **)&ul_dcch_msg,
+                    buffer,
+                    (enc_rval.encoded + 7) / 8,
+                    0,
+                    0);
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+        LOG_E(NR_RRC, " Failed to decode UL-DCCH (%zu bytes)\n",
+            dec_rval.consumed);
+        return -1;
+    } else {
+       LOG_I(NR_RRC, "decode securityModeComplete success\n");
+    }
 #else
     rrc_data_req (
       ctxt_pP,
@@ -2159,6 +2178,14 @@ void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const
         nr_rrc_mui,
         UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
         DCCH);
+#ifdef ITTI_SIM
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, UE_RRC_DCCH_DATA_IND);
+  UE_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+  UE_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+  UE_RRC_DCCH_DATA_IND (message_p).size  = size;
+  itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+#else
   rrc_data_req_ue (
     ctxt_pP,
     DCCH,
@@ -2167,6 +2194,8 @@ void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const
     size,
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
+
 }
 
 // from NR SRB1
@@ -2340,9 +2369,6 @@ void *rrc_nrue_task( void *args_p ) {
           NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
           NR_RRC_DCCH_DATA_IND (msg_p).sdu_p,
           NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
-        // Message buffer has been processed, free it now.
-        result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), NR_RRC_DCCH_DATA_IND (msg_p).sdu_p);
-        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
 
       default:

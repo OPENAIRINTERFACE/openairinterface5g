@@ -65,6 +65,9 @@
 #include "NR_SecurityConfig.h"
 #include "NR_RRCReconfiguration-v1530-IEs.h"
 #include "NR_UL-DCCH-Message.h"
+#include "NR_SDAP-Config.h"
+#include "NR_RRCReconfigurationComplete.h"
+#include "NR_RRCReconfigurationComplete-IEs.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -952,6 +955,7 @@ uint16_t do_RRCReconfiguration(
     NR_DRB_ToAddModList_t                            *DRB_configList       = NULL;
     NR_DRB_ToAddModList_t                            *DRB_configList2      = NULL;
     NR_DRB_ToAddMod_t                                *DRB_config           = NULL;
+    NR_SDAP_Config_t                                 *sdap_config          = NULL;
     NR_SecurityConfig_t                              *security_config      = NULL;
     NR_DedicatedNAS_Message_t                        *dedicatedNAS_Message = NULL;
 
@@ -1003,6 +1007,9 @@ uint16_t do_RRCReconfiguration(
     DRB_config->cnAssociation = CALLOC(1, sizeof(*DRB_config->cnAssociation));
     DRB_config->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
     // TODO sdap_Config
+    sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
+    memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
+    DRB_config->cnAssociation->choice.sdap_Config = sdap_config;
     // TODO pdcp_Config
     DRB_config->reestablishPDCP = NULL;
     DRB_config->recoverPDCP = NULL;
@@ -1068,6 +1075,10 @@ uint16_t do_RRCReconfiguration(
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
 
+    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+  // }
+
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                     NULL,
                                     (void *)&dl_dcch_msg,
@@ -1092,6 +1103,15 @@ uint16_t do_RRCReconfiguration(
             ctxt_pP->rnti);
         return(-1);
     }
+
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+    GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+    GNB_RRC_DCCH_DATA_IND (message_p).size  = (enc_rval.encoded+7)/8;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
 
     return((enc_rval.encoded+7)/8);
 }
@@ -1162,8 +1182,10 @@ do_NR_RRCReconfigurationComplete(
   ul_dcch_msg.message.present                     = NR_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1                   = CALLOC(1, sizeof(struct NR_UL_DCCH_MessageType__c1));
   ul_dcch_msg.message.choice.c1->present           = NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete;
+  ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete = CALLOC(1, sizeof(NR_RRCReconfigurationComplete_t));
   rrcReconfigurationComplete            = ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete;
   rrcReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
+  rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete = CALLOC(1, sizeof(NR_RRCReconfigurationComplete_IEs_t));
   rrcReconfigurationComplete->criticalExtensions.present =
 		  NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
   rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->nonCriticalExtension = NULL;
