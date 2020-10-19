@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-ran:tmp-rhel8-latest AS lte-ue-build 
+FROM image-registry.openshift-image-registry.svc:5000/oai/oai-ran:rhel8-latest AS lte-ue-build 
 
 
 WORKDIR /oai-ran
