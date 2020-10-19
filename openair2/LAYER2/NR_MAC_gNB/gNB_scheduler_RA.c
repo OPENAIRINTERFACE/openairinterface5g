@@ -486,15 +486,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     ra->Msg2_slot = msg2_slot;
 
     LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-    if(pr_found)
+    if (!ra->cfra) {
       do {
         ra->rnti = (taus() % 65518) + 1;
         loop++;
       }
-    while (loop != 100 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1) && ra->rnti >= 1 && ra->rnti <= 65519));
-    if (loop == 100) {
-      LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
-      abort();
+      while (loop != 100 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1) && ra->rnti >= 1 && ra->rnti <= 65519));
+      if (loop == 100) {
+        LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+        abort();
+      }
     }
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
