@@ -74,6 +74,7 @@
 #define MAX_NUM_CCE 90
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
+#define MAX_NUM_OF_SSB 64
 
 typedef enum {
   RA_IDLE = 0,
@@ -146,6 +147,8 @@ typedef struct {
   int msg4_mcs;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
+  // Beam index
+  uint8_t beam_id;
   /// secondaryCellGroup for UE in NSA that is to come
   NR_CellGroupConfig_t *secondaryCellGroup;
   /// Preambles for contention-free access
@@ -190,6 +193,16 @@ typedef struct {
   uint8_t vrb_map_UL[275];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
+  ///Number of active SSBs
+  uint8_t num_active_ssb;
+  //Total available prach occasions per configuration period
+  uint32_t total_prach_occasions_per_config_period;
+  //Total available prach occasions
+  uint32_t total_prach_occasions;
+  //Max Association period
+  uint8_t max_association_period;
+  //SSB index
+  uint8_t ssb_index[MAX_NUM_OF_SSB];
 } NR_COMMON_channels_t;
 
 
@@ -386,6 +399,8 @@ typedef struct {
   int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
+  // UE selected beam index
+  uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 /*! \brief top level eNB MAC structure */

@@ -288,6 +288,7 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
                  nfapi_nr_prach_pdu_t *prach_pdu,
+		 int prachOccasion,
                  int frame,
                  int subframe,
                  uint16_t *max_preamble,
@@ -298,6 +299,7 @@ void rx_nr_prach_ru(RU_t *ru,
                     int prach_fmt,
                     int numRA,
                     int prachStartSymbol,
+		    int prachOccasion,
                     int frame,
                     int subframe);
 
@@ -306,7 +308,7 @@ void nr_fill_prach_ru(RU_t *ru,
                       int Slot,
                       nfapi_nr_prach_pdu_t *prach_pdu);
 
-int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type);
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, find_type_t type);
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void);
@@ -325,7 +327,7 @@ int nr_find_pucch(uint16_t rnti,
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
-
+void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
