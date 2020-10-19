@@ -2253,6 +2253,60 @@ function run_test_on_vm {
         ######### start of PHY TEST loop
         while [ $try_cnt -lt 4 ]
         do
+
+            #start RA test
+            SYNC_STATUS=0
+            PING_STATUS=0
+            IPERF_STATUS=0
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Starting the gNB"
+            echo "############################################################"
+            CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb.log
+            #last argument = 1 is to enable --do-ra for RA test
+            start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 1
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Starting the NR-UE"
+            echo "############################################################"
+            CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue.log
+            #last argument = 1 is to enable --do-ra for RA test
+            start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
+            if [ $NR_UE_SYNC -eq 0 ]
+            then
+                echo "Problem w/ gNB and NR-UE not syncing"
+                terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
+                terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
+                scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
+                scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
+                SYNC_STATUS=-1
+                try_cnt=$[$try_cnt+1]
+                continue
+            fi
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Terminate gNB/NR-UE simulators"
+            echo "############################################################"
+            sleep 20
+            terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
+            terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
+            scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
+
+            #check RA markers in gNB and NR UE log files
+            echo "############################################################"
+            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "############################################################"
+
+            mv $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/ra_check_$CURRENT_GNB_LOG_FILE
+            mv $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE  $ARCHIVES_LOC/ra_check_$CURRENT_NR_UE_LOG_FILE
+            # Proper check to be done when RA test is working!
+            #check_ra_result $ARCHIVES_LOC/ra_check_$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/ra_check_$CURRENT_NR_UE_LOG_FILE
+
+
+            #end RA test
+            sleep 30
+
             SYNC_STATUS=0
             PING_STATUS=0
             IPERF_STATUS=0
