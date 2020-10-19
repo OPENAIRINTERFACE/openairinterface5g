@@ -92,6 +92,8 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     uint8_t                        MBMS_flag;
+    uint8_t 					   *UECapability;
+    uint8_t                        UECapability_size;
 
     NR_SystemInformation_t         *si[NB_CNX_UE];
     NR_SIB1_t                      *sib1[NB_CNX_UE];

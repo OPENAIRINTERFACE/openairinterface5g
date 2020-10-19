@@ -2271,6 +2271,13 @@ nr_rrc_ue_decode_dcch(
             case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
             case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
             case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
+            	LOG_I(RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n",
+            	      ctxt_pP->module_id,gNB_indexP);
+            	nr_rrc_ue_process_ueCapabilityEnquiry(
+            	  ctxt_pP,
+            	  &dl_dcch_msg->message.choice.c1->choice.ueCapabilityEnquiry,
+            	  gNB_indexP);
+            	 break;
             case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
             case NR_DL_DCCH_MessageType__c1_PR_dlDedicatedMessageSegment_r16:
             case NR_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r16:
@@ -2400,5 +2407,71 @@ void *nr_rrc_ue_process_sidelink_radioResourceConfig(
       default:
           break;
       }
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
+nr_rrc_ue_process_ueCapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  NR_UECapabilityEnquiry_t *UECapabilityEnquiry,
+  uint8_t gNB_index
+)
+//-----------------------------------------------------------------------------
+{
+  asn_enc_rval_t enc_rval;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
+  uint8_t buffer[200];
+  int i;
+  LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing UECapabilityEnquiry (gNB %d)\n",
+        ctxt_pP->module_id,
+        ctxt_pP->frame,
+        gNB_index);
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  memset((void *)&ue_CapabilityRAT_Container,0,sizeof(NR_UE_CapabilityRAT_Container_t));
+  ul_dcch_msg.message.present            = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_UL_DCCH_MessageType__c1));
+  ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation;
+  ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation                            = CALLOC(1, sizeof(struct NR_UECapabilityInformation));
+  ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
+  ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_eutra;
+  OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
+                       (const char *)NR_UE_rrc_inst[ctxt_pP->module_id].UECapability,
+                       NR_UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
+  //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
+  // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
+  AssertFatal(UECapabilityEnquiry->criticalExtensions.present == NR_UECapabilityEnquiry__criticalExtensions_PR_ueCapabilityEnquiry,
+              "UECapabilityEnquiry->criticalExtensions.present (%d) != UECapabilityEnquiry__criticalExtensions_PR_c1 (%d)\n",
+              UECapabilityEnquiry->criticalExtensions.present,NR_UECapabilityEnquiry__criticalExtensions_PR_ueCapabilityEnquiry);
+
+  ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.present           = NR_UECapabilityInformation__criticalExtensions_PR_ueCapabilityInformation;
+  ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation   = CALLOC(1, sizeof(struct NR_UECapabilityInformation_IEs));
+  ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.count = 0;
+
+  for (i=0; i<UECapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list.count; i++) {
+    if (UECapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list.array[i]
+        == NR_RAT_Type_eutra) {
+      ASN_SEQUENCE_ADD(
+        &ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list,
+        &ue_CapabilityRAT_Container);
+      enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, 100);
+      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                   enc_rval.failed_type->name, enc_rval.encoded);
+
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+        xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+      }
+
+      LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      rrc_data_req_ue (
+        ctxt_pP,
+        DCCH,
+        nr_rrc_mui++,
+        SDU_CONFIRM_NO,
+        (enc_rval.encoded + 7) / 8,
+        buffer,
+        PDCP_TRANSMISSION_MODE_CONTROL);
+    }
   }
 }
