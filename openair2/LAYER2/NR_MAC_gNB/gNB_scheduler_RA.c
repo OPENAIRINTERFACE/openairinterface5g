@@ -359,10 +359,23 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
     tdd_period_slot++;
 
+
   // computing start of next period
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
+  uint8_t start_next_period;
+
+  if (FR==nr_FR1) {
+    start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
+    *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  }
+  else {
+    // in FR2 we need to wait till the second half frame for msg2 since all beams are taken in first half frame by SSBs
+    if (rach_slot<30) start_next_period = 40;
+    else start_next_period = 50;
+    *msg2_slot = start_next_period;
+    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  }
  
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
