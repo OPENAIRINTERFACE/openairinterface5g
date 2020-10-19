@@ -268,15 +268,29 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
 
   cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
-  cfg->num_tlv++;
+  cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
+  cfg->num_tlv+=2;
 
   cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
   AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 13, "pdsch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
+
   int num_ssb=0;
   for (int i=0;i<32;i++) {
-    num_ssb += (cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1;
-    num_ssb += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
+    cfg->ssb_table.ssb_beam_id_list[i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
+    if ((cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1) {
+      cfg->ssb_table.ssb_beam_id_list[i].beam_id.value = num_ssb;
+      num_ssb++;
+    }
+    cfg->num_tlv++;
+  }
+  for (int i=0;i<32;i++) {
+    cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;      
+    if ((cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1) {
+      cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.value = num_ssb;
+      num_ssb++;
+    }
+    cfg->num_tlv++;
   } 
 
   cfg->carrier_config.num_rx_ant.value = cfg->carrier_config.num_tx_ant.value;

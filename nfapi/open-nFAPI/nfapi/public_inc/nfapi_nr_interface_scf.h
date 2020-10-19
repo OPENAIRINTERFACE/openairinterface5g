@@ -414,13 +414,13 @@ typedef struct
 {
   nfapi_uint32_tlv_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
 
-} nfapi_nr_ssb_mask_size_2_t;
+} nfapi_nr_ssb_mask_list_t;
 
 typedef struct 
 {
-  nfapi_uint8_tlv_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+  nfapi_uint8_tlv_t beam_id;//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
 
-} nfapi_nr_ssb_mask_size_64_t;
+} nfapi_nr_ssb_beam_id_list_t;
 
 typedef struct 
 {
@@ -429,8 +429,8 @@ typedef struct
   nfapi_uint8_tlv_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
   nfapi_uint8_tlv_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
   nfapi_uint32_tlv_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
-  nfapi_nr_ssb_mask_size_2_t ssb_mask_list[2];
-  nfapi_nr_ssb_mask_size_64_t* ssb_beam_id_list;//64
+  nfapi_nr_ssb_mask_list_t ssb_mask_list[2];
+  nfapi_nr_ssb_beam_id_list_t ssb_beam_id_list[64];
   nfapi_uint8_tlv_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
   nfapi_uint8_tlv_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
 

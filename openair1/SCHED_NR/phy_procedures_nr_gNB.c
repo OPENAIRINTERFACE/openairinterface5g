@@ -72,7 +72,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
-  uint8_t ssb_index, n_hf;
+  uint8_t ssb_index, ssb_per_slot=0, n_hf;
   uint16_t ssb_start_symbol, rel_slot;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
   uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
@@ -94,11 +94,12 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
   if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
 
-    for (int i=0; i<2; i++)  {  // max two SSB per frame
+    for (int i=0; i<2; i++)  {  // max two SSB per slot
       
       ssb_index = i + SSB_Table[rel_slot]; // computing the ssb_index
 
       if ((ssb_index<64) && ((fp->L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
+	ssb_per_slot++;
         fp->ssb_index = ssb_index;
         int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
 	ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
@@ -122,6 +123,16 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 			 ssb_start_symbol,
 			 n_hf, frame, cfg, fp);
 
+      }
+
+      // SSB beamforming is handled at PHY
+      // currently our PHY does not support switching more than once a slot. 
+      if (ssb_per_slot>1) {
+	LOG_W(PHY,"beamforming currently not supported for more than one SSB per slot\n");
+      }
+      else if (ssb_per_slot==1) {
+	for (int j=0;j<fp->symbols_per_slot;j++) 
+	  gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
       }
     }
   }

@@ -240,6 +240,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
             memcpy((void*)&ru->common.txdataF[i][j*fp->ofdm_symbol_size],
                    (void*)&gNB->common_vars.txdataF[i][j*fp->ofdm_symbol_size + txdataF_offset],
                    fp->ofdm_symbol_size*sizeof(int32_t));
+	    
           }
 
         }//num_gNB == 1
@@ -338,11 +339,20 @@ static void *nr_feptx_thread(void *param) {
       txdataF_offset = ((slot%2)*fp->samples_per_slot_wCP);
       ////////////precoding////////////
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 1);
+      
       start_meas(&ru->precoding_stats);
+
+      for(i=0; i<ru->nb_log_antennas; ++i) {
+	memcpy((void*) &ru->common.beam_id[i][slot*fp->symbols_per_slot+l],
+	       (void*) &ru->gNB_list[0]->common_vars.beam_id[i][slot*fp->symbols_per_slot+l],
+	       (fp->symbols_per_slot>>1)*sizeof(uint8_t));
+      }
+
+
       if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
-            memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
-                 (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
-                 (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
+	memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
+	       (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
+	       (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
       }
       else {
         bw  = ru->beam_weights[0];
@@ -491,10 +501,14 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
 
     if (nr_slot_select(cfg,frame_tx,slot_tx) == NR_UPLINK_SLOT) return;
 
-    for(i=0; i<ru->nb_log_antennas; ++i)
+    for(i=0; i<ru->nb_log_antennas; ++i) {
       memcpy((void*)ru->common.txdataF[i],
            (void*)&gNB->common_vars.txdataF[i][txdataF_offset],
            fp->samples_per_slot_wCP*sizeof(int32_t));
+      memcpy((void*)&ru->common.beam_id[i][slot_tx*fp->symbols_per_slot],
+	     (void*)&gNB->common_vars.beam_id[i][slot_tx*fp->symbols_per_slot],
+	     fp->symbols_per_slot*sizeof(uint8_t));
+    }
 
     if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
     
