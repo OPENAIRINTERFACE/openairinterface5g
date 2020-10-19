@@ -244,8 +244,15 @@ void common_signal_procedures_fembms (PHY_VARS_eNB *eNB,int frame, int subframe)
       eNB->pbch_configured=0;
     }
 
-    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-      T_BUFFER(pbch_pdu, 3));
+    if (T_ACTIVE(T_ENB_PHY_MIB)) {
+      /* MIB is stored in reverse in pbch_pdu, reverse it for properly logging */
+      uint8_t mib[3];
+      mib[0] = pbch_pdu[2];
+      mib[1] = pbch_pdu[1];
+      mib[2] = pbch_pdu[0];
+      T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+        T_BUFFER(mib, 3));
+    }
     generate_pbch_fembms (&eNB->pbch, txdataF, AMP, fp, pbch_pdu, (frame & 15)/4);
   } //else if ((subframe == 1) && (fp->frame_type == TDD)) {
     //generate_pss (txdataF, AMP, fp, 2, 2);
@@ -313,8 +320,15 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
       eNB->pbch_configured=0;
     }
 
-    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-      T_BUFFER(pbch_pdu, 3));
+    if (T_ACTIVE(T_ENB_PHY_MIB)) {
+      /* MIB is stored in reverse in pbch_pdu, reverse it for properly logging */
+      uint8_t mib[3];
+      mib[0] = pbch_pdu[2];
+      mib[1] = pbch_pdu[1];
+      mib[2] = pbch_pdu[0];
+      T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+        T_BUFFER(mib, 3));
+    }
     generate_pbch (&eNB->pbch, txdataF, AMP, fp, pbch_pdu, frame & 3);
   } else if ((subframe == 1) && (fp->frame_type == TDD)) {
     generate_pss (txdataF, AMP, fp, 2, 2);
