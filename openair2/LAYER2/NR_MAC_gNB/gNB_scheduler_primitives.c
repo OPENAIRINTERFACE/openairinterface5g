@@ -1684,6 +1684,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+
     if (UE_info->active[i] != TRUE)
       continue;
     if (UE_info->rnti[i] != rnti)

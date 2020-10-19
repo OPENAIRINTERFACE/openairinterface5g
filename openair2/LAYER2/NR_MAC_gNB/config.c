@@ -367,12 +367,18 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_RA_t *ra = &RC.nrmac[Mod_idP]->common_channels[CC_id].ra[0];
       ra->state = RA_IDLE;
       ra->secondaryCellGroup = secondaryCellGroup;
-      ra->crnti = rnti;
-      uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
-      ra->preambles.num_preambles = num_preamble;
-      ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
-      for (int i = 0; i < num_preamble; i++)
-        ra->preambles.preamble_list[i] = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+      if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
+        if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
+          ra->cfra = true;
+          ra->rnti = rnti;
+          struct NR_CFRA cfra = *secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+          uint8_t num_preamble = cfra.resources.choice.ssb->ssb_ResourceList.list.count;
+          ra->preambles.num_preambles = num_preamble;
+          ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
+          for (int i = 0; i < num_preamble; i++)
+            ra->preambles.preamble_list[i] = cfra.resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+        }
+      }
       LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);
     } else { // secondaryCellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
