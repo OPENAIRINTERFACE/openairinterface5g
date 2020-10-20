@@ -683,7 +683,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
     switch (rx_lcids[i]) {
       case CCCH:
-        if ((rx_lengths[i] > CCCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > sdu_lenP)) {
+        if ((rx_lengths[i] > CCCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > (sdu_lenP - (payload_ptr - sduP)))) {
           LOG_E(MAC, "[eNB %d/%d] frame %d received CCCH of size %d (too big, maximum allowed is %d, sdu_len %d), dropping packet\n",
                 enb_mod_idP,
                 CC_idP,
@@ -804,7 +804,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         LOG_T(MAC, "\n");
 #endif
 
-      if ((rx_lengths[i] > DCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > sdu_lenP)) {
+      if ((rx_lengths[i] > DCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > (sdu_lenP - (payload_ptr - sduP)))) {
         LOG_E(MAC, "[eNB %d/%d] frame %d received DCCH of size %d (too big, maximum allowed is %d, sdu_len %d), dropping packet\n",
               enb_mod_idP,
               CC_idP,
