@@ -862,9 +862,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 
         LOG_T(MAC, "\n");
 #endif
-
         if (rx_lcids[i] < NB_RB_MAX) {
-          if ((rx_lengths[i] > SCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > sdu_lenP)) {
+          if ((rx_lengths[i] > SCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > (sdu_lenP - (payload_ptr - sduP)))) {
             LOG_E(MAC, "[eNB %d/%d] frame %d received DTCH of size %d (too big, maximum allowed is %d, sdu_len %d), dropping packet\n",
                   enb_mod_idP,
                   CC_idP,
@@ -976,7 +975,7 @@ rx_sdu(const module_id_t enb_mod_idP,
      payload_ptr += rx_lengths[i];
     }else{
       LOG_E(MAC,"[eNB %d/%d] frame %d subframe %d rnti %x sdu_len %d  remain_len %d rx_lengths %d\n",
-                 enb_mod_idP,CC_idP,frameP,subframeP,rntiP,sdu_lenP,(uint16_t)(payload_ptr - sduP), rx_lengths[i]);
+                 enb_mod_idP,CC_idP,frameP,subframeP,rntiP,sdu_lenP,(uint16_t)(sdu_lenP - (payload_ptr - sduP)), rx_lengths[i]);
       return;
     }
   }
