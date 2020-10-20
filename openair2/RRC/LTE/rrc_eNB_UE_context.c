@@ -174,6 +174,23 @@ rrc_eNB_get_ue_context(
 
 
 //------------------------------------------------------------------------------
+struct rrc_eNB_ue_context_s *
+rrc_eNB_find_ue_context_from_gnb_rnti(
+  eNB_RRC_INST *rrc_instance_pP,
+  int gnb_rnti)
+//------------------------------------------------------------------------------
+{
+  struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(rrc_instance_pP->rrc_ue_head)) {
+    if (ue_context_p->ue_context.gnb_rnti == gnb_rnti) {
+      return ue_context_p;
+    }
+  }
+  return NULL;
+}
+
+
+//------------------------------------------------------------------------------
 void rrc_eNB_remove_ue_context(
   const protocol_ctxt_t *const ctxt_pP,
   eNB_RRC_INST                *rrc_instance_pP,

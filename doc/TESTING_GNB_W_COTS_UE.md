@@ -1,17 +1,31 @@
-STATUS 2020/09/10 : updated the status of interop (end to end UL/DL traffic)  
+STATUS 2020/10/15 : added External Resources section and links  
 
 
 ## Table of Contents ##
 
-1.   [Configuration Overview](#configuration-overview)
-2.   [SW Repository / Branch](#repository)
-3.   [Architecture Setup](#architecture-setup)
-4.   [Build / Install](#build-and-install)
-5.   [Run / Test](#run-and-test)
-6.   [Test case](#test-case)
-7.   [Log file monitoring](#log-file-monitoring)
-6.   [Required tools for debug](#required-tools-for-debug)
-7.   [Status of interoperability](#status-of-interoperability) 
+1.   [External Resources](#external-resources) 
+2.   [Configuration Overview](#configuration-overview)
+3.   [SW Repository / Branch](#repository)
+4.   [Architecture Setup](#architecture-setup)
+5.   [Build / Install](#build-and-install)
+6.   [Run / Test](#run-and-test)
+7.   [Test case](#test-case)
+8.   [Log file monitoring](#log-file-monitoring)
+9.   [Required tools for debug](#required-tools-for-debug)
+10.   [Status of interoperability](#status-of-interoperability) 
+11.   [CI integration](#ci-integration)  
+
+
+## External Resources
+
+Additional Resources to this page can be found here (special mention to Walter Maguire <wmaguire@live.com>) :  
+https://docs.google.com/document/d/1pL8Szm0ocGxdl5ESVp12Ff71a4PbhCb9SpvbLZzwYbo/edit?usp=sharing  
+At time of writing, the openairinterface5G Commit Tag is 2020.w39
+
+
+Faraday Cages can be found here :  
+http://www.saelig.com/MFR00066/ste2300.htm
+
 
 ## Configuration Overview
 
@@ -70,7 +84,7 @@ cd cmake_targets/
 - **EPC**
 
 for reference:
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
+https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
 
 
 
@@ -204,7 +218,7 @@ The test takes typically a few seconds, max 10-15 seconds. If it takes more than
 - **EPC** (on EPC host):
 
 for reference:
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
+https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
 
 
 
@@ -384,3 +398,16 @@ The following parts have been validated with FR1 COTS UE:
     some packet losses might still occur even in ideal channel conditions  
 
 
+## CI integration  
+The automation scripts are available on ILIADE.  
+The end-to-end test is integrated in the CI flow in a semi-automated manner, comprising 3 steps:  
+- update a YAML file comprising the IT resources definition, branch and commit number the test has to run on   
+- run the python script that generates the test from the YAML file  
+```
+python3 obj_build_from_yaml.py py_params_template.yaml fr1.sh
+```
+- run the test (fr1.sh)
+
+At the date of writing, the test comprises the deployment of the components (epc, eNB, gNB, cots ue) and the execution of 2 pings procedures (20 pings in 20sec, then 5 pings in 1sec)  
+
+This automation is run for every integration branch to be merged into develop.
