@@ -865,7 +865,7 @@ uint8_t do_NR_UECapabilityEnquiry_nr( const protocol_ctxt_t *const ctxt_pP,
 //------------------------------------------------------------------------------
 {
   NR_DL_DCCH_Message_t dl_dcch_msg;
-  NR_UE_CapabilityRAT_Request_t ue_capabilityrat_request;
+  NR_UE_CapabilityRAT_Request_t *ue_capabilityrat_request;
 
   asn_enc_rval_t enc_rval;
   memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
@@ -875,16 +875,18 @@ uint8_t do_NR_UECapabilityEnquiry_nr( const protocol_ctxt_t *const ctxt_pP,
   dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry = CALLOC(1,sizeof(struct NR_UECapabilityEnquiry));
   dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->rrc_TransactionIdentifier = Transaction_id;
   dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.present = NR_UECapabilityEnquiry__criticalExtensions_PR_ueCapabilityEnquiry;
-  ue_capabilityrat_request.rat_Type = NR_RAT_Type_nr;
-
+  dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry = CALLOC(1,sizeof(struct NR_UECapabilityEnquiry_IEs));
+  ue_capabilityrat_request =  CALLOC(1,sizeof(NR_UE_CapabilityRAT_Request_t));
+  memset(ue_capabilityrat_request,0,sizeof(NR_UE_CapabilityRAT_Request_t));
+  ue_capabilityrat_request->rat_Type = NR_RAT_Type_nr;
 
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list,
-                   &ue_capabilityrat_request);
+                   ue_capabilityrat_request);
 
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-  }
+  //}
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                    NULL,

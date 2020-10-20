@@ -1101,7 +1101,7 @@ rrc_gNB_decode_dcch(
                   xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
 //                }
 
-                rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+                rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
                 break;
 
             case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
@@ -1131,9 +1131,9 @@ rrc_gNB_decode_dcch(
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
                 DCCH,
                 sdu_sizeP);
-                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+                //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
                     xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
-                }
+                //}
                 LOG_I(NR_RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
                 int eutra_index = -1;
 
@@ -1153,9 +1153,9 @@ rrc_gNB_decode_dcch(
                                                     ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.buf,
                                                     ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size,
                                                     0,0);
-                            if(LOG_DEBUGFLAG(DEBUG_ASN1)){
+                            //if(LOG_DEBUGFLAG(DEBUG_ASN1)){
                                 xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
-                            }
+                            //}
 
                             if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)){
                                 LOG_E(NR_RRC,PROTOCOL_NR_RRC_CTXT_UE_FMT" Failed to decode nr UE capabilities (%zu bytes)\n",
@@ -1166,6 +1166,11 @@ rrc_gNB_decode_dcch(
 
                             ue_context_p->ue_context.UE_Capability_size = 
                             ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size;
+                            if(eutra_index != -1){
+                              LOG_E(NR_RRC,"fatal: more than 1 eutra capability\n");
+                              exit(1);
+                            }
+							eutra_index = i;
                         }
 
                         if(ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->rat_Type ==
@@ -1197,11 +1202,7 @@ rrc_gNB_decode_dcch(
 
                         if(ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->rat_Type ==
                         NR_RAT_Type_eutra){
-                        if(eutra_index == -1){
-                            LOG_E(NR_RRC,"fatal: more than 1 eutra capability\n");
-                            exit(1);
-                        }
-                        eutra_index = i;
+                          //TODO
                         }
                     }
 
@@ -1477,6 +1478,14 @@ rrc_gNB_generate_UECapabilityEnquiry(
     ue_context_pP->ue_context.rnti,
     rrc_gNB_mui,
     size);
+#ifdef ITTI_SIM
+			  MessageDef *message_p;
+			  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+			  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+			  GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+			  GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
+			  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
   rrc_data_req(
     ctxt_pP,
     DCCH,
@@ -1485,6 +1494,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
     size,
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
 }
 
 //-----------------------------------------------------------------------------
