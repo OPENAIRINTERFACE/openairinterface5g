@@ -283,6 +283,11 @@ def GetParametersFromXML(action):
 			else:
 				ldpc.forced_workspace_cleanup=False
 
+	elif action == 'Initialize_MME':
+		string_field = test.findtext('option')
+		if (string_field is not None):
+			EPC.mmeConfFile = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		

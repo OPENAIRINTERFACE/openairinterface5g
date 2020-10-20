@@ -1386,7 +1386,14 @@ class OaiCiTest():
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 				SSH.command('cd scripts', '\$', 5)
-				ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				# In case of a docker-based deployment, we need to ping from the trf-gen container
+				launchFromTrfContainer = False
+				if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+					launchFromTrfContainer = True
+				if launchFromTrfContainer:
+					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				else:
+					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
 			else:
 				cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 > ping_' + self.testCase_id + '_' + device_id + '.log' 
 				message = cmd + '\n'
@@ -2028,7 +2035,8 @@ class OaiCiTest():
 					SSH.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ls /data/local/tmp"\'', '\$', 60)
-				result = re.search('iperf3', SSH.getBefore())
+				# DEBUG: disabling iperf3 usage for the moment
+				result = re.search('iperf4', SSH.getBefore())
 				if result is None:
 					result = re.search('iperf', SSH.getBefore())
 					if result is None:
@@ -2105,6 +2113,10 @@ class OaiCiTest():
 			launchFromEpc = True
 			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 				launchFromEpc = False
+			# When using a docker-based deployment, IPERF client shall be launched from trf container
+			launchFromTrfContainer = False
+			if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+				launchFromTrfContainer = True
 			if launchFromEpc:
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
@@ -2129,7 +2141,16 @@ class OaiCiTest():
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue,SSH)
 			else:
 				if launchFromEpc:
-					iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+					if launchFromTrfContainer:
+						if self.ueIperfVersion == self.dummyIperfVersion:
+							prefix = ''
+						else:
+							prefix = ''
+							if self.ueIperfVersion == '2.0.5':
+								prefix = '/iperf-2.0.5/bin/'
+						iperf_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "' + prefix + 'iperf -c ' + UE_IPAddress + ' ' + modified_options + '" 2>&1 | tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+					else:
+						iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 				else:
 					if self.ueIperfVersion == self.dummyIperfVersion:
 						prefix = ''
