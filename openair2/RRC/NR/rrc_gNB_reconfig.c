@@ -1038,7 +1038,35 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = NULL;
  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
- csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = NULL;
+
+ csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
+
+ NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
+ nzpcsi0->nzp_CSI_RS_ResourceId = 0;
+ NR_CSI_RS_ResourceMapping_t resourceMapping;
+ resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2;
+ resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
+ resourceMapping.frequencyDomainAllocation.choice.row2.size = 2;
+ resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 4;
+ resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]=0;
+ resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]=16;
+ resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p1;
+ resourceMapping.firstOFDMSymbolInTimeDomain = 6;
+ resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
+ resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_noCDM;
+ resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
+ resourceMapping.density.choice.one = (NULL_t)0;
+ resourceMapping.freqBand.startingRB = 0;
+ resourceMapping.freqBand.nrofRBs = 104;
+ nzpcsi0->resourceMapping = resourceMapping;
+ nzpcsi0->powerControlOffset = 0;
+ nzpcsi0->powerControlOffsetSS = NULL;
+ nzpcsi0->scramblingID = 50;
+ nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
+ nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
+ nzpcsi0->periodicityAndOffset->choice.slots320 = 0;
+ nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
