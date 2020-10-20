@@ -32,15 +32,30 @@
 
 #define MAX_QUEUE_SIZE 512
 
-typedef struct queue_t {
-  void *items[MAX_QUEUE_SIZE];
-  size_t read_index, write_index;
-  size_t num_items;
-  pthread_mutex_t mutex;
+typedef struct queue_t
+{
+    void *items[MAX_QUEUE_SIZE];
+    size_t read_index, write_index;
+    size_t num_items;
+    pthread_mutex_t mutex;
 } queue_t;
-
 
 void init_queue(queue_t *q);
 bool put_queue(queue_t *q, void *item);
 void *get_queue(queue_t *q);
+
+/* Put the given item back onto this queue at the head.
+   (The next call to put_queue would return this item.)
+   Return true if successful, false if the queue was full */
+bool requeue(queue_t *q, void *item);
+
+/* Remove the last item queued.
+   Return the item or NULL if the queue was empty */
 void *unqueue(queue_t *q);
+
+typedef bool queue_matcher_t(void *wanted, void *candidate);
+
+/* Unqueue the most recently queued item for watch `matcher(wanted, candidate)`
+   returns true where `candidate` is an item currently on the queue.
+   Returns the candidate item, or NULL if none matches */
+void *unqueue_matching(queue_t *q, queue_matcher_t *matcher, void *wanted);
