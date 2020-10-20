@@ -2128,6 +2128,11 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
+  if (!prach_resources->init_msg1 && (frame_tx > ue->prach_resources[gNB_id]->sync_frame + 150)){
+    ue->prach_cnt = 0;
+    prach_resources->init_msg1 = 1;
+  }
+
   if (ue->mac_enabled == 0){
     //    prach_resources->ra_PreambleIndex = preamble_tx;
     prach_resources->ra_TDD_map_index = 0;
@@ -2146,11 +2151,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       }
       nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
     }
-  }
-
-  if (!prach_resources->init_msg1 && (frame_tx > ue->prach_resources[gNB_id]->sync_frame + 150)){
-    ue->prach_cnt = 0;
-    prach_resources->init_msg1 = 1;
   }
 
   if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
