@@ -1130,6 +1130,10 @@ parse_ulsch_header(unsigned char *mac_header,
             tb_length,
             length,
             mac_header_ptr - mac_header);
+      if(num_sdus >= NB_RB_MAX){
+        LOG_E(MAC,"parse_ulsch_header: num_sdus(%d) reach max\n",num_sdus);
+        return NULL;
+      }
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
       num_sdus++;
@@ -1137,6 +1141,10 @@ parse_ulsch_header(unsigned char *mac_header,
       if (lcid == SHORT_PADDING) {
         mac_header_ptr++;
       } else {
+        if(num_ces >= MAX_NUM_CE){
+           LOG_E(MAC,"parse_ulsch_header: num_ces(%d) reach max\n",num_ces);
+           return NULL;
+        }
         rx_ces[num_ces] = lcid;
         num_ces++;
         mac_header_ptr++;
