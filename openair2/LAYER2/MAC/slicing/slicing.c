@@ -336,6 +336,8 @@ void static_dl(module_id_t mod_id,
       rbgalloc_slice_mask[rbg] = rbgalloc_mask[rbg];
       n_rbg_sched += rbgalloc_mask[rbg];
     }
+    if (n_rbg_sched == 0) /* no free RBGs, e.g., taken by RA */
+      continue;
 
     s->s[i]->dl_algo.run(mod_id,
                          CC_id,
@@ -445,6 +447,8 @@ void static_ul(module_id_t mod_id,
     }
     if (!last_rb_blocked)
       rbs[n_contig - 1].length = p->posHigh - rbs[n_contig - 1].start + 1;
+    if (n_contig == 1 && rbs[0].length == 0) /* no RBs, e.g., taken by RA */
+      continue;
 
     s->s[i]->ul_algo.run(mod_id,
                          CC_id,

@@ -199,7 +199,7 @@ pipeline {
         
         stage ("Start VM -- enb-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
@@ -207,7 +207,7 @@ pipeline {
 
         stage ("Start VM -- ue-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
@@ -215,7 +215,7 @@ pipeline {
         
         stage ("Start VM -- cppcheck") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
@@ -416,7 +416,7 @@ pipeline {
                         stage ("Test RF simulator") {
                             steps {
                                 script {
-                                    timeout (time: 30, unit: 'MINUTES') {
+                                    timeout (time: 40, unit: 'MINUTES') {
                                         try {
                                             gitlabCommitStatus(name: "Test RF-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"

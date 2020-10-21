@@ -554,9 +554,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
 
+        // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
+        // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
+        mac->RA_active = 0;
         mac->RA_window_cnt = -1;
         mac->ra_state = RA_SUCCEEDED;
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
+        mac->generate_nr_prach = 2;
+        LOG_I(MAC, "[MAC][UE %d][RAPROC]: RAR successfully received \n", mod_id);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
@@ -639,7 +643,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         mac->RA_window_cnt--;
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR reception not successful, (RA window count %d) \n",
+        LOG_D(MAC, "[MAC][UE %d][RAPROC][%d.%d]: RAR not received yet (RA window count %d) \n",
           mod_id,
           frame,
           nr_tti_tx,

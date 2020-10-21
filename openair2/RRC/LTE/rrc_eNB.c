@@ -1282,10 +1282,14 @@ rrc_eNB_generate_UECapabilityEnquiry(
   uint8_t                             size;
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
-           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+           eutra_band,
+           nr_band);
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate UECapabilityEnquiry (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -1328,10 +1332,14 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   uint8_t                             size;
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
-           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+           eutra_band,
+           nr_band);
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -3283,8 +3291,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
     MeasObj2->measObjectId = 2;
     MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
-    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 641272;
-    //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = rrc_inst->nr_scg_ssb_freq; //641272; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
@@ -4648,6 +4655,8 @@ rrc_eNB_process_MeasurementReport(
     if ((ue_context_pP->ue_context.Status != RRC_NR_NSA) && (ue_context_pP->ue_context.Status != RRC_NR_NSA_RECONFIGURED)) {
       MessageDef      *msg;
       ue_context_pP->ue_context.Status = RRC_NR_NSA;
+      ue_context_pP->ue_context.gnb_rnti = -1;         // set when receiving X2AP_ENDC_SGNB_ADDITION_REQ_ACK
+      ue_context_pP->ue_context.gnb_x2_assoc_id = -1;  // set when receiving X2AP_ENDC_SGNB_ADDITION_REQ_ACK
 
       if(is_en_dc_supported(ue_context_pP->ue_context.UE_Capability)) {
         /** to add gNB as Secondary node CG-ConfigInfo to be added as per 36.423 r15 **/
@@ -5006,6 +5015,7 @@ void rrc_eNB_handover_ue_context_release(
   msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
 
   for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
     GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
@@ -6948,6 +6958,32 @@ rrc_eNB_generate_RRCConnectionSetup(
   }
 }
 
+//-----------------------------------------------------------------------------
+void rrc_eNB_process_reconfiguration_complete_endc(const protocol_ctxt_t *const ctxt_pP,
+        rrc_eNB_ue_context_t *const ue_context_p)
+//-----------------------------------------------------------------------------
+{
+  MessageDef *msg_p;
+
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, X2AP_ENDC_SGNB_RECONF_COMPLETE);
+
+  /* MeNB_ue_x2_id is unknown, set to 0.
+   * This is not correct but X2 id in the eNB is only 12 bits,
+   * so unfortunately we can't use rnti.
+   * To be corrected if needed.
+   * As of today, when stopping t_dc_prep we remove the UE
+   * from X2. To keep the id until the 'reconfiguration complete' message is received
+   * needs a rethink/rewrite of this logic. For simplicity, let's
+   * keep it as is. The only problem we can get is if/when we
+   * interoperate with a non-OAI gNB. The OAI gNB does not
+   * care about MeNB_ue_x2_id.
+   */
+  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg_p).MeNB_ue_x2_id   = 0;
+  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg_p).SgNB_ue_x2_id   = ue_context_p->ue_context.gnb_rnti;
+  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg_p).gnb_x2_assoc_id = ue_context_p->ue_context.gnb_x2_assoc_id;
+  itti_send_msg_to_task (TASK_X2AP, ctxt_pP->instance, msg_p);
+}
+
 void setup_ngran_CU(eNB_RRC_INST *rrc) {
 }
 
@@ -7028,6 +7064,8 @@ char openair_rrc_eNB_configuration(
 
     openair_rrc_top_init_eNB(RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag,0);
   }
+
+  RC.rrc[ctxt.module_id]->nr_scg_ssb_freq = configuration->nr_scg_ssb_freq;
 
   openair_rrc_on(&ctxt);
 
@@ -7846,9 +7884,12 @@ rrc_eNB_decode_dcch(
                           if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
                               nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
                               ->scg_ConfigResponseNR_r15!=NULL) {
+                            dedicated_DRB = -1;     /* put a value that does not run anything below */
                             ue_context_p->ue_context.Status = RRC_NR_NSA_RECONFIGURED;
                             /*Trigger E-RAB Modification Indication */
                             rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
+                            /* send reconfiguration complete to gNB */
+                            rrc_eNB_process_reconfiguration_complete_endc(ctxt_pP, ue_context_p);
                           }
                         }
                       }
@@ -7909,6 +7950,7 @@ rrc_eNB_decode_dcch(
               msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
               memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
               GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
 
               for(i = 0; i < NB_RB_MAX; i++) {
                 if(xid == ue_context_p->ue_context.e_rab[i].xid) {
@@ -8439,6 +8481,17 @@ rrc_eNB_decode_dcch(
                       ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
                       choice.c1.choice.scgFailureInformationNR_r15.failureReportSCG_NR_r15->failureType_r15);
                 xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)ul_dcch_msg);
+
+                /* TODO: scg failure indication, what to do? Let's remove the UE for now.
+                 * We could re-establish DRB?
+                 * Also, the way to remove is to start ue_release_timer_rrc and
+                 * send RRCConnectionRelease to the UE, maybe it's not good/correct.
+                 */
+                if (ue_context_p != NULL) {
+                  ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
+                  ue_context_p->ue_context.ue_release_timer_rrc = 1;
+                  rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
+                }
               }
             }
           }
@@ -8989,6 +9042,19 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       ue_to_be_removed[cur_ue]->ue_context.ue_reestablishment_timer = 0;
     }
 
+    /* remove UE from gNB if UE is in NSA mode */
+    if (ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA ||
+        ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA_RECONFIGURED) {
+      MessageDef *message_p;
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_RELEASE_REQUEST);
+      X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).rnti = ue_to_be_removed[cur_ue]->ue_context.gnb_rnti;
+      X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).assoc_id = ue_to_be_removed[cur_ue]->ue_context.gnb_x2_assoc_id;
+      X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).cause = X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST;
+      itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, message_p);
+      /* set state to RRC_NR_NSA_DELETED to avoid sending X2AP_ENDC_SGNB_RELEASE_REQUEST again later */
+      ue_to_be_removed[cur_ue]->ue_context.Status = RRC_NR_NSA_DELETED;
+    }
+
     rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed[cur_ue]);
 
     if (ue_to_be_removed[cur_ue]->ue_context.ul_failure_timer >= 20000) {
@@ -9030,6 +9096,27 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
   (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
+}
+
+void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m) {
+  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
+    LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+    return;
+  }
+
+  if (m->num_cc > MAX_NUM_CCs) {
+    LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+    return;
+  }
+
+  RC.rrc[mod_id]->num_neigh_cells++;
+  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+
+  for (int i=0; i<m->num_cc; i++) {
+    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
+    RC.rrc[mod_id]->nr_neigh_freq_band[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->servedNrCell_band[i];
+  }
+
 }
 
 void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
@@ -9106,6 +9193,10 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
 
   if (ue_context) {
     ue_context->ue_context.nb_of_modify_endc_e_rabs = m->nb_e_rabs_admitted_tobeadded;
+
+    ue_context->ue_context.gnb_rnti = m->SgNB_ue_x2_id;
+    ue_context->ue_context.gnb_x2_assoc_id = m->gnb_x2_assoc_id;
+
     int j=0;
 
     while(j < m->nb_e_rabs_admitted_tobeadded) {
@@ -9141,6 +9232,54 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
   } else {
     LOG_E(F1AP, "no ue_context for RNTI %x, acknowledging release\n", m->rnti);
   }
+}
+
+void rrc_eNB_process_ENDC_DC_prep_timeout(module_id_t module_id, x2ap_ENDC_dc_prep_timeout_t *m)
+{
+  rrc_eNB_ue_context_t *ue_context;
+
+  ue_context = rrc_eNB_get_ue_context(RC.rrc[module_id], m->rnti);
+  if (ue_context == NULL) {
+    LOG_E(RRC, "receiving DC prep timeout for unknown UE rnti %d\n", m->rnti);
+    return;
+  }
+
+  if (ue_context->ue_context.Status != RRC_NR_NSA) {
+    LOG_E(RRC, "receiving DC prep timeout for UE rnti %d not in state RRC_NR_NSA\n", m->rnti);
+    return;
+  }
+
+  LOG_I(RRC, "DC prep timeout for UE rnti %d, put back to RRC_RECONFIGURED mode\n", m->rnti);
+  ue_context->ue_context.Status = RRC_RECONFIGURED;
+}
+
+void rrc_eNB_process_ENDC_sgNB_release_required(module_id_t module_id, x2ap_ENDC_sgnb_release_required_t *m)
+{
+  rrc_eNB_ue_context_t *ue_context;
+  protocol_ctxt_t      ctxt;
+
+  ue_context = rrc_eNB_find_ue_context_from_gnb_rnti(RC.rrc[module_id], m->gnb_rnti);
+  if (ue_context == NULL) {
+    LOG_E(RRC, "receiving ENDC SgNB Release Required for unknown UE (with gNB's rnti %d)\n", m->gnb_rnti);
+    return;
+  }
+
+  /* TODO: what to do? release the UE? if yes, how? Or re-establish bearers in LTE?
+   * Or something else?
+   * The following removes the UE, maybe it's not correct at all.
+   */
+  ue_context->ue_context.ue_release_timer_thres_rrc = 100;
+  ue_context->ue_context.ue_release_timer_rrc = 1;
+
+  ue_context->ue_context.Status = RRC_NR_NSA_DELETED;
+
+  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                module_id,  /* TODO: should be 'instance' */
+                                ENB_FLAG_YES,
+                                ue_context->ue_context.rnti,
+                                0, 0);
+
+  rrc_eNB_generate_RRCConnectionRelease(&ctxt, ue_context);
 }
 
 //-----------------------------------------------------------------------------
@@ -9421,8 +9560,22 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
     }
 
+    case X2AP_ENDC_SETUP_REQ:
+      rrc_eNB_process_ENDC_x2_setup_request(instance, &X2AP_ENDC_SETUP_REQ(msg_p));
+      break;
+
     case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
       rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
+      break;
+    }
+
+    case X2AP_ENDC_DC_PREP_TIMEOUT: {
+      rrc_eNB_process_ENDC_DC_prep_timeout(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_DC_PREP_TIMEOUT(msg_p));
+      break;
+    }
+
+    case X2AP_ENDC_SGNB_RELEASE_REQUIRED: {
+      rrc_eNB_process_ENDC_sgNB_release_required(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_RELEASE_REQUIRED(msg_p));
       break;
     }
 

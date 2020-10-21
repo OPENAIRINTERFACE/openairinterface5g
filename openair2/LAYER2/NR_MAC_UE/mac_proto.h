@@ -88,6 +88,24 @@ NR_UE_MAC_INST_t *get_mac_inst(
    \param ul_info     UL indication*/
 NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
 
+/**\brief fill nr_scheduled_response struct instance
+   @param nr_scheduled_response_t *    pointer to scheduled_response instance to fill
+   @param fapi_nr_dl_config_request_t* pointer to dl_config,
+   @param fapi_nr_ul_config_request_t* pointer to ul_config,
+   @param fapi_nr_tx_request_t*        pointer to tx_request;
+   @param module_id_t mod_id           module ID
+   @param int cc_id                    CC ID
+   @param frame_t frame                frame number
+   @param int slot                     reference number */
+void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
+                             fapi_nr_dl_config_request_t *dl_config,
+                             fapi_nr_ul_config_request_t *ul_config,
+                             fapi_nr_tx_request_t *tx_request,
+                             module_id_t mod_id,
+                             int cc_id,
+                             frame_t frame,
+                             int slot);
+
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
 @param CC_id Component Carrier index
@@ -156,7 +174,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
-void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                          int dci_format,
                          uint8_t dci_length,
                          uint16_t rnti,
@@ -197,6 +215,17 @@ and fills the PRACH PDU per each FD occasion.
 */
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
+/* \brief This function schedules the Msg3 transmission
+@param
+@param
+@param
+@returns void
+*/
+void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
+                          frame_t current_frame,
+                          sub_frame_t current_slot,
+                          uint8_t Msg3_tda_id);
+
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
 @param CC_id Index to a component carrier
@@ -212,6 +241,7 @@ random-access procedure
 uint16_t nr_ue_process_rar(module_id_t mod_id,
                            int CC_id,
                            frame_t frameP,
+                           sub_frame_t slotP,
                            uint8_t * dlsch_buffer,
                            rnti_t * t_crnti,
                            uint8_t preamble_index,
@@ -265,5 +295,16 @@ void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
 
 void nr_ue_msg2_scheduler(module_id_t mod_id, uint16_t rach_frame, uint16_t rach_slot, uint16_t *msg2_frame, uint16_t *msg2_slot);
+
+int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      uint16_t n_RB_ULBWP,
+                                                      uint16_t n_RB_DLBWP,
+                                                      uint16_t riv);
+
+void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
+                     uint8_t *nb_dmrs_re_per_rb,
+                     uint16_t *number_dmrs_symbols);
+
 #endif
 /** @}*/
