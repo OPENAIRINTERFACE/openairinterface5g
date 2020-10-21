@@ -1642,6 +1642,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   // csi
   if (pucch_pdu->bit_len_csi_part1>0) {
     uci_pdu->pduBitmap|=4;
+    uci_pdu->csi_part1.csi_part1_bit_len=pucch_pdu->bit_len_csi_part1;
     int csi_part1_bytes=pucch_pdu->bit_len_csi_part1>>3;
     if ((pucch_pdu->bit_len_csi_part1&7) > 0) csi_part1_bytes++;
     uci_pdu->csi_part1.csi_part1_payload = (uint8_t*)malloc(csi_part1_bytes);

@@ -52,7 +52,7 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
-void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_ctrl, frame_t frame, slot_t slot);
+void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_ctrl, frame_t frame, slot_t slot);
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
@@ -129,9 +129,10 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
 				NR_SubcarrierSpacing_t scs, int UE_id,
 				module_id_t Mod_idP
                               ) {
+
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   uint8_t idx = 0;
-  uint8_t payload_size = ceil((double)uci_pdu->csi_part1.csi_part1_bit_len/8);
+  uint8_t payload_size = ceil(((double)uci_pdu->csi_part1.csi_part1_bit_len)/8);
   uint8_t *payload = calloc (payload_size, sizeof(uint8_t));
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
   NR_UE_list_t *UE_list = &(RC.nrmac[Mod_idP]->UE_list);
@@ -140,10 +141,10 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
 
   memcpy ( payload, uci_pdu->csi_part1.csi_part1_payload, payload_size);
 
+  UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = 0;
   for ( csi_report_id =0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
     //Assuming in periodic reporting for one slot can be configured with only one CSI-ReportConfig
  //   if (csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic) {
-      //considering 30khz scs and
       //Has to implement according to reportSlotConfig type
     periodicity = UE_list->csi_report_template[UE_id][csi_report_id].periodicity;
     LOG_I(PHY,"SFN/SF:%d%d \n", frame,slot);
