@@ -76,6 +76,7 @@ int ngap_gNB_handle_nas_first_req(
     out = &pdu.choice.initiatingMessage->value.choice.InitialUEMessage;
 
     /* Select the AMF corresponding to the provided GUAMI. */
+    //TODO have not be test. it's should be test
     if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_guami) {
         amf_desc_p = ngap_gNB_nnsf_select_amf_by_guami(
                          instance_p,
@@ -97,6 +98,7 @@ int ngap_gNB_handle_nas_first_req(
 
     if (amf_desc_p == NULL) {
         /* Select the AMF corresponding to the provided s-TMSI. */
+        //TODO have not be test. it's should be test
         if (ngap_nas_first_req_p->ue_identity.presenceMask & NGAP_UE_IDENTITIES_FiveG_s_tmsi) {
             amf_desc_p = ngap_gNB_nnsf_select_amf_by_amf_setid(
                              instance_p,
@@ -120,6 +122,7 @@ int ngap_gNB_handle_nas_first_req(
     if (amf_desc_p == NULL) {
         /* Select AMF based on the selected PLMN identity, received through RRC
          * Connection Setup Complete */
+        //TODO have not be test. it's should be test
         amf_desc_p = ngap_gNB_nnsf_select_amf_by_plmn_id(
                          instance_p,
                          ngap_nas_first_req_p->establishment_cause,
@@ -141,6 +144,7 @@ int ngap_gNB_handle_nas_first_req(
          * If no AMF corresponds to the GUAMI, the s-TMSI, or the selected PLMN
          * identity, selects the AMF with the highest capacity.
          */
+        //TODO have not be test. it's should be test
         amf_desc_p = ngap_gNB_nnsf_select_amf(
                          instance_p,
                          ngap_nas_first_req_p->establishment_cause);
@@ -1439,237 +1443,7 @@ int ngap_gNB_path_switch_req(instance_t instance,
                              ngap_path_switch_req_t *path_switch_req_p)
 //------------------------------------------------------------------------------
 {
-#if 0
-  ngap_gNB_instance_t          *ngap_gNB_instance_p = NULL;
-  struct ngap_gNB_ue_context_s *ue_context_p        = NULL;
-  struct ngap_gNB_amf_data_s   *amf_desc_p = NULL;
-
-  NGAP_NGAP_PDU_t                 pdu;
-  NGAP_PathSwitchRequest_t       *out;
-  NGAP_PathSwitchRequestIEs_t    *ie;
-
-  NGAP_PDUSESSIONToBeSwitchedDLItemIEs_t *e_RABToBeSwitchedDLItemIEs;
-  NGAP_PDUSESSIONToBeSwitchedDLItem_t    *e_RABToBeSwitchedDLItem;
-
-  uint8_t  *buffer = NULL;
-  uint32_t length;
-  int      ret = 0;//-1;
-
-  /* Retrieve the NGAP gNB instance associated with Mod_id */
-  ngap_gNB_instance_p = ngap_gNB_get_instance(instance);
-
-  DevAssert(path_switch_req_p != NULL);
-  DevAssert(ngap_gNB_instance_p != NULL);
-
-  //if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
-    //                                          path_switch_req_p->gNB_ue_ngap_id)) == NULL) {
-    /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-    //NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%06x\n",
-      //        path_switch_req_p->gNB_ue_ngap_id);
-    //return -1;
-  //}
-
-  /* Uplink NAS transport can occur either during an ngap connected state
-   * or during initial attach (for example: NAS authentication).
-   */
-  //if (!(ue_context_p->ue_state == NGAP_UE_CONNECTED ||
-       // ue_context_p->ue_state == NGAP_UE_WAITING_CSR)) {
-    //NGAP_WARN("You are attempting to send NAS data over non-connected "
-        //      "gNB ue ngap id: %06x, current state: %d\n",
-          //    path_switch_req_p->gNB_ue_ngap_id, ue_context_p->ue_state);
-    //return -1;
-  //}
-
-  /* Select the AMF corresponding to the provided GUAMI. */
-  amf_desc_p = ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_p, path_switch_req_p->ue_guami);
-
-  if (amf_desc_p == NULL) {
-    /*
-     * In case gNB has no AMF associated, the gNB should inform RRC and discard
-     * this request.
-     */
-
-    NGAP_WARN("No AMF is associated to the gNB\n");
-    // TODO: Inform RRC
-    return -1;
-  }
-
-  /* The gNB should allocate a unique gNB UE NGAP ID for this UE. The value
-   * will be used for the duration of the connectivity.
-   */
-  ue_context_p = ngap_gNB_allocate_new_UE_context();
-  DevAssert(ue_context_p != NULL);
-
-  /* Keep a reference to the selected AMF */
-  ue_context_p->amf_ref       = amf_desc_p;
-  ue_context_p->ue_initial_id = path_switch_req_p->ue_initial_id;
-  ue_context_p->gNB_instance  = ngap_gNB_instance_p;
-
-  do {
-    struct ngap_gNB_ue_context_s *collision_p;
-
-    /* Peek a random value for the gNB_ue_ngap_id */
-    ue_context_p->gNB_ue_ngap_id = (random() + random()) & 0x00ffffff;
-
-    if ((collision_p = RB_INSERT(ngap_ue_map, &ngap_gNB_instance_p->ngap_ue_head, ue_context_p))
-        == NULL) {
-      NGAP_DEBUG("Found usable gNB_ue_ngap_id: 0x%06x %u(10)\n",
-                 ue_context_p->gNB_ue_ngap_id,
-                 ue_context_p->gNB_ue_ngap_id);
-      /* Break the loop as the id is not already used by another UE */
-      break;
-    }
-  } while(1);
-  
-  ue_context_p->amf_ue_ngap_id = path_switch_req_p->amf_ue_ngap_id;
-
-  /* Prepare the NGAP message to encode */
-  memset(&pdu, 0, sizeof(pdu));
-  pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_PathSwitchRequest;
-  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_reject;
-  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_PathSwitchRequest;
-  out = &pdu.choice.initiatingMessage->value.choice.PathSwitchRequest;
-
-  /* mandatory */
-  ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_PathSwitchRequestIEs__value_PR_GNB_UE_NGAP_ID;
-  ie->value.choice.GNB_UE_NGAP_ID = ue_context_p->gNB_ue_ngap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  /* mandatory */
-  if (path_switch_req_p->nb_of_pdusessions > 0) {
-    ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_PDUSESSIONToBeSwitchedDLList;
-    ie->criticality = NGAP_Criticality_reject;
-    ie->value.present = NGAP_PathSwitchRequestIEs__value_PR_PDUSESSIONToBeSwitchedDLList;
-
-    for (int i = 0; i < path_switch_req_p->nb_of_pdusessions; i++) {
-      e_RABToBeSwitchedDLItemIEs = (NGAP_PDUSESSIONToBeSwitchedDLItemIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONToBeSwitchedDLItemIEs_t));
-      e_RABToBeSwitchedDLItemIEs->id = NGAP_ProtocolIE_ID_id_PDUSESSIONToBeSwitchedDLItem;
-      e_RABToBeSwitchedDLItemIEs->criticality = NGAP_Criticality_reject;
-      e_RABToBeSwitchedDLItemIEs->value.present = NGAP_PDUSESSIONToBeSwitchedDLItemIEs__value_PR_PDUSESSIONToBeSwitchedDLItem;
-
-      e_RABToBeSwitchedDLItem = &e_RABToBeSwitchedDLItemIEs->value.choice.PDUSESSIONToBeSwitchedDLItem;
-      e_RABToBeSwitchedDLItem->e_RAB_ID = path_switch_req_p->pdusessions_tobeswitched[i].pdusession_id;
-      INT32_TO_OCTET_STRING(path_switch_req_p->pdusessions_tobeswitched[i].gtp_teid, &e_RABToBeSwitchedDLItem->gTP_TEID);
-
-      e_RABToBeSwitchedDLItem->transportLayerAddress.size  = path_switch_req_p->pdusessions_tobeswitched[i].gNB_addr.length;
-      e_RABToBeSwitchedDLItem->transportLayerAddress.bits_unused = 0;
-
-      e_RABToBeSwitchedDLItem->transportLayerAddress.buf = calloc(1,e_RABToBeSwitchedDLItem->transportLayerAddress.size);
-
-      memcpy (e_RABToBeSwitchedDLItem->transportLayerAddress.buf,
-                path_switch_req_p->pdusessions_tobeswitched[i].gNB_addr.buffer,
-                path_switch_req_p->pdusessions_tobeswitched[i].gNB_addr.length);
-
-      NGAP_DEBUG("path_switch_req: pdusession ID %ld, teid %u, enb_addr %d.%d.%d.%d, SIZE %zu\n",
-               e_RABToBeSwitchedDLItem->e_RAB_ID,
-               path_switch_req_p->pdusessions_tobeswitched[i].gtp_teid,
-               e_RABToBeSwitchedDLItem->transportLayerAddress.buf[0],
-               e_RABToBeSwitchedDLItem->transportLayerAddress.buf[1],
-               e_RABToBeSwitchedDLItem->transportLayerAddress.buf[2],
-               e_RABToBeSwitchedDLItem->transportLayerAddress.buf[3],
-               e_RABToBeSwitchedDLItem->transportLayerAddress.size);
-
-      ASN_SEQUENCE_ADD(&ie->value.choice.PDUSESSIONToBeSwitchedDLList.list, e_RABToBeSwitchedDLItemIEs);
-    }
-
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* mandatory */
-  ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_SourceAMF_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_PathSwitchRequestIEs__value_PR_AMF_UE_NGAP_ID;
-  ie->value.choice.AMF_UE_NGAP_ID = path_switch_req_p->amf_ue_ngap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  /* mandatory */
-  ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_EUTRAN_CGI;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_PathSwitchRequestIEs__value_PR_EUTRAN_CGI;
-  MACRO_GNB_ID_TO_CELL_IDENTITY(ngap_gNB_instance_p->gNB_id,
-                                0,
-                                &ie->value.choice.EUTRAN_CGI.cell_ID);
-  MCC_MNC_TO_TBCD(ngap_gNB_instance_p->mcc[0],
-                  ngap_gNB_instance_p->mnc[0],
-                  ngap_gNB_instance_p->mnc_digit_length[0],
-                  &ie->value.choice.EUTRAN_CGI.pLMNidentity);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  /* mandatory */
-  ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_TAI;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_PathSwitchRequestIEs__value_PR_TAI;
-  /* Assuming TAI is the TAI from the cell */
-  INT16_TO_OCTET_STRING(ngap_gNB_instance_p->tac, &ie->value.choice.TAI.tAC);
-  MCC_MNC_TO_PLMNID(ngap_gNB_instance_p->mcc[0],
-                    ngap_gNB_instance_p->mnc[0],
-                    ngap_gNB_instance_p->mnc_digit_length[0],
-                    &ie->value.choice.TAI.pLMNidentity);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  /* mandatory */
-  ie = (NGAP_PathSwitchRequestIEs_t *)calloc(1, sizeof(NGAP_PathSwitchRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_UESecurityCapabilities;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_PathSwitchRequestIEs__value_PR_UESecurityCapabilities;
-  ENCRALG_TO_BIT_STRING(path_switch_req_p->security_capabilities.encryption_algorithms,
-              &ie->value.choice.UESecurityCapabilities.encryptionAlgorithms);
-  INTPROTALG_TO_BIT_STRING(path_switch_req_p->security_capabilities.integrity_algorithms,
-              &ie->value.choice.UESecurityCapabilities.integrityProtectionAlgorithms);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
-    NGAP_ERROR("Failed to encode Path Switch Req \n");
-    /* Encode procedure has failed... */
-    return -1;
-  }
-
-  /* Update the current NGAP UE state */
-  ue_context_p->ue_state = NGAP_UE_WAITING_CSR;
-
-  /* Assign a stream for this UE :
-   * From 3GPP 36.412 7)Transport layers:
-   *  Within the SCTP association established between one AMF and gNB pair:
-   *  - a single pair of stream identifiers shall be reserved for the sole use
-   *      of NGAP elementary procedures that utilize non UE-associated signalling.
-   *  - At least one pair of stream identifiers shall be reserved for the sole use
-   *      of NGAP elementary procedures that utilize UE-associated signallings.
-   *      However a few pairs (i.e. more than one) should be reserved.
-   *  - A single UE-associated signalling shall use one SCTP stream and
-   *      the stream should not be changed during the communication of the
-   *      UE-associated signalling.
-   */
-  amf_desc_p->nextstream = (amf_desc_p->nextstream + 1) % amf_desc_p->out_streams;
-
-  if ((amf_desc_p->nextstream == 0) && (amf_desc_p->out_streams > 1)) {
-    amf_desc_p->nextstream += 1;
-  }
-
-  ue_context_p->tx_stream = amf_desc_p->nextstream;
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_NGAP_GNB,
-    MSC_NGAP_AMF,
-    (const char *)buffer,
-    length,
-    MSC_AS_TIME_FMT" E_RAN Setup successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_p->gNB_ue_ngap_id,
-    path_switch_req_p->amf_ue_ngap_id);
-
-  /* UE associated signalling -> use the allocated stream */
-  ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
-                                   amf_desc_p->assoc_id, buffer,
-                                   length, ue_context_p->tx_stream);
-#endif
+  //TODO
 
   return 0;
 }
@@ -1679,156 +1453,7 @@ int ngap_gNB_generate_PDUSESSION_Modification_Indication(
   ngap_pdusession_modification_ind_t *pdusession_modification_ind)
 //-----------------------------------------------------------------------------
 {
-#if 0
-  struct ngap_gNB_ue_context_s        *ue_context_p        = NULL;
-  NGAP_NGAP_PDU_t            pdu;
-  NGAP_PDUSESSIONModificationIndication_t     *out = NULL;
-  NGAP_PDUSESSIONModificationIndicationIEs_t   *ie = NULL;
-  NGAP_PDUSESSIONToBeModifiedItemBearerModInd_t 	  *PDUSESSION_ToBeModifiedItem_BearerModInd = NULL;
-  NGAP_PDUSESSIONToBeModifiedItemBearerModIndIEs_t *PDUSESSION_ToBeModifiedItem_BearerModInd_IEs = NULL;
-
-  //NGAP_PDUSESSIONNotToBeModifiedItemBearerModInd_t 	  *PDUSESSION_NotToBeModifiedItem_BearerModInd = NULL;
-  //NGAP_PDUSESSIONNotToBeModifiedItemBearerModIndIEs_t  *PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs = NULL;
-
-
-  ngap_gNB_instance_t          *ngap_gNB_instance_p = NULL;
-  ngap_gNB_instance_p = ngap_gNB_get_instance(instance);
-  uint8_t  *buffer = NULL;
-  uint32_t  len = 0;
-  int       ret = 0;
-  DevAssert(ngap_gNB_instance_p != NULL);
-  DevAssert(pdusession_modification_ind != NULL);
-
-  int num_pdusessions_tobemodified = pdusession_modification_ind->nb_of_pdusessions_tobemodified;
-  //int num_pdusessions_nottobemodified = pdusession_modification_ind->nb_of_pdusessions_nottobemodified;
-
-  //uint32_t CSG_id = 0;
-  //uint32_t pseudo_gtp_teid = 10;
-
-  if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
-		  pdusession_modification_ind->gNB_ue_ngap_id)) == NULL) {
-          // The context for this gNB ue ngap id doesn't exist in the map of gNB UEs 
-          NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%06x\n",
-        		  pdusession_modification_ind->gNB_ue_ngap_id);
-          return -1;
-  }
-
-  // Prepare the NGAP message to encode 
-  memset(&pdu, 0, sizeof(pdu));
-  pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_PDUSESSIONModificationIndication;
-  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_reject;
-  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_PDUSESSIONModificationIndication;
-  out = &pdu.choice.initiatingMessage->value.choice.PDUSESSIONModificationIndication;
-  /* mandatory */
-  ie = (NGAP_PDUSESSIONModificationIndicationIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONModificationIndicationIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_PDUSESSIONModificationIndicationIEs__value_PR_AMF_UE_NGAP_ID;
-  ie->value.choice.AMF_UE_NGAP_ID = pdusession_modification_ind->amf_ue_ngap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  ie = (NGAP_PDUSESSIONModificationIndicationIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONModificationIndicationIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_PDUSESSIONModificationIndicationIEs__value_PR_GNB_UE_NGAP_ID;
-  ie->value.choice.GNB_UE_NGAP_ID = pdusession_modification_ind->gNB_ue_ngap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  //E-RABs to be modified list
-  ie = (NGAP_PDUSESSIONModificationIndicationIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONModificationIndicationIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_PDUSESSIONToBeModifiedListBearerModInd;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_PDUSESSIONModificationIndicationIEs__value_PR_PDUSESSIONToBeModifiedListBearerModInd;
-
-  //The following two for-loops here will probably need to change. We should do a different type of search
-  for(int i=0; i<num_pdusessions_tobemodified; i++){
-	  PDUSESSION_ToBeModifiedItem_BearerModInd_IEs = (NGAP_PDUSESSIONToBeModifiedItemBearerModIndIEs_t *)calloc(1,sizeof(NGAP_PDUSESSIONToBeModifiedItemBearerModIndIEs_t));
-	  PDUSESSION_ToBeModifiedItem_BearerModInd_IEs->id = NGAP_ProtocolIE_ID_id_PDUSESSIONToBeModifiedItemBearerModInd;
-	  PDUSESSION_ToBeModifiedItem_BearerModInd_IEs->criticality = NGAP_Criticality_reject;
-	  PDUSESSION_ToBeModifiedItem_BearerModInd_IEs->value.present = NGAP_PDUSESSIONToBeModifiedItemBearerModIndIEs__value_PR_PDUSESSIONToBeModifiedItemBearerModInd;
-	  PDUSESSION_ToBeModifiedItem_BearerModInd = &PDUSESSION_ToBeModifiedItem_BearerModInd_IEs->value.choice.PDUSESSIONToBeModifiedItemBearerModInd;
-
-	  {
-	  PDUSESSION_ToBeModifiedItem_BearerModInd->e_RAB_ID = pdusession_modification_ind->pdusessions_tobemodified[i].pdusession_id;
-
-	  PDUSESSION_ToBeModifiedItem_BearerModInd->transportLayerAddress.size  = pdusession_modification_ind->pdusessions_tobemodified[i].gNB_addr.length/8;
-	  PDUSESSION_ToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = pdusession_modification_ind->pdusessions_tobemodified[i].gNB_addr.length%8;
-	  PDUSESSION_ToBeModifiedItem_BearerModInd->transportLayerAddress.buf = calloc(1, PDUSESSION_ToBeModifiedItem_BearerModInd->transportLayerAddress.size);
-	  memcpy (PDUSESSION_ToBeModifiedItem_BearerModInd->transportLayerAddress.buf, pdusession_modification_ind->pdusessions_tobemodified[i].gNB_addr.buffer,
-			  PDUSESSION_ToBeModifiedItem_BearerModInd->transportLayerAddress.size);
-
-	  INT32_TO_OCTET_STRING(pdusession_modification_ind->pdusessions_tobemodified[i].gtp_teid, &PDUSESSION_ToBeModifiedItem_BearerModInd->dL_GTP_TEID);
-
-	  }
-	  ASN_SEQUENCE_ADD(&ie->value.choice.PDUSESSIONToBeModifiedListBearerModInd.list, PDUSESSION_ToBeModifiedItem_BearerModInd_IEs);
-  }
-
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  //E-RABs NOT to be modified list
-  /*ie = (NGAP_PDUSESSIONModificationIndicationIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONModificationIndicationIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_PDUSESSIONNotToBeModifiedListBearerModInd;
-  ie->criticality = NGAP_Criticality_reject;
-  //if(num_pdusessions_nottobemodified > 0) {
-	  ie->value.present = NGAP_PDUSESSIONModificationIndicationIEs__value_PR_PDUSESSIONNotToBeModifiedListBearerModInd;
-
-	  for(int i=0; i<num_pdusessions_tobemodified; i++){
-		  PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs = (NGAP_PDUSESSIONNotToBeModifiedItemBearerModIndIEs_t *)calloc(1,sizeof(NGAP_PDUSESSIONNotToBeModifiedItemBearerModIndIEs_t));
-		  PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs->id = NGAP_ProtocolIE_ID_id_PDUSESSIONNotToBeModifiedItemBearerModInd;
-		  PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs->criticality = NGAP_Criticality_reject;
-		  PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs->value.present = NGAP_PDUSESSIONNotToBeModifiedItemBearerModIndIEs__value_PR_PDUSESSIONNotToBeModifiedItemBearerModInd;
-		  PDUSESSION_NotToBeModifiedItem_BearerModInd = &PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs->value.choice.PDUSESSIONNotToBeModifiedItemBearerModInd;
-
-		  {
-			  PDUSESSION_NotToBeModifiedItem_BearerModInd->e_RAB_ID = 10; //pdusession_modification_ind->pdusessions_tobemodified[i].pdusession_id;
-
-			  PDUSESSION_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size  = pdusession_modification_ind->pdusessions_tobemodified[i].gNB_addr.length/8;
-			  PDUSESSION_NotToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = pdusession_modification_ind->pdusessions_tobemodified[i].gNB_addr.length%8;
-			  PDUSESSION_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf =
-	  	    				calloc(1, PDUSESSION_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
-			  memcpy (PDUSESSION_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf, pdusession_modification_ind->pdusessions_tobemodified[i].gNB_addr.buffer,
-					  PDUSESSION_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
-
-			  //INT32_TO_OCTET_STRING(pdusession_modification_ind->pdusessions_tobemodified[i].gtp_teid, &PDUSESSION_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
-			    INT32_TO_OCTET_STRING(pseudo_gtp_teid, &PDUSESSION_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
-
-		  }
-		  ASN_SEQUENCE_ADD(&ie->value.choice.PDUSESSIONNotToBeModifiedListBearerModInd.list, PDUSESSION_NotToBeModifiedItem_BearerModInd_IEs);
-	  }
- // }
-  //else{
-//	  ie->value.present = NGAP_PDUSESSIONModificationIndicationIEs__value_PR_PDUSESSIONNotToBeModifiedListBearerModInd;
-//	  ie->value.choice.PDUSESSIONNotToBeModifiedListBearerModInd.list.size = 0;
-//  } / 
-  
-	   
-
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);*/
-
-  /*ie = (NGAP_PDUSESSIONModificationIndicationIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONModificationIndicationIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_CSGMembershipInfo;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_PDUSESSIONModificationIndicationIEs__value_PR_CSGMembershipInfo;
-  ie->value.choice.CSGMembershipInfo.cSGMembershipStatus = NGAP_CSGMembershipStatus_member;
-  INT32_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
-  ie->value.choice.CSGMembershipInfo.cSG_Id.bits_unused=5; 
-  ie->value.choice.CSGMembershipInfo.cellAccessMode = NGAP_CellAccessMode_hybrid;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);*/
-  
-  if (ngap_gNB_encode_pdu(&pdu, &buffer, &len) < 0) {
-    NGAP_ERROR("Failed to encode S1 E-RAB modification indication \n");
-    return -1;
-  }
-
-  // Non UE-Associated signalling -> stream = 0 
-  NGAP_INFO("Size of encoded message: %d \n", len);
-  ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
-                                       ue_context_p->amf_ref->assoc_id, buffer,
-                                       len, ue_context_p->tx_stream);  
-
-//ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance, ue_context_p->amf_ref->assoc_id, buffer, len, 0);
-#endif
+  //TODO
   return 0;
 }
 

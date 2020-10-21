@@ -863,10 +863,45 @@ boolean_t pdcp_remove_UE(
   return 1;
 }
 
-void pdcp_config_set_security(const protocol_ctxt_t* const  ctxt_pP, pdcp_t *pdcp_pP, rb_id_t rb_id,
-                              uint16_t lc_idP, uint8_t security_modeP, uint8_t *kRRCenc_pP, uint8_t *kRRCint_pP, uint8_t *kUPenc_pP)
+void pdcp_config_set_security(
+        const protocol_ctxt_t* const  ctxt_pP,
+        pdcp_t *const pdcp_pP,
+        const rb_id_t rb_id,
+        const uint16_t lc_idP,
+        const uint8_t security_modeP,
+        uint8_t *const kRRCenc_pP,
+        uint8_t *const kRRCint_pP,
+        uint8_t *const kUPenc_pP)
 {
-  TODO;
+  DevAssert(pdcp_pP != NULL);
+
+  if ((security_modeP >= 0) && (security_modeP <= 0x77)) {
+    pdcp_pP->cipheringAlgorithm     = security_modeP & 0x0f;
+    pdcp_pP->integrityProtAlgorithm = (security_modeP>>4) & 0xf;
+    LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_SET_SECURITY_MODE: cipheringAlgorithm %d integrityProtAlgorithm %d\n",
+          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
+          pdcp_pP->cipheringAlgorithm,
+          pdcp_pP->integrityProtAlgorithm);
+    pdcp_pP->kRRCenc = kRRCenc_pP;
+    pdcp_pP->kRRCint = kRRCint_pP;
+    pdcp_pP->kUPenc  = kUPenc_pP;
+    /* Activate security */
+    pdcp_pP->security_activated = 1;
+    MSC_LOG_EVENT(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      "0 Set security ciph %X integ %x UE %"PRIx16" ",
+      pdcp_pP->cipheringAlgorithm,
+      pdcp_pP->integrityProtAlgorithm,
+      ctxt_pP->rnti);
+  } else {
+    MSC_LOG_EVENT(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      "0 Set security failed UE %"PRIx16" ",
+      ctxt_pP->rnti);
+    LOG_E(PDCP,PROTOCOL_PDCP_CTXT_FMT"  bad security mode %d",
+          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
+          security_modeP);
+  }
 }
 
 static boolean_t pdcp_data_req_drb(

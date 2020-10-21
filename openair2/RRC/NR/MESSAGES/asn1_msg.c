@@ -41,8 +41,10 @@
 #include <per_encoder.h>
 
 #include "asn1_msg.h"
+#include "../nr_rrc_proto.h"
 #include "RRC/NR/nr_rrc_extern.h"
 #include "NR_DL-CCCH-Message.h"
+#include "NR_UL-CCCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
 #include "NR_RRCReject.h"
 #include "NR_RejectWaitTime.h"
@@ -61,6 +63,8 @@
 #include "NR_DRB-ToAddMod.h"
 #include "NR_DRB-ToAddModList.h"
 #include "NR_SecurityConfig.h"
+#include "NR_RRCReconfiguration-v1530-IEs.h"
+#include "NR_UL-DCCH-Message.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -659,17 +663,18 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     NR_MAC_CellGroupConfig_t                         *mac_CellGroupConfig  = NULL;
 
     char masterCellGroup_buf[1000];
-    int size = 0;
     long *logicalChannelGroup = NULL;
 
     memset((void *)&dl_ccch_msg, 0, sizeof(NR_DL_CCCH_Message_t));
     dl_ccch_msg.message.present            = NR_DL_CCCH_MessageType_PR_c1;
     dl_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_DL_CCCH_MessageType__c1));
     dl_ccch_msg.message.choice.c1->present = NR_DL_CCCH_MessageType__c1_PR_rrcSetup;
+    dl_ccch_msg.message.choice.c1->choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_t));
 
     rrcSetup = dl_ccch_msg.message.choice.c1->choice.rrcSetup;
     rrcSetup->criticalExtensions.present = NR_RRCSetup__criticalExtensions_PR_rrcSetup;
     rrcSetup->rrc_TransactionIdentifier  = transaction_id;
+    rrcSetup->criticalExtensions.choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_IEs_t));
     ie = rrcSetup->criticalExtensions.choice.rrcSetup;
 
     /****************************** radioBearerConfig ******************************/
@@ -703,14 +708,18 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     cellGroupConfig->rlc_BearerToAddModList                          = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
     rlc_BearerConfig                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
     rlc_BearerConfig->logicalChannelIdentity                         = 1;
+    rlc_BearerConfig->servedRadioBearer                              = calloc(1, sizeof(*rlc_BearerConfig->servedRadioBearer));
     rlc_BearerConfig->servedRadioBearer->present                     = NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
     rlc_BearerConfig->servedRadioBearer->choice.srb_Identity         = 1;
     rlc_BearerConfig->reestablishRLC                                 = NULL;
+    rlc_Config = calloc(1, sizeof(NR_RLC_Config_t));
     rlc_Config->present                                              = NR_RLC_Config_PR_am;
     rlc_Config->choice.am                                            = calloc(1, sizeof(*rlc_Config->choice.am));
+    rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength                  = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
     *(rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
     rlc_Config->choice.am->dl_AM_RLC.t_Reassembly                    = NR_T_Reassembly_ms35;
     rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit                = NR_T_StatusProhibit_ms0;
+    rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength                  = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
     *(rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
     rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit                = NR_T_PollRetransmit_ms45;
     rlc_Config->choice.am->ul_AM_RLC.pollPDU                         = NR_PollPDU_infinity;
@@ -718,6 +727,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
     rlc_BearerConfig->rlc_Config                                     = rlc_Config;
     logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+    logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
     logicalChannelConfig->ul_SpecificParameters->priority            = 1;
     logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
     logicalChannelGroup                                              = CALLOC(1, sizeof(long));
@@ -725,6 +735,10 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
     rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
     ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+
+    cellGroupConfig->rlc_BearerToReleaseList = NULL;
+    cellGroupConfig->sCellToAddModList       = NULL;
+    cellGroupConfig->sCellToReleaseList      = NULL;
 
     /* mac CellGroup Config */
     mac_CellGroupConfig                                                     = calloc(1, sizeof(NR_MAC_CellGroupConfig_t));
@@ -932,12 +946,13 @@ uint16_t do_RRCReconfiguration(
     NR_DL_DCCH_Message_t                             dl_dcch_msg;
     asn_enc_rval_t                                   enc_rval;
     NR_RRCReconfiguration_IEs_t                      *ie;
-    NR_SRB_ToAddModList_t                            *SRB2_configList      = NULL;
+    NR_SRB_ToAddModList_t                            *SRB_configList       = NULL;
+    NR_SRB_ToAddModList_t                            *SRB_configList2      = NULL;
     NR_SRB_ToAddMod_t                                *SRB2_config          = NULL;
     NR_DRB_ToAddModList_t                            *DRB_configList       = NULL;
+    NR_DRB_ToAddModList_t                            *DRB_configList2      = NULL;
     NR_DRB_ToAddMod_t                                *DRB_config           = NULL;
     NR_SecurityConfig_t                              *security_config      = NULL;
-    NR_CellGroupConfig_t                             *secondaryCellGroup   = NULL;
     NR_DedicatedNAS_Message_t                        *dedicatedNAS_Message = NULL;
 
     memset(&dl_dcch_msg, 0, sizeof(NR_DL_DCCH_Message_t));
@@ -949,26 +964,40 @@ uint16_t do_RRCReconfiguration(
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier = Transaction_id;
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
 
-    uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
     /******************** Radio Bearer Config ********************/
-    ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
-    
     /* Configure SRB2 */
-    SRB2_configList = ue_context_pP->ue_context.SRB_configList2[xid];
+    SRB_configList2 = ue_context_pP->ue_context.SRB_configList2[Transaction_id];
+    SRB_configList = ue_context_pP->ue_context.SRB_configList;
+    SRB_configList = CALLOC(1, sizeof(*SRB_configList));
+    memset(SRB_configList, 0, sizeof(*SRB_configList));
 
-    if (SRB2_configList) {
-        free(SRB2_configList);
+    if (SRB_configList2) {
+        free(SRB_configList2);
     }
 
-    SRB2_configList = CALLOC(1, sizeof(*SRB2_configList));
-    memset(SRB2_configList, 0, sizeof(*SRB2_configList));
+    SRB_configList2 = CALLOC(1, sizeof(*SRB_configList2));
+    memset(SRB_configList2, 0, sizeof(*SRB_configList2));
     SRB2_config = CALLOC(1, sizeof(*SRB2_config));
     SRB2_config->srb_Identity = 2;
-    ASN_SEQUENCE_ADD(&SRB2_configList->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList2->list, SRB2_config);
 
     /* Configure DRB */
+    DRB_configList = ue_context_pP->ue_context.DRB_configList;
+    if (DRB_configList) {
+        free(DRB_configList);
+    }
+
     DRB_configList = CALLOC(1, sizeof(*DRB_configList));
     memset(DRB_configList, 0, sizeof(*DRB_configList));
+
+    DRB_configList2 = ue_context_pP->ue_context.DRB_configList2[Transaction_id];
+    if (DRB_configList2) {
+        free(DRB_configList2);
+    }
+    DRB_configList2 = CALLOC(1, sizeof(*DRB_configList2));
+    memset(DRB_configList2, 0, sizeof(*DRB_configList2));
+
     DRB_config = CALLOC(1, sizeof(*DRB_config));
     DRB_config->drb_Identity = 1;
     DRB_config->cnAssociation = CALLOC(1, sizeof(*DRB_config->cnAssociation));
@@ -998,31 +1027,32 @@ uint16_t do_RRCReconfiguration(
     DRB_config->pdcp_Config->ext1 = NULL;
 
     ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+    ASN_SEQUENCE_ADD(&DRB_configList2->list, DRB_config);
 
     /* Configure Security */
-    security_config    =  CALLOC(1, sizeof(NR_SecurityConfig_t));
-    security_config->securityAlgorithmConfig = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->securityAlgorithmConfig));
-    security_config->securityAlgorithmConfig->cipheringAlgorithm     = NR_CipheringAlgorithm_nea0;
-    security_config->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
-    security_config->keyToUse = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->keyToUse));
-    *security_config->keyToUse = NR_SecurityConfig__keyToUse_master;
+    // security_config    =  CALLOC(1, sizeof(NR_SecurityConfig_t));
+    // security_config->securityAlgorithmConfig = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->securityAlgorithmConfig));
+    // security_config->securityAlgorithmConfig->cipheringAlgorithm     = NR_CipheringAlgorithm_nea0;
+    // security_config->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
+    // security_config->keyToUse = CALLOC(1, sizeof(*ie->radioBearerConfig->securityConfig->keyToUse));
+    // *security_config->keyToUse = NR_SecurityConfig__keyToUse_master;
 
     ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
     ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
-    ie->radioBearerConfig->srb_ToAddModList  = SRB2_configList;
+    ie->radioBearerConfig->srb_ToAddModList  = SRB_configList;
     ie->radioBearerConfig->drb_ToAddModList  = DRB_configList;
     ie->radioBearerConfig->securityConfig    = security_config;
     ie->radioBearerConfig->srb3_ToRelease    = NULL;
     ie->radioBearerConfig->drb_ToReleaseList = NULL;
 
     /******************** Secondary Cell Group ********************/
-    rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
-    fill_default_secondaryCellGroup( carrier->ServingCellConfigCommon,
-                                     ue_context_pP->ue_context.secondaryCellGroup,
-                                     1,
-                                     1,
-                                     carrier->pdsch_AntennaPorts,
-                                     carrier->initial_csi_index[gnb_rrc_inst->Nb_ue]);
+    // rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
+    // fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
+    //                                  ue_context_pP->ue_context.secondaryCellGroup,
+    //                                  1,
+    //                                  1,
+    //                                  carrier->pdsch_AntennaPorts,
+    //                                  carrier->initial_csi_index[gnb_rrc_inst->Nb_ue]);
 
     /******************** Meas Config ********************/
     // measConfig
@@ -1030,9 +1060,10 @@ uint16_t do_RRCReconfiguration(
     // lateNonCriticalExtension
     ie->lateNonCriticalExtension = NULL;
     // nonCriticalExtension
+    ie->nonCriticalExtension = calloc(1, sizeof(NR_RRCReconfiguration_v1530_IEs_t));
+    dedicatedNAS_Message = calloc(1, sizeof(NR_DedicatedNAS_Message_t));
     dedicatedNAS_Message->buf  = ue_context_pP->ue_context.nas_pdu.buffer;
     dedicatedNAS_Message->size = ue_context_pP->ue_context.nas_pdu.length;
-    ie->nonCriticalExtension->dedicatedNAS_MessageList = CALLOC(1, sizeof(*ie->nonCriticalExtension->dedicatedNAS_MessageList));
     ASN_SEQUENCE_ADD(&ie->nonCriticalExtension->dedicatedNAS_MessageList->list, dedicatedNAS_Message);
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
@@ -1064,3 +1095,125 @@ uint16_t do_RRCReconfiguration(
 
     return((enc_rval.encoded+7)/8);
 }
+
+
+uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
+  asn_enc_rval_t enc_rval;
+  uint8_t buf[5],buf2=0;
+  NR_UL_CCCH_Message_t ul_ccch_msg;
+  NR_RRCSetupRequest_t *rrcSetupRequest;
+  memset((void *)&ul_ccch_msg,0,sizeof(NR_UL_CCCH_Message_t));
+  ul_ccch_msg.message.present           = NR_UL_CCCH_MessageType_PR_c1;
+  ul_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_UL_CCCH_MessageType__c1));
+  ul_ccch_msg.message.choice.c1->present = NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest;
+  rrcSetupRequest          = ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest;
+
+
+  if (1) {
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.present = NR_InitialUE_Identity_PR_randomValue;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.size = 5;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.bits_unused = 0;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf = buf;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[0] = rv[0];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[1] = rv[1];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[2] = rv[2];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[3] = rv[3];
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[4] = rv[4];
+  } else {
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.present = NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.size = 1;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.bits_unused = 0;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.buf = buf;
+    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.buf[0] = 0x12;
+  }
+
+  rrcSetupRequest->rrcSetupRequest.establishmentCause = NR_EstablishmentCause_mo_Signalling; //EstablishmentCause_mo_Data;
+  rrcSetupRequest->rrcSetupRequest.spare.buf = &buf2;
+  rrcSetupRequest->rrcSetupRequest.spare.size=1;
+  rrcSetupRequest->rrcSetupRequest.spare.bits_unused = 7;
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)&ul_ccch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_CCCH_Message,
+                                   NULL,
+                                   (void *)&ul_ccch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(RRC,"[UE] RRCSetupRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+  return((enc_rval.encoded+7)/8);
+}
+//------------------------------------------------------------------------------
+uint8_t
+do_NR_RRCReconfigurationComplete(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t *buffer,
+  const uint8_t Transaction_id
+)
+//------------------------------------------------------------------------------
+{
+  asn_enc_rval_t enc_rval;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  NR_RRCReconfigurationComplete_t *rrcReconfigurationComplete;
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present                     = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1                   = CALLOC(1, sizeof(struct NR_UL_DCCH_MessageType__c1));
+  ul_dcch_msg.message.choice.c1->present           = NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete;
+  rrcReconfigurationComplete            = ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete;
+  rrcReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
+  rrcReconfigurationComplete->criticalExtensions.present =
+		  NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
+  rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->nonCriticalExtension = NULL;
+  rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->lateNonCriticalExtension = NULL;
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
+                                   NULL,
+                                   (void *)&ul_dcch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(RRC,"rrcReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  return((enc_rval.encoded+7)/8);
+}
+
+uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS){
+  asn_enc_rval_t enc_rval;
+  
+  NR_UL_DCCH_Message_t  ul_dcch_msg;
+  NR_RRCSetupComplete_t *RrcSetupComplete;
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1 = CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
+  ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete;
+  RrcSetupComplete                       = ul_dcch_msg.message.choice.c1->choice.rrcSetupComplete;
+  RrcSetupComplete->rrc_TransactionIdentifier    = Transaction_id;
+  RrcSetupComplete->criticalExtensions.present   = NR_RRCSetupComplete__criticalExtensions_PR_rrcSetupComplete;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->nonCriticalExtension = CALLOC(1,
+    sizeof(*RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->nonCriticalExtension));
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->selectedPLMN_Identity = sel_plmn_id;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->registeredAMF = NULL;
+ memset(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,0,sizeof(OCTET_STRING_t));
+ OCTET_STRING_fromBuf(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,dedicatedInfoNAS,dedicatedInfoNASLength);
+if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&ul_dcch_msg);
+}
+
+enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
+                                 NULL,
+                                 (void *)&ul_dcch_msg,
+                                 buffer,
+                                 100);
+
+  AssertFatal(enc_rval.encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
+              enc_rval.failed_type->name,enc_rval.encoded);
+  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+
+  return((enc_rval.encoded+7)/8);
+}
+
