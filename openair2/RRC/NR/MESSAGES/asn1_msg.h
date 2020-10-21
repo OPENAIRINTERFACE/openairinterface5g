@@ -99,7 +99,7 @@ uint8_t do_NR_SecurityModeCommand(
                     const uint8_t cipheringAlgorithm,
                     NR_IntegrityProtAlgorithm_t *integrityProtAlgorithm);
 
-uint8_t do_NR_UECapabilityEnquiry_nr( const protocol_ctxt_t *const ctxt_pP,
+uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
                                    const uint8_t                Transaction_id);
 
