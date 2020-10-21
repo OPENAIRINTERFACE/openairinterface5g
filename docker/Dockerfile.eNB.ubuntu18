@@ -64,6 +64,8 @@ RUN apt-get update && \
     add-apt-repository ppa:ettusresearch/uhd --yes && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        net-tools \
+        iputils-ping \
         python \
         libusb-1.0-0 \
         libuhd003 \
@@ -120,3 +122,4 @@ WORKDIR /opt/oai-enb
 
 #CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]
