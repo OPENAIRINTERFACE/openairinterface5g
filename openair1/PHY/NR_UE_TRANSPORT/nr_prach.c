@@ -72,7 +72,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im;
-  int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
+  int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k, prachStartSymbol, sample_offset_slot;
   //int restricted_Type;
 
   prach                   = prach_tmp;
@@ -95,7 +95,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   kbar                    = 1;
   K                       = 24;
   k                       = 12*n_ra_prb - 6*fp->N_RB_UL;
-  //prachStartSymbol     = prach_config_pdu->prach_start_symbol
+  prachStartSymbol        = prach_pdu->prach_start_symbol;
   //restricted_Type         = 0;
 
   compute_nr_prach_seq(nrUE_config->prach_config.prach_sequence_length,
@@ -103,7 +103,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
                        nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index,
                        ue->X_u);
 
-  prach_start = fp->get_samples_slot_timestamp(slot, fp, 0);
+  sample_offset_slot = (prachStartSymbol==0?0:fp->ofdm_symbol_size*prachStartSymbol+fp->nb_prefix_samples0+fp->nb_prefix_samples*(prachStartSymbol-1));
+  prach_start = fp->get_samples_slot_timestamp(slot, fp, 0) + sample_offset_slot;
 
   // First compute physical root sequence
   /************************************************************************
