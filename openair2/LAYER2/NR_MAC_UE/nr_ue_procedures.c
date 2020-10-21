@@ -77,7 +77,7 @@
 
 extern int bwp_id;
 extern dci_pdu_rel15_t *def_dci_pdu_rel15;
-extern const uint16_t nr_slots_per_frame[5];
+extern const uint8_t nr_slots_per_frame[5];
 
 extern void mac_rlc_data_ind     (
 				  const module_id_t         module_idP,
@@ -795,7 +795,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
       uint8_t access_mode   = SCHEDULED_ACCESS;
 
-      fapi_nr_ul_config_request_t *ul_config_req = &mac->ul_config_request;
+      fapi_nr_ul_config_request_t *ul_config_req = &mac->ul_config_request[1];  // Temporary workaround due to change in the structure to accommodate multiple UL config requests
 
       // Schedule ULSCH only if the frame and slot are as indicated in ul_config_req.
       // These values were set based on the values of slot in which UL DCI was received and K2.
@@ -809,7 +809,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         fapi_nr_ul_config_request_t *ul_config = &dcireq.ul_config_req;
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
 
-        fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &mac->ul_config_request.ul_config_list[0];
+        fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &mac->ul_config_request[1].ul_config_list[0];  // Temporary workaround
 
         uint16_t rnti               = ulcfg_pdu->pusch_config_pdu.rnti;
         uint32_t rb_size            = ulcfg_pdu->pusch_config_pdu.rb_size;
@@ -975,7 +975,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         nr_scheduled_response_t scheduled_response;
         fapi_nr_tx_request_t tx_req;
         fapi_nr_tx_request_body_t tx_req_body;
-        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[1];   // Temporary workaround
         fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
         uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
 
@@ -1087,7 +1087,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[1];  // Temporary workaround
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
@@ -2450,13 +2450,45 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
 }
 
+long get_ul_config_request(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, uint8_t time_domain_ind, fapi_nr_ul_config_request_t **ul_config) {
+  // Get offset K2 from RRC configuration
+  NR_PUSCH_Config_t *pusch_config=mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+  if (pusch_config->pusch_TimeDomainAllocationList) {
+    pusch_TimeDomainAllocationList = pusch_config->pusch_TimeDomainAllocationList->choice.setup;
+  }
+  else if (mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+    pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  }
+  long k2 = *pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2;
+  
+  // Calculate the index of the UL slot in mac->ul_config_request list. This is
+  // based on the TDD pattern (slot configuration period) and number of UL+mixed
+  // slots in the period. TS 38.213 Sec 11.1
+  NR_TDD_UL_DL_Pattern_t *tdd_pattern = &mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  const int num_slots_per_tdd = nr_slots_per_frame[*mac->scc->ssbSubcarrierSpacing] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
+  const int num_slots_ul = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
+  int index = slot + k2 + num_slots_ul - num_slots_per_tdd;
+  LOG_D(MAC, "nr_ue_procedures: get_ul_config() k2 %ld, slots per tdd %d, num_slots_ul %d, index %d\n", 
+                k2,
+                num_slots_per_tdd,
+                num_slots_ul,
+                index);
+
+  *ul_config = &mac->ul_config_request[index];
+
+  return k2;
+}
+
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
   int bwp_id = 1;
+  int mu = 0;
+  long k2 = 0;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config = NULL;
     
   //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
@@ -2486,9 +2518,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
      *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
      *    50 SUL_IND_0_0:
      */
-    // It's redundant to process PUSCH pdu here in the Rx path. This is done 
-    // in the Tx path in nr_ue_scheduler(). Hence removing here.
-    //ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+    // Get the UL config request for the slot in which PUSCH will be scheduled
+    k2 = get_ul_config_request(mac, frame, slot, dci->frequency_hopping_flag.val, &ul_config);
+    AssertFatal(ul_config != NULL, "nr_ue_process_dci(): ul_config is NULL\n");
+
+    ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
     nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
     /* IDENTIFIER_DCI_FORMATS */
@@ -2526,8 +2560,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     /* SUL_IND_0_0 */ // To be implemented, FIXME!!!
 
-    // Removing since it's redundant to process PUSCH PDU in RX path!!
-    //ul_config->number_pdus = ul_config->number_pdus + 1;
+    // Get the numerology to calculate the Tx frame and slot
+    mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+  
+    // Calculate the slot and frame for PUSCH transmission
+    ul_config->slot = (slot + k2) % nr_slots_per_frame[mu];
+    ul_config->sfn = ((slot + k2) % nr_slots_per_frame[mu] > nr_slots_per_frame[mu]) ? (frame + 1) % 1024 : frame;
+    LOG_D(MAC, "nr_ue_process_dci(): Calculated frame and slot for pusch Tx: %d.%d, number of pdus %d\n", ul_config->sfn, ul_config->slot, ul_config->number_pdus);
+    ul_config->number_pdus = ul_config->number_pdus + 1;
     break;
 
   case NR_UL_DCI_FORMAT_0_1:
@@ -2559,9 +2599,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
      *    48 UL_SCH_IND
      *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
      */
-    // It's redundant to process PUSCH pdu here in the Rx path. This is done 
-    // in the Tx path in nr_ue_scheduler(). Hence removing here.
-    //ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+    // Get the UL config request for the slot in which PUSCH will be scheduled
+    k2 = get_ul_config_request(mac, frame, slot, dci->frequency_hopping_flag.val, &ul_config);
+    AssertFatal(ul_config != NULL, "nr_ue_process_dci(): ul_config is NULL\n");
+
+    ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
     nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
     /* IDENTIFIER_DCI_FORMATS */
@@ -2854,30 +2896,15 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* UL_SCH_IND */
     // A value of "1" indicates UL-SCH shall be transmitted on the PUSCH and
     // a value of "0" indicates UL-SCH shall not be transmitted on the PUSCH
-
-    // Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,
-    // where K2 is the offset between the slot in which UL DCI is received and the slot
-    // in which ULSCH should be scheduled. K2 is configured in RRC configuration.
-    
-    // Get K2 from RRC configuration
-    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-    if (pusch_config->pusch_TimeDomainAllocationList) {
-      pusch_TimeDomainAllocationList = pusch_config->pusch_TimeDomainAllocationList->choice.setup;
-    }
-    else if (mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-      pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-    }
-    long k2 = *pusch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->k2;
     
     // Get the numerology to calculate the Tx frame and slot
     int mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
     
-    // Calculate the slot and frame
+    // Calculate the slot and frame for PUSCH transmission
     ul_config->slot = (slot + k2) % nr_slots_per_frame[mu];
     ul_config->sfn = ((slot + k2) % nr_slots_per_frame[mu] > nr_slots_per_frame[mu]) ? (frame + 1) % 1024 : frame;
-    // Removing since it's redundant to process PUSCH PDU in RX path!!
-    //ul_config->number_pdus = ul_config->number_pdus + 1;
     LOG_I(MAC, "nr_ue_process_dci(): Calculated frame and slot for pusch Tx: %d.%d\n", ul_config->sfn, ul_config->slot);
+    ul_config->number_pdus = ul_config->number_pdus + 1;
     break;
 
   case NR_DL_DCI_FORMAT_1_0:

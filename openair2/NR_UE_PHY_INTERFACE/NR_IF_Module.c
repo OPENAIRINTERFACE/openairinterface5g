@@ -135,7 +135,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[1];  // Temporary workaround
 
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
     // UL indication to schedule DCI reception
