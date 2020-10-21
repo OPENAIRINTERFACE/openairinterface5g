@@ -1894,6 +1894,7 @@ void nr_csirs_scheduling(int Mod_idP,
   NR_NZP_CSI_RS_Resource_t *nzpcsi;
   int period, offset;
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
+  uint8_t *vrb_map = RC.nrmac[Mod_idP]->common_channels[CC_id].vrb_map;
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[sched_ctrl->active_bwp->bwp_Id-1];
 
@@ -2015,6 +2016,8 @@ void nr_csirs_scheduling(int Mod_idP,
         AssertFatal(1==0,"Invalid freqency domain allocation in CSI-RS resource\n");
       }
       dl_req->nPDUs++;
+      for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+        vrb_map[rb] = 1;
     }
   }
 }
