@@ -363,7 +363,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
-  if (UE_mode < PUSCH && prach_resources->init_msg1) {
+  if (prach_resources->init_msg1) {
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
 

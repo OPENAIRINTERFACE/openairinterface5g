@@ -216,7 +216,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   /* RACH */
   if (get_softmodem_params()->do_ra==1) {
-    if ((ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
+    if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
   }
