@@ -183,6 +183,7 @@ typedef struct NR_UE_RRC_INST_s {
     long               selected_plmn_identity;
     Rrc_State_NR_t     nrRrcState;
     Rrc_Sub_State_NR_t nrRrcSubState;
+	as_nas_info_t      initialNasMsg;
 } NR_UE_RRC_INST_t;
 
 #endif

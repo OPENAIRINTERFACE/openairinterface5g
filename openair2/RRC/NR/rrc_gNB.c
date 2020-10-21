@@ -576,8 +576,8 @@ rrc_gNB_process_RRCReconfigurationComplete(
     NR_DRB_Identity_t                  *drb_id_p      = NULL;
 
     ue_context_pP->ue_context.ue_reestablishment_timer = 0;
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
+    //rnti_t rnti = ue_context_pP->ue_id_rnti;
+    //module_id_t module_id = ctxt_pP->module_id;
 
     // int UE_id_mac = find_UE_id(module_id, rnti);
 
@@ -625,6 +625,31 @@ rrc_gNB_process_RRCReconfigurationComplete(
     //                         NULL);
 
     /* Loop through DRBs and establish if necessary */
+    /* Set the SRB active in UE context */
+    if (SRB_configList != NULL) {
+      for (int i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
+        if (SRB_configList->list.array[i]->srb_Identity == 1) {
+          ue_context_pP->ue_context.Srb1.Active = 1;
+        } else if (SRB_configList->list.array[i]->srb_Identity == 2) {
+          ue_context_pP->ue_context.Srb2.Active = 1;
+          ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
+          LOG_I(NR_RRC,"[gNB %d] Frame      %d CC %d : SRB2 is now active\n",
+                ctxt_pP->module_id,
+                ctxt_pP->frame,
+                ue_context_pP->ue_context.primaryCC_id);
+        } else {
+          LOG_W(NR_RRC,"[gNB %d] Frame      %d CC %d : invalide SRB identity %ld\n",
+                ctxt_pP->module_id,
+                ctxt_pP->frame,
+                ue_context_pP->ue_context.primaryCC_id,
+                SRB_configList->list.array[i]->srb_Identity);
+        }
+      }
+
+      free(SRB_configList);
+      ue_context_pP->ue_context.SRB_configList2[xid] = NULL;
+    }
+
     if (DRB_configList != NULL) {
         for (int i = 0; i < DRB_configList->list.count; i++) {
         if (DRB_configList->list.array[i]) {
@@ -1057,7 +1082,7 @@ rrc_gNB_decode_dcch(
 
                             uint64_t fiveg_s_TMSI = bitStr_to_uint64(&ul_dcch_msg->message.choice.c1->choice.rrcSetupComplete->
                                     criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
-                            LOG_I(NR_RRC, "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%d), amf_pointer: 0x%lX(%d), 5g TMSI: 0x%X \n",
+                            LOG_I(NR_RRC, "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%ld), amf_pointer: 0x%lX(%ld), 5g TMSI: 0x%X \n",
                                 fiveg_s_TMSI, fiveg_s_TMSI >> 38, fiveg_s_TMSI >> 38,
                                 (fiveg_s_TMSI >> 32) & 0x3F, (fiveg_s_TMSI >> 32) & 0x3F,
                                 (uint32_t)fiveg_s_TMSI);
@@ -1102,6 +1127,7 @@ rrc_gNB_decode_dcch(
 //                }
 
                 rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
+                //rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
                 break;
 
             case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:

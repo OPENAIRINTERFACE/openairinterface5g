@@ -1073,6 +1073,7 @@ uint16_t do_RRCReconfiguration(
     dedicatedNAS_Message = calloc(1, sizeof(NR_DedicatedNAS_Message_t));
     dedicatedNAS_Message->buf  = ue_context_pP->ue_context.nas_pdu.buffer;
     dedicatedNAS_Message->size = ue_context_pP->ue_context.nas_pdu.length;
+	ie->nonCriticalExtension->dedicatedNAS_MessageList = calloc(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
     ASN_SEQUENCE_ADD(&ie->nonCriticalExtension->dedicatedNAS_MessageList->list, dedicatedNAS_Message);
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
@@ -1105,15 +1106,6 @@ uint16_t do_RRCReconfiguration(
             ctxt_pP->rnti);
         return(-1);
     }
-
-#ifdef ITTI_SIM
-    MessageDef *message_p;
-    message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
-    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-    GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
-    GNB_RRC_DCCH_DATA_IND (message_p).size  = (enc_rval.encoded+7)/8;
-    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#endif
 
     return((enc_rval.encoded+7)/8);
 }
@@ -1192,9 +1184,9 @@ do_NR_RRCReconfigurationComplete(
 		  NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
   rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->nonCriticalExtension = NULL;
   rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->lateNonCriticalExtension = NULL;
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-  }
+  //}
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
                                    NULL,
@@ -1203,7 +1195,7 @@ do_NR_RRCReconfigurationComplete(
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-  LOG_D(NR_RRC,"rrcReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_I(NR_RRC,"rrcReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 

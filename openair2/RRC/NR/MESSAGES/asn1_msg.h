@@ -118,3 +118,5 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id,
                             uint8_t sel_plmn_id, 
                             const int dedicatedInfoNASLength, 
                             const char *dedicatedInfoNAS);
+
+uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv);

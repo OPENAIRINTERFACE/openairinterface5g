@@ -1275,7 +1275,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
       (dynamic_prb_BundlingType2==dy_2_n4)||(dynamic_prb_BundlingType2==dy_2_wideband)) prb_BundlingType_size=1;
 
   // 15 RATE_MATCHING_IND FIXME!!!
-  // according to TS 38.212: Rate matching indicator – 0, 1, or 2 bits according to higher layer parameter rateMatchPattern
+  // according to TS 38.212: Rate matching indicator  E0, 1, or 2 bits according to higher layer parameter rateMatchPattern
   uint8_t rateMatching_bits = pdsch_config.n_rateMatchPatterns;
   // 16 ZP_CSI_RS_TRIGGER FIXME!!!
   // 0, 1, or 2 bits as defined in Subclause 5.1.4.2 of [6, TS 38.214].
@@ -1418,7 +1418,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
   // 2 bits otherwise
   uint8_t ptrs_dmrs_bits=0; //FIXME!!!
   // 46 BETA_OFFSET_IND
-  // at IE PUSCH-Config, beta_offset indicator – 0 if the higher layer parameter betaOffsets = semiStatic; otherwise 2 bits
+  // at IE PUSCH-Config, beta_offset indicator  E0 if the higher layer parameter betaOffsets = semiStatic; otherwise 2 bits
   // uci-OnPUSCH
   // Selection between and configuration of dynamic and semi-static beta-offset. If the field is absent or released, the UE applies the value 'semiStatic' and the BetaOffsets
   uint8_t betaOffsets = 0;
@@ -3289,10 +3289,10 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     	
     case NR_RNTI_P:
       /*
-      // Short Messages Indicator – 2 bits
+      // Short Messages Indicator  E2 bits
       for (int i=0; i<2; i++)
       dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages_indicator>>(1-i))&1)<<(dci_size-pos++);
-      // Short Messages – 8 bits
+      // Short Messages  E8 bits
       for (int i=0; i<8; i++)
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages>>(7-i))&1)<<(dci_size-pos++);
       // Freq domain assignment 0-16 bit
@@ -3359,13 +3359,13 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       // HARQ process number  4bit
       pos+=4;
       dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-      // Downlink assignment index – 2 bits
+      // Downlink assignment index  E2 bits
       pos+=2;
       dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
-      // TPC command for scheduled PUCCH – 2 bits
+      // TPC command for scheduled PUCCH  E2 bits
       pos+=2;
       dci_pdu_rel15->tpc  = (*dci_pdu>>(dci_size-pos))&3;
-      // PDSCH-to-HARQ_feedback timing indicator – 3 bits
+      // PDSCH-to-HARQ_feedback timing indicator  E3 bits
       pos+=3;
       dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&7;
        
@@ -3386,7 +3386,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// Time domain assignment 4bit
 	pos+=4;
 	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-	// Frequency hopping flag – 1 bit
+	// Frequency hopping flag  E1 bit
 	pos++;
 	dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
 	// MCS  5 bit
@@ -3401,10 +3401,10 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// HARQ process number  4bit
 	pos+=4;
 	dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-	// TPC command for scheduled PUSCH – 2 bits
+	// TPC command for scheduled PUSCH  E2 bits
 	pos+=2;
 	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
-	// UL/SUL indicator – 1 bit
+	// UL/SUL indicator  E1 bit
 	/* commented for now (RK): need to get this from BWP descriptor
 	   if (cfg->pucch_config.pucch_GroupHopping.value)
 	   dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)ul_sul_indicator&1)<<(dci_size-pos++);
@@ -3422,7 +3422,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// Time domain assignment 4bit
 	for (int i=0; i<4; i++)
 	dci_pdu->= (((uint64_t)*dci_pdu>>(dci_size-pos)time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
-	// Frequency hopping flag – 1 bit
+	// Frequency hopping flag  E1 bit
 	dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)frequency_hopping_flag&1)<<(dci_size-pos++);
 	// MCS  5 bit
 	for (int i=0; i<5; i++)
@@ -3436,11 +3436,11 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	for (int i=0; i<4; i++)
 	*dci_pdu  |= (((uint64_t)*dci_pdu>>(dci_size-pos)harq_pid>>(3-i))&1)<<(dci_size-pos++);
 	
-	// TPC command for scheduled PUSCH – 2 bits
+	// TPC command for scheduled PUSCH  E2 bits
 	for (int i=0; i<2; i++)
 	dci_pdu->= (((uint64_t)*dci_pdu>>(dci_size-pos)tpc>>(1-i))&1)<<(dci_size-pos++);
 	*/	
-	// UL/SUL indicator – 1 bit
+	// UL/SUL indicator  E1 bit
 	/*
 	  commented for now (RK): need to get this information from BWP descriptor
 	  if (cfg->pucch_config.pucch_GroupHopping.value)
