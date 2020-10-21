@@ -25,13 +25,16 @@
 
 //#define NR_CSIRS_DEBUG
 
-int nr_generate_csi_rs(uint32_t **gold_csi_rs,
-                       int32_t** txdataF,
-                       int16_t amp,
-                       NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params)
-{
 
+void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
+                        int16_t amp,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        int slot){
+
+  NR_DL_FRAME_PARMS frame_parms=gNB->frame_parms;
+  uint32_t **gold_csi_rs = gNB->nr_gold_csi_rs[slot];
+  int32_t **txdataF = gNB->common_vars.txdataF;
+  int txdataF_offset = (slot%2)*frame_parms.samples_per_slot_wCP;
   int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1];
   uint16_t b = csi_params.freq_domain;
   uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
@@ -586,16 +589,17 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
             }
             // ZP CSI RS
             if (csi_params.csi_type == 2) {
-              ((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1] = 0;
-              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = 0;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)] = 0;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)] = 0;
             }
             else {
-              ((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
-              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
 #ifdef NR_CSIRS_DEBUG
-            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k-start_sc,mprime,p+3000,((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1],
-               ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
+            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k-start_sc,mprime,p+3000,
+                   ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)],
+                   ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)]);
 #endif
           }
         }
@@ -603,6 +607,4 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     }
    }
   } 
-
-  return 0;
 }

@@ -197,6 +197,18 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+
+  for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
+    NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[i];
+    if ((csirs->active == 1) &&
+	(csirs->frame == frame) &&
+	(csirs->slot == slot) ) {
+      LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
+      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
+      nr_generate_csi_rs(gNB, AMP, csi_params, slot);
+    }
+  }
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
