@@ -1880,6 +1880,145 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 }
 
 
+void nr_csirs_scheduling(int Mod_idP,
+                         int UE_id,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int n_slots_frame){
+
+  int CC_id = 0;
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
+  NR_CSI_MeasConfig_t *csi_measconfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_NZP_CSI_RS_Resource_t *nzpcsi;
+  int period, offset;
+  gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
+  nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[sched_ctrl->active_bwp->bwp_Id-1];
+
+  AssertFatal(csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count>0,"NO CSI report configuration available");
+
+  for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
+    nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+    NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
+    csi_period_offset(NULL,nzpcsi,&period,&offset);
+
+    if((frame*n_slots_frame+slot-offset)%period == 0) {
+
+      nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+      memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+      dl_tti_csirs_pdu->PDUType = NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE;
+      dl_tti_csirs_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_csi_rs_pdu));
+
+      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csirs_pdu_rel15 = &dl_tti_csirs_pdu->csi_rs_pdu.csi_rs_pdu_rel15;
+
+      csirs_pdu_rel15->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+      csirs_pdu_rel15->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+      csirs_pdu_rel15->subcarrier_spacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+      if (bwp->bwp_Common->genericParameters.cyclicPrefix)
+        csirs_pdu_rel15->cyclic_prefix = *bwp->bwp_Common->genericParameters.cyclicPrefix;
+      else
+        csirs_pdu_rel15->cyclic_prefix = 0;
+
+      csirs_pdu_rel15->start_rb = resourceMapping.freqBand.startingRB;
+      csirs_pdu_rel15->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
+      csirs_pdu_rel15->csi_type = 1; // NZP-CSI-RS
+      csirs_pdu_rel15->symb_l0 = resourceMapping.firstOFDMSymbolInTimeDomain;
+      if (resourceMapping.firstOFDMSymbolInTimeDomain2)
+        csirs_pdu_rel15->symb_l1 = *resourceMapping.firstOFDMSymbolInTimeDomain2;
+      csirs_pdu_rel15->cdm_type = resourceMapping.cdm_Type;
+      csirs_pdu_rel15->freq_density = resourceMapping.density.present;
+      if ((resourceMapping.density.present == NR_CSI_RS_ResourceMapping__density_PR_dot5)
+          && (resourceMapping.density.choice.dot5 == NR_CSI_RS_ResourceMapping__density__dot5_evenPRBs))
+        csirs_pdu_rel15->freq_density--;
+      csirs_pdu_rel15->scramb_id = nzpcsi->scramblingID;
+      csirs_pdu_rel15->power_control_offset = nzpcsi->powerControlOffset + 8;
+      if (nzpcsi->powerControlOffsetSS)
+        csirs_pdu_rel15->power_control_offset_ss = *nzpcsi->powerControlOffsetSS;
+      switch(resourceMapping.frequencyDomainAllocation.present){
+        case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
+          csirs_pdu_rel15->row = 1;
+          csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>4)&0x0f;
+          break;
+        case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
+          csirs_pdu_rel15->row = 2;
+          csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row1.buf[1]>>4)&0x0f) |
+                                         ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0]<<8)&0xf0));
+          break;
+        case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
+          csirs_pdu_rel15->row = 4;
+          csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>5)&0x0f;
+          break;
+        case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
+          csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>2)&0x0f;
+          // determining the row of table 7.4.1.5.3-1 in 38.211
+          switch(resourceMapping.nrofPorts){
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
+              csirs_pdu_rel15->row = 3;
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p4:
+              csirs_pdu_rel15->row = 5;
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p8:
+              if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                csirs_pdu_rel15->row = 8;
+              else{
+                int num_k = 0;
+                for (int k=0; k<6; k++)
+                  num_k+=(((csirs_pdu_rel15->freq_domain)>>k)&0x01);
+                if(num_k==4)
+                  csirs_pdu_rel15->row = 6;
+                else
+                  csirs_pdu_rel15->row = 7;
+              }
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p12:
+              if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                csirs_pdu_rel15->row = 10;
+              else
+                csirs_pdu_rel15->row = 9;
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p16:
+              if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                csirs_pdu_rel15->row = 12;
+              else
+                csirs_pdu_rel15->row = 11;
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p24:
+              if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                csirs_pdu_rel15->row = 14;
+              else{
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4)
+                  csirs_pdu_rel15->row = 15;
+                else
+                  csirs_pdu_rel15->row = 13;
+              }
+              break;
+            case NR_CSI_RS_ResourceMapping__nrofPorts_p32:
+              if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                csirs_pdu_rel15->row = 17;
+              else{
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4)
+                  csirs_pdu_rel15->row = 18;
+                else
+                  csirs_pdu_rel15->row = 16;
+              }
+              break;
+          default:
+            AssertFatal(1==0,"Invalid number of ports in CSI-RS resource\n");
+          }
+          break;
+      default:
+        AssertFatal(1==0,"Invalid freqency domain allocation in CSI-RS resource\n");
+      }
+      dl_req->nPDUs++;
+    }
+  }
+}
+
 uint16_t nr_get_csi_bitlen(int Mod_idP,
                            int UE_id,
                            uint8_t csi_report_id) {
@@ -1898,7 +2037,73 @@ uint16_t nr_get_csi_bitlen(int Mod_idP,
 
 
 void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
                        int *period, int *offset) {
+
+  if(nzpcsi != NULL) {
+
+    NR_CSI_ResourcePeriodicityAndOffset_PR p_and_o = nzpcsi->periodicityAndOffset->present;
+
+    switch(p_and_o){
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
+        *period = 4;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots4;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots5:
+        *period = 5;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots5;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots8:
+        *period = 8;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots8;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots10:
+        *period = 10;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots10;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots16:
+        *period = 16;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots16;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots20:
+        *period = 20;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots20;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots32:
+        *period = 32;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots32;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots40:
+        *period = 40;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots40;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots64:
+        *period = 64;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots64;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots80:
+        *period = 80;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots80;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots160:
+        *period = 160;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots160;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots320:
+        *period = 320;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots320;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots640:
+        *period = 640;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots640;
+        break;
+    default:
+      AssertFatal(1==0,"No periodicity and offset found in CSI resource");
+    }
+
+  }
+
+  if(csirep != NULL) {
 
     NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
 
@@ -1946,6 +2151,7 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
     default:
       AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
     }
+  }
 }
 
 
@@ -2048,7 +2254,7 @@ void nr_csi_meas_reporting(int Mod_idP,
 
     AssertFatal(csirep->reportConfigType.choice.periodic!=NULL,"Only periodic CSI reporting is implemented currently");
     int period, offset, sched_slot;
-    csi_period_offset(csirep,&period,&offset);
+    csi_period_offset(csirep,NULL,&period,&offset);
     sched_slot = (period+offset)%n_slots_frame;
     // prepare to schedule csi measurement reception according to 5.2.1.4 in 38.214
     // preparation is done in first slot of tdd period

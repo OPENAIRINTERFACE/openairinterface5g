@@ -456,9 +456,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule SR
   // TODO
 
-  // This schedule CSI measurement reporting
-  if (UE_info->active[UE_id])
+  // This schedule CSI-RS transmission and measurement reporting
+  if (UE_info->active[UE_id]){
+    nr_csirs_scheduling(module_idP, UE_id, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
     nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, slots_per_frame[*scc->ssbSubcarrierSpacing]);
+  }
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected

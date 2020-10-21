@@ -201,6 +201,12 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
+void nr_csirs_scheduling(int Mod_idP,
+                         int UE_id,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int n_slots_frame);
+
 void nr_csi_meas_reporting(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
@@ -208,6 +214,10 @@ void nr_csi_meas_reporting(int Mod_idP,
                            int slots_per_tdd,
                            int ul_slots,
                            int n_slots_frame);
+
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
+                       int *period, int *offset);
 
 void nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
