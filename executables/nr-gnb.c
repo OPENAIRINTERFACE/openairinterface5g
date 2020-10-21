@@ -255,11 +255,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
 
     // Do PRACH RU processing
-    int prach_id=find_nr_prach(gNB,frame_rx,slot_rx,0,SEARCH_EXIST);
-    if (prach_id>=0) {
-      L1_nr_prach_procedures(gNB,frame_rx,slot_rx,&gNB->prach_vars.list[prach_id].pdu);
-      gNB->prach_vars.list[prach_id].frame=-1;
-    }
+    L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 
@@ -981,7 +977,7 @@ void init_eNB_afterRU(void) {
       
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
 	LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
+	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
 	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }

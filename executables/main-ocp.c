@@ -222,7 +222,7 @@ void init_eNB_afterRU(void) {
 
         for (int i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) {
           LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
-          eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[i];
+          eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[0][i];
 
           for (int ce_level=0; ce_level<4; ce_level++)
             eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
@@ -479,7 +479,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int br_flag) 
     ru=eNB->RU_list[i];
 
     for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[0][ru_aa];
       int ce_level;
 
       if (br_flag==1)

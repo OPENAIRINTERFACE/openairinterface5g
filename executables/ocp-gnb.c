@@ -42,6 +42,7 @@
 #include <openair2/RRC/NR/nr_rrc_extern.h>
 #include <openair2/X2AP/x2ap_eNB.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_transport_proto.h>
+#include <nfapi/oai_integration/nfapi_pnf.h>
 
 // should be in a shared lib
 #include <forms.h>
@@ -179,13 +180,7 @@ static inline int ocp_rxtx(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
 
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // Do PRACH RU processing
-    int prach_id=find_nr_prach(gNB,proc->frame_rx,proc->slot_rx,0,SEARCH_EXIST);
-
-    if (prach_id>=0) {
-      L1_nr_prach_procedures(gNB,proc->frame_rx,proc->slot_rx,&gNB->prach_vars.list[prach_id].pdu);
-      gNB->prach_vars.list[prach_id].frame=-1;
-    }
-
+    L1_nr_prach_procedures(gNB,proc->frame_rx,proc->slot_rx);
     phy_procedures_gNB_uespec_RX(gNB, proc->frame_rx, proc->slot_rx);
   }
 

@@ -140,13 +140,50 @@ send radio signal samples to the RF board
 the samples numbers are the future time for these samples emission on-air
 {: .func3}
 
+# Scheduler
+The scheduler is called by the chain: nr_ul_indication()=>gNB_dlsch_ulsch_scheduler()
+It calls sub functions to process each physical channel (rach, ...)  
+The scheduler uses and internal map of used RB: vrb_map and vrb_map_UL, so each specific channel scheduler can see the already filled RB in each subframe (the function gNB_dlsch_ulsch_scheduler() clears these two arrays when it starts)   
+
+# RRC
+RRC is a regular thread with itti loop on queue: TASK_RRC_GNB
+it receives it's configuration in message NRRRC_CONFIGURATION_REQ, then real time mesages for all events: S1/NGAP events, X2AP messages and RRC_SUBFRAME_PROCESS  
+  
+RRC_SUBFRAME_PROCESS message is send each subframe  
+  
+how does it communicate to  scheduler ?  
+
+
+# RLC
+RLC code is new implementation.
+It is a library, running in thread RRC (except on itti message:  F1AP_UL_RRC_MESSAGE for F1).  
+
+# NGAP
+NGAP would be a itti thread as is S1AP (+twin thread SCTP that is almost void processing)?  
+About all messages are exchanged with RRC thread  
+
+
+# GTP
+Gtp + UDP are two twin threads performing the data plane interface to the core network
+The design is hybrid: thread and inside other threads calls. It should at least be protected by a mutex.
+## GTP thread
+Gtp thread has a itti interface: queue TASK_GTPV1_U  
+The interface is about full definition: control messages (create/delet GTP tunnels) and data messages (user plane UL and DL).  
+PDCP layer push to the GTP queue (outside UDP thread that do almost nothing and work only with GTP thread) is to push a UL packet.
+
+
+## GTP thread running code from other layers
+gtp thread calls directly pdcp_data_req(), so it runs inside it's context internal pdcp structures updates
+
+## inside other threads
+gtpv1u_create_s1u_tunnel(), delete tunnel, ... functions are called inside the other threads, without mutex.
+
 
 <div class="panel panel-info">
 **Note**
 {: .panel-heading}
 <div class="panel-body">
 
-NOTE DESCRIPTION
 
 </div>
 </div>

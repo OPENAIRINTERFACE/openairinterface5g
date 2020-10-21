@@ -544,9 +544,10 @@ function main() {
       #  flash_firmware_iris
       #fi
     fi
-    echo_info "installing protobuf/protobuf-c for flexran agent support"
+    echo_info "Installing protobuf/protobuf-c for flexran agent support"
     install_protobuf_from_source
     install_protobuf_c_from_source
+    echo_success "protobuf/protobuf-c installation successful"
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
@@ -642,14 +643,22 @@ function main() {
         $build_dir coding \
         libcoding.so $dbin/libcoding.so
 
-      compilations \
-        $build_dir nasmesh \
-        CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 
-      compilations \
-        $build_dir rb_tool \
-        rb_tool $dbin/rb_tool
-      cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+      #check if we run inside a container or not
+      #IS_CONTAINER variable is defined in build_helper file
+      #compile  nasmesh and rb_tool only if NOT running in a container
+      if [ $IS_CONTAINER -eq 0 ]
+      then
+        compilations \
+          $build_dir nasmesh \
+          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+
+        compilations \
+          $build_dir rb_tool \
+          rb_tool $dbin/rb_tool
+
+        cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+      fi #IS_CONTAINER
     fi
 
   fi
@@ -657,9 +666,16 @@ function main() {
   if [ "$UE" = 1 ] ; then
 
     echo_info "Compiling UE specific part"
-    compilations \
-      $build_dir ue_ip \
-      CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      echo_info "Building ue_ip module"
+      compilations \
+        $build_dir ue_ip \
+        CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+    else
+      echo_info "Bypassing ue_ip build"
+    fi #IS_CONTAINER
 
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
