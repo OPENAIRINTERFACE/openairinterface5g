@@ -74,7 +74,7 @@ int
 rrc_gNB_process_security(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_gNB_ue_context_t *const ue_context_pP,
-  security_capabilities_t *security_capabilities_pP
+  ngap_security_capabilities_t *security_capabilities_pP
 );
 
 #endif

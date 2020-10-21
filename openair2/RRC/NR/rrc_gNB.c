@@ -68,9 +68,7 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 
 #include "rrc_eNB_S1AP.h"
 #include "rrc_gNB_NGAP.h"
@@ -91,6 +89,28 @@
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
+
+extern boolean_t nr_rrc_pdcp_config_asn1_req(
+    const protocol_ctxt_t *const  ctxt_pP,
+    NR_SRB_ToAddModList_t  *const srb2add_list,
+    NR_DRB_ToAddModList_t  *const drb2add_list,
+    NR_DRB_ToReleaseList_t *const drb2release_list,
+    const uint8_t                   security_modeP,
+    uint8_t                  *const kRRCenc,
+    uint8_t                  *const kRRCint,
+    uint8_t                  *const kUPenc
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+    ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
+  #endif
+    ,rb_id_t                 *const defaultDRB,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 mui_t                               rrc_gNB_mui = 0;
 
@@ -327,7 +347,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-    LOG_I(RRC, "rrc_gNB_generate_RRCSetup \n");
+    LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
     NR_SRB_ToAddModList_t        *SRB_configList = NULL;
 
     // T(T_GNB_RRC_SETUP,
@@ -337,7 +357,7 @@ rrc_gNB_generate_RRCSetup(
     //   T_INT(ctxt_pP->rnti));
     gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
     SRB_configList = ue_p->SRB_configList;
-    do_RRCSetup(ctxt_pP,
+    ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ctxt_pP,
                 ue_context_pP,
                 CC_id,
                 (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
@@ -400,6 +420,13 @@ rrc_gNB_generate_RRCSetup(
     ue_context_pP->ue_context.ue_release_timer_thres = 1000;
     /* init timers */
     //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, GNB_RRC_CCCH_DATA_IND);
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
 }
 
 void
@@ -542,18 +569,18 @@ rrc_gNB_process_RRCReconfigurationComplete(
       return;
     }
 
-    /* Derive the keys from kenb */
+    /* Derive the keys from kgnb */
     if (DRB_configList != NULL) {
         derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                        ue_context_pP->ue_context.kenb,
+                        ue_context_pP->ue_context.kgnb,
                         &kUPenc);
     }
 
     derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                        ue_context_pP->ue_context.kenb,
+                        ue_context_pP->ue_context.kgnb,
                         &kRRCenc);
     derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                        ue_context_pP->ue_context.kenb,
+                        ue_context_pP->ue_context.kgnb,
                         &kRRCint);
 
     /* Refresh SRBs/DRBs */
@@ -570,6 +597,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                 kRRCint,
                                 kUPenc,
                                 NULL,
+                                NULL,
                                 NULL);
     /* Refresh SRBs/DRBs */
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
@@ -577,9 +605,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                             DRB_configList,
                             DRB_Release_configList2,
                             NULL,
-                            0,
-                            0
-                            );
+                            NULL);
 
     /* Loop through DRBs and establish if necessary */
     if (DRB_configList != NULL) {
@@ -1184,7 +1210,7 @@ void *rrc_gnb_task(void *args_p) {
 
     /* RRC_SUBFRAME_PROCESS is sent every subframe, do not log it */
     if (ITTI_MSG_ID(msg_p) != RRC_SUBFRAME_PROCESS)
-      LOG_I(NR_RRC,"Received message %s\n",msg_name_p);
+    LOG_I(NR_RRC,"Received message %s\n",msg_name_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
@@ -1194,6 +1220,10 @@ void *rrc_gnb_task(void *args_p) {
 
       case MESSAGE_TEST:
         LOG_I(NR_RRC, "[gNB %d] Received %s\n", instance, msg_name_p);
+        break;
+
+      case RRC_SUBFRAME_PROCESS:
+        nr_rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
         break;
 
       /* Messages from MAC */
@@ -1221,10 +1251,6 @@ void *rrc_gnb_task(void *args_p) {
                           NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
                           NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
       break;
-
-      case RRC_SUBFRAME_PROCESS:
-        nr_rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
-        break;
 
       /* Messages from PDCP */
       case NR_RRC_DCCH_DATA_IND:
