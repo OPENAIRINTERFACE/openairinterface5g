@@ -536,7 +536,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  (pucch->frame == frame_rx) &&
 	  (pucch->slot == slot_rx) ) {
 
-        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
         uint16_t num_ucis;
 
         switch (pucch_pdu->format_type) {
