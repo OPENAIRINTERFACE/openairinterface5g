@@ -59,6 +59,7 @@ RUN apt-get update && \
         openssl \
         net-tools \
         iproute2 \
+        iputils-ping \
         libyaml-0-2 && \
     # Install UHD driver from ettus ppa 
     # At time of writing, it is 3.14
