@@ -850,7 +850,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                 ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
                             }
                         }
-                    } else {
+                    } //else {
                         /* TODO */
                         LOG_E(NR_RRC,
                                 PROTOCOL_NR_RRC_CTXT_UE_FMT" RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE\n",
@@ -859,7 +859,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                                    rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
                                                    CC_id);
                         break;
-                    }
+                    //}
                 }
 
                 if (ue_context_p != NULL) {
