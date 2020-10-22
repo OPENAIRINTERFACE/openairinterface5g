@@ -119,6 +119,7 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+// Dummy function to avoid linking error at compilation of nr-ulsim
 int is_x2ap_enabled(void)
 {
   return 0;

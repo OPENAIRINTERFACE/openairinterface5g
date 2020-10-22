@@ -100,6 +100,7 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
+// Dummy function to avoid linking error at compilation of nr-prachsim
 int is_x2ap_enabled(void)
 {
   return 0;
