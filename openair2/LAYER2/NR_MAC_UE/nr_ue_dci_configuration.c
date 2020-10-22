@@ -54,13 +54,15 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
   LOG_D(MAC,"Filling search candidates for DCI\n");
   
-  rel15->number_of_candidates=3;
+  rel15->number_of_candidates=4;
   rel15->CCE[0]=0;
   rel15->L[0]=4;
   rel15->CCE[1]=4;
   rel15->L[1]=4;
   rel15->CCE[2]=8;
   rel15->L[2]=4;
+  rel15->CCE[3]=12;
+  rel15->L[3]=4;
 
 }
 

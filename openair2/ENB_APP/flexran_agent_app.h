@@ -19,15 +19,15 @@
  *      contact@openairinterface.org
  */ 
 
-/*! \file flexran_agent.h
- * \brief top level flexran agent  
- * \author Navid Nikaein and Xenofon Foukas
- * \date 2017
+/*! \file flexran_agent_app.h
+ * \brief Common app definitions
+ * \author Robert Schmidt
+ * \date 2020
  * \version 0.1
  */
 
-#ifndef FLEXRAN_AGENT_H_
-#define FLEXRAN_AGENT_H_
+#ifndef BURST_ANALYSIS_LL_H_
+#define BURST_ANALYSIS_LL_H_
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_async.h"
@@ -41,17 +41,34 @@
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_pdcp.h"
 #include "flexran_agent_s1ap.h"
-#include "flexran_agent_app.h"
 #include "common/utils/LOG/log.h"
 #include "assertions.h"
 
-/* Initiation of the eNodeB agent */
-int flexran_agent_start(mid_t mod_id);
+/* App type: to be implemented by shared libraries */
+typedef struct {
+  int (*start)(mid_t mod_id,
+               Protocol__FlexAgentReconfigurationSubsystem__ParamsEntry **p,
+               int n_p);
+  int (*reconfig)(mid_t mod_id,
+                  Protocol__FlexAgentReconfigurationSubsystem__ParamsEntry **p,
+                  int n_p);
+  int (* stop)(mid_t mod_id);
+} flexran_agent_app_t;
 
-/* 
- * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
- * and can interact with other itti tasks
-*/
-void *flexran_agent_task(void *args);
+/* FlexRAN agent app handling init */
+void flexran_agent_app_init(mid_t mod_id);
+
+/* Start an app from within the agent */
+int flexran_agent_start_app_direct(mid_t mod_id, flexran_agent_app_t *app, char *name);
+
+/* FlexRAN agent handler to setup/teardown apps */
+void flexran_agent_handle_apps(
+    mid_t mod_id,
+    Protocol__FlexAgentReconfigurationSubsystem **subs,
+    int n_subs);
+
+/* Fills the enb_config_reply with the currently loaded (started) apps */
+void flexran_agent_fill_loaded_apps(mid_t mod_id,
+                                    Protocol__FlexEnbConfigReply *reply);
 
 #endif
