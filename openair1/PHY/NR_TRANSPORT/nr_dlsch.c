@@ -140,7 +140,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
     int16_t **tx_layers = (int16_t**)dlsch->txdataF;
-    int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
+    int8_t Wf[2], Wt[2], l0, l_prime, delta;
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
     uint16_t n_dmrs;
@@ -251,14 +251,13 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     
     /// DMRS QPSK modulation
     
-    
-    l0 = get_l0(rel15->dlDmrsSymbPos);
     for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
     	if (rel15->dlDmrsSymbPos & (1 << l))
     		nr_modulation(pdsch_dmrs[l][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs[l]); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
     }
     
 #ifdef DEBUG_DLSCH
+    l0 = get_l0(rel15->dlDmrsSymbPos);
     printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_Type);
     for (int i=0; i<n_dmrs>>4; i++) {
       for (int j=0; j<8; j++) {
@@ -286,11 +285,12 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
       get_Wt(Wt, ap, dmrs_Type);
       get_Wf(Wf, ap, dmrs_Type);
       delta = get_delta(ap, dmrs_Type);
-      l_prime[0] = 0; // single symbol ap 0
-      uint8_t dmrs_symbol = l0+l_prime[0];
+      l_prime = 0; // single symbol ap 0
+      l0 = get_l0(rel15->dlDmrsSymbPos);
+      uint8_t dmrs_symbol = l0+l_prime;
 #ifdef DEBUG_DLSCH_MAPPING
       printf("DMRS Type %d params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n",
-	     1+dmrs_Type,ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
+	     1+dmrs_Type,ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime, l0, dmrs_symbol);
 #endif
       uint8_t k_prime=0;
       uint16_t m=0, n=0, dmrs_idx=0, k=0;
@@ -309,8 +309,15 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
 	  if ((rel15->dlDmrsSymbPos & (1 << l)) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_Type))%(frame_parms->ofdm_symbol_size)))) {
 
-	    ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[l][dmrs_idx<<1]) >> 15;
-	    ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+		  if (l==(l0+1)) //take into account the double DMRS symbols
+			  l_prime = 1;
+		  else if (l>(l0+1)){//new DMRS pair
+			  l0 = l;
+			  l_prime = 0;
+		  }
+
+	    ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[l][dmrs_idx<<1]) >> 15;
+	    ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
 	    printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
 		   dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
@@ -323,7 +330,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	  }
 	  
 	  else {
-	    if( (!(rel15->dlDmrsSymbPos & (1 << l))) || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
+	    if( (!(rel15->dlDmrsSymbPos & (1 << l))) || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,frame_parms->ofdm_symbol_size,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
 	      ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
 	      ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING

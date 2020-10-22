@@ -37,6 +37,7 @@
 
 uint8_t allowed_xlsch_re_in_dmrs_symbol(uint16_t k,
                                         uint16_t start_sc,
+                                        uint16_t ofdm_symbol_size,
                                         uint8_t numDmrsCdmGrpsNoData,
                                         uint8_t dmrs_type) {
   uint8_t delta;
@@ -44,7 +45,7 @@ uint8_t allowed_xlsch_re_in_dmrs_symbol(uint16_t k,
   if (k>start_sc)
     diff = k-start_sc;
   else
-    diff = start_sc-k;
+    diff = (ofdm_symbol_size-start_sc)+k;
   for (int i = 0; i<numDmrsCdmGrpsNoData; i++){
     if  (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
       delta = i;
@@ -53,7 +54,7 @@ uint8_t allowed_xlsch_re_in_dmrs_symbol(uint16_t k,
     }
     else {
       delta = i<<1;
-      if ( (((diff)%6)  == delta) || (((k-start_sc)%6)  == (delta+1)) )
+      if (((diff%6) == delta) || ((diff%6) == (delta+1)))
         return (0);
     }
   }

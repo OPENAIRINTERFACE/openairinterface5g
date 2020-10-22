@@ -58,6 +58,7 @@ uint16_t get_dmrs_freq_idx_ul(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_
 
 uint8_t allowed_xlsch_re_in_dmrs_symbol(uint16_t k,
                                         uint16_t start_sc,
+                                        uint16_t ofdm_symbol_size,
                                         uint8_t numDmrsCdmGrpsNoData,
                                         uint8_t dmrs_type);
 
