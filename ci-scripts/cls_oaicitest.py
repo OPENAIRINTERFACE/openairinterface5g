@@ -72,6 +72,9 @@ class OaiCiTest():
 		self.ADBCentralized = True
 		self.testCase_id = ''
 		self.testXMLfiles = []
+		self.testUnstable = False
+		self.testMinStableId = '999999'
+		self.testStabilityPointReached = False
 		self.desc = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
@@ -211,7 +214,7 @@ class OaiCiTest():
 			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', CONST.ALL_PROCESSES_OK, 'OAI UE')
 			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.ConditionalExit()
 
 	def CheckFlexranCtrlInstallation(self,RAN,EPC):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
@@ -335,7 +338,7 @@ class OaiCiTest():
 				if (pStatus < 0):
 					HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'KO', pStatus)
 					HTML.CreateHtmlTabFooter(False)
-					sys.exit(1)
+					self.ConditionalExit()
 			UE_prefix = ''
 		else:
 			UE_prefix = 'NR '
@@ -719,7 +722,7 @@ class OaiCiTest():
 				logging.debug('Using the OAI EPC HSS: not implemented yet')
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 				HTML.CreateHtmlTabFooter(False)
-				sys.exit(1)
+				self.ConditionalExit()
 			else:
 				SSH.command('egrep --color=never "Allocated ipv4 addr" /opt/ltebox/var/log/xGwLog.0', '\$', 5)
 				result = re.search('Allocated ipv4 addr: (?P<ipaddr>[0-9\.]+) from Pool', SSH.getBefore())
@@ -1046,7 +1049,7 @@ class OaiCiTest():
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.ConditionalExit()
 		multi_jobs = []
 		for device_id in self.UEDevices:
 			p = Process(target = self.RebootUE_common, args = (device_id,))
@@ -1248,7 +1251,7 @@ class OaiCiTest():
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.ConditionalExit()
 		multi_jobs = []
 		lock = Lock()
 		status_queue = SimpleQueue()
@@ -3168,6 +3171,12 @@ class OaiCiTest():
 			logging.debug('cpu_mhz: ' + CpuMHz)
 			HTML.CpuMHz[idx]=CpuMHz
 		SSH.close()
+
+	def ConditionalExit(self):
+		if self.testUnstable:
+			if self.testStabilityPointReached or self.testMinStableId == '999999':
+				sys.exit(0)
+		sys.exit(1)
 
 	def ShowTestID(self):
 		logging.debug('\u001B[1m----------------------------------------\u001B[0m')

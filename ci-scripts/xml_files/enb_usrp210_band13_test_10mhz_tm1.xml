@@ -25,6 +25,7 @@
 	<htmlTabName>Test-LTE-M-10MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
+	<TestUnstable>True</TestUnstable>
 	<TestCaseRequestedList>
  030201
  040102
