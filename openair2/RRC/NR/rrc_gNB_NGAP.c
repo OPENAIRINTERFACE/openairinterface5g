@@ -134,6 +134,7 @@ nr_rrc_pdcp_config_security(
     hashtable_rc_t                      h_rc;
     hash_key_t                          key;
 
+#ifndef PHYSIM
     /* Derive the keys from kgnb */
     if (SRB_configList != NULL) {
         derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
@@ -147,6 +148,7 @@ nr_rrc_pdcp_config_security(
     derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
                         &kRRCint);
+#endif
     if (!IS_SOFTMODEM_IQPLAYER) {
         SET_LOG_DUMP(DEBUG_SECURITY) ;
     }
