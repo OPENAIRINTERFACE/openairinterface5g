@@ -322,6 +322,43 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   UE_info = &gNB_mac->UE_info;
   int target_snrx10 = gNB_mac->pusch_target_snrx10;
 
+  NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[0];
+
+  // random access pusch with TC-RNTI
+  if (ra->state == WAIT_Msg3) {
+    if (sduP != NULL) { // if the CRC passed
+
+      if (ra->rnti != current_rnti) {
+        LOG_E(MAC,
+              "expected TC-RNTI %04x to match current RNTI %04x\n",
+              ra->rnti,
+              current_rnti);
+        return;
+      }
+      free(ra->preambles.preamble_list);
+      ra->state = RA_IDLE;
+      LOG_I(MAC, "reset RA state information for RA-RNTI %04x\n", ra->rnti);
+      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti);
+      UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
+      compute_csi_bitlen (ra->secondaryCellGroup, UE_info, UE_id);
+      UE_info->UE_beam_index[UE_id] = ra->beam_id;
+      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+      AssertFatal(bwpList->list.count == 1,
+                  "downlinkBWP_ToAddModList has %d BWP!\n",
+                  bwpList->list.count);
+      const int bwp_id = 1;
+      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+      LOG_I(MAC,
+            "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
+            "adding UE MAC Context UE_id %d/RNTI %04x\n",
+            gnb_mod_idP,
+            current_rnti,
+            UE_id,
+            ra->rnti);
+    }
+    return;
+  }
+
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
@@ -365,46 +402,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     else {
 
     }
-  }
-  else if (sduP != NULL) { // if the CRC passed
-    // random access pusch with TC-RNTI
-    NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[0];
-    if (ra->state != WAIT_Msg3) {
-      LOG_E(MAC,
-            "expected RA state WAIT_Msg3/%d (but is %d) for RA-RNTI %04x\n",
-            WAIT_Msg3,
-            ra->state,
-            ra->rnti);
-      return;
-    }
-    if (ra->rnti != current_rnti) {
-      LOG_E(MAC,
-            "expected RA-RNTI %04x (C-RNTI %04x) to match current RNTI %04x\n",
-            ra->rnti,
-            ra->crnti,
-            current_rnti);
-      return;
-    }
-    free(ra->preambles.preamble_list);
-    ra->state = RA_IDLE;
-    LOG_I(MAC, "reset RA state information for RA-RNTI %04x\n", ra->rnti);
-    const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->crnti);
-    UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
-    compute_csi_bitlen (ra->secondaryCellGroup, UE_info, UE_id);
-    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
-        ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-    AssertFatal(bwpList->list.count == 1,
-                "downlinkBWP_ToAddModList has %d BWP!\n",
-                bwpList->list.count);
-    const int bwp_id = 1;
-    UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
-    LOG_W(MAC,
-          "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
-          "adding UE MAC Context UE_id %d/RNTI %04x\n",
-          gnb_mod_idP,
-          current_rnti,
-          UE_id,
-          ra->crnti);
   }
 }
 

@@ -518,16 +518,21 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                               sched_ctrl->search_space);
   sched_ctrl->coreset = get_coreset(
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
+  const int m = UE_info->num_pdcch_cand[UE_id][cid];
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                  sched_ctrl->active_bwp,
-                                  sched_ctrl->coreset,
-                                  sched_ctrl->aggregation_level,
-                                  UE_info->rnti[UE_id],
-                                  0); // m
+                                           sched_ctrl->active_bwp,
+                                           sched_ctrl->coreset,
+                                           sched_ctrl->aggregation_level,
+                                           Y,
+                                           m,
+                                           nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
     return;
   }
+  UE_info->num_pdcch_cand[UE_id][cid]++;
 
   /* Find PUCCH occasion */
   nr_acknack_scheduling(module_id,
