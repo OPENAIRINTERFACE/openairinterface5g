@@ -1189,6 +1189,7 @@ uint8_t get_nr_prach_duration(uint8_t prach_format){
          break;
 
   }
+
 }
 
 int get_nr_prach_info_from_index(uint8_t index,

@@ -211,7 +211,7 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
 
   // Create the PRACH occasions map
   // ==============================
-  // WIP-IDCC: For now assume no rejected PRACH occasions because of conflict with SSB or TDD_UL_DL_ConfigurationCommon schedule
+  // WIP: For now assume no rejected PRACH occasions because of conflict with SSB or TDD_UL_DL_ConfigurationCommon schedule
 
   // Identify the proper PRACH Configuration Index table according to the operating frequency
   LOG_D(MAC,"Pointa %u, mu = %u, PRACH config index  = %u, unpaired = %u\n", pointa, mu, config_index, unpaired);
@@ -404,7 +404,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
 
   // Map SSBs to PRACH occasions
   // ===========================
-  // WIP-IDCC: Assumption: No PRACH occasion is rejected because of a conflict with SSBs or TDD_UL_DL_ConfigurationCommon schedule
+  // WIP: Assumption: No PRACH occasion is rejected because of a conflict with SSBs or TDD_UL_DL_ConfigurationCommon schedule
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
 
@@ -456,7 +456,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
 
   // Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period
   // ==============================================================================================================
-  // WIP-IDCC: Assumption for now is that all the PRACH configuration periods within a maximum association pattern period have the same number of PRACH occasions
+  // WIP: Assumption for now is that all the PRACH configuration periods within a maximum association pattern period have the same number of PRACH occasions
   //      (No PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule)
   //      There is only one possible association period which can contain up to 16 PRACH configuration periods
   LOG_D(MAC,"Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period\n");
@@ -488,7 +488,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
     AssertFatal(1 == 0, "Invalid number of PRACH config periods within an association period %d\n", required_nb_of_prach_conf_period);
   }
 
-  prach_assoc_pattern.nb_of_assoc_period = 1; // WIP-IDCC: only one possible association period
+  prach_assoc_pattern.nb_of_assoc_period = 1; // WIP: only one possible association period
   prach_assoc_pattern.prach_association_period_list[0].nb_of_frame = prach_assoc_pattern.prach_association_period_list[0].nb_of_prach_conf_period * prach_assoc_pattern.prach_conf_period_list[0].nb_of_frame;
   prach_assoc_pattern.nb_of_frame = prach_assoc_pattern.prach_association_period_list[0].nb_of_frame;
 
@@ -513,7 +513,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
     uint8_t ro_in_freq=0;
 
     // Set the starting PRACH Configuration period index in the association_pattern map for this particular association period
-    prach_configuration_period_idx = 0;  // WIP-IDCC: only one possible association period so the starting PRACH configuration period is automatically 0
+    prach_configuration_period_idx = 0;  // WIP: only one possible association period so the starting PRACH configuration period is automatically 0
 
     // Check if we need to map multiple SSBs per RO or multiple ROs per SSB
     if (true == multiple_ssb_per_ro) {
@@ -523,8 +523,8 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
       // --------------------
       // --------------------
 
-      // WIP-IDCC: For the moment, only map each SSB idx once per association period if configuration is multiple SSBs per RO
-      //           this is true if no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
+      // WIP: For the moment, only map each SSB idx once per association period if configuration is multiple SSBs per RO
+      //      this is true if no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
       ssb_idx = 0;
 
       // Go through the list of PRACH config periods within this association period
@@ -541,8 +541,8 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
                 prach_occasion_info_t *ro_p = &prach_conf_period_p->prach_occasion_slot_map[frame][slot].prach_occasion[ro_in_time][ro_in_freq];
 
                 // Go through the list of transmitted SSBs and map the required amount of SSBs to this RO
-                // WIP-IDCC: For the moment, only map each SSB idx once per association period if configuration is multiple SSBs per RO
-                //           this is true if no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
+                // WIP: For the moment, only map each SSB idx once per association period if configuration is multiple SSBs per RO
+                //      this is true if no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
                 for (; ssb_idx<MAX_NB_SSB; ssb_idx++) {
                   // Map only the transmitted ssb_idx
                   if (true == ssb_list.tx_ssb[ssb_idx].transmitted) {
@@ -583,7 +583,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
         if (MAX_NB_SSB == ssb_idx) break;
       } // for n_prach_conf
 
-      // WIP-IDCC: note that there is no re-mapping of the SSBs within the association period since there is no invalid ROs in the PRACH config periods that would create this situation
+      // WIP: note that there is no re-mapping of the SSBs within the association period since there is no invalid ROs in the PRACH config periods that would create this situation
 
     } // if multiple_ssbs_per_ro
 
@@ -1768,8 +1768,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   if (is_nr_UL_slot(scc, slotP)) {
 
-    // WIP-IDCC Need to get the proper selected ssb_idx
-    //          Initial beam selection functionality is not available yet
+    // WIP Need to get the proper selected ssb_idx
+    //     Initial beam selection functionality is not available yet
     uint8_t selected_gnb_ssb_idx = 0;
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index

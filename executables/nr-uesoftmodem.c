@@ -693,7 +693,6 @@ int main( int argc, char **argv ) {
     }
    
     init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
-
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     UE[CC_id]->mac_enabled = 1;
@@ -752,7 +751,7 @@ int main( int argc, char **argv ) {
       UE[CC_id]->N_TA_offset = (int)(N_TA_offset * factor);
       LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
     }
-}
+  }
 
   //  printf("tx_max_power = %d -> amp %d\n",tx_max_power[0],get_tx_amp(tx_max_poHwer,tx_max_power));
   init_openair0();
