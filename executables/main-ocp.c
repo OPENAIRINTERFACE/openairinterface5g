@@ -1098,8 +1098,6 @@ int restart_L1L2(module_id_t enb_id) {
   /* TODO this should be done for all RUs associated to this eNB */
   memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
 
-  RC.ru_mask |= (1 << ru->idx);
-
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
   init_UE_info(&RC.mac[enb_id]->UE_info);
@@ -1112,11 +1110,6 @@ int restart_L1L2(module_id_t enb_id) {
   msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-  /* TODO XForms might need to be restarted, but it is currently (09/02/18)
-   * broken, so we cannot test it */
-  init_RU_proc(ru);
-  ru->rf_map.card = 0;
-  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
   init_eNB_afterRU();
   printf("Sending sync to all threads\n");
   pthread_mutex_lock(&sync_mutex);

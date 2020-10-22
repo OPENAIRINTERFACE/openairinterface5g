@@ -45,6 +45,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_NR_PBCHSIM
 

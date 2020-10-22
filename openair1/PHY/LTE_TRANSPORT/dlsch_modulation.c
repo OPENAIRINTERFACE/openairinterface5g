@@ -2248,7 +2248,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint8_t Nl0;  //= dlsch0_harq->Nl;
   uint8_t Nl1;
 #endif
-  RU_t *ru;
 
 
   if ((dlsch0 != NULL) && (dlsch1 != NULL)){
@@ -2431,6 +2430,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       // mapping ue specific beamforming weights from UE specified DLSCH structure to RU beam weights for the eNB
       /*
       for (int ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+        RU_t *ru;
 	ru = RC.ru[ru_id];
 	for (int eNB_id=0;eNB_id<ru->num_eNB;eNB_id++){
 	  if (phy_vars_eNB == ru->eNB_list[eNB_id]) {

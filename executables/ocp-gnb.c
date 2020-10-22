@@ -56,7 +56,6 @@
 #include <openair2/RRC/LTE/rrc_vars.h>
 #include <openair1/SCHED/sched_common_vars.h>
 volatile int oai_exit;
-int transmission_mode;
 int single_thread_flag=1;
 uint32_t do_forms=0;
 unsigned int mmapped_dma=0;
@@ -201,23 +200,6 @@ static inline int ocp_rxtx(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
   return(0);
 }
 
-void gNB_top(gNB_L1_proc_t *proc, struct RU_t_s *ru) {
-  gNB_L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
-  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  RU_proc_t *ru_proc=&ru->proc;
-  proc->timestamp_rx  = ru_proc->timestamp_rx;
-  L1_proc->frame_rx = proc->frame_rx = proc->frame_prach = ru_proc->frame_rx =
-                                         (ru_proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-  L1_proc->slot_rx = proc->slot_rx = proc->slot_prach =
-                                       ru_proc->tti_rx; // computed before in caller function
-  L1_proc->timestamp_tx = proc->timestamp_tx = ru_proc->timestamp_tx =
-                            ru_proc->timestamp_rx +
-                            sf_ahead*fp->samples_per_subframe;
-  L1_proc->frame_tx  = proc->frame_tx = ru_proc->frame_tx =
-                                          (proc->timestamp_tx / (fp->samples_per_subframe*10))&1023;
-  L1_proc->slot_tx   =  ru_proc->tti_tx =
-                          (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
-}
 
 static void *process_stats_thread(void *param) {
   PHY_VARS_gNB *gNB  = (PHY_VARS_gNB *)param;
@@ -253,12 +235,11 @@ void init_gNB_proc(int inst) {
   proc->RU_mask_tx               = (1<<gNB->num_RU)-1;
   proc->RU_mask_prach            =0;
   pthread_mutex_init( &gNB->UL_INFO_mutex, NULL);
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->threadPool = (tpool_t *)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t *) malloc(sizeof(notifiedFIFO_t));
   char ul_pool[] = "-1,-1";
   initTpool(ul_pool, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
-
 }
 
 /// eNB kept in function name for nffapi calls, TO FIX
@@ -319,7 +300,7 @@ static void get_options(void) {
     memset((void *)&RC,0,sizeof(RC));
     /* Read RC configuration file */
     NRRCConfig();
-    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %hhu\n",RC.nb_nr_inst,RC.nb_nr_L1_inst,RC.nb_RU);
+    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %hhd\n", RC.nb_nr_inst,RC.nb_nr_L1_inst,RC.nb_RU);
   }
 
   AssertFatal(RC.nb_nr_L1_inst == 1 && RC.nb_RU == 1, "Only one gNB, one RU and one carrier is supported\n");
@@ -351,15 +332,8 @@ static void init_pdcp(void) {
   }
 
   pdcp_module_init(pdcp_initmask);
-  /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-    pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
-    } else {*/
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  //}
-  /*} else {
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
-    }*/
 }
 
 void init_main_gNB(void) {
@@ -807,15 +781,11 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
 static void *ru_thread( void *param ) {
   RU_t               *ru      = (RU_t *)param;
-  RU_proc_t          *proc    = &ru->proc;
   NR_DL_FRAME_PARMS  *fp      = ru->nr_frame_parms;
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
-  nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
   nr_dump_frame_parms(fp);
   AssertFatal(openair0_device_load(&ru->rfdevice,&ru->openair0_cfg)==0,"Cannot connect to local radio\n");
   AssertFatal(ru->rfdevice.trx_start_func(&ru->rfdevice) == 0,"Could not start the RF device\n");
-  tpool_t *threadPool=(tpool_t *)malloc(sizeof(tpool_t));
-  initTpool("-1,-1,-1", threadPool, true);
   int64_t slot=-1;
   int64_t nextHWTSshouldBe=0, nextRxTSlogical=0;
   // weird globals, used in NR_IF_Module.c
@@ -843,23 +813,23 @@ static void *ru_thread( void *param ) {
       LOG_E(HW,"reading a stream must be continuous, %ld, %ld\n", HWtimeStamp, nextHWTSshouldBe);
 
     nextHWTSshouldBe=HWtimeStamp+rxs;
-    proc->timestamp_rx=nextRxTSlogical;
+    ru->proc.timestamp_rx=nextRxTSlogical;
     nextRxTSlogical+=samples_per_slot;
-    int64_t HW_to_logical_RxTSoffset=(int64_t)HWtimeStamp-(int64_t)proc->timestamp_rx;
-    proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-    uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-    float offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
-    proc->tti_rx = (idx_sf * fp->slots_per_subframe +
-                    lroundf(offsetInSubframe / fp->samples_per_slot0))%
-                   fp->slots_per_frame;
+    int64_t HW_to_logical_RxTSoffset=(int64_t)HWtimeStamp-(int64_t)ru->proc.timestamp_rx;
+    ru->proc.frame_rx    = (ru->proc.timestamp_rx / (fp->samples_per_subframe*10))&1023;
+    uint32_t idx_sf = ru->proc.timestamp_rx / fp->samples_per_subframe;
+    float offsetInSubframe=ru->proc.timestamp_rx % fp->samples_per_subframe;
+    ru->proc.tti_rx = (idx_sf * fp->slots_per_subframe +
+                       lroundf(offsetInSubframe / fp->samples_per_slot0))%
+                      fp->slots_per_frame;
     LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
           ru->idx, 0,
-          (unsigned long long int)proc->timestamp_rx,
-          (int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
-    int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,proc->frame_rx,proc->tti_rx);
+          (unsigned long long int)ru->proc.timestamp_rx,
+          (int)ru->ts_offset,ru->proc.frame_rx,ru->proc.tti_rx,ru->proc.tti_tx,fp->slots_per_frame);
+    int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.frame_rx,ru->proc.tti_rx);
 
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
-      nr_fep_full(ru,proc->tti_rx);
+      nr_fep_full(ru,ru->proc.tti_rx);
 
       for (int aa=0; aa<ru->nb_rx; aa++)
         memcpy((void *)RC.gNB[0]->common_vars.rxdataF[aa],
@@ -868,33 +838,47 @@ static void *ru_thread( void *param ) {
       LOG_D(PHY, "rxdataF energy: %d\n", signal_energy(ru->common.rxdataF[0], fp->symbols_per_slot*fp->ofdm_symbol_size));
     }
 
-    gNB_top(&RC.gNB[0][0].proc, ru);
-    gNB_L1_rxtx_proc_t *L1_proc = &RC.gNB[0][0].proc.L1_proc;
+    gNB_L1_proc_t *gNBproc=&RC.gNB[0][0].proc;
+    gNB_L1_rxtx_proc_t *L1_proc = &gNBproc->L1_proc;
+    NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
+    gNBproc->timestamp_rx  = ru->proc.timestamp_rx;
+    L1_proc->frame_rx = gNBproc->frame_rx = gNBproc->frame_prach = ru->proc.frame_rx =
+        (ru->proc.timestamp_rx / (fp->samples_per_subframe*10))&1023;
+    L1_proc->slot_rx = gNBproc->slot_rx = gNBproc->slot_prach =
+                                            ru->proc.tti_rx; // computed before in caller function
+    L1_proc->timestamp_tx = gNBproc->timestamp_tx = ru->proc.timestamp_tx =
+                              ru->proc.timestamp_rx +
+                              sf_ahead*fp->samples_per_subframe;
+    L1_proc->frame_tx  = gNBproc->frame_tx = ru->proc.frame_tx =
+                           (gNBproc->timestamp_tx / (fp->samples_per_subframe*10))&1023;
+    L1_proc->slot_tx   =  ru->proc.tti_tx =
+                            (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
     if (ocp_rxtx(&RC.gNB[0][0],L1_proc) < 0)
       LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",RC.gNB[0][0].Mod_id,RC.gNB[0][0].CC_id);
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
     //ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
-    nr_feptx_prec(ru,proc->frame_tx,proc->tti_tx);
+    nr_feptx_prec(ru,ru->proc.frame_tx,ru->proc.tti_tx);
     // do OFDM with/without TX front-end processing  if needed
     //ru->feptx_ofdm
     nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
 
-    if (nr_slot_select(cfg,proc->frame_tx, proc->tti_tx ) != NR_UPLINK_SLOT) {
+    if (nr_slot_select(cfg,ru->proc.frame_tx, ru->proc.tti_tx ) != NR_UPLINK_SLOT) {
       int aa=0; // antenna 0 hardcoded
       NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
-      nr_feptx0(ru,proc->tti_tx,0,fp->symbols_per_slot,aa);
-      int *txdata = &ru->common.txdata[aa][fp->get_samples_slot_timestamp(proc->tti_tx,fp,0)];
+      nr_feptx0(ru,ru->proc.tti_tx,0,fp->symbols_per_slot,aa);
+      int *txdata = &ru->common.txdata[aa][fp->get_samples_slot_timestamp(ru->proc.tti_tx,fp,0)];
       int slot_sizeF = (fp->ofdm_symbol_size)*
                        ((NFAPI_CP_NORMAL == 1) ? 12 : 14);
       LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, slot %d: txp (time %ld) %d dB, txp (freq) %d dB\n",
-            proc->frame_tx,proc->tti_tx,proc->timestamp_tx,dB_fixed(signal_energy((int32_t *)txdata,fp->get_samples_per_slot(
-                  proc->tti_tx,fp))),dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
+            ru->proc.frame_tx,ru->proc.tti_tx,ru->proc.timestamp_tx,
+            dB_fixed(signal_energy((int32_t *)txdata,fp->get_samples_per_slot(ru->proc.tti_tx,fp))),
+            dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
 
     // do outgoing fronthaul (south) if needed
-    tx_rf(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx+HW_to_logical_RxTSoffset);
+    tx_rf(ru,ru->proc.frame_tx,ru->proc.tti_tx,ru->proc.timestamp_tx+HW_to_logical_RxTSoffset);
     slot++;
   }
 

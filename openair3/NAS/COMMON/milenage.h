@@ -230,6 +230,8 @@ static bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
    Returns: 0 = success (sqn filled), -1 on failure
 */
 #define p(a) printf("%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (int)((a)[0]), (int)((a)[1]), (int)((a)[2]), (int)((a)[3]),(int)((a)[4]), (int)((a)[5]));
+// valid code but put in comment as it is not used right now
+#if 0
 static bool milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
                    u8 *sqn) {
   u8 amf[2] = { 0x00, 0x00 }; /* TS 33.102 v7.0.0, 6.3.3 */
@@ -349,4 +351,5 @@ static void milenage_opc_gen(const u8 *k, const u8 *op, u8 *opc) {
   for (i = 0; i < 16; i++)
     opc[i] = opc[i] ^ op[i];
 }
+#endif
 #endif

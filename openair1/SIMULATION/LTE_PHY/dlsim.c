@@ -79,6 +79,9 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
 double DS_TDL = .03;
+static int cmpdouble(const void *p1, const void *p2) {
+  return *(double *)p1 > *(double *)p2;
+}
 
 int emulate_rf = 0;
 int split73=0;

@@ -29,23 +29,28 @@ the function main() initializes the data from configuration file
 The infinite loop:
 ## rx_rf()
   Collect radio signal samples from RF board  
+    all SDR processing is triggered by I/Q sample reception and it's date (timestamp)  
+    TX I/Q samples will have a date in the future, compared to RX timestamp  
     called for each 5G NR slot  
     it blocks until data is available  
     the internal time comes from the RF board sampling numbers  
     (each sample has a incremental number representing a very accurate timing)  
-raw incoming data is in buffer called "rxdata"
+raw incoming data is in buffer called "rxdata"  
+    We derivate frame number, slot number, ... from the RX timestamp
 {: .func2}
-### nr_fep_full()
+## nr_fep_full()
 "front end processing" of uplink signal  
 performs DFT on the signal  
-same function (duplicates): phy_procedures_gNB_common_RX()
-it computes the buffer rxdataF (for frequency) from rxdata (samples over time)
+same function (duplicates): phy_procedures_gNB_common_RX()  
+it computes the buffer rxdataF (for frequency) from rxdata (samples over time)  
+rxdataF is the rxdata in frequency domain, phase aligned
 {: .func3}
-### gNB_top()
+## gNB_top()
 only compute frame numbre, slot number, ...
 {: .func3}
-### ocp_rxtx()
+## ocp_rxtx()
 main processing for both UL and DL  
+start by calling oai_subframe_ind() that trigger processing in pnf_p7_subframe_ind() purpose ???  
 all the context is in the passed structure UL_INFO  
 the context is not very clear: there is a mutex on it,  
 but not actual coherency (see below handle_nr_rach() assumes data is up-to-date)  
@@ -54,7 +59,7 @@ Then, phy_procedures_gNB_uespec_RX will hereafter replace the data for the next 
 This is very tricky and not thread safe at all.
 {: .func3}
 
-#### NR_UL_indication()  
+### NR_UL_indication()  
 This block processes data already decoded and stored in structures behind UL_INFO
 {: .func4}
 
@@ -71,22 +76,19 @@ if the input is a UE RACH detection
 handles ulsch data prepared by nr_fill_indication()
 {: .func4}
 * gNB_dlsch_ulsch_scheduler ()  
-also calls "run_pdcp()", as this is not a autonomous thread, it needs to be called here to update traffic requests (DL) and to propagate waiting UL to upper layers  
-Calls schedule_nr_mib() that calls mac_rrc_nr_data_req() to fill MIB,  
-Calls each channel allocation: schedule SI, schedule_ul, schedule_dl, ...  
-this is a major entry for "phy-test" mode: in this mode, the allocation is fixed  
-all these channels goes to mac_rrc_nr_data_req() to get the data to transmit
+the **scheduler** is called here, see dedicated chapter
 {: .func4}
 * NR_Schedule_response()  
 process as per the scheduler decided
 {: .func4}
 
-#### L1_nr_prach_procedures()  
+### L1_nr_prach_procedures()  
 ????
 {: .func4}
-#### phy_procedures_gNB_uespec_RX()
+### phy_procedures_gNB_uespec_RX()
 * nr_decode_pucch0()  
-actual CCH channel decoding  
+actual CCH channel decoding form rxdataF (rx data in frequency domain)  
+populates UL_INFO.uci_ind, actual uci data is in gNB->pucch  
 {: .func4}
 * nr_rx_pusch()  
 {: .func4}
@@ -113,12 +115,12 @@ this function creates the "likelyhood ratios"
  {: .func4}
    * nr_ulsch_decoding()
  {: .func4}
-   * nr_fill_indication()
-{: .func4}
-populated the data for the next call to "NR_UL_indication()"
+   * nr_fill_indication()   
+populate the data for the next call to "NR_UL_indication()"  
+it would be better to call **NR_UL_indication()** now instead of before (on previous slot)
 {: .func4}
 
-#### phy_procedures_gNB_TX()
+### phy_procedures_gNB_TX()
 * nr_common_signal_procedures()  
 generate common signals
 {: .func4}
@@ -145,6 +147,25 @@ The scheduler is called by the chain: nr_ul_indication()=>gNB_dlsch_ulsch_schedu
 It calls sub functions to process each physical channel (rach, ...)  
 The scheduler uses and internal map of used RB: vrb_map and vrb_map_UL, so each specific channel scheduler can see the already filled RB in each subframe (the function gNB_dlsch_ulsch_scheduler() clears these two arrays when it starts)   
 
+The scheduler also calls "run_pdcp()", as this is not a autonomous thread, it needs to be called here to update traffic requests (DL) and to propagate waiting UL to upper layers  
+After calling run_pdcp, it updates "rlc" time data but it doesn't actually process rlc 
+it sends a iiti message to activate the thread for RRC, the answer will be asynchronous in ????  
+
+Calls schedule_nr_mib() that calls mac_rrc_nr_data_req() to fill MIB,  
+
+Calls each channel allocation: schedule SI, schedule_ul, schedule_dl, ...  
+this is a major entry for "phy-test" mode: in this mode, the allocation is fixed  
+all these channels goes to mac_rrc_nr_data_req() to get the data to transmit  
+
+nr_schedule_ue_spec() is called  
+* calls nr_simple_dlsch_preprocessor()=> mac_rlc_status_ind() mac_rlc_status_ind() locks and checks directly inside rlc data the quantity of waiting data. So, the scheduler can allocate RBs
+* calls nr_update_pucch_scheduling()  
+    * get_pdsch_to_harq_feedback() to schedule retransmission in DL
+
+Calls nr_fill_nfapi_dl_pdu() to actually populate what should be done by the lower layers to make the Tx subframe
+
+
+
 # RRC
 RRC is a regular thread with itti loop on queue: TASK_RRC_GNB
 it receives it's configuration in message NRRRC_CONFIGURATION_REQ, then real time mesages for all events: S1/NGAP events, X2AP messages and RRC_SUBFRAME_PROCESS  
@@ -155,7 +176,8 @@ how does it communicate to  scheduler ?
 
 
 # RLC
-RLC code is new implementation.
+RLC code is new implementation, not using OAI mechanisms: it is implmented directly on pthreads, ignoring OAI common functions.  
+It runs a thread waiting incoming data, but it is mainly running inside calling thread.  
 It is a library, running in thread RRC (except on itti message:  F1AP_UL_RRC_MESSAGE for F1).  
 
 # NGAP

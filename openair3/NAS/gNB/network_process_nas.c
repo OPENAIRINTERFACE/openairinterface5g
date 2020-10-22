@@ -187,5 +187,6 @@ int securityModeCommand(void **msg, NRUEcontext_t *UE) {
   // KSI: N-NAS-int-alg 0x02
   req->ngKSI=2;
   
+  *msg=req;
   return 0;
 }
