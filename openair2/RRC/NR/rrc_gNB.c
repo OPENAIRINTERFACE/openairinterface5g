@@ -531,7 +531,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
       GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
       itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-    rrc_data_req(ctxt_pP,
+    nr_rrc_data_req(ctxt_pP,
                 DCCH,
                 rrc_gNB_mui++,
                 SDU_CONFIRM_NO,
@@ -562,18 +562,11 @@ rrc_gNB_process_RRCReconfigurationComplete(
     NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
     NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
     NR_DRB_Identity_t                  *drb_id_p      = NULL;
+    uint8_t                             nr_DRB2LCHAN[8];
 
     ue_context_pP->ue_context.ue_reestablishment_timer = 0;
-    //rnti_t rnti = ue_context_pP->ue_id_rnti;
-    //module_id_t module_id = ctxt_pP->module_id;
 
-    // int UE_id_mac = find_UE_id(module_id, rnti);
-
-    // if (UE_id_mac == -1) {
-    //   LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
-    //   return;
-    // }
-
+#ifndef PHYSIM
     /* Derive the keys from kgnb */
     if (DRB_configList != NULL) {
         derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
@@ -587,7 +580,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
     derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
                         &kRRCint);
-
+#endif
     /* Refresh SRBs/DRBs */
     MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
                      MSC_AS_TIME_ARGS(ctxt_pP),
@@ -661,7 +654,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
 
                     if (DRB_configList->list.array[i]->pdcp_Config->moreThanOneRLC->primaryPath.logicalChannel) {
-                        DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->pdcp_Config->moreThanOneRLC->primaryPath.logicalChannel;
+                        nr_DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->pdcp_Config->moreThanOneRLC->primaryPath.logicalChannel;
                     }
 
                 // rrc_mac_config_req_eNB
@@ -675,7 +668,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                     SRB_FLAG_NO,
                                     MBMS_FLAG_NO,
                                     CONFIG_ACTION_REMOVE,
-                                    DRB2LCHAN[i],
+                                    nr_DRB2LCHAN[i],
                                     Rlc_info_um);
             }
 
@@ -810,7 +803,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                         if ((ue_context_p = rrc_gNB_ue_context_5g_s_tmsi_exist(RC.nrrrc[ctxt_pP->module_id], s_tmsi_part1))) {
                             LOG_I(NR_RRC, " 5G-S-TMSI-Part1 exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p, ue_context_p->ue_context.rnti, ctxt_pP->rnti);
 
-                            rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
+                            nr_rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
 
                             /* replace rnti in the context */
                             /* for that, remove the context from the RB tree */
@@ -1456,7 +1449,7 @@ rrc_gNB_generate_SecurityModeCommand(
 			GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
 			itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-  rrc_data_req(ctxt_pP,
+  nr_rrc_data_req(ctxt_pP,
                DCCH,
                rrc_gNB_mui++,
                SDU_CONFIRM_NO,
@@ -1513,7 +1506,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
 			  GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
 			  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-  rrc_data_req(
+  nr_rrc_data_req(
     ctxt_pP,
     DCCH,
     rrc_gNB_mui++,
@@ -1574,7 +1567,7 @@ rrc_gNB_generate_RRCConnectionRelease(
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
     itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
   } else {
-    rrc_data_req(ctxt_pP,
+    nr_rrc_data_req(ctxt_pP,
                  DCCH,
                  rrc_gNB_mui++,
                  SDU_CONFIRM_NO,
