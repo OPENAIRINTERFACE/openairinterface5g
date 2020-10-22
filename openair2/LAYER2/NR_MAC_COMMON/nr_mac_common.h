@@ -120,9 +120,6 @@ void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
                                                uint16_t *offset);
 
-void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
-int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx, int frame, int slot, prach_occasion_info_t **prach_occasion_info_pp);
-
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
                                  int slot,
@@ -165,6 +162,10 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
 
 int get_format0(uint8_t index, uint8_t unpaired);
+
+int64_t *get_prach_config_info(uint32_t pointa,
+                               uint8_t index,
+                               uint8_t unpaired);
 
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
