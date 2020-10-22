@@ -118,4 +118,4 @@ COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* ./
 WORKDIR /opt/oai-lte-ue
 #CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
-
+CMD ["sleep", "infinity"]
