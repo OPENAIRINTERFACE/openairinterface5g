@@ -21,30 +21,28 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-fr1-tm1</htmlTabRef>
-	<htmlTabName>Test-FR1-TM1</htmlTabName>
-	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>1</repeatCount>
+	<htmlTabRef>epc-start-tab</htmlTabRef>
+	<htmlTabName>EPC-Start</htmlTabName>
+	<htmlTabIcon>log-in</htmlTabIcon>
 	<TestCaseRequestedList>
- 070001
- 070000
+ 000100 000101 000102
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>
 
-	<testCase id="070000">
-		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
+	<testCase id="000100">
+		<class>Initialize_HSS</class>
+		<desc>Initialize HSS</desc>
 	</testCase>
 
-	<testCase id="070001">
-		<class>Terminate_eNB</class>
-		<desc>Terminate gNB</desc>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
+	<testCase id="000101">
+		<class>Initialize_MME</class>
+		<desc>Initialize MME</desc>
+	</testCase>
+
+	<testCase id="000102">
+		<class>Initialize_SPGW</class>
+		<desc>Initialize SPGW</desc>
 	</testCase>
 
 </testCaseList>
-

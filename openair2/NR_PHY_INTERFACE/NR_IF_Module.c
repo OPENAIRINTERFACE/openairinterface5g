@@ -56,24 +56,25 @@ extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
+
   if (UL_info->rach_ind.number_of_pdus>0) {
-    AssertFatal(UL_info->rach_ind.number_of_pdus==1,"More than 1 RACH pdu not supported\n");
-    UL_info->rach_ind.number_of_pdus=0;
-    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
-
-    if (UL_info->rach_ind.pdu_list[0].num_preamble>0)
-    AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
-		"More than 1 preamble not supported\n");
+    LOG_I(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
+    int npdus = UL_info->rach_ind.number_of_pdus;
+    for(int i = 0; i < npdus; i++) {
+      UL_info->rach_ind.number_of_pdus--;
+      if (UL_info->rach_ind.pdu_list[i].num_preamble>0)
+      AssertFatal(UL_info->rach_ind.pdu_list[i].num_preamble==1,
+                  "More than 1 preamble not supported\n");
     
-    nr_initiate_ra_proc(UL_info->module_id,
-                        UL_info->CC_id,
-                        UL_info->rach_ind.sfn,
-                        UL_info->rach_ind.slot,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
-                        UL_info->rach_ind.pdu_list[0].freq_index,
-                        UL_info->rach_ind.pdu_list[0].symbol_index,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);
-
+      nr_initiate_ra_proc(UL_info->module_id,
+                          UL_info->CC_id,
+                          UL_info->rach_ind.sfn,
+                          UL_info->rach_ind.slot,
+                          UL_info->rach_ind.pdu_list[i].preamble_list[0].preamble_index,
+                          UL_info->rach_ind.pdu_list[i].freq_index,
+                          UL_info->rach_ind.pdu_list[i].symbol_index,
+                          UL_info->rach_ind.pdu_list[i].preamble_list[0].timing_advance);
+    }
   }
 }
 
@@ -181,10 +182,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
   
-  handle_nr_uci(UL_info,&mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0],mac->pucch_target_snrx10);
+  handle_nr_uci(UL_info,&mac->UE_info.UE_sched_ctrl[0],&mac->UE_info.mac_stats[0],mac->pucch_target_snrx10);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0]);
+  handle_nr_ulsch(UL_info, &mac->UE_info.UE_sched_ctrl[0],&mac->UE_info.mac_stats[0]);
 
   if (nfapi_mode != 1) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {

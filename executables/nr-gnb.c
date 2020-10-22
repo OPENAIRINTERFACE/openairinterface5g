@@ -139,7 +139,6 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 //#define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
-
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
@@ -178,6 +177,59 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 
+  /* hack to remove UEs */
+  extern int rnti_to_remove[10];
+  extern volatile int rnti_to_remove_count;
+  extern pthread_mutex_t rnti_to_remove_mutex;
+  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+  int up_removed = 0;
+  int down_removed = 0;
+  int pucch_removed = 0;
+  for (int i = 0; i < rnti_to_remove_count; i++) {
+    LOG_W(PHY, "to remove rnti %d\n", rnti_to_remove[i]);
+    void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
+    void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
+    int j;
+    for (j = 0; j < NUMBER_OF_NR_ULSCH_MAX; j++)
+      if (gNB->ulsch[j][0]->rnti == rnti_to_remove[i]) {
+        gNB->ulsch[j][0]->rnti = 0;
+        gNB->ulsch[j][0]->harq_mask = 0;
+        //clean_gNB_ulsch(gNB->ulsch[j][0]);
+        int h;
+        for (h = 0; h < NR_MAX_ULSCH_HARQ_PROCESSES; h++) {
+          gNB->ulsch[j][0]->harq_processes[h]->status = SCH_IDLE;
+          gNB->ulsch[j][0]->harq_processes[h]->round  = 0;
+          gNB->ulsch[j][0]->harq_processes[h]->handled = 0;
+        }
+        up_removed++;
+      }
+    for (j = 0; j < NUMBER_OF_NR_DLSCH_MAX; j++)
+      if (gNB->dlsch[j][0]->rnti == rnti_to_remove[i]) {
+        gNB->dlsch[j][0]->rnti = 0;
+        gNB->dlsch[j][0]->harq_mask = 0;
+        //clean_gNB_dlsch(gNB->dlsch[j][0]);
+        down_removed++;
+      }
+    for (j = 0; j < NUMBER_OF_NR_PUCCH_MAX; j++)
+      if (gNB->pucch[j]->active > 0 &&
+          gNB->pucch[j]->pucch_pdu.rnti == rnti_to_remove[i]) {
+        gNB->pucch[j]->active = 0;
+        gNB->pucch[j]->pucch_pdu.rnti = 0;
+        pucch_removed++;
+      }
+#if 0
+    for (j = 0; j < NUMBER_OF_NR_PDCCH_MAX; j++)
+      gNB->pdcch_pdu[j].frame = -1;
+    for (j = 0; j < NUMBER_OF_NR_PDCCH_MAX; j++)
+      gNB->ul_pdcch_pdu[j].frame = -1;
+    for (j = 0; j < NUMBER_OF_NR_PRACH_MAX; j++)
+      gNB->prach_vars.list[j].frame = -1;
+#endif
+  }
+  if (rnti_to_remove_count) LOG_W(PHY, "to remove rnti_to_remove_count=%d, up_removed=%d down_removed=%d pucch_removed=%d\n", rnti_to_remove_count, up_removed, down_removed, pucch_removed);
+  rnti_to_remove_count = 0;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
+
   /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
@@ -203,11 +255,8 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
 
     // Do PRACH RU processing
-    int prach_id=find_nr_prach(gNB,frame_rx,slot_rx,0,SEARCH_EXIST);
-    if (prach_id>=0) {
-      L1_nr_prach_procedures(gNB,frame_rx,slot_rx,&gNB->prach_vars.list[prach_id].pdu);
-      gNB->prach_vars.list[prach_id].frame=-1;
-    }
+    L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
+
     //apply the rx signal rotation here
     apply_nr_rotation_ul(&gNB->frame_parms,
 			 gNB->common_vars.rxdataF[0],
@@ -553,6 +602,8 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   int i;
   struct timespec abstime;
   int time_ns = 50000;
+  int wait_timer = 0;
+  bool do_last_check = 1;
   
   AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU))==0,"mutex_lock returns %d\n",ret);
   for (i=0; i<gNB->num_RU; i++) {
@@ -573,22 +624,36 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"muex_unlock returns %d\n",ret);
   }
 
-  clock_gettime(CLOCK_REALTIME, &abstime);
-  abstime.tv_nsec = abstime.tv_nsec + time_ns;
-
-  if (abstime.tv_nsec >= 1000*1000*1000) {
-    abstime.tv_nsec -= 1000*1000*1000;
-    abstime.tv_sec  += 1;
-  }
-
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
-  AssertFatal((ret=pthread_mutex_timedlock(&L1_proc->mutex, &abstime)) == 0,"mutex_lock returns %d\n", ret);
+  while (wait_timer < 200) {
+    clock_gettime(CLOCK_REALTIME, &abstime);
+    abstime.tv_nsec = abstime.tv_nsec + time_ns;
 
-  if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
-    AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"muex_unlock return %d\n",ret);
-    LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx);
-    return(-1);
+    if (abstime.tv_nsec >= 1000*1000*1000) {
+      abstime.tv_nsec -= 1000*1000*1000;
+      abstime.tv_sec  += 1;
+    }
+
+    AssertFatal((ret=pthread_mutex_timedlock(&L1_proc->mutex, &abstime)) == 0,"mutex_lock returns %d\n", ret);
+
+    if (L1_proc->instance_cnt == 0) { // L1_thread is busy so wait for a bit
+      AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"muex_unlock return %d\n",ret);
+      wait_timer += 50;
+      usleep(50);
+    }
+    else {
+      do_last_check = 0;
+      break;
+    }
+  }
+  if (do_last_check) {
+    AssertFatal((ret=pthread_mutex_timedlock(&L1_proc->mutex, &abstime)) == 0,"mutex_lock returns %d\n", ret);
+    if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
+      AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"muex_unlock return %d\n",ret);
+      LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx);
+      return (-1);
+    }
   }
 
   ++L1_proc->instance_cnt;
@@ -801,6 +866,12 @@ void init_gNB_proc(int inst) {
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
   pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
   sync_phy_proc.phy_proc_CC_id = 0;
+
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  char ul_pool[] = "-1,-1";
+  initTpool(ul_pool, gNB->threadPool, false);
+  initNotifiedFIFO(gNB->respDecode);
 }
 
 
@@ -915,7 +986,7 @@ void init_eNB_afterRU(void) {
       
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
 	LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
+	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
 	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }

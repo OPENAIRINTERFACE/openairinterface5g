@@ -21,19 +21,27 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-airplane-mode</htmlTabRef>
-	<htmlTabName>AirplaneToggle</htmlTabName>
-	<htmlTabIcon>tasks</htmlTabIcon>
+	<htmlTabRef>epc-closure</htmlTabRef>
+	<htmlTabName>EPC-Closure</htmlTabName>
+	<htmlTabIcon>log-out</htmlTabIcon>
 	<TestCaseRequestedList>
- 010000
+060000 060001 060002
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="010000">
-		<class>COTS_UE_Airplane</class>
-		<desc>Toggle COTS Airplane mode ON</desc>
-		<cots_ue_airplane_args>ON</cots_ue_airplane_args>
+	<testCase id="060000">
+		<class>Terminate_HSS</class>
+		<desc>Terminate HSS</desc>
 	</testCase>
 
+	<testCase id="060001">
+		<class>Terminate_MME</class>
+		<desc>Terminate MME</desc>
+	</testCase>
+
+	<testCase id="060002">
+		<class>Terminate_SPGW</class>
+		<desc>Terminate SPGW</desc>
+	</testCase>
 
 </testCaseList>

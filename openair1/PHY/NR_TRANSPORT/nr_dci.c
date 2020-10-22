@@ -39,95 +39,6 @@
 //#define DEBUG_DCI
 //#define DEBUG_CHANNEL_CODING
 
-
-uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
-                         nfapi_nr_rnti_type_e rnti_type,
-                         uint16_t N_RB) {
-  uint16_t size = 0;
-
-  switch(format) {
-    /*Only sizes for 0_0 and 1_0 are correct at the moment*/
-    case NFAPI_NR_UL_DCI_FORMAT_0_0:
-      /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
-      size += 20;
-      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      size += nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB) - size; // Padding to match 1_0 size
-      // UL/SUL indicator assumed to be 0
-      break;
-
-    case NFAPI_NR_UL_DCI_FORMAT_0_1:
-      /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, SRS request 2 --17
-      size += 17;
-      // Carrier indicator
-      // UL/SUL indicator
-      // BWP Indicator
-      // Freq domain assignment
-      // Time domain assignment
-      // VRB to PRB mapping
-      // Frequency Hopping flag
-      // 1st DAI
-      // 2nd DAI
-      // SRS resource indicator
-      // Precoding info and number of layers
-      // Antenna ports
-      // CSI request
-      // CBGTI
-      // PTRS - DMRS association
-      // beta offset indicator
-      // DMRS sequence init
-      break;
-
-    case NFAPI_NR_DL_DCI_FORMAT_1_0:
-      /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
-      size += 28;
-      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
-      break;
-
-    case NFAPI_NR_DL_DCI_FORMAT_1_1:
-      // Carrier indicator
-      size += 1; // Format identifier
-      // BWP Indicator
-      // Freq domain assignment
-      // Time domain assignment
-      // VRB to PRB mapping
-      // PRB bundling size indicator
-      // Rate matching indicator
-      // ZP CSI-RS trigger
-      /// TB1- MCS 5, NDI 1, RV 2
-      size += 8;
-      // TB2
-      size += 4 ;  // HARQ PID
-      // DAI
-      size += 2; // TPC PUCCH
-      size += 3; // PUCCH resource indicator
-      size += 3; // PDSCH to HARQ timing indicator
-      // Antenna ports
-      // Tx Config Indication
-      size += 2; // SRS request
-      // CBGTI
-      // CBGFI
-      size += 1; // DMRS sequence init
-      break;
-
-    case NFAPI_NR_DL_DCI_FORMAT_2_0:
-      break;
-
-    case NFAPI_NR_DL_DCI_FORMAT_2_1:
-      break;
-
-    case NFAPI_NR_DL_DCI_FORMAT_2_2:
-      break;
-
-    case NFAPI_NR_DL_DCI_FORMAT_2_3:
-      break;
-
-    default:
-      AssertFatal(1==0, "Invalid NR DCI format %d\n", format);
-  }
-
-  return size;
-}
-
 void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t size,
                          uint32_t Nid,
@@ -153,36 +64,22 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-
-
-uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
-			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
-                            uint32_t **gold_pdcch_dmrs,
-                            int32_t *txdataF,
-                            int16_t amp,
-                            NR_DL_FRAME_PARMS frame_parms) {
+void nr_generate_dci(PHY_VARS_gNB *gNB,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                        uint32_t **gold_pdcch_dmrs,
+                        int32_t *txdataF,
+                        int16_t amp,
+                        NR_DL_FRAME_PARMS frame_parms) {
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
-  /*First iteration: single DCI*/
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15=NULL;
-
 
   // find coreset descriptor
     
   int rb_offset;
   int n_rb;
-
-  AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
-  AssertFatal(pdcch_pdu==NULL || ul_dci_pdu==NULL,"Can't handle both DL and UL DCI in same slot\n");
-
-
-  if (pdcch_pdu) pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
-  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu_rel15;
 
   nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
 
@@ -330,6 +227,25 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
     } // reg_idx
     
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
-  return 0;
+}
+
+void nr_generate_dci_top(PHY_VARS_gNB *gNB,
+			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
+			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
+                            uint32_t **gold_pdcch_dmrs,
+                            int32_t *txdataF,
+                            int16_t amp,
+                            NR_DL_FRAME_PARMS frame_parms) {
+
+  AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
+
+  if (pdcch_pdu && ul_dci_pdu) {
+    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  }
+  else if (pdcch_pdu)
+    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  else
+    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
 

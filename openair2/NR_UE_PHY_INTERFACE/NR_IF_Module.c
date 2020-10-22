@@ -107,17 +107,10 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  // clean previous FAPI messages
-  mac->tx_request.number_of_pdus = 0;
-  mac->ul_config_request.number_pdus = 0;
-  mac->dl_config_request.number_pdus = 0;
-  // clean previous FAPI messages
-
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra){
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
-  }
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -131,8 +124,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   default:
     break;
   }
-
-  mac->if_module->scheduled_response(&mac->scheduled_response);
 
   return 0;
 }
@@ -151,22 +142,11 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     nr_ue_scheduler(dl_info, NULL);
   } else {
     // UL indication after reception of DCI or DL PDU
-    dl_config->number_pdus = 0;
-    ul_config->number_pdus = 0;
-    //hook up pointers
-    mac->scheduled_response.dl_config = dl_config;
-    mac->scheduled_response.ul_config = ul_config;
-    mac->scheduled_response.tx_request = &mac->tx_request;
-    mac->scheduled_response.module_id = dl_info->module_id;
-    mac->scheduled_response.CC_id = dl_info->cc_id;
-    mac->scheduled_response.frame = dl_info->frame;
-    mac->scheduled_response.slot = dl_info->slot;
-
     if(dl_info->dci_ind != NULL){
       LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
-
+        nr_scheduled_response_t scheduled_response;
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
@@ -174,8 +154,10 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
         if (ret >= 0) {
-          AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
-          nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
+          AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
+          AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+          fill_scheduled_response(&scheduled_response, dl_config, ul_config, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot);
+          nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
       }
     }
@@ -266,20 +248,16 @@ int nr_ue_if_module_kill(uint32_t module_id) {
 
   if (nr_ue_if_module_inst[module_id] != NULL){
     free(nr_ue_if_module_inst[module_id]);
-  } 
+  }
   return 0;
 }
 
 int nr_ue_dcireq(nr_dcireq_t *dcireq) {
-  
-  fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
+
+  fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-
-  dl_config->sfn=UE_mac->dl_config_request.sfn;
-  dl_config->slot=UE_mac->dl_config_request.slot;
-  dl_config->number_pdus=0;
-
-  //printf(" UE_mac->dl_config_request.slot %d VS dcireq->slot %d \n", UE_mac->dl_config_request.slot, dcireq->slot);
+  dl_config->sfn = UE_mac->dl_config_request.sfn;
+  dl_config->slot = UE_mac->dl_config_request.slot;
 
   LOG_D(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
 

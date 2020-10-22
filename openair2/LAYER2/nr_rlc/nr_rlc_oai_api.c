@@ -158,14 +158,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   mac_rlc_status_resp_t ret;
   nr_rlc_entity_t *rb;
 
-  /* TODO: handle time a bit more properly */
-  if (nr_rlc_current_time_last_frame != frameP ||
-      nr_rlc_current_time_last_subframe != subframeP) {
-    nr_rlc_current_time++;
-    nr_rlc_current_time_last_frame = frameP;
-    nr_rlc_current_time_last_subframe = subframeP;
-  }
-
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
@@ -920,4 +912,11 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 
   return RLC_OP_STATUS_OK;
+}
+
+void nr_rlc_tick(int frame, int subframe)
+{
+  if (frame != nr_rlc_current_time_last_frame ||
+      subframe != nr_rlc_current_time_last_subframe)
+    nr_rlc_current_time++;
 }

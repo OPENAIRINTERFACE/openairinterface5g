@@ -60,7 +60,8 @@ typedef enum {
   NR_RNTI_INT,
   NR_RNTI_TPC_PUSCH,
   NR_RNTI_TPC_PUCCH,
-  NR_RNTI_TPC_SRS
+  NR_RNTI_TPC_SRS,
+  NR_RNTI_MCS_C,
 } nr_rnti_type_t;
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
@@ -98,7 +99,31 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint16_t *format,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
-                                 uint8_t *N_dur);
+                                 uint8_t *N_dur,
+                                 uint16_t *RA_sfn_index,
+                                 uint8_t *N_RA_slot,
+																 uint8_t *config_period);
+
+int get_nr_prach_occasion_info_from_index(uint8_t index,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur,
+                                 uint8_t *N_RA_slot,
+                                 uint16_t *N_RA_sfn,
+                                 uint8_t *max_association_period);
+
+uint8_t get_nr_prach_duration(uint8_t prach_format);
+
+uint8_t get_pusch_mcs_table(long *mcs_Table,
+                            int is_tp,
+                            int dci_format,
+                            int rnti_type,
+                            int target_ss,
+                            bool config_grant);
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
@@ -117,4 +142,5 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
+int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 #endif
