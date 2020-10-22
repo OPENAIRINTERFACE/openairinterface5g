@@ -2077,7 +2077,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  if (!prach_resources->init_msg1 && (frame_tx > ue->prach_resources[gNB_id]->sync_frame + 150)){
+  if (!prach_resources->init_msg1 && (frame_tx == (ue->prach_resources[gNB_id]->sync_frame + 150) % MAX_FRAME_NUMBER)){
     ue->prach_cnt = 0;
     prach_resources->init_msg1 = 1;
   }
