@@ -29,8 +29,6 @@ extern UL_IND_t *UL_INFO;
 /// Pointers to config_request types. Used from nfapi callback functions.
 //below 3 difinitions move to phy_stub_UE.c to add initialization when difinition.
 
-int	tx_req_num_elems;
-
 //below 2 difinitions move to lte-ue.c to add initialization when difinition.
 //int next_ra_frame;
 //module_id_t next_Mod_id;
@@ -99,12 +97,20 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present, int index,
                          nfapi_ul_config_request_t *ul_config_req);
 
+typedef struct nfapi_tx_req_pdu_list_t
+{
+    int num_pdus;                  /* number .pdus[] objects */
+    nfapi_tx_request_pdu_t pdus[]; /* see "struct hack" */
+} nfapi_tx_req_pdu_list_t;
+
+void nfapi_free_tx_req_pdu_list(nfapi_tx_req_pdu_list_t *);
+
 void dl_config_req_UE_MAC_dci(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *dci,
                               nfapi_dl_config_request_pdu_t *dlsch,
                               int num_ue,
-                              nfapi_tx_request_pdu_t *tx_request_pdu_list);
+                              nfapi_tx_req_pdu_list_t *);
 void dl_config_req_UE_MAC_bch(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *bch,
@@ -113,7 +119,7 @@ void dl_config_req_UE_MAC_mch(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *bch,
                               int num_ue,
-                              nfapi_tx_request_pdu_t *tx_request_pdu_list);
+                              nfapi_tx_req_pdu_list_t *);
 
 int tx_req_UE_MAC(nfapi_tx_request_t* req);
 
@@ -154,9 +160,8 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req);
 const char *dl_pdu_type_to_string(uint8_t pdu_type);
 const char *ul_pdu_type_to_string(uint8_t pdu_type);
 
-
 extern queue_t dl_config_req_queue;
-extern queue_t tx_req_pdu_queue;
+extern queue_t tx_req_pdu_queue; /* items in this queue are nfapi_tx_req_pdu_list_t* */
 extern queue_t ul_config_req_queue;
 extern queue_t hi_dci0_req_queue;
 
