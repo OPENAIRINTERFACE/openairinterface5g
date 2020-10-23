@@ -1670,7 +1670,7 @@ int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_
     }
     else AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
    }
-   else AssertFatal(0==1, "Invalid Lmax %d for the synchronization block\n", Lmax);
+   else AssertFatal(0==1, "Invalid Lmax %u for the synchronization block\n", Lmax);
   }
   else return 0;
 
@@ -1705,7 +1705,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
-  int slot_ssb;
+  //int slot_ssb;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
@@ -1729,7 +1729,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
   
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp);
-  slot_ssb = is_ssb_in_slot(cfg, frame_rx, nr_tti_rx, fp);
+  //slot_ssb = is_ssb_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)
