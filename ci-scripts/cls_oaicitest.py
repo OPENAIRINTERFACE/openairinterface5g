@@ -1157,15 +1157,18 @@ class OaiCiTest():
 						self.UEDevicesRebootCmd.append(comma_split[5])
 					phone_list_file.close()
 
+		# better handling of the case when no UE detected
+		# Sys-exit is now dealt by the calling function
 		if terminate_ue_flag == True:
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
-				sys.exit(1)
+				return False
 		if len(self.UEDevicesStatus) == 0:
 			cnt = 0
 			while cnt < len(self.UEDevices):
 				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 				cnt += 1
+		return True
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':

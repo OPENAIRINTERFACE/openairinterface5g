@@ -620,7 +620,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if (CiTestObj.ADBIPAddress != 'none'):
 						#in these cases, having no devices is critical, GetAllUEDevices function has to manage it as a critical error, reason why terminate_ue_flag is set to True
 						terminate_ue_flag = True 
-						CiTestObj.GetAllUEDevices(terminate_ue_flag)
+						# Now we stop properly the test-suite --> clean reporting
+						status = CiTestObj.GetAllUEDevices(terminate_ue_flag)
+						if not status:
+							RAN.prematureExit = True
+							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
 				elif action == 'WaitEndBuild_eNB':
