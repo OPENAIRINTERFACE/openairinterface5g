@@ -41,7 +41,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
   int wf, wt, lp, kp, symb;
   uint8_t fi = 0;
   double rho, alpha;
-  uint32_t beta;
+  uint32_t beta = amp;
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
