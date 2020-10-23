@@ -86,7 +86,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd);
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
@@ -373,6 +373,8 @@ void nr_process_mac_pdu(
 int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
+
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.

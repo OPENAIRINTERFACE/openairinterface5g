@@ -56,7 +56,7 @@
 extern RAN_CONTEXT_t RC;
 extern uint8_t SSB_Table[38];
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, uint8_t slots_per_frame){
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
@@ -67,93 +67,135 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
   int mib_sdu_length;
   int CC_id;
-  AssertFatal(slotP == 0, "Subframe must be 0\n");
-  AssertFatal((frameP & 7) == 0, "Frame must be a multiple of 8\n");
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-
-    nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
-    dl_tti_request = &gNB->DL_req[CC_id];
-    dl_req = &dl_tti_request->dl_tti_request_body;
     cc = &gNB->common_channels[CC_id];
-#if 0    
-   //SSB is transmitted based on SSB periodicity
-    if((frameP % cfg->ssb_table.ssb_period.value) == 0) {
-    uint64_t L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
-    uint32_t ssb_index = -1;
-    for (int i=0; i<2; i++)  {  // max two SSB per slot  
-      ssb_index = i + SSB_Table[slotP]; // computing the ssb_index
-      if ((ssb_index<64) && ((L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
-#endif 			  
-
-    mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]); // not used in this case
-
-    LOG_D(MAC, "Frame %d, slot %d: BCH PDU length %d\n", frameP, slotP, mib_sdu_length);
-
-    if (mib_sdu_length > 0) {
-
-      LOG_D(MAC, "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n", frameP, slotP, dl_req->nPDUs, mib_sdu_length);
-
-      if ((frameP & 1023) < 80){
-        LOG_I(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);
-      }
-
-      dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
-      memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
-      dl_config_pdu->PDUType      = NFAPI_NR_DL_TTI_SSB_PDU_TYPE;
-      dl_config_pdu->PDUSize      =2 + sizeof(nfapi_nr_dl_tti_ssb_pdu_rel15_t);
-
-      AssertFatal(cc->ServingCellConfigCommon->physCellId!=NULL,"cc->ServingCellConfigCommon->physCellId is null\n");
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.PhysCellId          = *cc->ServingCellConfigCommon->physCellId;
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.BetaPss             = 0;
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex       = 0;//ssb_index ;//SSB index for each SSB
-      AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon!=NULL,"scc->downlinkConfigCommonL is null\n");
-      AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL!=NULL,"scc->downlinkConfigCommon->frequencyInfoDL is null\n");
-      AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB!=NULL,"scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB is null\n");
-      AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count==1,"Frequency Band list does not have 1 element (%d)\n",cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count);
-      AssertFatal(cc->ServingCellConfigCommon->ssbSubcarrierSpacing,"ssbSubcarrierSpacing is null\n");
-      AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],"band is null\n");
-      long band = *cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-      uint32_t ssb_offset0 = *cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-      int ratio;
-      switch (*cc->ServingCellConfigCommon->ssbSubcarrierSpacing) {
-      case NR_SubcarrierSpacing_kHz15:
-	AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
-	if (band<77) // below 3GHz
-	  ratio=3; // NRARFCN step is 5 kHz
-	else
-	  ratio=1; // NRARFCN step is 15 kHz
-	break;
-      case NR_SubcarrierSpacing_kHz30:
-	AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
-	if (band<77) // below 3GHz
-	  ratio=6; // NRARFCN step is 5 kHz
-	else
-	  ratio=2; // NRARFCN step is 15 kHz
-	break;
-      case NR_SubcarrierSpacing_kHz120:
-	AssertFatal(band >= 257, "Band %ld is not possible for SSB with 120 kHz SCS\n",band);
+    const long band = *cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    const uint32_t ssb_offset0 = *cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+    int ratio;
+    switch (*cc->ServingCellConfigCommon->ssbSubcarrierSpacing) {
+    case NR_SubcarrierSpacing_kHz15:
+      AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
+      if (band<77) // below 3GHz
+        ratio=3; // NRARFCN step is 5 kHz
+      else
+	ratio=1; // NRARFCN step is 15 kHz
+      break;
+    case NR_SubcarrierSpacing_kHz30:
+      AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
+      if (band<77) // below 3GHz
+	ratio=6; // NRARFCN step is 5 kHz
+      else
 	ratio=2; // NRARFCN step is 15 kHz
-	break;
-      case NR_SubcarrierSpacing_kHz240:
-	AssertFatal(band >= 257, "Band %ld is not possible for SSB with 240 kHz SCS\n",band);
-	ratio=4; // NRARFCN step is 15 kHz
-	break;
-      default:
-        AssertFatal(1==0,"SCS %ld not allowed for SSB \n", *cc->ServingCellConfigCommon->ssbSubcarrierSpacing);
-      }
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value; //kSSB
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12) - 10;/*cfg->ssb_table.ssb_offset_point_a.value;*/ // absoluteFrequencySSB is the center of SSB
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
-      dl_req->nPDUs++;
+      break;
+    case NR_SubcarrierSpacing_kHz120:
+      AssertFatal(band >= 257, "Band %ld is not possible for SSB with 120 kHz SCS\n",band);
+      ratio=2; // NRARFCN step is 15 kHz
+      break;
+    case NR_SubcarrierSpacing_kHz240:
+      AssertFatal(band >= 257, "Band %ld is not possible for SSB with 240 kHz SCS\n",band);
+      ratio=4; // NRARFCN step is 15 kHz
+      break;
+    default:
+      AssertFatal(1==0,"SCS %ld not allowed for SSB \n", *cc->ServingCellConfigCommon->ssbSubcarrierSpacing);
+    }
 
-      uint8_t *vrb_map = cc[CC_id].vrb_map;
-      const int rbStart = dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA;
-      for (int rb = 0; rb < 20; rb++)
-        vrb_map[rbStart + rb] = 1;
+    // scheduling MIB every 8 frames, PHY repeats it in between
+    if((slotP == 0) && (frameP & 7) == 0) {
+      dl_tti_request = &gNB->DL_req[CC_id];
+      dl_req = &dl_tti_request->dl_tti_request_body;
+
+      mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]); // not used in this case
+
+      LOG_D(MAC, "Frame %d, slot %d: BCH PDU length %d\n", frameP, slotP, mib_sdu_length);
+
+      if (mib_sdu_length > 0) {
+
+        LOG_D(MAC, "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n", frameP, slotP, dl_req->nPDUs, mib_sdu_length);
+
+        if ((frameP & 1023) < 80){
+          LOG_I(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);
+        }
+
+        dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+        memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+        dl_config_pdu->PDUType      = NFAPI_NR_DL_TTI_SSB_PDU_TYPE;
+        dl_config_pdu->PDUSize      =2 + sizeof(nfapi_nr_dl_tti_ssb_pdu_rel15_t);
+
+        AssertFatal(cc->ServingCellConfigCommon->physCellId!=NULL,"cc->ServingCellConfigCommon->physCellId is null\n");
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.PhysCellId          = *cc->ServingCellConfigCommon->physCellId;
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.BetaPss             = 0;
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex       = 0;
+        AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon!=NULL,"scc->downlinkConfigCommonL is null\n");
+        AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL!=NULL,"scc->downlinkConfigCommon->frequencyInfoDL is null\n");
+        AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB!=NULL,"scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB is null\n");
+        AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count==1,"Frequency Band list does not have 1 element (%d)\n",cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count);
+        AssertFatal(cc->ServingCellConfigCommon->ssbSubcarrierSpacing,"ssbSubcarrierSpacing is null\n");
+        AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],"band is null\n");
+
+        const nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value; //kSSB
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12) - 10; // absoluteFrequencySSB is the center of SSB
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
+        dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
+        dl_req->nPDUs++;
+      }
+    }
+
+    // checking if there is any SSB in slot
+    const int abs_slot = (slots_per_frame * frameP) + slotP;
+    const int slot_per_period = (slots_per_frame>>1)<<(*cc->ServingCellConfigCommon->ssb_periodicityServingCell);
+    int eff_120_slot;
+    switch (cc->ServingCellConfigCommon->ssb_PositionsInBurst->present) {
+      case 1 :
+        // presence of ssbs possible in the first 2 slots of ssb period
+        if ((abs_slot%slot_per_period)<2){
+          if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])>>(6-(slotP<<1)))&3)!=0)
+            fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
+        }
+        break;
+      case 2 :
+        // presence of ssbs possible in the first 4 slots of ssb period
+        if ((abs_slot%slot_per_period)<4){
+          if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])>>(6-(slotP<<1)))&3)!=0)
+            fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
+        }
+        break;
+      case 3 :
+        if(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing == NR_SubcarrierSpacing_kHz120){
+          if ((abs_slot%slot_per_period)<8){
+            eff_120_slot = slotP;
+            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])>>(6-(eff_120_slot<<1)))&3)!=0)
+              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
+          }
+          else if ((abs_slot%slot_per_period)<17){
+            eff_120_slot = slotP-9;
+            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[1])>>(6-(eff_120_slot<<1)))&3)!=0)
+              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
+          }
+          else if ((abs_slot%slot_per_period)<26){
+            eff_120_slot = slotP-18;
+            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[2])>>(6-(eff_120_slot<<1)))&3)!=0)
+              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
+          }
+          else if ((abs_slot%slot_per_period)<35){
+            eff_120_slot = slotP-27;
+            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[3])>>(6-(eff_120_slot<<1)))&3)!=0)
+              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
+          }
+        }
+        else
+          AssertFatal(1==0,"240kHZ subcarrier spacing currently not supported for SSBs\n");
+        break;
+    default:
+      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", cc->ServingCellConfigCommon->ssb_PositionsInBurst->present);
     }
   }
 }
 
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id) {
 
+  uint8_t *vrb_map = cc[CC_id].vrb_map;
+  for (int rb = 0; rb < 20; rb++)
+    vrb_map[rbStart + rb] = 1;
+}
