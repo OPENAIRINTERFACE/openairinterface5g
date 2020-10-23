@@ -171,8 +171,6 @@ typedef struct syncData_s {
   PHY_VARS_NR_UE *UE;
 } syncData_t;
 
-extern const char *duplex_mode[];
-
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
   int i, hw_slot_offset;
@@ -186,15 +184,9 @@ static void UE_synch(void *arg) {
 
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
 
-      if (UE->frame_parms.frame_type == FDD)
-        openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_FDD;
-      else
-        openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_TDD;
-
-      LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f duplex mode %s (RF card %d, oai_exit %d, channel %d,  rx_num_channels %d)\n",
+      LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f (RF card %d, oai_exit %d, channel %d, rx_num_channels %d)\n",
         openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i],
         openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i],
-        duplex_mode[openair0_cfg[UE->rf_map.card].duplex_mode],
         UE->rf_map.card,
         oai_exit,
         i,

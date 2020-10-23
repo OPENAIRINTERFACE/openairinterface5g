@@ -85,6 +85,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+extern const char *duplex_mode[];
+
 // Thread variables
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -419,7 +421,7 @@ void init_openair0(void) {
 
     if (frame_parms->frame_type==TDD)
       openair0_cfg[card].duplex_mode = duplex_mode_TDD;
-    else //FDD
+    else
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
     LOG_I(PHY, "HW: Configuring card %d, nb_antennas_tx/rx %hhu/%hhu\n",
