@@ -828,9 +828,9 @@ uint8_t do_NR_SecurityModeCommand(
   dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
     = integrityProtAlgorithm;
 
-  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-  //}
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                    NULL,
@@ -864,7 +864,7 @@ uint8_t do_NR_SecurityModeCommand(
 
 /*TODO*/
 //------------------------------------------------------------------------------
-uint8_t do_NR_UECapabilityEnquiry_nr( const protocol_ctxt_t *const ctxt_pP,
+uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
                                    const uint8_t                Transaction_id)
 //------------------------------------------------------------------------------
@@ -889,9 +889,9 @@ uint8_t do_NR_UECapabilityEnquiry_nr( const protocol_ctxt_t *const ctxt_pP,
                    ue_capabilityrat_request);
 
 
-  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-  //}
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                    NULL,
@@ -1083,9 +1083,9 @@ uint16_t do_RRCReconfiguration(
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
 
-    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-      xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-  // }
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+        xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+    }
 
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                     NULL,
@@ -1152,9 +1152,9 @@ uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
   rrcSetupRequest->rrcSetupRequest.spare.size=1;
   rrcSetupRequest->rrcSetupRequest.spare.bits_unused = 7;
 
-  // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)&ul_ccch_msg);
-  // }
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_CCCH_Message,
                                    NULL,
@@ -1189,9 +1189,9 @@ do_NR_RRCReconfigurationComplete(
 		  NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
   rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->nonCriticalExtension = NULL;
   rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->lateNonCriticalExtension = NULL;
-  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-  //}
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
                                    NULL,
@@ -1212,11 +1212,6 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Trans
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
 
   uint8_t buf[6];
-  uint8_t rv[6];  
-  int i;
-  for (i=0; i<6; i++) {
-      rv[i]=taus()&0xff;
-  }
 
   ul_dcch_msg.message.present = NR_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1 = CALLOC(1,sizeof(struct NR_UL_DCCH_MessageType__c1));
@@ -1235,18 +1230,18 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Trans
   RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->present = NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI;
   RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size = 6;
   RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf = buf;
-  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[0] = rv[0];
-  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[1] = rv[1];
-  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[2] = rv[2];
-  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[3] = rv[3];
-  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[4] = rv[4];
-  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[5] = rv[5];
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[0] = 0x12;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[1] = 0x34;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[2] = 0x56;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[3] = 0x78;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[4] = 0x9A;
+  RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.buf[5] = 0xBC;
 
  memset(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,0,sizeof(OCTET_STRING_t));
  OCTET_STRING_fromBuf(&RrcSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,dedicatedInfoNAS,dedicatedInfoNASLength);
-//if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
   xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-//}
+}
 
 enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
                                  NULL,

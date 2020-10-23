@@ -522,7 +522,8 @@ int main( int argc, char **argv )
     exit(-1);
   }
 
-  AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+  // AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+  AMF_MODE_ENABLED = 0;
 
 #if T_TRACER
   T_Config_Init();

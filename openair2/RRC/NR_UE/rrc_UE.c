@@ -107,6 +107,11 @@ nr_sa_rrc_ue_process_radioBearerConfig(
     NR_RadioBearerConfig_t *const      radioBearerConfig
 );
 
+uint8_t do_NR_RRCReconfigurationComplete(
+                        const protocol_ctxt_t *const ctxt_pP,
+                        uint8_t *buffer,
+                        const uint8_t Transaction_id
+                      );
 
 mui_t nr_rrc_mui=0;
 
@@ -1393,9 +1398,9 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                            (uint8_t *)Srb_info->Rx_buffer.Payload,
                            100,0,0);
     
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
       xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
-    }
+    // }
     
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
       LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
@@ -1691,9 +1696,9 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                  enc_rval.failed_type->name, enc_rval.encoded);
 
-//    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
       xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-//    }
+   }
 
     LOG_D(NR_RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
 
@@ -1764,8 +1769,13 @@ void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, cons
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_UE_SIM,TASK_RRC_GNB_SIM,
+          NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+    memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+          NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
     message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, UE_RRC_CCCH_DATA_IND);
-    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
     GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size;
     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #endif
@@ -2266,9 +2276,9 @@ nr_rrc_ue_decode_dcch(
         return -1;
     }
 
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
         xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message,(void *)dl_dcch_msg);
-    }
+    // }
 
     if (dl_dcch_msg->message.present == NR_DL_DCCH_MessageType_PR_c1) {
         switch (dl_dcch_msg->message.choice.c1->present) {
@@ -2479,9 +2489,9 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   OAI_NR_UECapability_t *UECap;
   UECap = CALLOC(1,sizeof(OAI_NR_UECapability_t));
   UECap->UE_NR_Capability = UE_Capability_nr;
-  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
-  //}
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_NR_Capability,
                                    NULL,
@@ -2521,9 +2531,9 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                    enc_rval.failed_type->name, enc_rval.encoded);
 
-      //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
         xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-      //}
+      }
 
       LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #ifdef ITTI_SIM

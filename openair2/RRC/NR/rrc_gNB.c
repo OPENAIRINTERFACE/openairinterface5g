@@ -401,8 +401,12 @@ rrc_gNB_generate_RRCSetup(
     //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 #ifdef ITTI_SIM
     MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
+              ue_p->Srb0.Tx_buffer.payload_size);
+    memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
     message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
-    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
     GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
     itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #endif
@@ -439,8 +443,12 @@ rrc_gNB_generate_RRCReject(
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
+              ue_p->Srb0.Tx_buffer.payload_size);
+    memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
     message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
-    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
     GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
     itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #endif
@@ -514,9 +522,12 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                         size);
 #ifdef ITTI_SIM
       MessageDef *message_p;
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
+      memcpy (message_buffer, buffer, size);
       message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
       GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-      GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
       GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
       itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
@@ -1106,9 +1117,9 @@ rrc_gNB_decode_dcch(
                       DCCH,
                       sdu_sizeP);
 
-//                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+               if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
                   xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
-//                }
+               }
 
                 rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
                 //rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
@@ -1141,9 +1152,9 @@ rrc_gNB_decode_dcch(
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
                 DCCH,
                 sdu_sizeP);
-                //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
                     xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
-                //}
+                }
                 LOG_I(NR_RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
                 int eutra_index = -1;
 
@@ -1163,9 +1174,9 @@ rrc_gNB_decode_dcch(
                                                     ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.buf,
                                                     ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size,
                                                     0,0);
-                            //if(LOG_DEBUGFLAG(DEBUG_ASN1)){
+                            if(LOG_DEBUGFLAG(DEBUG_ASN1)){
                                 xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
-                            //}
+                            }
 
                             if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)){
                                 LOG_E(NR_RRC,PROTOCOL_NR_RRC_CTXT_UE_FMT" Failed to decode nr UE capabilities (%zu bytes)\n",
@@ -1436,9 +1447,12 @@ rrc_gNB_generate_SecurityModeCommand(
   LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
 #ifdef ITTI_SIM
 			MessageDef *message_p;
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,size);
+      memcpy (message_buffer, buffer, size);
 			message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
 			GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-			GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+			GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
 			GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
 			itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
@@ -1464,7 +1478,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
   uint8_t                             size;
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  size = do_NR_UECapabilityEnquiry_nr(
+  size = do_NR_SA_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
@@ -1490,9 +1504,12 @@ rrc_gNB_generate_UECapabilityEnquiry(
     size);
 #ifdef ITTI_SIM
 			  MessageDef *message_p;
+        uint8_t *message_buffer;
+        message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
+        memcpy (message_buffer, buffer, size);
 			  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
 			  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-			  GNB_RRC_DCCH_DATA_IND (message_p).sdu = (uint8_t*)buffer;
+			  GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
 			  GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
 			  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
