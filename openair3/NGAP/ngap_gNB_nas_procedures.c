@@ -70,6 +70,7 @@ int ngap_gNB_handle_nas_first_req(
     DevAssert(instance_p != NULL);
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
+    pdu.choice.initiatingMessage = (NGAP_InitiatingMessage_t *)calloc(1,sizeof(NGAP_InitiatingMessage_t));
     pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_InitialUEMessage;
     pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
     pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_InitialUEMessage;
@@ -220,6 +221,8 @@ int ngap_gNB_handle_nas_first_req(
 
     ie->value.choice.UserLocationInformation.present = NGAP_UserLocationInformation_PR_userLocationInformationNR;
 
+    ie->value.choice.UserLocationInformation.choice.userLocationInformationNR = 
+        CALLOC(1, sizeof(*ie->value.choice.UserLocationInformation.choice.userLocationInformationNR));
     userinfo_nr_p = ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
 
     /* Set nRCellIdentity. default userLocationInformationNR */

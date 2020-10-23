@@ -584,7 +584,7 @@ int main( int argc, char **argv )
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
 
-  usleep(10000);
+  usleep(100000);
   protocol_ctxt_t ctxt;
   struct rrc_gNB_ue_context_s *ue_context_p = NULL;
 
@@ -603,31 +603,6 @@ int main( int argc, char **argv )
   NR_UE_rrc_inst[ctxt.module_id].Info[0].State = RRC_SI_RECEIVED;
 
   rrc_ue_generate_RRCSetupRequest(&ctxt, 0);
-
-#if 0
-  // test itti sim
-  usleep(10000);
-
-  protocol_ctxt_t ctxt;
-  struct rrc_gNB_ue_context_s *ue_context_p = NULL;
-
-
-  ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[0]);
-
-  if(ue_context_p == NULL){
-    printf("ue_context_p == NULL");
-  }
-  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-                                0,
-                                ENB_FLAG_YES,
-                                0,
-                                0,
-                                0);
-  rrc_gNB_generate_RRCSetup(&ctxt,
-                            ue_context_p,
-                            0);
-  // end test itti sim
-#endif
 
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();

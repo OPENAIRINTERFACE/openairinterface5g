@@ -378,33 +378,7 @@ rrc_gNB_generate_RRCSetup(
             PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
             PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
 
-    // rrc_mac_config_req_eNB( ctxt_pP->module_id,
-    //                         ue_context_pP->ue_context.primaryCC_id,
-    //                         0,0,0,0,0, 0,
-    //                         ue_context_pP->ue_context.rnti,
-    //                         NULL,
-    //                         NULL,
-    //                         NULL,
-    //                         ue_context_pP->ue_context.physicalConfigDedicated,
-    //                         NULL,
-    //                         NULL,
-    //                         ue_context_pP->ue_context.mac_MainConfig,
-    //                         1,
-    //                         SRB1_logicalChannelConfig,
-    //                         ue_context_pP->ue_context.measGapConfig,
-    //                         NULL,
-    //                         NULL,
-    //                         NULL,
-    //                         0, NULL, NULL, NULL,
-    //                         0, NULL, NULL,
-    //                         NULL,
-    //                         0,
-    //                         NULL,
-    //                         NULL,
-    //                         NULL,
-    //                         NULL,
-    //                         NULL,
-    //                         NULL);
+    // rrc_mac_config_req_eNB
 
     MSC_LOG_TX_MESSAGE(
         MSC_RRC_GNB,
@@ -462,6 +436,14 @@ rrc_gNB_generate_RRCReject(
           PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating NR_RRCReject (bytes %d)\n",
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_p->Srb0.Tx_buffer.payload_size);
+
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -479,18 +461,13 @@ rrc_gNB_process_RRCSetupComplete(
     LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
     ue_context_pP->ue_context.Srb1.Active = 1;
-    ue_context_pP->ue_context.Status = RRC_CONNECTED;
-    // T(T_GNB_RRC_SETUP_COMPLETE,
-    //     T_INT(ctxt_pP->module_id),
-    //     T_INT(ctxt_pP->frame),
-    //     T_INT(ctxt_pP->subframe),
-    //     T_INT(ctxt_pP->rnti));
+    ue_context_pP->ue_context.Status = NR_RRC_CONNECTED;
 
-    // if (AMF_MODE_ENABLED) {
-    //     rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
-    // } else {
+    if (AMF_MODE_ENABLED) {
+        rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
+    } else {
         rrc_gNB_generate_SecurityModeCommand(ctxt_pP, ue_context_pP);
-    // }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -605,24 +582,26 @@ rrc_gNB_process_RRCReconfigurationComplete(
                      MSC_AS_TIME_ARGS(ctxt_pP),
                      ue_context_pP->ue_context.rnti);
 
-    // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-    //                             SRB_configList, // NULL,
-    //                             DRB_configList,
-    //                             DRB_Release_configList2,
-    //                             0xff, // already configured during the securitymodecommand
-    //                             kRRCenc,
-    //                             kRRCint,
-    //                             kUPenc,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL);
-    // /* Refresh SRBs/DRBs */
-    // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-    //                         SRB_configList, // NULL,
-    //                         DRB_configList,
-    //                         DRB_Release_configList2,
-    //                         NULL,
-    //                         NULL);
+#ifndef ITTI_SIM
+    nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                SRB_configList, // NULL,
+                                DRB_configList,
+                                DRB_Release_configList2,
+                                0xff, // already configured during the securitymodecommand
+                                kRRCenc,
+                                kRRCint,
+                                kUPenc,
+                                NULL,
+                                NULL,
+                                NULL);
+    /* Refresh SRBs/DRBs */
+    nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                            SRB_configList, // NULL,
+                            DRB_configList,
+                            DRB_Release_configList2,
+                            NULL,
+                            NULL);
+#endif
 
     /* Loop through DRBs and establish if necessary */
     /* Set the SRB active in UE context */
@@ -850,8 +829,13 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                 ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
                             }
                         }
-                    } //else {
+                    } else {
                         /* TODO */
+                        memcpy(((uint8_t *) & random_value) + 3,
+                                rrcSetupRequest->ue_Identity.choice.randomValue.buf,
+                                rrcSetupRequest->ue_Identity.choice.randomValue.size);
+
+                        rrc_gNB_get_next_free_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], random_value);
                         LOG_E(NR_RRC,
                                 PROTOCOL_NR_RRC_CTXT_UE_FMT" RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE\n",
                                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
@@ -859,7 +843,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                                    rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
                                                    CC_id);
                         break;
-                    //}
+                    }
                 }
 
                 if (ue_context_p != NULL) {
