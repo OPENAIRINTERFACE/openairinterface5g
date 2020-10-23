@@ -1651,7 +1651,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
-  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 

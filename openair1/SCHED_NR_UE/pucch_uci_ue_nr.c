@@ -446,8 +446,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     return (FALSE);
   }
 
-  int max_code_rate = 0;
-  int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
+  //int max_code_rate = 0;
+  //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
 
@@ -476,18 +476,18 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format3_nr:
     {
       nb_of_prbs = pucch_resource->format.choice.format3->nrofPRBs;
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->pi2BPSK[0] == 1) {
-        Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
-      }
+      //if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->pi2BPSK[0] == 1) {
+      //  Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
+      //}
       N_sc_ctrl_RB = N_SC_RB;
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       break;
     }
     case pucch_format4_nr:
     {
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4->choice.setup->pi2BPSK[0] == 1) {
-        Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
-      }
+      //if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4->choice.setup->pi2BPSK[0] == 1) {
+      //  Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
+      //}
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       nb_of_prbs = 1;
       subframe_number = nr_tti_tx/(ue->frame_parms.slots_per_subframe);//ttis_per_subframe);
@@ -1104,7 +1104,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 {
   int pucch_resource_set_id = 0;
-  long *pucch_max_pl_bits = NULL;
+  //long *pucch_max_pl_bits = NULL;
 
   /* from TS 38.331 field maxPayloadMinus1
     -- Maximum number of payload bits minus 1 that the UE may transmit using this PUCCH resource set. In a PUCCH occurrence, the UE
@@ -1116,9 +1116,9 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
   /* look for the first resource set which supports uci_size number of bits for payload */
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
-      pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1;
+      //pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1;
       if (uci_size <= 2) { //TBC rrc (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
-        NR_TST_PHY_PRINTF("PUCCH found resource set %d max bits %d\n",  pucch_resource_set_id, pucch_max_pl_bits);
+        //NR_TST_PHY_PRINTF("PUCCH found resource set %d max bits %d\n",  pucch_resource_set_id, pucch_max_pl_bits);
         pucch_resource_set_id = 0;
         return (pucch_resource_set_id);
         break;
@@ -1156,7 +1156,7 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
 {
   pucch_format_nr_t selected_pucch_format;
   pucch_format_nr_t selected_pucch_format_second;
-  NR_SetupRelease_PUCCH_FormatConfig_t *identified_format = NULL;
+  /*NR_SetupRelease_PUCCH_FormatConfig_t *identified_format = NULL;
 
   switch (format_pucch) {
     case pucch_format1_nr:
@@ -1181,7 +1181,7 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
 
     default:
     break;
-  }
+  }*/
 
  /* if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
     LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);

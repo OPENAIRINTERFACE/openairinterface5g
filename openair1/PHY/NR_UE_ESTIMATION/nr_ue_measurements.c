@@ -233,7 +233,7 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 	uint16_t Nid_cell = ue->frame_parms.Nid_cell;
 	uint8_t eNB_offset=0,l,nushift;
 	uint16_t off,nb_rb;
-	NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+//	NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 	int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[slot]].rxdataF;
 
 	nushift =  ue->frame_parms.Nid_cell%4;
