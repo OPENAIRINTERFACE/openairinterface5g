@@ -757,7 +757,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
                               nfapi_dl_config_request_pdu_t *dci,
                               nfapi_dl_config_request_pdu_t *dlsch,
                               int num_ue,
-                              nfapi_tx_request_pdu_t *tx_request_pdu_list) {
+                              nfapi_tx_req_pdu_list_t *tx_req_pdu_list) {
   DevAssert(dci->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE);
   DevAssert(dlsch->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE);
 
@@ -771,7 +771,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
   }
 
   const int pdu_index = dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
-  if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
+  if (pdu_index < 0 || pdu_index >= tx_req_pdu_list->num_pdus) {
     LOG_E(MAC,
           "%s(): Problem with receiving data: "
           "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
@@ -780,21 +780,21 @@ void dl_config_req_UE_MAC_dci(int sfn,
     return;
   }
 
-  LOG_D(MAC, "%s() rnti value: 0x%x rnti type: %d\n", __func__,
+  LOG_I(MAC, "%s() rnti value: 0x%x rnti type: %d\n", __func__,
         rnti, rnti_type);
   if (rnti_type == 1) { // C-RNTI (Normal DLSCH case)
     for (int ue_id = 0; ue_id < num_ue; ue_id++) {
       if (UE_mac_inst[ue_id].crnti == rnti) {
-        LOG_D(MAC,
+        LOG_I(MAC,
               "%s() Received data: sfn/sf:%d.%d "
               "size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n",
               __func__,
               sfn, sf, dci->pdu_size,
               dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
-              tx_req_num_elems);
+              tx_req_pdu_list->num_pdus);
         ue_send_sdu(ue_id, 0, sfn, sf,
-            tx_request_pdu_list[pdu_index].segments[0].segment_data,
-            tx_request_pdu_list[pdu_index].segments[0].segment_length,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length,
             0);
         return;
       }
@@ -806,16 +806,16 @@ void dl_config_req_UE_MAC_dci(int sfn,
           continue;
 
         ue_decode_si(ue_id, 0, sfn, 0,
-            tx_request_pdu_list[pdu_index].segments[0].segment_data,
-            tx_request_pdu_list[pdu_index].segments[0].segment_length);
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
       }
     } else if (rnti == 0xFFFE) { /* PI-RNTI */
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
         ue_decode_p(ue_id, 0, sfn, 0,
-                    tx_request_pdu_list[pdu_index].segments[0].segment_data,
-                    tx_request_pdu_list[pdu_index].segments[0].segment_length);
+                    tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+                    tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
       }
     } else if (rnti == 0x0002) { /* RA-RNTI */
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
@@ -837,10 +837,10 @@ void dl_config_req_UE_MAC_dci(int sfn,
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
           ue_process_rar(ue_id, 0, sfn,
               ra_rnti, //RA-RNTI
-              tx_request_pdu_list[pdu_index].segments[0].segment_data,
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
               &UE_mac_inst[ue_id].crnti, //t-crnti
               UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
-              tx_request_pdu_list[pdu_index].segments[0].segment_data);
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data);
           // UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
           LOG_I(MAC, "setting UE_MODE now: %d\n", UE_mac_inst[ue_id].UE_mode[0]);
           // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
@@ -880,7 +880,7 @@ void dl_config_req_UE_MAC_mch(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *mch,
                               int num_ue,
-                              nfapi_tx_request_pdu_t *tx_request_pdu_list) {
+                              nfapi_tx_req_pdu_list_t *tx_req_pdu_list) {
   DevAssert(mch->pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE);
 
   for (int ue_id = 0; ue_id < num_ue; ue_id++) {
@@ -895,7 +895,7 @@ void dl_config_req_UE_MAC_mch(int sfn,
 
     } else {
 	 const int pdu_index = mch->mch_pdu.mch_pdu_rel8.pdu_index;
-  	if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
+	if (pdu_index < 0 || pdu_index >= tx_req_pdu_list->num_pdus) {
     	LOG_E(MAC,
           "%s(): Problem with receiving data: "
           "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
@@ -904,8 +904,8 @@ void dl_config_req_UE_MAC_mch(int sfn,
     	return;
   	}
         ue_send_mch_sdu(ue_id, 0, sfn,
-            tx_request_pdu_list[pdu_index].segments[0].segment_data,
-            tx_request_pdu_list[pdu_index].segments[0].segment_length,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length,
             0,0);
     }
   }
@@ -928,17 +928,13 @@ void hi_dci0_req_UE_MAC(int sfn,
   }
 }
 
-// TODO: Find a way to drop more un-wanted dl_config_reqs & tx_reqs
-// In the current state we let alot of unecessary packets through
-// during the ra-rnti/pi-rnti/si-rnti in the startup state before a c-rnti is assigned
-// Right now we are just accepting all dl_config_req and tx_reqs
-// when the c-rnti is 0 - Andrew
-static bool is_my_dl_config_req(nfapi_dl_config_request_t *req)
+static bool is_my_dl_config_req(const nfapi_dl_config_request_t *req)
 {
-  bool is_my_rnti = true;
-  const rnti_t my_rnti = UE_mac_inst[0].crnti; // 0 for standalone pnf mode. TODO: Make this more clear - Andrew
 
-  for (int i = 0; i < req->dl_config_request_body.number_pdu; i++)
+  const rnti_t my_rnti = UE_mac_inst[0].crnti;
+  int num_pdus = req->dl_config_request_body.number_pdu;
+  // look through list of pdus for rnti type 1 with my_rnti (normal dlsch case)
+  for (int i = 0; i < num_pdus; i++)
   {
     nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
     const int pdu_type = pdu->pdu_type;
@@ -946,21 +942,128 @@ static bool is_my_dl_config_req(nfapi_dl_config_request_t *req)
     {
       const rnti_t dci_rnti = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
       const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
-      if (rnti_type == 1 && dci_rnti != my_rnti)
+      if (rnti_type == 1 && dci_rnti == my_rnti)
       {
-        is_my_rnti = false;
-        LOG_I(MAC, "RNTI is not mine for pdu_type: %d my_rnti: 0x%x dci_rnti: 0x%x\n",
-                pdu_type, my_rnti, dci_rnti);
+        return true;
       }
-      else
+    }
+    else if(pdu_type != NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)
+    {
+      return true; // Because these two pdu_types are coupled and we have to accept all other pdu_types
+    }
+  }
+
+  // Look for broadcasted rnti types
+  for (int i = 0; i < num_pdus; i++)
+  {
+    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
+    const int pdu_type = pdu->pdu_type;
+    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
+    {
+      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+      if (rnti_type != 1)
       {
-        is_my_rnti = true;
-        break;
+        return true;
       }
     }
   }
 
-  return is_my_rnti;
+
+  return false;
+}
+
+static int get_dlsch_pdu_indicies(const nfapi_dl_config_request_t *req, int *pdu_indicies, size_t max_pdu_indicies)
+{
+
+  const rnti_t my_rnti = UE_mac_inst[0].crnti;
+  int num_pdus = req->dl_config_request_body.number_pdu;
+  size_t num_pdu_indicies = 0;
+  for (int i = 0; i < num_pdus; i++)
+  {
+    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
+    const int pdu_type = pdu->pdu_type;
+    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
+    {
+      const rnti_t dci_rnti = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
+      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+      if (rnti_type == 1 && dci_rnti != my_rnti && i + 1 < num_pdus)
+      {
+        if (num_pdu_indicies < max_pdu_indicies)
+        {
+          pdu_indicies[num_pdu_indicies++] = i + 1; // This an index of a dlsch pdu which contains a pdu_index field
+        }
+        i++;
+      }
+    }
+  }
+
+  return num_pdu_indicies;
+}
+
+typedef struct dlsch_pdu_indicies_t
+{
+  size_t num_indicies;
+  int *indicies;
+}dlsch_pdu_indicies_t;
+
+static void print_lists(const dlsch_pdu_indicies_t *dlsch_list, const nfapi_tx_req_pdu_list_t *tx_pdu_list)
+{
+  const size_t max_result = 1024;
+  uint16_t num_pdus = tx_pdu_list->num_pdus;
+  char dlsch_result[max_result];
+  char tx_pdu_result[max_result];
+
+  snprintf(dlsch_result, max_result, "dlsch_list::");
+  snprintf(tx_pdu_result, max_result, "tx_pdu_list::");
+
+  for (size_t i = 0; i < num_pdus; ++i)
+  {
+    int dlsch_len = strlen(dlsch_result);
+    int tx_pdu_len = strlen(tx_pdu_result);
+    if (tx_pdu_len >= max_result - 1 || dlsch_len >= max_result - 1)
+    {
+      break;
+    }
+    snprintf(dlsch_result + dlsch_len, max_result - dlsch_len, " %d", dlsch_list->indicies[i]);
+    snprintf(tx_pdu_result + tx_pdu_len, max_result - tx_pdu_len, " %d", tx_pdu_list->pdus[i].pdu_index);
+  }
+
+  LOG_E(MAC, "%s\n", dlsch_result);
+  LOG_E(MAC, "%s\n", tx_pdu_result);
+}
+
+static bool match_dl_config_req(void *wanted_vp, void *candidate_vp)
+{
+  dlsch_pdu_indicies_t *wanted = wanted_vp;
+  const nfapi_tx_req_pdu_list_t *candidate = candidate_vp;
+
+  int num_pdus = candidate->num_pdus;
+  if (wanted->num_indicies != num_pdus)
+  {
+    LOG_E(MAC, "tx_req_pdus not equal to dlsch_pdus:: %zu != %d\n", wanted->num_indicies, num_pdus);
+    return false;
+  }
+  for (int i = 0; i < num_pdus; ++i)
+  {
+    bool found = false;
+    const nfapi_tx_request_pdu_t *pdu = &candidate->pdus[i];
+    for (int j = 0; j < num_pdus; ++j)
+    {
+      if (pdu->pdu_index == wanted->indicies[i])
+      {
+        found = true;
+        break;
+      }
+    }
+    if (!found)
+    {
+      LOG_E(MAC, "Could not find tx_req_pdu index to match dlsch_index for pdu_index: %d\n",
+      pdu->pdu_index);
+      print_lists(wanted, candidate);
+      return false;
+    }
+  }
+  return true;
 }
 
 // The following set of memcpy functions should be getting called as callback
@@ -969,15 +1072,29 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
 
-  if (!is_my_dl_config_req(req))
+  if (!is_my_dl_config_req(req) && req->dl_config_request_body.number_pdu <= 2)
   {
-    // TODO: Add in some kind of log or check to identify that what is being removed from the queue is correct. - Andrew
+    const size_t max_dlsch_pdu_indicies = 1024;
+    int dlsch_pdu_indicies[max_dlsch_pdu_indicies];
     // Need to remove corresponding tx_req (comes before dl_config_req always)
-    void *p = unqueue(&tx_req_pdu_queue);
-    if (p)
+    int num_dlsch_pdu_indicies = get_dlsch_pdu_indicies(req, dlsch_pdu_indicies, max_dlsch_pdu_indicies);
+    if (num_dlsch_pdu_indicies == 0)
     {
-      free(p);
+      LOG_E(MAC, "COULD NOT FIND DLSCH_PDU_INDICIES for dl_config_req SFN.SF: %d.%d",
+            req->sfn_sf >> 4, req->sfn_sf & 15);
+      return 0;
     }
+    dlsch_pdu_indicies_t wanted = {num_dlsch_pdu_indicies, dlsch_pdu_indicies};
+    nfapi_tx_req_pdu_list_t *matched = unqueue_matching(&tx_req_pdu_queue, match_dl_config_req, &wanted);
+    if (!matched)
+    {
+      LOG_W(MAC, "Could not unqueue_matching\n");
+      return 0;
+    }
+
+    LOG_E(MAC, "REMOVING.. dl_config_req & tx_req\n");
+    free(matched);
+
     return 0;
   }
 
@@ -1007,6 +1124,7 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
   if (!put_queue(&dl_config_req_queue, p)) {
     free(p);
   }
+  LOG_I(MAC, "DL_CONFIG_REQ QUEUE: %zu", dl_config_req_queue.num_items);
   return 0;
 }
 
@@ -1071,10 +1189,30 @@ int memcpy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nf
   return 0;
 }
 
+void nfapi_free_tx_req_pdu_list(nfapi_tx_req_pdu_list_t *list)
+{
+  // free all the p[i].segments[j].segment_data memory
+  int num_pdus = list->num_pdus;
+  nfapi_tx_request_pdu_t *pdus = list->pdus;
+  for (int i = 0; i < num_pdus; i++) {
+    int num_segments = pdus[i].num_segments;
+    for (int j = 0; j < num_segments; j++) {
+      free(pdus[i].segments[j].segment_data);
+      pdus[i].segments[j].segment_data = NULL;
+    }
+  }
+  free(list);
+}
+
 int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
-  tx_req_num_elems = req->tx_request_body.number_of_pdus;
-  nfapi_tx_request_pdu_t *p = calloc(tx_req_num_elems, sizeof(nfapi_tx_request_pdu_t));
-  for (int i = 0; i < tx_req_num_elems; i++) {
+
+  int num_pdus = req->tx_request_body.number_of_pdus;
+
+  nfapi_tx_req_pdu_list_t *list = calloc(1, sizeof(nfapi_tx_req_pdu_list_t) + num_pdus * sizeof(nfapi_tx_request_pdu_t));
+  list->num_pdus = num_pdus;
+  nfapi_tx_request_pdu_t *p = list->pdus;
+
+  for (int i = 0; i < num_pdus; i++) {
     p[i].num_segments = req->tx_request_body.tx_pdu_list[i].num_segments;
     p[i].pdu_index = req->tx_request_body.tx_pdu_list[i].pdu_index;
     p[i].pdu_length = req->tx_request_body.tx_pdu_list[i].pdu_length;
@@ -1090,15 +1228,15 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
     }
   }
 
-  if (!put_queue(&tx_req_pdu_queue, p)) {
-    free(p);
+  if (!put_queue(&tx_req_pdu_queue, list)) {
+    nfapi_free_tx_req_pdu_list(list);
   }
 
   return 0;
 }
 
-int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
-			nfapi_pnf_p7_config_t* pnf_p7, 
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
+			nfapi_pnf_p7_config_t* pnf_p7,
 			nfapi_hi_dci0_request_t* req) {
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
@@ -1132,7 +1270,7 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
   if (!put_queue(&hi_dci0_req_queue, p)) {
     free(p);
   }
-
+  LOG_I(MAC, "DCI0 QUEUE: %zu\n", hi_dci0_req_queue.num_items);
   return 0;
 }
 
@@ -1304,7 +1442,7 @@ void *ue_standalone_pnf_task(void *context)
         else
         {
           // check to see if dl_config_req is null
-          LOG_D(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
+          LOG_I(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
                 dl_config_req.sfn_sf & 15);
           memcpy_dl_config_req(NULL, NULL, &dl_config_req);
         }
@@ -1322,7 +1460,7 @@ void *ue_standalone_pnf_task(void *context)
         else
         {
           // check to see if tx_req is null
-          LOG_D(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
+          LOG_I(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
                 tx_req.sfn_sf & 15);
           memcpy_tx_req(NULL, &tx_req);
         }
