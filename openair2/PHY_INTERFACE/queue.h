@@ -55,7 +55,8 @@ void *unqueue(queue_t *q);
 
 typedef bool queue_matcher_t(void *wanted, void *candidate);
 
-/* Unqueue the most recently queued item for watch `matcher(wanted, candidate)`
+/* Unqueue the most recently queued item for which `matcher(wanted, candidate)`
    returns true where `candidate` is an item currently on the queue.
+   Look only at the last `max_depth` items on the queue, at most.
    Returns the candidate item, or NULL if none matches */
-void *unqueue_matching(queue_t *q, queue_matcher_t *matcher, void *wanted);
+void *unqueue_matching(queue_t *q, size_t max_depth, queue_matcher_t *matcher, void *wanted);

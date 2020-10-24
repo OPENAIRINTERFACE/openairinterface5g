@@ -113,7 +113,7 @@ void *unqueue(queue_t *q)
     return item;
 }
 
-void *unqueue_matching(queue_t *q, queue_matcher_t *matcher, void *wanted)
+void *unqueue_matching(queue_t *q, size_t max_depth, queue_matcher_t *matcher, void *wanted)
 {
     if (pthread_mutex_lock(&q->mutex) != 0)
     {
@@ -125,6 +125,12 @@ void *unqueue_matching(queue_t *q, queue_matcher_t *matcher, void *wanted)
     size_t endi = q->write_index;
     for (size_t i = 0; i < q->num_items; i++)
     {
+        if (max_depth == 0)
+        {
+            break;
+        }
+        --max_depth;
+
         endi = (endi + MAX_QUEUE_SIZE - 1) % MAX_QUEUE_SIZE;
         void *candidate = q->items[endi];
         if (matcher(wanted, candidate))

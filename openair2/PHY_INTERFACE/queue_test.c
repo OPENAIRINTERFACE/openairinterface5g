@@ -128,7 +128,7 @@ int main(void)
     init_queue(&queue);
 
     // empty queue
-    p = unqueue_matching(&queue, matcher, &thing1);
+    p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &thing1);
     EQUAL(p, NULL);
     EQUAL(queue.num_items, 0);
 
@@ -136,14 +136,19 @@ int main(void)
     if (!put_queue(&queue, &thing1))
         FAIL;
     EQUAL(queue.num_items, 1);
-    p = unqueue_matching(&queue, matcher, &thing2);
+    p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &thing2);
     EQUAL(p, NULL);
     EQUAL(queue.num_items, 1);
-    p = unqueue_matching(&queue, matcher, &thing1);
+
+    p = unqueue_matching(&queue, /*max_queue=*/ 0, matcher, &thing1);
+    EQUAL(p, NULL);
+    EQUAL(queue.num_items, 1);
+
+    p = unqueue_matching(&queue, /*max_queue=*/ 1, matcher, &thing1);
     EQUAL(p, &thing1);
     EQUAL(queue.num_items, 0);
 
-    // fill the queue then remove every other item
+    // more max_queue values
     for (int i = 0; i < MAX_QUEUE_SIZE; ++i)
     {
         if (!put_queue(&queue, &things[i]))
@@ -151,15 +156,35 @@ int main(void)
             FAIL;
         }
     }
-    p = unqueue_matching(&queue, matcher, &thing1);
+    p = unqueue_matching(&queue, /*max_queue=*/ 0, matcher, &things[MAX_QUEUE_SIZE - 1]);
+    EQUAL(p, NULL);
+    p = unqueue_matching(&queue, /*max_queue=*/ 1, matcher, &things[MAX_QUEUE_SIZE - 1]);
+    EQUAL(p, &things[MAX_QUEUE_SIZE - 1]);
+    EQUAL(queue.num_items, MAX_QUEUE_SIZE - 1);
+    p = unqueue_matching(&queue, /*max_queue=*/ MAX_QUEUE_SIZE - 2, matcher, &things[0]);
+    EQUAL(p, NULL);
+    p = unqueue_matching(&queue, /*max_queue=*/ MAX_QUEUE_SIZE - 1, matcher, &things[0]);
+    EQUAL(p, &things[0]);
+    EQUAL(queue.num_items, MAX_QUEUE_SIZE - 2);
+
+    // fill the queue then remove every other item
+    init_queue(&queue);
+    for (int i = 0; i < MAX_QUEUE_SIZE; ++i)
+    {
+        if (!put_queue(&queue, &things[i]))
+        {
+            FAIL;
+        }
+    }
+    p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &thing1);
     EQUAL(p, NULL);
     for (int i = MAX_QUEUE_SIZE - 1; i >= 0; i -= 2)
     {
-        p = unqueue_matching(&queue, matcher, &things[i]);
+        p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &things[i]);
         EQUAL(p, &things[i]);
     }
     EQUAL(queue.num_items, MAX_QUEUE_SIZE / 2);
-    p = unqueue_matching(&queue, matcher, &thing1);
+    p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &thing1);
     EQUAL(p, NULL);
     for (int i = 0; i < MAX_QUEUE_SIZE; i += 2)
     {
@@ -176,15 +201,15 @@ int main(void)
             FAIL;
         }
     }
-    p = unqueue_matching(&queue, matcher, &thing1);
+    p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &thing1);
     EQUAL(p, NULL);
     for (int i = 0; i < MAX_QUEUE_SIZE; i += 3)
     {
-        p = unqueue_matching(&queue, matcher, &things[i]);
+        p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &things[i]);
         EQUAL(p, &things[i]);
     }
     EQUAL(queue.num_items, MAX_QUEUE_SIZE * 2 / 3);
-    p = unqueue_matching(&queue, matcher, &thing1);
+    p = unqueue_matching(&queue, MAX_QUEUE_SIZE, matcher, &thing1);
     EQUAL(p, NULL);
     for (int i = 0; i < MAX_QUEUE_SIZE; ++i)
     {

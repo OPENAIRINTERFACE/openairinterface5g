@@ -1084,8 +1084,14 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
             req->sfn_sf >> 4, req->sfn_sf & 15);
       return 0;
     }
-    dlsch_pdu_indicies_t wanted = {num_dlsch_pdu_indicies, dlsch_pdu_indicies};
-    nfapi_tx_req_pdu_list_t *matched = unqueue_matching(&tx_req_pdu_queue, match_dl_config_req, &wanted);
+    dlsch_pdu_indicies_t wanted =
+    {
+      num_dlsch_pdu_indicies,
+      dlsch_pdu_indicies,
+    };
+    nfapi_tx_req_pdu_list_t *matched =
+      unqueue_matching(&tx_req_pdu_queue, /*max_depth=*/ 2,
+                       match_dl_config_req, &wanted);
     if (!matched)
     {
       LOG_W(MAC, "Could not unqueue_matching\n");
