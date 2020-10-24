@@ -168,6 +168,13 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
     /// Scrambling
     uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD]= {0};
     nr_pdcch_scrambling(encoder_output, encoded_length, Nid, scrambling_RNTI, scrambled_output);
+
+    printf("polar_encoder_fast: pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d] = %i, pdcch_pdu_rel15->dci_pdu.AggregationLevel[d] = %i, n_RNTI = %i\n",
+           pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d], pdcch_pdu_rel15->dci_pdu.AggregationLevel[d], n_RNTI);
+
+    printf("nr_pdcch_scrambling: encoded_length = %i, Nid = %i, scrambling_RNTI = %i\n\n",encoded_length, Nid, scrambling_RNTI);
+
+
 #ifdef DEBUG_CHANNEL_CODING
     printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\t [4]->0x%08x\t [5]->0x%08x\t \
 [6]->0x%08x \t [7]->0x%08x \t [8]->0x%08x \t [9]->0x%08x\t [10]->0x%08x\t [11]->0x%08x\n",

@@ -458,14 +458,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules SIB1
-  if(slot  == 15){
-    schedule_nr_sib1(module_idP, frame, slot);
-  }
+  schedule_nr_sib1(module_idP, frame, slot);
 
 
   // This schedule PRACH if we are not in phy_test mode
-  if (get_softmodem_params()->phy_test == 0)
+  if (get_softmodem_params()->phy_test == 0) {
     schedule_nr_prach(module_idP, frame, slot);
+  }
 
   // This schedule SR
   // TODO
@@ -513,8 +512,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     ue_sched_ctl->ta_apply = false;
   }
 
-  if (UE_info->active[UE_id])
+  if (UE_info->active[UE_id]) {
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
+  }
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

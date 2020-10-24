@@ -71,6 +71,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
+void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0);
+
+void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0);
+
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 				     NR_CellGroupConfig_t *secondaryCellGroup,
 				     int scg_id,

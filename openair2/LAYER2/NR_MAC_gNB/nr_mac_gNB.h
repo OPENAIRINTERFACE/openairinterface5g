@@ -443,6 +443,8 @@ typedef struct gNB_MAC_INST_s {
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 
+  NR_UE_sched_ctrl_t *sched_ctrlCommon;
+  NR_CellGroupConfig_t *secondaryCellGroupCommon;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
 
 } gNB_MAC_INST;

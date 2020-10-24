@@ -873,11 +873,17 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
         #endif
 
         uint16_t crc = polar_decoder_int16(tmp_e,
-                                          dci_estimation,
+                                           dci_estimation,
                                           1,
                                           currentPtrDCI);
 
         n_rnti = rel15->rnti;
+
+        printf("nr_pdcch_unscrambling: encoded_length = %i, Nid = %i, scrambling_RNTI = %i\n",
+               L*108, rel15->coreset.pdcch_dmrs_scrambling_id, rel15->coreset.scrambling_rnti);
+
+        printf("polar_decoder_int16: pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d] = %i, pdcch_pdu_rel15->dci_pdu.AggregationLevel[d] = %i, n_RNTI = %i\n",
+               dci_length, L, rel15->rnti);
 
         if (crc == n_rnti) {
           LOG_D(PHY,"Decoded crc %x matches rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format_options[k]);
@@ -889,6 +895,10 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
           dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
           memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
           dci_ind->number_of_dcis++;
+
+          printf("\n>> Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n\n",
+                 n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);
+
           break;    // If DCI is found, no need to check for remaining DCI lengths
         } else {
           LOG_D(PHY,"Decoded crc %x does not match rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format_options[k]);
@@ -896,6 +906,10 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       }
     }
   }
+
+  printf("nr_dci_decoding_procedure: frame = %i, slot = %i\n", frame, slot);
+  getchar();
+
   return(dci_ind->number_of_dcis);
 }
 

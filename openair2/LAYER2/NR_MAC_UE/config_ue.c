@@ -394,7 +394,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(*css->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
-    AssertFatal(css->searchSpaceId != 0, "css->searchSpaceId is 0\n");
+    AssertFatal(&css->searchSpaceId != NULL, "css->searchSpaceId is null\n");
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");

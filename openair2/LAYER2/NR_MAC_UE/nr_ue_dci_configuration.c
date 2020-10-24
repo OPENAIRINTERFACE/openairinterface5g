@@ -143,6 +143,23 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     case NR_RNTI_SP_CSI:
     break;
     case NR_RNTI_SI:
+
+      // we use DL BWP dedicated
+      sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+      // for SPS=14 8 MSBs in positions 13 down to 6
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = mac->crnti; // FIXME: Must be 0xFFFF
+      rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
+      rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
+      rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
+
+      for (int i = 0; i < rel15->num_dci_options; i++) {
+        rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
+      }
+
+      printf("bwp_Common->genericParameters.locationAndBandwidth = %li\n", bwp_Common->genericParameters.locationAndBandwidth);
+      printf("rel15->BWPSize = %i\n", rel15->BWPSize);
+
     break;
     case NR_RNTI_SFI:
     break;
@@ -203,6 +220,14 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       // Fetch configuration for searchSpaceZero
       // note: The search space with the SearchSpaceId = 0 identifies the search space configured via PBCH (MIB) and in ServingCellConfigCommon (searchSpaceZero).
       if (pdcch_ConfigCommon->choice.setup->searchSpaceZero){
+
+        printf("pdcch_ConfigCommon->choice.setup->searchSpaceZero = %li\n", *pdcch_ConfigCommon->choice.setup->searchSpaceZero);
+
+        if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 == NULL){
+          pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
+        }
+        *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = 0;
+
         LOG_D(MAC, "[DCI_CONFIG] Configure SearchSpace#0 of the initial BWP\n");
         LOG_W(MAC, "[DCI_CONFIG] This should not be available yet...");
       }
@@ -227,7 +252,16 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
           }
         }
         if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
-          if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+          //if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+
+            if(slot  == 10){
+              rel15->num_dci_options = 1;
+              rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+              config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, ss_id);
+              fill_dci_search_candidates(ss, rel15);
+            //}
+
+
             // Configure monitoring of PDCCH candidates in Type0-PDCCH common search space on the MCG
             LOG_W(MAC, "[DCI_CONFIG] This seach space should not be configured yet...");
           }

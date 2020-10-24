@@ -190,6 +190,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                       (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
                       (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
 
+            LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], SIB case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
           break;
 
         case FAPI_NR_RX_PDU_TYPE_DLSCH:
