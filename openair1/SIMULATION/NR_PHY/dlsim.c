@@ -140,6 +140,12 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 
+// Dummy function to avoid linking error at compilation of nr-dlsim
+int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
