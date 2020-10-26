@@ -183,6 +183,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
   int ss_id;
   uint8_t bwp_id = 1, coreset_id = 1;
+  //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Downlink_t *bwp = mac->DLbwp[bwp_id - 1];
 
   #ifdef DEBUG_DCI

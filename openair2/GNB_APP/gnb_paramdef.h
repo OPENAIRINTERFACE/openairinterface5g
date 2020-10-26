@@ -246,7 +246,6 @@ typedef struct ccparams_nr_x2 {
 #define GNB_SLICE_SERIVE_TYPE_IDX        0
 #define GNB_SLICE_DIFFERENTIATOR_IDX     1
 
-
 #define GNBSNSSAIPARAMS_DESC {                                                                  \
 /*   optname                               helpstr                 paramflags XXXptr     def val          type    numelt */ \
   {GNB_CONFIG_STRING_SLICE_SERIVE_TYPE,    "slice serive type",            0, uptr:NULL, defuintval:1,    TYPE_UINT, 0},    \
@@ -259,7 +258,6 @@ typedef struct ccparams_nr_x2 {
   { .s1 = { config_check_intval, SLICE_SERIVE_TYPE_OKRANGES, 4 } },             \
   { .s5 = { NULL } },             \
 }
-
 
 /* AMF configuration parameters section name */
 #define GNB_CONFIG_STRING_AMF_IP_ADDRESS                "amf_ip_address"

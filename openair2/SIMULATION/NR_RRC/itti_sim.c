@@ -59,6 +59,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "RRC/NR_UE/rrc_proto.h"
+#include "RRC/NR_UE/rrc_vars.h"
 #include "openair3/NAS/UE/nas_ue_task.h"
 
 pthread_cond_t nfapi_sync_cond;
@@ -380,7 +381,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
   if (ue_nb > 0) {
     printf("create TASK_RRC_NRUE\n");
     if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
-      LOG_E(RRC, "Create task for RRC UE failed\n");
+      LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
   }
@@ -406,12 +407,12 @@ void *itti_sim_ue_rrc_task( void *args_p) {
 
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
-        LOG_W(RRC, " *** Exiting RRC thread\n");
+        LOG_W(NR_RRC, " *** Exiting RRC thread\n");
         itti_exit_task ();
         break;
 
       case MESSAGE_TEST:
-        LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
       case GNB_RRC_BCCH_DATA_IND:
           message_p = itti_alloc_new_message (TASK_RRC_NRUE, NR_RRC_MAC_BCCH_DATA_IND);
@@ -433,12 +434,11 @@ void *itti_sim_ue_rrc_task( void *args_p) {
         message_p = itti_alloc_new_message (TASK_RRC_NRUE, NR_RRC_DCCH_DATA_IND);
         NR_RRC_DCCH_DATA_IND (message_p).dcch_index = GNB_RRC_DCCH_DATA_IND(msg_p).rbid;
         NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = GNB_RRC_DCCH_DATA_IND(msg_p).size;
-        memset(NR_RRC_DCCH_DATA_IND (message_p).sdu_p, 0, GNB_RRC_DCCH_DATA_IND(msg_p).size);
-        memcpy(NR_RRC_DCCH_DATA_IND (message_p).sdu_p, GNB_RRC_DCCH_DATA_IND(msg_p).sdu, GNB_RRC_DCCH_DATA_IND(msg_p).size);
+        NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = GNB_RRC_DCCH_DATA_IND(msg_p).sdu;
         itti_send_msg_to_task (TASK_RRC_NRUE, instance, message_p);
         break;
       default:
-        LOG_E(RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        LOG_E(NR_RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
     }
 
@@ -464,30 +464,30 @@ void *itti_sim_gnb_rrc_task( void *args_p) {
 
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
-        LOG_W(RRC, " *** Exiting RRC thread\n");
+        LOG_W(NR_RRC, " *** Exiting RRC thread\n");
         itti_exit_task ();
         break;
 
       case MESSAGE_TEST:
-        LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
       case UE_RRC_CCCH_DATA_IND:
           message_p = itti_alloc_new_message (TASK_RRC_GNB, NR_RRC_MAC_CCCH_DATA_IND);
-          RRC_MAC_CCCH_DATA_IND (message_p).sdu_size = UE_RRC_CCCH_DATA_IND(msg_p).size;
-          memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-          memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).size);
+          NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size = UE_RRC_CCCH_DATA_IND(msg_p).size;
+          memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+          memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).size);
           itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
            break;
       case UE_RRC_DCCH_DATA_IND:
     	    message_p = itti_alloc_new_message (TASK_RRC_GNB, NR_RRC_DCCH_DATA_IND);
-    	    RRC_DCCH_DATA_IND (message_p).sdu_size   = UE_RRC_DCCH_DATA_IND(msg_p).size;
-            memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, UE_RRC_DCCH_DATA_IND(msg_p).size);
-            memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, UE_RRC_DCCH_DATA_IND(msg_p).sdu, UE_RRC_DCCH_DATA_IND(msg_p).size);
+    	    NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = UE_RRC_DCCH_DATA_IND(msg_p).size;
+          NR_RRC_DCCH_DATA_IND (message_p).dcch_index = UE_RRC_DCCH_DATA_IND(msg_p).rbid;
+          NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = UE_RRC_DCCH_DATA_IND(msg_p).sdu;
     	    itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
            break;
 
       default:
-        LOG_E(RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+        LOG_E(NR_RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
     }
 
@@ -522,7 +522,8 @@ int main( int argc, char **argv )
     exit(-1);
   }
 
-  AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+  // AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+  AMF_MODE_ENABLED = 0;
 
 #if T_TRACER
   T_Config_Init();
@@ -584,12 +585,7 @@ int main( int argc, char **argv )
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
 
-
-
-#if 0
-  // test itti sim
-  usleep(10000);
-
+  usleep(100000);
   protocol_ctxt_t ctxt;
   struct rrc_gNB_ue_context_s *ue_context_p = NULL;
 
@@ -605,11 +601,9 @@ int main( int argc, char **argv )
                                 0,
                                 0,
                                 0);
-  rrc_gNB_generate_RRCSetup(&ctxt,
-                            ue_context_p,
-                            0);
-  // end test itti sim
-#endif
+  NR_UE_rrc_inst[ctxt.module_id].Info[0].State = RRC_SI_RECEIVED;
+
+  rrc_ue_generate_RRCSetupRequest(&ctxt, 0);
 
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
