@@ -191,9 +191,11 @@ typedef struct {
   int fmt;
   int numRA;
   int prachStartSymbol;
+  int num_prach_ocas;
 } RU_PRACH_list_t;
 
 #define NUMBER_OF_NR_RU_PRACH_MAX 8
+#define NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX 12
 
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
@@ -594,8 +596,8 @@ typedef struct RU_t_s {
   RU_PRACH_list_t prach_list[NUMBER_OF_NR_RU_PRACH_MAX];
   /// mutex for prach_list access
   pthread_mutex_t prach_list_mutex;
-  /// received frequency-domain signal for PRACH (IF4p5 RRU)
-  int16_t **prach_rxsigF;
+  /// received frequency-domain signal for PRACH (IF4p5 RRU) 
+  int16_t **prach_rxsigF[NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX];
   /// received frequency-domain signal for PRACH BR (IF4p5 RRU)
   int16_t **prach_rxsigF_br[4];
   /// sequence number for IF5

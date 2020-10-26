@@ -1149,9 +1149,22 @@ add_library(FLEXRAN_AGENT
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_async.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_internal.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_slice_verification.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_app.c
   )
 add_dependencies(FLEXRAN_AGENT rrc_flag)
 set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
+add_library(flapp_sample SHARED
+  ${OPENAIR2_DIR}/ENB_APP/flexran_apps/sample.c
+)
+set_target_properties(flapp_sample PROPERTIES C_VISIBILITY_PRESET hidden)
+add_library(flapp_imsi SHARED
+  ${OPENAIR2_DIR}/ENB_APP/flexran_apps/imsi.c
+)
+set_target_properties(flapp_imsi PROPERTIES C_VISIBILITY_PRESET hidden)
+add_custom_target(flapp_all DEPENDS
+  flapp_sample
+  flapp_imsi
+)
 #include_directories(${OPENAIR2_DIR}/ENB_APP)
 
 set(PROTOBUF_LIB "protobuf-c")
