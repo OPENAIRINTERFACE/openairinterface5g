@@ -503,8 +503,6 @@ pdcp_data_ind(
 //-----------------------------------------------------------------------------
 {
   pdcp_t      *pdcp_p          = NULL;
-  list_t      *sdu_list_p      = NULL;
-  mem_block_t *new_sdu_p       = NULL;
   uint8_t      pdcp_header_len = 0;
   uint8_t      pdcp_tailer_len = 0;
   pdcp_sn_t    sequence_number = 0;
@@ -576,7 +574,6 @@ pdcp_data_ind(
     }
   }
 
-  sdu_list_p = &pdcp_sdu_list;
 
   if (sdu_buffer_sizeP == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!\n");
@@ -974,9 +971,8 @@ pdcp_data_ind(
 #endif
 
   if (FALSE == packet_forwarded) {
-    new_sdu_p = get_free_mem_block(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t), __func__);
+    notifiedFIFO_elt_t * new_sdu_p = newNotifiedFIFO_elt(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t), 0, NULL, NULL);
 
-    if (new_sdu_p) {
       if ((MBMS_flagP == 0) && (pdcp_p->rlc_mode == RLC_MODE_AM)) {
         pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
       }
@@ -984,14 +980,15 @@ pdcp_data_ind(
       /*
        * Prepend PDCP indication header which is going to be removed at pdcp_fifo_flush_sdus()
        */
-      memset(new_sdu_p->data, 0, sizeof (pdcp_data_ind_header_t));
-      ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size = sdu_buffer_sizeP - payload_offset;
+      pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(new_sdu_p);
+      memset(pdcpHead, 0, sizeof (pdcp_data_ind_header_t));
+      pdcpHead->data_size = sdu_buffer_sizeP - payload_offset;
       AssertFatal((sdu_buffer_sizeP - payload_offset >= 0), "invalid PDCP SDU size!");
 
       // Here there is no virtualization possible
       // set ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst for IP layer here
       if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id;
+        pdcpHead->rb_id = rb_id;
 
         if (EPC_MODE_ENABLED) {
           /* for the UE compiled in S1 mode, we need 1 here
@@ -1002,45 +999,40 @@ pdcp_data_ind(
 #ifdef UESIM_EXPANSION
 
             if (UE_NAS_USE_TUN) {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+              pdcpHead->inst  = ctxt_pP->module_id;
             } else {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 0;
+              pdcpHead->inst  = 0;
             }
 
 #else
-            ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+            pdcpHead->inst  = ctxt_pP->module_id;
 #endif
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+              pdcpHead->inst  = ctxt_pP->module_id;
             } else {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 1;
+              pdcpHead->inst  = 1;
             }
           } // nfapi_mode
         }
       } else {
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+        pdcpHead->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
+        pdcpHead->inst  = ctxt_pP->module_id;
       }
 
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
         static uint32_t pdcp_inst = 0;
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst = pdcp_inst++;
-        LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
+        pdcpHead->inst = pdcp_inst++;
+        LOG_D(PDCP, "inst=%d size=%d\n", pdcpHead->inst, pdcpHead->data_size);
       }
 
-      memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)],
+      memcpy(pdcpHead+1,
              &sdu_buffer_pP->data[payload_offset],
              sdu_buffer_sizeP - payload_offset);
-      
-      #if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
-      	LOG_I(PDCP, "Printing first bytes of PDCP SDU before adding it to the list: \n");
-      	for (int i=0; i<30; i++){
-    	  LOG_I(PDCP, "%x", sdu_buffer_pP->data[i]);
-      	}
-      #endif
-      list_add_tail_eurecom (new_sdu_p, sdu_list_p);
-    }
+      if( LOG_DEBUGFLAG(DEBUG_PDCP) )
+	log_dump(PDCP, pdcpHead+1, min(sdu_buffer_sizeP - payload_offset,30) , LOG_DUMP_CHAR,
+	         "Printing first bytes of PDCP SDU before adding it to the list: \n");
+      pushNotifiedFIFO(&pdcp_sdu_list, new_sdu_p); 
 
     /* Print octets of incoming data in hexadecimal form */
     LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
@@ -2297,17 +2289,16 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
     if(UE_NAS_USE_TUN) {
       int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
       netlink_init_tun("ue",num_if);
-      //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
     	  nas_config(1, 1, 2, "ue");
-      netlink_init_mbms_tun("uem",num_if);
+      netlink_init_mbms_tun("uem");
       nas_config_mbms(1, 2, 2, "uem");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
     } else if(ENB_NAS_USE_TUN) {
       netlink_init_tun("enb",1);
       nas_config(1, 1, 1, "enb");
       if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
-      	netlink_init_mbms_tun("enm",1);
+        netlink_init_mbms_tun("enm");
       	nas_config_mbms(1, 2, 1, "enm"); 
       	LOG_I(PDCP, "ENB pdcp will use mbms tun interface\n");
       }
@@ -2319,7 +2310,7 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
   }else{
          if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
              LOG_W(PDCP, "ENB pdcp will use tun interface for MBMS\n");
-            netlink_init_mbms_tun("enm",1);
+            netlink_init_mbms_tun("enm");
              nas_config_mbms_s1(1, 2, 1, "enm"); 
          }else
              LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
@@ -2362,101 +2353,6 @@ void pdcp_module_cleanup (void)
 {
 }
 
-void nr_ip_over_LTE_DRB_preconfiguration(void){
-
-	  // Addition for the use-case of 4G stack on top of 5G-NR.
-	  // We need to configure pdcp and rlc instances without having an actual
-	  // UE RRC Connection. In order to be able to test the NR PHY with some injected traffic
-	  // on top of the LTE stack.
-	  protocol_ctxt_t ctxt;
-	  LTE_DRB_ToAddModList_t*                DRB_configList=NULL;
-	  DRB_configList = CALLOC(1, sizeof(LTE_DRB_ToAddModList_t));
-	  struct LTE_LogicalChannelConfig        *DRB_lchan_config                                 = NULL;
-	  struct LTE_RLC_Config                  *DRB_rlc_config                   = NULL;
-	  struct LTE_PDCP_Config                 *DRB_pdcp_config                  = NULL;
-	  struct LTE_PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
-
-	  struct LTE_DRB_ToAddMod                *DRB_config                       = NULL;
-	  struct LTE_LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters        = NULL;
-	  long  *logicalchannelgroup_drb;
-
-
-	  //Static preconfiguration of DRB
-	  DRB_config = CALLOC(1, sizeof(*DRB_config));
-
-	  DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
-	  // allowed value 5..15, value : x+4
-	  *(DRB_config->eps_BearerIdentity) = 1; //ue_context_pP->ue_context.e_rab[i].param.e_rab_id;//+ 4; // especial case generation
-	  //   DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
-	  // 1 + drb_identiy_index;
-	  DRB_config->drb_Identity = 1;
-	  DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
-	  *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
-
-	  DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
-	  DRB_config->rlc_Config = DRB_rlc_config;
-
-	  DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
-	  DRB_config->pdcp_Config = DRB_pdcp_config;
-	  DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
-	  *DRB_pdcp_config->discardTimer = LTE_PDCP_Config__discardTimer_infinity;
-	  DRB_pdcp_config->rlc_AM = NULL;
-	  DRB_pdcp_config->rlc_UM = NULL;
-
-	  DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
-	  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
-	  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
-	  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = LTE_T_Reordering_ms35;
-	  // PDCP
-	  PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
-	  DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
-	  PDCP_rlc_UM->pdcp_SN_Size = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
-
-	  DRB_pdcp_config->headerCompression.present = LTE_PDCP_Config__headerCompression_PR_notUsed;
-
-	  DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
-	  DRB_config->logicalChannelConfig = DRB_lchan_config;
-	  DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
-	  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-
-	  DRB_ul_SpecificParameters->priority= 4;
-
-	  DRB_ul_SpecificParameters->prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
-	  //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-	  DRB_ul_SpecificParameters->bucketSizeDuration =
-	  LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-	  logicalchannelgroup_drb = CALLOC(1, sizeof(long));
-	  *logicalchannelgroup_drb = 1;//(i+1) % 3;
-	  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-
-	  ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config);
-
-	  if (ENB_NAS_USE_TUN){
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
-	  }
-	  else{
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
-	  }
-
-	  rrc_pdcp_config_asn1_req(&ctxt,
-	               (LTE_SRB_ToAddModList_t *) NULL,
-	               DRB_configList,
-	               (LTE_DRB_ToReleaseList_t *) NULL,
-	               0xff, NULL, NULL, NULL
-	               , (LTE_PMCH_InfoList_r9_t *) NULL,
-	               &DRB_config->drb_Identity);
-
-	rrc_rlc_config_asn1_req(&ctxt,
-	               (LTE_SRB_ToAddModList_t*)NULL,
-	               DRB_configList,
-	               (LTE_DRB_ToReleaseList_t*)NULL
-	//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-	               ,(LTE_PMCH_InfoList_r9_t *)NULL
-	               , 0, 0
-	//#endif
-	         );
-}
 //-----------------------------------------------------------------------------
 void pdcp_layer_init(void)
 //-----------------------------------------------------------------------------
@@ -2468,7 +2364,7 @@ void pdcp_layer_init(void)
   /*
    * Initialize SDU list
    */
-  list_init(&pdcp_sdu_list, NULL);
+  initNotifiedFIFO(&pdcp_sdu_list);
   pdcp_coll_p = hashtable_create ((LTE_maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, pdcp_free);
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
@@ -2541,7 +2437,8 @@ void pdcp_layer_init(void)
 void pdcp_layer_cleanup (void)
 //-----------------------------------------------------------------------------
 {
-  list_free (&pdcp_sdu_list);
+  //list_free (&pdcp_sdu_list);
+  while(pollNotifiedFIFO(&pdcp_sdu_list)) {};
   hashtable_destroy(&pdcp_coll_p);
 #ifdef MBMS_MULTICAST_OUT
 

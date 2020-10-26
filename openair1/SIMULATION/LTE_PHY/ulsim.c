@@ -54,6 +54,7 @@
 #include "common/config/config_load_configmodule.h"
 #include "executables/thread-common.h"
 #include "targets/RT/USER/lte-softmodem.h"
+#include "executables/split_headers.h"
 
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -80,6 +81,14 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+
+int split73=0;
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
 extern void fep_full(RU_t *ru, int subframe);
 extern void ru_fep_full_2thread(RU_t *ru, int subframe);
@@ -720,6 +729,7 @@ int main(int argc, char **argv) {
                                 channel_model,
                                 N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
+                                30e-9,
                                 forgetting_factor,
                                 delay,
                                 0);
@@ -793,6 +803,13 @@ int main(int argc, char **argv) {
   proc_rxtx_ue->frame_rx = (subframe<4)?(proc_rxtx->frame_tx-1):(proc_rxtx->frame_tx);
   proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
   proc_rxtx_ue->subframe_rx = (proc_rxtx->subframe_tx+6)%10;
+  proc_rxtx->threadPool=(tpool_t*)malloc(sizeof(tpool_t));
+  proc_rxtx->respEncode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  proc_rxtx->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initTpool("n",proc_rxtx->threadPool, true);
+  initNotifiedFIFO(proc_rxtx->respEncode);
+  initNotifiedFIFO(proc_rxtx->respDecode);
+
   printf("Init UL hopping UE\n");
   init_ul_hopping(&UE->frame_parms);
   printf("Init UL hopping eNB\n");
@@ -995,7 +1012,7 @@ int main(int argc, char **argv) {
                                             srs_flag);
           sched_resp.subframe=(subframe+6)%10;
           sched_resp.frame=(1024+eNB->proc.frame_rx+((subframe<4)?-1:0))&1023;
-          schedule_response(&sched_resp);
+          schedule_response(&sched_resp, proc_rxtx);
 
           /////////////////////
           if (abstx) {
@@ -1070,7 +1087,7 @@ int main(int argc, char **argv) {
           if (awgn_flag == 0) {
             if (UE2eNB->max_Doppler == 0) {
               multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                eNB->frame_parms.samples_per_tti,hold_channel);
+                                eNB->frame_parms.samples_per_tti,hold_channel,0);
             } else {
               multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
                                    2*eNB->frame_parms.samples_per_tti,hold_channel);
@@ -1270,7 +1287,7 @@ int main(int argc, char **argv) {
         LOG_UDUMPMSG(SIM,dataArray(table_rx),table_rx->size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
-      printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %d dB, delta_IF %d [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
+      printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %u dB, delta_IF %d [ (%d,%d) dB / (%u,%u) dB ]**************************\n",
              nb_rb,mcs,SNR,SNR2,
              tx_lev_dB,
              20*log10(tx_gain),
@@ -1352,7 +1369,7 @@ int main(int argc, char **argv) {
         printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
         printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
         printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
-        printf("|__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
+        printf("    |__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
                eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ?
                eNB->ulsch[0]->harq_processes[harq_pid]->Kminus :
                eNB->ulsch[0]->harq_processes[harq_pid]->Kplus,

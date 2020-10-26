@@ -181,29 +181,140 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
         );
 */
 
-void idft1536(int16_t *sigF,int16_t *sig,int scale);
 
-void idft6144(int16_t *sigF,int16_t *sig,int scale);
 
-void idft12288(int16_t *sigF,int16_t *sig,int scale);
+#ifdef OAIDFTS_MAIN
+typedef  void(*adftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
+typedef  void(*aidftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);     
 
-void idft18432(int16_t *sigF,int16_t *sig,int scale);
+void dft12(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft36(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft48(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft60(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft64(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft72(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft96(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft108(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft120(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft128(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft144(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft180(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft192(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft216(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft240(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft256(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft288(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft300(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft324(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft360(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft384(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft432(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft480(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft512(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft540(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft576(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft600(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft648(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft720(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft768(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft864(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft900(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft960(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft972(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1024(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1080(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1152(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1200(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1536(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void dft2048(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft3072(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void dft4096(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft6144(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void dft8192(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft9216(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft12288(int16_t *x,int16_t *y,uint8_t scale_flag);  
+void dft18432(int16_t *x,int16_t *y,uint8_t scale_flag); 
+void dft24576(int16_t *x,int16_t *y,uint8_t scale_flag); 
+void dft36864(int16_t *x,int16_t *y,uint8_t scale_flag); 
+void dft49152(int16_t *x,int16_t *y,uint8_t scale_flag); 
+void dft73728(int16_t *x,int16_t *y,uint8_t scale_flag); 
+void dft98304(int16_t *x,int16_t *y,uint8_t scale_flag);
 
-void idft3072(int16_t *sigF,int16_t *sig,int scale);
 
-void idft24576(int16_t *sigF,int16_t *sig,int scale);
+void idft64(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft128(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft256(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft512(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft1024(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft1536(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft2048(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft3072(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft4096(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft6144(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft8192(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft9216(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft12288(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft18432(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft24576(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft36864(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft49152(int16_t *sigF,int16_t *sig,uint8_t scale_flag); 
+void idft73728(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void idft98304(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
 
-void dft1536(int16_t *sigF,int16_t *sig,int scale);
 
-void dft3072(int16_t *sigF,int16_t *sig,int scale);
 
-void dft6144(int16_t *sigF,int16_t *sig,int scale);
 
-void dft12288(int16_t *sigF,int16_t *sig,int scale);
+#else
+  typedef  void(*dftfunc_t)(uint8_t sizeidx,int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
+  typedef  void(*idftfunc_t)(uint8_t sizeidx,int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
+#  ifdef OAIDFTS_LOADER
+  dftfunc_t dft;
+  idftfunc_t idft;
+#  else
+  extern dftfunc_t dft;
+  extern idftfunc_t idft;
+  extern int load_dftslib(void);
+#  endif
+#endif
 
-void dft18432(int16_t *sigF,int16_t *sig,int scale);
+typedef enum DFT_size_idx {
+	DFT_12,    DFT_24,    DFT_36,   DFT_48,     DFT_60,   DFT_72,   DFT_96,
+	DFT_108,   DFT_120,   DFT_128,  DFT_144,    DFT_180,  DFT_192,  DFT_216,   DFT_240,
+	DFT_256,   DFT_288,   DFT_300,  DFT_324,    DFT_360,  DFT_384,  DFT_432,   DFT_480,
+	DFT_512,   DFT_540,   DFT_576,  DFT_600,    DFT_648,  DFT_720,  DFT_768,   DFT_864,
+	DFT_900,   DFT_960,   DFT_972,  DFT_1024,   DFT_1080, DFT_1152, DFT_1200,  DFT_1536,
+	DFT_2048,  DFT_3072,  DFT_4096, DFT_6144,   DFT_8192, DFT_9216, DFT_12288, DFT_18432, 
+	DFT_24576, DFT_36864, DFT_49152, DFT_73728, DFT_98304,
+	DFT_SIZE_IDXTABLESIZE
+} dft_size_idx_t;
 
-void dft24576(int16_t *sigF,int16_t *sig,int scale);
+#ifdef OAIDFTS_MAIN
+adftfunc_t dft_ftab[]={
+	dft12,    dft24,    dft36,    dft48,    dft60,   dft72,   dft96,
+	dft108,   dft120,   dft128,   dft144,   dft180,  dft192,  dft216,   dft240,   
+	dft256,   dft288,   dft300,   dft324,   dft360,  dft384,  dft432,   dft480,
+	dft512,   dft540,   dft576,   dft600,   dft648,  dft720,  dft768,   dft864,
+	dft900,   dft960,   dft972,   dft1024,  dft1080, dft1152, dft1200,  dft1536,
+	dft2048,  dft3072,  dft4096,  dft6144,  dft8192, dft9216, dft12288, dft18432, 
+	dft24576, dft36864, dft49152, dft73728, dft98304
+};
+#endif
+
+typedef enum idft_size_idx {
+	IDFT_128,   IDFT_256,  IDFT_512,   IDFT_1024,  IDFT_1536,  IDFT_2048,  IDFT_3072,  IDFT_4096,
+	IDFT_6144,  IDFT_8192, IDFT_9216,  IDFT_12288, IDFT_18432, IDFT_24576, IDFT_36864, IDFT_49152, 
+	IDFT_73728, IDFT_98304, 
+	IDFT_SIZE_IDXTABLESIZE
+} idft_size_idx_t;
+#ifdef OAIDFTS_MAIN
+aidftfunc_t idft_ftab[]={
+        idft128,   idft256,  idft512,   idft1024,  idft1536,  idft2048,  idft3072,  idft4096,
+	    idft6144,  idft8192, idft9216,  idft12288, idft18432, idft24576, idft36864, idft49152, 
+	    idft73728, idft98304
+};
+#endif
+
 
 
 /*!\fn int32_t rotate_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift)
@@ -374,57 +485,7 @@ int64_t dot_product64(int16_t *x,
                       uint32_t N, //must be a multiple of 8
                       uint8_t output_shift);
 
-void dft12(int16_t *x,int16_t *y);
-void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft36(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft48(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft60(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft72(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft96(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft108(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft120(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft144(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft180(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft192(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft216(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft240(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft288(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft300(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft324(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft360(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft384(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft432(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft480(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft540(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft576(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft600(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft648(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft720(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft768(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft864(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft900(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft960(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft972(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft1080(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft1152(int16_t *x,int16_t *y,uint8_t scale_flag);
-void dft1200(int16_t *x,int16_t *y,uint8_t scale_flag);
 
-void dft64(int16_t *x,int16_t *y,int scale);
-void dft128(int16_t *x,int16_t *y,int scale);
-void dft256(int16_t *x,int16_t *y,int scale);
-void dft512(int16_t *x,int16_t *y,int scale);
-void dft1024(int16_t *x,int16_t *y,int scale);
-void dft2048(int16_t *x,int16_t *y,int scale);
-void dft4096(int16_t *x,int16_t *y,int scale);
-void dft8192(int16_t *x,int16_t *y,int scale);
-void idft64(int16_t *x,int16_t *y,int scale);
-void idft128(int16_t *x,int16_t *y,int scale);
-void idft256(int16_t *x,int16_t *y,int scale);
-void idft512(int16_t *x,int16_t *y,int scale);
-void idft1024(int16_t *x,int16_t *y,int scale);
-void idft2048(int16_t *x,int16_t *y,int scale);
-void idft4096(int16_t *x,int16_t *y,int scale);
-void idft8192(int16_t *x,int16_t *y,int scale);
 /** @} */
 
 

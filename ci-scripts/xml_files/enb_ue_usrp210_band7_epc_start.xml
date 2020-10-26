@@ -25,22 +25,9 @@
 	<htmlTabName>EPC-Start</htmlTabName>
 	<htmlTabIcon>log-in</htmlTabIcon>
 	<TestCaseRequestedList>
- 010101 090101
  050101 060101 070101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
-
-        <testCase id="010101">
-                <class>Build_eNB</class>
-                <desc>Build eNB (USRP)</desc>
-                <Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
-        </testCase>
-
-        <testCase id="090101">
-                <class>Build_OAI_UE</class>
-                <desc>Build OAI UE</desc>
-                <Build_OAI_UE_args>-w USRP --UE</Build_OAI_UE_args>
-        </testCase>
 
 	<testCase id="050101">
 		<class>Initialize_HSS</class>

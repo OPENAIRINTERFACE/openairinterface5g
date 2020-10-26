@@ -53,47 +53,22 @@
  */
 int xer_sprint_NR(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
 
-uint16_t get_adjacent_cell_id_NR(uint8_t Mod_id,uint8_t index);
+uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
+                  uint32_t frame);
 
-uint8_t get_adjacent_cell_mod_id_NR(uint16_t phyCellId);
-
-/**
-\brief Generate configuration for SIB1 (eNB).
-@param carrier pointer to Carrier information
-@param N_RB_DL Number of downlink PRBs
-@param phich_Resource PHICH resoure parameter
-@param phich_duration PHICH duration parameter
-@param frame radio frame number
-@return size of encoded bit stream in bytes*/
-uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
-                  uint32_t frame,
-                  uint32_t ssb_SubcarrierOffset,
-                  uint32_t pdcch_ConfigSIB1,
-                  uint32_t subCarrierSpacingCommon,
-                  uint32_t dmrs_TypeA_Position);
 /**
 \brief Generate configuration for SIB1 (gNB).
 @param carrier pointer to Carrier information
 @param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
-uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
-#if defined(ENABLE_ITTI)
-  , gNB_RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
+  gNB_RrcConfigurationReq *configuration
                   );
 
-void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
-                                int CC_id,
-#if defined(ENABLE_ITTI)
-  gNB_RrcConfigurationReq *configuration,
-#endif
-                                int initial_flag);
-
 void do_RLC_BEARER(uint8_t Mod_id,
-                   int CC_id,
-                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
-                   rlc_bearer_config_t *rlc_config);
-
+                    int CC_id,
+                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
+                    rlc_bearer_config_t  *rlc_config);
 void do_MAC_CELLGROUP(uint8_t Mod_id,
                       int CC_id,
                       NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
@@ -104,6 +79,6 @@ void do_PHYSICALCELLGROUP(uint8_t Mod_id,
                           NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig,
                           physicalcellgroup_t *physicalcellgroup_config);
 
-void do_SpCellConfig(uint8_t Mod_id,
-                     int CC_id,
-                     NR_SpCellConfig_t *spconfig);
+
+void do_SpCellConfig(gNB_RRC_INST *rrc,
+                      struct NR_SpCellConfig  *spconfig);

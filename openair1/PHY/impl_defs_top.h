@@ -149,10 +149,10 @@
 #define OFDM_SYMBOL_SIZE_BYTES0 (OFDM_SYMBOL_SIZE_SAMPLES0*2)
 #define OFDM_SYMBOL_SIZE_BYTES_NO_PREFIX (OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX*2)
 
-#define SLOT_LENGTH_BYTES (frame_parms->samples_per_tti<<1) // 4 bytes * samples_per_tti/2
+#define SLOT_LENGTH_BYTES (frame_parms->samples_per_slot) // 4 bytes * samples_per_tti/2
 #define SLOT_LENGTH_BYTES_NO_PREFIX (OFDM_SYMBOL_SIZE_BYTES_NO_PREFIX * NUMBER_OF_OFDM_SYMBOLS_PER_SLOT)
 
-#define FRAME_LENGTH_COMPLEX_SAMPLES (frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
+#define FRAME_LENGTH_COMPLEX_SAMPLES (frame_parms->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
 #define FRAME_LENGTH_SAMPLES (FRAME_LENGTH_COMPLEX_SAMPLES*2)
 #define FRAME_LENGTH_SAMPLES_NO_PREFIX (NUMBER_OF_SYMBOLS_PER_FRAME*OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX)
 #define FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX (FRAME_LENGTH_SAMPLES_NO_PREFIX/2)
@@ -265,7 +265,7 @@
 #define NB_NUMEROLOGIES_NR                       (5)
 #define TDD_CONFIG_NB_FRAMES                     (2)
 #define NR_MAX_SLOTS_PER_FRAME                   (160)                    /* number of slots per frame */
-#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (4)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
+#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (6)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
                                                                           /* - between reception of pdsch and tarnsmission of its acknowlegment */
                                                                           /* - between reception of un uplink grant and its related transmission */
 

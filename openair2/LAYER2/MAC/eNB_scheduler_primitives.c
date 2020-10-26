@@ -48,10 +48,8 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
-
+#include "intertask_interface.h"
+#include "executables/softmodem-common.h"
 #include "T.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
@@ -1171,14 +1169,14 @@ program_dlsch_acknak(module_id_t module_idP,
 {
   eNB_MAC_INST                           *eNB                         = RC.mac[module_idP];
   COMMON_channels_t                      *cc                          = eNB->common_channels;
-  UE_list_t                              *UE_list                     = &eNB->UE_list;
+  UE_info_t                              *UE_info                     = &eNB->UE_info;
   rnti_t                                 rnti                         = UE_RNTI(module_idP, UE_idP);
   nfapi_ul_config_request_body_t         *ul_req;
   nfapi_ul_config_request_pdu_t          *ul_config_pdu;
   int                                    use_simultaneous_pucch_pusch = 0;
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information      = NULL;
   nfapi_ul_config_harq_information       *harq_information            = NULL;
-  struct LTE_PhysicalConfigDedicated__ext2 *ext2 = UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2;
+  struct LTE_PhysicalConfigDedicated__ext2 *ext2 = UE_info->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2;
 
   if (ext2 &&
       ext2->pucch_ConfigDedicated_v1020 &&
@@ -1365,12 +1363,12 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
 {
   eNB_MAC_INST *eNB     = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
-  UE_list_t *UE_list    = &eNB->UE_list;
+  UE_info_t *UE_info    = &eNB->UE_info;
   int UE_id = find_UE_id(module_idP, rntiP);
   nfapi_ul_config_ulsch_harq_information_rel10_t *harq_information_rel10 = &harq_information->harq_information_rel10;
   AssertFatal(UE_id >= 0, "UE_id cannot be found, impossible\n");
-  AssertFatal(UE_list != NULL, "UE_list is null\n");
-  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated;
+  AssertFatal(UE_info != NULL, "UE_info is null\n");
+  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated;
   AssertFatal(physicalConfigDedicated != NULL, "physicalConfigDedicated for rnti %x is null\n",
               rntiP);
   struct LTE_PUSCH_ConfigDedicated *puschConfigDedicated = physicalConfigDedicated->pusch_ConfigDedicated;
@@ -1470,14 +1468,14 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
 {
   eNB_MAC_INST *eNB     = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
-  UE_list_t *UE_list    = &eNB->UE_list;
+  UE_info_t *UE_info    = &eNB->UE_info;
   int UE_id = find_UE_id(module_idP,
                          rntiP);
   AssertFatal(UE_id >= 0, "UE_id cannot be found, impossible\n");
-  AssertFatal(UE_list != NULL, "UE_list is null\n");
+  AssertFatal(UE_info != NULL, "UE_info is null\n");
   harq_information->harq_information_rel11.tl.tag        = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL11_TAG;
   harq_information->harq_information_rel11.num_ant_ports = 1;
-  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated;
+  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated;
   struct LTE_PUCCH_ConfigDedicated *pucch_ConfigDedicated = NULL;
 
   if (physicalConfigDedicated != NULL) pucch_ConfigDedicated = physicalConfigDedicated->pucch_ConfigDedicated;
@@ -1491,7 +1489,7 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
     case 6:
     case 7:
       if (cc->tdd_Config != NULL) {
-        //      AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL,
+        //      AssertFatal(UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL,
         //      "pucch_ConfigDedicated is null for TDD!\n");
         if (physicalConfigDedicated != NULL && pucch_ConfigDedicated != NULL &&
             pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL &&
@@ -1621,15 +1619,14 @@ fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
 
 //------------------------------------------------------------------------------
 void
-fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
-                        nfapi_dl_config_request_body_t *dl_req,
+fill_nfapi_dlsch_config(nfapi_dl_config_request_pdu_t *dl_config_pdu,
                         uint16_t length,
                         int16_t pdu_index,
                         uint16_t rnti,
                         uint8_t resource_allocation_type,
                         uint8_t
                         virtual_resource_block_assignment_flag,
-                        uint16_t resource_block_coding,
+                        uint32_t resource_block_coding,
                         uint8_t modulation,
                         uint8_t redundancy_version,
                         uint8_t transport_blocks,
@@ -1648,7 +1645,6 @@ fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
                         uint8_t num_bf_vector)
 //------------------------------------------------------------------------------
 {
-  nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
   memset((void *) dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
   dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
   dl_config_pdu->pdu_size                                                        = (uint8_t) (2 + sizeof(nfapi_dl_config_dlsch_pdu));
@@ -1675,7 +1671,6 @@ fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = transmission_mode;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = num_bf_prb_per_subband;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = num_bf_vector;
-  dl_req->number_pdu++;
   return;
 }
 
@@ -1881,8 +1876,7 @@ mpdcch_sf_condition(eNB_MAC_INST *eNB,
       break;
 
     case TYPEUESPEC:
-      epdcch_setconfig_r11 =
-        eNB->UE_list.UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0];
+      epdcch_setconfig_r11 = eNB->UE_info.UE_template[CC_id][UE_id].physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0];
       AssertFatal(epdcch_setconfig_r11 != NULL, " epdcch_setconfig_r11 is null for UE specific \n");
       AssertFatal(epdcch_setconfig_r11->ext2 != NULL, " ext2 doesn't exist in epdcch config ' \n");
 
@@ -1990,11 +1984,11 @@ find_UE_id(module_id_t mod_idP,
 //------------------------------------------------------------------------------
 {
   int UE_id;
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
 
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-    if (UE_list->active[UE_id] == TRUE) {
-      if (UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
+    if (UE_info->active[UE_id] == TRUE) {
+      if (UE_info->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
         return UE_id;
       }
     }
@@ -2029,7 +2023,7 @@ find_RA_id(module_id_t mod_idP,
 
 //------------------------------------------------------------------------------
 int
-UE_num_active_CC(UE_list_t *listP,
+UE_num_active_CC(UE_info_t *listP,
                  int ue_idP)
 //------------------------------------------------------------------------------
 {
@@ -2042,7 +2036,7 @@ UE_PCCID(module_id_t mod_idP,
          int ue_idP)
 //------------------------------------------------------------------------------
 {
-  return (RC.mac[mod_idP]->UE_list.pCC_id[ue_idP]);
+  return (RC.mac[mod_idP]->UE_info.pCC_id[ue_idP]);
 }
 
 //------------------------------------------------------------------------------
@@ -2053,7 +2047,7 @@ UE_RNTI(module_id_t mod_idP,
 {
   if (!RC.mac || !RC.mac[mod_idP]) return 0;
 
-  rnti_t rnti = RC.mac[mod_idP]->UE_list.UE_template[UE_PCCID(mod_idP,
+  rnti_t rnti = RC.mac[mod_idP]->UE_info.UE_template[UE_PCCID(mod_idP,
                 ue_idP)][ue_idP].rnti;
 
   if (rnti > 0) {
@@ -2071,7 +2065,7 @@ is_UE_active(module_id_t mod_idP,
              int ue_idP)
 //------------------------------------------------------------------------------
 {
-  return (RC.mac[mod_idP]->UE_list.active[ue_idP]);
+  return (RC.mac[mod_idP]->UE_info.active[ue_idP]);
 }
 
 //------------------------------------------------------------------------------
@@ -2124,28 +2118,49 @@ get_aggregation(uint8_t bw_index,
 
 //------------------------------------------------------------------------------
 /*
- * Dump the UL or DL UE_list into LOG_T(MAC)
+ * Dump the UE_list into LOG_T(MAC)
  */
 void
-dump_ue_list(UE_list_t *listP,
-             int ul_flag)
-//------------------------------------------------------------------------------
-{
-  if (ul_flag == 0) {
-    for (int j = listP->head; j >= 0; j = listP->next[j]) {
-      LOG_T(MAC, "DL list node %d => %d\n",
-            j,
-            listP->next[j]);
-    }
-  } else {
-    for (int j = listP->head_ul; j >= 0; j = listP->next_ul[j]) {
-      LOG_T(MAC, "UL list node %d => %d\n",
-            j,
-            listP->next_ul[j]);
-    }
-  }
+dump_ue_list(UE_list_t *listP) {
+  for (int j = listP->head; j >= 0; j = listP->next[j])
+    LOG_T(MAC, "DL list node %d => %d\n", j, listP->next[j]);
+}
 
-  return;
+//------------------------------------------------------------------------------
+/*
+ * Add a UE to UE_list listP
+ */
+inline void add_ue_list(UE_list_t *listP, int UE_id) {
+  int *cur = &listP->head;
+  while (*cur >= 0)
+    cur = &listP->next[*cur];
+  *cur = UE_id;
+}
+
+//------------------------------------------------------------------------------
+/*
+ * Remove a UE from the UE_list listP
+ */
+inline int remove_ue_list(UE_list_t *listP, int UE_id) {
+  int *cur = &listP->head;
+  while (*cur != -1 && *cur != UE_id)
+    cur = &listP->next[*cur];
+  if (*cur == -1)
+    return 0;
+  int *next = &listP->next[*cur];
+  *cur = listP->next[*cur];
+  *next = -1;
+  return 1;
+}
+
+//------------------------------------------------------------------------------
+/*
+ * Initialize the UE_list listP
+ */
+inline void init_ue_list(UE_list_t *listP) {
+  listP->head = -1;
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
+    listP->next[i] = -1;
 }
 
 //------------------------------------------------------------------------------
@@ -2160,51 +2175,53 @@ add_new_ue(module_id_t mod_idP,
 {
   int UE_id;
   int i, j;
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-  LOG_D(MAC, "[eNB %d, CC_id %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  LOG_D(MAC, "[eNB %d, CC_id %d] Adding UE with rnti %x (prev. num_UEs %d)\n",
         mod_idP,
         cc_idP,
         rntiP,
-        UE_list->avail,
-        UE_list->num_UEs);
-  dump_ue_list(UE_list, 0);
+        UE_info->num_UEs);
 
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-    if (UE_list->active[i] == TRUE)
+    if (UE_info->active[i] == TRUE)
       continue;
 
     UE_id = i;
-    memset(&UE_list->UE_template[cc_idP][UE_id], 0, sizeof(UE_TEMPLATE));
-    UE_list->UE_template[cc_idP][UE_id].rnti = rntiP;
-    UE_list->UE_template[cc_idP][UE_id].configured = FALSE;
-    UE_list->numactiveCCs[UE_id] = 1;
-    UE_list->numactiveULCCs[UE_id] = 1;
-    UE_list->pCC_id[UE_id] = cc_idP;
-    UE_list->ordered_CCids[0][UE_id] = cc_idP;
-    UE_list->ordered_ULCCids[0][UE_id] = cc_idP;
-    UE_list->num_UEs++;
-    UE_list->active[UE_id] = TRUE;
-#if defined(USRP_REC_PLAY) // not specific to record/playback ?
-    UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
-#endif
-    UE_list->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type;
-    memset((void *) &UE_list->UE_sched_ctrl[UE_id],
+    memset(&UE_info->UE_template[cc_idP][UE_id], 0, sizeof(UE_TEMPLATE));
+    UE_info->UE_template[cc_idP][UE_id].rnti = rntiP;
+    UE_info->UE_template[cc_idP][UE_id].configured = FALSE;
+    UE_info->numactiveCCs[UE_id] = 1;
+    UE_info->numactiveULCCs[UE_id] = 1;
+    UE_info->pCC_id[UE_id] = cc_idP;
+    UE_info->ordered_CCids[0][UE_id] = cc_idP;
+    UE_info->ordered_ULCCids[0][UE_id] = cc_idP;
+    UE_info->num_UEs++;
+    UE_info->active[UE_id] = TRUE;
+    add_ue_list(&UE_info->list, UE_id);
+    dump_ue_list(&UE_info->list);
+    pp_impl_param_t* dl = &RC.mac[mod_idP]->pre_processor_dl;
+    if (dl->slices) // inform slice implementation about new UE
+      dl->add_UE(dl->slices, UE_id);
+    pp_impl_param_t* ul = &RC.mac[mod_idP]->pre_processor_ul;
+    if (ul->slices) // inform slice implementation about new UE
+      ul->add_UE(ul->slices, UE_id);
+    if (IS_SOFTMODEM_IQPLAYER)// not specific to record/playback ?
+      UE_info->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
+    UE_info->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type;
+    memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(UE_sched_ctrl_t));
-    memset((void *) &UE_list->eNB_UE_stats[cc_idP][UE_id],
+    memset((void *) &UE_info->eNB_UE_stats[cc_idP][UE_id],
            0,
            sizeof(eNB_UE_STATS));
-    UE_list->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
-    /* default slice in case there was something different */
-    UE_list->assoc_dl_slice_idx[UE_id] = 0;
-    UE_list->assoc_ul_slice_idx[UE_id] = 0;
-    UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
+    UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+    UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
 
     for (j = 0; j < 8; j++) {
-      UE_list->UE_template[cc_idP][UE_id].oldNDI[j] = 0;
-      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = 0;
-      UE_list->UE_sched_ctrl[UE_id].round[cc_idP][j] = 8;
-      UE_list->UE_sched_ctrl[UE_id].round_UL[cc_idP][j] = 0;
+      UE_info->UE_template[cc_idP][UE_id].oldNDI[j] = 0;
+      UE_info->UE_template[cc_idP][UE_id].oldNDI_UL[j] = 0;
+      UE_info->UE_sched_ctrl[UE_id].round[cc_idP][j] = 8;
+      UE_info->UE_sched_ctrl[UE_id].round_UL[cc_idP][j] = 0;
     }
 
     eNB_ulsch_info[mod_idP][cc_idP][UE_id].status = S_UL_WAITING;
@@ -2214,15 +2231,11 @@ add_new_ue(module_id_t mod_idP,
           UE_id,
           cc_idP,
           rntiP);
-    dump_ue_list(UE_list,
-                 0);
     return (UE_id);
   }
 
-  // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
   LOG_E(MAC, "error in add_new_ue(), could not find space in UE_list, Dumping UE list\n");
-  dump_ue_list(UE_list,
-               0);
+  dump_ue_list(&UE_info->list);
   return -1;
 }
 
@@ -2235,7 +2248,7 @@ rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
   int UE_id = find_UE_id(mod_idP, rntiP);
   eNB_UE_STATS *ue_stats = NULL;
   int pCC_id = -1;
@@ -2251,37 +2264,20 @@ rrc_mac_remove_ue(module_id_t mod_idP,
         UE_id,
         pCC_id,
         rntiP);
-  dump_ue_list(UE_list, 0); // DL list displayed in LOG_T(MAC)
-  UE_list->active[UE_id] = FALSE;
-  UE_list->num_UEs--;
+  UE_info->active[UE_id] = FALSE;
+  UE_info->num_UEs--;
 
-  /* If present, remove UE from DL list */
-  if (UE_list->head == UE_id) {
-    UE_list->head = UE_list->next[UE_id];
-  } else {
-    int previous = prev(UE_list, UE_id, 0);
-
-    if (previous != -1) {
-      UE_list->next[previous] = UE_list->next[UE_id];
-    }
-  }
-
-  /* If present, remove UE from UL list */
-  if (UE_list->head_ul == UE_id) {
-    UE_list->head_ul = UE_list->next_ul[UE_id];
-  } else {
-    int previous = prev(UE_list, UE_id, 1);
-
-    if (previous != -1) {
-      UE_list->next_ul[previous] = UE_list->next_ul[UE_id];
-    }
-  }
+  remove_ue_list(&UE_info->list, UE_id);
+  pp_impl_param_t* dl = &RC.mac[mod_idP]->pre_processor_dl;
+  if (dl->slices) // inform slice implementation about new UE
+    dl->remove_UE(dl->slices, UE_id);
+  pp_impl_param_t* ul = &RC.mac[mod_idP]->pre_processor_ul;
+  if (ul->slices) // inform slice implementation about new UE
+    ul->remove_UE(ul->slices, UE_id);
 
   /* Clear all remaining pending transmissions */
-  memset(&UE_list->UE_template[pCC_id][UE_id],
-         0,
-         sizeof(UE_TEMPLATE));
-  ue_stats = &UE_list->eNB_UE_stats[pCC_id][UE_id];
+  memset(&UE_info->UE_template[pCC_id][UE_id], 0, sizeof(UE_TEMPLATE));
+  ue_stats = &UE_info->eNB_UE_stats[pCC_id][UE_id];
   ue_stats->total_rbs_used = 0;
   ue_stats->total_rbs_used_retx = 0;
 
@@ -2358,164 +2354,17 @@ rrc_mac_remove_ue(module_id_t mod_idP,
 /*
  * Returns the previous UE_id in the scheduling list in UL or DL
  */
-int
-prev(UE_list_t *listP,
-     int nodeP,
-     int ul_flag)
-//------------------------------------------------------------------------------
-{
-  if (ul_flag == 0) {
-    if (nodeP == listP->head) {
-      return nodeP;
-    }
+inline int prev(UE_list_t *listP, int nodeP) {
+  if (nodeP == listP->head)
+      return -1; /* there is no previous of the head */
 
-    for (int j = listP->head; j >= 0; j = listP->next[j]) {
-      if (listP->next[j] == nodeP) {
-        return j;
-      }
-    }
-  } else {
-    if (nodeP == listP->head_ul) {
-      return nodeP;
-    }
+  for (int j = listP->head; j >= 0; j = listP->next[j])
+    if (listP->next[j] == nodeP)
+      return j;
 
-    for (int j = listP->head_ul; j >= 0; j = listP->next_ul[j]) {
-      if (listP->next_ul[j] == nodeP) {
-        return j;
-      }
-    }
-  }
-
-  LOG_E(MAC, "error in prev(), could not find previous to %d in UE_list %s, should never happen, Dumping UE list\n",
-        nodeP,
-        (ul_flag == 0) ? "DL" : "UL");
-  dump_ue_list(listP,
-               ul_flag);
+  LOG_E(MAC, "%s(): could not find previous to %d in UE_list\n", __func__, nodeP);
+  dump_ue_list(listP);
   return -1;
-}
-
-//------------------------------------------------------------------------------
-void
-swap_UEs(UE_list_t *listP,
-         int nodeiP,
-         int nodejP,
-         int ul_flag)
-//------------------------------------------------------------------------------
-{
-  int prev_i, prev_j, next_i, next_j;
-  LOG_T(MAC, "Swapping UE %d,%d\n",
-        nodeiP,
-        nodejP);
-  dump_ue_list(listP,
-               ul_flag);
-  prev_i = prev(listP,
-                nodeiP,
-                ul_flag);
-  prev_j = prev(listP,
-                nodejP,
-                ul_flag);
-  AssertFatal((prev_i >= 0) && (prev_j >= 0), "swap_UEs: problem");
-
-  if (ul_flag == 0) {
-    next_i = listP->next[nodeiP];
-    next_j = listP->next[nodejP];
-  } else {
-    next_i = listP->next_ul[nodeiP];
-    next_j = listP->next_ul[nodejP];
-  }
-
-  LOG_T(MAC, "[%s] next_i %d, next_i, next_j %d, head %d \n",
-        (ul_flag == 0) ? "DL" : "UL",
-        next_i,
-        next_j,
-        listP->head);
-
-  if (ul_flag == 0) {
-    if (next_i == nodejP) { // case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...
-      LOG_T(MAC, "Case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...\n");
-      listP->next[nodeiP] = next_j;
-      listP->next[nodejP] = nodeiP;
-
-      if (nodeiP == listP->head) {  // case i j n(j)
-        listP->head = nodejP;
-      } else {
-        listP->next[prev_i] = nodejP;
-      }
-    } else if (next_j == nodeiP) {  // case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...
-      LOG_T(MAC, "Case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...\n");
-      listP->next[nodejP] = next_i;
-      listP->next[nodeiP] = nodejP;
-
-      if (nodejP == listP->head) {  // case j i n(i)
-        listP->head = nodeiP;
-      } else {
-        listP->next[prev_j] = nodeiP;
-      }
-    } else {    // case ...  p(i) i n(i) ... p(j) j n(j) ...
-      listP->next[nodejP] = next_i;
-      listP->next[nodeiP] = next_j;
-
-      if (nodeiP == listP->head) {
-        LOG_T(MAC, "changing head to %d\n",
-              nodejP);
-        listP->head = nodejP;
-        listP->next[prev_j] = nodeiP;
-      } else if (nodejP == listP->head) {
-        LOG_D(MAC, "changing head to %d\n",
-              nodeiP);
-        listP->head = nodeiP;
-        listP->next[prev_i] = nodejP;
-      } else {
-        listP->next[prev_i] = nodejP;
-        listP->next[prev_j] = nodeiP;
-      }
-    }
-  } else {      // ul_flag
-    if (next_i == nodejP) { // case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...
-      LOG_T(MAC, "[UL] Case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...\n");
-      listP->next_ul[nodeiP] = next_j;
-      listP->next_ul[nodejP] = nodeiP;
-
-      if (nodeiP == listP->head_ul) { // case i j n(j)
-        listP->head_ul = nodejP;
-      } else {
-        listP->next_ul[prev_i] = nodejP;
-      }
-    } else if (next_j == nodeiP) {  // case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...
-      LOG_T(MAC, "[UL]Case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...\n");
-      listP->next_ul[nodejP] = next_i;
-      listP->next_ul[nodeiP] = nodejP;
-
-      if (nodejP == listP->head_ul) { // case j i n(i)
-        listP->head_ul = nodeiP;
-      } else {
-        listP->next_ul[prev_j] = nodeiP;
-      }
-    } else {    // case ...  p(i) i n(i) ... p(j) j n(j) ...
-      listP->next_ul[nodejP] = next_i;
-      listP->next_ul[nodeiP] = next_j;
-
-      if (nodeiP == listP->head_ul) {
-        LOG_T(MAC, "[UL]changing head to %d\n",
-              nodejP);
-        listP->head_ul = nodejP;
-        listP->next_ul[prev_j] = nodeiP;
-      } else if (nodejP == listP->head_ul) {
-        LOG_T(MAC, "[UL]changing head to %d\n",
-              nodeiP);
-        listP->head_ul = nodeiP;
-        listP->next_ul[prev_i] = nodejP;
-      } else {
-        listP->next_ul[prev_i] = nodejP;
-        listP->next_ul[prev_j] = nodeiP;
-      }
-    }
-  }
-
-  LOG_T(MAC, "After swap\n");
-  dump_ue_list(listP,
-               ul_flag);
-  return;
 }
 
 // This has to be updated to include BSR information
@@ -2526,8 +2375,8 @@ UE_is_to_be_scheduled(module_id_t module_idP,
                       uint8_t UE_id)
 //------------------------------------------------------------------------------
 {
-  UE_TEMPLATE *UE_template = &RC.mac[module_idP]->UE_list.UE_template[CC_id][UE_id];
-  UE_sched_ctrl_t *UE_sched_ctl = &RC.mac[module_idP]->UE_list.UE_sched_ctrl[UE_id];
+  UE_TEMPLATE *UE_template = &RC.mac[module_idP]->UE_info.UE_template[CC_id][UE_id];
+  UE_sched_ctrl_t *UE_sched_ctl = &RC.mac[module_idP]->UE_info.UE_sched_ctrl[UE_id];
   int rrc_status;
 
   // do not schedule UE if UL is not working
@@ -2569,7 +2418,7 @@ get_tmode(module_id_t module_idP,
 {
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
-  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = eNB->UE_list.UE_template[CC_idP][UE_idP].physicalConfigDedicated;
+  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = eNB->UE_info.UE_template[CC_idP][UE_idP].physicalConfigDedicated;
 
   if (physicalConfigDedicated == NULL) {  // RRCConnectionSetup not received by UE yet
     AssertFatal(cc->p_eNB <= 2, "p_eNB is %d, should be <2\n",
@@ -2779,19 +2628,21 @@ get_min_rb_unit(module_id_t module_id,
   int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
-    case 6:     // 1.4 MHz
+    case 6:       // 1.4MHz
       min_rb_unit = 1;
       break;
 
-    case 25:      // 5HMz
+    case 15:      // 3MHz
+    case 25:      // 5MHz
       min_rb_unit = 2;
       break;
 
-    case 50:      // 10HMz
+    case 50:      // 10MHz
       min_rb_unit = 3;
       break;
 
-    case 100:     // 20HMz
+    case 75:      // 15MHz
+    case 100:     // 20MHz
       min_rb_unit = 4;
       break;
 
@@ -2812,7 +2663,7 @@ uint32_t
 allocate_prbs_sub(int nb_rb,
                   int N_RB_DL,
                   int N_RBG,
-                  uint8_t *rballoc)
+                  const uint8_t *rballoc)
 //------------------------------------------------------------------------------
 {
   int check = 0;    //check1=0,check2=0;
@@ -3485,7 +3336,7 @@ try_again:
 
       if (fCCE == -1) {
         if (DL_req->number_pdcch_ofdm_symbols == max_symbol) {
-          LOG_I(MAC, "subframe %d: Dropping Allocation for RNTI %x\n",
+          LOG_D(MAC, "subframe %d: Dropping Allocation for RNTI %x\n",
                 subframeP,
                 dl_config_pduLoop->dci_dl_pdu.dci_dl_pdu_rel8.rnti);
 
@@ -3672,6 +3523,121 @@ CCE_allocation_infeasible(int module_idP,
   }
 
   return res;
+}
+
+int CCE_try_allocate_dlsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi) {
+  const rnti_t rnti = RC.mac[module_id]->UE_info.UE_template[CC_id][UE_id].rnti;
+  nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_id]->DL_req[CC_id].dl_config_request_body;
+
+  if (DL_req->number_pdu >= MAX_NUM_DL_PDU) {
+    LOG_W(MAC, "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n", subframe, rnti);
+    return -1;
+  }
+
+  int aggregation = 2;
+  const uint8_t tm = get_tmode(module_id, CC_id, UE_id);
+  switch (tm) {
+    case 1:
+    case 2:
+    case 7:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format1);
+      break;
+
+    case 3:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format2A);
+      break;
+
+    default:
+      AssertFatal(0, "Unsupported transmission mode %d\n", tm);
+      break;
+  }
+
+  nfapi_dl_config_request_pdu_t *dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
+  memset(dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag            = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
+  dl_config_pdu->pdu_type                                     = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti              = rnti;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type         = 1;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
+  DL_req->number_pdu++;
+  LOG_D(MAC, "Subframe %d: Checking CCE feasibility format 1: (%x,%d) \n",
+        subframe, rnti, aggregation);
+
+  if (allocate_CCEs(module_id, CC_id, 0, subframe, 0) < 0) {
+    DL_req->number_pdu--;
+    return -1;
+  }
+
+  DL_req->number_dci++;
+  nfapi_dl_config_request_pdu_t *dl_dlsch_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
+  dl_dlsch_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
+  dl_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DLSCH_PDU_REL8_TAG;
+  dl_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti = rnti;
+  DL_req->number_pdu++;
+
+  return DL_req->number_pdu - 2;
+}
+
+int CCE_try_allocate_ulsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi) {
+  const rnti_t rnti = RC.mac[module_id]->UE_info.UE_template[CC_id][UE_id].rnti;
+  nfapi_hi_dci0_request_body_t *HI_DCI0_req = &RC.mac[module_id]->HI_DCI0_req[CC_id][subframe].hi_dci0_request_body;
+
+  if (HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi >= MAX_NUM_HI_DCI0_PDU) {
+    LOG_W(MAC, "Subframe %d: FAPI UL structure is full, skip scheduling UE %d\n", subframe, rnti);
+    return -1;
+  }
+
+  int aggregation = 2;
+  const uint8_t tm = get_tmode(module_id, CC_id, UE_id);
+  switch (tm) {
+    case 1:
+    case 2:
+    case 7:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format1);
+      break;
+
+    case 3:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format2A);
+      break;
+
+    default:
+      AssertFatal(0, "Unsupported transmission mode %d\n", tm);
+      break;
+  }
+
+  const int idx = HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi;
+  nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &HI_DCI0_req->hi_dci0_pdu_list[idx];
+  memset(hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+  hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
+  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
+  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
+  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
+  HI_DCI0_req->number_of_dci++;
+  LOG_D(MAC, "%s() sf %d: Checking CCE feasibility format 2: RNTI %04x, agg %d\n",
+        __func__, subframe, rnti, aggregation);
+
+  if (allocate_CCEs(module_id, CC_id, 0, subframe, 0) < 0) {
+    HI_DCI0_req->number_of_dci--;
+    return -1;
+  }
+
+  return idx;
 }
 
 //------------------------------------------------------------------------------
@@ -3934,15 +3900,15 @@ extract_harq(module_id_t mod_idP,
 //------------------------------------------------------------------------------
 {
   eNB_MAC_INST *eNB = RC.mac[mod_idP];
-  UE_list_t *UE_list = &eNB->UE_list;
-  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_info_t *UE_info = &eNB->UE_info;
+  UE_sched_ctrl_t *sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(mod_idP, UE_id);
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
   nfapi_harq_indication_fdd_rel13_t *harq_indication_fdd;
   nfapi_harq_indication_tdd_rel13_t *harq_indication_tdd;
   uint16_t num_ack_nak;
-  int numCC = UE_list->numactiveCCs[UE_id];
-  int pCCid = UE_list->pCC_id[UE_id];
+  int numCC = UE_info->numactiveCCs[UE_id];
+  int pCCid = UE_info->pCC_id[UE_id];
   int spatial_bundling = 0;
   int tmode[5];
   int i, j, m;
@@ -3950,7 +3916,7 @@ extract_harq(module_id_t mod_idP,
   sub_frame_t subframe_tx;
   int frame_tx;
   uint8_t harq_pid;
-  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated;
+  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_info->UE_template[pCCid][UE_id].physicalConfigDedicated;
 
   if (physicalConfigDedicated != NULL && physicalConfigDedicated->pucch_ConfigDedicated != NULL &&
       physicalConfigDedicated->ext7 != NULL && physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13 != NULL &&
@@ -4084,7 +4050,7 @@ extract_harq(module_id_t mod_idP,
           sched_ctl->round[CC_idP][harq_pid]);
 
     // use 1 HARQ proces of BL/CE UE for now
-    if (UE_list->UE_template[pCCid][UE_id].rach_resource_type > 0) harq_pid = 0;
+    if (UE_info->UE_template[pCCid][UE_id].rach_resource_type > 0) harq_pid = 0;
 
     switch (harq_indication_fdd->mode) {
       case 0:   // Format 1a/b (10.1.2.1)
@@ -4570,18 +4536,18 @@ extract_pucch_csi(module_id_t mod_idP,
                   uint8_t length)
 //------------------------------------------------------------------------------
 {
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  UE_sched_ctrl_t *sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   int no_pmi;
   uint8_t Ltab[6] = { 0, 2, 4, 4, 4, 4 };
   uint8_t Jtab[6] = { 0, 2, 2, 3, 4, 4 };
   int feedback_cnt;
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",
+  AssertFatal(UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",
               UE_id);
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL, "cqi_ReportConfig is null for UE %d\n",
+  AssertFatal(UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL, "cqi_ReportConfig is null for UE %d\n",
               UE_id);
-  struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic;
+  struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic = UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic;
   AssertFatal(cqi_ReportPeriodic != NULL, "cqi_ReportPeriodic is null for UE %d\n",
               UE_id);
   // determine feedback mode
@@ -4681,9 +4647,9 @@ extract_pusch_csi(module_id_t mod_idP,
                   uint8_t length)
 //------------------------------------------------------------------------------
 {
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
-  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   int Ntab[6] = { 0, 4, 7, 9, 10, 13 };
   int Ntab_uesel[6] = { 0, 8, 13, 17, 19, 25 };
   int Ltab_uesel[6] = { 0, 6, 9, 13, 15, 18 };
@@ -4692,12 +4658,12 @@ extract_pusch_csi(module_id_t mod_idP,
   int i;
   uint64_t p = *(uint64_t *) pdu;
   int curbyte, curbit;
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",
+  AssertFatal(UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",
               UE_id);
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL, "cqi_ReportConfig is null for UE %d\n",
+  AssertFatal(UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL, "cqi_ReportConfig is null for UE %d\n",
               UE_id);
   LTE_CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic
-    = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
+    = UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
   AssertFatal(cqi_ReportModeAperiodic  != NULL, "cqi_ReportModeAperiodic is null for UE %d\n",
               UE_id);
   int N = Ntab[cc->mib->message.dl_Bandwidth];
@@ -4967,14 +4933,14 @@ cqi_indication(module_id_t mod_idP,
 //------------------------------------------------------------------------------
 {
   int UE_id = find_UE_id(mod_idP, rntiP);
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
 
   if (UE_id == -1) {
     LOG_W(MAC, "cqi_indication: UE %x not found\n", rntiP);
     return;
   }
 
-  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
 
   if (UE_id >= 0) {
     LOG_D(MAC,"%s() UE_id:%d channel:%d cqi:%d\n",
@@ -5040,11 +5006,11 @@ SR_indication(module_id_t mod_idP,
     T_INT(subframeP),
     T_INT(rntiP));
   int UE_id = find_UE_id(mod_idP, rntiP);
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
   UE_sched_ctrl_t *UE_scheduling_ctrl = NULL;
 
   if (UE_id != -1) {
-    UE_scheduling_ctrl = &(UE_list->UE_sched_ctrl[UE_id]);
+    UE_scheduling_ctrl = &(UE_info->UE_sched_ctrl[UE_id]);
 
     if ((UE_scheduling_ctrl->cdrx_configured == TRUE) &&
         (UE_scheduling_ctrl->dci0_ongoing_timer > 0)  &&
@@ -5068,8 +5034,8 @@ SR_indication(module_id_t mod_idP,
               cc_idP);
       }
 
-      UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
-      UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
+      UE_info->UE_template[cc_idP][UE_id].ul_SR = 1;
+      UE_info->UE_template[cc_idP][UE_id].ul_active = TRUE;
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 1);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 0);
     }
@@ -5096,7 +5062,7 @@ UL_failure_indication(module_id_t mod_idP,
 //------------------------------------------------------------------------------
 {
   int UE_id = find_UE_id(mod_idP, rntiP);
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
 
   if (UE_id != -1) {
     LOG_D(MAC, "[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",
@@ -5107,9 +5073,9 @@ UL_failure_indication(module_id_t mod_idP,
           subframeP,
           UE_id,
           cc_idP,
-          UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+          UE_info->UE_sched_ctrl[UE_id].ul_failure_timer);
 
-    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0) UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
+    if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer == 0) UE_info->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
   } else {
     //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
     //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
@@ -5172,8 +5138,8 @@ harq_indication(module_id_t mod_idP,
     return;
   }
 
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  UE_sched_ctrl_t *sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   // extract HARQ Information
 
@@ -5203,52 +5169,4 @@ harq_indication(module_id_t mod_idP,
   }
 
   return;
-}
-
-// Flexran Slicing functions
-//------------------------------------------------------------------------------
-uint16_t
-nb_rbs_allowed_slice(float rb_percentage,
-                     int total_rbs)
-//------------------------------------------------------------------------------
-{
-  return (uint16_t) floor(rb_percentage * total_rbs);
-}
-
-//------------------------------------------------------------------------------
-int
-ue_dl_slice_membership(module_id_t mod_id,
-                       int UE_id,
-                       int slice_idx)
-//------------------------------------------------------------------------------
-{
-  eNB_MAC_INST *eNB = RC.mac[mod_id];
-
-  if (slice_idx < 0 || slice_idx >= eNB->slice_info.n_dl) {
-    LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
-          slice_idx,
-          eNB->slice_info.dl[slice_idx].id);
-    return 0;
-  }
-
-  return eNB->UE_list.active[UE_id] == TRUE && eNB->UE_list.assoc_dl_slice_idx[UE_id] == slice_idx;
-}
-
-//------------------------------------------------------------------------------
-int
-ue_ul_slice_membership(module_id_t mod_id,
-                       int UE_id,
-                       int slice_idx)
-//------------------------------------------------------------------------------
-{
-  eNB_MAC_INST *eNB = RC.mac[mod_id];
-
-  if (slice_idx < 0 || slice_idx >= eNB->slice_info.n_ul) {
-    LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
-          slice_idx,
-          eNB->slice_info.dl[slice_idx].id);
-    return 0;
-  }
-
-  return eNB->UE_list.active[UE_id] == TRUE && eNB->UE_list.assoc_ul_slice_idx[UE_id] == slice_idx;
 }

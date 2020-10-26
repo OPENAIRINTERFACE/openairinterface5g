@@ -306,7 +306,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                        (LTE_MBSFNAreaConfiguration_r9_t*) NULL
           );
           break;
       } // case
@@ -480,7 +481,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                          (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                         (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                    );
                   }
 
@@ -697,7 +699,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
           break;
         }
         
-        UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_list.UE_sched_ctrl[UE_id_mac]);
+        UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
         
         if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
           UE_scheduling_control->cdrx_waiting_ack = FALSE;

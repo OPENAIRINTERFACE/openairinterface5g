@@ -32,7 +32,7 @@
 #define __NR_LDPC_MPASS__H__
 
 #include <string.h>
-#include "nrLDPC_defs.h"
+#include "nrLDPCdecoder_defs.h"
 
 /**
    \brief Circular memcpy
@@ -135,25 +135,25 @@ static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrL
 */
 static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
-    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
-    const uint16_t (*lut_circShift_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->circShift[1];
-    const uint16_t (*lut_circShift_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->circShift[2];
-    const uint16_t (*lut_circShift_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->circShift[3];
-    const uint16_t (*lut_circShift_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->circShift[4];
-    const uint16_t (*lut_circShift_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->circShift[5];
-    const uint16_t (*lut_circShift_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->circShift[6];
-    const uint16_t (*lut_circShift_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->circShift[7];
-    const uint16_t (*lut_circShift_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->circShift[8];
+    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
+    const uint16_t (*lut_circShift_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->circShift[1];
+    const uint16_t (*lut_circShift_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->circShift[2];
+    const uint16_t (*lut_circShift_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->circShift[3];
+    const uint16_t (*lut_circShift_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->circShift[4];
+    const uint16_t (*lut_circShift_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->circShift[5];
+    const uint16_t (*lut_circShift_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->circShift[6];
+    const uint16_t (*lut_circShift_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->circShift[7];
+    const uint16_t (*lut_circShift_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->circShift[8];
 
-    const uint8_t (*lut_posBnInCnProcBuf_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->posBnInCnProcBuf[0];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->posBnInCnProcBuf[1];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->posBnInCnProcBuf[2];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->posBnInCnProcBuf[3];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->posBnInCnProcBuf[4];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->posBnInCnProcBuf[5];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->posBnInCnProcBuf[6];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->posBnInCnProcBuf[7];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (uint8_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->posBnInCnProcBuf[8];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->posBnInCnProcBuf[0];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->posBnInCnProcBuf[1];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->posBnInCnProcBuf[2];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->posBnInCnProcBuf[3];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->posBnInCnProcBuf[4];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->posBnInCnProcBuf[5];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->posBnInCnProcBuf[6];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->posBnInCnProcBuf[7];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (const uint8_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->posBnInCnProcBuf[8];
 
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
@@ -344,19 +344,19 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 */
 static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
-    const uint16_t (*lut_circShift_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->circShift[0];
-    const uint16_t (*lut_circShift_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->circShift[1];
-    const uint16_t (*lut_circShift_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->circShift[2];
-    const uint16_t (*lut_circShift_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->circShift[3];
-    const uint16_t (*lut_circShift_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->circShift[4];
-    const uint16_t (*lut_circShift_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->circShift[5];
+    const uint16_t (*lut_circShift_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->circShift[0];
+    const uint16_t (*lut_circShift_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->circShift[1];
+    const uint16_t (*lut_circShift_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->circShift[2];
+    const uint16_t (*lut_circShift_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->circShift[3];
+    const uint16_t (*lut_circShift_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->circShift[4];
+    const uint16_t (*lut_circShift_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->circShift[5];
 
-    const uint8_t (*lut_posBnInCnProcBuf_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (uint8_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->posBnInCnProcBuf[0];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (uint8_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->posBnInCnProcBuf[1];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (uint8_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->posBnInCnProcBuf[2];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (uint8_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->posBnInCnProcBuf[3];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (uint8_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->posBnInCnProcBuf[4];
-    const uint8_t (*lut_posBnInCnProcBuf_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (uint8_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->posBnInCnProcBuf[5];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (const uint8_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->posBnInCnProcBuf[0];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (const uint8_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->posBnInCnProcBuf[1];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (const uint8_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->posBnInCnProcBuf[2];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (const uint8_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->posBnInCnProcBuf[3];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (const uint8_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->posBnInCnProcBuf[4];
+    const uint8_t (*lut_posBnInCnProcBuf_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (const uint8_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->posBnInCnProcBuf[5];
 
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
@@ -483,26 +483,26 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    const uint16_t (*lut_circShift_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->circShift[0];
-    const uint16_t (*lut_circShift_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->circShift[1];
-    const uint16_t (*lut_circShift_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->circShift[2];
-    const uint16_t (*lut_circShift_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->circShift[3];
-    const uint16_t (*lut_circShift_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->circShift[4];
-    const uint16_t (*lut_circShift_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->circShift[5];
+    const uint16_t (*lut_circShift_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->circShift[0];
+    const uint16_t (*lut_circShift_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->circShift[1];
+    const uint16_t (*lut_circShift_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->circShift[2];
+    const uint16_t (*lut_circShift_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->circShift[3];
+    const uint16_t (*lut_circShift_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->circShift[4];
+    const uint16_t (*lut_circShift_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->circShift[5];
 
-    const uint32_t (*lut_startAddrBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (const uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (const uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (const uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (const uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (const uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (const uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
 
-    const uint8_t (*lut_bnPosBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (const uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (const uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (const uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (const uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (const uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (const uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
 
     int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
     int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
@@ -521,7 +521,6 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<3; j++)
     {
         p_cnProcBufRes = &cnProcBufRes[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[0]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG3[j][i] + lut_bnPosBnProcBuf_CNG3[j][i]*Z;
@@ -627,34 +626,34 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
-    const uint16_t (*lut_circShift_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->circShift[1];
-    const uint16_t (*lut_circShift_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->circShift[2];
-    const uint16_t (*lut_circShift_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->circShift[3];
-    const uint16_t (*lut_circShift_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->circShift[4];
-    const uint16_t (*lut_circShift_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->circShift[5];
-    const uint16_t (*lut_circShift_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->circShift[6];
-    const uint16_t (*lut_circShift_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->circShift[7];
-    const uint16_t (*lut_circShift_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->circShift[8];
+    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
+    const uint16_t (*lut_circShift_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->circShift[1];
+    const uint16_t (*lut_circShift_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->circShift[2];
+    const uint16_t (*lut_circShift_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->circShift[3];
+    const uint16_t (*lut_circShift_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->circShift[4];
+    const uint16_t (*lut_circShift_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->circShift[5];
+    const uint16_t (*lut_circShift_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->circShift[6];
+    const uint16_t (*lut_circShift_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->circShift[7];
+    const uint16_t (*lut_circShift_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->circShift[8];
 
-    const uint32_t (*lut_startAddrBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (uint32_t(*)[lut_numCnInCnGroups[6]]) p_lut->startAddrBnProcBuf[6];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint32_t(*)[lut_numCnInCnGroups[7]]) p_lut->startAddrBnProcBuf[7];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint32_t(*)[lut_numCnInCnGroups[8]]) p_lut->startAddrBnProcBuf[8];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (const uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (const uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (const uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (const uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (const uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (const uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (const uint32_t(*)[lut_numCnInCnGroups[6]]) p_lut->startAddrBnProcBuf[6];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (const uint32_t(*)[lut_numCnInCnGroups[7]]) p_lut->startAddrBnProcBuf[7];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (const uint32_t(*)[lut_numCnInCnGroups[8]]) p_lut->startAddrBnProcBuf[8];
 
-    const uint8_t (*lut_bnPosBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (uint8_t(*)[lut_numCnInCnGroups[6]]) p_lut->bnPosBnProcBuf[6];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint8_t(*)[lut_numCnInCnGroups[7]]) p_lut->bnPosBnProcBuf[7];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint8_t(*)[lut_numCnInCnGroups[8]]) p_lut->bnPosBnProcBuf[8];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (const uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (const uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (const uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (const uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (const uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (const uint8_t(*)[lut_numCnInCnGroups[6]]) p_lut->bnPosBnProcBuf[6];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (const uint8_t(*)[lut_numCnInCnGroups[7]]) p_lut->bnPosBnProcBuf[7];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (const uint8_t(*)[lut_numCnInCnGroups[8]]) p_lut->bnPosBnProcBuf[8];
 
     int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
     int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
@@ -673,7 +672,6 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<3; j++)
     {
         p_cnProcBufRes = &cnProcBufRes[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
-
         nrLDPC_inv_circ_memcpy(&bnProcBuf[lut_startAddrBnProcBuf_CNG3[j][0]],p_cnProcBufRes,Z,lut_circShift_CNG3[j][0]);
     }
 
@@ -826,26 +824,26 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    const uint16_t (*lut_circShift_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->circShift[0];
-    const uint16_t (*lut_circShift_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->circShift[1];
-    const uint16_t (*lut_circShift_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->circShift[2];
-    const uint16_t (*lut_circShift_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->circShift[3];
-    const uint16_t (*lut_circShift_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->circShift[4];
-    const uint16_t (*lut_circShift_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (uint16_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->circShift[5];
+    const uint16_t (*lut_circShift_CNG3)  [lut_numCnInCnGroups_BG2_R15[0]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[0]]) p_lut->circShift[0];
+    const uint16_t (*lut_circShift_CNG4)  [lut_numCnInCnGroups_BG2_R15[1]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[1]]) p_lut->circShift[1];
+    const uint16_t (*lut_circShift_CNG5)  [lut_numCnInCnGroups_BG2_R15[2]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[2]]) p_lut->circShift[2];
+    const uint16_t (*lut_circShift_CNG6)  [lut_numCnInCnGroups_BG2_R15[3]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[3]]) p_lut->circShift[3];
+    const uint16_t (*lut_circShift_CNG8)  [lut_numCnInCnGroups_BG2_R15[4]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[4]]) p_lut->circShift[4];
+    const uint16_t (*lut_circShift_CNG10) [lut_numCnInCnGroups_BG2_R15[5]] = (const uint16_t(*)[lut_numCnInCnGroups_BG2_R15[5]]) p_lut->circShift[5];
 
-    const uint32_t (*lut_startAddrBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (const uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (const uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (const uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (const uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (const uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (const uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
 
-    const uint8_t (*lut_bnPosBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG3)  [lut_numCnInCnGroups[0]] = (const uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG4)  [lut_numCnInCnGroups[1]] = (const uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG5)  [lut_numCnInCnGroups[2]] = (const uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG6)  [lut_numCnInCnGroups[3]] = (const uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG8)  [lut_numCnInCnGroups[4]] = (const uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG10) [lut_numCnInCnGroups[5]] = (const uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
 
     int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
@@ -867,7 +865,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<2; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[0]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG3[j][i] + lut_bnPosBnProcBuf_CNG3[j][i]*Z;
@@ -884,7 +881,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<3; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[1] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
@@ -901,7 +897,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<4; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[2] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
@@ -918,7 +913,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<5; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[3] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
@@ -931,7 +925,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 8 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG2_R15[4]*NR_LDPC_ZMAX;
-
     for (j=0; j<8; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[4] + j*bitOffsetInGroup];
@@ -952,7 +945,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<10; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[5] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
@@ -961,6 +953,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         }
     }
 }
+
 
 /**
    \brief Copies the values in the BN processing results buffer to their corresponding place in the CN processing buffer for BG1.
@@ -973,34 +966,34 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
-    const uint16_t (*lut_circShift_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->circShift[1];
-    const uint16_t (*lut_circShift_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->circShift[2];
-    const uint16_t (*lut_circShift_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->circShift[3];
-    const uint16_t (*lut_circShift_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->circShift[4];
-    const uint16_t (*lut_circShift_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->circShift[5];
-    const uint16_t (*lut_circShift_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->circShift[6];
-    const uint16_t (*lut_circShift_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->circShift[7];
-    const uint16_t (*lut_circShift_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->circShift[8];
+    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
+    const uint16_t (*lut_circShift_CNG4) [lut_numCnInCnGroups_BG1_R13[1]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[1]]) p_lut->circShift[1];
+    const uint16_t (*lut_circShift_CNG5) [lut_numCnInCnGroups_BG1_R13[2]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[2]]) p_lut->circShift[2];
+    const uint16_t (*lut_circShift_CNG6) [lut_numCnInCnGroups_BG1_R13[3]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[3]]) p_lut->circShift[3];
+    const uint16_t (*lut_circShift_CNG7) [lut_numCnInCnGroups_BG1_R13[4]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[4]]) p_lut->circShift[4];
+    const uint16_t (*lut_circShift_CNG8) [lut_numCnInCnGroups_BG1_R13[5]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[5]]) p_lut->circShift[5];
+    const uint16_t (*lut_circShift_CNG9) [lut_numCnInCnGroups_BG1_R13[6]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[6]]) p_lut->circShift[6];
+    const uint16_t (*lut_circShift_CNG10)[lut_numCnInCnGroups_BG1_R13[7]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[7]]) p_lut->circShift[7];
+    const uint16_t (*lut_circShift_CNG19)[lut_numCnInCnGroups_BG1_R13[8]] = (const uint16_t(*)[lut_numCnInCnGroups_BG1_R13[8]]) p_lut->circShift[8];
 
-    const uint32_t (*lut_startAddrBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (uint32_t(*)[lut_numCnInCnGroups[6]]) p_lut->startAddrBnProcBuf[6];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint32_t(*)[lut_numCnInCnGroups[7]]) p_lut->startAddrBnProcBuf[7];
-    const uint32_t (*lut_startAddrBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint32_t(*)[lut_numCnInCnGroups[8]]) p_lut->startAddrBnProcBuf[8];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (const uint32_t(*)[lut_numCnInCnGroups[0]]) p_lut->startAddrBnProcBuf[0];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (const uint32_t(*)[lut_numCnInCnGroups[1]]) p_lut->startAddrBnProcBuf[1];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (const uint32_t(*)[lut_numCnInCnGroups[2]]) p_lut->startAddrBnProcBuf[2];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (const uint32_t(*)[lut_numCnInCnGroups[3]]) p_lut->startAddrBnProcBuf[3];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (const uint32_t(*)[lut_numCnInCnGroups[4]]) p_lut->startAddrBnProcBuf[4];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (const uint32_t(*)[lut_numCnInCnGroups[5]]) p_lut->startAddrBnProcBuf[5];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (const uint32_t(*)[lut_numCnInCnGroups[6]]) p_lut->startAddrBnProcBuf[6];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (const uint32_t(*)[lut_numCnInCnGroups[7]]) p_lut->startAddrBnProcBuf[7];
+    const uint32_t (*lut_startAddrBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (const uint32_t(*)[lut_numCnInCnGroups[8]]) p_lut->startAddrBnProcBuf[8];
 
-    const uint8_t (*lut_bnPosBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (uint8_t(*)[lut_numCnInCnGroups[6]]) p_lut->bnPosBnProcBuf[6];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint8_t(*)[lut_numCnInCnGroups[7]]) p_lut->bnPosBnProcBuf[7];
-    const uint8_t (*lut_bnPosBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint8_t(*)[lut_numCnInCnGroups[8]]) p_lut->bnPosBnProcBuf[8];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (const uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (const uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (const uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG7) [lut_numCnInCnGroups[4]] = (const uint8_t(*)[lut_numCnInCnGroups[4]]) p_lut->bnPosBnProcBuf[4];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG8) [lut_numCnInCnGroups[5]] = (const uint8_t(*)[lut_numCnInCnGroups[5]]) p_lut->bnPosBnProcBuf[5];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (const uint8_t(*)[lut_numCnInCnGroups[6]]) p_lut->bnPosBnProcBuf[6];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (const uint8_t(*)[lut_numCnInCnGroups[7]]) p_lut->bnPosBnProcBuf[7];
+    const uint8_t (*lut_bnPosBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (const uint8_t(*)[lut_numCnInCnGroups[8]]) p_lut->bnPosBnProcBuf[8];
 
     int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
@@ -1019,10 +1012,9 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX;
 
-    for (j=0; j<2; j++)
+    for (j=0;j<2; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
-
         nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[lut_startAddrBnProcBuf_CNG3[j][0]], Z, lut_circShift_CNG3[j][0]);
     }
 
@@ -1034,7 +1026,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<3; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[1] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
@@ -1051,7 +1042,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<4; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[2] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
@@ -1068,7 +1058,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<5; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[3] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
@@ -1102,7 +1091,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<7; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[5] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG8[j][i] + lut_bnPosBnProcBuf_CNG8[j][i]*Z;
@@ -1119,7 +1107,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<8; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[6] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[6]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG9[j][i] + lut_bnPosBnProcBuf_CNG9[j][i]*Z;
@@ -1136,7 +1123,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<9; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[7] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[7]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
@@ -1153,7 +1139,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<19; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[8] + j*bitOffsetInGroup];
-
         for (i=0; i<lut_numCnInCnGroups[8]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG19[j][i] + lut_bnPosBnProcBuf_CNG19[j][i]*Z;

@@ -660,7 +660,7 @@ config_sib2_mbsfn_part( int Mod_idP,
       if (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         phycfg.cfg->embms_mbsfn_config.fourframes_flag[i] = 0;
         phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i] = mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[0];  // 6-bit subframe configuration
-        LOG_I (MAC, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i, phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i]);
+        LOG_I (MAC, "[CONFIG] MBSFN_SubframeConfig[%d] oneFrame pattern is  %d\n", i, phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i]);
       } else if (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) {       // 24-bit subframe configuration
         phycfg.cfg->embms_mbsfn_config.fourframes_flag[i]  = 1;
         phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i] =
@@ -668,7 +668,7 @@ config_sib2_mbsfn_part( int Mod_idP,
           (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
 
-        LOG_I(MAC, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
+        LOG_I(MAC, "[CONFIG] MBSFN_SubframeConfig[%d] fourFrame pattern is  %x\n", i,
               phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i]);
       }
     }
@@ -777,12 +777,13 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                            LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms,
                            struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
                            LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
-                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms,
+   		           LTE_MBSFNAreaConfiguration_r9_t*mbms_AreaConfig
                           ) {
   int i;
   int UE_id = -1;
   eNB_MAC_INST *eNB = RC.mac[Mod_idP];
-  UE_list_t *UE_list= &eNB->UE_list;
+  UE_info_t *UE_info= &eNB->UE_info;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
   LOG_D(MAC, "RC.mac:%p mib:%p\n", RC.mac, mib);
 
@@ -882,6 +883,34 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   }
 
+  if (logicalChannelIdentity > 0) { // is SRB1,2 or DRB
+    if ((UE_id = find_UE_id(Mod_idP, rntiP)) < 0) {
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
+    int idx = -1;
+    UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
+      if (sched_ctrl->dl_lc_ids[i] == logicalChannelIdentity) {
+        /* TODO this might also mean we have to remove it, not clear */
+        idx = i;
+        break;
+      }
+    }
+    if (idx < 0) {
+      sched_ctrl->dl_lc_num++;
+      sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num-1] = logicalChannelIdentity;
+      sched_ctrl->dl_lc_bytes[sched_ctrl->dl_lc_num-1] = 0;
+      LOG_I(MAC, "UE %d RNTI %x adding LC %ld idx %d to scheduling control (total %d)\n", UE_id, rntiP, logicalChannelIdentity, sched_ctrl->dl_lc_num-1, sched_ctrl->dl_lc_num);
+      if (logicalChannelIdentity == 1) { // if it is SRB1, add SRB2 directly because RRC does not indicate this separately
+        sched_ctrl->dl_lc_num++;
+        sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num-1] = 2;
+        sched_ctrl->dl_lc_bytes[sched_ctrl->dl_lc_num-1] = 0;
+        LOG_I(MAC, "UE %d RNTI %x adding LC 2 idx %d to scheduling control (total %d)\n", UE_id, rntiP, sched_ctrl->dl_lc_num-1, sched_ctrl->dl_lc_num);
+      }
+    }
+  }
+
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig != NULL) { // check for eMTC specific things
     UE_id = find_UE_id(Mod_idP, rntiP);
@@ -892,9 +921,9 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
 
     if (logicalChannelConfig) {
-      UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-      UE_list->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
-    } else UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
+      UE_info->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+      UE_info->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
+    } else UE_info->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
   }
 
   if (physicalConfigDedicated != NULL) {
@@ -905,7 +934,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       return(-1);
     }
 
-    UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
     LOG_I(MAC,"Added physicalConfigDedicated %p for %d.%d\n",physicalConfigDedicated,CC_idP,UE_id);
   }
 
@@ -961,6 +990,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     cfg->num_tlv++;
     //We need to reuse current MCH scheduler
     //TOCHECK whether we can simply reuse current mbsfn_SubframeConfig stuff
+    RC.mac[Mod_idP]->common_channels[0].FeMBMS_flag = FeMBMS_Flag;
   }
 
   if (mbsfn_AreaInfoList != NULL) {
@@ -974,6 +1004,21 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
             RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
       //      config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
 	config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
+    }
+  }
+
+  if(mbms_AreaConfig != NULL) {
+    RC.mac[Mod_idP]->common_channels[0].commonSF_AllocPeriod_r9 = mbms_AreaConfig->commonSF_AllocPeriod_r9; 
+    LOG_I(MAC, "[eNB %d][CONFIG]  LTE_MBSFNAreaConfiguration_r9_t(%p) commonSF_AllocPeriod_r9(%d)\n",Mod_idP,mbms_AreaConfig, RC.mac[Mod_idP]->common_channels[0].commonSF_AllocPeriod_r9);
+    for(i=0; i < mbms_AreaConfig->commonSF_Alloc_r9.list.count; i++){
+      RC.mac[Mod_idP]->common_channels[0].commonSF_Alloc_r9_mbsfn_SubframeConfig[i] = mbms_AreaConfig->commonSF_Alloc_r9.list.array[i];
+     LOG_I(RRC,"[eNB %d][CONFIG] MBSFNArea[%d] commonSF_Alloc_r9: radioframeAllocationPeriod(%ldn),radioframeAllocationOffset(%ld), subframeAllocation(%x,%x,%x)\n"
+      ,Mod_idP,i
+      ,RC.mac[Mod_idP]->common_channels[0].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->radioframeAllocationPeriod
+      ,RC.mac[Mod_idP]->common_channels[0].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->radioframeAllocationOffset
+      ,RC.mac[Mod_idP]->common_channels[0].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]
+      ,RC.mac[Mod_idP]->common_channels[0].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[1]
+      ,RC.mac[Mod_idP]->common_channels[0].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[2]);
     }
   }
 
@@ -1048,15 +1093,11 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
                           rrc_mac_drx_config_req_t *rrc_mac_drx_config_req)
 //-----------------------------------------------------------------------------
 {
-  UE_list_t *UE_list_mac = NULL;
+  UE_info_t *UE_info_mac = &RC.mac[Mod_id]->UE_info;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
-  int UE_id = -1;
-  
-  rnti_t rnti = rrc_mac_drx_config_req->rnti;
   LTE_DRX_Config_t *const drx_Configuration = rrc_mac_drx_config_req->drx_Configuration;
-
-  UE_list_mac = &(RC.mac[Mod_id]->UE_list);
-  UE_id = find_UE_id(Mod_id, rnti);
+  rnti_t rnti = rrc_mac_drx_config_req->rnti;
+  int UE_id = find_UE_id(Mod_id, rnti);
 
   /* Check UE_id */
   if (UE_id == -1) {
@@ -1065,7 +1106,7 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   }
 
   /* Get struct to modify */
-  UE_scheduling_control = &(UE_list_mac->UE_sched_ctrl[UE_id]);
+  UE_scheduling_control = &(UE_info_mac->UE_sched_ctrl[UE_id]);
   UE_scheduling_control->cdrx_configured = FALSE; // will be set to true when no error
 
   /* Check drx_Configuration */

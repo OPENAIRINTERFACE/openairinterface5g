@@ -30,7 +30,6 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
     }
 }
 
-def doRedHatBuild = false
 def doFlexranCtrlTest = false
 
 // Location of the executor node
@@ -66,7 +65,8 @@ pipeline {
             "Test-IF4p5-TDD-Band38-Multi-RRU",
             "Test-eNB-OAI-UE-FDD-Band7",
             "Test-Mono-FDD-Band13-X2-HO",
-            "Test-TDD-Band78-gNB-NR-UE"
+            "Test-TDD-Band78-gNB-NR-UE",
+            "Test-OCP-FDD-Band7"
         ])
         ansiColor('xterm')
     }
@@ -84,21 +84,6 @@ pipeline {
                         echo "Platform is ${env.TESTPLATFORM_OWNER}"
                     }
 
-                    if (params.RedHatRemoteServer == null) {
-                        allParametersPresent = false
-                    }
-                    if (params.RedHatRemoteCredentials == null) {
-                        allParametersPresent = false
-                    }
-                    if (params.RedHatWorkingPath == null) {
-                        allParametersPresent = false
-                    }
-                    if (allParametersPresent) {
-                        echo "Performing Red Hat Build"
-                        doRedHatBuild = true
-                    } else {
-                        doRedHatBuild = false
-                    }
                     if (params.FlexRanRtcGitLabRepository_Credentials != null) {
                         doFlexranCtrlTest = true
                     }
@@ -214,7 +199,7 @@ pipeline {
         
         stage ("Start VM -- enb-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
@@ -222,7 +207,7 @@ pipeline {
 
         stage ("Start VM -- ue-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
@@ -230,7 +215,7 @@ pipeline {
         
         stage ("Start VM -- cppcheck") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
@@ -278,7 +263,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNB-USRP") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -306,28 +291,6 @@ pipeline {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                            }
-                        }
-                    }
-                }
-                stage ("Build eNB-USRP on Red Hat") {
-                    when {
-                        expression {doRedHatBuild}
-                    }
-                    steps {
-                        gitlabCommitStatus(name: "Build eNB-USRP-RHE") {
-                            script {
-                                try {
-                                    withCredentials([
-                                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.RedHatRemoteCredentials}", usernameVariable: 'RH_Username', passwordVariable: 'RH_Password']
-                                    ]) {
-                                        timeout (time: 20, unit: 'MINUTES') {
-                                            sh "./ci-scripts/buildOnRH.sh --workspace $WORKSPACE --job-name ${JOB_NAME} --build-id ${BUILD_ID} --remote-host ${params.RedHatRemoteServer} --remote-path ${params.RedHatWorkingPath} --remote-user-name ${RH_Username} --remote-password ${RH_Password}"
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    echo "Red Hat build failed but we could keep running pipeline if all ubuntu-based build passed"
-                                }
                             }
                         }
                     }
@@ -453,7 +416,7 @@ pipeline {
                         stage ("Test RF simulator") {
                             steps {
                                 script {
-                                    timeout (time: 30, unit: 'MINUTES') {
+                                    timeout (time: 40, unit: 'MINUTES') {
                                         try {
                                             gitlabCommitStatus(name: "Test RF-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
@@ -674,6 +637,25 @@ pipeline {
                         always {
                             script {
                                 finalizeSlaveJob('gNB-nrUE-MONO-TDD-Band78-N300')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI OCP-eNB - FDD - Band 7 - B210") {
+                    steps {
+                        script {
+                            triggerSlaveJob ('OCPeNB-FDD-Band7-B210', 'Test-OCP-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('OCPeNB-FDD-Band7-B210')
                             }
                         }
                         failure {

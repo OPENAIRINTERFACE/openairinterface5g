@@ -38,6 +38,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 //#include "SCHED/defs.h"
 //#include "SCHED/extern.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "common_lib.h"
 #include <math.h>
@@ -135,7 +136,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
       
-      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
+      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im*current_ssb->c_im;
       
       // generate a list of SSB structures
       if (best_ssb == NULL)
@@ -176,7 +177,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
   
   if (ret==0) {
     
-    frame_parms->nb_antenna_ports_eNB = 1; //pbch_tx_ant;
+    frame_parms->nb_antenna_ports_gNB = 1; //pbch_tx_ant;
     
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
     //frame_parms->mode1_flag = (pbch_tx_ant==1);
@@ -213,17 +214,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
   int rx_power=0; //aarx,
-  //nfapi_nr_config_request_t* config;
+  
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_IN);
 
-  int n_ssb_crb=(fp->N_RB_DL-20);
-  // First try TDD normal prefix, mu 1
-  fp->Ncp=NORMAL;
-  fp->frame_type=TDD;
-  // FK: added N_RB_DL paramter here as this function shares code with the gNB where it is needed. We should rewrite this function for the UE. 
-  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
+
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", fp->N_RB_DL);
-
-
 
   /*   Initial synchronisation
    *
@@ -264,7 +259,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
 	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
-	int start = ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
+	int start = is*fp->samples_per_frame+ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
   	int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
 
 	for(int n=start; n<end; n++){  	
@@ -290,10 +285,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
     /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
       for(int i=0; i<4;i++)
-        nr_slot_fep(ue,
+        nr_slot_fep_init_sync(ue,
 	            i,
 	            0,
-	            ue->ssb_offset,
+	            is*fp->samples_per_frame+ue->ssb_offset,
 	            0);
 
 #ifdef DEBUG_INITIAL_SYNCH
@@ -312,7 +307,13 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
         sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+
+        if (ue->ssb_offset < sync_pos_frame)
+          ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
+        else
+          ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+
+        ue->init_sync_frame = is;
       }   
 
       nr_gold_pdcch(ue,0, 2);
@@ -406,7 +407,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 	  fp->N_RB_DL,
 	  fp->phich_config_common.phich_duration,
 	  phich_string[fp->phich_config_common.phich_resource],
-	  fp->nb_antenna_ports_eNB);*/
+	  fp->nb_antenna_ports_gNB);*/
 
 #if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
     LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
@@ -480,6 +481,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   }
 
   //  exit_fun("debug exit");
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
   return ret;
 }
 

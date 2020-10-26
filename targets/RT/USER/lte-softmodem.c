@@ -80,7 +80,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 //#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
-#include "UTIL/OTG/otg_vars.h"
+  #include "UTIL/OTG/otg_vars.h"
 #endif
 
 
@@ -93,6 +93,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
+#include <executables/split_headers.h>
 
 
 pthread_cond_t nfapi_sync_cond;
@@ -113,7 +114,7 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 volatile int             oai_exit = 0;
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int UE_scan = 1;
@@ -152,6 +153,13 @@ int otg_enabled;
 
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
+int split73=0;
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -162,6 +170,7 @@ extern void init_eNB_afterRU(void);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -170,7 +179,7 @@ eth_params_t *eth_params;
 double cpuf;
 
 int oaisim_flag=0;
-//threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1};
+
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -265,7 +274,7 @@ void exit_function(const char *file, const char *function, const int line, const
 
 static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
-  get_common_options();
+  get_common_options(SOFTMODEM_ENB_BIT );
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
@@ -429,13 +438,10 @@ int restart_L1L2(module_id_t enb_id) {
   }
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this eNB */
-  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
-  init_UE_list(&RC.mac[enb_id]->UE_list);
+  init_UE_info(&RC.mac[enb_id]->UE_info);
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
 
   if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
@@ -539,7 +545,7 @@ int main ( int argc, char **argv )
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
-
+  // allows to forward in wireshark L2 protocol for decoding
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
@@ -579,11 +585,11 @@ int main ( int argc, char **argv )
     for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
     }
-
+    
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
-    init_pdcp();
-
+   init_pdcp();
+    
     if (create_tasks(1) < 0) {
       printf("cannot create ITTI tasks\n");
       exit(-1);
@@ -607,7 +613,7 @@ int main ( int argc, char **argv )
     ctxt.subframe = 0;
     pdcp_run(&ctxt);
   }
-    
+
   /* start threads if only L1 or not a CU */
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type) || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // init UE_PF_PO and mutex lock
@@ -618,31 +624,45 @@ int main ( int argc, char **argv )
     pthread_mutex_init(&sync_mutex, NULL);
 
     rt_sleep_ns(10*100000000ULL);
-    
+
     if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
       LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
       pthread_cond_init(&sync_cond,NULL);
       pthread_mutex_init(&sync_mutex, NULL);
     }
-    
+
     if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
 #if defined(PRE_SCD_THREAD)
       init_ru_vnf();  // ru pointer is necessary for pre_scd.
 #endif
       wait_nfapi_init("main?");
     }
-    
+
     LOG_I(ENB_APP,"START MAIN THREADS\n");
     // start the main threads
     number_of_cards = 1;
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
-    
+
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
-      //      for (inst=0;inst<RC.nb_L1_inst;inst++)
-      //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
+    for (int x=0; x < RC.nb_L1_inst; x++) 
+      for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
+        L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
+	L1proc->threadPool=(tpool_t*)malloc(sizeof(tpool_t));
+        L1proc->respEncode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+        L1proc->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+        if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
+         initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
+        else
+         initTpool("n", L1proc->threadPool, true);
+      initNotifiedFIFO(L1proc->respEncode);
+      initNotifiedFIFO(L1proc->respDecode);
+      RC.eNB[x][CC_id]->proc.L1_proc_tx.threadPool = L1proc->threadPool;
+    }
+
+
   }
 
   printf("wait_eNBs()\n");
@@ -654,29 +674,29 @@ int main ( int argc, char **argv )
   // some initialization is necessary and init_ru_vnf do this.
   if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
     printf("Initializing RU threads\n");
-    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
+    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
     
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
     }
-    
+
     config_sync_var=0;
-    
+
     if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
       wait_nfapi_init("main?");
     }
-    
+
     printf("wait RUs\n");
-    // CI -- Flushing the std outputs for the previous marker to show on the eNB / RRU log file
+    // end of CI modifications
     fflush(stdout);
     fflush(stderr);
-    // end of CI modifications
+    // wait_RUs() is wrong and over complex!
     wait_RUs();
     LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
     printf("ALL RUs ready - init eNBs\n");
-
+    
     if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
       LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
@@ -692,9 +712,12 @@ int main ( int argc, char **argv )
     sync_var=0;
     pthread_cond_broadcast(&sync_cond);
     pthread_mutex_unlock(&sync_mutex);
+    create_tasks_mbms(1);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
-  create_tasks_mbms(1);
+  else
+    create_tasks_mbms(1);
+  //create_tasks_mbms(1);
 
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
@@ -704,7 +727,7 @@ int main ( int argc, char **argv )
   // end of CI modifications
   //getchar();
   if(IS_SOFTMODEM_DOFORMS)
-     load_softscope("enb");
+     load_softscope("enb",NULL);
   itti_wait_tasks_end();
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
@@ -723,7 +746,7 @@ int main ( int argc, char **argv )
     for (int inst = 0; inst < NB_eNB_INST; inst++) {
       for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
 	free_transport(RC.eNB[inst][cc_id]);
-	phy_free_lte_eNB(RC.eNB[inst][cc_id]);
+        phy_free_lte_eNB(RC.eNB[inst][cc_id]);
       }
     }
 
@@ -741,17 +764,17 @@ int main ( int argc, char **argv )
 
     for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       if (RC.ru[ru_id]->rfdevice.trx_end_func) {
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-	RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
       }
 
       if (RC.ru[ru_id]->ifdevice.trx_end_func) {
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
-	RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
       }
     }
   }
-   
+
   terminate_opt();
   logClean();
   printf("Bye.\n");

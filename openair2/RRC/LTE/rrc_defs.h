@@ -40,6 +40,10 @@
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
+#include "RRC/NR/nr_rrc_types.h"
+#include "NR_UE-MRDC-Capability.h"
+#include "NR_UE-NR-Capability.h"
+
 
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
@@ -92,6 +96,7 @@
 
 #define PC5_DISCOVERY_PAYLOAD_SIZE      29
 
+#define DEBUG_SCG_CONFIG 1
 
 typedef enum {
   UE_STATE_OFF_NETWORK,
@@ -264,7 +269,10 @@ typedef enum UE_STATE_e {
   RRC_SI_RECEIVED,
   RRC_CONNECTED,
   RRC_RECONFIGURED,
-  RRC_HO_EXECUTION
+  RRC_HO_EXECUTION,
+  RRC_NR_NSA,
+  RRC_NR_NSA_RECONFIGURED,
+  RRC_NR_NSA_DELETED
 } UE_STATE_t;
 
 typedef enum HO_STATE_e {
@@ -380,6 +388,7 @@ typedef enum e_rab_satus_e {
   E_RAB_STATUS_DONE, // from the eNB perspective
   E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
   E_RAB_STATUS_REESTABLISHED, // after HO
+  E_RAB_STATUS_TOMODIFY,      // ENDC NSA
   E_RAB_STATUS_FAILED,
   E_RAB_STATUS_TORELEASE  // to release DRB between eNB and UE
 } e_rab_status_t;
@@ -566,6 +575,10 @@ typedef struct eNB_RRC_UE_s {
 
   LTE_UE_EUTRA_Capability_t         *UE_Capability;
   int                                UE_Capability_size;
+  NR_UE_MRDC_Capability_t           *UE_Capability_MRDC;
+  int                UE_MRDC_Capability_size;
+  NR_UE_NR_Capability_t       *UE_Capability_nr;
+  int                UE_NR_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
   /* KeNB as derived from KASME received from EPC */
@@ -579,6 +592,8 @@ typedef struct eNB_RRC_UE_s {
 
   uint8_t                            Status; // RRC status, type enum UE_STATE_t
   rnti_t                             rnti;
+  int                                gnb_rnti;     //RNTI of the UE at the gNB if in ENDC connection
+  int                                gnb_x2_assoc_id;
   uint64_t                           random_ue_identity;
 
 
@@ -611,6 +626,7 @@ typedef struct eNB_RRC_UE_s {
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
+  uint8_t              nb_of_modify_endc_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
@@ -625,6 +641,10 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+  // LG: For GTPV1 TUNNELS ENDC
+  uint32_t                           gnb_gtp_endc_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             gnb_gtp_endc_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_endc_ebi[S1AP_MAX_E_RAB];
   /* Total number of e_rab already setup in the list */
   uint8_t                            nb_x2u_e_rabs;
   // LG: For GTPV1 TUNNELS(X2U)
@@ -644,6 +664,8 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_rrc_inactivity_timer;
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
+  int                                does_nr;
+  int                                nr_capabilities_requested;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;
@@ -697,6 +719,9 @@ typedef struct {
   LTE_BCCH_BCH_Message_MBMS_t            mib_fembms;
   LTE_BCCH_DL_SCH_Message_MBMS_t         siblock1_MBMS;
   LTE_BCCH_DL_SCH_Message_MBMS_t         systemInformation_MBMS;
+  LTE_SchedulingInfo_MBMS_r14_t 	 schedulingInfo_MBMS;
+  LTE_PLMN_IdentityInfo_t		 PLMN_identity_info_MBMS[6];
+  LTE_MCC_MNC_Digit_t			 dummy_mcc_MBMS[6][3], dummy_mnc_MBMS[6][3];
   LTE_SystemInformationBlockType1_t     *sib1;
   LTE_SystemInformationBlockType2_t     *sib2;
   LTE_SystemInformationBlockType3_t     *sib3;
@@ -713,6 +738,12 @@ typedef struct {
   LTE_MCCH_Message_t                mcch;
   LTE_MBSFNAreaConfiguration_r9_t  *mcch_message;
   SRB_INFO                          MCCH_MESS[8];// MAX_MBSFN_AREA
+  uint8_t                           **MCCH_MESSAGE_COUNTING; //  MAX_MBSFN_AREA
+  uint8_t                           sizeof_MCCH_MESSAGE_COUNTING[8];// MAX_MBSFN_AREA
+  LTE_MCCH_Message_t                mcch_counting;
+  LTE_MBMSCountingRequest_r10_t    *mcch_message_counting;
+  SRB_INFO                          MCCH_MESS_COUNTING[8];// MAX_MBSFN_AREA
+
   //TTN - SIB 18,19,21 for D2D
   LTE_SystemInformationBlockType18_r12_t *sib18;
   LTE_SystemInformationBlockType19_r12_t *sib19;
@@ -763,6 +794,10 @@ typedef struct eNB_RRC_INST_s {
   int num_neigh_cells_cc[MAX_NUM_CCs];
   uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
+  // Nr scc freq band and SSB absolute frequency
+  uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+  int nr_scg_ssb_freq;
+
   // other RAN parameters
   int srb1_timer_poll_retransmit;
   int srb1_poll_pdu;
@@ -790,6 +825,7 @@ typedef struct UE_RRC_INST_s {
   Rrc_Sub_State_t RrcSubState;
   plmn_t          plmnID;
   Byte_t          rat;
+  uint8_t         selected_plmn_identity;
   as_nas_info_t   initialNasMsg;
   OAI_UECapability_t *UECap;
   uint8_t *UECapability;

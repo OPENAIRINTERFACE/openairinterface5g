@@ -94,6 +94,35 @@ unsigned char I_TBS2I_MCS(unsigned char I_TBS) {
   return I_MCS;
 }
 
+uint16_t find_nb_rb_DL(uint8_t mcs, uint32_t bytes, uint16_t nb_rb_max, uint16_t rb_gran) {
+  if (bytes == 0 || mcs > 28 || nb_rb_max == 0)
+    return 0;
+  const uint32_t bits = bytes << 3;
+  const unsigned char I_TBS = get_I_TBS(mcs);
+
+  uint32_t TBS = TBStable[I_TBS][nb_rb_max - 1];
+  if (bits >= TBS)     // is nb_rb_max too small?
+    return nb_rb_max;
+
+  TBS = TBStable[I_TBS][rb_gran - 1];
+  if (bits <= TBS)     // is rb_gran RB enough?
+    return rb_gran;
+
+  nb_rb_max += nb_rb_max % rb_gran; // round up to full RBG
+  uint16_t hi = nb_rb_max/rb_gran - 1;
+  uint16_t lo = 0;
+  uint16_t p = (hi + lo) / 2;
+  for (; lo + 1 != hi; p = (hi + lo) / 2) {
+    const uint16_t rbi = (p + 1) * rb_gran - 1;  // convert "RBG" -> RB
+    TBS = TBStable[I_TBS][rbi];
+    if (bits <= TBS)  // need less RBs
+      hi = p;
+    else              // need more RBs
+      lo = p;
+  }
+  return (hi + 1) * rb_gran;
+}
+
 uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb) {
   uint32_t TBS;
 

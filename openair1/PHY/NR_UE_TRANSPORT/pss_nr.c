@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEFINE_VARIABLES_PSS_NR_H
 #include "PHY/NR_REFSIG/pss_nr.h"
@@ -52,7 +53,7 @@
 *
 * PARAMETERS :   size of ofdm symbol
 *
-* RETURN :       function idft
+* RETURN :       index pointing to the dft func in the dft library
 *
 * DESCRIPTION :  get idft function depending of ofdm size
 *
@@ -60,45 +61,45 @@
 
 //#define DBG_PSS_NR
 
-void *get_idft(int ofdm_symbol_size)
+idft_size_idx_t get_idft(int ofdm_symbol_size)
 {
-  void (*idft)(int16_t *,int16_t *, int);
-
+  
+ 
   switch (ofdm_symbol_size) {
     case 128:
-      idft = idft128;
+      return IDFT_128;
       break;
 
     case 256:
-      idft = idft256;
+      return IDFT_256;
       break;
 
     case 512:
-      idft = idft512;
+      return IDFT_512;
       break;
 
     case 1024:
-      idft = idft1024;
+      return IDFT_1024;
       break;
 
     case 1536:
-      idft = idft1536;
+      return IDFT_1536;
       break;
 
     case 2048:
-      idft = idft2048;
+      return IDFT_2048;
       break;
 
     case 3072:
-      idft = idft3072;
+      return IDFT_3072;
       break;
 
     case 4096:
-      idft = idft4096;
+      return IDFT_4096;
       break;
 
     case 8192:
-      idft = idft8192;
+      return IDFT_8192;
       break;
 
     default:
@@ -106,7 +107,7 @@ void *get_idft(int ofdm_symbol_size)
       assert(0);
       break;
  }
- return idft;
+ return IDFT_SIZE_IDXTABLESIZE; // never reached and will trigger assertion in idft function
 }
 
 /*******************************************************************
@@ -121,41 +122,41 @@ void *get_idft(int ofdm_symbol_size)
 *
 *********************************************************************/
 
-void *get_dft(int ofdm_symbol_size)
+dft_size_idx_t get_dft(int ofdm_symbol_size)
 {
-  void (*dft)(int16_t *,int16_t *, int);
+
 
   switch (ofdm_symbol_size) {
     case 128:
-      dft = dft128;
+      return DFT_128;
       break;
 
     case 256:
-      dft = dft256;
+      return DFT_256;
       break;
 
     case 512:
-      dft = dft512;
+      return DFT_512;
       break;
 
     case 1024:
-      dft = dft1024;
+      return DFT_1024;
       break;
 
     case 1536:
-      dft = dft1536;
+      return DFT_1536;
       break;
 
     case 2048:
-      dft = dft2048;
+      return DFT_2048;
       break;
 
     case 4096:
-      dft = dft4096;
+      return DFT_4096;
       break;
 
     case 8192:
-      dft = dft8192;
+      return DFT_8192;
       break;
 
     default:
@@ -163,7 +164,7 @@ void *get_dft(int ofdm_symbol_size)
       assert(0);
       break;
  }
- return dft;
+ return DFT_SIZE_IDXTABLESIZE; // never reached and will trigger assertion in idft function;
 }
 
 /*******************************************************************
@@ -191,7 +192,7 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   unsigned int size = length * IQ_SIZE; /* i & q */
   int16_t *primary_synchro = primary_synchro_nr[N_ID_2]; /* pss in complex with alternatively i then q */
   int16_t *primary_synchro2 = primary_synchro_nr2[N_ID_2]; /* pss in complex with alternatively i then q */
-  void (*idft)(int16_t *,int16_t *, int);
+
 
   #define INITIAL_PSS_NR    (7)
   const int x_initial[INITIAL_PSS_NR] = {0, 1, 1 , 0, 1, 1, 1};
@@ -269,7 +270,6 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   if (k>= fp->ofdm_symbol_size) k-=fp->ofdm_symbol_size;
 
 
-
   for (int i=0; i < LENGTH_PSS_NR; i++) {
     synchroF_tmp[2*k] = primary_synchro[2*i];
     synchroF_tmp[2*k+1] = primary_synchro[2*i+1];
@@ -282,9 +282,10 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
 
   /* IFFT will give temporal signal of Pss */
 
-  idft = get_idft(length);
-
-  idft(synchroF_tmp,          /* complex input */
+ 
+ 
+  idft((int16_t)get_idft(length),
+  	   synchroF_tmp,          /* complex input */
        synchro_tmp,           /* complex output */
        1);                 /* scaling factor */
 
@@ -312,6 +313,7 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
 #endif
 
 
+
 #if 0
 
 /* it allows checking that process of idft on a signal and then dft gives same signal with limited errors */
@@ -323,10 +325,11 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
 
     bzero(synchroF_tmp, size);
 
-    void (*dft)(int16_t *,int16_t *, int) = get_dft(length);
+  
 
     /* get pss in the time domain by applying an inverse FFT */
-    dft(synchro_tmp,           /* complex input */
+    dft((int16_t)get_dft(length),
+    	synchro_tmp,           /* complex input */
         synchroF_tmp,          /* complex output */
         1);                 /* scaling factor */
 
@@ -669,6 +672,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
   int **rxdata = NULL;
   int fo_flag = PHY_vars_UE->UE_fo_compensation;  // flag to enable freq offset estimation and compensation
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SYNCHRO_NR, VCD_FUNCTION_IN);
 #ifdef DBG_PSS_NR
 
   LOG_M("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], frame_parms->samples_per_frame, 1, 1);
@@ -707,6 +711,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 
 #endif
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SEARCH_TIME_NR, VCD_FUNCTION_IN);
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
 					fo_flag,
@@ -714,6 +719,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
                                         (int *)&PHY_vars_UE->common_vars.eNb_id,
 					(int *)&PHY_vars_UE->common_vars.freq_offset);
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SEARCH_TIME_NR, VCD_FUNCTION_OUT);
 
 #if TEST_SYNCHRO_TIMING_PSS
 
@@ -746,6 +752,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
   }
 #endif
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SYNCHRO_NR, VCD_FUNCTION_OUT);
   return synchro_position;
 }
 
@@ -880,7 +887,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
           /* perform correlation of rx data and pss sequence ie it is a dot product */
           result  = dot_product64((short*)primary_synchro_time_nr[pss_index], 
-				  (short*) &(rxdata[ar][n])+(is*frame_parms->samples_per_frame), 
+				  (short*) &(rxdata[ar][n+is*frame_parms->samples_per_frame]), 
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);
@@ -914,13 +921,13 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 	  int64_t result1,result2;
 	  // Computing cross-correlation at peak on half the symbol size for first half of data
 	  result1  = dot_product64((short*)primary_synchro_time_nr[pss_source], 
-				  (short*) &(rxdata[0][peak_position])+(is*frame_parms->samples_per_frame), 
+				  (short*) &(rxdata[0][peak_position+is*frame_parms->samples_per_frame]), 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 	  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
 	  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
 	  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
-				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size+(is*frame_parms->samples_per_frame)), 
+				  (short*) &(rxdata[0][peak_position+is*frame_parms->samples_per_frame])+frame_parms->ofdm_symbol_size, 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 

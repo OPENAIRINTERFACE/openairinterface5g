@@ -248,7 +248,8 @@ const char* eurecomVariablesNames[] = {
   "slot_number_TX1_gNB",
   "slot_number_RX0_gNB",
   "slot_number_RX1_gNB",
-  "ru_tx_ofdm_mask"
+  "ru_tx_ofdm_mask",
+  "usrp_send_return"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -282,6 +283,8 @@ const char* eurecomFunctionsNames[] = {
   "lock_mutex_ru",
   "lock_mutex_ru1",
   "lock_mutex_ru2",
+  /* uhd signals */
+  "trx_write_thread",
   /* simulation signals */
   "do_DL_sig",
   "do_UL_sig",
@@ -514,7 +517,30 @@ const char* eurecomFunctionsNames[] = {
   /*NR softmodem signal*/
   "wakeup_txfh",
   "gNB_thread_rxtx0",
-  "gNB_thread_rxtx1"
+  "gNB_thread_rxtx1",
+  "ru_thread_tx_wait",
+  "gNB_ulsch_decoding",
+  "gNB_pdsch_codeword_scrambling",
+  "gNB_dlsch_encoding",
+  "gNB_pdsch_modulation",
+  "gNB_pdcch_tx",
+  "phy_procedures_gNB_tx",
+  "phy_procedures_gNB_common_tx",
+  "phy_procedures_gNB_uespec_rx",
+  "nr_rx_pusch",
+  "nr_ulsch_procedures_rx",
+  "macxface_gNB_dlsch_ulsch_scheduler",
+
+  /*NR ue-softmodem signal*/
+  "nr_ue_ulsch_encoding",
+  "nr_segmentation",
+  "ldpc_encoder_optim",
+  "nr_rate_matching_ldpc",
+  "nr_interleaving_ldpc",
+  "pss_synchro_nr",
+  "pss_search_time_nr",
+  "nr_initial_ue_sync",
+  "beam_switching_gpio"
 };
 
 struct vcd_module_s vcd_modules[] = {
@@ -633,9 +659,6 @@ inline static uint32_t vcd_get_write_index(void)
   return write_index;
 }
 
-#if defined(ENABLE_ITTI)
-int signal_mask(void);
-#endif
 
 void *vcd_dumper_thread_rt(void *args)
 {
@@ -644,9 +667,7 @@ void *vcd_dumper_thread_rt(void *args)
   struct sched_param sched_param;
   uint32_t data_ready_wait;
 
-# if defined(ENABLE_ITTI)
   return 0; //signal_mask(); //function defined at common/utils/ocp_itti/intertask_interface.cpp
-# endif
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
   sched_setscheduler(0, SCHED_FIFO, &sched_param);

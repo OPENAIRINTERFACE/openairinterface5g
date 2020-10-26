@@ -62,6 +62,7 @@
 // overwrite the previous deinitions
 
 #    define MAX_MODULES                NB_MODULES_MAX
+#define MAX_NR_RRC_UE_CONTEXTS 64
 
 #ifndef UE_EXPANSION
   // TODO:L2 FAPI simulator.
@@ -72,7 +73,9 @@
   #ifdef UESIM_EXPANSION
     #define MAX_MOBILES_PER_ENB         256
     #define MAX_MOBILES_PER_ENB_NB_IoT  256
+    #define MAX_MOBILES_PER_GNB         256
     #define MAX_eNB                      2
+    #define MAX_gNB                      2
   #else
     #ifdef LARGE_SCALE
       #define MAX_MOBILES_PER_ENB         128
@@ -83,7 +86,7 @@
     #else
       #define MAX_MOBILES_PER_ENB         4
       #define MAX_MOBILES_PER_ENB_NB_IoT  4
-      #define MAX_MOBILES_PER_GNB         4
+      #define MAX_MOBILES_PER_GNB         2//16
       #define MAX_eNB                      2
       #define MAX_gNB                      2
     #endif
@@ -96,8 +99,12 @@
   #define MAX_gNB                      2
 #endif
 
-#define NUMBER_OF_NR_DLSCH_MAX 4
-#define NUMBER_OF_NR_ULSCH_MAX 4
+#define NUMBER_OF_NR_DLSCH_MAX 2//16
+#define NUMBER_OF_NR_ULSCH_MAX 2//16
+#define NUMBER_OF_NR_SCH_STATS_MAX 16
+#define NUMBER_OF_NR_PUCCH_MAX 16
+#define NUMBER_OF_NR_SR_MAX 16
+#define NUMBER_OF_NR_PDCCH_MAX 16
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 #define MAX_MANAGED_GNB_PER_MOBILE  2

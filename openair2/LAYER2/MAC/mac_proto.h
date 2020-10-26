@@ -33,6 +33,16 @@
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
 #include "openair2/COMMON/mac_messages_types.h"
 
+/** \fn void schedule_fembms_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+\brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+
+*/
+
+void schedule_fembms_mib(module_id_t module_idP,
+		  frame_t frameP, sub_frame_t subframeP);
 
 /** \addtogroup _mac
  *  @{
@@ -122,29 +132,20 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
-@param slice_idx Slice instance index for this eNB
+@param CC_id The component carrier to schedule
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
-void schedule_ulsch_rnti(module_id_t module_idP, int slice_idx, frame_t frameP,
+void schedule_ulsch_rnti(module_id_t module_idP, int CC_id, frame_t frameP,
                          sub_frame_t subframe,
-                         unsigned char sched_subframe,
-                         uint16_t *first_rb);
+                         unsigned char sched_subframe);
 
 void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                               frame_t       frameP,
                               sub_frame_t   subframeP,
                               unsigned char sched_subframeP,
                               int          *emtc_active);
-
-/** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
-@param Mod_id Instance of eNB
-@param frame Frame index
-@param subframe Index of subframe
-@param mbsfn_flag Indicates that this subframe is for MCH/MCCH
-*/
-void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
@@ -156,8 +157,10 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 void schedule_dlsch(module_id_t module_idP, frame_t frameP,
                     sub_frame_t subframe, int *mbsfn_flag);
 
-void schedule_ue_spec(module_id_t module_idP, int slice_idxP,
-                      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
+void schedule_ue_spec(module_id_t module_idP,
+                      int CC_id,
+                      frame_t frameP,
+                      sub_frame_t subframe);
 void schedule_ue_spec_br(module_id_t   module_idP,
                          frame_t       frameP,
                          sub_frame_t   subframeP);
@@ -192,9 +195,7 @@ void add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
 
 //main.c
 
-void init_UE_list(UE_list_t *UE_list);
-
-void init_slice_info(slice_info_t *sli);
+void init_UE_info(UE_info_t *UE_info);
 
 int mac_top_init(int eMBMS_active, char *uecap_xer,
                  uint8_t cba_group_active, uint8_t HO_active);
@@ -231,73 +232,9 @@ void clear_nfapi_information(eNB_MAC_INST *eNB, int CC_idP,
 
 
 void dlsch_scheduler_pre_processor(module_id_t module_idP,
-                                   int slice_idxP,
+                                   int CC_id,
                                    frame_t frameP,
-                                   sub_frame_t subframe,
-                                   int *mbsfn_flag,
-                                   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
-    int slice_idx,
-    frame_t frameP,
-    sub_frame_t subframeP,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
-    int *mbsfn_flag);
-
-void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
-    int slice_idx,
-    const uint8_t rbs_retx[NFAPI_CC_MAX]);
-
-void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
-    int slice_idx,
-    frame_t frameP,
-    sub_frame_t subframeP,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
-
-void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
-    int slice_idx,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
-    int slice_idx,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void slice_priority_sort(module_id_t Mod_id, int slice_list[MAX_NUM_SLICES]);
-
-void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
-    int frameP,
-    sub_frame_t subframeP,
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id,
-                                      int frameP,
-                                      sub_frame_t subframeP);
-
-void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
-    int UE_id,
-    uint8_t CC_id,
-    int N_RBG,
-    int min_rb_unit,
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+                                   sub_frame_t subframe);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f.
@@ -484,10 +421,23 @@ boolean_t CCE_allocation_infeasible(int module_idP,
                                     int common_flag,
                                     int subframe,
                                     int aggregation, int rnti);
+/* tries to allocate a CCE. If it succeeds, reserves NFAPI DCI and DLSCH config */
+int CCE_try_allocate_dlsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi);
+
+/* tries to allocate a CCE for UL. If it succeeds, reserves the NFAPI DCI */
+int CCE_try_allocate_ulsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi);
 
 void set_ue_dai(sub_frame_t subframeP,
                 int UE_id,
-                uint8_t CC_id, uint8_t tdd_config, UE_list_t *UE_list);
+                uint8_t CC_id, uint8_t tdd_config, UE_info_t *UE_info);
 
 uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 /** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
@@ -509,14 +459,6 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP, int CC_id,
 */
 module_id_t schedule_next_ulue(module_id_t module_idP, int UE_id,
                                sub_frame_t subframe);
-
-/** \brief Round-robin scheduler for DLSCH traffic.
-@param Mod_id Instance ID for eNB
-@param subframe Subframe number on which to act
-@returns UE index that is to be scheduled if needed/room
-*/
-int schedule_next_dlue(module_id_t module_idP, int CC_id,
-                       sub_frame_t subframe);
 
 /* \brief Allocates a set of PRBS for a particular UE.  This is a simple function for the moment, later it should process frequency-domain CQI information and/or PMI information.  Currently it just returns the first PRBS that are available in the subframe based on the number requested.
 @param UE_id Index of UE on which to act
@@ -599,6 +541,10 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
                  sub_frame_t subframe, uint8_t eNB_index,
                  uint8_t *sync_area, uint8_t *mcch_active);
+
+int ue_query_mch_fembms(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
+		 sub_frame_t subframe, uint8_t eNB_index,
+		 uint8_t * sync_area, uint8_t * mcch_active);
 
 
 /* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
@@ -721,13 +667,14 @@ int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid, uint8_t rach_resource_type);
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
-void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
-void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
+void store_dlsch_buffer(module_id_t Mod_id, int CC_id, frame_t frameP, sub_frame_t subframeP);
 
-void swap_UEs(UE_list_t *listP, int nodeiP, int nodejP, int ul_flag);
-int prev(UE_list_t *listP, int nodeP, int ul_flag);
-void dump_ue_list(UE_list_t *listP, int ul_flag);
-int UE_num_active_CC(UE_list_t *listP, int ue_idP);
+int prev(UE_list_t *listP, int nodeP);
+void add_ue_list(UE_list_t *listP, int UE_id);
+int remove_ue_list(UE_list_t *listP, int UE_id);
+void dump_ue_list(UE_list_t *listP);
+void init_ue_list(UE_list_t *listP);
+int UE_num_active_CC(UE_info_t *listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
@@ -739,20 +686,14 @@ void set_ul_DAI(int module_idP,
                 int frameP,
                 int subframeP);
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int slice_idx, int frameP,
+void ulsch_scheduler_pre_processor(module_id_t module_idP,
+                                   int CC_id,
+                                   frame_t frameP,
                                    sub_frame_t subframeP,
-                                   int sched_frameP,
-                                   unsigned char sched_subframeP,
-                                   uint16_t *first_rb);
-void store_ulsch_buffer(module_id_t module_idP, int frameP,
-                        sub_frame_t subframeP);
-void assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
-                           sub_frame_t subframeP, uint16_t *first_rb);
-void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
-                     UE_TEMPLATE *UE_template);
+                                   frame_t sched_frameP,
+                                   sub_frame_t sched_subframeP);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
-void sort_UEs(module_id_t Mod_idP, int slice_idx, int frameP, sub_frame_t subframeP);
 
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
@@ -913,8 +854,7 @@ void add_common_dci(DCI_PDU *DCI_pdu,
                     uint8_t ra_flag);
 */
 
-uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG,
-                           uint8_t *rballoc);
+uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, const uint8_t *rballoc);
 
 void update_ul_dci(module_id_t module_idP, uint8_t CC_id, rnti_t rnti,
                    uint8_t dai, sub_frame_t subframe);
@@ -973,6 +913,7 @@ int generate_dlsch_header(unsigned char *mac_header,
 @param non_MBSFN_SubframeConfig pointer to FeMBMS Non MBSFN Subframe Config
 @param sib1_mbms_r14_fembms pointer SI Scheduling infomration for SI-MBMS
 @param mbsfn_AreaInfoList_fembms pointer to FeMBMS MBSFN Area Info list from SIB1-MBMS
+@param mbms_AreaConfiguration pointer to eMBMS MBSFN Area Configuration
 */
 
 int rrc_mac_config_req_eNB(module_id_t module_idP,
@@ -1009,7 +950,8 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
                            LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms,
                            struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
                            LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
-                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms,
+			   LTE_MBSFNAreaConfiguration_r9_t * mbms_AreaConfiguration
                           );
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
@@ -1176,14 +1118,13 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
                           frame_t frameP, sub_frame_t subframeP,
                           uint8_t cce_idx);
 
-void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
-                             nfapi_dl_config_request_body_t *dl_req,
+void fill_nfapi_dlsch_config(nfapi_dl_config_request_pdu_t *dl_config_pdu,
                              uint16_t length, int16_t pdu_index,
                              uint16_t rnti,
                              uint8_t resource_allocation_type,
                              uint8_t
                              virtual_resource_block_assignment_flag,
-                             uint16_t resource_block_coding,
+                             uint32_t resource_block_coding,
                              uint8_t modulation,
                              uint8_t redundancy_version,
                              uint8_t transport_blocks,
@@ -1277,11 +1218,6 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
                                  uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
 #endif
 
-/* Slice related functions */
-uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
-int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
-int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
-
 /* DRX Configuration */
 /* Configure local DRX timers and thresholds in UE context, following the drx_configuration input */
 void eNB_Config_Local_DRX(instance_t Mod_id, rrc_mac_drx_config_req_t *rrc_mac_drx_config_req);                        
@@ -1294,3 +1230,4 @@ uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 /* MAC ITTI messaging related functions */
 /* Main loop of MAC itti message handling */
 void *mac_enb_task(void *arg);
+

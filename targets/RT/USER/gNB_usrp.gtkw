@@ -1,21 +1,25 @@
 [*]
 [*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
-[*] Tue Dec 17 15:31:51 2019
+[*] Wed Mar  4 14:05:43 2020
 [*]
-[dumpfile] "/tmp/gNB.vcd"
-[dumpfile_mtime] "Tue Dec 17 15:25:49 2019"
-[dumpfile_size] 6343431
+[dumpfile] "/tmp/gNB_trx_thread.vcd"
+[dumpfile_mtime] "Wed Mar  4 14:05:10 2020"
+[dumpfile_size] 10750468
 [savefile] "/home/wangts/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 1517712000
-[size] 1920 1018
-[pos] -9 -33
-*-19.276148 1518358451 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 31148700000
+[size] 1916 1002
+[pos] -1 -25
+*-23.852516 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
-[sst_vpaned_height] 267
+[sst_vpaned_height] 262
 @28
 functions.trx_read
+functions.trx_write_thread
+@25
+variables.trx_write_flags[63:0]
+@28
 functions.trx_write
 @420
 variables.frame_number_TX0_UE[63:0]
@@ -28,43 +32,50 @@ variables.frame_number_RX1_UE[63:0]
 variables.trx_ts_ue[63:0]
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
-variables.frame_number_RX0_RU[63:0]
-variables.tti_number_RX0_RU[63:0]
-variables.frame_number_TX0_RU[63:0]
-variables.tti_number_TX0_RU[63:0]
-@28
-functions.mac_schedule_dlsch
-functions.macxface_eNB_dlsch_ulsch_scheduler
-@24
-variables.frame_number_RX0_gNB[63:0]
-variables.slot_number_RX0_gNB[63:0]
-variables.frame_number_TX0_gNB[63:0]
-variables.slot_number_TX0_gNB[63:0]
-@28
-functions.gNB_thread_rxtx0
-@24
-variables.frame_number_RX1_gNB[63:0]
-variables.slot_number_RX1_gNB[63:0]
-variables.frame_number_TX1_gNB[63:0]
-variables.slot_number_TX1_gNB[63:0]
-@28
-functions.gNB_thread_rxtx1
-functions.phy_enb_pdcch_tx
-functions.phy_eNB_dlsch_encoding
-functions.phy_eNB_dlsch_encoding_w
-functions.generate_dlsch
+@22
+variables.frame_number_RX0_UE[63:0]
 @420
 variables.frame_number_RX0_UE[63:0]
+@24
+variables.frame_number_RX0_RU[63:0]
+variables.tti_number_RX0_RU[63:0]
+variables.frame_number_RX0_gNB[63:0]
+variables.slot_number_RX0_gNB[63:0]
+variables.slot_number_RX1_gNB[63:0]
+variables.frame_number_RX1_gNB[63:0]
 @28
 functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx1
+functions.phy_procedures_gNB_uespec_rx
+functions.nr_rx_pusch
+functions.nr_ulsch_procedures_rx
+functions.gNB_ulsch_decoding
+@24
+variables.frame_number_TX0_RU[63:0]
+variables.frame_number_TX0_gNB[63:0]
+variables.frame_number_TX1_gNB[63:0]
+variables.tti_number_TX0_RU[63:0]
+variables.slot_number_TX0_gNB[63:0]
+variables.slot_number_TX1_gNB[63:0]
+@29
+functions.mac_schedule_dlsch
+@28
+functions.macxface_gNB_dlsch_ulsch_scheduler
+functions.gNB_thread_rxtx0
+functions.gNB_thread_rxtx1
+functions.generate_dlsch
+functions.phy_procedures_gNB_common_tx
+functions.phy_procedures_gNB_tx
+functions.gNB_pdcch_tx
+functions.gNB_dlsch_encoding
+functions.gNB_pdsch_codeword_scrambling
+functions.gNB_pdsch_modulation
 functions.phy_procedures_ru_feptx_ofdm0
 functions.phy_procedures_ru_feptx_ofdm1
 functions.phy_procedures_ru_feptx_ofdm2
 functions.phy_procedures_ru_feptx_prec0
 functions.phy_procedures_ru_feptx_prec1
 functions.phy_procedures_ru_feptx_prec2
-@22
 variables.ru_tx_ofdm_mask[63:0]
 [pattern_trace] 1
 [pattern_trace] 0

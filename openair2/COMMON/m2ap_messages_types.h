@@ -480,7 +480,7 @@ typedef struct m2ap_mbms_scheduling_information_s {
 		uint8_t common_sf_allocation_period;
 		uint8_t mbms_area_id;
 		struct{
-			uint8_t allocated_sf_end;
+			uint16_t allocated_sf_end;
                         uint8_t data_mcs;
                         uint8_t mch_scheduling_period;
 			struct{
@@ -532,6 +532,15 @@ typedef struct m2ap_mce_sctp_req_s {
   	/* eNB port for M2C*/
   	uint32_t mce_port_for_M2C;
 }m2ap_mce_sctp_req_t;
+
+typedef struct m2ap_enb_sctp_req_s {
+  	/* The local MCE IP address to bind */
+	net_ip_address_t enb_m2_ip_address;
+
+  	/* eNB port for M2C*/
+  	uint32_t enb_port_for_M2C;
+}m2ap_enb_sctp_req_t;
+
 
 typedef struct m2ap_mbms_scheduling_information_resp_s {
 } m2ap_mbms_scheduling_information_resp_t;

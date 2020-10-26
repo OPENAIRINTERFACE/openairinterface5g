@@ -49,8 +49,6 @@
 #include "PHY/phy_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "LAYER2/MAC/mac_vars.h"
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
@@ -71,24 +69,20 @@ unsigned short config_frames[4] = {2,9,11,13};
   #include "UTIL/OTG/otg_vars.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "PHY/INIT/phy_init.h"
 
 #include "system.h"
 #include <openair2/GNB_APP/gnb_app.h>
-
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
 #include "stats.h"
 #include "nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 #include "NB_IoT_interface.h"
-
-short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,16384,16384,-16384,-16384,16384,16384,16384,-16384,-16384,16384,-16384,-16384,7327,7327,7327,21981,21981,7327,21981,21981,7327,-7327,7327,-21981,21981,-7327,21981,-21981,-7327,7327,-7327,21981,-21981,7327,-21981,21981,-7327,-7327,-7327,-21981,-21981,-7327,-21981,-21981,10726,10726,10726,3576,3576,10726,3576,3576,10726,17876,10726,25027,3576,17876,3576,25027,17876,10726,17876,3576,25027,10726,25027,3576,17876,17876,17876,25027,25027,17876,25027,25027,10726,-10726,10726,-3576,3576,-10726,3576,-3576,10726,-17876,10726,-25027,3576,-17876,3576,-25027,17876,-10726,17876,-3576,25027,-10726,25027,-3576,17876,-17876,17876,-25027,25027,-17876,25027,-25027,-10726,10726,-10726,3576,-3576,10726,-3576,3576,-10726,17876,-10726,25027,-3576,17876,-3576,25027,-17876,10726,-17876,3576,-25027,10726,-25027,3576,-17876,17876,-17876,25027,-25027,17876,-25027,25027,-10726,-10726,-10726,-3576,-3576,-10726,-3576,-3576,-10726,-17876,-10726,-25027,-3576,-17876,-3576,-25027,-17876,-10726,-17876,-3576,-25027,-10726,-25027,-3576,-17876,-17876,-17876,-25027,-25027,-17876,-25027,-25027,8886,8886,8886,12439,12439,8886,12439,12439,8886,5332,8886,1778,12439,5332,12439,1778,5332,8886,5332,12439,1778,8886,1778,12439,5332,5332,5332,1778,1778,5332,1778,1778,8886,19547,8886,15993,12439,19547,12439,15993,8886,23101,8886,26655,12439,23101,12439,26655,5332,19547,5332,15993,1778,19547,1778,15993,5332,23101,5332,26655,1778,23101,1778,26655,19547,8886,19547,12439,15993,8886,15993,12439,19547,5332,19547,1778,15993,5332,15993,1778,23101,8886,23101,12439,26655,8886,26655,12439,23101,5332,23101,1778,26655,5332,26655,1778,19547,19547,19547,15993,15993,19547,15993,15993,19547,23101,19547,26655,15993,23101,15993,26655,23101,19547,23101,15993,26655,19547,26655,15993,23101,23101,23101,26655,26655,23101,26655,26655,8886,-8886,8886,-12439,12439,-8886,12439,-12439,8886,-5332,8886,-1778,12439,-5332,12439,-1778,5332,-8886,5332,-12439,1778,-8886,1778,-12439,5332,-5332,5332,-1778,1778,-5332,1778,-1778,8886,-19547,8886,-15993,12439,-19547,12439,-15993,8886,-23101,8886,-26655,12439,-23101,12439,-26655,5332,-19547,5332,-15993,1778,-19547,1778,-15993,5332,-23101,5332,-26655,1778,-23101,1778,-26655,19547,-8886,19547,-12439,15993,-8886,15993,-12439,19547,-5332,19547,-1778,15993,-5332,15993,-1778,23101,-8886,23101,-12439,26655,-8886,26655,-12439,23101,-5332,23101,-1778,26655,-5332,26655,-1778,19547,-19547,19547,-15993,15993,-19547,15993,-15993,19547,-23101,19547,-26655,15993,-23101,15993,-26655,23101,-19547,23101,-15993,26655,-19547,26655,-15993,23101,-23101,23101,-26655,26655,-23101,26655,-26655,-8886,8886,-8886,12439,-12439,8886,-12439,12439,-8886,5332,-8886,1778,-12439,5332,-12439,1778,-5332,8886,-5332,12439,-1778,8886,-1778,12439,-5332,5332,-5332,1778,-1778,5332,-1778,1778,-8886,19547,-8886,15993,-12439,19547,-12439,15993,-8886,23101,-8886,26655,-12439,23101,-12439,26655,-5332,19547,-5332,15993,-1778,19547,-1778,15993,-5332,23101,-5332,26655,-1778,23101,-1778,26655,-19547,8886,-19547,12439,-15993,8886,-15993,12439,-19547,5332,-19547,1778,-15993,5332,-15993,1778,-23101,8886,-23101,12439,-26655,8886,-26655,12439,-23101,5332,-23101,1778,-26655,5332,-26655,1778,-19547,19547,-19547,15993,-15993,19547,-15993,15993,-19547,23101,-19547,26655,-15993,23101,-15993,26655,-23101,19547,-23101,15993,-26655,19547,-26655,15993,-23101,23101,-23101,26655,-26655,23101,-26655,26655,-8886,-8886,-8886,-12439,-12439,-8886,-12439,-12439,-8886,-5332,-8886,-1778,-12439,-5332,-12439,-1778,-5332,-8886,-5332,-12439,-1778,-8886,-1778,-12439,-5332,-5332,-5332,-1778,-1778,-5332,-1778,-1778,-8886,-19547,-8886,-15993,-12439,-19547,-12439,-15993,-8886,-23101,-8886,-26655,-12439,-23101,-12439,-26655,-5332,-19547,-5332,-15993,-1778,-19547,-1778,-15993,-5332,-23101,-5332,-26655,-1778,-23101,-1778,-26655,-19547,-8886,-19547,-12439,-15993,-8886,-15993,-12439,-19547,-5332,-19547,-1778,-15993,-5332,-15993,-1778,-23101,-8886,-23101,-12439,-26655,-8886,-26655,-12439,-23101,-5332,-23101,-1778,-26655,-5332,-26655,-1778,-19547,-19547,-19547,-15993,-15993,-19547,-15993,-15993,-19547,-23101,-19547,-26655,-15993,-23101,-15993,-26655,-23101,-19547,-23101,-15993,-26655,-19547,-26655,-15993,-23101,-23101,-23101,-26655,-26655,-23101,-26655,-26655};
-
+#include "x2ap_eNB.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -101,9 +95,7 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
-#if defined(ENABLE_ITTI)
-  volatile int             start_gNB = 0;
-#endif
+volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
 
 static int wait_for_sync = 0;
@@ -111,17 +103,15 @@ static int wait_for_sync = 0;
 unsigned int mmapped_dma=0;
 int single_thread_flag=1;
 
-static int8_t threequarter_fs=0;
+int8_t threequarter_fs=0;
 
-uint32_t downlink_frequency[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-#if defined(ENABLE_ITTI)
-  static char                    *itti_dump_file = NULL;
-#endif
+static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -163,7 +153,6 @@ char channels[128] = "0";
 
 int rx_input_level_dBm;
 
-uint32_t do_forms=0;
 int otg_enabled;
 
 //int number_of_cards = 1;
@@ -176,15 +165,21 @@ uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
+int split73=0;
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 extern void init_eNB_afterRU(void);
+extern void *udp_eNB_task(void *args_p);
 
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 
 static char *parallel_config = NULL;
@@ -206,7 +201,7 @@ char uecap_xer_in=0;
 uint8_t abstraction_flag=0;
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -302,7 +297,7 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-#if defined(ENABLE_ITTI)
+
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -375,7 +370,6 @@ void *l2l1_task(void *arg) {
   */
   return NULL;
 }
-#endif
 
 int create_gNB_tasks(uint32_t gnb_nb) {
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
@@ -388,41 +382,57 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
   if (gnb_nb > 0) {
     /* Last task to create, others task must be ready before its start */
-    if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
+    /*if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");
       return -1;
+    }*/
+    if(itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0){
+    	LOG_E(SCTP, "Create task for SCTP failed\n");
+    	return -1;
+    }
+    if (is_x2ap_enabled()) {
+    	if(itti_create_task(TASK_X2AP, x2ap_task, NULL) < 0){
+    		LOG_E(X2AP, "Create task for X2AP failed\n");
+    	}
+    }
+    else {
+    	LOG_I(X2AP, "X2AP is disabled.\n");
     }
   }
 
-  /*
-    if (EPC_MODE_ENABLED) {
-        if (gnb_nb > 0) {
-          if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-            LOG_E(SCTP, "Create task for SCTP failed\n");
-            return -1;
-          }
+  if (EPC_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+    if (gnb_nb > 0) {
+      /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+        LOG_E(SCTP, "Create task for SCTP failed\n");
+        return -1;
+      }
 
-          if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
-            LOG_E(S1AP, "Create task for S1AP failed\n");
-            return -1;
-          }
-          if(!emulate_rf){
-            if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-              LOG_E(UDP_, "Create task for UDP failed\n");
-              return -1;
-            }
-          }
+      if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
+        LOG_E(S1AP, "Create task for S1AP failed\n");
+        return -1;
+      }*/
 
-          if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
-            LOG_E(GTPU, "Create task for GTPV1U failed\n");
-            return -1;
-          }
+
+      if(!emulate_rf){
+        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
+          LOG_E(UDP_, "Create task for UDP failed\n");
+          return -1;
         }
+      }
 
+      if (itti_create_task (TASK_GTPV1_U, &gtpv1u_gNB_task, NULL) < 0) {
+        LOG_E(GTPU, "Create task for GTPV1U failed\n");
+        return -1;
+      }
     }
-  */
+  }
+
 
   if (gnb_nb > 0) {
+    if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
+		  LOG_E(GNB_APP, "Create task for gNB APP failed\n");
+		  return -1;
+	}
     LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
 
     if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
@@ -440,7 +450,11 @@ static void get_options(void) {
 
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
 
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+  get_common_options(SOFTMODEM_GNB_BIT );
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
+
 
 
 
@@ -460,18 +474,18 @@ static void get_options(void) {
 }
 
 
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
-		                     NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
+void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
+		             NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
 {
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS *) malloc(sizeof(NR_DL_FRAME_PARMS));
-    config[CC_id] = (nfapi_nr_config_request_t *) malloc(sizeof(nfapi_nr_config_request_t));
-    config[CC_id]->subframe_config.numerology_index_mu.value =1;
-    config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
-    config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-    config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
-    config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
-    config[CC_id]->sch_config.physical_cell_id.value = 0;
+    config[CC_id] = (nfapi_nr_config_request_scf_t *) malloc(sizeof(nfapi_nr_config_request_scf_t));
+    config[CC_id]->ssb_config.scs_common.value = 1;
+    config[CC_id]->cell_config.frame_duplex_type.value = 1; //FDD
+    //config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+    config[CC_id]->carrier_config.dl_grid_size[1].value = 106;
+    config[CC_id]->carrier_config.ul_grid_size[1].value = 106;
+    config[CC_id]->cell_config.phy_cell_id.value = 0;
     ///dl frequency to be filled in
     /*  //Set some default values that may be overwritten while reading options
         frame_parms[CC_id]->frame_type          = FDD;
@@ -483,7 +497,7 @@ void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
         frame_parms[CC_id]->Ncp_UL              = NORMAL;
         frame_parms[CC_id]->Nid_cell            = 0;
         frame_parms[CC_id]->num_MBSFN_config    = 0;
-        frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
+        frame_parms[CC_id]->nb_antenna_ports_gNB  = 1;
         frame_parms[CC_id]->nb_antennas_tx      = 1;
         frame_parms[CC_id]->nb_antennas_rx      = 1;
 
@@ -560,8 +574,8 @@ void init_openair0(void) {
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-     RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value,
-     RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
+     RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value,
+     RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
     openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_carrier_bandwidth.value;
@@ -569,8 +583,8 @@ void init_openair0(void) {
     openair0_cfg[card].clock_source = clock_source;
 
 
-    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
-    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
 
     for (i=0; i<4; i++) {
 
@@ -586,7 +600,7 @@ void init_openair0(void) {
 
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = RC.gNB[0][0]->rx_total_gain_dB;
+      openair0_cfg[card].rx_gain[i] = RC.gNB[0]->rx_total_gain_dB;
 
 
       openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
@@ -615,7 +629,7 @@ void wait_RUs(void) {
 }
 
 void wait_gNBs(void) {
-  int i,j;
+  int i;
   int waiting=1;
 
   while (waiting==1) {
@@ -624,13 +638,10 @@ void wait_gNBs(void) {
     waiting=0;
 
     for (i=0; i<RC.nb_nr_L1_inst; i++) {
-      printf("RC.nb_nr_L1_CC[%d]:%d\n", i, RC.nb_nr_L1_CC[i]);
 
-      for (j=0; j<RC.nb_nr_L1_CC[i]; j++) {
-        if (RC.gNB[i][j]->configured==0) {
-          waiting=1;
-          break;
-        }
+      if (RC.gNB[i]->configured==0) {
+	waiting=1;
+	break;
       }
     }
   }
@@ -638,7 +649,6 @@ void wait_gNBs(void) {
   printf("gNB L1 are configured\n");
 }
 
-#if defined(ENABLE_ITTI)
 /*
  * helper function to terminate a certain ITTI task
  */
@@ -690,10 +700,9 @@ int stop_L1L2(module_id_t gnb_id) {
   kill_NR_RU_proc(gnb_id);
   oai_exit = 0;
 
-  for (int cc_id = 0; cc_id < RC.nb_nr_CC[gnb_id]; cc_id++) {
-    //free_transport(RC.gNB[gnb_id][cc_id]);
-    phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
-  }
+    //free_transport(RC.gNB[gnb_id]);
+  phy_free_nr_gNB(RC.gNB[gnb_id]);
+
 
   nr_phy_free_RU(RC.ru[gnb_id]);
   free_lte_top();
@@ -705,29 +714,20 @@ int stop_L1L2(module_id_t gnb_id) {
  */
 int restart_L1L2(module_id_t gnb_id) {
   RU_t *ru = RC.ru[gnb_id];
-  int cc_id;
   MessageDef *msg_p = NULL;
   LOG_W(GNB_APP, "restarting nr-softmodem\n");
   /* block threads */
   sync_var = -1;
 
-  for (cc_id = 0; cc_id < RC.nb_nr_L1_CC[gnb_id]; cc_id++) {
-    RC.gNB[gnb_id][cc_id]->configured = 0;
-  }
+  RC.gNB[gnb_id]->configured = 0;
+  
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this gNB */
-  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
   LOG_I(GNB_APP, "attempting to create ITTI tasks\n");
-
-  if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
-    LOG_E(RRC, "Create task for RRC eNB failed\n");
-    return -1;
-  } else {
-    LOG_I(RRC, "Re-created task for RRC gNB successfully\n");
-  }
+  // No more rrc thread, as many race conditions are hidden behind
+  rrc_enb_init();
+  itti_mark_task_ready(TASK_RRC_ENB);
 
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
     LOG_E(PDCP, "Create task for L2L1 failed\n");
@@ -756,7 +756,6 @@ int restart_L1L2(module_id_t gnb_id) {
   pthread_mutex_unlock(&sync_mutex);
   return 0;
 }
-#endif
 
 static  void wait_nfapi_init(char *thread_name) {
   printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
@@ -771,31 +770,32 @@ static  void wait_nfapi_init(char *thread_name) {
 
 void init_pdcp(void) {
   //if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
-    pdcp_layer_init();
-    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+  pdcp_layer_init();
+  uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                           (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
 
-    if (IS_SOFTMODEM_NOS1){
-    	printf("IS_SOFTMODEM_NOS1 option enabled \n");
-      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
-    }
+  if (IS_SOFTMODEM_NOS1) {
+    printf("IS_SOFTMODEM_NOS1 option enabled \n");
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+  }
 
-    pdcp_module_init(pdcp_initmask);
+  pdcp_module_init(pdcp_initmask);
 
-    /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
-    } else {*/
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-    //}
+  /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
+    pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+  } else {*/
+  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  //}
   /*} else {
     pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
   }*/
 }
 
+
 int main( int argc, char **argv )
 {
-  int i, ru_id, CC_id = 0;
+  int ru_id, CC_id = 0;
   start_background_system();
 
   ///static configuration for NR at the moment
@@ -814,7 +814,6 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
-  get_common_options();
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -822,6 +821,10 @@ int main( int argc, char **argv )
   }
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+
+  if (get_softmodem_params()->do_ra)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
 #if T_TRACER
   T_Config_Init();
@@ -835,16 +838,16 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-#if defined(ENABLE_ITTI)
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-#endif
 
-init_opt();
+
+  init_opt();
 
 
 #ifdef PDCP_USE_NETLINK
+if(!IS_SOFTMODEM_NOS1)
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
@@ -857,9 +860,7 @@ init_opt();
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
-
-#if defined(ENABLE_ITTI)
+    init_pdcp();
 
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
@@ -869,13 +870,14 @@ init_opt();
     RCconfig_L1();
   }
 
-#endif
   /* Start the agent. If it is turned off in the configuration, it won't start */
+  /*
   RCconfig_nr_flexran();
 
   for (i = 0; i < RC.nb_nr_L1_inst; i++) {
     flexran_agent_start(i);
   }
+*/
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
@@ -883,38 +885,8 @@ init_opt();
   mlockall(MCL_CURRENT | MCL_FUTURE);
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-/*#ifdef XFORMS
-  int UE_id;
 
-  if (do_forms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_stats_l2 = create_form_stats_form();
-    fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
-    form_stats = create_form_stats_form();
-    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-
-    for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        form_gnb[CC_id][UE_id] = create_phy_scope_gnb();
-        sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
-        fl_show_form (form_gnb[CC_id][UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-        if (otg_enabled) {
-          fl_set_button(form_gnb[CC_id][UE_id]->button_0,1);
-          fl_set_object_label(form_gnb[CC_id][UE_id]->button_0,"DL Traffic ON");
-        } else {
-          fl_set_button(form_gnb[CC_id][UE_id]->button_0,0);
-          fl_set_object_label(form_gnb[CC_id][UE_id]->button_0,"DL Traffic OFF");
-        }
-      } // CC_id
-    } // UE_id
-
-    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
-    printf("Scope thread created, ret=%d\n",ret);
-  }
-
-#endif*/
-  usleep(10*1000);
+  usleep(1000);
 
   if (nfapi_mode) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
@@ -983,6 +955,15 @@ init_opt();
   printf("RC.nb_RU:%d\n", RC.nb_RU);
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
+  if(IS_SOFTMODEM_DOFORMS) {
+  	
+    scopeParms_t p;
+    p.argc=&argc;
+    p.argv=argv;
+    p.gNB=RC.gNB[0];
+    p.ru=RC.ru[0];
+    load_softscope("nr",&p);
+  }
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
@@ -1004,41 +985,34 @@ init_opt();
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-#if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
-#else
 
-  while (oai_exit==0)
-    sleep(1);
-
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
   // stop threads
-/*#ifdef XFORMS
+  /*#ifdef XFORMS
 
-    printf("waiting for XFORMS thread\n");
+      printf("waiting for XFORMS thread\n");
 
-    if (do_forms==1) {
-      pthread_join(forms_thread,&status);
-      fl_hide_form(form_stats->stats_form);
-      fl_free_form(form_stats->stats_form);
+      if (do_forms==1) {
+        pthread_join(forms_thread,&status);
+        fl_hide_form(form_stats->stats_form);
+        fl_free_form(form_stats->stats_form);
 
-        fl_hide_form(form_stats_l2->stats_form);
-        fl_free_form(form_stats_l2->stats_form);
+          fl_hide_form(form_stats_l2->stats_form);
+          fl_free_form(form_stats_l2->stats_form);
 
-        for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      fl_hide_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
-      fl_free_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
-    }
-        }
-    }
+          for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
+      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        fl_hide_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
+        fl_free_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
+      }
+          }
+      }
 
-#endif*/
+  #endif*/
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);
@@ -1047,10 +1021,8 @@ init_opt();
   /* release memory used by the RU/gNB threads (incomplete), after all
    * threads have been stopped (they partially use the same memory) */
   for (int inst = 0; inst < NB_gNB_INST; inst++) {
-    for (int cc_id = 0; cc_id < RC.nb_nr_CC[inst]; cc_id++) {
-      //free_transport(RC.gNB[inst][cc_id]);
-      phy_free_nr_gNB(RC.gNB[inst][cc_id]);
-    }
+      //free_transport(RC.gNB[inst]);
+      phy_free_nr_gNB(RC.gNB[inst]);
   }
 
   for (int inst = 0; inst < NB_RU; inst++) {

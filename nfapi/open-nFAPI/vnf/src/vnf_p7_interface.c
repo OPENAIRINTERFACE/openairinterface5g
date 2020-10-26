@@ -47,7 +47,7 @@ nfapi_vnf_p7_config_t* nfapi_vnf_p7_config_create()
 	_this->_public.codec_config.deallocate = &free;
 	
 
-	return &(_this->_public);
+	return (nfapi_vnf_p7_config_t*)_this;
 }
 
 void nfapi_vnf_p7_config_destory(nfapi_vnf_p7_config_t* config)
@@ -482,7 +482,7 @@ int nfapi_vnf_p7_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_dl_config_re
 	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &req->header);
 }
 
-int nfapi_vnf_p7_nr_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_nr_dl_config_request_t* req)
+int nfapi_vnf_p7_nr_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_nr_dl_tti_request_t* req)
 {
 	//NFAPI_TRACE(NFAPI_TRACE_INFO, "%s(config:%p req:%p)\n", __FUNCTION__, config, req);
 

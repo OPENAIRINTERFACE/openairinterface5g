@@ -237,7 +237,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
   frame_parms->nb_antennas_tx       = N_tx;
   frame_parms->nb_antennas_rx       = N_rx;
   frame_parms->frame_type           = frame_type;
-  frame_parms->nb_antenna_ports_eNB = 1;
+  frame_parms->nb_antenna_ports_gNB = 1;
   frame_parms->threequarter_fs      = 0;
   frame_parms->numerology_index     = NUMEROLOGY_INDEX_MAX_NR;
   int mu = 1;

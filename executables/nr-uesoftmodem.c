@@ -38,16 +38,14 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 //#include "../../SIMU/USER/init_lte.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 #include "LAYER2/MAC/mac_vars.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
@@ -77,37 +75,12 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
-#include <forms.h>
-
-
 /* Callbacks, globals and object handlers */
 
-extern void reset_stats( FL_OBJECT *, long );
-//extern void initTpool(char *params, tpool_t *pool, bool performanceMeas);
-
-/* Forms and Objects */
-
-typedef struct {
-  FL_FORM    *stats_form;
-  void       *vdata;
-  char       *cdata;
-  long        ldata;
-  FL_OBJECT *stats_text;
-  FL_OBJECT *stats_button;
-} FD_stats_form;
-
-extern FD_stats_form *create_form_stats_form( void );
-
-#include "PHY/TOOLS/nr_phy_scope.h"
 //#include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
-// at eNB 0, an UL scope for every UE
-FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
-//FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-//FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
-char title[255];
-static pthread_t forms_thread; //xforms
-
+#include "PHY/TOOLS/phy_scope_interface.h"
+#include "PHY/TOOLS/nr_phy_scope.h"
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -127,14 +100,14 @@ volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-static clock_source_t    clock_source = unset;
 int                      single_thread_flag=1;
 static double            snr_dB=20;
 
 int                      threequarter_fs=0;
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+//int32_t					 uplink_counter = 0;
 
 
 extern int16_t nr_dlsch_demod_shift;
@@ -177,14 +150,11 @@ char ref[128] = "internal";
 char channels[128] = "0";
 
 
-static char *parallel_config = NULL;
-static char *worker_config = NULL;
-
 int rx_input_level_dBm;
 
 //static int online_log_messages=0;
 
-uint32_t do_forms=0;
+
 int otg_enabled;
 //int number_of_cards = 1;
 
@@ -199,6 +169,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 int transmission_mode=1;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 /* flag set by eNB conf file to specify if the radio head is local or remote (default option is local) */
 //uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
@@ -214,11 +185,13 @@ int emulate_rf = 0;
 
 tpool_t *Tpool;
 #ifdef UE_DLSCH_PARALLELISATION
-tpool_t *Tpool_dl;
+  tpool_t *Tpool_dl;
 #endif
 
 
 char *usrp_args=NULL;
+
+char *rrc_config_path=NULL;
 
 /* forward declarations */
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -273,7 +246,7 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void reset_stats(FL_OBJECT *button, long arg) {
+void reset_stats(long arg) {
   //int i,j,k;
   /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 
@@ -303,37 +276,6 @@ void reset_stats(FL_OBJECT *button, long arg) {
   }*/
 }
 
-static void *scope_thread(void *arg) {
-  sleep(5);
-
-  while (!oai_exit) {
-    phy_scope_nrUE(form_nrue[0],
-                 PHY_vars_UE_g[0][0],
-                 0,0,1);
-    usleep(100*1000);
-  }
-
-  pthread_exit((void *)arg);
-}
-
-
-void init_scope(void) {
-  int fl_argc=1;
-
-  if (do_forms==1) {
-    char *name="5G-UE-scope";
-    fl_initialize (&fl_argc, &name, NULL, 0, 0);
-    int UE_id = 0;
-    form_nrue[UE_id] = create_phy_scope_nrue();
-    sprintf (title, "NR DL SCOPE UE");
-    fl_show_form (form_nrue[UE_id]->phy_scope_nrue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
-  }
-
-}
-
-
-#if defined(ENABLE_ITTI)
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -373,7 +315,7 @@ void *l2l1_task(void *arg) {
 
   return NULL;
 }
-#endif
+
 
 int16_t dlsch_demod_shift;
 
@@ -382,8 +324,8 @@ static void get_options(void) {
   int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
-
   //uint32_t noS1;
+  //uint32_t nokrnmod;
   //uint32_t nokrnmod;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
@@ -473,7 +415,7 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     /* Set some default values that may be overwritten while reading options */
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS *) calloc(sizeof(NR_DL_FRAME_PARMS),1);
-    frame_parms[CC_id]->eutra_band          = 78;
+    frame_parms[CC_id]->nr_band          = 78;
     frame_parms[CC_id]->frame_type          = FDD;
     frame_parms[CC_id]->tdd_config          = 3;
     //frame_parms[CC_id]->tdd_config_S        = 0;
@@ -483,7 +425,7 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     //frame_parms[CC_id]->Ncp_UL              = NORMAL;
     frame_parms[CC_id]->Nid_cell            = 0;
     //frame_parms[CC_id]->num_MBSFN_config    = 0;
-    frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
+    frame_parms[CC_id]->nb_antenna_ports_gNB  = 1;
     frame_parms[CC_id]->nb_antennas_tx      = 1;
     frame_parms[CC_id]->nb_antennas_rx      = 1;
     //frame_parms[CC_id]->nushift             = 0;
@@ -501,8 +443,25 @@ void init_openair0(void) {
   for (card=0; card<MAX_CARDS; card++) {
     openair0_cfg[card].configFilename = NULL;
     openair0_cfg[card].threequarter_fs = frame_parms[0]->threequarter_fs;
+    numerology = frame_parms[0]->numerology_index;
 
-    if(frame_parms[0]->N_RB_DL == 217) {
+    if(frame_parms[0]->N_RB_DL == 66) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=122.88e6;
+          openair0_cfg[card].samples_per_frame = 1228800;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
+    }else if(frame_parms[0]->N_RB_DL == 32) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=61.44e6;
+          openair0_cfg[card].samples_per_frame = 614400;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
+    }else if(frame_parms[0]->N_RB_DL == 217) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=92.16e6;
@@ -511,12 +470,12 @@ void init_openair0(void) {
         else {
           openair0_cfg[card].sample_rate=122.88e6;
           openair0_cfg[card].samples_per_frame = 1228800;
-        } 
+        }
       } else {
         LOG_E(PHY,"Unsupported numerology!\n");
         exit(-1);
       }
-     }else if(frame_parms[0]->N_RB_DL == 273) {
+    } else if(frame_parms[0]->N_RB_DL == 273) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
           AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
@@ -524,12 +483,12 @@ void init_openair0(void) {
         else {
           openair0_cfg[card].sample_rate=122.88e6;
           openair0_cfg[card].samples_per_frame = 1228800;
-        } 
+        }
       } else {
         LOG_E(PHY,"Unsupported numerology!\n");
         exit(-1);
       }
-     }else if(frame_parms[0]->N_RB_DL == 106) {
+    } else if(frame_parms[0]->N_RB_DL == 106) {
       if (numerology==0) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=23.04e6;
@@ -538,15 +497,15 @@ void init_openair0(void) {
           openair0_cfg[card].sample_rate=30.72e6;
           openair0_cfg[card].samples_per_frame = 307200;
         }
-     } else if (numerology==1) {
+      } else if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
-	  openair0_cfg[card].sample_rate=46.08e6;
-	  openair0_cfg[card].samples_per_frame = 460800;
+          openair0_cfg[card].sample_rate=46.08e6;
+          openair0_cfg[card].samples_per_frame = 460800;
 	}
 	else {
-	  openair0_cfg[card].sample_rate=61.44e6;
-	  openair0_cfg[card].samples_per_frame = 614400;
-	}
+          openair0_cfg[card].sample_rate=61.44e6;
+          openair0_cfg[card].samples_per_frame = 614400;
+        }
       } else if (numerology==2) {
         openair0_cfg[card].sample_rate=122.88e6;
         openair0_cfg[card].samples_per_frame = 1228800;
@@ -579,18 +538,19 @@ void init_openair0(void) {
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
     openair0_cfg[card].Mod_id = 0;
     openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
-    openair0_cfg[card].clock_source = clock_source;
+    openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
+    openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
     openair0_cfg[card].tx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx);
     openair0_cfg[card].rx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
 
     for (i=0; i<4; i++) {
       if (i<openair0_cfg[card].tx_num_channels)
-        openair0_cfg[card].tx_freq[i] = downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+        openair0_cfg[card].tx_freq[i] = frame_parms[0]->ul_CarrierFreq;
       else
         openair0_cfg[card].tx_freq[i]=0.0;
 
       if (i<openair0_cfg[card].rx_num_channels)
-        openair0_cfg[card].rx_freq[i] = downlink_frequency[0][i];
+        openair0_cfg[card].rx_freq[i] = frame_parms[0]->dl_CarrierFreq;
       else
         openair0_cfg[card].rx_freq[i]=0.0;
 
@@ -621,14 +581,19 @@ void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
 
   /*if (rlc_module_init() != 0) {
-	  LOG_I(RLC, "Problem at RLC initiation \n");
+    LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
-  nr_ip_over_LTE_DRB_preconfiguration();*/
+  nr_DRB_preconfiguration();*/
   pdcp_module_init(pdcp_initmask);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   LOG_I(PDCP, "Before getting out from init_pdcp() \n");
+}
+
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_msg(void *notUsed) {
+  return NULL;
 }
 
 
@@ -650,7 +615,7 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
   get_options (); //Command-line options, enb_properties
-  get_common_options();
+  get_common_options(SOFTMODEM_5GUE_BIT );
 #if T_TRACER
   T_Config_Init();
 #endif
@@ -658,25 +623,32 @@ int main( int argc, char **argv ) {
   set_taus_seed (0);
   tpool_t pool;
   Tpool = &pool;
-  char params[]="-1,-1"; 
+  char params[]="-1,-1";
   initTpool(params, Tpool, false);
 #ifdef UE_DLSCH_PARALLELISATION
   tpool_t pool_dl;
   Tpool_dl = &pool_dl;
-  char params_dl[]="-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1"; 
+  char params_dl[]="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1";
   initTpool(params_dl, Tpool_dl, false);
 #endif
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   init_opt() ;
-  if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
+  load_nrLDPClib();
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
 
+  #ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+
+  init_NR_UE(1,rrc_config_path);
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
 /*
 #ifdef PDCP_USE_NETLINK
   netlink_init();
@@ -685,38 +657,46 @@ int main( int argc, char **argv ) {
 #endif
 #endif
 */
-  #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
-#endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
-  // init the parameters
-  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
-    frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
-    frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
-    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
-    LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
-    get_band(downlink_frequency[CC_id][0], &frame_parms[CC_id]->eutra_band,   &uplink_frequency_offset[CC_id][0], &frame_parms[CC_id]->frame_type);
-  }
 
   NB_UE_INST=1;
   NB_INST=1;
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
 
+  if (get_softmodem_params()->do_ra)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    printf("frame_parms %hu\n",frame_parms[CC_id]->ofdm_symbol_size);
-    nr_init_frame_parms_ue(frame_parms[CC_id],numerology,NORMAL,frame_parms[CC_id]->N_RB_DL,(frame_parms[CC_id]->N_RB_DL-20)>>1,0);
-    PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
+    printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
+    frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
+    frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
+    frame_parms[CC_id]->nb_antenna_ports_gNB = 1; //initial value overwritten by initial sync later
+    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
+    LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
+
+    PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+    memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+      mac->if_module->phy_config_request(&mac->phy_config);
 
-    if (get_softmodem_params()->phy_test==1)
-      UE[CC_id]->mac_enabled = 0;
-    else
-      UE[CC_id]->mac_enabled = 1;
+    fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+    nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
 
+    // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0) {
+      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    }
+   
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
+    init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
+
+    UE[CC_id]->mac_enabled = 1;
+    UE[CC_id]->if_inst = nr_ue_if_module_init(0);
     UE[CC_id]->UE_scan = UE_scan;
     UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
     UE[CC_id]->UE_fo_compensation = UE_fo_compensation;
@@ -724,25 +704,52 @@ int main( int argc, char **argv ) {
     UE[CC_id]->no_timing_correction = UE_no_timing_correction;
     printf("UE[%d]->mode = %d\n",CC_id,mode);
 
-    for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
-      if (UE[CC_id]->mac_enabled == 1)
-        UE[CC_id]->pdcch_vars[i][0]->crnti = 0x1234;
-      else
-        UE[CC_id]->pdcch_vars[i][0]->crnti = 0x1235;
-    }
-
     UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
     UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
-    if (frame_parms[CC_id]->frame_type==FDD) {
+    if (UE[CC_id]->frame_parms.frame_type == FDD) {
       UE[CC_id]->N_TA_offset = 0;
     } else {
-      if (frame_parms[CC_id]->N_RB_DL == 100)
-        UE[CC_id]->N_TA_offset = 624;
-      else if (frame_parms[CC_id]->N_RB_DL == 50)
-        UE[CC_id]->N_TA_offset = 624/2;
-      else if (frame_parms[CC_id]->N_RB_DL == 25)
-        UE[CC_id]->N_TA_offset = 624/4;
+      int N_RB = UE[CC_id]->frame_parms.N_RB_DL;
+      int N_TA_offset = UE[CC_id]->frame_parms.ul_CarrierFreq < 6e9 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
+      double factor=1;
+      switch (UE[CC_id]->frame_parms.numerology_index) {
+        case 0: //15 kHz scs
+          AssertFatal(N_TA_offset == 400, "scs_common 15kHz only for FR1\n");
+          if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
+          else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
+          else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
+          else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
+          else AssertFatal(1==0,"Too many PRBS for mu=0\n");
+          break;
+        case 1: //30 kHz sc
+          AssertFatal(N_TA_offset == 400, "scs_common 30kHz only for FR1\n");
+          if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
+          else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
+          break;
+        case 2: //60 kHz scs
+          AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+          break;
+        case 3: //120 kHz scs
+          AssertFatal(N_TA_offset == 431, "scs_common 120kHz only for FR2\n");
+          break;
+        case 4: //240 kHz scs
+          AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+          if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
+          else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
+          else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
+          break;
+
+        if (N_RB == 100)
+          UE[CC_id]->N_TA_offset = 624;
+        else if (N_RB == 50)
+          UE[CC_id]->N_TA_offset = 624/2;
+        else if (N_RB == 25)
+          UE[CC_id]->N_TA_offset = 624/4;
+      }
+      if (UE[CC_id]->frame_parms.threequarter_fs == 1) factor = factor*.75;
+      UE[CC_id]->N_TA_offset = (int)(N_TA_offset * factor);
+      LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
     }
   }
 
@@ -753,23 +760,23 @@ int main( int argc, char **argv ) {
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
-  init_scope();
+ 
+  if(IS_SOFTMODEM_DOFORMS) { 
+    load_softscope("nr",PHY_vars_UE_g[0][0]);
+  }     
   number_of_cards = 1;
 
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-#if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
-    PHY_vars_UE_g[0][CC_id]->hw_timing_advance = timing_advance;
     PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
-#else
-    PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
-#endif
   }
 
+  init_NR_UE_threads(1);
+  printf("UE threads created by %ld\n", gettid());
+  
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_NR_UE(1);
 
   while(true)
     sleep(3600);

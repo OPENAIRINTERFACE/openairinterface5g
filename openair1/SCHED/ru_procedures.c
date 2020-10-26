@@ -41,6 +41,17 @@
  * \warning
  */
 
+/*! \function feptx0
+ * \brief Implementation of ofdm encoding for FeMBMS profile in one eNB
+ * \author J. Morgade
+ * \date 2020
+ * \version 0.1
+ * \email: javier.morgade@ieee.org
+ * \note
+ * \warning
+ */
+
+
 
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
@@ -76,7 +87,7 @@ void feptx0(RU_t *ru,
   int slot_sizeF = (fp->ofdm_symbol_size) * ((fp->Ncp==1) ? 6 : 7);
   int subframe = ru->proc.tti_tx;
 
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(slot&1) , 1 );
 
   slot_offset = slot*(fp->samples_per_tti>>1); //slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
 
@@ -91,7 +102,17 @@ void feptx0(RU_t *ru,
                    fp->nb_prefix_samples,
                    CYCLIC_PREFIX);
     } else {
-      if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
+      if(is_fembms_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
+        if((slot&1)==0){//just use one slot chance
+               PHY_ofdm_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                       (int*)&ru->common.txdata[aa][slot_offset],
+                       fp->ofdm_symbol_size_khz_1dot25,
+                       1,
+                       fp->ofdm_symbol_size_khz_1dot25>>2,
+                       CYCLIC_PREFIX);
+               LOG_D(HW,"Generating PMCH FeMBMS TX subframe %d %d\n",subframe,fp->ofdm_symbol_size_khz_1dot25);
+      	}
+      } else if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
         if ((slot&1) == 0) {//just use one slot chance
           normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
                             (int*)&ru->common.txdata[aa][slot_offset],
@@ -321,7 +342,7 @@ void feptx_ofdm(RU_t *ru,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       } else {
-       if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)/*subframe==1*/){
+       if(is_pmch_subframe(frame,subframe,fp)/*subframe==1*/){
         normal_prefix_mod(&ru->common.txdataF_BF[aa][0],
                           dummy_tx_b,
                           2,
@@ -426,7 +447,7 @@ void feptx_ofdm(RU_t *ru,
 
      stop_meas(&ru->ofdm_mod_stats);
      LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
+	   frame,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
   }
@@ -693,12 +714,6 @@ void ru_fep_full_2thread(RU_t *ru,
                              3/(fp->symbols_per_tti/2),// Ns = slot number
                              fp);
         
-	/*lte_ul_channel_estimation((PHY_VARS_eNB *)NULL,
-                                proc,
-                                ru->idx,
-                                3%(fp->symbols_per_tti/2),
-                                3/(fp->symbols_per_tti/2));
-        */
 	lte_ul_channel_estimation_RRU(fp,
                                   calibration->drs_ch_estimates,
                                   calibration->drs_ch_estimates_time,
@@ -713,7 +728,7 @@ void ru_fep_full_2thread(RU_t *ru,
                                   0,//interpolate,
                                   0 /*eNB->ulsch[ru->idx]->rnti rnti or ru->ulsch[eNB_id]->rnti*/);
 
-	check_sync_pos = lte_est_timing_advance_pusch((PHY_VARS_eNB *)NULL, ru->idx);
+	check_sync_pos = lte_est_timing_advance_pusch(ru->frame_parms, ru->calibration.drs_ch_estimates_time); 
         if (ru->state == RU_CHECK_SYNC) {
           if ((check_sync_pos >= 0 && check_sync_pos<8) || (check_sync_pos < 0 && check_sync_pos>-8)) {
     		  LOG_I(PHY,"~~~~~~~~~~~    check_sync_pos %d, frame %d, cnt %d\n",check_sync_pos,proc->frame_rx,ru->wait_check); 

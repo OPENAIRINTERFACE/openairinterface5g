@@ -90,10 +90,12 @@ typedef enum {
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
 #define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
 #define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
+#define CONFIG_STRING_RU_SDR_TME_SRC              "time_src"
 #define CONFIG_STRING_RU_SF_EXTENSION             "sf_extension"
 #define CONFIG_STRING_RU_END_OF_BURST_DELAY       "end_of_burst_delay"
 #define CONFIG_STRING_RU_OTA_SYNC_ENABLE          "ota_sync_enabled"
 #define CONFIG_STRING_RU_BF_WEIGHTS_LIST          "bf_weights"
+#define CONFIG_STRING_RU_IF_FREQUENCY             "if_freq"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -116,10 +118,12 @@ typedef enum {
 #define RU_NBIOTRRC_LIST_IDX          18
 #define RU_SDR_ADDRS                  19
 #define RU_SDR_CLK_SRC                20
-#define RU_SF_EXTENSION_IDX           21
-#define RU_END_OF_BURST_DELAY_IDX     22
-#define RU_OTA_SYNC_ENABLE_IDX        23
-#define RU_BF_WEIGHTS_LIST_IDX        24
+#define RU_SDR_TME_SRC                21
+#define RU_SF_EXTENSION_IDX           22
+#define RU_END_OF_BURST_DELAY_IDX     23
+#define RU_OTA_SYNC_ENABLE_IDX        24
+#define RU_BF_WEIGHTS_LIST_IDX        25
+#define RU_IF_FREQUENCY               26
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
@@ -147,10 +151,12 @@ typedef enum {
     {CONFIG_STRING_RU_NBIOTRRC_LIST,               NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
     {CONFIG_STRING_RU_SDR_ADDRS,                   NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_SDR_CLK_SRC,                 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_SDR_TME_SRC,                 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_SF_EXTENSION,                NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_END_OF_BURST_DELAY,          NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_OTA_SYNC_ENABLE,             NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_BF_WEIGHTS_LIST,             NULL,       0,       iptr:NULL,       defintarrayval:DEFBFW,   TYPE_INTARRAY,    0}, \
+    {CONFIG_STRING_RU_IF_FREQUENCY,                NULL,       0,       u64ptr:NULL,     defuintval:0,            TYPE_UINT64,      0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -423,6 +429,9 @@ typedef enum {
 //SIB1-MBMS
 #define ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL       "mbms_dedicated_serving_cell"
 
+//NSA NR Cell SSB Absolute Frequency
+#define ENB_CONFIG_STRING_NR_SCG_SSB_FREQ                         "nr_scg_ssb_freq"
+
 
 
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pdsch_maxNumRepetitionCEmodeA_r13"
@@ -571,6 +580,7 @@ typedef struct ccparams_lte_s {
   int32_t           srb1_poll_pdu;
   int32_t           srb1_poll_byte;
   int32_t           srb1_max_retx_threshold;
+  int32_t           nr_scg_ssb_freq;
 } ccparams_lte_t;
 
 #define CCPARAMS_CHECK {                             \
@@ -774,7 +784,8 @@ typedef struct ccparams_lte_s {
   {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
   {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ccparams.ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
   {ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0},  \
-  {ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL,                  NULL,   0,           strptr:&ccparams.mbms_dedicated_serving_cell,  defstrval:"DISABLE",       TYPE_STRING,       0}  \
+  {ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL,                  NULL,   0,           strptr:&ccparams.mbms_dedicated_serving_cell,            defstrval:"DISABLE",       TYPE_STRING,     0},  \
+  {ENB_CONFIG_STRING_NR_SCG_SSB_FREQ,                              NULL,   0,           iptr:&ccparams.nr_scg_ssb_freq,                        defintval:641272,          TYPE_INT,        0}   \
 }
 
 

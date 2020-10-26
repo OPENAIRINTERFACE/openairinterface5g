@@ -1,7 +1,26 @@
 /*
-  Author: Laurent THOMAS, Open Cells
-  copyleft: OpenAirInterface Software Alliance and it's licence
+* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The OpenAirInterface Software Alliance licenses this file to You under
+* the OAI Public License, Version 1.1  (the "License"); you may not use this file
+* except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.openairinterface.org/?page_id=698
+*
+* Author and copyright: Laurent Thomas, open-cells.com
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*-------------------------------------------------------------------------------
+* For more information about the OpenAirInterface (OAI) Software Alliance:
+*      contact@openairinterface.org
 */
+
 
 #define _GNU_SOURCE
 #include <sched.h>
@@ -92,9 +111,10 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   pool->activated=true;
   initNotifiedFIFO(&pool->incomingFifo);
   char *saveptr, * curptr;
+  char *parms_cpy=strdup(params);
   pool->nbThreads=0;
   pool->restrictRNTI=false;
-  curptr=strtok_r(params,",",&saveptr);
+  curptr=strtok_r(parms_cpy,",",&saveptr);
   struct one_thread * ptr;
   while ( curptr!=NULL ) {
     int c=toupper(curptr[0]);
@@ -126,7 +146,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
 
     curptr=strtok_r(NULL,",",&saveptr);
   }
-
+  free(parms_cpy);
   if (pool->activated && pool->nbThreads==0) {
     printf("No servers created in the thread pool, exit\n");
     exit(1);

@@ -34,10 +34,9 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
@@ -46,6 +45,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "common/utils/threadPool/thread-pool.h"
 
 //#define DEBUG_NR_ULSCHSIM
 
@@ -53,6 +53,11 @@ PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 double cpuf;
 uint8_t nfapi_mode = 0;
@@ -63,6 +68,44 @@ PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
+  ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
+  NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
+  NR_gNB_ULSCH_t *ulsch = rdata->ulsch;
+  int r = rdata->segment_r;
+
+  bool decodeSuccess = (rdata->decodeIterations <= rdata->decoderParms.numMaxIter);
+  ulsch_harq->processedSegments++;
+  gNB->nbDecode--;
+
+  if (decodeSuccess) {
+    memcpy(ulsch_harq->b+rdata->offset,
+           ulsch_harq->c[r],
+           rdata->Kr_bytes- - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
+  } else {
+    if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
+      int nb=abortTpool(gNB->threadPool, req->key);
+      nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
+      gNB->nbDecode-=nb;
+      AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
+      ulsch_harq->processedSegments, nb, rdata->nbSegments);
+      ulsch_harq->processedSegments=rdata->nbSegments;
+      return 1;
+    }
+  }
+
+  // if all segments are done 
+  if (rdata->nbSegments == ulsch_harq->processedSegments) {
+    if (decodeSuccess) {
+      return 0;
+    } else {
+      return 1;
+      }
+
+    }
+    ulsch->last_iteration_cnt = rdata->decodeIterations;
+  return 0;
+}
 int main(int argc, char **argv)
 {
   char c;
@@ -88,12 +131,14 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   double sigma;
   unsigned char qbits = 8;
-  int ret;
+  int ret=0;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+
+  double DS_TDL = .03;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -232,9 +277,9 @@ int main(int argc, char **argv)
         break;
 
       case 'R':
-        N_RB_DL = atoi(optarg);
+        N_RB_UL = atoi(optarg);
 #ifdef DEBUG_NR_ULSCHSIM
-        printf("N_RB_DL (-R) = %d\n", N_RB_DL);
+        printf("N_RB_UL (-R) = %d\n", N_RB_UL);
 #endif
         break;
 
@@ -292,7 +337,7 @@ int main(int argc, char **argv)
           //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
           printf("-M Multiple SSB positions in burst\n");
           printf("-N Nid_cell\n");
-          printf("-R N_RB_DL\n");
+          printf("-R N_RB_UL\n");
           printf("-F Input filename (.txt format) for RX conformance testing\n");
           printf("-m\n");
           printf("-l\n");
@@ -314,34 +359,40 @@ int main(int argc, char **argv)
     snr1 = snr0 + 10;
 
   gNB2UE = new_channel_desc_scm(n_tx,
-		                        n_rx,
-								channel_model,
+		                n_rx,
+				channel_model,
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
-                                0,
-								0,
-								0);
+                                DS_TDL,
+                                0,0,0);
 
   if (gNB2UE == NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
-  RC.gNB = (PHY_VARS_gNB ** *) malloc(sizeof(PHY_VARS_gNB **));
-  RC.gNB[0] = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
-  gNB = RC.gNB[0][0];
 
+  RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  gNB = RC.gNB[0];
+  //gNB_config = &gNB->gNB_config;
+
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  char tp_param[] = "n";
+  initTpool(tp_param, gNB->threadPool, true);
+  initNotifiedFIFO(gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
-
   crcTableInit();
 
-  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell, SSB_positions);
+  memcpy(&gNB->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+
+  nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
   phy_init_nr_gNB(gNB, 0, 0);
 
@@ -369,7 +420,6 @@ int main(int argc, char **argv)
   }
 
   unsigned char harq_pid = 0;
-  uint8_t is_crnti = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
   uint8_t nb_re_dmrs = 6;
@@ -383,26 +433,26 @@ int main(int argc, char **argv)
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_processes[harq_pid];
-  nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &harq_process_gNB->ulsch_pdu.ulsch_pdu_rel15;
+  nfapi_nr_pusch_pdu_t *rel15_ul = &harq_process_gNB->ulsch_pdu;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
   mod_order = nr_get_Qm_ul(Imcs, 0);
   code_rate = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
+  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 
   /////////// setting rel15_ul parameters ///////////
-  rel15_ul->number_rbs     = nb_rb;
-  rel15_ul->number_symbols = nb_symb_sch;
-  rel15_ul->Qm             = mod_order;
-  rel15_ul->mcs            = Imcs;
-  rel15_ul->rv             = rvidx;
-  rel15_ul->n_layers       = Nl;
-  rel15_ul->length_dmrs    = length_dmrs;
-  rel15_ul->R              = code_rate;
+  rel15_ul->rb_size             = nb_rb;
+  rel15_ul->nr_of_symbols       = nb_symb_sch;
+  rel15_ul->qam_mod_order       = mod_order;
+  rel15_ul->mcs_index           = Imcs;
+  rel15_ul->pusch_data.rv_index = rvidx;
+  rel15_ul->nrOfLayers          = Nl;
+  rel15_ul->target_code_rate    = code_rate;
+  rel15_ul->pusch_data.tb_size  = TBS/8;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -422,15 +472,6 @@ int main(int argc, char **argv)
   for (i = 0; i < TBS / 8; i++)
     test_input[i] = (unsigned char) rand();
 
-
-  /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
-  ///////////
-  ulsch_ue->nb_re_dmrs = nb_re_dmrs;
-  ulsch_ue->length_dmrs =  length_dmrs;
-  ulsch_ue->rnti = n_rnti;
-  ///////////
-  ////////////////////////////////////////////////////////////////////////////////////////////
-
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
   NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
@@ -440,13 +481,14 @@ int main(int argc, char **argv)
 
   if (harq_process_ul_ue) {
 
-    harq_process_ul_ue->mcs = Imcs;
-    harq_process_ul_ue->Nl = Nl;
-    harq_process_ul_ue->nb_rb = nb_rb;
-    harq_process_ul_ue->number_of_symbols = nb_symb_sch;
+    harq_process_ul_ue->pusch_pdu.rnti = n_rnti;
+    harq_process_ul_ue->pusch_pdu.mcs_index = Imcs;
+    harq_process_ul_ue->pusch_pdu.nrOfLayers = Nl;
+    harq_process_ul_ue->pusch_pdu.rb_size = nb_rb;
+    harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
-    harq_process_ul_ue->rvidx = rvidx;
-    harq_process_ul_ue->TBS = TBS;
+    harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
+    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
     harq_process_ul_ue->a = &test_input[0];
 
   }
@@ -459,9 +501,10 @@ int main(int argc, char **argv)
 
   /////////////////////////ULSCH coding/////////////////////////
   ///////////
+  unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
 
   if (input_fd == NULL) {
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
+    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
   }
   
   printf("\n");
@@ -516,18 +559,31 @@ int main(int argc, char **argv)
         if (channel_output_uncoded[i] != ulsch_ue->harq_processes[harq_pid]->f[i])
           errors_bit_uncoded = errors_bit_uncoded + 1;
       }
-
+/*
       printf("errors bits uncoded %u\n", errors_bit_uncoded);
       printf("\n");
+*/
 #ifdef DEBUG_CODER
       printf("\n");
       exit(-1);
 #endif
 
-      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms,
-                              frame, nb_symb_sch, nb_re_dmrs, subframe, harq_pid, is_crnti);
+     uint32_t G = nr_get_G(rel15_ul->rb_size,
+                           rel15_ul->nr_of_symbols,
+                           nb_re_dmrs,
+                           1, // FIXME only single dmrs is implemented 
+                           rel15_ul->qam_mod_order,
+                           rel15_ul->nrOfLayers);
 
-      if (ret > ulsch_gNB->max_ldpc_iterations)
+      nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
+                              frame, subframe, harq_pid, G);
+      while (gNB->nbDecode > 0) {
+        notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
+        ret = nr_postDecode_sim(gNB, req);
+        delNotifiedFIFO_elt(req);
+      }
+
+      if (ret)
         n_errors++;
 
       //count errors
@@ -541,13 +597,13 @@ int main(int argc, char **argv)
           errors_bit++;
         }
       }
-
+/*
       if (errors_bit > 0) {
         n_false_positive++;
         if (n_trials == 1)
           printf("errors_bit %u (trial %d)\n", errors_bit, trial);
       }
-      printf("\n");
+      printf("\n");*/
     }
     
     printf("*****************************************\n");
@@ -557,13 +613,14 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
 
-    if (errors_bit == 0) {
+    if (n_errors == 0) {
       printf("PUSCH test OK\n");
       printf("\n");
       break;
     }
     printf("\n");
   }
+
 
   if (output_fd)
     fclose(output_fd);

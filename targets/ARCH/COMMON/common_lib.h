@@ -35,21 +35,36 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <openair1/PHY/TOOLS/tools_defs.h>
+#include "record_player.h"
 
-/* name of shared library implementing the radio front end */
+/* default name of shared library implementing the radio front end */
 #define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
+<<<<<<< HEAD
 /* name of shared library implementing a third-party transport */
 #define OAI_THIRDPARTY_TP_LIBNAME        "thirdparty_transpro"
 /* name of shared library implementing the basic/rf simulator */
+=======
+/* name of shared library implementing the rf simulator */
+>>>>>>> origin/develop
 #define OAI_RFSIM_LIBNAME     "rfsimulator"
-/* name of shared library implementing the basic/rf simulator */
+/* name of shared library implementing the basic simulator */
 #define OAI_BASICSIM_LIBNAME  "tcp_bridge_oai"
+/* name of shared library implementing the iq player */
+#define OAI_IQPLAYER_LIBNAME  "oai_iqplayer"
+
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
+<<<<<<< HEAD
 #define RAU_REMOTE_THIRDPARTY_RADIO_HEAD 2
+=======
+
+#define MAX_WRITE_THREAD_PACKAGE     10
+#define MAX_WRITE_THREAD_BUFFER_SIZE 8
+
+>>>>>>> origin/develop
 #ifndef MAX_CARDS
   #define MAX_CARDS 8
 #endif
@@ -67,13 +82,9 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
-#if OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
-#endif
 
 
 /** @addtogroup _GENERIC_PHY_RF_INTERFACE_
@@ -89,6 +100,8 @@ typedef enum {
   USRP_B200_DEV,
   /*!\brief device is USRP X300/X310*/
   USRP_X300_DEV,
+  /*!\brief device is USRP N300/N310*/
+  USRP_N300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
   /*!\brief device is LMSSDR (SoDeRa)*/
@@ -103,7 +116,7 @@ typedef enum {
   UEDv2_DEV,
   MAX_RF_DEV_TYPE
 } dev_type_t;
-
+#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2"} 
 /*!\brief transport protocol types
  */
 typedef enum {
@@ -146,6 +159,7 @@ typedef enum {
   //! This tells the underlying hardware to use the gpsdo reference
   gpsdo=2
 } clock_source_t;
+
 
 /*! \brief RF frontend parameters set by application */
 typedef struct {
@@ -221,15 +235,9 @@ typedef struct {
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
   unsigned int my_port;
-#if defined(USRP_REC_PLAY)
-  unsigned short sf_mode;           // 1=record, 2=replay
-  char           sf_filename[1024]; // subframes file path
-  unsigned int   sf_max;            // max number of recorded subframes
-  unsigned int   sf_loops;          // number of loops in replay mode
-  unsigned int   sf_read_delay;     // read delay in replay mode
-  unsigned int   sf_write_delay;    // write delay in replay mode
-  unsigned int   eth_mtu;           // ethernet MTU
-#endif
+  //! record player configuration, definition in record_player.h
+  uint32_t       recplay_mode;
+  recplay_conf_t *recplay_conf;
   //! number of samples per tti
   unsigned int  samples_per_tti;
   //! the sample rate for receive.
@@ -278,8 +286,37 @@ typedef struct {
   void *rx;
 } if_buffer_t;
 
+typedef struct {
+  openair0_timestamp timestamp;
+  void *buff[MAX_WRITE_THREAD_BUFFER_SIZE];// buffer to be write;
+  int nsamps;
+  int cc;
+  signed char first_packet;
+  signed char last_packet;
+  int flags_msb;
+} openair0_write_package_t;
+
+typedef struct {
+  openair0_write_package_t write_package[MAX_WRITE_THREAD_PACKAGE];
+  int start;
+  int end;
+  /// \internal This variable is protected by \ref mutex_write
+  int count_write;
+  /// pthread struct for trx write thread
+  pthread_t pthread_write;
+  /// pthread attributes for trx write thread
+  pthread_attr_t attr_write;
+  /// condition varible for trx write thread
+  pthread_cond_t cond_write;
+  /// mutex for trx write thread
+  pthread_mutex_t mutex_write;
+} openair0_thread_t;
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
+  /*!tx write thread*/
+  openair0_thread_t write_thread;
+
   /*!brief Module ID of this device */
   int Mod_id;
 
@@ -300,7 +337,8 @@ struct openair0_device_t {
 
   /* !brief ETH params set by application */
   eth_params_t *eth_params;
-
+  //! record player data, definition in record_player.h
+  recplay_state_t *recplay_state;
   /* !brief Indicates if device already initialized */
   int is_init;
 
@@ -427,6 +465,7 @@ struct openair0_device_t {
    */
   void (*configure_rru)(int idx, void *arg);
 
+<<<<<<< HEAD
 /*! \brief Pointer to generic RRU private information
    */
 
@@ -446,6 +485,18 @@ struct openair0_device_t {
    */
   int (*thirdparty_startstreaming)(openair0_device *device);
 
+=======
+  /*! \brief RRU Configuration callback
+   * \param idx RU index
+   * \param arg pointer to capabilities or configuration
+   */
+  int (*trx_write_init)(openair0_device *device);
+  /* \brief Get internal parameter
+   * \param id parameter to get
+   * \return a pointer to the parameter
+   */
+  void *(*get_internal_parameter)(char *id);
+>>>>>>> origin/develop
 };
 
 /* type of device init function, implemented in shared lib */
@@ -489,11 +540,31 @@ typedef struct {
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+
+#define  DEVICE_SECTION   "device"
+#define  CONFIG_HLP_DEVICE  "Identifies the oai device (the interface to RF) to use, the shared lib \"lib_<name>.so\" will be loaded"
+
+#define  CONFIG_DEVICEOPT_NAME "name"
+
+/* inclusion for device configuration */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            config parameters for oai device                                                                                               */
+/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define DEVICE_PARAMS_DESC {\
+    { CONFIG_DEVICEOPT_NAME,      CONFIG_HLP_DEVICE,          0,                strptr:&devname,                 defstrval:NULL,         TYPE_STRING,     0}\
+}
+
+
+
+/*! \brief get device name from device type */
+char *get_devname(int devtype);
 /*! \brief Initialize openair RF target. It returns 0 if OK */
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);
 /*! \brief Initialize transport protocol . It returns 0 if OK */
@@ -511,6 +582,11 @@ openair0_timestamp get_usrp_time(openair0_device *device);
  * \returns 0 in success
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg);
+/*! \brief read the iq record/player configuration */
+extern int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_state);
+/*! \brief store recorded iqs from memory to file. */
+extern void iqrecorder_end(openair0_device *device);
+
 
 #define gettid() syscall(__NR_gettid)
 /*@}*/

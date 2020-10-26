@@ -330,7 +330,10 @@ int trx_brf_set_gains(openair0_device* device,
 {
     return(0);
 }
-
+int trx_brf_write_init(openair0_device *device)
+{
+    return 0;
+}
 
 #define RXDCLENGTH 16384
 int16_t cos_fsover8[8]  = {2047,   1447,      0,  -1448,  -2047,  -1448,     0,   1447};
@@ -1145,6 +1148,7 @@ int device_init(openair0_device *device,
     device->trx_stop_func        = trx_brf_stop;
     device->trx_set_freq_func    = trx_brf_set_freq;
     device->trx_set_gains_func   = trx_brf_set_gains;
+    device->trx_write_init       = trx_brf_write_init;
     device->openair0_cfg = openair0_cfg;
     device->priv = (void *)brf;
 

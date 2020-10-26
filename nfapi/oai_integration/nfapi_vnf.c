@@ -31,7 +31,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "nfapi_vnf_interface.h"
 #include "nfapi.h"
 #include "vendor_ext.h"
@@ -348,7 +348,15 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
     old_sf = sf;
     old_sfn = sfn;
 
-    if (old_sf == 0 && old_sfn % 100==0) LOG_W( PHY,"[eNB] sfn/sf:%d%d old_sfn/sf:%d%d proc[rx:%d%d]\n", sfn, sf, old_sfn, old_sf, proc->frame_rx, proc->subframe_rx);
+    if (old_sf == 0 && old_sfn % 100==0)
+      LOG_D(PHY,
+            "[eNB] sfn/sf:%d%d old_sfn/sf:%d%d proc[rx:%d%d]\n",
+            sfn,
+            sf,
+            old_sfn,
+            old_sf,
+            proc->frame_rx,
+            proc->subframe_rx);
   }
 
   ++L1_proc->instance_cnt;
@@ -435,6 +443,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
     }
     if(index == -1){
       LOG_E(MAC,"phy_rach_indication : num of rach reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.rach_ind[index] = *ind;
@@ -499,6 +508,7 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
     }
     if(index == -1){
       LOG_E(MAC,"phy_harq_indication : num of harq reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.harq_ind[index] = *ind;
@@ -538,6 +548,7 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
     }
     if(index == -1){
       LOG_E(MAC,"phy_crc_indication : num of crc reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.crc_ind[index] = *ind;
@@ -603,6 +614,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
     }
     if(index == -1){
       LOG_E(MAC,"phy_rx_indication : num of rx reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.rx_ind[index] = *ind;
@@ -686,6 +698,7 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
     }
     if(index == -1){
       LOG_E(MAC,"phy_sr_indication : num of sr reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.sr_ind[index] = *ind;
@@ -737,6 +750,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
     }
     if(index == -1){
       LOG_E(MAC,"phy_cqi_indication : num of cqi reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.cqi_ind[index] = *ind;
@@ -1169,7 +1183,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   return retval;
 }
 
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req)
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
 
@@ -1177,9 +1191,9 @@ int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req)
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);
 
-  dl_config_req->dl_config_request_body.number_dci                          = 0;
-  dl_config_req->dl_config_request_body.number_pdu                          = 0;
-  dl_config_req->dl_config_request_body.number_pdsch_rnti                   = 0;
+  dl_config_req->dl_tti_request_body.nPDUs                          = 0;
+  dl_config_req->dl_tti_request_body.nGroup                       = 0;
+
 
   if (retval!=0) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);

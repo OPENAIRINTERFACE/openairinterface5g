@@ -85,8 +85,6 @@ typedef struct {
   int nb_nr_L1_inst;  
   /// Number of Component Carriers per instance in this node
   int *nb_L1_CC;
-  /// Number of NR Component Carriers per instance in this node
-  int *nb_nr_L1_CC;
   /// Number of RU instances in this node
   int nb_RU;
   /// FlexRAN context variables
@@ -94,7 +92,7 @@ typedef struct {
   /// eNB context variables
   struct PHY_VARS_eNB_s ***eNB;
   /// gNB context variables
-  struct PHY_VARS_gNB_s ***gNB;
+  struct PHY_VARS_gNB_s **gNB;
   /// NB_IoT L1 context variables
   struct PHY_VARS_eNB_NB_IoT_s **L1_NB_IoT;
   /// RRC context variables

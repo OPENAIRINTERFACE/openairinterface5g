@@ -35,7 +35,7 @@
 
 #define TELNET_PORT               9090
 #define TELNET_MAX_MSGLENGTH      2048
-#define TELNET_PROMPT             "softmodem> "
+#define TELNET_PROMPT_PREFIX      "softmodem"
 #define TELNET_MAXCMD             20
 #define TELNET_CMD_MAXSIZE        20
 #define TELNET_HELPSTR_SIZE       80
@@ -53,13 +53,26 @@
 /* to add a set of new command to the telnet server shell */
 typedef void(*telnet_printfunc_t)(const char* format, ...);
 typedef int(*cmdfunc_t)(char*, int, telnet_printfunc_t prnt);
+typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 
+#define TELNETSRV_CMDFLAG_PUSHINTPOOLQ   (1<<0)    // ask the telnet server to push the command in a thread pool queue
 typedef struct cmddef {
     char cmdname[TELNET_CMD_MAXSIZE];
     char helpstr[TELNET_HELPSTR_SIZE];
     cmdfunc_t cmdfunc; 
+    unsigned int cmdflags;
+    void *qptr;
 } telnetshell_cmddef_t;
 
+/*----------------------------------------------------------------------------*/
+/* structure used to send a command via a message queue to enable */
+/* executing a command in a thread different from the telnet server thread */
+typedef struct telnetsrv_qmsg {
+  qcmdfunc_t cmdfunc;
+  telnet_printfunc_t prnt;
+  int debug;
+  char *cmdbuff;
+} telnetsrv_qmsg_t;
 /*----------------------------------------------------------------------------*/
 /*structure to be used when adding a module to the telnet server */
 /* This is the first parameter of the add_telnetcmd function, which can be used   */
@@ -111,9 +124,6 @@ typedef struct {
 } telnetsrv_params_t;
 
 
-
-typedef int(*addcmdfunc_t)(char*, telnetshell_vardef_t*, telnetshell_cmddef_t*);
-
 typedef void(*settelnetmodule_t)(char *name, void *ptr); 
 
 /*-------------------------------------------------------------------------------------------*/
@@ -133,7 +143,9 @@ VT escape sequence definition, for smarter display....
 
 /*---------------------------------------------------------------------------------------------*/
 #define TELNET_ADDCMD_FNAME "add_telnetcmd"
+#define TELNET_POLLCMDQ_FNAME "poll_telnetcmdq"
 typedef int(*add_telnetcmd_func_t)(char *, telnetshell_vardef_t *, telnetshell_cmddef_t *);
+typedef void(*poll_telnetcmdq_func_t)(void *qid,void *arg);
 #ifdef TELNETSERVERCODE
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);

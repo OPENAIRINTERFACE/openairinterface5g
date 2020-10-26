@@ -202,6 +202,10 @@ int trx_eth_reset_stats(openair0_device* device)
     return(0);
 }
 
+int trx_eth_write_init(openair0_device *device)
+{
+    return 0;
+}
 
 int ethernet_tune(openair0_device *device,
                   unsigned int option,
@@ -289,7 +293,7 @@ int ethernet_tune(openair0_device *device,
     /******************* interface level options  *************************/
     case MTU_SIZE: /* change  MTU of the eth interface */
         ifr.ifr_addr.sa_family = AF_INET;
-        strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name));
+        strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name)-1);
         ifr.ifr_mtu =value;
         if (ioctl(eth->sockfdd,SIOCSIFMTU,(caddr_t)&ifr) < 0 )
             perror ("[ETHERNET] Can't set the MTU");
@@ -299,7 +303,7 @@ int ethernet_tune(openair0_device *device,
 
     case TX_Q_LEN:  /* change TX queue length of eth interface */
         ifr.ifr_addr.sa_family = AF_INET;
-        strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name));
+        strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name)-1);
         ifr.ifr_qlen =value;
         if (ioctl(eth->sockfdd,SIOCSIFTXQLEN,(caddr_t)&ifr) < 0 )
             perror ("[ETHERNET] Can't set the txqueuelen");
@@ -411,8 +415,9 @@ int transport_init(openair0_device *device,
     device->trx_reset_stats_func = trx_eth_reset_stats;
     device->trx_end_func         = trx_eth_end;
     device->trx_stop_func        = trx_eth_stop;
-    device->trx_set_freq_func = trx_eth_set_freq;
-    device->trx_set_gains_func = trx_eth_set_gains;
+    device->trx_set_freq_func    = trx_eth_set_freq;
+    device->trx_set_gains_func   = trx_eth_set_gains;
+    device->trx_write_init       = trx_eth_write_init;
 
     device->trx_read_func2 = NULL;
     device->trx_read_func = NULL;

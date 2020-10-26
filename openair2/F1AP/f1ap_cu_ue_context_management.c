@@ -37,7 +37,6 @@
 #include "f1ap_cu_ue_context_management.h"
 #include <string.h>
 
-#include "openair2/LAYER2/MAC/mac_proto.h"
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
 #include "rrc_eNB_S1AP.h"
@@ -227,7 +226,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     
     ie->value.choice.ResourceCoordinationTransferContainer.buf = malloc(4);
     ie->value.choice.ResourceCoordinationTransferContainer.size = 4;
-    strncpy((char *)ie->value.choice.ResourceCoordinationTransferContainer.buf, "123", 3);
+    strncpy((char *)ie->value.choice.ResourceCoordinationTransferContainer.buf, "123", 4);
 
 
     OCTET_STRING_fromBuf(&ie->value.choice.ResourceCoordinationTransferContainer, "asdsa1d32sa1d31asd31as",

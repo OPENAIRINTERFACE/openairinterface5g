@@ -46,9 +46,7 @@
 
 #include <time.h>
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
@@ -82,7 +80,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     ru=eNB->RU_list[i];
 
     for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[0][ru_aa];
       int ce_level;
 
       if (br_flag==1)

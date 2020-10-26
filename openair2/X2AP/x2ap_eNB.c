@@ -101,7 +101,6 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t *x2ap_enb_data_p;
   DevAssert(sctp_new_association_resp != NULL);
-  printf("x2ap_eNB_handle_sctp_association_resp at 1\n");
   dump_trees();
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
@@ -117,7 +116,9 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       /* some sanity check - to be refined at some point */
       if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
         X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED, what to do?\n");
-        abort();
+        // Allow for a gracious exit when we kill first the gNB, then the eNB
+        //abort();
+        return;
       }
 
       x2ap_enb_data_p->in_streams  = sctp_new_association_resp->in_streams;
@@ -129,7 +130,6 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   x2ap_enb_data_p = x2ap_get_eNB(instance_p, -1,
                                  sctp_new_association_resp->ulp_cnx_id);
   DevAssert(x2ap_enb_data_p != NULL);
-  printf("x2ap_eNB_handle_sctp_association_resp at 2\n");
   dump_trees();
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
@@ -142,17 +142,17 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     return;
   }
 
-  printf("x2ap_eNB_handle_sctp_association_resp at 3\n");
   dump_trees();
   /* Update parameters */
   x2ap_enb_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
   x2ap_enb_data_p->in_streams  = sctp_new_association_resp->in_streams;
   x2ap_enb_data_p->out_streams = sctp_new_association_resp->out_streams;
-  printf("x2ap_eNB_handle_sctp_association_resp at 4\n");
   dump_trees();
   /* Prepare new x2 Setup Request */
-  x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
-  //x2ap_eNB_generate_ENDC_x2_setup_request(instance_p, x2ap_enb_data_p);
+  if(instance_p->cell_type == CELL_MACRO_GNB)
+	  x2ap_gNB_generate_ENDC_x2_setup_request(instance_p, x2ap_enb_data_p);
+  else
+	  x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
 }
 
 static
@@ -305,7 +305,9 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     x2ap_id_manager_init(&new_instance->id_manager);
     x2ap_timers_init(&new_instance->timers,
                      x2ap_register_eNB->t_reloc_prep,
-                     x2ap_register_eNB->tx2_reloc_overall);
+                     x2ap_register_eNB->tx2_reloc_overall,
+                     x2ap_register_eNB->t_dc_prep,
+                     x2ap_register_eNB->t_dc_overall);
 
     for (int i = 0; i< x2ap_register_eNB->num_cc; i++) {
       new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
@@ -449,6 +451,112 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
 }
 
 static
+void x2ap_eNB_handle_sgNB_add_req(instance_t instance,
+                                  x2ap_ENDC_sgnb_addition_req_t *x2ap_ENDC_sgnb_addition_req)
+{
+  x2ap_id_manager     *id_manager;
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *x2ap_eNB_data;
+  int                 ue_id;
+  LTE_PhysCellId_t target_pci;
+  target_pci = x2ap_ENDC_sgnb_addition_req->target_physCellId;
+  x2ap_eNB_data = x2ap_is_eNB_pci_in_list(target_pci);
+  DevAssert(x2ap_eNB_data != NULL);
+  DevAssert(x2ap_ENDC_sgnb_addition_req != NULL);
+
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  /* allocate x2ap ID */
+  id_manager = &instance_p->id_manager;
+  ue_id = x2ap_allocate_new_id(id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    /* TODO: cancel NSA: send (to be defined) message to RRC */
+    exit(1);
+  }
+  /* id_source is ue_id, id_target is unknown yet */
+  x2ap_set_ids(id_manager, ue_id, x2ap_ENDC_sgnb_addition_req->rnti, ue_id, -1);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_NSA_ENB_PREPARE);
+  x2ap_set_dc_prep_timer(id_manager, ue_id,
+                         x2ap_timer_get_tti(&instance_p->timers));
+  x2ap_id_set_target(id_manager, ue_id, x2ap_eNB_data);
+
+  x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_ENDC_sgnb_addition_req,
+      x2ap_eNB_data, ue_id);
+}
+
+static
+void x2ap_gNB_trigger_sgNB_add_req_ack(instance_t instance,
+		x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_ENDC_sgnb_addition_req_ACK)
+{
+  /* TODO: remove this hack (the goal is to find the correct
+   * eNodeB structure for the other end) - we need a proper way for RRC
+   * and X2AP to identify eNodeBs
+   * RRC knows about mod_id and X2AP knows about eNB_id (eNB_ID in
+   * the configuration file)
+   * as far as I understand.. CROUX
+   */
+
+  x2ap_id_manager     *id_manager;
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int                 ue_id;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+  target = x2ap_get_eNB(NULL,x2ap_ENDC_sgnb_addition_req_ACK->target_assoc_id, 0);
+  DevAssert(target != NULL);
+	
+  /* allocate x2ap ID */
+  id_manager = &instance_p->id_manager;
+  ue_id = x2ap_allocate_new_id(id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    exit(1);
+  }
+  /* id_Source is MeNB_ue_x2_id, id_target is rnti (rnti is SgNB_ue_x2_id) */
+  x2ap_set_ids(id_manager, ue_id,
+      x2ap_ENDC_sgnb_addition_req_ACK->SgNB_ue_x2_id,
+      x2ap_ENDC_sgnb_addition_req_ACK->MeNB_ue_x2_id,
+      x2ap_ENDC_sgnb_addition_req_ACK->SgNB_ue_x2_id);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_NSA_GNB_OVERALL);
+  x2ap_set_dc_overall_timer(id_manager, ue_id,
+                            x2ap_timer_get_tti(&instance_p->timers));
+  x2ap_id_set_target(id_manager, ue_id, target);
+
+  x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK(instance_p, target,
+      x2ap_ENDC_sgnb_addition_req_ACK, ue_id);
+}
+
+/**
+ * @fn	: Function triggers sgnb reconfiguration complete
+ * @param	: IN instance, IN x2ap_reconf_complete
+**/ 
+static
+void x2ap_eNB_trigger_sgnb_reconfiguration_complete(instance_t instance,
+    x2ap_ENDC_reconf_complete_t *x2ap_reconf_complete)
+{
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int                 id_source;
+  int                 id_target;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_reconf_complete != NULL);
+
+  target = x2ap_get_eNB(NULL,x2ap_reconf_complete->gnb_x2_assoc_id, 0);
+  DevAssert(target != NULL);
+
+  id_source = x2ap_reconf_complete->MeNB_ue_x2_id;
+  id_target = x2ap_reconf_complete->SgNB_ue_x2_id;
+  x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(instance_p, target, id_source, id_target);
+}
+
+
+static
 void x2ap_eNB_ue_context_release(instance_t instance,
                                  x2ap_ue_context_release_t *x2ap_ue_context_release)
 {
@@ -471,6 +579,34 @@ void x2ap_eNB_ue_context_release(instance_t instance,
     exit(1);
   }
   x2ap_release_id(&instance_p->id_manager, ue_id);
+}
+
+static
+void x2ap_eNB_handle_sgNB_release_request(instance_t instance,
+    x2ap_ENDC_sgnb_release_request_t *x2ap_release_req)
+{
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_release_req != NULL);
+
+  if (x2ap_release_req->rnti == -1 ||
+      x2ap_release_req->assoc_id == -1) {
+    X2AP_WARN("x2ap_eNB_handle_sgNB_release_request: bad rnti or assoc_id, do not send release request to gNB\n");
+    return;
+  }
+
+  target = x2ap_get_eNB(NULL, x2ap_release_req->assoc_id, 0);
+  DevAssert(target != NULL);
+
+  /* id_source is not used by oai's gNB so it's not big deal. For
+   * interoperability with other gNBs things may need to be refined.
+   */
+  x2ap_eNB_generate_ENDC_x2_SgNB_release_request(instance_p, target,
+                                                 0, x2ap_release_req->rnti,
+                                                 x2ap_release_req->cause);
 }
 
 void *x2ap_task(void *arg) {
@@ -511,6 +647,27 @@ void *x2ap_task(void *arg) {
       case X2AP_UE_CONTEXT_RELEASE:
         x2ap_eNB_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                                 &X2AP_UE_CONTEXT_RELEASE(received_msg));
+        break;
+
+      case X2AP_ENDC_SGNB_ADDITION_REQ:
+        x2ap_eNB_handle_sgNB_add_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                     &X2AP_ENDC_SGNB_ADDITION_REQ(received_msg));
+        break;
+
+      case X2AP_ENDC_SGNB_ADDITION_REQ_ACK:
+    	  x2ap_gNB_trigger_sgNB_add_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    			  &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(received_msg));
+    	LOG_I(X2AP, "Received elements for X2AP_ENDC_SGNB_ADDITION_REQ_ACK \n");
+    	break;
+
+      case X2AP_ENDC_SGNB_RECONF_COMPLETE:
+        x2ap_eNB_trigger_sgnb_reconfiguration_complete(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                          &X2AP_ENDC_SGNB_RECONF_COMPLETE(received_msg));
+        break;
+
+      case X2AP_ENDC_SGNB_RELEASE_REQUEST:
+        x2ap_eNB_handle_sgNB_release_request(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                          &X2AP_ENDC_SGNB_RELEASE_REQUEST(received_msg));
         break;
 
       case SCTP_INIT_MSG_MULTI_CNF:
@@ -556,7 +713,6 @@ int is_x2ap_enabled(void)
   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
   if (pthread_mutex_lock(&mutex)) goto mutex_error;
-
   if (config_loaded) {
     if (pthread_mutex_unlock(&mutex)) goto mutex_error;
     return enabled;
@@ -569,13 +725,20 @@ int is_x2ap_enabled(void)
 
   /* TODO: do it per module - we check only first eNB */
   config_get(p, sizeof(p)/sizeof(paramdef_t), "eNBs.[0]");
-  if (enable_x2 != NULL && strcmp(enable_x2, "yes") == 0)
-    enabled = 1;
+  if (enable_x2 != NULL && strcmp(enable_x2, "yes") == 0){
+	  enabled = 1;
+  }
+
+  /*Consider also the case of enabling X2AP for a gNB by parsing a gNB configuration file*/
+
+  config_get(p, sizeof(p)/sizeof(paramdef_t), "gNBs.[0]");
+    if (enable_x2 != NULL && strcmp(enable_x2, "yes") == 0){
+  	  enabled = 1;
+    }
 
   config_loaded = 1;
 
   if (pthread_mutex_unlock(&mutex)) goto mutex_error;
-
   return enabled;
 
 mutex_error:

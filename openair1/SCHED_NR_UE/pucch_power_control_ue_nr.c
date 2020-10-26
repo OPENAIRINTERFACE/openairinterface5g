@@ -70,17 +70,17 @@
 
 int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
                               uint8_t gNB_id,
-							  UE_nr_rxtx_proc_t *proc,
-							  pucch_format_nr_t pucch_format,
-							  int nb_of_prbs,
-							  int N_sc_ctrl_RB,
-							  int N_symb_PUCCH,
-							  int O_UCI,
-							  int O_SR,
-							  int O_CSI,
-							  int O_ACK,
+                              UE_nr_rxtx_proc_t *proc,
+                              pucch_format_nr_t pucch_format,
+                              int nb_of_prbs,
+                              int N_sc_ctrl_RB,
+                              int N_symb_PUCCH,
+                              int O_UCI,
+                              int O_SR,
+                              int O_CSI,
+                              int O_ACK,
                               int O_CRC,
-							  int n_HARQ_ACK) {
+                              int n_HARQ_ACK) {
 
   int16_t P_O_NOMINAL_PUCCH = ue->pucch_config_common_nr[gNB_id].p0_nominal;
   PUCCH_PowerControl_t *power_config = &ue->pucch_config_dedicated_nr[gNB_id].pucch_PowerControl;
@@ -104,7 +104,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
 
   int P_O_PUCCH = P_O_NOMINAL_PUCCH + P_O_UE_PUCCH;
 
-  int16_t PL = nr_get_PL(ue->Mod_id, ue->CC_id, gNB_id); /* LTE function because NR path loss not yet implemented FFS TODO NR */
+  int16_t PL = get_nr_PL(ue->Mod_id, ue->CC_id, gNB_id); /* LTE function because NR path loss not yet implemented FFS TODO NR */
 
   int16_t delta_F_PUCCH =  power_config->deltaF_PUCCH_f[pucch_format];
 
@@ -215,3 +215,4 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
 
   return (pucch_power);
 }
+

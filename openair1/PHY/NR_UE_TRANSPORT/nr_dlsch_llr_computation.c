@@ -786,16 +786,16 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 //----------------------------------------------------------------------------------------------
 
 void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
-                     int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
-                     int32_t **dl_ch_magb,
-                     uint8_t symbol,
-					 uint32_t len,
-                     uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint32_t llr_offset,
-                     uint8_t beamforming_mode)
+			int32_t **rxdataF_comp,
+			int16_t *dlsch_llr,
+			int32_t **dl_ch_mag,
+			int32_t **dl_ch_magb,
+			uint8_t symbol,
+			uint32_t len,
+			uint8_t first_symbol_flag,
+			uint16_t nb_rb,
+			uint32_t llr_offset,
+			uint8_t beamforming_mode)
 {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*nb_rb*12)];
@@ -980,7 +980,7 @@ void nr_dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       amp_tmp = 0x1fff;//dlsch0->sqrt_rho_b; already taken into account
-      if (frame_parms->nb_antenna_ports_eNB!=1)
+      if (frame_parms->nb_antenna_ports_gNB!=1)
         len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
       else
         len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
@@ -1379,7 +1379,7 @@ int nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
+    if (frame_parms->nb_antenna_ports_gNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -1661,7 +1661,7 @@ int nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
+    if (frame_parms->nb_antenna_ports_gNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -2427,7 +2427,7 @@ int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
+    if (frame_parms->nb_antenna_ports_gNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -3602,7 +3602,7 @@ int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
+    if (frame_parms->nb_antenna_ports_gNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -5164,7 +5164,7 @@ int nr_dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
+    if (frame_parms->nb_antenna_ports_gNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -6707,7 +6707,7 @@ int nr_dlsch_64qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
+    if (frame_parms->nb_antenna_ports_gNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else

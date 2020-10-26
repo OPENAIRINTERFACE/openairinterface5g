@@ -3,6 +3,12 @@ This is an RF simulator that allows to test OAI without an RF board. It replaces
 
 As much as possible, it works like an RF board, but not in real-time: It can run faster than real-time if there is enough CPU, or slower (it is CPU-bound instead of real-time RF sampling-bound).
 
+It can be run either in:
+
+- "noS1" mode: the generated IP traffic is sent and received between gNB and UE IP tunnel interfaces ("oaitun") by applications like ping and iperf
+- "phy-test" mode: random UL and DL traffic is generated at every scheduling opportunity 
+
+
 # build
 
 ## From [build_oai](../../../doc/BUILD.md) script
@@ -84,18 +90,47 @@ make rfsimulator
 ### Launch gNB in one window
 
 ```bash
-sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test
 ```
 
 ### Launch UE in another window
 
 ```bash
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C 3510000000 
+sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path .
 ```
 
-Of course, set the gNB machine IP address if the UE and the gNB are not on the same machine.
+Notes:
+
+1. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts
+2. the --rrc_config_path parameter SHALL specify where the 2 RAW files are located (`rbconfig.raw` and `reconfig.raw`).
+   - If you are running on the same machine and launched the 2 executables (`nr-softmodem` and `nr-uesoftmodem`) from the same directory, nothing has to be done.
+   - If you launched the 2 executables from 2 different folders, just point to the location where you launched the `nr-softmodem`:
+     * `sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path /the/path/where/you/launched/nr-softmodem`
+   - If you are not running on the same machine or launched the 2 executables from 2 different folders, you need to **COPY** the 2 raw files
+     * `scp usera@machineA:/the/path/where/you/launched/nr-softmodem/r*config.raw userb@machineB:/the/path/where/you/will/launch/nr-uesoftmodem/`
+     * Obviously this operation SHALL be done before launching the `nr-uesoftmodem` executable.
+3. to enable the noS1 mode --noS1 and --nokrnmod 1 options should be added to the command line
+
 
 In the UE, you can add `-d` option to get the softscope.
+
+### Testing IP traffic (ping and iperf)
+
+```
+ping -I oaitun_enb1 10.0.1.2 (from gNB mchine)
+ping -I oaitun_ue1 10.0.1.1 (from nrUE mchine)
+``` 
+
+```iperf (Downlink):
+Server nrUE machine: iperf -s -i 1 -u -B 10.0.1.2
+Client gNB machine: iperf -c 10.0.1.2 -u -b 0.1M --bind 10.0.1.1
+```
+
+```iperf (Uplink):
+Server gNB machine: iperf -s -i 1 -u -B 10.0.1.1
+Client nrUE machine: iperf -c 10.0.1.1 -u -b 0.1M --bind 10.0.1.2
+Note: iperf tests can be performed only when running gNB and nrUE on separate hosts. 
+```
 
 ### Store and replay
 

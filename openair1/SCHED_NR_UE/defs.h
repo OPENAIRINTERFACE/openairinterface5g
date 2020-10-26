@@ -111,17 +111,18 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id, uint8_t thread_id);
+
 /*! \brief Scheduling for UE RX procedures in normal subframes.
-  @param last_slot Index of last slot (0-19)
-  @param phy_vars_ue Pointer to UE variables on which to act
-  @param proc Pointer to RXn_TXnp4 proc information
-  @param eNB_id Local id of eNB on which to act
-  @param abstraction_flag Indicator of PHY abstraction
-  @param mode calibration/debug mode
-  @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-  @param phy_vars_rn pointer to RN variables
+  @param ue       Pointer to UE variables on which to act
+  @param proc     Pointer to proc information
+  @param gNB_id   Local id of eNB on which to act
+  @param mode     calibration/debug mode
 */
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t do_pdcch_flag,runmode_t mode);
+int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
+                           uint8_t gNB_id,
+                           runmode_t mode);
+
 int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
 
 
@@ -217,6 +218,15 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
     @param eNB_index Index of eNB
  */
 void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+
+/*! \brief UE PRACH procedures.
+    @param
+    @param
+    @param
+ */
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t mode);
+
+int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe);
 
 #if 0
 /*! \brief Compute ACK/NACK information for PUSCH/PUCCH for UE transmission in subframe n. This function implements table 10.1-1 of 36.213, p. 69.
@@ -322,13 +332,14 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t SR);
 
 #endif
+
 /*! \brief This function retrieves the PHY UE mode. It is used as a helper function for the UE MAC.
   @param Mod_id Local UE index on which to act
   @param CC_id Component Carrier Index
-  @param eNB_index ID of eNB
+  @param gNB_index ID of gNB
   @returns UE mode
 */
-UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
 
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables
@@ -376,11 +387,10 @@ void nr_compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsP
 void set_tx_harq_id(NR_UE_ULSCH_t *ulsch, int harq_pid, int slot_tx);
 int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
 
-int is_pbch_in_slot(fapi_nr_pbch_config_t *pbch_config, int frame, int slot, int periodicity, uint16_t slots_per_frame);
+int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 
 /*@}*/
 
 
 #endif
-
 

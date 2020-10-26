@@ -16,7 +16,7 @@ This page is valid on tags starting from **`2019.w09`**.
 
 # Soft Modem Build Script
 
-oai EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-cn/wiki) , it is not described here.
+The OAI EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-epc-fed/wiki) , it is not described here.
 
 OAI softmodem sources, which aim to implement 3GPP compliant UEs, eNodeB and gNodeB can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
 
@@ -34,7 +34,7 @@ The main oai binaries, which are tested by the Continuous Integration process ar
 
 Running the  [build_oai](../cmake_targets/build_oai) script also generates some utilities required to build and/or run the oai softmodem binaries:
 
-- `con2uedata`: a binary used to build the UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
+- `conf2uedata`: a binary used to build the UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
 - `nvram`: a binary used to build UE (IMEI...) and EMM (IMSI, registered PLMN) non volatile data. 
 - `rb_tool`: radio bearer utility 
 - `genids` T Tracer utility, used at build time to generate T_IDs.h include file. This binary is located in the [T Tracer source file directory](../common/utils/T) .

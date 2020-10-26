@@ -38,7 +38,7 @@ int phy_init_RU(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_CALIBRATION *calibration = &ru->calibration;
   int i,j,p,re;
-  init_dfts();
+  //load_dftslib();
   LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
   if (ru->is_slave == 1) {
@@ -76,7 +76,7 @@ int phy_init_RU(RU_t *ru) {
   }
 
   if (ru->function != NGFI_RRU_IF5) { // we need to do RX/TX RU processing
-    init_dfts();
+    load_dftslib();
     init_7_5KHz();
     LOG_I(PHY,"nb_tx %d\n",ru->nb_tx);
     ru->common.rxdata_7_5kHz = (int32_t **)malloc16(ru->nb_rx*sizeof(int32_t *) );
@@ -121,13 +121,13 @@ int phy_init_RU(RU_t *ru) {
     /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
     //AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
     //"nb_antennas_rx too large");
-    ru->prach_rxsigF = (int16_t **)malloc(ru->nb_rx * sizeof(int16_t *));
+    ru->prach_rxsigF[0] = (int16_t **)malloc(ru->nb_rx * sizeof(int16_t *));
 
     for (j=0; j<4; j++) ru->prach_rxsigF_br[j] = (int16_t **)malloc(ru->nb_rx * sizeof(int16_t *));
 
     for (i=0; i<ru->nb_rx; i++) {
-      ru->prach_rxsigF[i] = (int16_t *)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
-      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
+      ru->prach_rxsigF[0][i] = (int16_t *)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[0][i]);
 
       for (j=0; j<4; j++) {
         ru->prach_rxsigF_br[j][i] = (int16_t *)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
@@ -186,7 +186,6 @@ void phy_free_RU(RU_t *ru) {
   int i,j,p;
   RU_CALIBRATION *calibration = &ru->calibration;
   LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
-  free_and_zero(ru->frame_parms);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
     for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdata[i]);
@@ -231,14 +230,14 @@ void phy_free_RU(RU_t *ru) {
     }
 
     for (i = 0; i < ru->nb_rx; i++) {
-      free_and_zero(ru->prach_rxsigF[i]);
+      free_and_zero(ru->prach_rxsigF[0][i]);
 
       for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j][i]);
     }
 
     for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j]);
 
-    free_and_zero(ru->prach_rxsigF);
+    free_and_zero(ru->prach_rxsigF[0]);
     /* ru->prach_rxsigF_br is not allocated -> don't free */
 
     for (i = 0; i < RC.nb_L1_inst; i++) {

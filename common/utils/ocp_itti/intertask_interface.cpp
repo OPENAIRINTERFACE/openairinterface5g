@@ -1,12 +1,32 @@
 /*
-  Author: Laurent THOMAS, Open Cells
-  copyleft: OpenAirInterface Software Alliance and it's licence
+* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The OpenAirInterface Software Alliance licenses this file to You under
+* the OAI Public License, Version 1.1  (the "License"); you may not use this file
+* except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.openairinterface.org/?page_id=698
+*
+* Author and copyright: Laurent Thomas, open-cells.com
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*-------------------------------------------------------------------------------
+* For more information about the OpenAirInterface (OAI) Software Alliance:
+*      contact@openairinterface.org
 */
+
 #include <vector>
 #include <map>
 #include <sys/eventfd.h>
 
 
+extern "C" {
 #include <intertask_interface.h>
 #include <common/utils/system.h>
 
@@ -35,7 +55,6 @@ typedef struct task_list_s {
 int timer_expired(int fd);
 task_list_t tasks[TASK_MAX];
 
-extern "C" {
   void *pool_buffer_init (void) {
     return 0;
   }
@@ -61,7 +80,7 @@ extern "C" {
 
   void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize_t size) {
     void *ptr = NULL;
-    AssertFatal ((ptr=malloc (size)) != NULL, "Memory allocation of %zu bytes failed (%d -> %d)!\n",
+    AssertFatal ((ptr=calloc (size, 1)) != NULL, "Memory allocation of %zu bytes failed (%d -> %d)!\n",
                  size, origin_task_id, destination_task_id);
     return ptr;
   }
@@ -72,8 +91,16 @@ extern "C" {
     return (EXIT_SUCCESS);
   }
 
+  // in the two following functions, the +32 in malloc is there to deal with gcc memory alignment
+  // because a struct size can be larger than sum(sizeof(struct components))
+  // We should remove the itti principle of a huge union for all types of messages in paramter "msg_t ittiMsg"
+  // to use a more C classical pointer casting "void * ittiMsg", later casted in the right struct
+  // but we would have to change all legacy macros, as per this example
+  // #define S1AP_REGISTER_ENB_REQ(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_register_enb_req
+  // would become
+  // #define S1AP_REGISTER_ENB_REQ(mSGpTR)           (s1ap_register_enb_req) mSGpTR)->ittiMsg
   MessageDef *itti_alloc_new_message_sized(task_id_t origin_task_id, MessagesIds message_id, MessageHeaderSize size) {
-    MessageDef *temp = (MessageDef *)itti_malloc (origin_task_id, TASK_UNKNOWN, sizeof(MessageHeader) + size);
+    MessageDef *temp = (MessageDef *)itti_malloc (origin_task_id, TASK_UNKNOWN, sizeof(MessageHeader) +32 + size);
     temp->ittiMsgHeader.messageId = message_id;
     temp->ittiMsgHeader.originTaskId = origin_task_id;
     temp->ittiMsgHeader.ittiMsgSize = size;
@@ -81,11 +108,14 @@ extern "C" {
   }
 
   MessageDef *itti_alloc_new_message(task_id_t origin_task_id, MessagesIds message_id) {
-    int size=sizeof(MessageHeader) + messages_info[message_id].size;
+    int size=sizeof(MessageHeader) + 32 + messages_info[message_id].size;
     MessageDef *temp = (MessageDef *)itti_malloc (origin_task_id, TASK_UNKNOWN, size);
     temp->ittiMsgHeader.messageId = message_id;
     temp->ittiMsgHeader.originTaskId = origin_task_id;
     temp->ittiMsgHeader.ittiMsgSize = size;
+    temp->ittiMsgHeader.destinationTaskId=TASK_UNKNOWN;
+    temp->ittiMsgHeader.instance=0;
+    temp->ittiMsgHeader.lte_time={0};
     return temp;
     //return itti_alloc_new_message_sized(origin_task_id, message_id, messages_info[message_id].size);
   }

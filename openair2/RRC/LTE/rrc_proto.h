@@ -360,6 +360,8 @@ void rrc_eNB_process_x2_setup_response(int mod_id, x2ap_setup_resp_t *m);
 
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m);
 
+void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m);
+
 /**\brief Generate/decode the handover RRCConnectionReconfiguration at eNB
    \param module_idP Instance ID for eNB/CH
    \param frame Frame index
@@ -580,6 +582,12 @@ mac_UE_get_rrc_status(
 
 void
 rrc_eNB_generate_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP
+);
+
+void
+rrc_eNB_generate_NR_UECapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t          *const ue_context_pP
 );

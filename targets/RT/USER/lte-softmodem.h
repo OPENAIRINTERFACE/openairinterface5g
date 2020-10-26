@@ -81,7 +81,6 @@
 #define CONFIG_HLP_DLSHIFT       "dynamic shift for LLR compuation for TM3/4 (default 0)\n"
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
-#define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
 
@@ -115,7 +114,6 @@
     {"dlsch-demod-shift", CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,      0},   \
     {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
     {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
-    {"clock-source",      CONFIG_HLP_CLK,         0,               iptr:&clock_source,                 defintval:0,          TYPE_INT,      0},   \
     {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
     {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
   }
@@ -141,7 +139,7 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern int rx_input_level_dBm;
@@ -157,6 +155,10 @@ extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
 
+extern int emulate_rf;
+extern int numerology;
+extern int usrp_tx_thread;
+
 // In lte-enb.c
 extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
@@ -169,7 +171,7 @@ extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
-extern void init_RU(char *, clock_source_t clock_source, clock_source_t time_source, int send_dmrssync);
+extern void init_RU(char *, int send_dmrssync);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);

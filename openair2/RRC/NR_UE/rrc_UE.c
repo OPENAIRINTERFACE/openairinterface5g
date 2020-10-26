@@ -42,9 +42,9 @@
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "rrc_vars.h"
-#include "mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
-
+#include "executables/softmodem-common.h"
 
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
@@ -80,11 +80,19 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
     }
 
-    //nr_rrc_mac_config_req_ue( module_id_t module_id, int CC_id, uint8_t gNB_index, NR_MIB_t *mibP, NR_MAC_CellGroupConfig_t *mac_cell_group_configP, NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, NR_SpCellConfig_t *spcell_configP );
+    //nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
 
     return 0;
 }
 
+int8_t nr_rrc_ue_process_RadioBearerConfig(NR_RadioBearerConfig_t *RadioBearerConfig){
+
+
+  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
+  // Configure PDCP
+
+  return 0;
+}
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (decoded)
 // RRCReconfiguration
@@ -96,7 +104,7 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
                 if(NR_UE_rrc_inst->radio_bearer_config == NULL){
                     NR_UE_rrc_inst->radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;                
                 }else{
-                    nr_rrc_ue_process_radio_bearer_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig);
+                    nr_rrc_ue_process_RadioBearerConfig(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig);
                 }
             }
 
@@ -108,14 +116,17 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
                             (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
                             rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0); 
 
+		xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+
                 if(NR_UE_rrc_inst->cell_group_config == NULL){
                     //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
                     NR_UE_rrc_inst->cell_group_config = cellGroupConfig;
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
                 }else{
                     //  after first time, update it and free the memory after.
+                    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst->cell_group_config, 0);
+                    NR_UE_rrc_inst->cell_group_config = cellGroupConfig;
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
-                    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
                 }
                 
             }
@@ -148,6 +159,8 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
     return 0;
 }
 
+
+
 int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 
     return 0;
@@ -156,8 +169,7 @@ int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
     int i;
     if(NR_UE_rrc_inst->cell_group_config==NULL){
-        //  initial list
-      
+      //  initial list
         if(cell_group_config->spCellConfig != NULL){
             if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
                 if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
@@ -167,8 +179,6 @@ int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
                 }
             }
         } 
-       
-
     }else{
         //  maintain list
         if(cell_group_config->spCellConfig != NULL){
@@ -197,13 +207,57 @@ int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
 
     return 0;
 }
-int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_bearer_config){
 
-    return 0;
+
+
+
+void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message,int msg_len) {
+
+  switch (nsa_message_type) {
+    case nr_SecondaryCellGroupConfig_r15:
+      {
+	NR_RRCReconfiguration_t *RRCReconfiguration=NULL;
+	asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+							&asn_DEF_NR_RRCReconfiguration,
+							(void **)&RRCReconfiguration,
+							(uint8_t *)message,
+							msg_len); 
+	
+	if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+	  LOG_E(RRC,"NR_RRCReconfiguration decode error\n");
+	  // free the memory
+	  SEQUENCE_free( &asn_DEF_NR_RRCReconfiguration, RRCReconfiguration, 1 );
+	  return;
+	}      
+	nr_rrc_ue_process_rrcReconfiguration(RRCReconfiguration);
+      }
+      break;
+    case nr_RadioBearerConfigX_r15:
+      {
+	NR_RadioBearerConfig_t *RadioBearerConfig=NULL;
+	asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+							&asn_DEF_NR_RadioBearerConfig,
+							(void **)&RadioBearerConfig,
+							(uint8_t *)message,
+							msg_len); 
+	
+	if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+	  LOG_E(RRC,"NR_RadioBearerConfig decode error\n");
+	  // free the memory
+	  SEQUENCE_free( &asn_DEF_NR_RadioBearerConfig, RadioBearerConfig, 1 );
+	  return;
+	}      
+	nr_rrc_ue_process_RadioBearerConfig(RadioBearerConfig);
+      }
+      break;
+    default:
+      AssertFatal(1==0,"Unknown message %d\n",nsa_message_type);
+      break;
+  }
+
 }
 
-
-int8_t openair_rrc_top_init_ue_nr(void){
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
 
     if(NB_NR_UE_INST > 0){
         NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
@@ -264,11 +318,44 @@ int8_t openair_rrc_top_init_ue_nr(void){
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_SSB_ResourceSet_list, NR_maxNrofCSI_SSB_ResourceSets);
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ResourceConfig_list, NR_maxNrofCSI_ResourceConfigurations);
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
+
+	if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
+	  // read in files for RRCReconfiguration and RBconfig
+	  FILE *fd;
+	  char filename[1024];
+	  if (rrc_config_path)
+	    sprintf(filename,"%s/reconfig.raw",rrc_config_path);
+	  else
+	    sprintf(filename,"reconfig.raw");
+	  fd = fopen(filename,"r");
+          char buffer[1024];
+	  AssertFatal(fd,
+	              "cannot read file %s: errno %d, %s\n",
+	              filename,
+	              errno,
+	              strerror(errno));
+	  int msg_len=fread(buffer,1,1024,fd);
+	  fclose(fd);
+	  process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
+	  if (rrc_config_path)
+	    sprintf(filename,"%s/rbconfig.raw",rrc_config_path);
+	  else
+	    sprintf(filename,"rbconfig.raw");
+	  fd = fopen(filename,"r");
+	  AssertFatal(fd,
+	              "cannot read file %s: errno %d, %s\n",
+	              filename,
+	              errno,
+	              strerror(errno));
+	  msg_len=fread(buffer,1,1024,fd);
+	  fclose(fd);
+	  process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 
+	}
     }else{
         NR_UE_rrc_inst = NULL;
     }
 
-    return 0;
+    return NR_UE_rrc_inst;
 }
 
 
@@ -312,9 +399,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     }
 
 
-    for(i=0; i<buffer_len; ++i){
-        printf("[RRC] MIB PDU : %d\n", bufferP[i]);
-    }
+    //for(i=0; i<buffer_len; ++i){
+    //    printf("[RRC] MIB PDU : %d\n", bufferP[i]);
+    //}
 
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                                                     &asn_DEF_NR_BCCH_BCH_Message,
@@ -339,7 +426,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
       //    (void *)&bcch_message->message.choice.mib,
       //    sizeof(NR_MIB_t) );
       
-      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
+      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL);
     }
     
     return 0;

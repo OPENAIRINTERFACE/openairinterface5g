@@ -67,32 +67,9 @@ EXTERN const uint8_t N_slot_subframe[MU_NUMBER]
 #endif
 ;
 
-//#define RX_NB_TH_MAX 3
-//#define RX_NB_TH 3
-
-#if 0
-#define LTE_SLOTS_PER_SUBFRAME             (2)
-
-#define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME  (10)
-#define LTE_SLOTS_PER_FRAME                (20)
-#define LTE_CE_FILTER_LENGTH               (5)
-#define LTE_CE_OFFSET                      (LTE_CE_FILTER_LENGTH)
-#define TX_RX_SWITCH_SYMBOL                (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#define PBCH_PDU_SIZE                      (3) //bytes
-
-#define PRACH_SYMBOL                       (3) //position of the UL PSS wrt 2nd slot of special subframe
-
-#define NUMBER_OF_FREQUENCY_GROUPS         (lte_frame_parms->N_RB_DL)
-
-#define SSS_AMP                            (1148)
-
-#define MAX_NUM_PHICH_GROUPS               (56)  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
-
-#define MAX_MBSFN_AREA                     (8)
-
-#endif
 
 #define  NB_DL_DATA_TO_UL_ACK              (8) /* size of table TS 38.213 Table 9.2.3-1 */
+
 
 /***********************************************************************
 *
@@ -120,14 +97,10 @@ SystemInformationBlockType1_nr_t;
 #define NR_TDD_SET_ALL_SYMBOLS             (0x3FFF)
 
 #define NR_DOWNLINK_SLOT                   (0x01)
-#define NR_UPLINK_SLOT                     (0x03)
+#define NR_UPLINK_SLOT                     (0x02)
+#define NR_MIXED_SLOT                      (0x03)
 
 #define FRAME_DURATION_MICRO_SEC           (10000)  /* frame duration in microsecond */
-
-typedef enum {
-  SLOT_DL = 0,
-  SLOT_UL = 1,
-} nr_slot_t;
 
 typedef enum {
   ms0p5    = 500,                 /* duration is given in microsecond */
@@ -140,7 +113,7 @@ typedef enum {
   ms10     = 10000,
 } dl_UL_TransmissionPeriodicity_t;
 
-typedef struct {
+typedef struct TDD_UL_DL_configCommon_s {
   /// Reference SCS used to determine the time domain boundaries in the UL-DL pattern which must be common across all subcarrier specific
   /// virtual carriers, i.e., independent of the actual subcarrier spacing using for data transmission.
   /// Only the values 15 or 30 kHz  (<6GHz), 60 or 120 kHz (>6GHz) are applicable.
@@ -164,7 +137,7 @@ typedef struct {
   /// Corresponds to L1 parameter 'number-of-UL-symbols-common' (see 38.211, section FFS_Section)
   uint8_t nrofUplinkSymbols;
   /// \ for setting a sequence
-  struct TDD_UL_DL_configCommon_t *p_next_TDD_UL_DL_configCommon_t;
+  struct TDD_UL_DL_configCommon_s *p_next;
 } TDD_UL_DL_configCommon_t;
 
 typedef struct {
@@ -363,9 +336,9 @@ typedef struct {
 
 /***********************************************************************
 *
-* FUNCTIONALITY    :  Packed Downlink Shared Channel PDSCH
+* FUNCTIONALITY    :  Physical Downlink Shared Channel PDSCH
 *
-* DESCRIPTION      :  interface description for PSCH configuration
+* DESCRIPTION      :  interface description for PSDCH configuration
 *
 ************************************************************************/
 
@@ -510,9 +483,6 @@ typedef struct {
   uint8_t         startSymbolAndLength;
 } PUSCH_TimeDomainResourceAllocation_t;
 ////////////////////////////////////////////////////////////////////////////////################################
-typedef struct { // The IE PTRS-UplinkConfig is used to configure uplink Phase-Tracking-Reference-Signals (PTRS)
-
-} ptrs_UplinkConfig_t;
 typedef enum{
   maxCodeBlockGroupsPerTransportBlock_n2 = 2,
   maxCodeBlockGroupsPerTransportBlock_n4 = 4,
@@ -530,8 +500,8 @@ typedef enum {
   pdsch_dmrs_type2 = 2
 } pdsch_dmrs_type_t;
 typedef enum {
-  pusch_dmrs_type1 = 1,
-  pusch_dmrs_type2 = 2
+  pusch_dmrs_type1 = 0,
+  pusch_dmrs_type2 = 1
 } pusch_dmrs_type_t;
 typedef enum {
   pdsch_dmrs_pos0 = 0,
@@ -545,6 +515,12 @@ typedef enum {
   pusch_dmrs_pos3 = 3,
 } pusch_dmrs_AdditionalPosition_t;
 typedef enum {
+  offset00 = 0,
+  offset01 = 1,
+  offset10 = 2,
+  offset11 = 3,
+} ptrs_resource_elementoffset_t;
+typedef enum {
   pdsch_len1 = 1,
   pdsch_len2 = 2
 } pdsch_maxLength_t;
@@ -552,6 +528,22 @@ typedef enum {
   pusch_len1 = 1,
   pusch_len2 = 2
 } pusch_maxLength_t;
+typedef struct {
+  uint8_t ptrs_mcs1;
+  uint8_t ptrs_mcs2;
+  uint8_t ptrs_mcs3;
+} ptrs_time_density_t;
+typedef struct {
+  uint16_t n_rb0;
+  uint16_t n_rb1;
+} ptrs_frequency_density_t;
+typedef struct { // The IE PTRS-UplinkConfig is used to configure uplink Phase-Tracking-Reference-Signals (PTRS)
+  uint8_t  num_ptrs_ports;
+  ptrs_resource_elementoffset_t resourceElementOffset;
+  ptrs_time_density_t  timeDensity;
+  ptrs_frequency_density_t  frequencyDensity;
+  uint32_t  ul_ptrs_power;
+} ptrs_UplinkConfig_t;
 typedef struct { // The IE DMRS-DownlinkConfig is used to configure downlink demodulation reference signals for PDSCH
   pdsch_dmrs_type_t pdsch_dmrs_type;
   pdsch_dmrs_AdditionalPosition_t pdsch_dmrs_AdditionalPosition;
@@ -563,6 +555,7 @@ typedef struct { // The IE DMRS-UplinkConfig is used to configure uplink demodul
   pusch_dmrs_type_t pusch_dmrs_type;
   pusch_dmrs_AdditionalPosition_t pusch_dmrs_AdditionalPosition;
   pusch_maxLength_t pusch_maxLength;
+  ptrs_UplinkConfig_t ptrs_UplinkConfig;
   uint16_t scramblingID0;
   uint16_t scramblingID1;
 } dmrs_UplinkConfig_t;
@@ -647,6 +640,10 @@ typedef struct {
  * resourceAllocation
  */
   ul_resourceAllocation_t ul_resourceAllocation;
+/*
+ * DMRS-Uplinkconfig
+ */
+  dmrs_UplinkConfig_t dmrs_UplinkConfig;
 /*
  * rgb_Size
  */
@@ -760,11 +757,11 @@ typedef struct {
 #define MAX_NR_OF_SPATIAL_RELATION_INFOS          (8)
 
 typedef enum {
-  pucch_format0_nr  = 0,
-  pucch_format1_nr  = 1,
-  pucch_format2_nr  = 2,
-  pucch_format3_nr  = 3,
-  pucch_format4_nr  = 4,
+  pucch_format0_nr  = 1,
+  pucch_format1_nr  = 2,
+  pucch_format2_nr  = 3,
+  pucch_format3_nr  = 4,
+  pucch_format4_nr  = 5
 } pucch_format_nr_t;
 
 typedef enum {
@@ -1111,6 +1108,7 @@ typedef struct {
   int                                active_sr_id;
   SchedulingRequestResourceConfig_t  *sr_ResourceConfig[MAX_NR_OF_SR_CONFIG_PER_CELL_GROUP];
 } scheduling_request_config_t;
+
 
 #undef EXTERN
 #undef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H

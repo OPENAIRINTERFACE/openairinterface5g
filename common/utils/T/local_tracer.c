@@ -358,23 +358,21 @@ static void forward(void *_forwarder, char *buf, int size) {
 
   f->tail = new;
 #if BASIC_SIMULATOR
-
   /* When runnng the basic simulator, the tracer may be too slow.
    * Let's not take too much memory in the tracee and
    * wait if there is too much data to send. 200MB is
    * arbitrary.
    */
-  while (f->memusage > 200 * 1024 * 1024) {
-    if (pthread_cond_signal(&f->cond)) abort();
+    while (f->memusage > 200 * 1024 * 1024) {
+      if (pthread_cond_signal(&f->cond)) abort();
 
-    if (pthread_mutex_unlock(&f->lock)) abort();
+      if (pthread_mutex_unlock(&f->lock)) abort();
 
-    usleep(1000);
+      usleep(1000);
 
-    if (pthread_mutex_lock(&f->lock)) abort();
-  }
-
-#endif /* BASIC_SIMULATOR */
+      if (pthread_mutex_lock(&f->lock)) abort();
+    }
+#endif
   f->memusage += size+4;
 
   /* warn every 100MB */

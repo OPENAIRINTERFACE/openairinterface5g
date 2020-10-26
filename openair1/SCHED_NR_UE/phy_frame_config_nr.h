@@ -29,25 +29,13 @@
 *
 ************************************************************************/
 
-#ifndef PHY_FRAME_CONFIG_NR_H
-#define PHY_FRAME_CONFIG_NR_H
+#ifndef PHY_FRAME_CONFIG_NR_UE_H
+#define PHY_FRAME_CONFIG_NR_UE_H
 
 /************** DEFINE ********************************************/
 
 /*************** FUNCTIONS *****************************************/
 
-/** \brief This function processes tdd dedicated configuration for nr
- *  @param frame_parms NR DL Frame parameters
- *  @param dl_UL_TransmissionPeriodicity periodicity
- *  @param nrofDownlinkSlots number of downlink slots
- *  @param nrofDownlinkSymbols number of downlink symbols
- *  @param nrofUplinkSlots number of uplink slots
- *  @param nrofUplinkSymbols number of uplink symbols
-    @returns 0 if tdd dedicated configuration has been properly set or -1 on error with message */
-
-int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeriodicity,
-                       int nrofDownlinkSlots, int nrofDownlinkSymbols,
-                       int nrofUplinkSlots,   int nrofUplinkSymbols);
 
 /** \brief This function adds a slot configuration to current dedicated configuration for nr
  *  @param frame_parms NR DL Frame parameters
@@ -74,9 +62,17 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
  *  @param frame_parms NR DL Frame parameters
  *  @param nr_frame : frame number
  *  @param nr_tti   : slot number
-    @returns nr_slot_t : downlink or uplink */
+    @returns int : downlink or uplink */
 
 int slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti);
+
+/** \brief This function checks nr UE slot direction : downlink or uplink
+ *  @param cfg      : FAPI Config Request
+ *  @param nr_frame : frame number
+ *  @param nr_tti   : slot number
+    @returns int : downlink, uplink or mixed slot type */
+
+int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_frame, int nr_tti);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters

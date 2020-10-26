@@ -64,7 +64,7 @@ sim_t sim;
 
 void init_ru_devices(void);
 
-void init_RU(char *,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
+void init_RU(char *,int send_dmrssync);
 
 void *rfsim_top(void *n_frames);
 
@@ -101,7 +101,7 @@ void RCConfig_sim(void) {
   RC.nb_RU     = RUParamList.numelt;
   AssertFatal(RC.nb_RU>0,"we need at least 1 RU for simulation\n");
   printf("returned with %d rus\n",RC.nb_RU);
-  init_RU(NULL,internal,internal,0);
+  init_RU(NULL,0);
   printf("Waiting for RUs to get set up\n");
   wait_RUs();
   init_ru_devices();
@@ -337,6 +337,7 @@ void init_ue_devices(PHY_VARS_UE *UE) {
 void init_ocm(void) {
   module_id_t UE_id, ru_id;
   int CC_id;
+  double DS_TDL = .03;
   randominit(0);
   set_taus_seed(0);
   init_channelmod();
@@ -357,6 +358,7 @@ void init_ocm(void) {
                                AWGN,
                                N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_DL),
                                N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_DL),
+                               DS_TDL,
                                0.0,
                                0,
                                0);
@@ -369,6 +371,7 @@ void init_ocm(void) {
                                AWGN,
                                N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_UL),
                                N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_UL),
+                               DS_TDL,
                                0.0,
                                0,
                                0);

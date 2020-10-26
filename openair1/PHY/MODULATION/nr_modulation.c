@@ -20,40 +20,145 @@
  */
 
 #include "nr_modulation.h"
-
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 void nr_modulation(uint32_t *in,
                    uint32_t length,
                    uint16_t mod_order,
                    int16_t *out)
 {
-  uint16_t offset;
-  uint8_t idx, b_idx;
+  uint16_t mask = ((1<<mod_order)-1);
+  int32_t* nr_mod_table32;
+  int32_t* out32 = (int32_t*) out;
+  uint8_t* in_bytes = (uint8_t*) in;
+  uint64_t* in64 = (uint64_t*) in;
+  int64_t* out64 = (int64_t*) out;
+  uint8_t idx;
+  uint32_t i,j;
+  uint32_t bit_cnt;
+  uint64_t x,x1,x2;
+    
+#if defined(__SSE2__)
+  __m128i *nr_mod_table128;
+  __m128i *out128;
+#endif
 
-  offset = (mod_order==2)? NR_MOD_TABLE_QPSK_OFFSET : (mod_order==4)? NR_MOD_TABLE_QAM16_OFFSET : \
-                    (mod_order==6)? NR_MOD_TABLE_QAM64_OFFSET: (mod_order==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
+  LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
-  for (int i=0; i<length/mod_order; i++)
-  {
-    idx = 0;
-    for (int j=0; j<mod_order; j++)
-    {
-      b_idx = (i*mod_order+j)&0x1f;
-      if (i && (!b_idx))
-        in++;
-      idx ^= (((*in)>>b_idx)&1)<<(mod_order-j-1);
+  switch (mod_order) {
+
+#if defined(__SSE2__)
+  case 2:
+    nr_mod_table128 = (__m128i*) nr_qpsk_byte_mod_table;
+    out128 = (__m128i*) out;
+    for (i=0; i<length/8; i++)
+      out128[i] = nr_mod_table128[in_bytes[i]];
+    // the bits that are left out
+    i = i*8/2;
+    nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
+    while (i<length/2){
+      idx = ((in_bytes[(i*2)/8]>>((i*2)&0x7)) & mask);
+      out32[i] = nr_mod_table32[idx];
+      i++;
     }
+    return;
+#else
+  case 2:
+    nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
+    for (i=0; i<length/mod_order; i++) {
+      idx = ((in[i*2/32]>>((i*2)&0x1f)) & mask);
+      out32[i] = nr_mod_table32[idx];
+    }
+    return;
+#endif
 
-    out[i<<1] = nr_mod_table[(offset+idx)<<1];
-    out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
+  case 4:
+    out64 = (int64_t*) out;
+    for (i=0; i<length/8; i++)
+      out64[i] = nr_16qam_byte_mod_table[in_bytes[i]];
+    // the bits that are left out
+    i = i*8/4;
+    while (i<length/4){
+      idx = ((in_bytes[(i*4)/8]>>((i*4)&0x7)) & mask);
+      out32[i] = nr_16qam_mod_table[idx];
+      i++;
+    }
+    return;
+
+  case 6:
+    j = 0;
+    for (i=0; i<length/192; i++) {
+      x = in64[i*3]; 
+      x1 = x&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>24)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>36)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>48)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x2 = (x>>60);
+      x = in64[i*3+1];
+      x2 |= x<<4;
+      x1 = x2&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>24)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>36)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>48)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x2 = ((x>>56)&0xf0) | (x2>>60);
+      x = in64[i*3+2];
+      x2 |= x<<8;
+      x1 = x2&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>24)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>36)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>48)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x2 = ((x>>52)&0xff0) | (x2>>60);
+      out64[j++] = nr_64qam_mod_table[x2];
+    }
+    i *= 24;
+    bit_cnt = i * 8;
+    while (bit_cnt < length) {
+      x = *((uint32_t*)(in_bytes+i));
+      x1 = x&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      i += 3;
+      bit_cnt += 24;
+    }
+    return;
+      
+  case 8:
+    nr_mod_table32 = (int32_t*) nr_256qam_mod_table;
+    for (i=0; i<length/8; i++)
+      out32[i] = nr_mod_table32[in_bytes[i]];
+    return;
+
+  default:
+    break;
   }
+  AssertFatal(false,"Invalid or unsupported modulation order %d\n",mod_order);
+
 }
 
 void nr_layer_mapping(int16_t **mod_symbs,
-                         uint8_t n_layers,
-                         uint16_t n_symbs,
-                         int16_t **tx_layers) {
+		      uint8_t n_layers,
+		      uint16_t n_symbs,
+		      int16_t **tx_layers) {
+  LOG_D(PHY,"Doing layer mapping for %d layers, %d symbols\n",n_layers,n_symbs);
 
   switch (n_layers) {
 
@@ -241,7 +346,7 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 
   switch (Msc_PUSCH) {
     case 12:
-      dft12((int16_t *)dft_in0, (int16_t *)dft_out0);
+      dft(DFT_12,(int16_t *)dft_in0, (int16_t *)dft_out0,0);
 
 #if defined(__x86_64__) || defined(__i386__)
       norm128 = _mm_set1_epi16(9459);
@@ -259,139 +364,173 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
       break;
 
     case 24:
-      dft24((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_24,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 36:
-      dft36((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_36,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 48:
-      dft48((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_48,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 60:
-      dft60((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_60,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 72:
-      dft72((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_72,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 96:
-      dft96((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_96,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 108:
-      dft108((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_108,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 120:
-      dft120((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_120,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 144:
-      dft144((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_144,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 180:
-      dft180((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_180,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 192:
-      dft192((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_192,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 216:
-      dft216((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_216,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 240:
-      dft240((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_240,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 288:
-      dft288((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_288,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 300:
-      dft300((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_300,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 324:
-      dft324((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_324,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 360:
-      dft360((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_360,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 384:
-      dft384((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_384,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 432:
-      dft432((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_432,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 480:
-      dft480((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_480,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 540:
-      dft540((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_540,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 576:
-      dft576((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_576,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 600:
-      dft600((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_600,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 648:
-      dft648((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_648,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 720:
-      dft720((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_720,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 768:
-      dft768((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_768,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 864:
-      dft864((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_864,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 900:
-      dft900((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_900,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 960:
-      dft960((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_960,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 972:
-      dft972((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_960,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 1080:
-      dft1080((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_1080,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 1152:
-      dft1152((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_1152,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 1200:
-      dft1200((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_1200,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
   }
 
   for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
     z[i] = dft_out0[ip];
+  }
+}
+
+
+void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq) {
+
+  const int nsymb = fp->symbols_per_slot * fp->slots_per_frame/10;
+  const double Tc=(1/480e3/4096);
+  const double Nu=2048*64*.5;
+  const double f0= (double)CarrierFreq;
+  const double Ncp0=16*64 + (144*64*.5);
+  const double Ncp1=(144*64*.5);
+  double tl=0,poff,exp_re,exp_im;
+  double Ncp,Ncpm1=Ncp0;
+
+  poff = 2*M_PI*((Ncp0*Tc))*f0;
+  exp_re = cos(poff);
+  exp_im = sin(-poff);
+  fp->symbol_rotation[0]=(int16_t)floor(exp_re*32767);
+  fp->symbol_rotation[1]=(int16_t)floor(exp_im*32767);
+  LOG_I(PHY,"Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n",f0,nsymb);
+  LOG_I(PHY,"Symbol rotation %d/%d => (%d,%d)\n",0,nsymb,fp->symbol_rotation[0],fp->symbol_rotation[1]);
+  for (int l=1;l<nsymb;l++) {
+    if (l==(7*(1<<fp->numerology_index))) Ncp=Ncp0;
+    else Ncp=Ncp1;
+    tl += (Nu+Ncpm1)*Tc;					     
+    poff = 2*M_PI*(tl + (Ncp*Tc))*f0;
+    exp_re = cos(poff);
+    exp_im = sin(-poff);
+    fp->symbol_rotation[l<<1]=(int16_t)floor(exp_re*32767);
+    fp->symbol_rotation[1+(l<<1)]=(int16_t)floor(exp_im*32767);
+    LOG_I(PHY,"Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",l,nsymb,tl,fp->symbol_rotation[l<<1],fp->symbol_rotation[1+(l<<1)],
+	  (poff/2/M_PI)-floor(poff/2/M_PI));
+    Ncpm1=Ncp;
   }
 }

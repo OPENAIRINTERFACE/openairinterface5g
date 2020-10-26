@@ -37,6 +37,7 @@
 #include "common/utils/load_module_shlib.h"
 #include "common/utils/telnetsrv/telnetsrv.h"
 #include "executables/thread-common.h"
+#include "common/utils/LOG/log.h"
 #include "softmodem-common.h"
 
 static softmodem_params_t softmodem_params;
@@ -44,7 +45,7 @@ char *parallel_config=NULL;
 char *worker_config=NULL;
 
 
-
+static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
 static struct timespec start;
 
 uint64_t get_softmodem_optmask(void) {
@@ -60,9 +61,28 @@ softmodem_params_t *get_softmodem_params(void) {
   return &softmodem_params;
 }
 
-void get_common_options(void) {
-  uint32_t online_log_messages;
-  uint32_t glog_level ;
+int32_t check_execmask(uint64_t execmask) {
+  char *softmodemfunc=map_int_to_str(softmodem_funcs, execmask);
+  if (softmodemfunc != NULL) {
+  	  set_softmodem_optmask(execmask);
+  	  return 0;
+  } 
+  return -1;
+}
+char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
+  uint64_t fmask=(get_softmodem_optmask()&SOFTMODEM_FUNC_BITS);
+  char *softmodemfunc=map_int_to_str(softmodem_funcs, fmask);
+  if (sofmodemfunc_mask_ptr != NULL)
+  	  *sofmodemfunc_mask_ptr=fmask;
+  if (softmodemfunc != NULL) {
+  	  return softmodemfunc;
+  }
+  return "???";
+}
+
+void get_common_options(uint32_t execmask) {
+  uint32_t online_log_messages=0;
+  uint32_t glog_level=0 ;
   uint32_t start_telnetsrv = 0;
   uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
   uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
@@ -70,6 +90,7 @@ void get_common_options(void) {
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
+  check_execmask(execmask);
   config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
   config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
                             sizeof(cmdline_logparams)/sizeof(paramdef_t));
@@ -123,29 +144,28 @@ void get_common_options(void) {
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
 }
-
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
-   struct rusage usage;
-   struct timespec stop;
+  struct rusage usage;
+  struct timespec stop;
 
-   clock_gettime(CLOCK_BOOTTIME, &stop);
+  clock_gettime(CLOCK_BOOTTIME, &stop);
 
-   uint64_t elapse = (stop.tv_sec - start.tv_sec) ;   // in seconds
+  uint64_t elapse = (stop.tv_sec - start.tv_sec) ;   // in seconds
 
 
-   int st = getrusage(RUSAGE_SELF,&usage);
-   if (!st) {
-   	 pf("\nRun time: %lluh %llus\n",(unsigned long long)elapse/3600,(unsigned long long)(elapse - (elapse/3600)));
-     pf("\tTime executing user inst.: %lds %ldus\n",(long)usage.ru_utime.tv_sec,(long)usage.ru_utime.tv_usec);
-     pf("\tTime executing system inst.: %lds %ldus\n",(long)usage.ru_stime.tv_sec,(long)usage.ru_stime.tv_usec);
-     pf("\tMax. Phy. memory usage: %ldkB\n",(long)usage.ru_maxrss);
-     pf("\tPage fault number (no io): %ld\n",(long)usage.ru_minflt);
-     pf("\tPage fault number (requiring io): %ld\n",(long)usage.ru_majflt);
-     pf("\tNumber of file system read: %ld\n",(long)usage.ru_inblock);
-     pf("\tNumber of filesystem write: %ld\n",(long)usage.ru_oublock);
-     pf("\tNumber of context switch (process origin, io...): %ld\n",(long)usage.ru_nvcsw);
-     pf("\tNumber of context switch (os origin, priority...): %ld\n",(long)usage.ru_nivcsw);
-   } 
+  int st = getrusage(RUSAGE_SELF,&usage);
+  if (!st) {
+    pf("\nRun time: %lluh %llus\n",(unsigned long long)elapse/3600,(unsigned long long)(elapse - (elapse/3600)));
+    pf("\tTime executing user inst.: %lds %ldus\n",(long)usage.ru_utime.tv_sec,(long)usage.ru_utime.tv_usec);
+    pf("\tTime executing system inst.: %lds %ldus\n",(long)usage.ru_stime.tv_sec,(long)usage.ru_stime.tv_usec);
+    pf("\tMax. Phy. memory usage: %ldkB\n",(long)usage.ru_maxrss);
+    pf("\tPage fault number (no io): %ld\n",(long)usage.ru_minflt);
+    pf("\tPage fault number (requiring io): %ld\n",(long)usage.ru_majflt);
+    pf("\tNumber of file system read: %ld\n",(long)usage.ru_inblock);
+    pf("\tNumber of filesystem write: %ld\n",(long)usage.ru_oublock);
+    pf("\tNumber of context switch (process origin, io...): %ld\n",(long)usage.ru_nvcsw);
+    pf("\tNumber of context switch (os origin, priority...): %ld\n",(long)usage.ru_nivcsw);
+  }
 }
 
 void signal_handler(int sig) {
@@ -160,9 +180,9 @@ void signal_handler(int sig) {
     backtrace_symbols_fd(array, size, 2);
     exit(-1);
   } else {
-  	if(sig==SIGINT ||sig==SOFTMODEM_RTSIGNAL)
-  		softmodem_printresources(sig,(telnet_printfunc_t)printf);
-  	if (sig != SOFTMODEM_RTSIGNAL) {
+    if(sig==SIGINT ||sig==SOFTMODEM_RTSIGNAL)
+      softmodem_printresources(sig,(telnet_printfunc_t)printf);
+    if (sig != SOFTMODEM_RTSIGNAL) {
       printf("Linux signal %s...\n",strsignal(sig));
       exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
     }
@@ -172,7 +192,7 @@ void signal_handler(int sig) {
 
 
 void set_softmodem_sighandler(void) {
-  struct sigaction	act,oldact;
+  struct sigaction  act,oldact;
   clock_gettime(CLOCK_BOOTTIME, &start);
   memset(&act,0,sizeof(act));
   act.sa_handler=signal_handler;
@@ -181,5 +201,6 @@ void set_softmodem_sighandler(void) {
   signal(SIGSEGV, signal_handler);
   signal(SIGINT,  signal_handler);
   signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);	
+  signal(SIGABRT, signal_handler);
 }
+
