@@ -109,9 +109,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
             dlsch0_harq->harq_ack.slot_for_feedback_ack = (slot+dlsch_config_pdu->pdsch_to_harq_feedback_time_ind)%frame_parms.slots_per_frame;
             dlsch0_harq->Nl=1;
-            dlsch0_harq->mcs_table=0;
+            dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
             dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
             dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
+            /* PTRS */
+            dlsch0_harq->PTRSFreqDensity = dlsch_config_pdu->PTRSFreqDensity;
+            dlsch0_harq->PTRSTimeDensity = dlsch_config_pdu->PTRSTimeDensity;
+            dlsch0_harq->PTRSPortIndex = dlsch_config_pdu->PTRSPortIndex;
+            dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
+            dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
+            dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
             LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
 		
           }

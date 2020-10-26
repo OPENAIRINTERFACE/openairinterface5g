@@ -468,6 +468,21 @@ typedef struct {
   uint8_t cbgti;
   uint8_t codeBlockGroupFlushIndicator;
   //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
+  // PTRS [TS38.214, sec 5.1.6.3]
+  /// PT-RS antenna ports [TS38.214, sec 5.1.6.3] [TS38.211, table 7.4.1.2.2-1] Bitmap occupying the 6 LSBs with: bit 0: antenna port 1000 bit 5: antenna port 1005 and for each bit 0: PTRS port not used 1: PTRS port used
+  uint8_t PTRSPortIndex ;
+  /// PT-RS time density [TS38.214, table 5.1.6.3-1] 0: 1 1: 2 2: 4
+  uint8_t PTRSTimeDensity;
+  /// PT-RS frequency density [TS38.214, table 5.1.6.3-2] 0: 2 1: 4
+  uint8_t PTRSFreqDensity;
+  /// PT-RS resource element offset [TS38.211, table 7.4.1.2.2-1] Value: 0->3
+  uint8_t PTRSReOffset;
+  ///  PT-RS-to-PDSCH EPRE ratio [TS38.214, table 4.1-2] Value :0->3
+  uint8_t nEpreRatioOfPDSCHToPTRS;
+  /// MCS table for this DLSCH
+  uint8_t mcs_table;
+  
+  uint16_t pduBitmap;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
 typedef struct {
