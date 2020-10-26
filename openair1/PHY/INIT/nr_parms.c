@@ -275,9 +275,9 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
-  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antenna_ports_gNB = cfg->carrier_config.num_tx_ant.value;// It corresponds to pdsch_AntennaPorts
+  fp->nb_antennas_rx = cfg->carrier_config.num_rx_ant.value;      // in config_common() in config.c: HardCoded to 1
+  fp->nb_antennas_tx = 1;                                         // It corresponds to UE Tx antenna
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;

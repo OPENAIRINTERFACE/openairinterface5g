@@ -268,7 +268,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     num_ssb += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
   } 
 
-  cfg->carrier_config.num_rx_ant.value = cfg->carrier_config.num_tx_ant.value;
+  cfg->carrier_config.num_rx_ant.value = 1;//HardCoded till we review the rx chain of PUSCH for num_rx_ant > 1 "cfg->carrier_config.num_tx_ant.value;"
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
   LOG_I(MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
