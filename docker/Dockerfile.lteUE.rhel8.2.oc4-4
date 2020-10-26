@@ -51,6 +51,7 @@ RUN yum update -y && \
         atlas \
         iproute \
         net-tools \
+        iputils \
         libyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
@@ -114,8 +115,9 @@ RUN ldd /usr/local/lib/libdfts.so
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-lte-ue/etc
 COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
+COPY --from=lte-ue-build /oai-ran/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf ./ue_usim.conf
 
 WORKDIR /opt/oai-lte-ue
 #CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
-
+CMD ["sleep", "infinity"]
