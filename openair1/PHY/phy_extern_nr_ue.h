@@ -32,7 +32,8 @@ extern char  fmageren_name2[512];
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
-//#include "PHY/LTE_TRANSPORT/transport_extern.h"
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
+extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern const short conjugate[8],conjugate2[8];
 extern int number_of_cards;
