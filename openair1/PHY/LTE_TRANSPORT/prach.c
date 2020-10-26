@@ -167,7 +167,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
               br_flag,ce_level,frame_prach,subframe,fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],prach_ConfigIndex);
       }
     } else {
-      rxsigF            = ru->prach_rxsigF;
+      rxsigF            = ru->prach_rxsigF[0];
 
       if (LOG_DEBUGFLAG(PRACH)) {
         if (((frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",

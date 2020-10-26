@@ -3,4 +3,25 @@ package protocol;
 
 enum flex_control_delegation_type {
      FLCDT_MAC_DL_UE_SCHEDULER = 1;		// DL UE scheduler delegation
+     FLCDT_AGENT_CONTROL_APP = 2;               // Generic control application
+}
+
+message flex_agent_reconfiguration_system {
+  optional string system = 1;
+  repeated flex_agent_reconfiguration_subsystem subsystems = 2;
+}
+
+message flex_agent_reconfiguration_subsystem {
+  optional string name = 1;   // Name of the object (app name or user plane object)
+  optional string behavior = 2;   // For an app: a callback in a shared library. For any other subsystem: an object name (shared library) with defined syntax.
+  map<string, flex_agent_reconfiguration_param> params = 3; // Param configurations depending on callback/shared library above.
+}
+
+message flex_agent_reconfiguration_param {
+  oneof param {
+    int32 integer = 1;
+    float floating = 2;
+    bool boolean = 3;
+    string str = 4;
+  }
 }
