@@ -665,7 +665,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   nushift = (p>>1)&1;
   ue->frame_parms.nushift = nushift;
 
-  if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
+  if (ue->high_speed_flag == 0)
     ch_offset     = ue->frame_parms.ofdm_symbol_size ;
   else
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
@@ -717,7 +717,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   // generate pilot
   uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12;
   int config_type = 0; // needs to be updated from higher layer
-  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][0], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
+  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 

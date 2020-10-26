@@ -719,7 +719,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 										unsigned short nb_pdsch_rb,
                                         unsigned char nr_tti_rx,
                                         uint32_t high_speed_flag,
-                                        NR_DL_FRAME_PARMS *frame_parms);
+                                        NR_DL_FRAME_PARMS *frame_parms,
+                                        uint16_t dlDmrsSymbPos);
 
 /** \fn dlsch_extract_rbs_dual(int32_t **rxdataF,
     int32_t **dl_ch_estimates,

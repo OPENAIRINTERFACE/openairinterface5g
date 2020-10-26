@@ -724,17 +724,18 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
     // do channel estimation for first DMRS only
-    for (m = s0; m < 3; m++) {
+    for (m = s0; m < (s0 +s1); m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
-	nr_pdsch_channel_estimation(ue,
-				    0 /*eNB_id*/,
-				    nr_tti_rx,
-				    0 /*p*/,
-				    m,
-				    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
-				    pdsch_nb_rb);
-	LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
-	break;
+        nr_pdsch_channel_estimation(ue,
+                                    0 /*eNB_id*/,
+                                    nr_tti_rx,
+                                    0 /*p*/,
+                                    m,
+                                    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
+                                    pdsch_nb_rb);
+        LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
+        if ( ue->high_speed_flag == 0 ) //for slow speed case only estimate the channel once per slot
+          break;
       }
     }
     for (m = s0; m < (s1 + s0); m++) {
@@ -902,7 +903,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
   uint8_t dmrs_type, nb_re_dmrs;
-  uint16_t length_dmrs = 1; 
+  uint16_t dmrs_len = get_num_dmrs(dlsch0->harq_processes[dlsch0->current_harq_pid]->dlDmrsSymbPos);
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
@@ -991,7 +992,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
                                                    nb_symb_sch,
                                                    nb_re_dmrs,
-                                                   length_dmrs,
+                                                   dmrs_len,
                                                    dlsch0->harq_processes[harq_pid]->Qm,
                                                    dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
@@ -1072,11 +1073,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       if(is_cw1_active)
       {
           // start ldpc decode for CW 1
-          dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
-							 nb_symb_sch,
-							 nb_re_dmrs,
-							 length_dmrs,
-							 dlsch1->harq_processes[harq_pid]->Qm,
+        dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
+                                                       nb_symb_sch,
+                                                       nb_re_dmrs,
+                                                       dmrs_len,
+                                                       dlsch1->harq_processes[harq_pid]->Qm,
 							 dlsch1->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
           start_meas(&ue->dlsch_unscrambling_stats);
@@ -1764,7 +1765,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
       AssertFatal(symb_dmrs>=0,"no dmrs in 0..3\n");
       LOG_D(PHY,"Initializing dmrs for symb %d DMRS mask %x\n",symb_dmrs,dlsch0_harq->dlDmrsSymbPos);
-      nr_gold_pdsch(ue,symb_dmrs,0, 1);
+      nr_gold_pdsch(ue,0);
     
       for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
         nr_slot_fep(ue,
