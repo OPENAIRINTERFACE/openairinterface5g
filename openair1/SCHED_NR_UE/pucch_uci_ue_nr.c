@@ -446,7 +446,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     return (FALSE);
   }
 
-  //int max_code_rate = 0;
+  int max_code_rate = 0;
   //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
