@@ -246,37 +246,25 @@ static void UE_synch(void *arg) {
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
+      uint64_t dl_carrier, ul_carrier;
+      double rx_gain_off = 0;
+      nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
+
       if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
 
         // rerun with new cell parameters and frequency-offset
-        for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-          openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+        // todo: the freq_offset computed on DL shall be scaled before being applied to UL
+        nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
 
-          if (freq_offset >= 0)
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(freq_offset);
-          else
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(freq_offset);
-
-          if (uplink_frequency_offset[0][0])
-          openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] + uplink_frequency_offset[0][0];
-          else
-          openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+(UE->frame_parms.ul_CarrierFreq-UE->frame_parms.dl_CarrierFreq);
-
-          //UE->frame_parms.dl_CarrierFreq = openair0_cfg[CC_id].rx_freq[i];
-        }
-
-        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %f Hz, UL %f Hz), UE_scan_carrier %d\n",
+        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %f (DL %f Hz, UL %f Hz)\n",
               hw_slot_offset,
               freq_offset,
-              UE->rx_total_gain_dB,
+              openair0_cfg[UE->rf_map.card].rx_gain[0],
               openair0_cfg[UE->rf_map.card].rx_freq[0],
-              openair0_cfg[UE->rf_map.card].tx_freq[0],
-              UE->UE_scan_carrier);
+              openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
         // reconfigure for potentially different bandwidth
         switch(UE->frame_parms.N_RB_DL) {
@@ -332,45 +320,21 @@ static void UE_synch(void *arg) {
           UE->is_synchronized = 1;
         }
       } else {
-        // initial sync failed
-        // calculate new offset and try again
-        if (UE->UE_scan_carrier == 1) {
 
-          uint64_t dl_carrier, ul_carrier;
+        if (UE->UE_scan_carrier == 1) {
 
           if (freq_offset >= 0)
             freq_offset += 100;
 
           freq_offset *= -1;
 
-          if (downlink_frequency[0][0])
-            dl_carrier = downlink_frequency[0][0];
-          else
-            dl_carrier = UE->frame_parms.dl_CarrierFreq;
+          nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
 
-          if (uplink_frequency_offset[0][0])
-            ul_carrier = dl_carrier + uplink_frequency_offset[0][0];
-          else
-            ul_carrier = dl_carrier + UE->frame_parms.ul_CarrierFreq - UE->frame_parms.dl_CarrierFreq;
-
-          for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = dl_carrier + freq_offset;
-            openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = ul_carrier + freq_offset;
-            openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-
-          LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %f, UL %f)\n",
-                freq_offset,
-                UE->rx_total_gain_dB,
-                openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i],
-                openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i]);
-
-            if (UE->UE_scan_carrier==1)
-              openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
-          }
+          LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
           if (UE->mode != loop_through_memory)
             UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
-        }// initial_sync=0
+        }
 
         break;
 

@@ -40,7 +40,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
-#include "PHY/LTE_TRANSPORT/transport_vars.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 //#include "../../SIMU/USER/init_lte.h"
@@ -304,6 +304,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->no_timing_correction = UE_no_timing_correction;
   UE->mode                 = mode;
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
+  UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
 
   LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", mode, UE_fo_compensation, UE_scan, UE_scan_carrier, UE_no_timing_correction);
@@ -328,10 +329,11 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
 void init_openair0(void) {
   int card;
-  int i;
+  int freq_off = 0;
   NR_DL_FRAME_PARMS *frame_parms = &PHY_vars_UE_g[0][0]->frame_parms;
 
   for (card=0; card<MAX_CARDS; card++) {
+    uint64_t dl_carrier, ul_carrier;
     openair0_cfg[card].configFilename = NULL;
     openair0_cfg[card].threequarter_fs = frame_parms->threequarter_fs;
     numerology = frame_parms->numerology_index;
@@ -424,11 +426,6 @@ void init_openair0(void) {
     else
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
-    LOG_I(PHY, "HW: Configuring card %d, nb_antennas_tx/rx %hhu/%hhu\n",
-      card,
-      frame_parms->nb_antennas_tx,
-      frame_parms->nb_antennas_rx);
-
     openair0_cfg[card].Mod_id = 0;
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
@@ -436,36 +433,17 @@ void init_openair0(void) {
     openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
     openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
 
-    for (i=0; i<4; i++) {
+    LOG_I(PHY, "HW: Configuring card %d, tx/rx num_channels %d/%d, duplex_mode %s\n",
+      card,
+      openair0_cfg[card].tx_num_channels,
+      openair0_cfg[card].rx_num_channels,
+      duplex_mode[openair0_cfg[card].duplex_mode]);
 
-      if (i<openair0_cfg[card].rx_num_channels){
-        if (downlink_frequency[0][0])
-          openair0_cfg[card].rx_freq[i] = downlink_frequency[0][0];
-        else
-          openair0_cfg[card].rx_freq[i] = frame_parms->dl_CarrierFreq;
-      }
-      else
-        openair0_cfg[card].rx_freq[i]=0.0;
+    nr_get_carrier_frequencies(frame_parms, &dl_carrier, &ul_carrier);
 
-      if (i<openair0_cfg[card].tx_num_channels){
-        if (uplink_frequency_offset[0][0])
-          openair0_cfg[card].tx_freq[i] = openair0_cfg[card].rx_freq[i] + uplink_frequency_offset[0][0];
-        else
-          openair0_cfg[card].tx_freq[i] = frame_parms->ul_CarrierFreq;
-      }
-      else
-        openair0_cfg[card].tx_freq[i]=0.0;
+    nr_rf_card_config(&openair0_cfg[card], rx_gain_off, ul_carrier, dl_carrier, freq_off);
 
-      openair0_cfg[card].autocal[i] = 1;
-      openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
-      openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-             card,i, openair0_cfg[card].tx_gain[i],
-             openair0_cfg[card].rx_gain[i],
-             openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
-    }
+    openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
 
     if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
 
