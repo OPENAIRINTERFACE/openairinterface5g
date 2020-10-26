@@ -2818,7 +2818,20 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
    * 5.1.6.3-1 and Table 5.1.6.3-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
    */
-  if((*K_ptrs !=2  || *K_ptrs !=4 ) || (*L_ptrs !=0 || *L_ptrs !=1 || *L_ptrs !=2  ))
+  if(*K_ptrs ==2  || *K_ptrs ==4 )
+  {
+    valid = true;
+  }
+  else
+  {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  )
+  {
+    valid = true;
+  }
+  else
   {
     valid = false;
     return valid;
