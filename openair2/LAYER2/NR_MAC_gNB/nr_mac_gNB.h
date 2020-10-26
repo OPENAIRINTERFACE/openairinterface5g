@@ -372,7 +372,7 @@ typedef struct {
   /// Retransmission-related information
   NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
 
-  uint16_t ta_timer;
+  uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
   uint8_t tpc0;

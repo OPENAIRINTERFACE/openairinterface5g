@@ -634,24 +634,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
   const int CC_id = 0;
-  /* calculate number of slots since last DL scheduling, since the scheduler is
-   * not called in every slot. */
-  const NR_COMMON_channels_t *cc = gNB_mac->common_channels;
-  const NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  const NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int slot_diff =
-      (slot % num_slots_per_tdd) == 0 ? tdd_pattern->nrofUplinkSlots + 1 : 1;
-
   NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-    /* update TA and set ta_apply upon expiry. If such UE is not scheduled now,
-     * it will be by the preprocessor later. If we add the CE, ta_apply will be
-     * reset */
-    if (sched_ctrl->ta_timer > 0)
-      sched_ctrl->ta_timer -= slot_diff;
-    else
+    /* update TA and set ta_apply every 10 frames.
+     * Possible improvement: take the periodicity from input file.
+     * If such UE is not scheduled now, it will be by the preprocessor later.
+     * If we add the CE, ta_apply will be reset */
+    if (frame >= (sched_ctrl->ta_frame + 10) % 1023)
       sched_ctrl->ta_apply = true; /* the timer is reset once TA CE is scheduled */
 
     if (sched_ctrl->rbSize <= 0 && !get_softmodem_params()->phy_test)
@@ -751,15 +742,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* reserve space for timing advance of UE if necessary,
        * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
       const int ta_len = (sched_ctrl->ta_apply) ? 2 : 0;
-      if (sched_ctrl->ta_apply) {
-        LOG_I(MAC,
-              "%d.%2d UE %d TA scheduled, resetting timer to 100\n",
-              frame,
-              slot,
-              UE_id);
-        sched_ctrl->ta_apply = false;
-        sched_ctrl->ta_timer = 100;
-      }
 
       /* Get RLC data TODO: remove random data retrieval */
       int header_length_total = 0;
@@ -803,7 +785,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
         sdu_length_total += sdu_lengths[num_sdus];
         header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
         header_length_total += header_length_last;
-
         num_sdus++;
 
         //ue_sched_ctl->uplane_inactivity_timer = 0;
@@ -866,6 +847,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
       retInfo->mcsTableIdx = sched_ctrl->mcsTableIdx;
       retInfo->mcs = sched_ctrl->mcs;
       retInfo->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
+
+      // ta command is sent, values are reset
+      if (sched_ctrl->ta_apply) {
+        sched_ctrl->ta_apply = false;
+        sched_ctrl->ta_frame = frame;
+        LOG_D(MAC,
+              "%d.%2d UE %d TA scheduled, resetting TA frame\n",
+              frame,
+              slot,
+              UE_id);
+      }
 
       T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
         T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(buf, TBS));

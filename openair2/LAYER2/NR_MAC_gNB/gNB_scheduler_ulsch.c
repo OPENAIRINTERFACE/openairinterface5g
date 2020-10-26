@@ -361,6 +361,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             current_rnti,
             UE_id,
             ra->rnti);
+      // re-initialize ta update variables afrer RA procedure completion
+      UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
     }
     return;
   }
