@@ -63,7 +63,11 @@
 #include "NR_PhysicalCellGroupConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
-
+#include "NR_MeasConfig.h"
+#include "fapi_nr_ue_interface.h"
+#include "NR_IF_Module.h"
+#include "PHY/defs_nr_common.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 
 #define NB_NR_UE_MAC_INST 1
 /*!\brief Maximum number of logical channl group IDs */
@@ -158,6 +162,7 @@ typedef struct {
   NR_CellGroupConfig_t            *scg;
   NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
   int                             servCellIndex;
+  NR_CSI_ReportConfig_t           *csirc;
   ////  MAC config
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;

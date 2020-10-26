@@ -1136,8 +1136,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul);
 
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-      gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
-                                                                   rel15_ul->rb_size*12);
+      gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
+                                                                        rel15_ul->rb_size*12);
       if (gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]==1) return (1);
     }
 
