@@ -143,4 +143,10 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
+
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
+                        uint8_t *nERatio,uint8_t *reOffset,
+                        uint8_t NrOfSymbols);
 #endif

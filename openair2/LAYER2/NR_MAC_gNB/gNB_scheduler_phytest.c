@@ -268,6 +268,7 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
   int TBS;
   int bwp_id=1;
   int UE_id = 0;
+  bool valid_ptrs_setup = false;
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
 
@@ -344,6 +345,20 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
 						     scc->dmrs_TypeA_Position,
 						     pdsch_pdu_rel15->NrOfSymbols);
 
+  /* Check and validate PTRS values */
+  if(bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL)
+  {
+    valid_ptrs_setup = set_dl_ptrs_values(bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
+                                          pdsch_pdu_rel15->rbSize, pdsch_pdu_rel15->mcsIndex[0],
+                                          pdsch_pdu_rel15->mcsTable[0],
+                                          &pdsch_pdu_rel15->PTRSFreqDensity,&pdsch_pdu_rel15->PTRSTimeDensity,
+                                          &pdsch_pdu_rel15->PTRSPortIndex,&pdsch_pdu_rel15->nEpreRatioOfPDSCHToPTRS,
+                                          &pdsch_pdu_rel15->PTRSReOffset, pdsch_pdu_rel15->NrOfSymbols);
+    if(valid_ptrs_setup==true)
+    {
+      pdsch_pdu_rel15->pduBitmap |=0x1;
+    }
+  }
   dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
   
   // bwp indicator
