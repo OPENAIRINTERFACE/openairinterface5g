@@ -438,8 +438,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     //mbsfn_status[CC_id] = 0;
 
     // clear vrb_maps
-    memset(cc[CC_id].vrb_map, 0, 275);
-    memset(cc[CC_id].vrb_map_UL, 0, 275);
+    memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
+    memset(cc[CC_id].vrb_map_UL, 0, sizeof(uint16_t) * 275);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }

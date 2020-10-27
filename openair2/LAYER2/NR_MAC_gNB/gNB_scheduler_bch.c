@@ -204,7 +204,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
 
 void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id) {
 
-  uint8_t *vrb_map = cc[CC_id].vrb_map;
+  uint16_t *vrb_map = cc[CC_id].vrb_map;
   for (int rb = 0; rb < 20; rb++)
-    vrb_map[rbStart + rb] = 1;
+    vrb_map[rbStart + rb] = 0xf; // mark the first four symbols as occupied
 }

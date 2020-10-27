@@ -274,7 +274,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   int rbStart = 0;
   int tStart = 0;
   int rbSize = 0;
-  uint8_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
+  uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   /* find largest unallocated RB region */
   do {
     /* advance to first free RB */
