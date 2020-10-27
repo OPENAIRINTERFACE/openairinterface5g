@@ -18,6 +18,8 @@
 #include "NasKeySetIdentifier.h"
 #include "FGSRegistrationType.h"
 #include "MessageType.h"
+#include "FGMMCapability.h"
+#include "NrUESecurityCapability.h"
 
 #ifndef REGISTRATION_REQUEST_H_
 #define REGISTRATION_REQUEST_H_
@@ -89,6 +91,9 @@ typedef struct registration_request_msg_tag {
   FGSMobileIdentity                       fgsmobileidentity;
 
   /* Optional fields */
+  uint32_t                                presencemask;
+  FGMMCapability                          fgmmcapability;
+  NrUESecurityCapability                  nruesecuritycapability;
 } registration_request_msg;
 
 int decode_registration_request(registration_request_msg *registrationrequest, uint8_t *buffer, uint32_t len);

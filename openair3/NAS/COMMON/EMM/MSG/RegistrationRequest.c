@@ -65,7 +65,30 @@ int encode_registration_request(registration_request_msg *registration_request, 
   else
     encoded += encode_result;
 
-  // TODO, Eecoding optional fields
+  if ((registration_request->presencemask & REGISTRATION_REQUEST_5GMM_CAPABILITY_PRESENT)
+      == REGISTRATION_REQUEST_5GMM_CAPABILITY_PRESENT) {
+    if ((encode_result = encode_5gmm_capability(&registration_request->fgmmcapability,
+                         REGISTRATION_REQUEST_5GMM_CAPABILITY_IEI, buffer + encoded, len -
+                         encoded)) < 0)
+      // Return in case of error
+      return encode_result;
+    else
+      encoded += encode_result;
+  }
+
+  if ((registration_request->presencemask & REGISTRATION_REQUEST_UE_SECURITY_CAPABILITY_PRESENT)
+      == REGISTRATION_REQUEST_UE_SECURITY_CAPABILITY_PRESENT) {
+    if ((encode_result = encode_nrue_security_capability(&registration_request->nruesecuritycapability,
+                         REGISTRATION_REQUEST_UE_SECURITY_CAPABILITY_IEI, buffer + encoded, len -
+                         encoded)) < 0)
+      // Return in case of error
+      return encode_result;
+    else
+      encoded += encode_result;
+  }
+
+
+  // TODO, Encoding optional fields
   return encoded;
 }
 
