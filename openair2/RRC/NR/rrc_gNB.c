@@ -1337,14 +1337,6 @@ void *rrc_gnb_task(void *args_p) {
                             NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_p,
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
-        // Message buffer has been processed, free it now.
-        result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), NR_RRC_DCCH_DATA_IND(msg_p).sdu_p);
-
-        if (result != EXIT_SUCCESS) {
-            LOG_I(NR_RRC, "Failed to free memory (%d)!\n", result);
-            break;
-        }
-
         break;
 
       /*
