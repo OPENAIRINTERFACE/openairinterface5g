@@ -126,6 +126,8 @@ typedef struct NR_UE_RRC_INST_s {
 
     /* KeNB as computed from parameters within USIM card */
     uint8_t kgnb[32];
+    NR_CipheringAlgorithm_t  cipheringAlgorithm;
+    e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
   
     /* Used integrity/ciphering algorithms */
     //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
