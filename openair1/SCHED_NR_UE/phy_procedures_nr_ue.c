@@ -2144,7 +2144,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
           ue->ulsch_Msg3_active[i] = 0;
         }
       }
-      nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], ue->prach_vars[0], mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
+      nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
     }
   }
 

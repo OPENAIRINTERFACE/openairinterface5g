@@ -77,7 +77,7 @@ void nr_get_prach_resources(module_id_t mod_id,
                             uint8_t gNB_id,
                             uint8_t first_Msg3,
                             NR_PRACH_RESOURCES_t *prach_resources,
-                            NR_UE_PRACH *prach_vars,
+                            fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
@@ -197,7 +197,7 @@ void nr_get_prach_resources(module_id_t mod_id,
         (ssb_rach_ratio > 1)) {
       total_preambles_per_ssb = numberOfRA_Preambles / ssb_rach_ratio;
 
-      ssb_nb_in_ro = prach_vars->prach_pdu.ssb_nb_in_ro;
+      ssb_nb_in_ro = prach_pdu->ssb_nb_in_ro;
       starting_preamble_nb = total_preambles_per_ssb * ssb_nb_in_ro;
     }
     else {
@@ -345,9 +345,9 @@ void nr_get_prach_resources(module_id_t mod_id,
    // - s_id is starting symbol of the PRACH occasion [0...14]
    // - t_id is the first slot of the PRACH occasion in a system frame [0...80]
    ul_carrier_id = 0; // NUL
-   f_id = prach_vars->prach_pdu.num_ra;
-   t_id = prach_vars->prach_pdu.prach_slot;
-   s_id = prach_vars->prach_pdu.prach_start_symbol;
+   f_id = prach_pdu->num_ra;
+   t_id = prach_pdu->prach_slot;
+   s_id = prach_pdu->prach_start_symbol;
 
    prach_resources->ra_RNTI = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
    mac->ra_rnti = prach_resources->ra_RNTI;
@@ -395,7 +395,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 // - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
 
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
-                       NR_UE_PRACH *prach_vars,
+                       fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
                        UE_MODE_t UE_mode,
@@ -510,7 +510,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_vars, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -637,7 +637,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_vars, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       } else {
 
@@ -651,7 +651,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_vars, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       }
     }
