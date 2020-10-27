@@ -53,8 +53,11 @@
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
+#include "../NR/nr_rrc_defs.h"
 
 #define NB_NR_UE_INST 1
+#define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
+#define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 
 typedef uint32_t channel_t;
 
@@ -68,11 +71,17 @@ typedef struct NR_UE_RRC_INST_s {
     NR_MeasConfig_t        *meas_config;
     NR_CellGroupConfig_t   *cell_group_config;
     NR_RadioBearerConfig_t *radio_bearer_config;
+
+    NR_SRB_INFO Srb0[NB_SIG_CNX_UE];
+    NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
+    NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
   
     NR_MIB_t *mib;
 
     /* KeNB as computed from parameters within USIM card */
     uint8_t kgnb[32];
+    NR_CipheringAlgorithm_t  cipheringAlgorithm;
+    e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
   
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList
