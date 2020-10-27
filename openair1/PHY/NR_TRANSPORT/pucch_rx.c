@@ -412,7 +412,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_I(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
+    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
           slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -427,7 +427,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_I(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
+    LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
           slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -1464,7 +1464,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     } // cw loop
     corr_dB = dB_fixed64((uint64_t)corr);
-    LOG_I(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
+    LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
     decodedPayload[0]=(uint64_t)cw_ML;
   }
   else { // polar coded case
@@ -1519,11 +1519,11 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  if (cw==0) corr += ((int64_t)corr32_re[half_prb>>2][aa]*corr32_re[half_prb>>2][aa])+
 		       ((int64_t)corr32_im[half_prb>>2][aa]*corr32_im[half_prb>>2][aa]);
 
-	
+
 	  corr_re = ( corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
 	  corr_im = ( corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
 	  corr_tmp += corr_re*corr_re + corr_im*corr_im;
-          /*
+
           LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
                 half_prb,cw,cw&15,cw>>4,aa,
                 ((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
@@ -1540,15 +1540,15 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                 corr_re,
                 corr_im,
                 corr_tmp);
-          */
+
 	}
 	corr16 = _mm_set1_epi16((int16_t)(corr_tmp>>8));
-	/*	
+
 	LOG_D(PHY,"half_prb %d cw %d corr16 %d\n",half_prb,cw,corr_tmp>>8);
-	*/
+
 	llr_num = _mm_max_epi16(_mm_mullo_epi16(corr16,pucch2_polar_llr_num_lut[cw]),llr_num);
 	llr_den = _mm_max_epi16(_mm_mullo_epi16(corr16,pucch2_polar_llr_den_lut[cw]),llr_den);
-	/*
+
 	LOG_D(PHY,"lut_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",
 	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[0],
 	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[1],
@@ -1558,7 +1558,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[5],
 	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[6],
 	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[7]);
-	
+
 	LOG_D(PHY,"llr_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",
 	      ((int16_t*)&llr_num)[0],
 	      ((int16_t*)&llr_num)[1],
@@ -1577,7 +1577,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	      ((int16_t*)&llr_den)[5],
 	      ((int16_t*)&llr_den)[6],
 	      ((int16_t*)&llr_den)[7]);
-	*/	
+
       }
       // compute llrs
       llrs[half_prb] = _mm_subs_epi16(llr_num,llr_den);

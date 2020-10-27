@@ -23,7 +23,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/MODULATION/nr_modulation.h"
 
-//#define NR_CSIRS_DEBUG
+#define NR_CSIRS_DEBUG
 
 
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,

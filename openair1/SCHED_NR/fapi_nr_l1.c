@@ -124,6 +124,7 @@ void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
   for (int id=0; id<NUMBER_OF_NR_CSIRS_MAX; id++) {
     NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[id];
     if (csirs->active == 0) {
+      LOG_I(PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
       csirs->frame = frame;
       csirs->slot = slot;
       csirs->active = 1;
@@ -206,7 +207,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
       break;
       case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
-        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+        LOG_I(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
         handle_nfapi_nr_csirs_pdu(gNB,
 				  frame, slot,
 				  &dl_tti_pdu->csi_rs_pdu);
