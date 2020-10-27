@@ -283,12 +283,12 @@ function check_ra_result {
 
     #gNB RA test
     echo "Checking gNB Log for RA success"
-    egrep "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly and UE_id (.+) is now 5G connected" $1 
+    egrep "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1 
  
  
     #UE RA test
     echo 'Checking UE Log for RA success'
-    egrep "RA procedure succeeded" $2
+    egrep "\[RAPROC\] RA procedure succeeded" $2
 
 }
 
