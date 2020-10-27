@@ -130,6 +130,7 @@ void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
       csirs->active = 1;
       memcpy((void*)&csirs->csirs_pdu, (void*)csirs_pdu, sizeof(nfapi_nr_dl_tti_csi_rs_pdu));
       found = 1;
+      break;
     }
   }
   if (found == 0)
