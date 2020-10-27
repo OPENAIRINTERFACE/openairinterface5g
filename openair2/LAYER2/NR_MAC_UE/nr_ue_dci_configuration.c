@@ -148,7 +148,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
       // for SPS=14 8 MSBs in positions 13 down to 6
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-      rel15->rnti = mac->crnti; // FIXME: Must be 0xFFFF
+      rel15->rnti = 0xFFFF; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
       rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
       rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
@@ -252,19 +252,21 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
           }
         }
         if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+
+          printf("*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = %li\n", *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1);
+          printf("ss->searchSpaceId = %li\n", ss->searchSpaceId);
+
+          // FIXME:
           //if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
 
-            if(slot  == 10){
+            if( (frame%2 == mac->type0_PDCCH_CSS_config.sfn_c) && (slot == mac->type0_PDCCH_CSS_config.n_0) ){
               rel15->num_dci_options = 1;
               rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
               config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, ss_id);
               fill_dci_search_candidates(ss, rel15);
-            //}
+            }
 
-
-            // Configure monitoring of PDCCH candidates in Type0-PDCCH common search space on the MCG
-            LOG_W(MAC, "[DCI_CONFIG] This seach space should not be configured yet...");
-          }
+          //}
         }
         if (pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation){
           if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation){

@@ -2953,5 +2953,14 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+
+  /*printf("\nbig_o = %f\n", big_o);
+  printf("scs_pdcch = %u\n", scs_pdcch);
+  printf("ssb_index = %u\n", type0_PDCCH_CSS_config->ssb_index);
+  printf("big_m = %f\n", big_m);
+  printf("num_slot_per_frame = %u\n", num_slot_per_frame);*/
+
+
   return 0;
 }
