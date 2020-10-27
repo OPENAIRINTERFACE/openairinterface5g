@@ -588,15 +588,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
     uint8_t                             nr_DRB2LCHAN[8];
 
     ue_context_pP->ue_context.ue_reestablishment_timer = 0;
-    //rnti_t rnti = ue_context_pP->ue_id_rnti;
-    //module_id_t module_id = ctxt_pP->module_id;
-
-    // int UE_id_mac = find_UE_id(module_id, rnti);
-
-    // if (UE_id_mac == -1) {
-    //   LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
-    //   return;
-    // }
 
 #ifndef PHYSIM
     /* Derive the keys from kgnb */
@@ -639,7 +630,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
                             NULL);
 #endif
 
-    /* Loop through DRBs and establish if necessary */
     /* Set the SRB active in UE context */
     if (SRB_configList != NULL) {
       for (int i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
@@ -665,6 +655,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
       ue_context_pP->ue_context.SRB_configList2[xid] = NULL;
     }
 
+    /* Loop through DRBs and establish if necessary */
     if (DRB_configList != NULL) {
         for (int i = 0; i < DRB_configList->list.count; i++) {
         if (DRB_configList->list.array[i]) {
