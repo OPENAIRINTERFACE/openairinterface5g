@@ -128,12 +128,7 @@ typedef struct NR_UE_RRC_INST_s {
     uint8_t kgnb[32];
     NR_CipheringAlgorithm_t  cipheringAlgorithm;
     e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
-  
-    /* Used integrity/ciphering algorithms */
-    //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
-    NR_CipheringAlgorithm_t  cipheringAlgorithm;
-    e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
-
+    
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList
     RRC_LIST_TYPE(NR_RLC_BearerConfig_t, NR_maxLC_ID) RLC_Bearer_Config_list;

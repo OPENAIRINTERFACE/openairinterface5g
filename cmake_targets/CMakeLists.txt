@@ -3465,6 +3465,7 @@ add_executable(nr-ittisim
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${GTPU_need_ITTI}
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
