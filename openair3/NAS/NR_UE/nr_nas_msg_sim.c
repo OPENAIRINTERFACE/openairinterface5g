@@ -112,9 +112,9 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = NAS_KEY_SET_IDENTIFIER_NOT_AVAILABLE;
   size += 1;
   mm_msg->registration_request.fgsmobileidentity.guti.typeofidentity = FGS_MOBILE_IDENTITY_5G_GUTI;
-//  mm_msg->registration_request.fgsmobileidentity.guti.amfregionid = 1;
-//  mm_msg->registration_request.fgsmobileidentity.guti.amfpointer = 1;
-//  mm_msg->registration_request.fgsmobileidentity.guti.amfsetid = 1;
+  mm_msg->registration_request.fgsmobileidentity.guti.amfregionid = 0xca;
+  mm_msg->registration_request.fgsmobileidentity.guti.amfpointer = 0;
+  mm_msg->registration_request.fgsmobileidentity.guti.amfsetid = 1016;
   mm_msg->registration_request.fgsmobileidentity.guti.tmsi = 10;
   mm_msg->registration_request.fgsmobileidentity.guti.mncdigit1 = 9;
   mm_msg->registration_request.fgsmobileidentity.guti.mncdigit2 = 3;

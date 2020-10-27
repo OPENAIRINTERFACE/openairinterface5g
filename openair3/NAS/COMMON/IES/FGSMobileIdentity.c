@@ -145,7 +145,7 @@ static int encode_guti_5gs_mobile_identity(Guti5GSMobileIdentity_t *guti, uint8_
   *(buffer + encoded) = guti->amfregionid;
   encoded++;
 
-  temp = 0x00 | ((guti->amfsetid & 0x3f) << 6) | (guti->amfpointer & 0x3f);
+  temp = 0x00 | ((guti->amfsetid) << 6) | (guti->amfpointer & 0x3f);
 
   IES_ENCODE_U16(buffer, encoded, temp);
   IES_ENCODE_U32(buffer, encoded, guti->tmsi);
