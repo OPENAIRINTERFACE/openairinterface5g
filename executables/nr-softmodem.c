@@ -84,6 +84,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "NB_IoT_interface.h"
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
+#include "gnb_paramdef.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -400,6 +401,23 @@ int create_gNB_tasks(uint32_t gnb_nb) {
       LOG_I(X2AP, "X2AP is disabled.\n");
     }
   }
+  
+  paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+  config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix); 
+
+  for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++){
+    if( NETParams[i].strptr == NULL){
+      LOG_E(NGAP, "No configuration in the file.\n");
+	  NGAP_CONF_MODE = 0;
+	}
+    else {
+      LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
+    }
+  
+  }
+
 
   if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
     if (gnb_nb > 0) {
@@ -409,10 +427,13 @@ int create_gNB_tasks(uint32_t gnb_nb) {
         return -1;
       }
       */
- 
-      if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
-        LOG_E(S1AP, "Create task for NGAP failed\n");
-        return -1;
+      if(NGAP_CONF_MODE){
+        if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
+          LOG_E(NGAP, "Create task for NGAP failed\n");
+          return -1;
+        }
+      } else {
+          LOG_E(NGAP, "Ngap task not created\n");
       }
 
 
@@ -825,6 +846,7 @@ int main( int argc, char **argv )
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
   AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+  NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");

@@ -80,21 +80,24 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
+      if(NGAP_CONF_MODE){
+        ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
+        
+        // note:  there is an implicit relationship between the data structure and the message name 
+        msg_p = itti_alloc_new_message (TASK_GNB_APP, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
 
-      // note:  there is an implicit relationship between the data structure and the message name 
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
+        RCconfig_NR_NG(msg_p, gnb_id);
+		
+        ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
 
-      RCconfig_NR_NG(msg_p, gnb_id);
+		LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
+
+		itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+	  }
 
       if (gnb_id == 0) RCconfig_nr_gtpu();
 
-      ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
-      LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
-
-      LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
-
-      itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+	  LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
 
       register_gnb_pending++;
     }
