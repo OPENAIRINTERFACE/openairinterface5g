@@ -413,13 +413,13 @@ sctp_handle_new_association_req(
     }
 
     /* Subscribe to all events */
-    event.sctp_data_io_event = 1;
-    event.sctp_association_event = 1;
-    event.sctp_address_event = 1;
-    event.sctp_send_failure_event = 1;
-    event.sctp_peer_error_event = 1;
-    event.sctp_shutdown_event = 1;
-    event.sctp_partial_delivery_event = 1;
+    events.sctp_data_io_event = 1;
+    events.sctp_association_event = 1;
+    events.sctp_address_event = 1;
+    events.sctp_send_failure_event = 1;
+    events.sctp_peer_error_event = 1;
+    events.sctp_shutdown_event = 1;
+    events.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &events,
                    8) < 0) {
