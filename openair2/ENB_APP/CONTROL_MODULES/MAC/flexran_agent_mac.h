@@ -39,6 +39,12 @@
 // for flexran_agent_get_mac_xface()
 #include "flexran_agent_extern.h"
 
+/* Type for a list of shared objects used in the user plane (schedulers) */
+typedef struct flexran_agent_so_handle_s {
+  char *name; // name of the object
+  void *dl_handle; // handle of associated objects
+  SLIST_ENTRY (flexran_agent_so_handle_s) entries;
+} flexran_agent_so_handle_t;
 
 /* Initialization function for the agent structures etc */
 void flexran_agent_init_mac_agent(mid_t mod_id);
@@ -117,7 +123,9 @@ void flexran_agent_slice_update(mid_t mod_id);
 
 /* marks slice_config so that it can be applied later. Takes ownership of the
  * FlexSliceConfig message */
-void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice);
+void prepare_update_slice_config(mid_t mod_id,
+                                 Protocol__FlexSliceConfig **slice,
+                                 int request_objects);
 
 /* inserts a new ue_config into the structure keeping ue to slice association
  * updates and marks so it can be applied. Takes ownership of the FlexUeConfig message */
@@ -126,5 +134,14 @@ void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig **ue_con
 /* free slice_config part of flexCellConfig, filled in
  * flexran_agent_fill_mac_cell_config() */
 void flexran_agent_destroy_mac_slice_config(Protocol__FlexCellConfig *conf);
+
+/* information about a new (potentially relevant) control delegation message */
+void flexran_agent_mac_inform_delegation(mid_t mod_id,
+                                         Protocol__FlexControlDelegation *cdm);
+
+/* fill the enb_config_reply with the shared objects in use by the MAC sublayer */
+void flexran_agent_mac_fill_loaded_mac_objects(
+    mid_t mod_id,
+    Protocol__FlexEnbConfigReply *reply);
 
 #endif

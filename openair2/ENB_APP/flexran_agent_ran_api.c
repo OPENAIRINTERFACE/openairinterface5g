@@ -3092,12 +3092,13 @@ int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id) {
   return slices->s[idx]->id;
 }
 
-void flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
+int flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return 0;
   int idx = flexran_find_dl_slice(mod_id, slice_id);
-  if (idx < 0) return;
+  if (idx < 0) return 0;
   pp_impl_param_t *dl = &RC.mac[mod_id]->pre_processor_dl;
   dl->move_UE(dl->slices, ue_id, idx);
+  return 1;
 }
 
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
@@ -3108,15 +3109,16 @@ int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
   return slices->s[idx]->id;
 }
 
-void flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
+int flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return 0;
   int idx = flexran_find_ul_slice(mod_id, slice_id);
-  if (idx < 0) return;
+  if (idx < 0) return 0;
   pp_impl_param_t *ul = &RC.mac[mod_id]->pre_processor_ul;
   ul->move_UE(ul->slices, ue_id, idx);
+  return 1;
 }
 
-int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
+int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object) {
   if (!mac_is_present(mod_id)) return 0;
   void *params = NULL;
   switch (s->params_case) {
@@ -3133,7 +3135,7 @@ int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
   char *l = s->label ? strdup(s->label) : NULL;
   void *algo = &dl->dl_algo; // default scheduler
   if (s->scheduler) {
-    algo = dlsym(NULL, s->scheduler);
+    algo = dlsym(object, s->scheduler);
     if (!algo) {
       free(params);
       LOG_E(FLEXRAN_AGENT, "cannot locate scheduler '%s'\n", s->scheduler);
@@ -3193,7 +3195,7 @@ int flexran_get_num_dl_slices(mid_t mod_id) {
   return RC.mac[mod_id]->pre_processor_dl.slices->num;
 }
 
-int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
+int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object) {
   if (!mac_is_present(mod_id)) return -1;
   void *params = NULL;
   switch (s->params_case) {
@@ -3210,7 +3212,7 @@ int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
   char *l = s->label ? strdup(s->label) : NULL;
   void *algo = &ul->ul_algo; // default scheduler
   if (s->scheduler) {
-    algo = dlsym(NULL, s->scheduler);
+    algo = dlsym(object, s->scheduler);
     if (!algo) {
       free(params);
       LOG_E(FLEXRAN_AGENT, "cannot locate scheduler '%s'\n", s->scheduler);
@@ -3276,9 +3278,9 @@ char *flexran_get_dl_scheduler_name(mid_t mod_id) {
   return RC.mac[mod_id]->pre_processor_dl.dl_algo.name;
 }
 
-int flexran_set_dl_scheduler(mid_t mod_id, char *sched) {
+int flexran_set_dl_scheduler(mid_t mod_id, char *sched, void *object) {
   if (!mac_is_present(mod_id)) return -1;
-  void *d = dlsym(NULL, sched);
+  void *d = dlsym(object, sched);
   if (!d) return -2;
   pp_impl_param_t *dl_pp = &RC.mac[mod_id]->pre_processor_dl;
   dl_pp->dl_algo.unset(&dl_pp->dl_algo.data);
@@ -3292,9 +3294,9 @@ char *flexran_get_ul_scheduler_name(mid_t mod_id) {
   return RC.mac[mod_id]->pre_processor_ul.ul_algo.name;
 }
 
-int flexran_set_ul_scheduler(mid_t mod_id, char *sched) {
+int flexran_set_ul_scheduler(mid_t mod_id, char *sched, void *object) {
   if (!mac_is_present(mod_id)) return -1;
-  void *d = dlsym(NULL, sched);
+  void *d = dlsym(object, sched);
   if (!d) return -2;
   pp_impl_param_t *ul_pp = &RC.mac[mod_id]->pre_processor_ul;
   ul_pp->ul_algo.unset(&ul_pp->ul_algo.data);

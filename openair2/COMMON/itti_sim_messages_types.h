@@ -24,7 +24,7 @@
 
 
 typedef struct itti_sim_rrc_ch_s {
-    const rb_id_t                rbid;
+    rb_id_t                      rbid;
     uint8_t                     *sdu;
     int                          size;
 } itti_sim_rrc_ch_t;

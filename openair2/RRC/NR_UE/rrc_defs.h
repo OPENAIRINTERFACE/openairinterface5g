@@ -70,6 +70,13 @@ typedef enum {
   nr_RadioBearerConfigX_r15=1
 } nsa_message_t;
 
+#define MAX_UE_NR_CAPABILITY_SIZE 255
+typedef struct OAI_NR_UECapability_s {
+  uint8_t sdu[MAX_UE_NR_CAPABILITY_SIZE];
+  uint8_t sdu_size;
+  NR_UE_NR_Capability_t *UE_NR_Capability;
+} OAI_NR_UECapability_t;
+
 typedef struct NR_UE_RRC_INST_s {
 
     NR_MeasConfig_t        *meas_config;
@@ -92,6 +99,9 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     uint8_t                        MBMS_flag;
+	OAI_NR_UECapability_t          *UECap;
+    uint8_t 					   *UECapability;
+    uint8_t                        UECapability_size;
 
     NR_SystemInformation_t         *si[NB_CNX_UE];
     NR_SIB1_t                      *sib1[NB_CNX_UE];
@@ -116,12 +126,9 @@ typedef struct NR_UE_RRC_INST_s {
 
     /* KeNB as computed from parameters within USIM card */
     uint8_t kgnb[32];
-  
-    /* Used integrity/ciphering algorithms */
-    //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
     NR_CipheringAlgorithm_t  cipheringAlgorithm;
     e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
-
+    
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList
     RRC_LIST_TYPE(NR_RLC_BearerConfig_t, NR_maxLC_ID) RLC_Bearer_Config_list;
@@ -173,6 +180,7 @@ typedef struct NR_UE_RRC_INST_s {
     long               selected_plmn_identity;
     Rrc_State_NR_t     nrRrcState;
     Rrc_Sub_State_NR_t nrRrcSubState;
+	as_nas_info_t      initialNasMsg;
 } NR_UE_RRC_INST_t;
 
 #endif

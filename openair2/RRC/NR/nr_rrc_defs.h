@@ -150,7 +150,7 @@ typedef struct UE_RRC_INFO_NR_s {
   uint32_t                                            SIStatus;
   uint32_t                                            SIcnt;
   uint8_t                                             MCCHStatus[8];             // MAX_MBSFN_AREA
-  uint8_t                                             SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
+  uint16_t                                            SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t                                             handoverTarget;
   //HO_STATE_t ho_state;
   uint16_t
