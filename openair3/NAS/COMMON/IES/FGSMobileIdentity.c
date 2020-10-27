@@ -51,7 +51,6 @@ int decode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
 
 int encode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei, uint8_t *buffer, uint32_t len)
 {
-  uint8_t *lenPtr;
   int encoded_rc = TLV_ENCODE_VALUE_DOESNT_MATCH;
   uint32_t encoded = 0;
 
@@ -60,8 +59,7 @@ int encode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
     encoded++;
   }
 
-  lenPtr  = (buffer + encoded);
-  encoded ++;
+  encoded = encoded + 2;
 
   if (fgsmobileidentity->guti.typeofidentity == FGS_MOBILE_IDENTITY_5G_GUTI) {
     encoded_rc = encode_guti_5gs_mobile_identity(&fgsmobileidentity->guti,
@@ -72,7 +70,7 @@ int encode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
     return encoded_rc;
   }
 
-  *lenPtr = encoded  + encoded_rc - 1 - ((iei > 0) ? 1 : 0);
+  *(uint16_t*) buffer = htons(encoded  + encoded_rc - 2 - ((iei > 0) ? 1 : 0));
   return (encoded + encoded_rc);
 }
 

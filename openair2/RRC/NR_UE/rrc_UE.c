@@ -68,6 +68,10 @@
 #include "RRC/NAS/rb_config.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#if ITTI_SIM
+#include "nr_nas_msg_sim.h"
+#endif
+
 /* NAS Attach request with IMSI */
 static const char  nr_nas_attach_req_imsi[] = {
   0x07, 0x41,
@@ -1351,8 +1355,15 @@ static void rrc_ue_generate_RRCSetupComplete(
         const char *nas_msg;
         int   nas_msg_length;
        if (AMF_MODE_ENABLED) {
+#if ITTI_SIM
+          as_nas_info_t initialNasMsg;
+          generateRegistrationRequest(&initialNasMsg);
+          nas_msg = (char*)initialNasMsg.data;
+          nas_msg_length = initialNasMsg.length;
+#else
           nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
           nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+#endif
            } else {
           nas_msg         = nr_nas_attach_req_imsi;
           nas_msg_length  = sizeof(nr_nas_attach_req_imsi);

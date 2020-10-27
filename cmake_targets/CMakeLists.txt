@@ -2380,6 +2380,124 @@ if(NAS_UE)
 endif()
 
 
+if(ITTI_SIM)
+  set(libnas_ue_api_OBJS
+    ${NAS_SRC}UE/API/USER/at_command.c
+    ${NAS_SRC}UE/API/USER/at_error.c
+    ${NAS_SRC}UE/API/USER/at_response.c
+    ${NAS_SRC}UE/API/USER/user_api.c
+    ${NAS_SRC}UE/API/USER/user_indication.c
+    ${NAS_SRC}UE/API/USIM/aka_functions.c
+    ${NAS_SRC}UE/API/USIM/usim_api.c
+  )
+  set(libnas_ue_emm_OBJS
+    ${NAS_SRC}UE/EMM/Attach.c
+    ${NAS_SRC}UE/EMM/Authentication.c
+    ${NAS_SRC}UE/EMM/Detach.c
+    ${NAS_SRC}UE/EMM/emm_main.c
+    ${NAS_SRC}UE/EMM/EmmStatusHdl.c
+    ${NAS_SRC}UE/EMM/Identification.c
+    ${NAS_SRC}UE/EMM/IdleMode.c
+    ${NAS_SRC}UE/EMM/LowerLayer.c
+    ${NAS_SRC}UE/EMM/SecurityModeControl.c
+    ${NAS_SRC}UE/EMM/ServiceRequestHdl.c
+    ${NAS_SRC}UE/EMM/TrackingAreaUpdate.c
+  )
+  set(libnas_ue_emm_sap_OBJS
+    ${NAS_SRC}UE/EMM/SAP/emm_as.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredAttachNeeded.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredAttemptingToAttach.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregistered.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredLimitedService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNoCellAvailable.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNoImsi.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNormalService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredPlmnSearch.c
+    ${NAS_SRC}UE/EMM/SAP/emm_esm.c
+    ${NAS_SRC}UE/EMM/SAP/emm_fsm.c
+    ${NAS_SRC}UE/EMM/SAP/EmmNull.c
+    ${NAS_SRC}UE/EMM/SAP/emm_recv.c
+    ${NAS_SRC}UE/EMM/SAP/emm_reg.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredAttemptingToUpdate.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegistered.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredImsiDetachInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredLimitedService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredNoCellAvailable.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredNormalService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredPlmnSearch.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredUpdateNeeded.c
+    ${NAS_SRC}UE/EMM/SAP/emm_sap.c
+    ${NAS_SRC}UE/EMM/SAP/emm_send.c
+    ${NAS_SRC}UE/EMM/SAP/EmmServiceRequestInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmTrackingAreaUpdatingInitiated.c
+  )
+  set (libnas_ue_esm_OBJS
+    ${NAS_SRC}UE/ESM/DedicatedEpsBearerContextActivation.c
+    ${NAS_SRC}UE/ESM/DefaultEpsBearerContextActivation.c
+    ${NAS_SRC}UE/ESM/EpsBearerContextDeactivation.c
+    ${NAS_SRC}UE/ESM/esm_ebr.c
+    ${NAS_SRC}UE/ESM/esm_ebr_context.c
+    ${NAS_SRC}UE/ESM/esm_ip.c
+    ${NAS_SRC}UE/ESM/esm_main.c
+    ${NAS_SRC}UE/ESM/esm_pt.c
+    ${NAS_SRC}UE/ESM/EsmStatusHdl.c
+    ${NAS_SRC}UE/ESM/PdnConnectivity.c
+    ${NAS_SRC}UE/ESM/PdnDisconnect.c
+  )
+  set(libnas_ue_esm_sap_OBJS
+    ${NAS_SRC}UE/ESM/SAP/esm_recv.c
+    ${NAS_SRC}UE/ESM/SAP/esm_send.c
+    ${NAS_SRC}UE/ESM/SAP/esm_sap.c
+  )
+
+  set(libnrnas_emm_msg_OBJS
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationRequest.c
+  )
+
+  set(libnrnas_ies_OBJS
+    ${NAS_SRC}COMMON/IES/ExtendedProtocolDiscriminator.c
+    ${NAS_SRC}COMMON/IES/FGSMobileIdentity.c
+    ${NAS_SRC}COMMON/IES/FGSRegistrationType.c
+    ${NAS_SRC}COMMON/IES/SpareHalfOctet.c
+    ${NAS_SRC}COMMON/IES/FGMMCapability.c
+    ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
+  )
+
+  add_library(LIB_NAS_SIMUE
+    ${NAS_SRC}UE/nas_itti_messaging.c
+    ${NAS_SRC}UE/nas_network.c
+    ${NAS_SRC}UE/nas_parser.c
+    ${NAS_SRC}UE/nas_proc.c
+    ${NAS_SRC}UE/nas_user.c
+    ${NAS_SRC}NR_UE/nr_nas_msg_sim.c
+    ${libnas_api_OBJS}
+    ${libnas_ue_api_OBJS}
+    ${libnas_emm_msg_OBJS}
+    ${libnas_esm_msg_OBJS}
+    ${libnas_ies_OBJS}
+    ${libnas_utils_OBJS}
+    ${libnas_ue_emm_OBJS}
+    ${libnas_ue_emm_sap_OBJS}
+    ${libnas_ue_esm_OBJS}
+    ${libnas_ue_esm_sap_OBJS}
+    ${libnrnas_emm_msg_OBJS}
+    ${libnrnas_ies_OBJS}
+  )
+  add_dependencies(LIB_NAS_SIMUE rrc_flag)
+  set(NAS_SIM_LIB LIB_NAS_SIMUE)
+
+  include_directories(${NAS_SRC}NR_UE)
+  include_directories(${NAS_SRC}UE)
+  include_directories(${NAS_SRC}UE/API/USER)
+  include_directories(${NAS_SRC}UE/API/USIM)
+  include_directories(${NAS_SRC}UE/EMM)
+  include_directories(${NAS_SRC}UE/EMM/SAP)
+  include_directories(${NAS_SRC}UE/ESM)
+  include_directories(${NAS_SRC}UE/ESM/SAP)
+endif()
+
 # nbiot
 add_definitions("-DNUMBER_OF_UE_MAX_NB_IoT=16")
 set (NBIOT_SOURCES
@@ -3332,7 +3450,7 @@ add_executable(nr-ittisim
 target_link_libraries (nr-ittisim
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_SIM_LIB} RRC_LIB NR_RRC_LIB 
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   NR_L2_UE
