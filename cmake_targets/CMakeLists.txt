@@ -2454,6 +2454,7 @@ if(ITTI_SIM)
 
   set(libnrnas_emm_msg_OBJS
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationAccept.c
   )
 
   set(libnrnas_ies_OBJS
@@ -2461,6 +2462,7 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/IES/FGSMobileIdentity.c
     ${NAS_SRC}COMMON/IES/FGSRegistrationType.c
     ${NAS_SRC}COMMON/IES/SpareHalfOctet.c
+    ${NAS_SRC}COMMON/IES/FGSRegistrationResult.c
     ${NAS_SRC}COMMON/IES/FGMMCapability.c
     ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
   )
