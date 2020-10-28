@@ -61,7 +61,7 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
-
+#include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
@@ -143,8 +143,7 @@ int generate_dlsch_header(unsigned char *mac_header,
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-
-
+void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, uint8_t *K_ptrs, uint8_t *L_ptrs);
 
 int main(int argc, char **argv)
 {
@@ -214,6 +213,16 @@ int main(int argc, char **argv)
   int css_flag=0;
 
   cpuf = get_cpu_freq_GHz();
+  int enable_ptrs = 0;
+  
+  /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
+  uint8_t ptrs_arg[2] = {-1,-1};// Invalid values
+  uint16_t ptrsRePerSymb = 0;
+  uint16_t pdu_bit_map = 0x0;
+  uint16_t dlPtrsSymPos = 0;
+  uint16_t ptrsSymbPerSlot = 0;
+  uint16_t rbSize = 106;
+  uint8_t  mcsIndex = 9;
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
@@ -226,7 +235,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -409,9 +418,16 @@ int main(int argc, char **argv)
       eff_tp_check = (float)atoi(optarg)/100;
       break;
 
-    case 'w':
-      output_fd = fopen("txdata.dat", "w+");
-      break;
+     case 'w':
+       output_fd = fopen("txdata.dat", "w+");
+       break;
+      
+     case 'T':
+       enable_ptrs=1;
+       for(i=0; i < atoi(optarg); i++){
+         ptrs_arg[i] = atoi(argv[optind++]);
+       }
+       break;
 
     default:
     case 'h':
@@ -443,6 +459,7 @@ int main(int argc, char **argv)
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
+      printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
       exit (-1);
@@ -539,7 +556,14 @@ int main(int argc, char **argv)
 				  0);
   fix_scc(scc,ssb_bitmap);
 
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+  /* -T option enable PTRS */
+  if(enable_ptrs)
+  {
+    printf("[DLSIM] PTRS Enabled with L %d, K %d \n", 1<<ptrs_arg[0], ptrs_arg[1] );
+    update_ptrs_config(secondaryCellGroup, &rbSize, &mcsIndex, &ptrs_arg[1], &ptrs_arg[0]);
+  }
+
+  //xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
@@ -792,7 +816,22 @@ int main(int argc, char **argv)
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
         nr_schedule_response(&Sched_INFO);
-        
+
+        /* PTRS values for DLSIM calculations   */
+        nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[Sched_INFO.CC_id].dl_tti_request_body;
+        nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[1];
+        nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+        pdu_bit_map = pdsch_pdu_rel15->pduBitmap;
+        if(pdu_bit_map & 0x1){
+          set_ptrs_symb_idx(&dlPtrsSymPos,
+                            pdsch_pdu_rel15->NrOfSymbols,
+                            pdsch_pdu_rel15->StartSymbolIndex,
+                            1<<pdsch_pdu_rel15->PTRSTimeDensity,
+                            pdsch_pdu_rel15->dlDmrsSymbPos);
+          ptrsSymbPerSlot = get_ptrs_symbols_in_slot(dlPtrsSymPos, pdsch_pdu_rel15->StartSymbolIndex, pdsch_pdu_rel15->NrOfSymbols);
+          ptrsRePerSymb = ((rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity);
+          printf("[DLSIM] PTRS Symbols in a slot: %2d, RE per Symbol: %3d, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
+        }
         if (run_initial_sync)
           nr_common_signal_procedures(gNB,frame,slot);
         else
@@ -876,7 +915,7 @@ int main(int argc, char **argv)
             r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
           }
         }
-        
+        double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size); 
         //AWGN
         sigma2_dB = 10 * log10((double)txlev * ((double)UE->frame_parms.ofdm_symbol_size/(12*rel15->rbSize))) - SNR;
         sigma2    = pow(10, sigma2_dB/10);
@@ -889,6 +928,12 @@ int main(int argc, char **argv)
           for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
             ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            /* Add phase noise if enabled */
+            if (pdu_bit_map & 0x1)
+              {
+                phase_noise(ts, &((short*) UE->common_vars.rxdata[aa])[2*i],
+                            &((short*) UE->common_vars.rxdata[aa])[2*i+1]);
+              }
           }
         }
         
@@ -923,6 +968,11 @@ int main(int argc, char **argv)
       uint8_t  nb_symb_sch = rel15->NrOfSymbols;
       
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
+      if(pdu_bit_map & 0x1)
+        {
+          available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
+          printf("[DLSIM][PTRS] Available bits are: %5d, removed PTRS bits are: %5d \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
+        }
       
       for (i = 0; i < available_bits; i++) {
 	
@@ -1084,3 +1134,57 @@ int main(int argc, char **argv)
   return(n_errors);
   
 }
+
+
+void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, uint8_t *K_ptrs, uint8_t *L_ptrs)
+{
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+  int *ptrsFreqDenst = calloc(2, sizeof(long));
+  ptrsFreqDenst[0]= 25;
+  ptrsFreqDenst[1]= 115;
+  int *ptrsTimeDenst = calloc(3, sizeof(long));
+  ptrsTimeDenst[0]= 2;
+  ptrsTimeDenst[1]= 4;
+  ptrsTimeDenst[2]= 10;
+
+  int epre_Ratio = 0;
+  int reOffset = 0;
+
+  if(*L_ptrs ==0)
+    {
+      ptrsTimeDenst[2]= *mcsIndex -1;
+    }
+  else if(*L_ptrs == 1)
+    {
+      ptrsTimeDenst[1]= *mcsIndex - 1;
+      ptrsTimeDenst[2]= *mcsIndex + 1;
+    }
+  else if(*L_ptrs ==2)
+    {
+      ptrsTimeDenst[0]= *mcsIndex - 1;
+      ptrsTimeDenst[1]= *mcsIndex + 1;
+    }
+  else
+  {
+    printf("[DLSIM] Wrong L_PTRS value, using default values 1\n");
+  }
+  /* L = 4 if Imcs < MCS4 */
+  if(*K_ptrs ==2)
+    {
+      ptrsFreqDenst[0]= *rbSize - 1;
+      ptrsFreqDenst[1]= *rbSize + 1;
+    }
+  else if(*K_ptrs == 4)
+    {
+      ptrsFreqDenst[1]= *rbSize - 1;
+    }
+  else
+    {
+      printf("[DLSIM] Wrong K_PTRS value, using default values 2\n");
+    }
+  
+  /* overwrite the values */
+  rrc_config_dl_ptrs_params(bwp, ptrsFreqDenst, ptrsTimeDenst, &epre_Ratio, &reOffset);
+}
+
+

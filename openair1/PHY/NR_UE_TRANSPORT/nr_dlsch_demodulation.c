@@ -37,6 +37,7 @@
 //#include "extern.h"
 #include "PHY/sse_intrin.h"
 #include "T.h"
+#include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 
 #ifndef USER_MODE
@@ -140,12 +141,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms;
   PHY_NR_MEASUREMENTS *measurements = &ue->measurements;
   NR_UE_DLSCH_t   **dlsch;
-  uint16_t startSymbIdx=0; 
-  uint16_t nbSymb=0;
-  
+
   int avg[4];
-//  int avg_0[2];
-//  int avg_1[2];
+  //  int avg_0[2];
+  //  int avg_1[2];
 
 #if UE_TIMING_TRACE
   uint8_t slot = 0;
@@ -174,6 +173,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   uint16_t n_tx=1, n_rx=1;
   int32_t median[16];
   uint32_t len;
+  uint16_t startSymbIdx=0; 
+  uint16_t nbSymb=0;
+  uint16_t pduBitmap=0x0;
 
   switch (type) {
   case SI_PDSCH:
@@ -693,49 +695,56 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       {
         startSymbIdx = dlsch0_harq->start_symbol;
         nbSymb = dlsch0_harq->nb_symbols;
+        pduBitmap = dlsch0_harq->pduBitmap;
       }
     if(dlsch1_harq)
       {
         startSymbIdx = dlsch1_harq->start_symbol;
         nbSymb = dlsch1_harq->nb_symbols;
+        pduBitmap = dlsch1_harq->pduBitmap;
       }
-    //printf("LLR dlsch0_harq->Qm %d rx_type %d cw0 %d cw1 %d symbol %d \n",dlsch0_harq->Qm,rx_type,codeword_TB0,codeword_TB1,symbol);
-    // compute LLRs
-    // -> // compute @pointer where llrs should filled for this ofdm-symbol
+
+    /* Check for PTRS bitmap and process it respectively */
+    if((pduBitmap & 0x1) && (type == PDSCH))
+      {
+        nr_pdsch_ptrs_processing(ue,
+                                 pdsch_vars,
+                                 frame_parms,
+                                 dlsch0_harq, dlsch1_harq,
+                                 eNB_id, nr_tti_rx,
+                                 symbol, (nb_rb*12),
+                                 harq_pid,
+                                 dlsch[0]->rnti,rx_type);
+        pdsch_vars[eNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[eNB_id]->ptrs_re_per_slot[0][symbol];
+      }
+
+    /* at last symbol in a slot calculate LLR's for whole slot */
     if(symbol == (startSymbIdx + nbSymb -1))
     {
       for(uint8_t i =startSymbIdx; i <= nbSymb;i++)
       {
         /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
         if(i == startSymbIdx && i < 3)
-        {
-          first_symbol_flag =1;
-        }
+          {
+            first_symbol_flag =1;
+          }
         else
-        {
-          first_symbol_flag=0;
-        }
-        /* Calculate LLR's for ech symbol */
-        nr_dlsch_llr(pdsch_vars,
-                     frame_parms,
-                     rxdataF_comp_ptr,
-                     dl_ch_mag_ptr,
-                     dlsch0_harq,
-                     dlsch1_harq,
-                     rx_type,
-                     harq_pid,
-                     eNB_id,
-                     eNB_id_i,
+          {
+            first_symbol_flag=0;
+          }
+        /* Calculate LLR's for each symbol */
+        nr_dlsch_llr(pdsch_vars, frame_parms,
+                     rxdataF_comp_ptr, dl_ch_mag_ptr,
+                     dlsch0_harq, dlsch1_harq,
+                     rx_type, harq_pid,
+                     eNB_id, eNB_id_i,
                      first_symbol_flag,
-                     i,
-                     nb_rb,
-                     round,
-                     codeword_TB0,
-                     codeword_TB1,
+                     i, nb_rb, round,
+                     codeword_TB0, codeword_TB1,
                      pdsch_vars[eNB_id]->dl_valid_re[i-1],
-                     nr_tti_rx,
-                     beamforming_mode);
+                     nr_tti_rx, beamforming_mode);
       }
+
       //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
       if (rx_type==rx_IC_dual_stream) {  
         nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
