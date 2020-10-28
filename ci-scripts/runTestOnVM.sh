@@ -281,14 +281,35 @@ function check_ra_result {
     local LOC_GNB_LOG=$1
     local LOC_UE_LOG=$2
 
-    #gNB RA test
-    echo "Checking gNB Log for RA success"
-    egrep "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1 
- 
- 
-    #UE RA test
-    echo 'Checking UE Log for RA success'
-    egrep "\[RAPROC\] RA procedure succeeded" $2
+    #if log files exist
+    if [ -f $LOC_GNB_LOG ] && [ -f $LOC_UE_LOG ]
+    then
+
+        #gNB RA test
+        #console check
+        echo "Checking gNB Log for RA success"
+        egrep "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1
+        #script check
+        local GNB_COMPLETE=`egrep -c "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1`
+
+        #UE RA test
+        #console check
+        echo 'Checking UE Log for RA success'
+        egrep "\[RAPROC\] RA procedure succeeded" $2
+        #script check
+        local UE_COMPLETE=`egrep -c "\[RAPROC\] RA procedure succeeded" $2`
+
+        #generate status
+        if [ $GNB_COMPLETE -eq 0 ] || [ $UE_COMPLETE -eq 0 ]
+        then
+            RA_STATUS=-1
+            echo "RA test FAILED, could not find the markers"
+        fi
+    #case where log files do not exist
+    else
+        echo "RA test log files not present"
+        RA_STATUS=-1        
+    fi
 
 }
 
@@ -2196,10 +2217,11 @@ function run_test_on_vm {
         NR_STATUS=0
 
         ######### start of RA TEST loop
-        while [ $try_cnt -lt 1 ]
+        while [ $try_cnt -lt 4 ]
         do
 
             SYNC_STATUS=0
+            RA_STATUS=0
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the gNB"
@@ -2242,9 +2264,13 @@ function run_test_on_vm {
 
             # Proper check to be done when RA test is working!
             check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
-
-            try_cnt=$[$try_cnt+1]
-
+            if [ $RA_STATUS -ne 0 ]
+            then
+                echo "RA test NOT OK"
+                try_cnt=$[$try_cnt+1]
+            else
+                try_cnt=$[$try_cnt+10]
+            fi
         done
         ########### end RA test
         
@@ -2359,6 +2385,7 @@ function run_test_on_vm {
         echo "Checking run status"
         echo "############################################################"
 
+        if [ $RA_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $PING_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then NR_STATUS=-1; fi
