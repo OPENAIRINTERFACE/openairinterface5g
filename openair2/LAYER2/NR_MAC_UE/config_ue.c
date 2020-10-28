@@ -401,6 +401,37 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     mac->SSpace[0][0][ss_id] = css;
     ss_id++;
   }
+
+  // TODO: Merge this code in a single function as fill_default_searchSpaceZero() in rrc_gNB_reconfig.c
+  // Search space zero
+  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->search_space_zero->controlResourceSetId == NULL) mac->search_space_zero->controlResourceSetId=calloc(1,sizeof(*mac->search_space_zero->controlResourceSetId));
+  if(mac->search_space_zero->monitoringSymbolsWithinSlot == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot = calloc(1,sizeof(*mac->search_space_zero->monitoringSymbolsWithinSlot));
+  if(mac->search_space_zero->monitoringSymbolsWithinSlot->buf == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  if(mac->search_space_zero->nrofCandidates == NULL) mac->search_space_zero->nrofCandidates = calloc(1,sizeof(*mac->search_space_zero->nrofCandidates));
+  if(mac->search_space_zero->searchSpaceType == NULL) mac->search_space_zero->searchSpaceType = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType));
+  if(mac->search_space_zero->searchSpaceType->choice.common == NULL) mac->search_space_zero->searchSpaceType->choice.common=calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common));
+  if(mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL) mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+
+  mac->search_space_zero->searchSpaceId = 0;
+  *mac->search_space_zero->controlResourceSetId = 0;
+  mac->search_space_zero->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*mac->search_space_zero->monitoringSlotPeriodicityAndOffset));
+  mac->search_space_zero->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+  mac->search_space_zero->duration=NULL;
+
+  // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[1] = 0;
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  mac->search_space_zero->monitoringSymbolsWithinSlot->size = 2;
+  mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
+
+  mac->search_space_zero->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  mac->search_space_zero->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+
+  mac->search_space_zero->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
 }
 
 int nr_rrc_mac_config_req_ue(

@@ -2943,7 +2943,7 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
     case NR_RNTI_RA:
     case NR_RNTI_TC:
     case NR_RNTI_P:
-    case NR_RNTI_SI:
+    //case NR_RNTI_SI:
       if (mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) {
         uint8_t bwp_id = 1;
         uint8_t coreset_id = 0; // assuming controlResourceSetId is 0 for controlResourceSetZero
@@ -2953,8 +2953,9 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
         N_RB = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
       }
       break;
+    case NR_RNTI_SI:
     case NR_RNTI_C:
-    N_RB = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, 275);
+      N_RB = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, 275);
     break;
   }
   return N_RB;
@@ -3192,23 +3193,51 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       break;
   	
     case NR_RNTI_SI:
-      /*
-      // Freq domain assignment 0-16 bit
-      fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
-      for (int i=0; i<fsize; i++)
-      *dci_pdu |= ((dci_pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<(dci_size-pos++);
-      // Time domain assignment 4 bit
-      for (int i=0; i<4; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
-      // VRB to PRB mapping 1 bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
-      // MCS 5bit  //bit over 32, so dci_pdu ++
-      for (int i=0; i<5; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
-      // Redundancy version  2bit
-      for (int i=0; i<2; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->rv>>(1-i))&1)<<(dci_size-pos++);
-      */	
+
+      printf("\nnr_extract_dci_info\n\n");
+
+        // Freq domain assignment 0-16 bit
+        fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+        pos+=fsize;
+        dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
+
+        // Time domain assignment 4 bit
+        pos+=4;
+        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
+
+        // VRB to PRB mapping 1 bit
+        pos++;
+        dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&0x1;
+
+        // MCS 5bit  //bit over 32, so dci_pdu ++
+        pos+=5;
+        dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
+
+        // Redundancy version  2 bit
+        pos+=2;
+        dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&3;
+
+        // System information indicator 1 bit
+        pos++;
+        dci_pdu_rel15->system_info_indicator = (*dci_pdu>>(dci_size-pos))&0x1;
+
+        printf("\n\n");
+
+        for(int i = 64-dci_size; i<64; i++) {
+          printf("%i ", (*dci_pdu >> 63-i)&(uint64_t)0x01);
+        }
+
+        printf("\nN_RB = %i\n", N_RB);
+        printf("\ndci_size = %i\n", dci_size);
+        printf("fsize = %i\n", fsize);
+        printf("dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+        printf("dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+        printf("dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+        printf("dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+        printf("dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+        printf("dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
+        printf("\n");
+
       break;
 	
     case NR_RNTI_TC:
