@@ -48,6 +48,8 @@ RUN yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
         lksctp-tools \
         nettle \
+        net-tools \
+        iputils \
         atlas \
         libXpm \
         libX11 \
@@ -114,4 +116,4 @@ COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
 WORKDIR /opt/oai-nr-ue
 #CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]
-
+CMD ["sleep", "infinity"]

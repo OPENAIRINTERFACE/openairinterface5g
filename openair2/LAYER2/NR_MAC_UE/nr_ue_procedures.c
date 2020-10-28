@@ -1214,7 +1214,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 //      first_symbol_index = 0;
 //    }
     //  38.213 chapter 13: over two consecutive slots
-//    search_space_duration = 2;
+    //search_space_duration = 2;
   }
 
   /// MUX PATTERN 2

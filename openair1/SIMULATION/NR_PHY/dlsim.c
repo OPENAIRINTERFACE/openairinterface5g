@@ -140,6 +140,12 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 
+// Dummy function to avoid linking error at compilation of nr-dlsim
+int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
@@ -531,13 +537,14 @@ int main(int argc, char **argv)
   uint64_t ssb_bitmap;
   fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
 
+  fix_scc(scc,ssb_bitmap);
+
   fill_default_secondaryCellGroup(scc,
 				  secondaryCellGroup,
 				  0,
 				  1,
 				  n_tx,
 				  0);
-  fix_scc(scc,ssb_bitmap);
 
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 

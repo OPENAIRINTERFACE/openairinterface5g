@@ -119,6 +119,12 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+// Dummy function to avoid linking error at compilation of nr-ulsim
+int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -559,13 +565,14 @@ int main(int argc, char **argv)
   uint64_t ssb_bitmap;
   fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
 
+  fix_scc(scc,ssb_bitmap);
+
   fill_default_secondaryCellGroup(scc,
 				  secondaryCellGroup,
 				  0,
 				  1,
 				  n_tx,
 				  0);
-  fix_scc(scc,ssb_bitmap);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
