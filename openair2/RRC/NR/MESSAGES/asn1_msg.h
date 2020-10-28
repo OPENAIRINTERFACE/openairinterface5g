@@ -126,3 +126,16 @@ uint8_t do_NR_RRCReconfigurationComplete(
                         uint8_t *buffer,
                         const uint8_t Transaction_id
                       );
+
+uint8_t 
+do_NR_DLInformationTransfer(
+    uint8_t Mod_id,
+    uint8_t **buffer,
+    uint8_t transaction_id,
+    uint32_t pdu_length,
+    uint8_t *pdu_buffer
+);
+
+uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, 
+                        uint32_t pdu_length,
+                        uint8_t *pdu_buffer);

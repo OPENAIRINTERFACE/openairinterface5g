@@ -330,7 +330,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
     if (ue_context_p == NULL) {
         /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
         MessageDef *msg_fail_p = NULL;
-        LOG_W(NR_RRC, "[gNB %d] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+        LOG_W(NR_RRC, "[gNB %d] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
         msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
         NGAP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
         // TODO add failure cause when defined!
@@ -480,4 +480,113 @@ rrc_gNB_process_security(
          integrityProtAlgorithm,
          changed ? "changed" : "same");
   return changed;
+}
+
+//------------------------------------------------------------------------------
+int
+rrc_gNB_process_NGAP_DOWNLINK_NAS(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t  instance,
+  mui_t      *rrc_gNB_mui
+)
+//------------------------------------------------------------------------------
+{
+    uint16_t ue_initial_id;
+    uint32_t gNB_ue_ngap_id;
+    uint32_t length;
+    uint8_t *buffer;
+    struct rrc_gNB_ue_context_s *ue_context_p = NULL;
+    protocol_ctxt_t              ctxt;
+    memset(&ctxt, 0, sizeof(protocol_ctxt_t));
+    ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
+    gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
+    ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
+    LOG_I(NR_RRC, "[gNB %d] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d\n",
+            instance,
+            msg_name,
+            ue_initial_id,
+            gNB_ue_ngap_id);
+
+    if (ue_context_p == NULL) {
+        MSC_LOG_RX_MESSAGE(
+            MSC_RRC_GNB,
+            MSC_NGAP_GNB,
+            NULL,
+            0,
+            MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u gNB_ue_ngap_id %u",
+            0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+            ue_initial_id,
+            gNB_ue_ngap_id);
+        /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
+        MessageDef *msg_fail_p;
+        LOG_W(NR_RRC, "[gNB %d] In NGAP_DOWNLINK_NAS: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_NAS_NON_DELIVERY_IND);
+        NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
+        NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.length = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.length;
+        NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.buffer = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.buffer;
+        // TODO add failure cause when defined!
+        MSC_LOG_TX_MESSAGE(
+            MSC_RRC_ENB,
+            MSC_NGAP_GNB,
+            (const char *)NULL,
+            0,
+            MSC_AS_TIME_FMT" NGAP_NAS_NON_DELIVERY_IND UE initial id %u gNB_ue_ngap_id %u (ue ctxt !found)",
+            0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+            ue_initial_id,
+            gNB_ue_ngap_id);
+        itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
+        return (-1);
+    } else {
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+
+        /* Is it the first income from NGAP ? */
+        if (ue_context_p->ue_context.gNB_ue_ngap_id == 0) {
+            ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
+        }
+
+        MSC_LOG_RX_MESSAGE(
+            MSC_RRC_GNB,
+            MSC_NGAP_GNB,
+            (const char *)NULL,
+            0,
+            MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u gNB_ue_ngap_id %u",
+            0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+            ue_initial_id,
+            NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id);
+        /* Create message for PDCP (DLInformationTransfer_t) */
+        length = do_NR_DLInformationTransfer (
+                instance,
+                &buffer,
+                rrc_gNB_get_next_transaction_identifier (instance),
+                NGAP_DOWNLINK_NAS (msg_p).nas_pdu.length,
+                NGAP_DOWNLINK_NAS (msg_p).nas_pdu.buffer);
+        LOG_DUMPMSG(NR_RRC, DEBUG_RRC, buffer, length, "[MSG] RRC DL Information Transfer\n");
+        /*
+        * switch UL or DL NAS message without RRC piggybacked to SRB2 if active.
+        */
+#ifdef ITTI_SIM
+        MessageDef *message_p;
+        uint8_t *message_buffer;
+        message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
+        memcpy (message_buffer, buffer, length);
+        message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+        GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+        GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+        GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
+        itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
+        LOG_I(NR_RRC, "Send DL NAS message \n");
+#else
+        /* Transfer data to PDCP */
+        nr_rrc_data_req (
+            &ctxt,
+            ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
+            (*rrc_gNB_mui)++,
+            SDU_CONFIRM_NO,
+            length,
+            buffer,
+            PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
+        return (0);
+    }
 }

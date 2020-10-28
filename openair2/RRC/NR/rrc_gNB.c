@@ -1309,6 +1309,10 @@ void *rrc_gnb_task(void *args_p) {
 
         break;
 
+      case NGAP_DOWNLINK_NAS:
+        rrc_gNB_process_NGAP_DOWNLINK_NAS(msg_p, msg_name_p, instance, &rrc_gNB_mui);
+        break;
+
       /*
       #if defined(ENABLE_USE_MME)
 

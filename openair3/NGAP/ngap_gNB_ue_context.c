@@ -82,8 +82,8 @@ struct ngap_gNB_ue_context_s *ngap_gNB_get_ue_context(
 
   memset(&temp, 0, sizeof(struct ngap_gNB_ue_context_s));
 
-  /* gNB ue ngap id = 24 bits wide */
-  temp.gNB_ue_ngap_id = gNB_ue_ngap_id & 0x00FFFFFF;
+  /* gNB ue ngap id = 32 bits wide */
+  temp.gNB_ue_ngap_id = gNB_ue_ngap_id & 0xFFFFFFFF;
 
   return RB_FIND(ngap_ue_map, &instance_p->ngap_ue_head, &temp);
 }

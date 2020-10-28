@@ -340,11 +340,11 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
     DevAssert(pdu != NULL);
 
     /* UE-related procedure -> stream != 0 */
-    if (stream == 0) {
-        NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream == 0\n",
-                   assoc_id);
-        return -1;
-    }
+    // if (stream == 0) {
+    //     NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream == 0\n",
+    //                assoc_id);
+    //     return -1;
+    // }
 
     if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
         NGAP_ERROR(
