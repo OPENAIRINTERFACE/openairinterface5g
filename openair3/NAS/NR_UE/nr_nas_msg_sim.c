@@ -118,6 +118,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   mm_msg->registration_request.fgsmobileidentity.guti.tmsi = 10;
   mm_msg->registration_request.fgsmobileidentity.guti.mncdigit1 = 9;
   mm_msg->registration_request.fgsmobileidentity.guti.mncdigit2 = 3;
+  mm_msg->registration_request.fgsmobileidentity.guti.mncdigit3 = 0xf;
   mm_msg->registration_request.fgsmobileidentity.guti.mccdigit1 = 2;
   mm_msg->registration_request.fgsmobileidentity.guti.mccdigit2 = 0;
   mm_msg->registration_request.fgsmobileidentity.guti.mccdigit3 = 8;
