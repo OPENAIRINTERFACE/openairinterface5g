@@ -2308,6 +2308,9 @@ nr_rrc_ue_decode_dcch(
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
             case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
+              LOG_I(NR_RRC, "[UE %d] Received RRC Release (gNB %d)\n",
+                      ctxt_pP->module_id, gNB_indexP);
+
               msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_RELEASE_IND);
 
               if((dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.present == NR_RRCRelease__criticalExtensions_PR_rrcRelease) &&
