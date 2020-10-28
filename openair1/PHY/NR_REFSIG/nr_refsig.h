@@ -38,6 +38,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
  */
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
+void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid);
 
 void nr_gold_pusch(PHY_VARS_gNB* gNB, uint32_t *Nid);
 
