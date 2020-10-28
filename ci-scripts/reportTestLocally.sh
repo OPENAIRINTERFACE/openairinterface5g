@@ -770,7 +770,7 @@ function report_test {
 
                 #build log files names
                 RA_ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb_ra_test.log
-                RA_UE_LOG=$ARCHIVES_LOC/ra_check_${TMODE}_${BW}prb_${CN_CONFIG}_ue_ra_test.log
+                RA_UE_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_ue_ra_test.log
                 if [ -f $RA_ENB_LOG ] && [ -f $RA_UE_LOG ]
                 then
                     #get rid of full path
