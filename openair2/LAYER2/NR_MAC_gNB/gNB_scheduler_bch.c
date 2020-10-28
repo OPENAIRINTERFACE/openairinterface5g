@@ -75,29 +75,38 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
     int ratio;
     switch (*cc->ServingCellConfigCommon->ssbSubcarrierSpacing) {
     case NR_SubcarrierSpacing_kHz15:
-      AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
-      if (band<77) // below 3GHz
-        ratio=3; // NRARFCN step is 5 kHz
+      AssertFatal(band <= 79,
+                  "Band %ld is not possible for SSB with 15 kHz SCS\n",
+                  band);
+      if (band < 77)  // below 3GHz
+        ratio = 3;    // NRARFCN step is 5 kHz
       else
-	ratio=1; // NRARFCN step is 15 kHz
+        ratio = 1;  // NRARFCN step is 15 kHz
       break;
     case NR_SubcarrierSpacing_kHz30:
-      AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
-      if (band<77) // below 3GHz
-	ratio=6; // NRARFCN step is 5 kHz
+      AssertFatal(band <= 79,
+                  "Band %ld is not possible for SSB with 15 kHz SCS\n",
+                  band);
+      if (band < 77)  // below 3GHz
+        ratio = 6;    // NRARFCN step is 5 kHz
       else
-	ratio=2; // NRARFCN step is 15 kHz
+        ratio = 2;  // NRARFCN step is 15 kHz
       break;
     case NR_SubcarrierSpacing_kHz120:
-      AssertFatal(band >= 257, "Band %ld is not possible for SSB with 120 kHz SCS\n",band);
-      ratio=2; // NRARFCN step is 15 kHz
+      AssertFatal(band >= 257,
+                  "Band %ld is not possible for SSB with 120 kHz SCS\n",
+                  band);
+      ratio = 2;  // NRARFCN step is 15 kHz
       break;
     case NR_SubcarrierSpacing_kHz240:
-      AssertFatal(band >= 257, "Band %ld is not possible for SSB with 240 kHz SCS\n",band);
-      ratio=4; // NRARFCN step is 15 kHz
+      AssertFatal(band >= 257,
+                  "Band %ld is not possible for SSB with 240 kHz SCS\n",
+                  band);
+      ratio = 4;  // NRARFCN step is 15 kHz
       break;
     default:
-      AssertFatal(1==0,"SCS %ld not allowed for SSB \n", *cc->ServingCellConfigCommon->ssbSubcarrierSpacing);
+      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",
+                  *cc->ServingCellConfigCommon->ssbSubcarrierSpacing);
     }
 
     // scheduling MIB every 8 frames, PHY repeats it in between
@@ -105,13 +114,17 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
       dl_tti_request = &gNB->DL_req[CC_id];
       dl_req = &dl_tti_request->dl_tti_request_body;
 
-      mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]); // not used in this case
+      mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]);
 
       LOG_D(MAC, "Frame %d, slot %d: BCH PDU length %d\n", frameP, slotP, mib_sdu_length);
 
       if (mib_sdu_length > 0) {
-
-        LOG_D(MAC, "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n", frameP, slotP, dl_req->nPDUs, mib_sdu_length);
+        LOG_D(MAC,
+              "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n",
+              frameP,
+              slotP,
+              dl_req->nPDUs,
+              mib_sdu_length);
 
         if ((frameP & 1023) < 80){
           LOG_I(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);
@@ -146,49 +159,45 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
     const int abs_slot = (slots_per_frame * frameP) + slotP;
     const int slot_per_period = (slots_per_frame>>1)<<(*cc->ServingCellConfigCommon->ssb_periodicityServingCell);
     int eff_120_slot;
+    const BIT_STRING_t *mediumBitmap = &cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap;
+    uint8_t buf = 0;
     switch (cc->ServingCellConfigCommon->ssb_PositionsInBurst->present) {
-      case 1 :
+      case 1:
         // presence of ssbs possible in the first 2 slots of ssb period
-        if ((abs_slot%slot_per_period)<2){
-          if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])>>(6-(slotP<<1)))&3)!=0)
-            fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
-        }
+        if ((abs_slot % slot_per_period) < 2 &&
+            (((mediumBitmap->buf[0]) >> (6 - (slotP << 1))) & 3) != 0)
+          fill_ssb_vrb_map(cc, (ssb_offset0 / (ratio * 12) - 10), CC_id);
         break;
-      case 2 :
+      case 2:
         // presence of ssbs possible in the first 4 slots of ssb period
-        if ((abs_slot%slot_per_period)<4){
-          if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])>>(6-(slotP<<1)))&3)!=0)
-            fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
-        }
+        if ((abs_slot % slot_per_period) < 4 &&
+            (((mediumBitmap->buf[0]) >> (6 - (slotP << 1))) & 3) != 0)
+          fill_ssb_vrb_map(cc, (ssb_offset0 / (ratio * 12) - 10), CC_id);
         break;
-      case 3 :
-        if(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing == NR_SubcarrierSpacing_kHz120){
-          if ((abs_slot%slot_per_period)<8){
-            eff_120_slot = slotP;
-            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])>>(6-(eff_120_slot<<1)))&3)!=0)
-              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
-          }
-          else if ((abs_slot%slot_per_period)<17){
-            eff_120_slot = slotP-9;
-            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[1])>>(6-(eff_120_slot<<1)))&3)!=0)
-              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
-          }
-          else if ((abs_slot%slot_per_period)<26){
-            eff_120_slot = slotP-18;
-            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[2])>>(6-(eff_120_slot<<1)))&3)!=0)
-              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
-          }
-          else if ((abs_slot%slot_per_period)<35){
-            eff_120_slot = slotP-27;
-            if((((cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[3])>>(6-(eff_120_slot<<1)))&3)!=0)
-              fill_ssb_vrb_map(cc, (ssb_offset0/(ratio*12) - 10), CC_id);
-          }
+      case 3:
+        AssertFatal(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing ==
+                      NR_SubcarrierSpacing_kHz120,
+                    "240kHZ subcarrier spacing currently not supported for SSBs\n");
+        if ((abs_slot % slot_per_period) < 8) {
+          eff_120_slot = slotP;
+          buf = mediumBitmap->buf[0];
+        } else if ((abs_slot % slot_per_period) < 17) {
+          eff_120_slot = slotP - 9;
+          buf = mediumBitmap->buf[1];
+        } else if ((abs_slot % slot_per_period) < 26) {
+          eff_120_slot = slotP - 18;
+          buf = mediumBitmap->buf[2];
+        } else if ((abs_slot % slot_per_period) < 35) {
+          eff_120_slot = slotP - 27;
+          buf = mediumBitmap->buf[3];
         }
-        else
-          AssertFatal(1==0,"240kHZ subcarrier spacing currently not supported for SSBs\n");
+        if (((buf >> (6 - (eff_120_slot << 1))) & 3) != 0)
+          fill_ssb_vrb_map(cc, ssb_offset0 / (ratio * 12) - 10, CC_id);
         break;
     default:
-      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", cc->ServingCellConfigCommon->ssb_PositionsInBurst->present);
+      AssertFatal(0,
+                  "SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
+                  cc->ServingCellConfigCommon->ssb_PositionsInBurst->present);
     }
   }
 }
