@@ -825,7 +825,6 @@ add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchang
 add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
-add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 
 ########################
 # Include order
@@ -1594,6 +1593,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_csi_rs.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/scrambling_luts.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gen_mod_table.c

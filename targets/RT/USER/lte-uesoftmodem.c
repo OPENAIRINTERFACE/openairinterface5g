@@ -95,9 +95,6 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-#ifdef UESIM_EXPANSION
-  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 uint16_t sf_ahead=2;
 int tddflag;
 char *emul_iface;
@@ -546,9 +543,6 @@ void init_pdcp(void) {
 int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef UESIM_EXPANSION
-  memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
-#endif
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
