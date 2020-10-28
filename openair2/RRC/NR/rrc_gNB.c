@@ -1484,9 +1484,9 @@ rrc_gNB_generate_UECapabilityEnquiry(
 * If received, UE should switch to RRC_IDLE mode.
 */
 void
-rrc_gNB_generate_RRCConnectionRelease(
+rrc_gNB_generate_RRCRelease(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_gNB_ue_context_t *const ue_context_pP
+  rrc_gNB_ue_context_t  *const ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
@@ -1495,16 +1495,16 @@ rrc_gNB_generate_RRCConnectionRelease(
 
   memset(buffer, 0, RRC_BUF_SIZE);
 
-  size = do_NR_RRCConnectionRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  size = do_NR_RRCRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   LOG_I(NR_RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCRelease (bytes %d)\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
   LOG_D(NR_RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease MUI %d) --->[PDCP][RB %u]\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcRelease MUI %d) --->[PDCP][RB %u]\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size,
         rrc_gNB_mui,
         DCCH);
@@ -1513,7 +1513,7 @@ rrc_gNB_generate_RRCConnectionRelease(
     MSC_RRC_UE,
     buffer,
     size,
-    MSC_AS_TIME_FMT" LTE_RRCConnectionRelease UE %x MUI %d size %u",
+    MSC_AS_TIME_FMT" NR_RRCRelease UE %x MUI %d size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP->ue_context.rnti,
     rrc_gNB_mui,

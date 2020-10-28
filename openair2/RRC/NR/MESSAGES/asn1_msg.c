@@ -911,8 +911,8 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 }
 
 
-uint8_t do_NR_RRCConnectionRelease(uint8_t                            *buffer,
-                                  uint8_t                             Transaction_id) {
+uint8_t do_NR_RRCRelease(uint8_t                            *buffer,
+                         uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   NR_DL_DCCH_Message_t dl_dcch_msg;
   NR_RRCRelease_t *rrcConnectionRelease;
@@ -920,17 +920,31 @@ uint8_t do_NR_RRCConnectionRelease(uint8_t                            *buffer,
   dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1=CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
   dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_rrcRelease;
-  dl_dcch_msg.message.choice.c1->choice.rrcRelease = CALLOC(1, sizeof(struct NR_RRCRelease));
+  dl_dcch_msg.message.choice.c1->choice.rrcRelease = CALLOC(1, sizeof(NR_RRCRelease_t));
   rrcConnectionRelease = dl_dcch_msg.message.choice.c1->choice.rrcRelease;
   // RRCConnectionRelease
   rrcConnectionRelease->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionRelease->criticalExtensions.present = NR_RRCRelease__criticalExtensions_PR_rrcRelease;
-  rrcConnectionRelease->criticalExtensions.choice.rrcRelease = NULL;
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease = CALLOC(1, sizeof(NR_RRCRelease_IEs_t));
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq =
+      CALLOC(1, sizeof(struct NR_RRCRelease_IEs__deprioritisationReq));
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationType =
+      NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_nr;
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationTimer =
+      NR_RRCRelease_IEs__deprioritisationReq__deprioritisationTimer_min10;
+
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
+
+  if(enc_rval.encoded == -1) {
+    LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+        enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
+
   return((enc_rval.encoded+7)/8);
 }
 
