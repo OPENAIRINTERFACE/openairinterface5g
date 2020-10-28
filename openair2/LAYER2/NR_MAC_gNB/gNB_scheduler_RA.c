@@ -248,8 +248,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
   NR_SearchSpace_t *ss;
   int UE_id = 0;
-  // ra_rnti from 5.1.3 in 38.321
-  uint16_t ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
 
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
@@ -258,6 +256,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_RA_t *ra = &cc->ra[0];
+
+  uint16_t ra_rnti;
+
+  // ra_rnti from 5.1.3 in 38.321
+  // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here. 
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839) 
+   ra_rnti=1+symbol+(9/*slotP*/*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
+  else
+   ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
+
 
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
