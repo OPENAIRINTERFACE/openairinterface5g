@@ -252,13 +252,15 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
                         NR_DL_FRAME_PARMS *fp)
 {
 
+  AssertFatal (cfg != NULL, "%s %s:%i Null pointer to cfg %p!\n", __FUNCTION__, __FILE__, __LINE__, cfg);
+
   fp->frame_type = cfg->cell_config.frame_duplex_type.value;
   fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
   fp->N_RB_DL = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
   fp->N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
   int Ncp = NFAPI_CP_NORMAL;
-  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : 0;
+  int mu = cfg->ssb_config.scs_common.value;
 
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
