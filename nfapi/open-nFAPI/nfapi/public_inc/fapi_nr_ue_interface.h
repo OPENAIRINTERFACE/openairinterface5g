@@ -23,6 +23,7 @@
 #include "PHY/impl_defs_nr.h"
 
 #define NFAPI_UE_MAX_NUM_CB 8
+#define NFAPI_MAX_NUM_UL_PDU 8
 
 /*
   typedef unsigned int	   uint32_t;
@@ -155,7 +156,7 @@ typedef struct {
   uint16_t slot;
   fapi_nr_tx_config_t tx_config;
   uint16_t number_of_pdus;
-  fapi_nr_tx_request_body_t *tx_request_body;
+  fapi_nr_tx_request_body_t tx_request_body[NFAPI_MAX_NUM_UL_PDU];
 } fapi_nr_tx_request_t;
 
 /// This struct replaces:

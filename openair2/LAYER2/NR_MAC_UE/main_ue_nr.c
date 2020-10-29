@@ -57,10 +57,10 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
       
       if (IS_SOFTMODEM_NOS1){
         if (rlc_module_init(0) != 0) {
-	        LOG_I(RLC, "Problem at RLC initiation \n");
-    	  }
-    	  pdcp_layer_init();
-    	  nr_DRB_preconfiguration();
+          LOG_I(RLC, "Problem at RLC initiation \n");
+        }
+        pdcp_layer_init();
+        nr_DRB_preconfiguration();
       }
 
       // Allocate memory for ul_config_request in the mac instance. This is now a pointer and will
