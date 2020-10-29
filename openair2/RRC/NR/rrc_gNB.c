@@ -1147,6 +1147,31 @@ rrc_gNB_decode_dcch(
                 rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
                 //rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
                 break;
+            case NR_UL_DCCH_MessageType__c1_PR_securityModeFailure:
+              LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                          "[MSG] NR RRC Security Mode Failure\n");
+              MSC_LOG_RX_MESSAGE(
+                MSC_RRC_GNB,
+                MSC_RRC_UE,
+                Rx_sdu,
+                sdu_sizeP,
+                MSC_AS_TIME_FMT" securityModeFailure UE %x size %u",
+                MSC_AS_TIME_ARGS(ctxt_pP),
+                ue_context_p->ue_context.rnti,
+                sdu_sizeP);
+              LOG_W(NR_RRC,
+                    PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
+                    "(securityModeFailure) ---> RRC_gNB\n",
+                    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+                    DCCH,
+                    sdu_sizeP);
+            
+              if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+                xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+              }
+            
+              rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
+              break;
 
             case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
                 if(!ue_context_p) {

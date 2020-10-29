@@ -684,6 +684,7 @@ int ngap_gNB_initial_ctxt_resp(
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
+    pdu.choice.successfulOutcome = (NGAP_SuccessfulOutcome_t *)calloc(1,sizeof(struct NGAP_SuccessfulOutcome));
     pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_InitialContextSetup;
     pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
     pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse;
@@ -996,6 +997,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
+    pdu.choice.successfulOutcome = (NGAP_SuccessfulOutcome_t *)calloc(1,sizeof(struct NGAP_SuccessfulOutcome));
     pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceSetup;
     pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
     pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse;
@@ -1218,6 +1220,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
+    pdu.choice.successfulOutcome = (NGAP_SuccessfulOutcome_t *)calloc(1,sizeof(struct NGAP_SuccessfulOutcome));
     pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceModify;
     pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
     pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceModifyResponse;
@@ -1378,6 +1381,7 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
+    pdu.choice.successfulOutcome = (NGAP_SuccessfulOutcome_t *)calloc(1,sizeof(struct NGAP_SuccessfulOutcome));
     pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceRelease;
     pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
     pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceReleaseResponse;

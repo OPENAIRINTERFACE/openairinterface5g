@@ -50,8 +50,9 @@
 #include "UTIL/OSA/osa_defs.h"
 #include "ngap_gNB_defs.h"
 #include "ngap_gNB_ue_context.h"
+#include "ngap_gNB_management_procedures.h"
 #include "NR_ULInformationTransfer.h"
-#include "NR_UL-DCCH-Message.h"
+#include "RRC/NR/MESSAGES/asn1_msg.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -141,15 +142,84 @@ rrc_gNB_NGAP_get_ue_ids(
             // Still return *result
           }
         }
-      } // end if if (eNB_ue_s1ap_id > 0)
+      } // end if if (gNB_ue_ngap_idP > 0)
     } else { // end if (h_rc == HASH_TABLE_OK)
       LOG_E(NGAP, "[gNB %ld] In hashtable_get, couldn't find in initial_id2_ngap_ids ue_initial_id %"PRIu16"\n",
             rrc_instance_pP - RC.nrrrc[0],
             ue_initial_id);
       return NULL;
+      /*
+      * At the moment this is written, this case shouldn't (cannot) happen and is equivalent to an error.
+      * One could try to find the struct instance based on ngap_id2_ngap_ids and gNB_ue_ngap_idP (if > 0),
+      * but this behavior is not expected at the moment.
+      */
     } // end else (h_rc != HASH_TABLE_OK)
   } else { // end if (ue_initial_id != UE_INITIAL_ID_INVALID)
-    /* TODO */
+    if (gNB_ue_ngap_idP > 0) {
+      h_rc = hashtable_get(rrc_instance_pP->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_idP, (void **)&result);
+
+      if (h_rc != HASH_TABLE_OK) {
+        /*
+        * This case is uncommon, but can happen when:
+        * -> if the first NAS message was a Detach Request (non exhaustiv), the UE RRC context exist
+        * but is not associated with gNB_ue_ngap_id
+        * -> ... (?)
+        */
+        LOG_E(NGAP, "[gNB %ld] In hashtable_get, couldn't find in ngap_id2_ngap_ids gNB_ue_ngap_idP %"PRIu32", trying to find it through NGAP context\n",
+              rrc_instance_pP - RC.nrrrc[0],
+              gNB_ue_ngap_idP);
+        instance = GNB_MODULE_ID_TO_INSTANCE(rrc_instance_pP - RC.nrrrc[0]); // get gNB instance
+        ngap_gNB_instance_p = ngap_gNB_get_instance(instance); // get ngap_gNB_instance
+
+        if (ngap_gNB_instance_p != NULL) {
+          ue_desc_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p, gNB_ue_ngap_idP); // get s1ap_eNB_ue_context
+        } else {
+          LOG_E(NGAP, "[gNB instance %d] Couldn't find the gNB NGAP context\n",
+                instance);
+          return NULL;
+        }
+
+        if (ue_desc_p != NULL) {
+          struct ngap_gNB_ue_context_s *ngap_ue_context_p = NULL;
+
+          if ((ngap_ue_context_p = RB_REMOVE(ngap_ue_map, &ngap_gNB_instance_p->ngap_ue_head, ue_desc_p)) != NULL) {
+            LOG_E(NR_RRC, "Removed UE context gNB_ue_ngap_id %u\n", ngap_ue_context_p->gNB_ue_ngap_id);
+            ngap_gNB_free_ue_context(ngap_ue_context_p);
+          } else {
+            LOG_E(NR_RRC, "Removing UE context gNB_ue_ngap_id %u: did not find context\n",ue_desc_p->gNB_ue_ngap_id);
+          }
+
+          return NULL; //skip the operation below to avoid loop
+          result = rrc_gNB_NGAP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, gNB_ue_ngap_idP);
+
+          if (ue_desc_p->ue_initial_id != UE_INITIAL_ID_INVALID) {
+            result = rrc_gNB_NGAP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, gNB_ue_ngap_idP);
+
+            if (result != NULL) {
+              ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
+
+              if ((ue_context_p != NULL) && (ue_context_p->ue_context.gNB_ue_ngap_id == 0)) {
+                ue_context_p->ue_context.gNB_ue_ngap_id = gNB_ue_ngap_idP;
+              } else {
+                LOG_E(NR_RRC, "[gNB %ld] Incoherence between RRC context and NGAP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
+                      rrc_instance_pP - RC.nrrrc[0],
+                      (ue_context_p==NULL)?99999:ue_context_p->ue_context.gNB_ue_ngap_id,
+                      gNB_ue_ngap_idP,
+                      result->ue_rnti);
+              }
+            }
+          } else {
+            LOG_E(NGAP, "[gNB %ld] NGAP context found but ue_initial_id is invalid (0)\n", rrc_instance_pP - RC.nrrrc[0]);
+            return NULL;
+          }
+        } else {
+          LOG_E(NGAP, "[gNB %ld] In hashtable_get, couldn't find in ngap_id2_ngap_ids gNB_ue_ngap_idP %"PRIu32", because ue_initial_id is invalid in NGAP context\n",
+                rrc_instance_pP - RC.nrrrc[0],
+                gNB_ue_ngap_idP);
+          return NULL;
+        }
+      } // end if (h_rc != HASH_TABLE_OK)
+    } // end if (gNB_ue_ngap_idP > 0)
   } // end else (ue_initial_id == UE_INITIAL_ID_INVALID)
 
     return result;
@@ -257,7 +327,7 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
 )
 //------------------------------------------------------------------------------
 {
-    gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+    // gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
     MessageDef         *message_p         = NULL;
     rrc_ue_ngap_ids_t  *rrc_ue_ngap_ids_p = NULL;
     hashtable_rc_t      h_rc;
