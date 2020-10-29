@@ -143,7 +143,8 @@ int generate_dlsch_header(unsigned char *mac_header,
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, uint8_t *K_ptrs, uint8_t *L_ptrs);
+void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
+void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
 
 int main(int argc, char **argv)
 {
@@ -213,10 +214,13 @@ int main(int argc, char **argv)
   int css_flag=0;
 
   cpuf = get_cpu_freq_GHz();
-  int enable_ptrs = 0;
-  
+  int8_t enable_ptrs = 0;
+  int8_t modify_dmrs = 0;
+
+  int8_t dmrs_arg[2] = {-1,-1};// Invalid values
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
-  uint8_t ptrs_arg[2] = {-1,-1};// Invalid values
+  int8_t ptrs_arg[2] = {-1,-1};// Invalid values
+
   uint16_t ptrsRePerSymb = 0;
   uint16_t pdu_bit_map = 0x0;
   uint16_t dlPtrsSymPos = 0;
@@ -235,7 +239,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:U:")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -428,6 +432,12 @@ int main(int argc, char **argv)
          ptrs_arg[i] = atoi(argv[optind++]);
        }
        break;
+    case 'U':
+      modify_dmrs = 1;
+      for(i=0; i < atoi(optarg); i++){
+        dmrs_arg[i] = atoi(argv[optind++]);
+      }
+      break;
 
     default:
     case 'h':
@@ -460,6 +470,7 @@ int main(int argc, char **argv)
       printf("-e MSC index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2}, e.g. -U 2 0 2 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
       exit (-1);
@@ -556,12 +567,17 @@ int main(int argc, char **argv)
 				  0);
   fix_scc(scc,ssb_bitmap);
 
+  /* -U option modify DMRS */
+  if(modify_dmrs)
+  {
+    update_dmrs_config(secondaryCellGroup, NULL,dmrs_arg);
+  }
   /* -T option enable PTRS */
   if(enable_ptrs)
   {
-    printf("[DLSIM] PTRS Enabled with L %d, K %d \n", 1<<ptrs_arg[0], ptrs_arg[1] );
-    update_ptrs_config(secondaryCellGroup, &rbSize, &mcsIndex, &ptrs_arg[1], &ptrs_arg[0]);
+    update_ptrs_config(secondaryCellGroup, &rbSize, &mcsIndex, ptrs_arg);
   }
+
 
   //xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
@@ -673,6 +689,10 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  if(modify_dmrs)
+  {
+    update_dmrs_config( NULL,UE,dmrs_arg);
+  }
   init_nr_ue_transport(UE,0);
 
   nr_gold_pbch(UE);
@@ -1136,7 +1156,7 @@ int main(int argc, char **argv)
 }
 
 
-void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, uint8_t *K_ptrs, uint8_t *L_ptrs)
+void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, int8_t *ptrs_arg)
 {
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
   int *ptrsFreqDenst = calloc(2, sizeof(long));
@@ -1150,16 +1170,16 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
   int epre_Ratio = 0;
   int reOffset = 0;
 
-  if(*L_ptrs ==0)
+  if(ptrs_arg[0] ==0)
     {
       ptrsTimeDenst[2]= *mcsIndex -1;
     }
-  else if(*L_ptrs == 1)
+  else if(ptrs_arg[0] == 1)
     {
       ptrsTimeDenst[1]= *mcsIndex - 1;
       ptrsTimeDenst[2]= *mcsIndex + 1;
     }
-  else if(*L_ptrs ==2)
+  else if(ptrs_arg[0] ==2)
     {
       ptrsTimeDenst[0]= *mcsIndex - 1;
       ptrsTimeDenst[1]= *mcsIndex + 1;
@@ -1169,12 +1189,12 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
     printf("[DLSIM] Wrong L_PTRS value, using default values 1\n");
   }
   /* L = 4 if Imcs < MCS4 */
-  if(*K_ptrs ==2)
+  if(ptrs_arg[1] ==2)
     {
       ptrsFreqDenst[0]= *rbSize - 1;
       ptrsFreqDenst[1]= *rbSize + 1;
     }
-  else if(*K_ptrs == 4)
+  else if(ptrs_arg[1] == 4)
     {
       ptrsFreqDenst[1]= *rbSize - 1;
     }
@@ -1182,9 +1202,45 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
     {
       printf("[DLSIM] Wrong K_PTRS value, using default values 2\n");
     }
-  
+  printf("[DLSIM] PTRS Enabled with L %d, K %d \n", 1<<ptrs_arg[0], ptrs_arg[1] );
   /* overwrite the values */
   rrc_config_dl_ptrs_params(bwp, ptrsFreqDenst, ptrsTimeDenst, &epre_Ratio, &reOffset);
 }
 
+void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg)
+{
+  int8_t  mapping_type = typeA;//default value
+  int8_t  add_pos = pdsch_dmrs_pos0;//default value
+  if(dmrs_arg[0] == 0)
+  {
+    mapping_type = typeA;
+  }
+  else if (dmrs_arg[0] == 1)
+  {
+    mapping_type = typeB;
+  }
+  /* Additional DMRS positions 0 ,1 and 2 */
+  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <3 )
+  {
+    add_pos = dmrs_arg[1];
+  }
 
+  if(scg != NULL)
+  {
+    NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+    *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = add_pos;
+    for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++)
+    {
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
+    }
+  }
+  if(ue != NULL)
+  {
+    for (int i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++)
+    {
+      ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = mapping_type;
+    }
+    ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = add_pos;
+  }
+  printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d \n", dmrs_arg[0], dmrs_arg[1] );
+}

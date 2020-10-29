@@ -275,7 +275,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
   }
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
-  AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
+  AssertFatal(dmrs_length == 1 || dmrs_length == 2 || dmrs_length == 3 ,"Illegal dmrs_length %d\n",dmrs_length);
 
   uint32_t i,j;
 
