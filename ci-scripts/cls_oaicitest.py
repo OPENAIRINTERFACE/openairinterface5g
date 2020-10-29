@@ -1934,15 +1934,34 @@ class OaiCiTest():
 			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 			if ret.stdout is not None:
 				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
+		# When using a docker-based deployment, IPERF client shall be launched from trf container
+		launchFromTrfContainer = False
+		if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+			launchFromTrfContainer = True
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			SSH.command('docker inspect --format="TRF_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-trf-gen', '\$', 5)
+			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				EPC_Iperf_UE_IPAddress = result.group('trf_ip_addr')
+			SSH.close()
 		port = 5001 + idx
+		udpOptions = ''
+		if udpIperf:
+			udpOptions = '-u '
 		if launchFromEpc:
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			if udpIperf:
-				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
+			if launchFromTrfContainer:
+				if self.ueIperfVersion == self.dummyIperfVersion:
+					prefix = ''
+				else:
+					prefix = ''
+					if self.ueIperfVersion == '2.0.5':
+						prefix = '/iperf-2.0.5/bin/'
+				SSH.command('docker exec -d prod-trf-gen /bin/bash -c "nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &"', '\$', 5)
 			else:
-				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
+				SSH.command('echo $USER; nohup iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
 			SSH.close()
 		else:
 			if self.ueIperfVersion == self.dummyIperfVersion:
@@ -1951,10 +1970,7 @@ class OaiCiTest():
 				prefix = ''
 				if self.ueIperfVersion == '2.0.5':
 					prefix = '/opt/iperf-2.0.5/bin/'
-			if udpIperf:
-				cmd = 'nohup ' + prefix + 'iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
-			else:
-				cmd = 'nohup ' + prefix + 'iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			cmd = 'nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 		time.sleep(0.5)
@@ -2000,13 +2016,16 @@ class OaiCiTest():
 		# Kill iperf server on EPC side
 		if launchFromEpc:
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
+			if launchFromTrfContainer:
+				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
+			else:
+				SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
 			SSH.close()
 		else:
 			cmd = 'killall --signal SIGKILL iperf'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True)
-			time.sleep(1)			
+			time.sleep(1)
 			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1) or (clientStatus == -2):
@@ -2014,6 +2033,10 @@ class OaiCiTest():
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
+				if launchFromTrfContainer:
+					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+					SSH.command('docker cp prod-trf-gen:/iperf-2.0.5/iperf_server_' + self.testCase_id + '_' + device_id + '.log ' + EPC.SourceCodePath + '/scripts', '\$', 5)
+					SSH.close()
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
@@ -2212,8 +2235,16 @@ class OaiCiTest():
 				else:
 					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				# fromdos has to be called on the python executor not on ADB server
-				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log'
-				subprocess.run(cmd, shell=True)
+				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				try:
+					subprocess.run(cmd, shell=True)
+				except:
+					pass
+				cmd = 'dos2unix -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				try:
+					subprocess.run(cmd, shell=True)
+				except:
+					pass
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 			# in case of OAI UE: 
