@@ -1692,8 +1692,7 @@ inline int remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
   int *cur = &listP->head;
   while (*cur != -1 && *cur != UE_id)
     cur = &listP->next[*cur];
-  if (*cur == -1)
-    return 0;
+  AssertFatal(*cur != -1, "UE %d not found in UE_list\n", UE_id);
   int *next = &listP->next[*cur];
   *cur = listP->next[*cur];
   *next = -1;
