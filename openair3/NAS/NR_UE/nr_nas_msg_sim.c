@@ -146,3 +146,60 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
 
 
 }
+
+void generateRegistrationComplete(as_nas_info_t *ulNasMsg, SORTransparentContainer               *sortransparentcontainer) {
+  int length = sizeof(fgs_nas_message_security_header_t);
+  int size = 0;
+  fgs_nas_message_t nas_msg;
+  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
+  fgs_nas_message_security_protected_t *sp_msg;
+
+  sp_msg = &nas_msg.security_protected;
+  // set header
+  sp_msg->header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  sp_msg->header.security_header_type   = INTEGRITY_PROTECTED_AND_CIPHERED;
+  sp_msg->header.message_authentication_code = 0x8fc59d96;
+  sp_msg->header.sequence_number        = 1;
+
+  sp_msg->plain.mm_msg.registration_complete.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  length += 1;
+  sp_msg->plain.mm_msg.registration_complete.securityheadertype    = PLAIN_5GS_MSG;
+  sp_msg->plain.mm_msg.registration_complete.sparehalfoctet        = 0;
+  length += 1;
+  sp_msg->plain.mm_msg.registration_complete.messagetype = REGISTRATION_REQUEST;
+  length += 1;
+
+  if(sortransparentcontainer) {
+    length += sortransparentcontainer->sortransparentcontainercontents.length;
+  }
+
+  // encode the message
+  ulNasMsg->data = (Byte_t *)malloc(length * sizeof(Byte_t));
+
+  /* Encode the first octet of the header (extended protocol discriminator) */
+  ENCODE_U8(ulNasMsg->data + size, sp_msg->header.protocol_discriminator, size);
+  
+  /* Encode the security header type */
+  ENCODE_U8(ulNasMsg->data + size, sp_msg->header.security_header_type, size);
+  
+  /* Encode the message authentication code */
+  ENCODE_U32(ulNasMsg->data + size, sp_msg->header.message_authentication_code, size);
+  
+  /* Encode the sequence number */
+  ENCODE_U8(ulNasMsg->data + size, sp_msg->header.sequence_number, size);
+  
+  
+  /* Encode the extended protocol discriminator */
+  ENCODE_U8(ulNasMsg->data + size, sp_msg->plain.mm_msg.registration_complete.protocoldiscriminator, size);
+    
+  /* Encode the security header type */
+  ENCODE_U8(ulNasMsg->data + size, sp_msg->plain.mm_msg.registration_complete.securityheadertype, size);
+    
+  /* Encode the message type */
+  ENCODE_U8(ulNasMsg->data + size, sp_msg->plain.mm_msg.registration_complete.messagetype, size);
+
+  if(sortransparentcontainer) {
+    encode_registration_complete(&sp_msg->plain.mm_msg.registration_complete, ulNasMsg->data + size, length - size);
+  }
+}
+
