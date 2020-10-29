@@ -293,6 +293,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   RB_INIT(&rrc->rrc_ue_head);
   rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->initial_id2_ngap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->ngap_id2_ngap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
@@ -1092,6 +1094,34 @@ rrc_gNB_decode_dcch(
 
                 ue_context_p->ue_context.ue_release_timer = 0;
                 break;
+
+            case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+                LOG_I(NR_RRC,"Recived RRC GNB UL Information Transfer \n");
+                if(!ue_context_p) {
+                    LOG_I(NR_RRC, "Processing ulInformationTransfer UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+                    break;
+                }
+
+                LOG_D(NR_RRC,"[MSG] RRC UL Information Transfer \n");
+                LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                            "[MSG] RRC UL Information Transfer \n");
+                MSC_LOG_RX_MESSAGE(
+                  MSC_RRC_GNB,
+                  MSC_RRC_UE,
+                  Rx_sdu,
+                  sdu_sizeP,
+                  MSC_AS_TIME_FMT" ulInformationTransfer UE %x size %u",
+                  MSC_AS_TIME_ARGS(ctxt_pP),
+                  ue_context_p->ue_context.rnti,
+                  sdu_sizeP);
+
+                if (AMF_MODE_ENABLED == 1) {
+                    rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP,
+                                              ue_context_p,
+                                              ul_dcch_msg);
+                }
+                break;
+
             case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
                 // to avoid segmentation fault
                 if(!ue_context_p) {

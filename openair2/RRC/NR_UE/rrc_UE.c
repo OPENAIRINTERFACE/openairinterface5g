@@ -2350,6 +2350,13 @@ nr_rrc_ue_decode_dcch(
                   LOG_I(NR_RRC, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", ctxt_pP->module_id,  messages_info[NAS_DOWNLINK_DATA_IND].name,
                         ctxt_pP->module_id, pdu_length, pdu_buffer);
                   //nas_proc_dl_transfer_ind (user, pdu_buffer, pdu_length);
+/*                  MessageDef *message_p;
+                  message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
+                  NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
+                  NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = pdu_buffer;
+                  NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pdu_length;
+                  itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+                  LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message\n");*/
 #else
                   MessageDef *msg_p;
                   msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND);
@@ -2466,7 +2473,7 @@ void *rrc_nrue_task( void *args_p ) {
       case NAS_UPLINK_DATA_REQ: {
         uint32_t length;
         uint8_t *buffer;
-        LOG_D(NR_RRC, "[UE %d] Received %s: UEid %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_UPLINK_DATA_REQ (msg_p).UEid);
+        LOG_I(NR_RRC, "[UE %d] Received %s: UEid %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_UPLINK_DATA_REQ (msg_p).UEid);
         /* Create message for PDCP (ULInformationTransfer_t) */
         length = do_NR_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);
         /* Transfer data to PDCP */

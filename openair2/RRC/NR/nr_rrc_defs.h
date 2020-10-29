@@ -424,6 +424,8 @@ typedef struct gNB_RRC_INST_s {
   int                                                 Nb_ue;
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
+  hash_table_t                                        *initial_id2_ngap_ids;
+  hash_table_t                                        *ngap_id2_ngap_ids   ;
 
   // other PLMN parameters
   /// Mobile country code

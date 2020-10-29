@@ -522,8 +522,8 @@ int main( int argc, char **argv )
     exit(-1);
   }
 
-  // AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
-  AMF_MODE_ENABLED = 0;
+  AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+ // AMF_MODE_ENABLED = 0;
   NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
 
 #if T_TRACER

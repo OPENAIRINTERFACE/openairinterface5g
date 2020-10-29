@@ -465,6 +465,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
+    pdu.choice.initiatingMessage = (NGAP_InitiatingMessage_t *)calloc(1,sizeof(NGAP_InitiatingMessage_t));
     pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_UplinkNASTransport;
     pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
     pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_UplinkNASTransport;
@@ -499,6 +500,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_UserLocationInformation;
 
     ie->value.choice.UserLocationInformation.present = NGAP_UserLocationInformation_PR_userLocationInformationNR;
+    ie->value.choice.UserLocationInformation.choice.userLocationInformationNR = CALLOC(1,sizeof(struct NGAP_UserLocationInformationNR));
     userinfo_nr_p = ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
 
     /* Set nRCellIdentity. default userLocationInformationNR */
@@ -575,6 +577,7 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
+    pdu.choice.initiatingMessage = (NGAP_InitiatingMessage_t *)calloc(1,sizeof(NGAP_InitiatingMessage_t));
     pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_NASNonDeliveryIndication;
     pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
     pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_NASNonDeliveryIndication;
@@ -899,6 +902,7 @@ int ngap_gNB_ue_capabilities(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
+    pdu.choice.initiatingMessage = (NGAP_InitiatingMessage_t *)calloc(1,sizeof(NGAP_InitiatingMessage_t));
     pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_UERadioCapabilityInfoIndication;
     pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
     pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_UERadioCapabilityInfoIndication;

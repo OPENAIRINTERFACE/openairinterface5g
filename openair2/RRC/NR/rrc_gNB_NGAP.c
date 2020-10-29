@@ -48,6 +48,10 @@
 #include "S1AP_NAS-PDU.h"
 #include "executables/softmodem-common.h"
 #include "UTIL/OSA/osa_defs.h"
+#include "ngap_gNB_defs.h"
+#include "ngap_gNB_ue_context.h"
+#include "NR_ULInformationTransfer.h"
+#include "NR_UL-DCCH-Message.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -91,8 +95,62 @@ rrc_gNB_NGAP_get_ue_ids(
 //------------------------------------------------------------------------------
 {
     rrc_ue_ngap_ids_t *result = NULL;
+    rrc_ue_ngap_ids_t *result2 = NULL;
+  /*****************************/
+  instance_t instance = 0;
+  ngap_gNB_instance_t *ngap_gNB_instance_p = NULL;
+  ngap_gNB_ue_context_t *ue_desc_p = NULL;
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
+  /*****************************/
+  hashtable_rc_t     h_rc;
 
+  if (ue_initial_id != UE_INITIAL_ID_INVALID) {
+    h_rc = hashtable_get(rrc_instance_pP->initial_id2_ngap_ids, (hash_key_t)ue_initial_id, (void **)&result);
+
+    if (h_rc == HASH_TABLE_OK) {
+      if (gNB_ue_ngap_idP > 0) {
+        h_rc = hashtable_get(rrc_instance_pP->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_idP, (void **)&result2);
+
+        if (h_rc != HASH_TABLE_OK) { // this case is equivalent to associate gNB_ue_ngap_idP and ue_initial_id
+          result2 = malloc(sizeof(*result2));
+
+          if (NULL != result2) {
+            *result2 = *result;
+            result2->gNB_ue_ngap_id = gNB_ue_ngap_idP;
+            result->gNB_ue_ngap_id  = gNB_ue_ngap_idP;
+            h_rc = hashtable_insert(rrc_instance_pP->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_idP, result2);
+
+            if (h_rc != HASH_TABLE_OK) {
+              LOG_E(NGAP, "[gNB %ld] Error while hashtable_insert in ngap_id2_ngap_ids gNB_ue_ngap_idP %"PRIu32"\n",
+                    rrc_instance_pP - RC.nrrrc[0],
+                    gNB_ue_ngap_idP);
+            }
+          }
+        } else { // here we should check that the association was done correctly
+          if ((result->ue_initial_id != result2->ue_initial_id) || (result->gNB_ue_ngap_id != result2->gNB_ue_ngap_id)) {
+            LOG_E(NGAP, "[gNB %ld] Error while hashtable_get, two rrc_ue_ngap_ids_t that should be equal, are not:\n \
+              ue_initial_id 1 = %"PRIu16",\n \
+              ue_initial_id 2 = %"PRIu16",\n \
+              gNB_ue_ngap_idP 1 = %"PRIu32",\n \
+              gNB_ue_ngap_idP 2 = %"PRIu32"\n",
+                  rrc_instance_pP - RC.nrrrc[0],
+                  result->ue_initial_id,
+                  result2->ue_initial_id,
+                  result->gNB_ue_ngap_id,
+                  result2->gNB_ue_ngap_id);
+            // Still return *result
+          }
+        }
+      } // end if if (eNB_ue_s1ap_id > 0)
+    } else { // end if (h_rc == HASH_TABLE_OK)
+      LOG_E(NGAP, "[gNB %ld] In hashtable_get, couldn't find in initial_id2_ngap_ids ue_initial_id %"PRIu16"\n",
+            rrc_instance_pP - RC.nrrrc[0],
+            ue_initial_id);
+      return NULL;
+    } // end else (h_rc != HASH_TABLE_OK)
+  } else { // end if (ue_initial_id != UE_INITIAL_ID_INVALID)
     /* TODO */
+  } // end else (ue_initial_id == UE_INITIAL_ID_INVALID)
 
     return result;
 }
@@ -199,10 +257,10 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
 )
 //------------------------------------------------------------------------------
 {
-    // gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+    gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
     MessageDef         *message_p         = NULL;
     rrc_ue_ngap_ids_t  *rrc_ue_ngap_ids_p = NULL;
-    // hashtable_rc_t      h_rc;
+    hashtable_rc_t      h_rc;
 
     message_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_NAS_FIRST_REQ);
     memset(&message_p->ittiMsg.ngap_nas_first_req, 0, sizeof(ngap_nas_first_req_t));
@@ -213,15 +271,15 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
     rrc_ue_ngap_ids_p->gNB_ue_ngap_id = UE_INITIAL_ID_INVALID;
     rrc_ue_ngap_ids_p->ue_rnti        = ctxt_pP->rnti;
 
-    // h_rc = hashtable_insert(RC.nrrrc[ctxt_pP->module_id]->initial_id2_s1ap_ids,
-    //                         (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
-    //                         rrc_ue_s1ap_ids_p);
+    h_rc = hashtable_insert(RC.nrrrc[ctxt_pP->module_id]->initial_id2_ngap_ids,
+                            (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
+                            rrc_ue_ngap_ids_p);
 
-    // if (h_rc != HASH_TABLE_OK) {
-    //   LOG_E(S1AP, "[eNB %d] Error while hashtable_insert in initial_id2_s1ap_ids ue_initial_id %u\n",
-    //         ctxt_pP->module_id,
-    //         ue_context_pP->ue_context.ue_initial_id);
-    // }
+    if (h_rc != HASH_TABLE_OK) {
+      LOG_E(NGAP, "[gNB %d] Error while hashtable_insert in initial_id2_ngap_ids ue_initial_id %u\n",
+            ctxt_pP->module_id,
+            ue_context_pP->ue_context.ue_initial_id);
+    }
 
     /* Assume that cause is coded in the same way in RRC and NGap, just check that the value is in NGap range */
     AssertFatal(ue_context_pP->ue_context.establishment_cause < NGAP_RRC_CAUSE_LAST,
@@ -588,5 +646,34 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
             PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
         return (0);
+    }
+}
+
+//------------------------------------------------------------------------------
+void
+rrc_gNB_send_NGAP_UPLINK_NAS(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg
+)
+//------------------------------------------------------------------------------
+{
+    uint32_t pdu_length;
+    uint8_t *pdu_buffer;
+    MessageDef *msg_p;
+    NR_ULInformationTransfer_t *ulInformationTransfer = ul_dcch_msg->message.choice.c1->choice.ulInformationTransfer;
+
+    if (ulInformationTransfer->criticalExtensions.present == NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer) {
+        pdu_length = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size;
+        pdu_buffer = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf;
+        msg_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_UPLINK_NAS);
+        NGAP_UPLINK_NAS (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
+        NGAP_UPLINK_NAS (msg_p).nas_pdu.length = pdu_length;
+        NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer = pdu_buffer;
+        // extract_imsi(NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer,
+        //               NGAP_UPLINK_NAS (msg_p).nas_pdu.length,
+        //               ue_context_pP);
+        itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
+        LOG_I(NR_RRC,"Send RRC GNB UL Information Transfer \n");
     }
 }

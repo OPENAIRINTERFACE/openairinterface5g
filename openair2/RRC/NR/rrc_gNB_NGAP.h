@@ -37,6 +37,7 @@
 
 #include "NR_RRCSetupComplete-IEs.h"
 #include "NR_RegisteredAMF.h"
+#include "NR_UL-DCCH-Message.h"
 
 typedef struct rrc_ue_ngap_ids_s {
   /* Tree related data */
@@ -83,6 +84,13 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
   const char *msg_name,
   instance_t  instance,
   mui_t      *rrc_gNB_mui
+);
+
+void
+rrc_gNB_send_NGAP_UPLINK_NAS(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg
 );
 
 #endif
