@@ -277,10 +277,12 @@ typedef struct UE_info {
 typedef struct NR_sched_pucch {
   int frame;
   int ul_slot;
+  bool sr_flag;
+  int csi_bits;
+  bool simultaneous_harqcsi;
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-  bool active;
 } NR_sched_pucch;
 
 typedef struct NR_sched_pusch {
@@ -318,6 +320,25 @@ typedef struct NR_UE_ul_harq {
   NR_UL_harq_states_t state;
 } NR_UE_ul_harq_t;
 
+
+typedef struct {
+  uint8_t nb_ssbri_cri;
+  uint8_t cri_ssbri_bitlen;
+  uint8_t rsrp_bitlen;
+  uint8_t diff_rsrp_bitlen;
+}CRI_SSBRI_RSRP_bitlen_t;
+
+
+#define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
+typedef struct nr_csi_report {
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
+  uint8_t nb_of_nzp_csi_report;
+  uint8_t nb_of_csi_ssb_report;
+  CRI_SSBRI_RSRP_bitlen_t CSI_report_bitlen[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
+} nr_csi_report_t;
+
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   /// total amount of data awaiting for this UE
@@ -327,9 +348,10 @@ typedef struct {
 
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
-  NR_sched_pucch *sched_pucch;
+  NR_sched_pucch **sched_pucch;
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
+  int pucch_occ_idx;
   NR_sched_pusch *sched_pusch;
 
   /// CCE index and aggregation, should be coherent with cce_list
@@ -394,9 +416,11 @@ typedef struct {
 
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
+#define MAX_CSI_REPORTCONFIG 48
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
+  nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_UE_list_t list;

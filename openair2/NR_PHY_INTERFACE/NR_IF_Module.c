@@ -79,6 +79,44 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 }
 
 
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10) {
+
+  int num_ucis = UL_info->uci_ind.num_ucis;
+  nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
+
+  for (int i = 0; i < num_ucis; i++) {
+    switch (uci_list[i].pdu_type) {
+      case NFAPI_NR_UCI_PUSCH_PDU_TYPE: break;
+
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+
+        if( (uci_pdu->pduBitmap>>1) & 0x01)
+          nr_rx_acknack(NULL,uci_pdu,NULL,UL_info,sched_ctrl,stats);
+
+        break;
+      }
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
+
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+
+        if( (uci_pdu->pduBitmap>>1) & 0x01)
+          nr_rx_acknack(NULL,NULL,uci_pdu,UL_info,sched_ctrl,stats);
+
+        break;
+      }
+    }
+  }
+
+  UL_info->uci_ind.num_ucis = 0;
+}
+
+
 void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
 
   if(nfapi_mode == 1) {

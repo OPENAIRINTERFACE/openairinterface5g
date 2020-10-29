@@ -996,17 +996,7 @@ pdcp_data_ind(
            * TODO: be sure of this
            */
           if (NFAPI_MODE == NFAPI_UE_STUB_PNF ) {
-#ifdef UESIM_EXPANSION
-
-            if (UE_NAS_USE_TUN) {
-              pdcpHead->inst  = ctxt_pP->module_id;
-            } else {
-              pdcpHead->inst  = 0;
-            }
-
-#else
             pdcpHead->inst  = ctxt_pP->module_id;
-#endif
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
               pdcpHead->inst  = ctxt_pP->module_id;
@@ -2287,7 +2277,7 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("ue",num_if);
       if (IS_SOFTMODEM_NOS1)
     	  nas_config(1, 1, 2, "ue");

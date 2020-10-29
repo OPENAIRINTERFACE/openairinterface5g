@@ -35,6 +35,7 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
