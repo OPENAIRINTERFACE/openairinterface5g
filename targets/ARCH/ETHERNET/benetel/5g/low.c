@@ -27,17 +27,50 @@
 
 void store_ul(benetel_t *bs, ul_packet_t *ul)
 {
+#if 0
+struct timespec t;
+static struct timespec old;
+clock_gettime(CLOCK_REALTIME, &t);
+printf("store_ul %d.%ld (%ld)\n", (int)(t.tv_sec % 60), t.tv_nsec, t.tv_nsec - old.tv_nsec);
+old = t;
+#endif
+
   /* only antenna 0 for the moment */
   if (ul->antenna != 0)
     return;
 
   if (ul->slot != bs->next_slot ||
       ul->symbol != bs->next_symbol) {
-    printf("%s: fatal, expected frame.sl.symbol %d.%d.%d, got %d.%d.%d\n",
+    printf("%s: error, expected frame.sl.symbol %d.%d.%d, got %d.%d.%d\n",
            __FUNCTION__,
            bs->expected_benetel_frame, bs->next_slot, bs->next_symbol,
            ul->frame, ul->slot, ul->symbol);
-    exit(1);
+  }
+
+  /* fill missing data with 0s */
+  while (ul->slot != bs->next_slot ||
+         ul->symbol != bs->next_symbol) {
+    lock_ul_buffer(bs->buffers, bs->next_slot);
+    if (bs->buffers->ul_busy[bs->next_slot] & (1 << bs->next_symbol)) {
+      printf("%s: warning, UL overflow (sl.symbol %d.%d)\n", __FUNCTION__,
+             bs->next_slot, bs->next_symbol);
+    }
+
+    memset(bs->buffers->ul[bs->next_slot] + bs->next_symbol * 1272*4,
+           0, 1272*4);
+    bs->buffers->ul_busy[bs->next_slot] |= (1 << bs->next_symbol);
+    signal_ul_buffer(bs->buffers, bs->next_slot);
+    unlock_ul_buffer(bs->buffers, bs->next_slot);
+
+    bs->next_symbol++;
+    if (bs->next_symbol == 14) {
+      bs->next_symbol = 0;
+      bs->next_slot = (bs->next_slot + 1) % 20;
+      if (bs->next_slot == 0) {
+        bs->expected_benetel_frame++;
+        bs->expected_benetel_frame &= 255;
+      }
+    }
   }
 
   lock_ul_buffer(bs->buffers, bs->next_slot);
