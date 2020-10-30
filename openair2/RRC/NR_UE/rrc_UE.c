@@ -2349,14 +2349,34 @@ nr_rrc_ue_decode_dcch(
 #ifdef ITTI_SIM
                   LOG_I(NR_RRC, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", ctxt_pP->module_id,  messages_info[NAS_DOWNLINK_DATA_IND].name,
                         ctxt_pP->module_id, pdu_length, pdu_buffer);
-                  //nas_proc_dl_transfer_ind (user, pdu_buffer, pdu_length);
-/*                  MessageDef *message_p;
-                  message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
-                  NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                  NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = pdu_buffer;
-                  NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pdu_length;
-                  itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                  LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message\n");*/
+                  as_nas_info_t initialNasMsg;
+                  memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+                  if((pdu_buffer + 2) == NULL){
+                    LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
+                    return 0;
+                  }
+                  uint8_t msg_type = *(pdu_buffer + 2);
+
+                  switch(msg_type){
+                    case FGS_IDENTITY_REQUEST:
+                       generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3));
+                       break;
+                   // case FGS_AUTHENTICATION_REQUEST:
+                   //    generateAuthenticationResp(&initialNasMsg);
+                   //    break;
+                    default:
+                       LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
+                       break;
+                  }
+                  if(initialNasMsg.length > 0){
+                    MessageDef *message_p;
+                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
+                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
+                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
+                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message\n");
+                  }
 #else
                   MessageDef *msg_p;
                   msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND);

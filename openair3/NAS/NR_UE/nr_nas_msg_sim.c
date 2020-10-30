@@ -66,7 +66,12 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
     case REGISTRATION_REQUEST:
       encode_result = encode_registration_request(&mm_msg->registration_request, buffer, len);
       break;
-
+    case FGS_IDENTITY_RESPONSE:
+      encode_result = encode_identiy_response(&mm_msg->fgs_identity_response, buffer, len);
+      break;
+    case FGS_AUTHENTICATION_RESPONSE:
+      encode_result = encode_fgs_authentication_response(&mm_msg->fgs_auth_response, buffer, len);
+      break;
     default:
       LOG_TRACE(ERROR, "EMM-MSG   - Unexpected message type: 0x%x",
     		  mm_msg->header.message_type);
@@ -85,7 +90,6 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
 
   LOG_FUNC_RETURN (header_result + encode_result);
 }
-
 
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
@@ -109,21 +113,35 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   mm_msg->registration_request.messagetype = REGISTRATION_REQUEST;
   size += 1;
   mm_msg->registration_request.fgsregistrationtype = INITIAL_REGISTRATION;
-  mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = NAS_KEY_SET_IDENTIFIER_NOT_AVAILABLE;
+  mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = 1;
   size += 1;
-  mm_msg->registration_request.fgsmobileidentity.guti.typeofidentity = FGS_MOBILE_IDENTITY_5G_GUTI;
-  mm_msg->registration_request.fgsmobileidentity.guti.amfregionid = 0xca;
-  mm_msg->registration_request.fgsmobileidentity.guti.amfpointer = 0;
-  mm_msg->registration_request.fgsmobileidentity.guti.amfsetid = 1016;
-  mm_msg->registration_request.fgsmobileidentity.guti.tmsi = 10;
-  mm_msg->registration_request.fgsmobileidentity.guti.mncdigit1 = 9;
-  mm_msg->registration_request.fgsmobileidentity.guti.mncdigit2 = 3;
-  mm_msg->registration_request.fgsmobileidentity.guti.mncdigit3 = 0xf;
-  mm_msg->registration_request.fgsmobileidentity.guti.mccdigit1 = 2;
-  mm_msg->registration_request.fgsmobileidentity.guti.mccdigit2 = 0;
-  mm_msg->registration_request.fgsmobileidentity.guti.mccdigit3 = 8;
+  if(0){
+    mm_msg->registration_request.fgsmobileidentity.guti.typeofidentity = FGS_MOBILE_IDENTITY_5G_GUTI;
+    mm_msg->registration_request.fgsmobileidentity.guti.amfregionid = 0xca;
+    mm_msg->registration_request.fgsmobileidentity.guti.amfpointer = 0;
+    mm_msg->registration_request.fgsmobileidentity.guti.amfsetid = 1016;
+    mm_msg->registration_request.fgsmobileidentity.guti.tmsi = 10;
+    mm_msg->registration_request.fgsmobileidentity.guti.mncdigit1 = 9;
+    mm_msg->registration_request.fgsmobileidentity.guti.mncdigit2 = 3;
+    mm_msg->registration_request.fgsmobileidentity.guti.mncdigit3 = 0xf;
+    mm_msg->registration_request.fgsmobileidentity.guti.mccdigit1 = 2;
+    mm_msg->registration_request.fgsmobileidentity.guti.mccdigit2 = 0;
+    mm_msg->registration_request.fgsmobileidentity.guti.mccdigit3 = 8;
 
-  size += 13;
+    size += 13;
+
+  } else {
+    mm_msg->registration_request.fgsmobileidentity.suci.typeofidentity = FGS_MOBILE_IDENTITY_SUCI;
+    mm_msg->registration_request.fgsmobileidentity.suci.mncdigit1 = 9;
+    mm_msg->registration_request.fgsmobileidentity.suci.mncdigit2 = 3;
+    mm_msg->registration_request.fgsmobileidentity.suci.mncdigit3 = 0xf;
+    mm_msg->registration_request.fgsmobileidentity.suci.mccdigit1 = 2;
+    mm_msg->registration_request.fgsmobileidentity.suci.mccdigit2 = 0;
+    mm_msg->registration_request.fgsmobileidentity.suci.mccdigit3 = 8;
+    mm_msg->registration_request.fgsmobileidentity.suci.schemeoutput = 0x4778;
+
+    size += 14;
+  }
 
   mm_msg->registration_request.presencemask |= REGISTRATION_REQUEST_5GMM_CAPABILITY_PRESENT;
   mm_msg->registration_request.fgmmcapability.iei = REGISTRATION_REQUEST_5GMM_CAPABILITY_IEI;
@@ -147,3 +165,76 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
 
 
 }
+
+void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype) {
+  int size = sizeof(mm_msg_header_t);
+  fgs_nas_message_t nas_msg;
+  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
+  MM_msg *mm_msg;
+
+  mm_msg = &nas_msg.plain.mm_msg;
+  // set header
+  mm_msg->header.ex_protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  mm_msg->header.security_header_type = PLAIN_5GS_MSG;
+  mm_msg->header.message_type = FGS_IDENTITY_RESPONSE;
+
+
+  // set identity response
+  mm_msg->fgs_identity_response.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  size += 1;
+  mm_msg->fgs_identity_response.securityheadertype = PLAIN_5GS_MSG;
+  size += 1;
+  mm_msg->fgs_identity_response.messagetype = FGS_IDENTITY_RESPONSE;
+  size += 1;
+  if(identitytype == FGS_MOBILE_IDENTITY_SUCI){
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.typeofidentity = FGS_MOBILE_IDENTITY_SUCI;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit1 = 9;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit2 = 3;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit3 = 0xf;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mccdigit1 = 2;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mccdigit2 = 0;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mccdigit3 = 8;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.schemeoutput = 0x4778;
+
+    size += 14;
+  }
+
+  // encode the message
+  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+
+  initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
+
+}
+
+uint8_t tempbuf[16] = {0x0e, 0xa9, 0xf1, 0x39, 0xb9, 0x8c, 0xdb, 0x20, 0x81, 0x9f, 0x98, 0x43, 0xca, 0x03, 0x98, 0x36};
+OctetString res = {0x10, tempbuf};
+void generateAuthenticationResp(as_nas_info_t *initialNasMsg){
+  int size = sizeof(mm_msg_header_t);
+  fgs_nas_message_t nas_msg;
+  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
+  MM_msg *mm_msg;
+
+  mm_msg = &nas_msg.plain.mm_msg;
+  // set header
+  mm_msg->header.ex_protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  mm_msg->header.security_header_type = PLAIN_5GS_MSG;
+  mm_msg->header.message_type = FGS_AUTHENTICATION_RESPONSE;
+
+  // set authentication response
+  mm_msg->fgs_identity_response.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  size += 1;
+  mm_msg->fgs_identity_response.securityheadertype = PLAIN_5GS_MSG;
+  size += 1;
+  mm_msg->fgs_identity_response.messagetype = FGS_AUTHENTICATION_RESPONSE;
+  size += 1;
+
+  //set response parameter
+  mm_msg->fgs_auth_response.authenticationresponseparameter.res = res;
+  size += 18;
+  // encode the message
+  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+
+  initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
+}
+
+

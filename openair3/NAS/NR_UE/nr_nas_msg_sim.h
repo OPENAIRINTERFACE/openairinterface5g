@@ -12,6 +12,8 @@
 #define __NR_NAS_MSG_SIM_H__
 
 #include "RegistrationRequest.h"
+#include "FGSIdentityResponse.h"
+#include "FGSAuthenticationResponse.h"
 #include "as_message.h"
 
 
@@ -19,6 +21,13 @@
 #define INTEGRITY_PROTECTED                                0b0001
 
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
+#define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
+#define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */
+#define FGS_IDENTITY_REQUEST                               0b01011011 /* 91 = 0x5b */
+#define FGS_IDENTITY_RESPONSE                              0b01011100 /* 92 = 0x5c */
+#define FGS_SECURITY_MODE_COMMAND                          0b01011101 /* 93 = 0x5d */
+#define FGS_SECURITY_MODE_COMPLETE                         0b01011110 /* 94 = 0x5e */
+
 #define INITIAL_REGISTRATION                               0b001
 
 
@@ -48,6 +57,8 @@ typedef struct {
 typedef union {
   mm_msg_header_t                        header;
   registration_request_msg               registration_request;
+  fgs_identiy_response_msg               fgs_identity_response;
+  fgs_authentication_response_msg        fgs_auth_response;
 } MM_msg;
 
 
@@ -69,5 +80,9 @@ typedef union {
 } fgs_nas_message_t;
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg);
+void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype);
+void generateAuthenticationResp(as_nas_info_t *initialNasMsg);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/
+
+
