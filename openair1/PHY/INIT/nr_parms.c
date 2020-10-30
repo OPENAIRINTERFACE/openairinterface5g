@@ -308,7 +308,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   }
 
   fp->N_ssb = 0;
-  int num_tx_ant = (cfg == NULL) ? fp->Lmax : cfg->carrier_config.num_tx_ant.value;
+  int num_tx_ant = cfg->carrier_config.num_tx_ant.value;
 
   for (int p=0; p<num_tx_ant; p++)
     fp->N_ssb += ((fp->L_ssb >> (63-p)) & 0x01);
