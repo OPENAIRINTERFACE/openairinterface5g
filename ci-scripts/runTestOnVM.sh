@@ -1246,16 +1246,6 @@ function start_rf_sim_gnb {
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
     rm $1
 
-    # For the moment, in RA test, no check and no copy of generated raw files
-    if [ $LOC_RA_TEST -eq 1 ] # RA test
-    then
-        sleep 30
-        echo "echo \"free -m\"" > $1
-        echo "free -m" >> $1
-        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
-        rm $1
-        return 0
-    fi
 
     local i="0"
     echo "egrep -c \"got sync\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
@@ -1279,7 +1269,9 @@ function start_rf_sim_gnb {
         GNB_SYNC=1
         echo "RF-SIM gNB is sync'ed: waiting for UE(s) to connect"
     fi
-    if [ $LOC_S1_CONFIGURATION -eq 0 ]
+
+    # check noS1 config only outside RA test (as it does not support noS1)
+    if [ $LOC_S1_CONFIGURATION -eq 0 ] && [ $LOC_RA_TEST -eq 0 ]
     then
         echo "ifconfig oaitun_enb1 | egrep -c \"inet addr\"" > $1
         # Checking oaitun_enb1 interface has now an IP address
@@ -1362,14 +1354,6 @@ function start_rf_sim_nr_ue {
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
     rm $1
 
-    # In case of RA test mode, no UE sync check for the moment.
-    # To be removed later?
-    if [ $LOC_RA_TEST -eq 1 ] # RA test
-    then
-         sleep 30
-         NR_UE_SYNC=1
-         return 0
-    fi
     local i="0"
     echo "egrep -c \"Initial sync: pbch decoded sucessfully\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
     while [ $i -lt 10 ]
@@ -1393,11 +1377,13 @@ function start_rf_sim_nr_ue {
     else
         echo "RF-SIM NR-UE is sync'ed w/ gNB"
     fi
-    # Checking oaitun_ue1 interface has now an IP address
-    i="0"
-    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
-    while [ $i -lt 10 ]
-    do
+    # Checking oaitun_ue1 interface has now an IP address (only outside RA test)
+    if [ $LOC_RA_TEST -eq  0 ]
+    then
+      i="0"
+      echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+      while [ $i -lt 10 ]
+      do
         sleep 5
         CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1`
         if [ $CONNECTED -eq 1 ]
@@ -1406,21 +1392,20 @@ function start_rf_sim_nr_ue {
         else
             i=$[$i+1]
         fi
-    done
-    echo "echo \"free -m\"" > $1
-    echo "free -m" >> $1
-    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
-    rm $1
-    if [ $i -lt 50 ]
-    then
+      done
+      echo "echo \"free -m\"" > $1
+      echo "free -m" >> $1
+      ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
+      rm $1
+      if [ $i -lt 50 ]
+      then
         NR_UE_SYNC=0
         echo "RF-SIM NR-UE oaitun_ue1 is DOWN or NOT CONFIGURED"
-    else
+      else
         echo "RF-SIM NR-UE oaitun_ue1 is UP and CONFIGURED"
-    fi
-    sleep 10
-
-
+      fi
+      sleep 10
+   fi
 }
 
 
@@ -2217,7 +2202,7 @@ function run_test_on_vm {
         NR_STATUS=0
 
         ######### start of RA TEST loop
-        while [ $try_cnt -lt 4 ]
+        while [ $try_cnt -lt 10 ] #10 because it hardly succeed within CI
         do
 
             SYNC_STATUS=0
