@@ -1312,12 +1312,12 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
   	if (instance_p->frame_type[i] == TDD) {
             X2AP_FreqBandNrItem_t *freq_band;
             servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
-            servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = 0; //instance_p->tdd_nRARFCN[i];
+            servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = instance_p->tdd_nRARFCN[i];
             /* addition of Frequency Band List */
             freq_band = calloc(1, sizeof(X2AP_FreqBandNrItem_t));
             if (freq_band == NULL)
                exit(1);
-            freq_band->freqBandIndicatorNr = instance_p->eutra_band[0];
+            freq_band->freqBandIndicatorNr = instance_p->nr_band[i];
 
             SULFreqBandItem = calloc(1, sizeof(X2AP_SupportedSULFreqBandItem_t));
             SULFreqBandItem->freqBandIndicatorNr=80; /* TODO: put correct value */

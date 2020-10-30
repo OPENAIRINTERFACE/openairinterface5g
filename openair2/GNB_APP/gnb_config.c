@@ -34,6 +34,7 @@
 #include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "gnb_config.h"
+#include "gnb_paramdef.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "intertask_interface.h"
@@ -991,27 +992,33 @@ void NRRCConfig(void) {
 
 }
 
+
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
+  LOG_E(X2AP, "Inside RCconfig_NR_X2() \n");
   int   J, l;
   char *address = NULL;
   char *cidr    = NULL;
-
   //int                    num_gnbs                                                      = 0;
   //int                    num_component_carriers                                        = 0;
   int                    j,k                                                           = 0;
   int32_t                gnb_id                                                        = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  ////////// Identification parameters
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   /* get global parameters, defined outside any section in the config file */
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL);
-
-  //paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
+  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
+  uint64_t ssb_bitmap=0xff;
+  memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
+  prepare_scc(scc);
+  paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
+  paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
 
   AssertFatal(i < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
               "Failed to parse config file %s, %uth attribute %s \n",
-              RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+              RC.config_file_name, i, GNB_CONFIG_STRING_ACTIVE_GNBS);
 
   if (GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt > 0) {
     // Output a list of all gNBs.
@@ -1081,19 +1088,30 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
                         "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
                         X2AP_REGISTER_ENB_REQ(msg_p).mnc);
 
-            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = 1;
-            J = 0;
-            X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = 78; //ccparams_nr_x2.nr_band; //78
-            X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = 3600000000; //ccparams_nr_x2.downlink_frequency; //3600000000
-            X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = 0; //(unsigned int) ccparams_nr_x2.uplink_frequency_offset; //0
-            X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= 0; //ccparams_nr_x2.Nid_cell; //0
-            X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= 106; //ccparams_nr_x2.N_RB_DL; //106
+            sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
 
-            X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
-
-            //Temp out
-            /*X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
-              X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);*/
+            config_getlist(&SCCsParamList, NULL, 0, aprefix);
+            LOG_E(X2AP, "Before configuring SCCsParamList \n");
+            if (SCCsParamList.numelt > 0) {
+              LOG_E(X2AP, "SCCsParamList.numelt > 0 \n");
+              sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, 0);
+              config_get( SCCsParams,sizeof(SCCsParams)/sizeof(paramdef_t),aprefix);
+              fix_scc(scc,ssb_bitmap);
+            }
+            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = SCCsParamList.numelt;
+            for (J = 0; J < SCCsParamList.numelt ; J++) {
+              X2AP_REGISTER_ENB_REQ (msg_p).nr_band[J] = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]; //nr_band; //78
+              X2AP_REGISTER_ENB_REQ (msg_p).nrARFCN[J] = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+              X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier; //0
+              X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= *scc->physCellId; //0
+              X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]=  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;//106
+              X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
+              LOG_E(X2AP, "gNB configuration parameters: nr_band: %d, nr_ARFCN: %d, DL_RBs: %d, num_cc: %d \n",
+                  X2AP_REGISTER_ENB_REQ (msg_p).nr_band[J],
+                  X2AP_REGISTER_ENB_REQ (msg_p).nrARFCN[J],
+                  X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J],
+                  X2AP_REGISTER_ENB_REQ (msg_p).num_cc);
+            }
 
             sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
             config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
@@ -1181,5 +1199,4 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
 
   return 0;
 }
-
 
