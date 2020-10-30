@@ -2508,7 +2508,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // Get the numerology to calculate the Tx frame and slot
     mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
     // Get slot offset K2 which will be used to calculate TX slot
-    k2 = get_k2(mac, dci->frequency_hopping_flag.val);
+    k2 = get_k2(mac, dci->time_domain_assignment.val);
     // Calculate TX slot and frame
     slot_tx = (slot + k2) % nr_slots_per_frame[mu];
     frame_tx = ((slot + k2) > nr_slots_per_frame[mu]) ? (frame + 1) % 1024 : frame;
@@ -2597,7 +2597,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // Get the numerology to calculate the Tx frame and slot
     mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
     // Get slot offset K2 which will be used to calculate TX slot
-    k2 = get_k2(mac, dci->frequency_hopping_flag.val);
+    k2 = get_k2(mac, dci->time_domain_assignment.val);
     // Calculate TX slot and frame
     slot_tx = (slot + k2) % nr_slots_per_frame[mu];
     frame_tx = ((slot + k2) > nr_slots_per_frame[mu]) ? (frame + 1) % 1024 : frame;
