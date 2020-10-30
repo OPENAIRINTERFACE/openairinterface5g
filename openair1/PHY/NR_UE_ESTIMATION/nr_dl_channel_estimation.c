@@ -1059,6 +1059,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                                &phase_per_symbol[2* symbol],
                                &ptrs_re_symbol[symbol]);
         /* if very first symbol is PTRS then we need to undo conjugate done in estimation */
+        /* The PTRS estimation before DMRS symbol is pure error, shall be used as it is*/
         if(symbol == *startSymbIndex)
         {
           phase_per_symbol[(2* symbol)+1] = (-1) * phase_per_symbol[(2* symbol)+1]; 

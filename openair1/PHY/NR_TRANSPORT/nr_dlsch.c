@@ -120,6 +120,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
   uint32_t ***pdsch_dmrs = gNB->nr_gold_pdsch_dmrs[slot];
   int32_t** txdataF = gNB->common_vars.txdataF;
   int16_t amp = AMP;
+  int xOverhead = 0;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   time_stats_t *dlsch_encoding_stats=&gNB->dlsch_encoding_stats;
   time_stats_t *dlsch_scrambling_stats=&gNB->dlsch_scrambling_stats;
@@ -157,9 +158,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     
     uint16_t dmrs_symbol_map = rel15->dlDmrsSymbPos;//single DMRS: 010000100 Double DMRS 110001100
     uint8_t dmrs_len = get_num_dmrs(rel15->dlDmrsSymbPos);
-    
-    uint16_t nb_re;
-    nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-dmrs_len)*rel15->rbSize*rel15->NrOfCodewords;
+    uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));

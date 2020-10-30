@@ -39,6 +39,7 @@
 #include "T.h"
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
@@ -2098,9 +2099,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   unsigned char i,aarx; //,nsymb,sss_symb,pss_symb=0,l;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
-  uint8_t ClosestDMRSIdx = 15; //closest DMRS index to the current OFDM symbol
-  uint8_t ClosestDMRSdist = 15; //temporarily save the distance to the closest DMRS symbol
   int8_t DMRSdist = 15; //temporarily save the distance to the DMRS symbol 
+  static uint8_t validDmrsEst = 0; //store last DMRS Symbol index
 
   unsigned char j=0;
 
@@ -2111,21 +2111,15 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
     k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
 
-    if (high_speed_flag == 1) {
-      for (int i=0; i<16; i++) { //loop over all possible DMRS symbols
-        if ( (1<<i & dlDmrsSymbPos) > 0 ) {
-          DMRSdist = symbol-i;
-          DMRSdist = DMRSdist>=0 ? DMRSdist : -DMRSdist;
-          if ( DMRSdist < ClosestDMRSdist ) {
-            ClosestDMRSIdx = i;
-            ClosestDMRSdist = DMRSdist;
-          }
-        } 
-      }
-      dl_ch0     = &dl_ch_estimates[aarx][(ClosestDMRSIdx*(frame_parms->ofdm_symbol_size))]; //use closest DMRS
+    if(validDmrsEst == 0)
+    {
+      validDmrsEst = get_next_dmrs_symbol_in_slot(dlDmrsSymbPos, symbol, DMRSdist);
     }
-    else
-      dl_ch0     = &dl_ch_estimates[aarx][0];
+    if(is_dmrs_symbol(symbol,dlDmrsSymbPos ) == 1)
+    {
+      validDmrsEst = symbol;
+    }
+    dl_ch0     = &dl_ch_estimates[aarx][(validDmrsEst*(frame_parms->ofdm_symbol_size))]; //use closest DMRS
 
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
 

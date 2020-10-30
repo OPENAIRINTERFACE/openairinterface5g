@@ -213,6 +213,11 @@ uint8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, u
   {
     return nextPtrs;
   }
+  /* Special case when DMRS is next valid estimation */
+  if(nextPtrs == 0 && nextDmrs !=0)
+  {
+    return nextDmrs;
+  }
   return (nextPtrs > nextDmrs)?nextDmrs:nextPtrs;
 }
 
@@ -366,6 +371,9 @@ int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
           /* set DMRS estimation */
           estPerSymb[symb*2]=(int16_t)((1<<15)-1); // 32767
           estPerSymb[(symb*2)+1]= 0; // no angle
+#ifdef DEBUG_PTRS
+          printf("[PHY][PTRS]: DMRS Symbol %d :(%4d %4d)\n", symb, estPerSymb[symb*2],estPerSymb[(symb*2)+1]);
+#endif
         }
       /* Update left and right reference from an estimated symbol */
       if((is_ptrs_symbol(symb, ptrsSymbPos)) || (is_dmrs_symbol(symb,dmrsSymbPos)))
@@ -387,7 +395,11 @@ int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
               {
                 /* calculate slope from next valid estimates*/
                 tmp =  get_next_estimate_in_slot(ptrsSymbPos,dmrsSymbPos,rightRef+1,symbInSlot);
-                get_slope_from_estimates(rightRef, tmp, estPerSymb, slope_p);
+                /* Special case when DMRS is not followed by PTRS symbol then reuse old slope */
+                if(tmp!=0)
+                {
+                  get_slope_from_estimates(rightRef, tmp, estPerSymb, slope_p);
+                }
                 ptrs_estimate_from_slope(estPerSymb,slope_p,leftRef, rightRef);
                 symb = rightRef -1;
               }
