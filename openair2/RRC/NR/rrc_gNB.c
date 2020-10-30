@@ -182,43 +182,21 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
+  // MIB
   rrc->carrier.MIB             = (uint8_t *) malloc16(4);
   rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
-  printf("rrc->carrier.sizeof_MIB = %i\n", rrc->carrier.sizeof_MIB);
 
-
-
-
-
+  // SIB 1
   gNB_RrcConfigurationReq  *configuration;
   configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
-
   configuration->cell_identity = 3;
-
   configuration->ssb_SubcarrierOffset = rrc->carrier.ssb_SubcarrierOffset;
   configuration->pdsch_AntennaPorts = rrc->carrier.pdsch_AntennaPorts;
   configuration->pusch_TargetSNRx10 = rrc->carrier.pusch_TargetSNRx10;
   configuration->pucch_TargetSNRx10 = rrc->carrier.pucch_TargetSNRx10;
   configuration->scc = rrc->carrier.servingcellconfigcommon;
-
-  rrc->carrier.SIB1             = (uint8_t *) malloc16(100);
-  rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier, configuration);
-
-
-  printf("\n");
-  printf("rrc->carrier.sizeof_SIB1 = %i\n", rrc->carrier.sizeof_SIB1);
-  for(int i = 0; i<20; i++) {
-    printf("%i ", rrc->carrier.SIB1[i]);
-  }
-  printf("\n\n");
-
-
-
-
-
-
-
-
+  if(rrc->carrier.SIB1 == NULL) rrc->carrier.SIB1 = (uint8_t *) malloc16(100);
+  rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier, configuration);
 
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   rrc_mac_config_req_gNB(rrc->module_id,

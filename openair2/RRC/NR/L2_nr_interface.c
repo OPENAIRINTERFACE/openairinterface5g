@@ -204,12 +204,6 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
 
   /* TODO BCCH SIB1 SIBs */
   if ((Srb_id & RAB_OFFSET ) == BCCH) {
-//      memcpy(&buffer_pP[0],
-//             RC.rrc[Mod_idP]->carrier[CC_id].SIB1_MBMS,
-//             RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS);
-//
-//    return RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS;
-
     memcpy(&buffer_pP[0],
            RC.nrrrc[Mod_idP]->carrier.SIB1,
            RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1);

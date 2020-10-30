@@ -2234,8 +2234,13 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
 
     case NR_DL_DCI_FORMAT_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
-      size += 28;
+      size = 28;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
+
+      dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      dci_pdu->time_domain_assignment.nbits = 4;
+      dci_pdu->vrb_to_prb_mapping.nbits = 1;
+
       break;
 
     case NR_DL_DCI_FORMAT_1_1:

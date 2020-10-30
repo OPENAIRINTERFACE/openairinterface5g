@@ -163,10 +163,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
         rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, bwp_id);
       }
 
-      printf("bwp_Common->genericParameters.locationAndBandwidth = %li\n", bwp_Common->genericParameters.locationAndBandwidth);
-      printf("rel15->BWPSize = %i\n", rel15->BWPSize);
-
     break;
+
     case NR_RNTI_SFI:
     break;
     case NR_RNTI_INT:
@@ -253,23 +251,12 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
             }
           }
         }
-        /*if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
-
-          printf("*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = %li\n", *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1);
-          printf("ss->searchSpaceId = %li\n", ss->searchSpaceId);
-
-          // FIXME:
-          //if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+        if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
           if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
-            if( (frame%2 == mac->type0_PDCCH_CSS_config.sfn_c) && (slot == mac->type0_PDCCH_CSS_config.n_0) ){
-              rel15->num_dci_options = 1;
-              rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-              config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, ss_id);
-              fill_dci_search_candidates(ss, rel15);
-            }
-
+            // Configure monitoring of PDCCH candidates in Type0-PDCCH common search space on the MCG
+            LOG_W(MAC, "[DCI_CONFIG] This seach space should not be configured yet...");
           }
-        }*/
+        }
         if (pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation){
           if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation){
             // Configure monitoring of PDCCH candidates in Type0-PDCCH common search space on the MCG

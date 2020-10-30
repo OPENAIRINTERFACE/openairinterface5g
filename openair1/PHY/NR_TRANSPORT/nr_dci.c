@@ -240,13 +240,7 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
       } // m
     } // reg_idx
 
-
-    printf("polar_encoder_fast: pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d] = %i, pdcch_pdu_rel15->dci_pdu.AggregationLevel[d] = %i, n_RNTI = %i\n",
-           pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d], pdcch_pdu_rel15->dci_pdu.AggregationLevel[d], n_RNTI);
-
-    printf("nr_pdcch_scrambling: encoded_length = %i, Nid = %i, scrambling_RNTI = %i\n\n",encoded_length, Nid, scrambling_RNTI);
-
-    printf("\n>> DCI: payloadSize = %d | payload = %llx\n\n",
+    printf(">> DCI: payloadSize = %d | payload = %llx\n\n",
            *pdcch_pdu_rel15->dci_pdu.PayloadSizeBits,*(unsigned long long*)pdcch_pdu_rel15->dci_pdu.Payload);
 
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
