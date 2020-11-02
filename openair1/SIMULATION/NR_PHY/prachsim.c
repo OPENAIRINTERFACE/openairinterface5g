@@ -151,7 +151,7 @@ int main(int argc, char **argv){
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -239,6 +239,10 @@ int main(int argc, char **argv){
 
     case 'E':
       threequarter_fs=1;
+      break;
+
+    case 'm':
+      mu = atoi(optarg);
       break;
 
     case 'n':
@@ -369,9 +373,8 @@ int main(int argc, char **argv){
   }
 
   
-  if (config_index<67)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
-  uint16_t N_ZC;
-  N_ZC = prach_sequence_length == 0 ? 839 : 139;
+  if (config_index<67 && mu==1)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
+  uint16_t N_ZC = prach_sequence_length == 0 ? 839 : 139;
 
   printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
 
@@ -414,6 +417,11 @@ int main(int argc, char **argv){
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
+  absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
+				       frame_parms->dl_CarrierFreq,
+				       frame_parms->numerology_index,
+				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
+
   //nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Frame type %s, Frequency Range %s\n",
@@ -430,7 +438,14 @@ int main(int argc, char **argv){
 
   gNB->gNB_config.carrier_config.num_tx_ant.value = 1;
   gNB->gNB_config.carrier_config.num_rx_ant.value = 1;
-  gNB->gNB_config.tdd_table.tdd_period.value = 6;
+  if (mu==1)
+    gNB->gNB_config.tdd_table.tdd_period.value = 6;
+  else if (mu==3)
+    gNB->gNB_config.tdd_table.tdd_period.value = 3;
+  else {
+    printf("unsupported numerology %d\n",mu);
+    exit(-1);
+  }
 
   gNB->gNB_config.prach_config.num_prach_fd_occasions.value = num_prach_fd_occasions;
   gNB->gNB_config.prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *) malloc(num_prach_fd_occasions*sizeof(nfapi_nr_num_prach_fd_occasions_t));
