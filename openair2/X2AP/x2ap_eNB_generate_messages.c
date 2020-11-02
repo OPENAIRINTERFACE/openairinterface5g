@@ -1282,8 +1282,8 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
   ie_GNB_ENDC->value.present = X2AP_En_gNB_ENDCX2SetupReqIEs__value_PR_ServedNRcellsENDCX2ManagementList;
 
   {
-      for (int i = 0; i<instance_p->num_cc; i++){
-        servedCellMember = (ServedNRcellsENDCX2ManagementList__Member *)calloc(1,sizeof(ServedNRcellsENDCX2ManagementList__Member));
+    for (int i = 0; i<instance_p->num_cc; i++){
+      servedCellMember = (ServedNRcellsENDCX2ManagementList__Member *)calloc(1,sizeof(ServedNRcellsENDCX2ManagementList__Member));
         {
           servedCellMember->servedNRCellInfo.nrpCI = instance_p->Nid_cell[i];
 
@@ -1297,17 +1297,16 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
           NR_FIVEGS_TAC_ID_TO_BIT_STRING(instance_p->tac, servedCellMember->servedNRCellInfo.fiveGS_TAC);
 
           X2AP_INFO("TAC: %d -> %02x%02x%02x\n", instance_p->tac,
-        		  	  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[0],
-					  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[1],
-					  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[2]);
+              servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[0],
+              servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[1],
+              servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[2]);
 
           plmn = (X2AP_PLMN_Identity_t *)calloc(1,sizeof(X2AP_PLMN_Identity_t));
           {
             MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.broadcastPLMNs.list, plmn);
           }
-
-  	if (instance_p->frame_type[i] == TDD) {
+          if (instance_p->frame_type[i] == TDD) {
             X2AP_FreqBandNrItem_t *freq_band;
             servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
             servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = instance_p->tdd_nRARFCN[i];
@@ -1319,34 +1318,42 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
 
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.freqBandListNr, freq_band);
             switch (instance_p->N_RB_DL[i]) {
-        	case 50:
-			//This is not correct. Just to be able to test X2 only using an eNB instead of gNB
-                	servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb51;
+            case 32:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb32;
+              break;
+            case 66:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb66;
+              break;
+            case 93 :
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb93;
+              break;
+            case 106:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb106;
+              break;
+            case 121:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb121;
+              break;
+            case 217:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb217;
+              break;
+            case 273:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb273;
+              break;
+              /*More cases to be added */
+            default:
+              AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
 			break;
-		case 93 :
-			servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb93;
-			break;
-		case 106:
-			servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb106;
-			break;
-		case 121:
-			servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb121;
-			break;
-		/*More cases to be added */
-		default:
-			AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
-			break;
-		}
-	}
+            }
+          }
           else {
             AssertFatal(0,"ENDC_X2Setuprequest not supported for FDD!");
           }
-  	/*Don't know where to extract the value of measurementTimingConfiguration from. Set it to 0 for now */
-  	INT8_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
+          /*Don't know where to extract the value of measurementTimingConfiguration from. Set it to 0 for now */
+          INT8_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
         }
         ASN_SEQUENCE_ADD(&ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list, servedCellMember);
-      }
     }
+  }
   ASN_SEQUENCE_ADD(&ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_en_gNB.list, ie_GNB_ENDC);
 
 
