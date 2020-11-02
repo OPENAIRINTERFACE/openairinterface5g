@@ -414,55 +414,14 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
     nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, TBS, startSymbolIndex, nrOfSymbols);
 
-    // reserve space for timing advance of UE if necessary,
-    const int ta_len = (gNB_mac->sched_ctrlCommon->ta_apply) ? 2 : 0;
-
-    int header_length_total = 0;
-    int sdu_length_total = 0;
-    int num_sdus = 0;
-    uint16_t sdu_lengths[NB_RB_MAX] = {0};
-    uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
-    unsigned char sdu_lcids[NB_RB_MAX] = {0};
-
-    // Data to be transmitted
-    bzero(mac_sdus,MAX_NR_DLSCH_PAYLOAD_BYTES);
-    //mac_sdus[2] = 0xFF;
-    //mac_sdus[5] = 0xFF;
-    memcpy(mac_sdus, sib1_payload, sib1_sdu_length);
-
-    sdu_lcids[0] = 0x3f; // DRB
-    sdu_lengths[0] = TBS - ta_len - 3;
-    header_length_total += 2 + (sdu_lengths[0] >= 128);
-    sdu_length_total += sdu_lengths[0];
-    num_sdus +=1;
-
-    // Check if there is data from RLC or CE
-    const int post_padding = TBS >= 2 + header_length_total + sdu_length_total + ta_len;
-
     const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
     nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
 
-    // pointer to directly generate the PDU into the nFAPI structure
-    uint32_t *buf = tx_req->TLVs[0].value.direct;
-
-    const int offset = nr_generate_dlsch_pdu(
-          module_idP,
-          gNB_mac->sched_ctrlCommon,
-          (unsigned char *)mac_sdus,
-          (unsigned char *)buf,
-          num_sdus,
-          sdu_lengths,
-          sdu_lcids,
-          255,
-          NULL,
-          post_padding);
-
-    // Padding: fill remainder of DLSCH with 0
-    if (post_padding > 0) {
-      for (int j = 0; j < TBS - offset; j++) {
-        buf[offset + j] = 0;
-      }
-    }
+    // Data to be transmitted
+    bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
+    //mac_sdus[2] = 0xFF;
+    //mac_sdus[5] = 0xFF;
+    memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
     tx_req->PDU_length = TBS;
     tx_req->PDU_index  = gNB_mac->pdu_index[0]++;
