@@ -470,7 +470,7 @@ function report_test {
                     then
                         NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfully configured" $UE_LOG`
                     else
-                        NB_UE_TUNNEL_UP=`egrep -c "executing ifconfig oaitun_ue1" $UE_LOG`
+                        NB_UE_TUNNEL_UP=`egrep -c "ip link set oaitun_ue1 up" $UE_LOG`
                     fi
                     if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 0 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
