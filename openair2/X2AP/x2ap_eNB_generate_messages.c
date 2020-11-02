@@ -39,7 +39,6 @@
 #include "x2ap_ids.h"
 
 #include "x2ap_eNB_itti_messaging.h"
-#include "X2AP_SupportedSULFreqBandItem.h"
 
 #include "msc.h"
 #include "assertions.h"
@@ -1236,7 +1235,6 @@ int x2ap_gNB_generate_ENDC_x2_setup_request(
   X2AP_En_gNB_ENDCX2SetupReqIEs_t 			 *ie_GNB_ENDC;
   X2AP_PLMN_Identity_t               	 *plmn;
   ServedNRcellsENDCX2ManagementList__Member                *servedCellMember;
-  X2AP_SupportedSULFreqBandItem_t *SULFreqBandItem;
 
   uint8_t  *buffer;
   uint32_t  len;
@@ -1318,10 +1316,6 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
             if (freq_band == NULL)
                exit(1);
             freq_band->freqBandIndicatorNr = instance_p->nr_band[i];
-
-            SULFreqBandItem = calloc(1, sizeof(X2AP_SupportedSULFreqBandItem_t));
-            SULFreqBandItem->freqBandIndicatorNr=80; /* TODO: put correct value */
-            ASN_SEQUENCE_ADD(&freq_band->supportedSULBandList.list, SULFreqBandItem);
 
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.freqBandListNr, freq_band);
             switch (instance_p->N_RB_DL[i]) {
