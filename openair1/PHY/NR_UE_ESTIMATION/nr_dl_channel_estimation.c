@@ -1094,7 +1094,8 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
       for(uint8_t i = *startSymbIndex; i< symbInSlot ;i++)
       {
         /* DMRS Symbol has 0 phase so no need to rotate the respective symbol */
-        if(!is_dmrs_symbol(i,*dmrsSymbPos))
+        /* Skip rotation if the slot processing is wrong */
+        if((!is_dmrs_symbol(i,*dmrsSymbPos)) && (ret == 0))
         {
 #ifdef DEBUG_DL_PTRS
           printf("[PHY][DL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[2* i],phase_per_symbol[(2* i) +1]);

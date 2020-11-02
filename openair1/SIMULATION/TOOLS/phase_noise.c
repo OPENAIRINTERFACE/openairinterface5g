@@ -29,14 +29,42 @@
 /* linear phase noise model */
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm)
 {
-  double fd = 300;//0.01*30000
   static double i=0;
-  double real, imag,x ,y;
+  int32_t x=0 ,y=0;
+  double fd = 300;//0.01*30000
+  int16_t SinValue = 0, CosValue= 0;
+  double IdxDouble = (double)(i*fd * ts * ResolSinCos * 4);
+  int16_t IdxModulo = ((int32_t)(IdxDouble>0 ? IdxDouble+0.5 : IdxDouble-0.5)) % (ResolSinCos*4);
+  IdxModulo = IdxModulo<0 ? IdxModulo+ResolSinCos*4 : IdxModulo;
+
+  if ( IdxModulo>=0 && IdxModulo<ResolSinCos ) {
+    SinValue = LUTSin[IdxModulo];
+    CosValue = LUTSin[ResolSinCos-IdxModulo];
+  }
+  else if ( IdxModulo>=ResolSinCos && IdxModulo<2*ResolSinCos ) {
+    SinValue = LUTSin[2*ResolSinCos-IdxModulo];
+    CosValue = -LUTSin[IdxModulo-ResolSinCos];
+  }
+  else if ( IdxModulo>=2*ResolSinCos && IdxModulo<3*ResolSinCos ) {
+    SinValue = -LUTSin[IdxModulo-2*ResolSinCos];
+    CosValue = -LUTSin[3*ResolSinCos-IdxModulo];
+  }
+  else if ( IdxModulo>=3*ResolSinCos && IdxModulo<4*ResolSinCos ) {
+    SinValue = -LUTSin[4*ResolSinCos-IdxModulo];
+    CosValue = LUTSin[IdxModulo-3*ResolSinCos];
+  }
+  else {
+    AssertFatal(0==1,"Error in look-up table of sine function!\n");
+  }
+  x = ( ((int32_t)InRe[0] * CosValue) - ((int32_t)InIm[0] * SinValue ));
+  y = ( ((int32_t)InIm[0] * CosValue) + ((int32_t)InRe[0] * SinValue ));
+  InRe[0]= (int16_t)(x>>14);
+  InIm[0]= (int16_t)(y>>14);
   i++;
-  real = cos(fd * 2 * M_PI * i * ts);
-  imag = sin (fd * 2 * M_PI * i * ts);
-  x = ((real * (double)InRe[0]) - (imag * (double)InIm[0])) ;
-  y= ((real * (double)InIm[0]) + (imag * (double)InRe[0])) ;
-  InRe[0]= (int16_t)(x);
-  InIm[0]= (int16_t)(y);
+}
+/* Initialisation function for SIN table values */
+void InitSinLUT( void ) {
+  for ( int i=0; i<(ResolSinCos+1); i++ ) {
+    LUTSin[i] = sin((double)(M_PI*i)/(2*ResolSinCos)) * (1<<14); //Format: Q14
+  }
 }

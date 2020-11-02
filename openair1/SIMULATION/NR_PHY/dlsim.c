@@ -481,11 +481,14 @@ int main(int argc, char **argv)
   logInit();
   set_glog(loglvl);
   T_stdout = 1;
+  /* initialize the sin table */
+  InitSinLUT();
 
   get_softmodem_params()->phy_test = 1;
   
   if (snr1set==0)
     snr1 = snr0+10;
+
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
