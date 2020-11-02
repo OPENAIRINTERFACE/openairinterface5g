@@ -2361,9 +2361,9 @@ nr_rrc_ue_decode_dcch(
                     case FGS_IDENTITY_REQUEST:
                        generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3));
                        break;
-                   // case FGS_AUTHENTICATION_REQUEST:
-                   //    generateAuthenticationResp(&initialNasMsg);
-                   //    break;
+                    case FGS_AUTHENTICATION_REQUEST:
+                       generateAuthenticationResp(&initialNasMsg, pdu_buffer);
+                       break;
                     default:
                        LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
                        break;

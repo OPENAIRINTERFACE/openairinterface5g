@@ -15,6 +15,8 @@
 #include "TLVDecoder.h"
 #include "TLVEncoder.h"
 #include "nr_nas_msg_sim.h"
+#include "aka_functions.h"
+#include "secu_defs.h"
 
 
 static int _nas_mm_msg_encode_header(const mm_msg_header_t *header,
@@ -91,6 +93,48 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
   LOG_FUNC_RETURN (header_result + encode_result);
 }
 
+void transferRES(uint8_t ck[16], uint8_t ik[16], uint8_t *input, uint8_t rand[16], uint8_t *output) {
+  char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
+  uint8_t S[100];
+  S[0] = 0x6B;
+  int netNamesize = strlen(netName);
+  memcpy(&S[1], netName, netNamesize);
+  S[1 + netNamesize] = (netNamesize & 0xff00) >> 8;
+  S[2 + netNamesize] = (netNamesize & 0x00ff);
+  for (int i = 0; i < 16; i++)
+    S[3 + netNamesize + i] = rand[i];
+  S[19 + netNamesize] = 0x00;
+  S[20 + netNamesize] = 0x10;
+  for (int i = 0; i < 8; i++)
+    S[21 + netNamesize + i] = input[i];
+  S[29 + netNamesize] = 0x00;
+  S[30 + netNamesize] = 0x08;
+
+  uint8_t plmn[3] = { 0x02, 0xf8, 0x39 };
+  uint8_t oldS[100];
+  oldS[0] = 0x6B;
+  memcpy(&oldS[1], plmn, 3);
+  oldS[4] = 0x00;
+  oldS[5] = 0x03;
+  for (int i = 0; i < 16; i++)
+    oldS[6 + i] = rand[i];
+  oldS[22] = 0x00;
+  oldS[23] = 0x10;
+  for (int i = 0; i < 8; i++)
+    oldS[24 + i] = input[i];
+  oldS[32] = 0x00;
+  oldS[33] = 0x08;
+
+
+  uint8_t key[32];
+  memcpy(&key[0], ck, 16);
+  memcpy(&key[16], ik, 16);  //KEY
+  uint8_t out[32];
+  kdf(key, 32, S, 31 + netNamesize, out, 32);
+  for (int i = 0; i < 16; i++)
+    output[i] = out[16 + i];
+}
+
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   int size = sizeof(mm_msg_header_t);
@@ -115,7 +159,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   mm_msg->registration_request.fgsregistrationtype = INITIAL_REGISTRATION;
   mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = 1;
   size += 1;
-  if(0){
+  if(1){
     mm_msg->registration_request.fgsmobileidentity.guti.typeofidentity = FGS_MOBILE_IDENTITY_5G_GUTI;
     mm_msg->registration_request.fgsmobileidentity.guti.amfregionid = 0xca;
     mm_msg->registration_request.fgsmobileidentity.guti.amfpointer = 0;
@@ -206,9 +250,31 @@ void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype
 
 }
 
-uint8_t tempbuf[16] = {0x0e, 0xa9, 0xf1, 0x39, 0xb9, 0x8c, 0xdb, 0x20, 0x81, 0x9f, 0x98, 0x43, 0xca, 0x03, 0x98, 0x36};
-OctetString res = {0x10, tempbuf};
-void generateAuthenticationResp(as_nas_info_t *initialNasMsg){
+void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf){
+
+  uint8_t ak[6];
+
+  // USIM_API_K: 5122250214c33e723a5dd523fc145fc0
+  uint8_t k[16] = {0x51, 0x22, 0x25, 0x02, 0x14,0xc3, 0x3e, 0x72, 0x3a, 0x5d, 0xd5, 0x23, 0xfc, 0x14, 0x5f, 0xc0};
+  // OPC: 981d464c7c52eb6e5036234984ad0bcf
+  const uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c,0x7c,0x52,0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};
+
+  // get RAND for authentication request
+  unsigned char rand[16];
+  for(int index = 0; index < 16;index++){
+    rand[index] = buf[8+index];
+  }
+
+  uint8_t resTemp[16];
+  uint8_t ck[16], ik[16], output[16];
+  f2345(k, rand, resTemp, ck, ik, ak, opc);
+
+  transferRES(ck, ik, resTemp, rand, output);
+
+  OctetString res;
+  res.length = 16;
+  res.value = output;
+
   int size = sizeof(mm_msg_header_t);
   fgs_nas_message_t nas_msg;
   memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
@@ -236,5 +302,6 @@ void generateAuthenticationResp(as_nas_info_t *initialNasMsg){
 
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
 }
+
 
 

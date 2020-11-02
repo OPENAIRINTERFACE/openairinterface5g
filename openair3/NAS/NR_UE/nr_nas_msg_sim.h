@@ -81,8 +81,9 @@ typedef union {
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg);
 void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype);
-void generateAuthenticationResp(as_nas_info_t *initialNasMsg);
+void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/
+
 
 
