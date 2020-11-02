@@ -285,6 +285,7 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
       //if strongest measured RSRP is configured
       strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
       ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
+		  LOG_I(MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
       //if current ssb rsrp is greater than better rsrp
       if(ssb_rsrp[idx * nb_of_csi_ssb_report] > better_rsrp_reported) {
