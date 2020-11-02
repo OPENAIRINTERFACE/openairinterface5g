@@ -994,7 +994,6 @@ void NRRCConfig(void) {
 
 
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
-  LOG_E(X2AP, "Inside RCconfig_NR_X2() \n");
   int   J, l;
   char *address = NULL;
   char *cidr    = NULL;
@@ -1091,9 +1090,7 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
 
             config_getlist(&SCCsParamList, NULL, 0, aprefix);
-            LOG_E(X2AP, "Before configuring SCCsParamList \n");
             if (SCCsParamList.numelt > 0) {
-              LOG_E(X2AP, "SCCsParamList.numelt > 0 \n");
               sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, 0);
               config_get( SCCsParams,sizeof(SCCsParams)/sizeof(paramdef_t),aprefix);
               fix_scc(scc,ssb_bitmap);
@@ -1106,7 +1103,7 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
               X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= *scc->physCellId; //0
               X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]=  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;//106
               X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
-              LOG_E(X2AP, "gNB configuration parameters: nr_band: %d, nr_ARFCN: %d, DL_RBs: %d, num_cc: %d \n",
+              LOG_I(X2AP, "gNB configuration parameters: nr_band: %d, nr_ARFCN: %d, DL_RBs: %d, num_cc: %d \n",
                   X2AP_REGISTER_ENB_REQ (msg_p).nr_band[J],
                   X2AP_REGISTER_ENB_REQ (msg_p).nrARFCN[J],
                   X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J],
