@@ -907,6 +907,7 @@ typedef struct srb1_params_s {
 
 #define ENB_CONFIG_STRING_MME_IPV4_ADDRESS              "ipv4"
 #define ENB_CONFIG_STRING_MME_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_MME_PORT                      "port"
 #define ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE         "active"
 #define ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE     "preference"
 #define ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX      "broadcast_plmn_index"
@@ -921,14 +922,20 @@ typedef struct srb1_params_s {
   {ENB_CONFIG_STRING_MME_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE,              NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
-  {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6}     \
+  {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6},    \
+  {ENB_CONFIG_STRING_MME_PORT,                           NULL,      0,         u16ptr:NULL, defuintval:0,        TYPE_UINT16,    0},    \
 }
+
+
+
+
 
 #define ENB_MME_IPV4_ADDRESS_IDX          0
 #define ENB_MME_IPV6_ADDRESS_IDX          1
 #define ENB_MME_IP_ADDRESS_ACTIVE_IDX     2
 #define ENB_MME_IP_ADDRESS_PREFERENCE_IDX 3
 #define ENB_MME_BROADCAST_PLMN_INDEX      4
+#define ENB_MME_PORT_IDX                  5
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* X2 configuration parameters section name */

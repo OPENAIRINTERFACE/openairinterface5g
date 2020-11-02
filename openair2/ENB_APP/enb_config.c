@@ -57,6 +57,7 @@
 #include "enb_paramdef.h"
 #include "proto_agent.h"
 #include "executables/thread-common.h"
+#include "s1ap_eNB_default_values.h"
 
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t bw);
@@ -2509,6 +2510,13 @@ int RCconfig_S1(
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].numelt;
               } else {
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
+              }
+
+              /* set S1-mme port (sctp) */
+              if (S1ParamList.paramarray[l][ENB_MME_PORT_IDX].u16ptr) {
+                S1AP_REGISTER_ENB_REQ(msg_p).mme_port[l] = *S1ParamList.paramarray[l][ENB_MME_PORT_IDX].u16ptr;
+              } else {
+                S1AP_REGISTER_ENB_REQ(msg_p).mme_port[l] = S1AP_PORT_NUMBER;
               }
 
               AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
