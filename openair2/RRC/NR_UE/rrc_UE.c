@@ -2350,12 +2350,19 @@ nr_rrc_ue_decode_dcch(
                   LOG_I(NR_RRC, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", ctxt_pP->module_id,  messages_info[NAS_DOWNLINK_DATA_IND].name,
                         ctxt_pP->module_id, pdu_length, pdu_buffer);
                   as_nas_info_t initialNasMsg;
+                  uint8_t msg_type;
                   memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+                  if((pdu_buffer + 1) != NULL){
+                    if (*(pdu_buffer + 1) > 0 ) {
+                      msg_type = *(pdu_buffer + 9);
+                    } else {
+                      msg_type = *(pdu_buffer + 2);
+                    }
+                  }
                   if((pdu_buffer + 2) == NULL){
                     LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
                     return 0;
                   }
-                  uint8_t msg_type = *(pdu_buffer + 2);
 
                   switch(msg_type){
                     case FGS_IDENTITY_REQUEST:
@@ -2364,6 +2371,9 @@ nr_rrc_ue_decode_dcch(
                     case FGS_AUTHENTICATION_REQUEST:
                        generateAuthenticationResp(&initialNasMsg, pdu_buffer);
                        break;
+                    case FGS_SECURITY_MODE_COMMAND:
+                      generateSecurityModeComplete(&initialNasMsg);
+                      break;
                     default:
                        LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
                        break;

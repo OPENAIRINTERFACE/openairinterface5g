@@ -18,6 +18,28 @@
 #include "aka_functions.h"
 #include "secu_defs.h"
 
+static int nas_protected_security_header_encode(
+  char                                       *buffer,
+  const fgs_nas_message_security_header_t    *header,
+  int                                         length)
+{
+  LOG_FUNC_IN;
+
+  int size = 0;
+
+  /* Encode the protocol discriminator) */
+  ENCODE_U8(buffer, header->protocol_discriminator, size);
+
+  /* Encode the security header type */
+  ENCODE_U8(buffer+size, (header->security_header_type & 0xf), size);
+
+  /* Encode the message authentication code */
+  ENCODE_U32(buffer+size, header->message_authentication_code, size);
+  /* Encode the sequence number */
+  ENCODE_U8(buffer+size, header->sequence_number, size);
+
+  LOG_FUNC_RETURN (size);
+}
 
 static int _nas_mm_msg_encode_header(const mm_msg_header_t *header,
                                   uint8_t *buffer, uint32_t len) {
@@ -73,6 +95,9 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
       break;
     case FGS_AUTHENTICATION_RESPONSE:
       encode_result = encode_fgs_authentication_response(&mm_msg->fgs_auth_response, buffer, len);
+      break;
+    case FGS_SECURITY_MODE_COMPLETE:
+      encode_result = encode_fgs_security_mode_complete(&mm_msg->fgs_security_mode_complete, buffer, len);
       break;
     default:
       LOG_TRACE(ERROR, "EMM-MSG   - Unexpected message type: 0x%x",
@@ -303,5 +328,45 @@ void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf){
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
 }
 
+void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
+{
+  int size = sizeof(mm_msg_header_t);
+  fgs_nas_message_t nas_msg;
+  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
 
+  MM_msg *mm_msg;
+  int i;
+  // set security protected header
+  nas_msg.header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  nas_msg.header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
+  size += 7;
 
+  mm_msg = &nas_msg.security_protected.plain.mm_msg;
+
+  // set header
+  mm_msg->header.ex_protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  mm_msg->header.security_header_type = PLAIN_5GS_MSG;
+  mm_msg->header.message_type = FGS_SECURITY_MODE_COMPLETE;
+
+  // set security mode complete
+  mm_msg->fgs_security_mode_complete.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  size += 1;
+  mm_msg->fgs_security_mode_complete.securityheadertype    = PLAIN_5GS_MSG;
+  size += 1;
+  mm_msg->fgs_security_mode_complete.messagetype           = FGS_SECURITY_MODE_COMPLETE;
+  size += 1;
+
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.typeofidentity = FGS_MOBILE_IDENTITY_IMEISV;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit1  = 1;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitp1 = 1;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitp  = 1;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.oddeven = 0;
+  size += 5;
+
+  // encode the message
+  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+
+  int security_header_len = nas_protected_security_header_encode((char*)(initialNasMsg->data),&(nas_msg.header), size);
+
+  initialNasMsg->length = security_header_len + mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data+security_header_len), size-security_header_len);
+}

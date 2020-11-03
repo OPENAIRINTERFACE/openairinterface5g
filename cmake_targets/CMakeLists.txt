@@ -2457,6 +2457,7 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationAccept.c
     ${NAS_SRC}COMMON/EMM/MSG/FGSIdentityResponse.c
     ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSNASSecurityModeComplete.c
   )
 
   set(libnrnas_ies_OBJS

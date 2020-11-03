@@ -14,11 +14,15 @@
 #include "RegistrationRequest.h"
 #include "FGSIdentityResponse.h"
 #include "FGSAuthenticationResponse.h"
+#include "FGSNASSecurityModeComplete.h"
 #include "as_message.h"
 
 
 #define PLAIN_5GS_MSG                                      0b0000
 #define INTEGRITY_PROTECTED                                0b0001
+#define INTEGRITY_PROTECTED_AND_CIPHERED                   0b0010
+#define INTEGRITY_PROTECTED_WITH_NEW_SECU_CTX              0b0011          // only for SECURITY MODE COMMAND
+#define INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX 0b0100         // only for SECURITY MODE COMPLETE
 
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
 #define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
@@ -59,6 +63,7 @@ typedef union {
   registration_request_msg               registration_request;
   fgs_identiy_response_msg               fgs_identity_response;
   fgs_authentication_response_msg        fgs_auth_response;
+  fgs_security_mode_complete_msg         fgs_security_mode_complete;
 } MM_msg;
 
 
@@ -82,6 +87,7 @@ typedef union {
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg);
 void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype);
 void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf);
+void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/
 
