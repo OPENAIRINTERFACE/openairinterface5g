@@ -921,6 +921,10 @@ void nr_generate_Msg2(module_id_t module_idP,
     nr_mac->TX_req[CC_id].Slot = slotP;
     memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length);
 
+    T(T_GNB_MAC_DL_RAR_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id),
+      T_INT(RA_rnti), T_INT(frameP), T_INT(slotP), T_INT(0) /* harq pid, meaningful? */,
+      T_BUFFER(&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length));
+
     /* mark the corresponding RBs as used */
     uint8_t *vrb_map = cc[CC_id].vrb_map;
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
