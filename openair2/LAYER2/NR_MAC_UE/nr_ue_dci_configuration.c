@@ -76,15 +76,17 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
 
   NR_SearchSpace_t *ss;
+  NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
     ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
+    coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
   } else {
     ss = mac->search_space_zero;
+    coreset = mac->coreset0;
   }
 
-  // CORESET configuration
-  NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
   rel15->coreset.duration = coreset->duration;
+
   for (int i = 0; i < 6; i++)
     rel15->coreset.frequency_domain_resource[i] = coreset->frequencyDomainResources.buf[i];
   rel15->coreset.CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved ? FAPI_NR_CCE_REG_MAPPING_TYPE_INTERLEAVED : FAPI_NR_CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;

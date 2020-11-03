@@ -350,13 +350,13 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
-  printf("\n\nSchedule_nr_sib1: frameP = %i, slotP = %i\n", frameP, slotP);
+  LOG_D(MAC,"Schedule_nr_sib1: frameP = %i, slotP = %i\n", frameP, slotP);
 
   // static values
   const int CC_id = 0;
   int time_domain_allocation = 2;
   uint8_t mcsTableIdx = 0;
-  uint8_t mcs = 9;
+  uint8_t mcs = 0;
   uint8_t numDmrsCdmGrpsNoData = 1;
   int bwp_id = 1;
 
@@ -364,18 +364,14 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
   if( (frameP%2 == gNB_mac->type0_PDCCH_CSS_config.sfn_c) && (slotP == gNB_mac->type0_PDCCH_CSS_config.n_0 ) ) {
 
-    printf("> SIB1 will be transmitted here\n");
+    LOG_D(MAC,"> SIB1 transmission\n");
 
     // Get SIB1
     uint8_t sib1_payload[100];
     uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, 1, sib1_payload);
-    printf("sib1_sdu_length = %i\n", sib1_sdu_length);
-    printf("SIB1: ");
-    for(int i = 0; i<sib1_sdu_length; i++) {
-      printf("%x ", sib1_payload[i]);
-
-    }
-    printf("\n\n");
+    LOG_D(MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
+    LOG_I(MAC,"SIB1: \n");
+    for (int i=0;i<sib1_sdu_length;i++) LOG_I(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
 
     // Configure sched_ctrlCommon for SIB1
     schedule_control_sib1(module_idP, CC_id, bwp_id, time_domain_allocation, mcsTableIdx, mcs, numDmrsCdmGrpsNoData, sib1_sdu_length);
@@ -406,8 +402,6 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
     // Data to be transmitted
     bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
-    //mac_sdus[2] = 0xFF;
-    //mac_sdus[5] = 0xFF;
     memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
     tx_req->PDU_length = TBS;

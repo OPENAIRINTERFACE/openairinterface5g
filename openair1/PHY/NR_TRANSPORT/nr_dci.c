@@ -240,7 +240,7 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
       } // m
     } // reg_idx
 
-    printf(">> DCI: payloadSize = %d | payload = %llx\n\n",
+    LOG_I(PHY, ">> DCI: payloadSize = %d | payload = %llx\n",
            *pdcch_pdu_rel15->dci_pdu.PayloadSizeBits,*(unsigned long long*)pdcch_pdu_rel15->dci_pdu.Payload);
 
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)

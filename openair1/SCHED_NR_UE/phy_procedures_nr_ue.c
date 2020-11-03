@@ -1957,10 +1957,15 @@ start_meas(&ue->generic_stat);
 
     // FIXME: It was assumed that SIB1 has only one segment
     int harq_pid = PHY_vars_UE_g[0][0]->dlsch_SI[0]->current_harq_pid;
-    nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
-                                     ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
 
-    getchar();
+    if(ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->harq_ack.ack == 1) {
+      nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
+                                       ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
+    } else {
+      LOG_D(PHY,"SIB1 CRC NOT OK");
+    }
+
+
   }
 
   // do procedures for P-RNTI

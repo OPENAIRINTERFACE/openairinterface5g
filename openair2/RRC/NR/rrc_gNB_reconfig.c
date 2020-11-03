@@ -51,10 +51,10 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0) {
 
   coreset0->controlResourceSetId = 0;
 
-  // frequencyDomainResources '11111111 11111111 00000000 00000000 00000000 00000'B,
+  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
   if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
   coreset0->frequencyDomainResources.buf[0] = 0xff;
-  coreset0->frequencyDomainResources.buf[1] = 0xff;
+  coreset0->frequencyDomainResources.buf[1] = 0;
   coreset0->frequencyDomainResources.buf[2] = 0;
   coreset0->frequencyDomainResources.buf[3] = 0;
   coreset0->frequencyDomainResources.buf[4] = 0;

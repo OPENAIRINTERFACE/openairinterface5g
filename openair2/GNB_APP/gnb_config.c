@@ -583,6 +583,11 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         config_get(pdcch_ConfigSIB1,sizeof(pdcch_ConfigSIB1)/sizeof(paramdef_t),aprefix);
     }
 
+    AssertFatal(rrc->carrier.pdcch_ConfigSIB1->controlResourceSetZero == 10
+                || rrc->carrier.pdcch_ConfigSIB1->controlResourceSetZero == 11
+                || rrc->carrier.pdcch_ConfigSIB1->controlResourceSetZero == 12,
+                "controlResourceSetZero %li not suported yet\n", rrc->carrier.pdcch_ConfigSIB1->controlResourceSetZero);
+
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);

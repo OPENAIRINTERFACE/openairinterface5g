@@ -1195,23 +1195,14 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
 
         // reserved 15 bits
 
-
-          printf("\n\n");
-
-          for(int i = 64-dci_size; i<64; i++) {
-            printf("%i ", (*dci_pdu >> 63-i)&(uint64_t)0x01);
-          }
-
-          printf("\ndci_size = %i\n", dci_size);
-          printf("fsize = %i\n", fsize);
-          printf("dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
-          printf("dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
-          printf("dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
-          printf("dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
-          printf("dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
-          printf("dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
-          printf("\n");
-
+        LOG_D(PHY,"dci_size = %i\n", dci_size);
+        LOG_D(PHY,"fsize = %i\n", fsize);
+        LOG_D(PHY,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+        LOG_D(PHY,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+        LOG_D(PHY,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+        LOG_D(PHY,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+        LOG_D(PHY,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+        LOG_D(PHY,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
 
 	break;
 	

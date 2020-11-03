@@ -289,19 +289,15 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
 
-//#ifdef DEBUG_MIB
+#ifdef DEBUG_MIB
   LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
-  //LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
   LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
-  //LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
   LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
-  LOG_I(MAC,"pdcch config sib1.controlResourceSetZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
-  LOG_I(MAC,"pdcch config sib1.searchSpaceZero:             %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
+  LOG_I(MAC,"pdcch config sib1.controlResourceSetZero: %d\n", (int)mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
+  LOG_I(MAC,"pdcch config sib1.searchSpaceZero: %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
   LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-  //LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  //LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
-//#endif
+#endif
 
   get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config, mac->mib, extra_bits, ssb_length, ssb_index);
 
@@ -312,29 +308,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   mac->dl_config_request.sfn = mac->type0_PDCCH_CSS_config.frame;
   mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
 
-
-  printf("\nextra_bits = %i\n", extra_bits);
-
-  printf("mac->type0_PDCCH_CSS_config.num_rbs = %i\n", mac->type0_PDCCH_CSS_config.num_rbs);
-  printf("mac->type0_PDCCH_CSS_config.num_symbols = %i\n", mac->type0_PDCCH_CSS_config.num_symbols);
-  printf("mac->type0_PDCCH_CSS_config.rb_offset = %i\n", mac->type0_PDCCH_CSS_config.rb_offset);
-  printf("mac->type0_pdcch_ss_mux_pattern = %i\n", mac->type0_pdcch_ss_mux_pattern);
-  printf("mac->type0_PDCCH_CSS_config.frame = %i\n", mac->type0_PDCCH_CSS_config.frame);
-  printf("mac->type0_pdcch_ss_sfn_c = %i\n", mac->type0_pdcch_ss_sfn_c);
-  printf("mac->type0_pdcch_ss_n_c = %i\n", mac->type0_pdcch_ss_n_c);
-  printf("mac->type0_PDCCH_CSS_config.number_of_search_space_per_slot = %i\n", mac->type0_PDCCH_CSS_config.number_of_search_space_per_slot);
-  printf("mac->type0_PDCCH_CSS_config.first_symbol_index = %i\n", mac->type0_PDCCH_CSS_config.first_symbol_index);
-  printf("mac->type0_PDCCH_CSS_config.search_space_duration = %i\n", mac->type0_PDCCH_CSS_config.search_space_duration);
-  printf("mac->type0_PDCCH_CSS_config.ssb_length = %i\n", mac->type0_PDCCH_CSS_config.ssb_length);
-  printf("ssb_index = %i\n", ssb_index);
-
-  printf("mac->dl_config_request.sfn = %i\n", mac->dl_config_request.sfn);
-  printf("mac->dl_config_request.slot = %i\n", mac->dl_config_request.slot);
-
-  printf("\n\n\n");
-
   return 0;
-
 }
 
 
@@ -3204,8 +3178,6 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   	
     case NR_RNTI_SI:
 
-      printf("\nnr_extract_dci_info\n\n");
-
         // Freq domain assignment 0-16 bit
         fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
         pos+=fsize;
@@ -3231,22 +3203,15 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         pos++;
         dci_pdu_rel15->system_info_indicator = (*dci_pdu>>(dci_size-pos))&0x1;
 
-        printf("\n\n");
-
-        for(int i = 64-dci_size; i<64; i++) {
-          printf("%i ", (*dci_pdu >> 63-i)&(uint64_t)0x01);
-        }
-
-        printf("\nN_RB = %i\n", N_RB);
-        printf("\ndci_size = %i\n", dci_size);
-        printf("fsize = %i\n", fsize);
-        printf("dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
-        printf("dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
-        printf("dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
-        printf("dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
-        printf("dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
-        printf("dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
-        printf("\n");
+        LOG_D(MAC,"N_RB = %i\n", N_RB);
+        LOG_D(MAC,"dci_size = %i\n", dci_size);
+        LOG_D(MAC,"fsize = %i\n", fsize);
+        LOG_D(MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+        LOG_D(MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+        LOG_D(MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+        LOG_D(MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+        LOG_D(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+        LOG_D(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
 
       break;
 	
