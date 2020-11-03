@@ -206,5 +206,5 @@ void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id) {
 
   uint16_t *vrb_map = cc[CC_id].vrb_map;
   for (int rb = 0; rb < 20; rb++)
-    vrb_map[rbStart + rb] = 0xf; // mark the first four symbols as occupied
+    vrb_map[rbStart + rb] = 1;
 }

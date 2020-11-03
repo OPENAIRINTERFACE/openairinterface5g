@@ -928,7 +928,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     /* mark the corresponding RBs as used */
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
-      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 0x3fff; // mark all 14 symb
+      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
   }
 }
 
