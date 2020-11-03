@@ -432,6 +432,41 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     return 0;
 }
 
+/*brief decode SIB1 message*/
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(uint8_t *const bufferP, const uint8_t buffer_len){
+
+  NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
+
+  asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                  &asn_DEF_NR_BCCH_DL_SCH_Message,
+                                                  (void **)&bcch_message,
+                                                  (const void *)bufferP,
+                                                  buffer_len);
+
+  if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+
+    printf("NR_BCCH_DL_SCH decode error\n");
+    for (int i=0; i<buffer_len; i++){
+      printf("%02x ",bufferP[i]);
+    }
+    printf("\n");
+    SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
+    return -1;
+
+  }
+  else {
+
+    if(NR_UE_rrc_inst->sib1 != NULL){
+      SEQUENCE_free(&asn_DEF_NR_BCCH_BCH_Message, (void *)NR_UE_rrc_inst->sib1, 1 );
+    }
+    NR_UE_rrc_inst->sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+    xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)NR_UE_rrc_inst->sib1);
+
+  }
+
+  return 0;
+}
+
 
 // from NR SRB3
 int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(

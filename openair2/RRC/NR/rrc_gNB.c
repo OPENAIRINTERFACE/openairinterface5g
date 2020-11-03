@@ -189,13 +189,13 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
   // SIB 1
   gNB_RrcConfigurationReq  *configuration;
   configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
-  configuration->cell_identity = 3;
+  configuration->cell_identity = 0x0E00; // TODO: Get value from config file
   configuration->ssb_SubcarrierOffset = rrc->carrier.ssb_SubcarrierOffset;
   configuration->pdsch_AntennaPorts = rrc->carrier.pdsch_AntennaPorts;
   configuration->pusch_TargetSNRx10 = rrc->carrier.pusch_TargetSNRx10;
   configuration->pucch_TargetSNRx10 = rrc->carrier.pucch_TargetSNRx10;
   configuration->scc = rrc->carrier.servingcellconfigcommon;
-  if(rrc->carrier.SIB1 == NULL) rrc->carrier.SIB1 = (uint8_t *) malloc16(100);
+  if(rrc->carrier.SIB1 == NULL) rrc->carrier.SIB1 = (uint8_t *) malloc16(MAX_NR_SIB_LENGTH/8);
   rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier, configuration);
 
   LOG_I(NR_RRC,"Done init_NR_SI\n");

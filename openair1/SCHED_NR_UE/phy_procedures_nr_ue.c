@@ -770,8 +770,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                       return -1;
       }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
-	else if (pdsch == PDSCH) {
+	if (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
+	else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
           if (nr_rx_pdsch(ue,
                     pdsch,
                     eNB_id,
@@ -785,7 +785,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     dlsch0->current_harq_pid) < 0)
                       return -1;
         }
-	else AssertFatal(1==0,"not RA_PDSCH or PDSCH\n");
+	else AssertFatal(1==0,"not RA_PDSCH, SI_PDSCH or PDSCH\n");
       }
       if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]);
 #if UE_TIMING_TRACE
@@ -1178,6 +1178,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           case PDSCH:
           rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
           break;
+          case SI_PDSCH:
+            rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
           default:
           break;
         }
@@ -1747,6 +1750,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1){
       dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0];
+    } else if (ue->dlsch_SI[0]->active == 1){
+      dlsch = ue->dlsch_SI[0];
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }
@@ -1822,7 +1827,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
-  // do procedures for SI-RNTI
+  // do procedures for P-RNTI
   if ((ue->dlsch_p[gNB_id]) && (ue->dlsch_p[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
@@ -1938,23 +1943,24 @@ start_meas(&ue->generic_stat);
 
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[gNB_id]) && (ue->dlsch_SI[gNB_id]->active == 1)) {
-    nr_ue_pdsch_procedures(ue,
-			   proc,
-			   gNB_id,
-			   SI_PDSCH,
-			   ue->dlsch_SI[gNB_id],
-			   NULL);
 
-    /*ue_dlsch_procedures(ue,
-      proc,
-      gNB_id,
-      SI_PDSCH,
-      ue->dlsch_SI[gNB_id],
-      NULL,
-      &ue->dlsch_SI_errors[gNB_id],
-      mode,
-      abstraction_flag);
-    ue->dlsch_SI[gNB_id]->active = 0;*/
+    nr_ue_dlsch_procedures(ue,
+                           proc,
+                           gNB_id,
+                           SI_PDSCH,
+                           ue->dlsch_SI[gNB_id],
+                           NULL,
+                           &ue->dlsch_SI_errors[gNB_id],
+                           mode);
+
+    ue->dlsch_SI[gNB_id]->active = 0;
+
+    // FIXME: It was assumed that SIB1 has only one segment
+    int harq_pid = PHY_vars_UE_g[0][0]->dlsch_SI[0]->current_harq_pid;
+    nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
+                                     ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
+
+    getchar();
   }
 
   // do procedures for P-RNTI

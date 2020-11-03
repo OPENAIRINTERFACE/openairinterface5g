@@ -51,6 +51,7 @@
 #include "NR_asn_constant.h"
 #include "NR_SchedulingRequestToAddMod.h"
 #include "NR_MIB.h"
+#include "NR_SIB1.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
 
@@ -70,6 +71,7 @@ typedef struct NR_UE_RRC_INST_s {
     NR_RadioBearerConfig_t *radio_bearer_config;
   
     NR_MIB_t *mib;
+    NR_SIB1_t	*sib1;
   
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList

@@ -239,24 +239,11 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                               int StartSymbolIndex,
                               int NrOfSymbols) {
 
-  // static values
-  int rnti = 0xFFFF;
-  int dci_format = NR_DL_DCI_FORMAT_1_0;
-  int rnti_type = NR_RNTI_SI;
-
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t *cc = gNB_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_CellGroupConfig_t *secondaryCellGroup = gNB_mac->secondaryCellGroupCommon;
   NR_BWP_Downlink_t *bwp = gNB_mac->sched_ctrlCommon->active_bwp;
-
-  // Uncommenting these lines, the DLSCH is decoded in the UE:
-  //
-  //rnti = 0x1234;
-  //dci_format = NR_DL_DCI_FORMAT_1_1;
-  //rnti_type = NR_RNTI_C;
-  //gNB_mac->type0_PDCCH_CSS_config.n_0 = 6;
-  //
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -272,7 +259,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
   pdsch_pdu_rel15->pduBitmap = 0;
-  pdsch_pdu_rel15->rnti = rnti;
+  pdsch_pdu_rel15->rnti = SI_RNTI;
   pdsch_pdu_rel15->pduIndex = gNB_mac->pdu_index[0]++;
 
   pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
@@ -342,7 +329,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   nr_configure_pdcch(gNB_mac,
                      pdcch_pdu_rel15,
-                     rnti,
+                     SI_RNTI,
                      gNB_mac->sched_ctrlCommon->search_space,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
@@ -353,8 +340,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   int dci_formats[2];
   int rnti_types[2];
 
-  dci_formats[0]  = dci_format;
-  rnti_types[0]   = rnti_type;
+  dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
+  rnti_types[0]   = NR_RNTI_SI;
 
   fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
