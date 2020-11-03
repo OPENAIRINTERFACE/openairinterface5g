@@ -185,7 +185,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   for (int aa=0; aa<ru->nb_rx; aa++){ 
     if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
-    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))+sample_offset_slot-ru->N_TA_offset];
+    prach[aa] = (int16_t*)&ru->common.rxdata[aa][fp->get_samples_slot_timestamp(slot2,fp,0)+sample_offset_slot-ru->N_TA_offset];
   } 
 
   idft_size_idx_t dftsize;
@@ -512,14 +512,14 @@ void rx_nr_prach_ru(RU_t *ru,
 	if (slot%(fp->slots_per_subframe/2)==0 && prachStartSymbol == 0)
 	  prach2+=64; // 32 samples @ 61.44 Ms/s in first symbol of each half subframe
 	dftlen=512;
-	dftsize = IDFT_512;
+	dftsize = DFT_512;
       }
       else if (fp->N_RB_UL == 66) {
 	prach2 = prach[aa] + (Ncp<<3); // Ncp is for 30.72 Ms/s, so multiply by 4 for I/Q, and 2 for 122.88Msps
 	if (slot%(fp->slots_per_subframe/2)==0 && prachStartSymbol == 0)
 	  prach2+=128; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe 
 	dftlen=1024;
-	dftsize = IDFT_1024;
+	dftsize = DFT_1024;
       }
       else {
 	AssertFatal(1==0,"N_RB_UL %d not support for numerology %d\n",fp->N_RB_UL,mu);
@@ -551,6 +551,7 @@ void rx_nr_prach_ru(RU_t *ru,
       AssertFatal(1==0,"Numerology not supported\n");
     }
 
+    //LOG_M("ru_rxsigF_tmp.m","rxsFtmp", rxsigF[aa], dftlen*2*reps, 1, 1);
 
     //Coherent combining of PRACH repetitions (assumes channel does not change, to be revisted for "long" PRACH)
     LOG_D(PHY,"Doing PRACH combining of %d reptitions N_ZC %d\n",reps,N_ZC);
