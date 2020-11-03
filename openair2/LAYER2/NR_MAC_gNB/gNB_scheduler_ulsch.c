@@ -320,6 +320,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
   NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[0];
 
+  if (sduP != NULL) {
+    T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
+      T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
+      T_BUFFER(sduP, sdu_lenP));
+  }
+
   // random access pusch with TC-RNTI
   if (ra->state == WAIT_Msg3) {
     if (sduP != NULL) { // if the CRC passed

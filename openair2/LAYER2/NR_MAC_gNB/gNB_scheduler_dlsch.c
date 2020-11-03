@@ -840,6 +840,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
       retInfo->mcs = sched_ctrl->mcs;
       retInfo->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
 
+      T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(buf, TBS));
+
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       if (frame%100 == 0) {
         LOG_I(MAC,
