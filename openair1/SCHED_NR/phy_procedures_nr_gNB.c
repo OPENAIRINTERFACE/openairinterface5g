@@ -113,7 +113,15 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
         else
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	
+
+        if (T_ACTIVE(T_GNB_PHY_MIB)) {
+          unsigned char bch[3];
+          bch[0] = gNB->ssb_pdu.ssb_pdu_rel15.bchPayload & 0xff;
+          bch[1] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 8) & 0xff;
+          bch[2] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 16) & 0xff;
+          T(T_GNB_PHY_MIB, T_INT(0) /* module ID */, T_INT(frame), T_INT(slot), T_BUFFER(bch, 3));
+        }
+
 	nr_generate_pbch(&gNB->pbch,
 	                 &gNB->ssb_pdu,
 	                 gNB->nr_pbch_interleaver,

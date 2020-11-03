@@ -948,6 +948,24 @@ int get_format0(uint8_t index,
   return format;
 }
 
+int64_t *get_prach_config_info(uint32_t pointa,
+                               uint8_t index,
+                               uint8_t unpaired) {
+  int64_t *prach_config_info_p;
+
+  if (pointa > 2016666) { //FR2
+    prach_config_info_p = table_6_3_3_2_4_prachConfig_Index[index];
+  }
+  else { // FR1
+    if (unpaired)
+      prach_config_info_p = table_6_3_3_2_3_prachConfig_Index[index];
+    else
+      prach_config_info_p = table_6_3_3_2_2_prachConfig_Index[index];
+  } // FR2 / FR1
+
+  return prach_config_info_p;
+}
+
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
                                                uint16_t *offset) {
