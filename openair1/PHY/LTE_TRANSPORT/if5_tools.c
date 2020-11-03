@@ -1314,7 +1314,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type) {
 
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
-  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+  int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
 
   uint16_t packet_id=0, i=0, element_id=0;
 #ifdef DEBUG_UL_MOBIPASS
@@ -1447,7 +1447,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 				   (void*)temp_rx,
 				   spp_eth,
 				   &aid);
-        //LOG_I(PHY,"Received packet %d: aid %d, TS %lld\n",packet_id,aid,(unsigned long long)timestamp[packet_id]);
+        LOG_D(PHY,"subframe %d: Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld\n",subframe,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
         if (aid==0) {
            if (firstTS==1) firstTS=0;
            else if (oldTS + 256 != timestamp[packet_id]) {

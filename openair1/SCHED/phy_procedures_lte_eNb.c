@@ -2133,7 +2133,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   lte_eNB_I0_measurements (eNB, subframe, 0, eNB->first_run_I0_measurements);
   int min_I0=1000,max_I0=0;
 
-  if ((frame==0) && (subframe==4)) {
+  if ((frame==0) && (subframe==3)) {
     for (int i=0; i<eNB->frame_parms.N_RB_UL; i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
 

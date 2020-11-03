@@ -41,13 +41,9 @@
 #define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
-<<<<<<< HEAD
 /* name of shared library implementing a third-party transport */
 #define OAI_THIRDPARTY_TP_LIBNAME        "thirdparty_transpro"
-/* name of shared library implementing the basic/rf simulator */
-=======
 /* name of shared library implementing the rf simulator */
->>>>>>> origin/develop
 #define OAI_RFSIM_LIBNAME     "rfsimulator"
 /* name of shared library implementing the basic simulator */
 #define OAI_BASICSIM_LIBNAME  "tcp_bridge_oai"
@@ -57,14 +53,9 @@
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
-<<<<<<< HEAD
 #define RAU_REMOTE_THIRDPARTY_RADIO_HEAD 2
-=======
-
 #define MAX_WRITE_THREAD_PACKAGE     10
 #define MAX_WRITE_THREAD_BUFFER_SIZE 8
-
->>>>>>> origin/develop
 #ifndef MAX_CARDS
   #define MAX_CARDS 8
 #endif
@@ -465,7 +456,6 @@ struct openair0_device_t {
    */
   void (*configure_rru)(int idx, void *arg);
 
-<<<<<<< HEAD
 /*! \brief Pointer to generic RRU private information
    */
 
@@ -485,7 +475,6 @@ struct openair0_device_t {
    */
   int (*thirdparty_startstreaming)(openair0_device *device);
 
-=======
   /*! \brief RRU Configuration callback
    * \param idx RU index
    * \param arg pointer to capabilities or configuration
@@ -496,7 +485,6 @@ struct openair0_device_t {
    * \return a pointer to the parameter
    */
   void *(*get_internal_parameter)(char *id);
->>>>>>> origin/develop
 };
 
 /* type of device init function, implemented in shared lib */

@@ -298,7 +298,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 #endif
 
     
-    // bring RX data into 12 LSBs for softmodem RX
+    // bring TX data into 12 LSBs for softmodem RX
   for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
@@ -332,7 +332,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     // ECPRI PC_ID (2 bytes)
     *(uint16_t *)(buff2 + 4) = cc;
     // OAI modified SEQ_ID (4 bytes)
-    *(uint64_t *)(buff2 + 6) = ((uint64_t )timestamp)*3;
+    *(uint64_t *)(buff2 + 6) = ((uint64_t )timestamp)*6;
 
     /*
     printf("ECPRI TX (REV %x, MessType %d, Payload size %d, PC_ID %d, TS %llu\n",
@@ -466,7 +466,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
       /* store the timestamp value from packet's header */
       *timestamp =  *(openair0_timestamp *)(temp_rx0 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
       // convert TS to samples, /3 for 30.72 Ms/s, /6 for 15.36 Ms/s, /12 for 7.68 Ms/s, etc.
-      *timestamp = *timestamp/3;
+      *timestamp = *timestamp/6;
       // handle 1.4,3,5,10,15 MHz cases
       *cc        = *(uint16_t*)(temp_rx0 + ECPRICOMMON_BYTES);
     }
@@ -475,19 +475,17 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   }	 
  
   // populate receive buffer in lower 12-bits from 16-bit representation
-      for (int j=1; j<nsamps2; j++) {
+  for (int j=1; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-//	LOG_I(PHY,"((__m256i *)buff)[%d-1] = %p, temp_rx[%d] = %p\n",
-//	      j,&((__m256i *)buff)[j-1],j,&temp_rx[j]);
-          ((__m256i *)buff)[j-1] = _mm256_srai_epi16(temp_rx[j],4);
+       ((__m256i *)buff)[j-1] = _mm256_srai_epi16(temp_rx[j],2);
 #else
-          ((__m128i *)buff)[j-1] = _mm_srai_epi16(temp_rx[j],4);
+       ((__m128i *)buff)[j-1] = _mm_srai_epi16(temp_rx[j],2);
 #endif
 #elif defined(__arm__)
-          ((int16x8_t *)buff)[j] = vshrq_n_s16(temp_rx[i][j],4);
+       ((int16x8_t *)buff)[j] = vshrq_n_s16(temp_rx[i][j],2);
 #endif
-        }
+  }
 
   
   return (payload_size>>2);

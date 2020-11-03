@@ -141,6 +141,8 @@ extern uint16_t sf_ahead;
 static inline void fh_if5_south_out(RU_t *ru,int frame, int subframe, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
+  ru->south_out_cnt++;
+
   send_IF5(ru, timestamp, subframe, &ru->seqno, IF5_RRH_GW_DL);
 }
 
@@ -183,7 +185,6 @@ void fh_if5_south_in(RU_t *ru,
   recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL);
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->tti_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-
   //LOG_I(PHY,"%d.%d (TS %llu) => %d.%d\n",*frame,*subframe,(unsigned long long)proc->timestamp_rx,proc->frame_rx,proc->tti_rx);
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *subframe) {
@@ -1626,8 +1627,6 @@ static void *ru_thread( void *param ) {
   LOG_I(PHY,"Starting RU %d (%s,%s),\n", ru->idx, NB_functions[ru->function], NB_timing[ru->if_timing]);
 
   if(get_softmodem_params()->emulate_rf) {
-    fill_rf_config(ru,ru->rf_config_file);
-    init_frame_parms(ru->frame_parms,1);
     phy_init_RU(ru);
 
     if (setup_RU_buffers(ru)!=0) {
@@ -1643,12 +1642,14 @@ static void *ru_thread( void *param ) {
     ru->state = RU_RUN;
   } else if (ru->has_ctrl_prt == 0) {
     // There is no control port: start everything here
-    LOG_I(PHY, "RU %d has not ctrl port\n",ru->idx);
-    if (ru->if_south == LOCAL_RF)       openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    LOG_I(PHY, "RU %d has no OAI ctrl port\n",ru->idx);
 
     fill_rf_config(ru,ru->rf_config_file);
     init_frame_parms(ru->frame_parms,1);
     ru->frame_parms->nb_antennas_rx = ru->nb_rx;
+
+    if (ru->if_south == LOCAL_RF)       openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+
     phy_init_RU(ru);
       
       
@@ -2496,6 +2497,9 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
 
 void set_function_spec_param(RU_t *ru) {
   int ret;
+
+  fill_rf_config(ru,ru->rf_config_file);
+  init_frame_parms(ru->frame_parms,1);
 
   switch (ru->if_south) {
     case LOCAL_RF:   // this is an RU with integrated RF (RRU, eNB)
