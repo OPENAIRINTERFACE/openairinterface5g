@@ -1330,6 +1330,10 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   uint16_t *j      = NULL;
 
   openair0_timestamp timestamp[ru->nb_rx*spsf / spp_eth];
+  long timein[ru->nb_rx*spsf/spp_eth];
+  long timeout[ru->nb_rx*spsf/spp_eth];
+  struct timespec if_time;
+ 
   memset(timestamp, 0, sizeof(timestamp));
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
 
@@ -1441,18 +1445,22 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       for (packet_id=0; packet_id < ru->nb_rx*spsf / spp_eth; packet_id++) {
         //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
         //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
-        clock_gettime( CLOCK_MONOTONIC, &start_decomp);
+        clock_gettime( CLOCK_MONOTONIC, &if_time);
+        timein[packet_id] = if_time.tv_nsec;
         ru->ifdevice.trx_read_func2(&ru->ifdevice,
 				   &timestamp[packet_id],
 				   (void*)temp_rx,
 				   spp_eth,
 				   &aid);
-        LOG_D(PHY,"subframe %d: Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld\n",subframe,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
+        clock_gettime( CLOCK_MONOTONIC, &if_time);
+        timeout[packet_id] = if_time.tv_nsec;
+
+        LOG_D(PHY,"subframe %d: Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",subframe,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
         if (aid==0) {
            if (firstTS==1) firstTS=0;
            else if (oldTS + 256 != timestamp[packet_id]) {
-              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu\n",oldTS,timestamp[packet_id],timestamp[packet_id]-oldTS); 
-              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu\n",i,timestamp[i]);
+              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timein %lu, timeout %lu\n",oldTS,timestamp[packet_id],timestamp[packet_id]-oldTS,timein[packet_id],timeout[packet_id]); 
+              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu, timein %lu, timeout %lu\n",i,timestamp[i],timein[i],timeout[i]);
               AssertFatal(1==0,"fronthaul problem\n");
            }
 
