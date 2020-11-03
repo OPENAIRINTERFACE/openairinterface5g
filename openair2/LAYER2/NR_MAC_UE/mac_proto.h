@@ -265,6 +265,7 @@ andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 
 @param nr_tti_tx slot for PRACH transmission
 @returns indication to generate PRACH to phy */
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                       fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
                        UE_MODE_t UE_mode,
@@ -276,15 +277,14 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 @param module_idP Index of UE instance
 @param CC_id Component Carrier Index
 @param gNB_index gNB index
-@param t_id
 @param rach_ConfigDedicated
 @returns void */
 void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
-                            uint8_t t_id,
                             uint8_t first_Msg3,
                             NR_PRACH_RESOURCES_t *prach_resources,
+                            fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
 
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
@@ -302,6 +302,9 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
 void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
                      uint8_t *nb_dmrs_re_per_rb,
                      uint16_t *number_dmrs_symbols);
+
+void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
+
 
 #endif
 /** @}*/

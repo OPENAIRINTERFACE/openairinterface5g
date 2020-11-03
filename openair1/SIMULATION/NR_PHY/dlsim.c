@@ -140,6 +140,12 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 
+// Dummy function to avoid linking error at compilation of nr-dlsim
+int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
@@ -531,13 +537,14 @@ int main(int argc, char **argv)
   uint64_t ssb_bitmap;
   fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
 
+  fix_scc(scc,ssb_bitmap);
+
   fill_default_secondaryCellGroup(scc,
 				  secondaryCellGroup,
 				  0,
 				  1,
 				  n_tx,
 				  0);
-  fix_scc(scc,ssb_bitmap);
 
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
@@ -778,6 +785,8 @@ int main(int argc, char **argv)
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
         UE_info->UE_sched_ctrl[0].current_harq_pid = harq_pid;
         gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
+        for (int i=0; i<MAX_NUM_CORESET; i++)
+          gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
       
         if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&pucch_sched,&dlsch_config);
         else               nr_schedule_css_dlsch_phytest(0,frame,slot);
@@ -1038,7 +1047,7 @@ int main(int argc, char **argv)
     }
 
     //if ((float)n_errors/(float)n_trials <= target_error_rate) {
-    if (effRate >= (eff_tp_check*TBS)) {
+    if (effRate > (eff_tp_check*TBS)) {
       printf("PDSCH test OK\n");
       break;
     }

@@ -288,6 +288,7 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
                  nfapi_nr_prach_pdu_t *prach_pdu,
+		 int prachOccasion,
                  int frame,
                  int subframe,
                  uint16_t *max_preamble,
@@ -298,6 +299,7 @@ void rx_nr_prach_ru(RU_t *ru,
                     int prach_fmt,
                     int numRA,
                     int prachStartSymbol,
+		    int prachOccasion,
                     int frame,
                     int subframe);
 
@@ -306,7 +308,7 @@ void nr_fill_prach_ru(RU_t *ru,
                       int Slot,
                       nfapi_nr_prach_pdu_t *prach_pdu);
 
-int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type);
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, find_type_t type);
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void);
@@ -326,6 +328,13 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 
+int nr_generate_csi_rs(uint32_t **gold_csi_rs,
+                       int32_t **txdataF,
+                       int16_t amp,
+                       NR_DL_FRAME_PARMS frame_parms,
+                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params);
+
+void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
@@ -350,6 +359,11 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
+                      nfapi_nr_pucch_pdu_t* pucch_pdu);
+
+void nr_decode_pucch2(PHY_VARS_gNB *gNB,
+                      int slot,
+                      nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 

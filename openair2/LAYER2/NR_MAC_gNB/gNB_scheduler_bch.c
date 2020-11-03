@@ -30,7 +30,7 @@
 
  */
 
-#include <GNB_APP/RRC_nr_paramsvalues.h>
+#include "GNB_APP/RRC_nr_paramsvalues.h"
 #include "assertions.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_MAC_gNB/mac_proto.h"
@@ -53,6 +53,7 @@
 #include "executables/softmodem-common.h"
 
 extern RAN_CONTEXT_t RC;
+extern uint8_t SSB_Table[38];
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
@@ -65,15 +66,26 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
   int mib_sdu_length;
   int CC_id;
-
   AssertFatal(slotP == 0, "Subframe must be 0\n");
   AssertFatal((frameP & 7) == 0, "Frame must be a multiple of 8\n");
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
     dl_tti_request = &gNB_mac->DL_req[CC_id];
+    nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
+    dl_tti_request = &gNB_mac->DL_req[CC_id];
     dl_req = &dl_tti_request->dl_tti_request_body;
     cc = &gNB_mac->common_channels[CC_id];
+    cc = &gNB_mac->common_channels[CC_id];
+#if 0
+   //SSB is transmitted based on SSB periodicity
+    if((frameP % cfg->ssb_table.ssb_period.value) == 0) {
+    uint64_t L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
+    uint32_t ssb_index = -1;
+    for (int i=0; i<2; i++)  {  // max two SSB per slot
+      ssb_index = i + SSB_Table[slotP]; // computing the ssb_index
+      if ((ssb_index<64) && ((L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
+#endif
 
     mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]); // not used in this case
 
@@ -95,7 +107,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       AssertFatal(cc->ServingCellConfigCommon->physCellId!=NULL,"cc->ServingCellConfigCommon->physCellId is null\n");
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.PhysCellId          = *cc->ServingCellConfigCommon->physCellId;
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.BetaPss             = 0;
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex       = 0;
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex       = 0;//ssb_index ;//SSB index for each SSB
       AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon!=NULL,"scc->downlinkConfigCommonL is null\n");
       AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL!=NULL,"scc->downlinkConfigCommon->frequencyInfoDL is null\n");
       AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB!=NULL,"scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB is null\n");
@@ -131,8 +143,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
         default:
           AssertFatal(1==0,"SCS %ld not allowed for SSB \n", *cc->ServingCellConfigCommon->ssbSubcarrierSpacing);
       }
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = 0; //kSSB
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12) - 10; // absoluteFrequencySSB is the center of SSB
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value; //kSSB
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12) - 10;/*cfg->ssb_table.ssb_offset_point_a.value;*/ // absoluteFrequencySSB is the center of SSB
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
       dl_req->nPDUs++;

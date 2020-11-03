@@ -470,7 +470,7 @@ function report_test {
                     then
                         NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfully configured" $UE_LOG`
                     else
-                        NB_UE_TUNNEL_UP=`egrep -c "executing ifconfig oaitun_ue1" $UE_LOG`
+                        NB_UE_TUNNEL_UP=`egrep -c "ip link set oaitun_ue1 up" $UE_LOG`
                     fi
                     if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 0 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
@@ -769,8 +769,8 @@ function report_test {
                 #RA test (--do-ra option)
 
                 #build log files names
-                RA_ENB_LOG=$ARCHIVES_LOC/ra_check_${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
-                RA_UE_LOG=$ARCHIVES_LOC/ra_check_${TMODE}_${BW}prb_${CN_CONFIG}_ue.log
+                RA_ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb_ra_test.log
+                RA_UE_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_ue_ra_test.log
                 if [ -f $RA_ENB_LOG ] && [ -f $RA_UE_LOG ]
                 then
                     #get rid of full path
@@ -781,13 +781,12 @@ function report_test {
                     echo "        <td>Check if RA proc succeeded</td>" >> ./test_simulator_results.html
 
                     #gNB RA check
-                    GNB_RECEIVED=`egrep -c "received correctly" $RA_ENB_LOG`
-                    GNB_CONNECTED=`egrep -c "now 5G connected" $RA_ENB_LOG`
+                    GNB_RECEIVED=`egrep -c "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $RA_ENB_LOG`
                     #UE RA check
-                    UE_RA_PROC_OK=`egrep -c "RA procedure succeeded" $RA_UE_LOG`
+                    UE_RA_PROC_OK=`egrep -c "\[RAPROC\] RA procedure succeeded" $RA_UE_LOG`
 
 
-                    if [ $GNB_RECEIVED -gt 0 ] && [ $GNB_CONNECTED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
+                    if [ $GNB_RECEIVED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
                     then
                         echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
                     else
@@ -800,12 +799,6 @@ function report_test {
                         echo "<font color = \"blue\">- gNB --> RA received</font>" >> ./test_simulator_results.html
                     else
                         echo "<font color = \"red\"><b>- gNB RA NOT RECEIVED</b></font>" >> ./test_simulator_results.html
-                    fi
-                    if [ $GNB_CONNECTED -gt 0 ]
-                    then
-                        echo "<font color = \"blue\">- gNB --> 5G connected</font>" >> ./test_simulator_results.html
-                    else
-                        echo "<font color = \"red\"><b>- gNB NOT 5G CONNECTED</b></font>" >> ./test_simulator_results.html
                     fi
                     if [ $UE_RA_PROC_OK -gt 0 ]
                     then

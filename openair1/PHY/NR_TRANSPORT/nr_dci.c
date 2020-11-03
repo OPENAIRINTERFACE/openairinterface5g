@@ -64,36 +64,22 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-
-
-uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
-			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
-                            uint32_t **gold_pdcch_dmrs,
-                            int32_t *txdataF,
-                            int16_t amp,
-                            NR_DL_FRAME_PARMS frame_parms) {
+void nr_generate_dci(PHY_VARS_gNB *gNB,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                        uint32_t **gold_pdcch_dmrs,
+                        int32_t *txdataF,
+                        int16_t amp,
+                        NR_DL_FRAME_PARMS frame_parms) {
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
-  /*First iteration: single DCI*/
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15=NULL;
-
 
   // find coreset descriptor
     
   int rb_offset;
   int n_rb;
-
-  AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
-  AssertFatal(pdcch_pdu==NULL || ul_dci_pdu==NULL,"Can't handle both DL and UL DCI in same slot\n");
-
-
-  if (pdcch_pdu) pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
-  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu_rel15;
 
   nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
 
@@ -244,6 +230,25 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
            *pdcch_pdu_rel15->dci_pdu.PayloadSizeBits,*(unsigned long long*)pdcch_pdu_rel15->dci_pdu.Payload);
 
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
-  return 0;
+}
+
+void nr_generate_dci_top(PHY_VARS_gNB *gNB,
+			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
+			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
+                            uint32_t **gold_pdcch_dmrs,
+                            int32_t *txdataF,
+                            int16_t amp,
+                            NR_DL_FRAME_PARMS frame_parms) {
+
+  AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
+
+  if (pdcch_pdu && ul_dci_pdu) {
+    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  }
+  else if (pdcch_pdu)
+    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  else
+    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
 

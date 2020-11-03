@@ -385,7 +385,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
     fp->Lmax = 64;
   }
 
-  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
+  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[0].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
   
   fp->N_ssb = 0;
   for (int p=0; p<fp->Lmax; p++)
