@@ -1302,10 +1302,12 @@
 
     <testCase id="015112">
       <class>execution</class>
-      <desc>nr_prachsim Test cases. (Test1: 106 PRBs - Prach format A2),
-                                    (Test2: 217 PRBs - Prach format A2),
-                                    (Test3: 273 PRBs - Prach format A2),
-				    (Test4: 106 PRBs - Prach format 0)</desc>
+      <desc>nr_prachsim Test cases. (Test1: 30kHz SCS, 106 PRBs, Prach format A2),
+                                    (Test2: 30kHz SCS, 217 PRBs, Prach format A2),
+                                    (Test3: 30kHz SCS, 273 PRBs, Prach format A2),
+				    (Test4: 30kHz SCS, 106 PRBs, Prach format 0)
+                                    (Test5: 120kHz SCS, 32 PRBs, Prach format A2)
+                                    (Test5: 120kHz SCS, 66 PRBs, Prach format A2)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators -c </compile_prog_args>
@@ -1315,7 +1317,9 @@
       <main_exec_args>-a -s -30 -n 100 -p 63 -R 106
                       -a -s -30 -n 100 -p 63 -R 217
                       -a -s -30 -n 100 -p 63 -R 273
-		      -a -s -30 -n 100 -p 63 -R 106 -c 4</main_exec_args>
+		      -a -s -30 -n 100 -p 63 -R 106 -c 4
+		      -a -s -30 -n 100 -p 32 -R 32 -m 3 -c52 
+		      -a -s -30 -n 100 -p 32 -R 66 -m 3 -c52</main_exec_args>
       <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4</tags>
       <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
