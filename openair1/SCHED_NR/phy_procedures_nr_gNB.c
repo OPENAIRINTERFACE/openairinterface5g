@@ -113,7 +113,15 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
         else
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	
+
+        if (T_ACTIVE(T_GNB_PHY_MIB)) {
+          unsigned char bch[3];
+          bch[0] = gNB->ssb_pdu.ssb_pdu_rel15.bchPayload & 0xff;
+          bch[1] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 8) & 0xff;
+          bch[2] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 16) & 0xff;
+          T(T_GNB_PHY_MIB, T_INT(0) /* module ID */, T_INT(frame), T_INT(slot), T_BUFFER(bch, 3));
+        }
+
 	nr_generate_pbch(&gNB->pbch,
 	                 &gNB->ssb_pdu,
 	                 gNB->nr_pbch_interleaver,
@@ -136,8 +144,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   int offset = gNB->CC_id;
   uint8_t ssb_frame_periodicity = 1;  // every how many frames SSB are generated
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
-
-  
   
   if (cfg->ssb_table.ssb_period.value > 1) 
     ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ; 
@@ -519,7 +525,6 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
                      0);
     }
   }
-
 }
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
@@ -537,12 +542,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  (pucch->frame == frame_rx) &&
 	  (pucch->slot == slot_rx) ) {
 
-        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
         uint16_t num_ucis;
-
         switch (pucch_pdu->format_type) {
         case 0:
-
           num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
           gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
           gNB->UL_INFO.uci_ind.sfn = frame_rx;
@@ -559,8 +562,25 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
           pucch->active = 0;
 	  break;
+        case 2:
+          num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
+          gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
+          gNB->UL_INFO.uci_ind.sfn = frame_rx;
+          gNB->UL_INFO.uci_ind.slot = slot_rx;
+          gNB->uci_pdu_list[num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
+          gNB->uci_pdu_list[num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_2_3_4_t);
+          nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu_format2 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_2_3_4;
+
+          nr_decode_pucch2(gNB,
+                           slot_rx,
+                           uci_pdu_format2,
+                           pucch_pdu);
+
+          gNB->UL_INFO.uci_ind.num_ucis += 1;
+          pucch->active = 0;
+          break;
         default:
-	  AssertFatal(1==0,"Only PUCCH format 0 is currently supported\n");
+	  AssertFatal(1==0,"Only PUCCH formats 0 and 2 are currently supported\n");
         }
       }
     }

@@ -82,6 +82,7 @@
 
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include "x2ap_eNB.h"
 
 //#define XER_PRINT
 
@@ -317,8 +318,10 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   MessageDef *msg;
 
   /* send a tick to x2ap */
-  msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_SUBFRAME_PROCESS);
-  itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
+  if (is_x2ap_enabled()){
+    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_SUBFRAME_PROCESS);
+    itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
+  }
 }
 
 ///---------------------------------------------------------------------------------------------------------------///

@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-ran:ci-ran-tmp AS enb-build 
+FROM image-registry.openshift-image-registry.svc:5000/oai/oai-ran:latest AS enb-build 
 
 
 WORKDIR /oai-enb

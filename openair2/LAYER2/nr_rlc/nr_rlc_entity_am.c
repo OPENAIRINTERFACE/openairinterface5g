@@ -922,6 +922,7 @@ static missing_data_t next_missing(nr_rlc_entity_am_t *entity,
        */
       ret.sn_start = entity->rx_next;
       ret.so_start = 0;
+      ret.next = cur;
       goto set_end_different_sdu;
     }
   }

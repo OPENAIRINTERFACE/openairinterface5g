@@ -30,7 +30,7 @@ spec:
         #still needed for the target image
         git:
             uri: "https://gitlab.eurecom.fr/oai/openairinterface5g.git"
-            ref: "rh_ci_oc"
+            ref: "develop"
             httpProxy: http://proxy.eurecom.fr:8080
             httpsProxy: https://proxy.eurecom.fr:8080
         secrets:
@@ -52,4 +52,4 @@ spec:
     output:
         to:
             kind: "ImageStreamTag"
-            name: "oai-enb:ci-ran-tmp"
+            name: "oai-enb:latest"

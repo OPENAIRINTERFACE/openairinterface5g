@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-ran:tmp-rhel8-latest AS enb-build 
+FROM image-registry.openshift-image-registry.svc:5000/oai/oai-ran:rhel8-latest AS enb-build 
 
 
 WORKDIR /oai-ran
@@ -51,6 +51,7 @@ RUN yum update -y && \
         atlas \
         net-tools \
         iproute \
+        iputils \
         libyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
@@ -121,4 +122,4 @@ WORKDIR /opt/oai-enb
 
 #CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
-
+CMD ["sleep", "infinity"]

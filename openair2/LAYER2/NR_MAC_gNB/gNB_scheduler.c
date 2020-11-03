@@ -344,9 +344,8 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP) {
 
-  uint16_t O_uci;
-  uint16_t O_ack;
-  uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
+  uint16_t O_csi, O_ack, O_uci;
+  uint8_t O_sr = 0; // no SR in PUCCH implemented for now
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
@@ -359,31 +358,36 @@ void nr_schedule_pucch(int Mod_idP,
   NR_sched_pucch *curr_pucch;
 
   for (int k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k];
-    if ((curr_pucch->dai_c > 0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
-      UL_tti_req->SFN = curr_pucch->frame;
-      UL_tti_req->Slot = curr_pucch->ul_slot;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-      nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
-      memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
-      UL_tti_req->n_pdus+=1;
+    for (int l=0; l<2; l++) {
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
       O_ack = curr_pucch->dai_c;
-      O_uci = O_ack; // for now we are just sending acknacks in pucch
+      O_csi = curr_pucch->csi_bits;
+      O_uci = O_ack + O_csi + O_sr;
+      if ((O_uci>0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+        UL_tti_req->SFN = curr_pucch->frame;
+        UL_tti_req->Slot = curr_pucch->ul_slot;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
+        memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
+        UL_tti_req->n_pdus+=1;
 
-      LOG_D(MAC, "Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
+        LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d with (%d, %d, %d) (SR ACK, CSI) bits\n",
+              frameP,slotP,O_sr,O_ack,curr_pucch->csi_bits);
 
-      nr_configure_pucch(pucch_pdu,
-			 scc,
-			 ubwp,
-                         curr_pucch->resource_indicator,
-                         O_uci,
-                         O_ack,
-                         SR_flag);
+        nr_configure_pucch(pucch_pdu,
+                           scc,
+                           ubwp,
+                           UE_info->rnti[UE_id],
+                           curr_pucch->resource_indicator,
+                           O_csi,
+                           O_ack,
+                           O_sr);
 
-      memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));
+        memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
+               0,
+               sizeof(NR_sched_pucch));
+      }
     }
   }
 }
@@ -395,6 +399,7 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
+
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
@@ -451,19 +456,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
-  if (slot == 0 && UE_info->active[UE_id]) {
-    for (int k=0; k<nr_ulmix_slots; k++) {
-      /* Seems to be covered 384? */
-      /*memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));*/
-      /* Seems to be covered in line 335? */
-      /*memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
-             0,
-             sizeof(NR_sched_pusch));*/
-    }
-  }
-
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
@@ -475,11 +467,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1);
+  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
+  for (int i=0; i<MAX_NUM_CORESET; i++)
+    RC.nrmac[module_idP]->UE_info.num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 
@@ -504,11 +498,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule SR
   // TODO
 
-  // This schedule CSI
-  // TODO
+  // This schedule CSI measurement reporting
+  if (UE_info->active[UE_id])
+    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
+  RC.nrmac[module_idP]->current_slot=slot;
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
@@ -537,7 +533,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
-      && (!get_softmodem_params()->phy_test || slot == 1)
       && slot < 10) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
     //int pucch_sched;

@@ -1595,13 +1595,36 @@ void *ru_thread( void *param ) {
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
       // Do PRACH RU processing
+
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
+      uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
-	rx_nr_prach_ru(ru,
-		       ru->prach_list[prach_id].fmt,
-		       ru->prach_list[prach_id].numRA,
-		       ru->prach_list[prach_id].prachStartSymbol,
-		       proc->frame_rx,proc->tti_rx);
+	N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
+	/*
+	get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,
+				     proc->frame_rx,proc->tti_rx,
+				     ru->config.carrier_config.dl_frequency.value,
+				     fp->numerology_index,
+				     fp->frame_type,
+				     &format,
+				     &start_symbol,
+				     &N_t_slot,
+				     &N_dur,
+				     &RA_sfn_index,
+				     &N_RA_slot,
+				     &config_period);
+	*/			     
+	for (int prach_oc = 0; prach_oc<ru->prach_list[prach_id].num_prach_ocas; prach_oc++) {
+	  prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur;
+	  //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}. 
+
+	  rx_nr_prach_ru(ru,
+			 ru->prach_list[prach_id].fmt, //could also use format
+			 ru->prach_list[prach_id].numRA,
+			 prachStartSymbol,
+			 prach_oc,
+			 proc->frame_rx,proc->tti_rx);
+	}
 	free_nr_ru_prach_entry(ru,prach_id);
       }
       }

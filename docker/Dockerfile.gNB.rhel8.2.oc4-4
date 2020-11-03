@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-ran:tmp-rhel8-latest AS gnb-build 
+FROM image-registry.openshift-image-registry.svc:5000/oai/oai-ran:rhel8-latest AS gnb-build 
 
 
 WORKDIR /oai-ran
@@ -53,6 +53,8 @@ RUN yum repolist --disablerepo=* && \
         atlas \
         lksctp-tools \
         nettle \
+        net-tools \
+        iputils \
         libyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
@@ -124,4 +126,4 @@ WORKDIR /opt/oai-gnb
 
 #CMD ["/opt/oai-gnb/bin/nr-softmodem", "-O", "/opt/oai-gnb/etc/gnb.conf"]
 #ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
-
+CMD ["sleep", "infinity"]

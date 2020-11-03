@@ -74,6 +74,7 @@
 #define MAX_NUM_CCE 90
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
+#define MAX_NUM_OF_SSB 64
 
 typedef enum {
   RA_IDLE = 0,
@@ -146,12 +147,16 @@ typedef struct {
   int msg4_mcs;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
+  // Beam index
+  uint8_t beam_id;
   /// secondaryCellGroup for UE in NSA that is to come
   NR_CellGroupConfig_t *secondaryCellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
   /// NSA: the UEs C-RNTI to use
   rnti_t crnti;
+  /// CFRA flag
+  bool cfra;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -188,6 +193,16 @@ typedef struct {
   uint8_t vrb_map_UL[275];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
+  ///Number of active SSBs
+  uint8_t num_active_ssb;
+  //Total available prach occasions per configuration period
+  uint32_t total_prach_occasions_per_config_period;
+  //Total available prach occasions
+  uint32_t total_prach_occasions;
+  //Max Association period
+  uint8_t max_association_period;
+  //SSB index
+  uint8_t ssb_index[MAX_NUM_OF_SSB];
 } NR_COMMON_channels_t;
 
 
@@ -259,10 +274,12 @@ typedef struct UE_info {
 typedef struct NR_sched_pucch {
   int frame;
   int ul_slot;
+  bool sr_flag;
+  int csi_bits;
+  bool simultaneous_harqcsi;
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-  bool active;
 } NR_sched_pucch;
 
 typedef struct NR_sched_pusch {
@@ -300,6 +317,25 @@ typedef struct NR_UE_ul_harq {
   NR_UL_harq_states_t state;
 } NR_UE_ul_harq_t;
 
+
+typedef struct {
+  uint8_t nb_ssbri_cri;
+  uint8_t cri_ssbri_bitlen;
+  uint8_t rsrp_bitlen;
+  uint8_t diff_rsrp_bitlen;
+}CRI_SSBRI_RSRP_bitlen_t;
+
+
+#define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
+typedef struct nr_csi_report {
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
+  uint8_t nb_of_nzp_csi_report;
+  uint8_t nb_of_csi_ssb_report;
+  CRI_SSBRI_RSRP_bitlen_t CSI_report_bitlen[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
+} nr_csi_report_t;
+
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   /// total amount of data awaiting for this UE
@@ -309,9 +345,10 @@ typedef struct {
 
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
-  NR_sched_pucch *sched_pucch;
+  NR_sched_pucch **sched_pucch;
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
+  int pucch_occ_idx;
   NR_sched_pusch *sched_pusch;
 
   /// CCE index and aggregation, should be coherent with cce_list
@@ -370,9 +407,11 @@ typedef struct {
 } NR_UE_list_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
+#define MAX_CSI_REPORTCONFIG 48
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
+  nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_UE_list_t list;
@@ -380,6 +419,12 @@ typedef struct {
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+  /// CCE indexing
+  int Y[MAX_MOBILES_PER_GNB][3][160];
+  int m[MAX_MOBILES_PER_GNB];
+  int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
+  // UE selected beam index
+  uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 /*! \brief top level eNB MAC structure */
@@ -442,6 +487,8 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
+  /// current slot
+  int current_slot;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

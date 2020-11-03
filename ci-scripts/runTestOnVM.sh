@@ -281,14 +281,35 @@ function check_ra_result {
     local LOC_GNB_LOG=$1
     local LOC_UE_LOG=$2
 
-    #gNB RA test
-    echo "Checking gNB Log for RA success"
-    egrep "received correctly" $1 
-    egrep "now 5G connected" $1 
- 
-    #UE RA test
-    echo 'Checking UE Log for RA success'
-    egrep "RA procedure succeeded" $2
+    #if log files exist
+    if [ -f $LOC_GNB_LOG ] && [ -f $LOC_UE_LOG ]
+    then
+
+        #gNB RA test
+        #console check
+        echo "Checking gNB Log for RA success"
+        egrep "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1
+        #script check
+        local GNB_COMPLETE=`egrep -c "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1`
+
+        #UE RA test
+        #console check
+        echo 'Checking UE Log for RA success'
+        egrep "\[RAPROC\] RA procedure succeeded" $2
+        #script check
+        local UE_COMPLETE=`egrep -c "\[RAPROC\] RA procedure succeeded" $2`
+
+        #generate status
+        if [ $GNB_COMPLETE -eq 0 ] || [ $UE_COMPLETE -eq 0 ]
+        then
+            RA_STATUS=-1
+            echo "RA test FAILED, could not find the markers"
+        fi
+    #case where log files do not exist
+    else
+        echo "RA test log files not present"
+        RA_STATUS=-1        
+    fi
 
 }
 
@@ -1225,16 +1246,6 @@ function start_rf_sim_gnb {
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
     rm $1
 
-    # For the moment, in RA test, no check and no copy of generated raw files
-    if [ $LOC_RA_TEST -eq 1 ] # RA test
-    then
-        sleep 30
-        echo "echo \"free -m\"" > $1
-        echo "free -m" >> $1
-        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
-        rm $1
-        return 0
-    fi
 
     local i="0"
     echo "egrep -c \"got sync\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
@@ -1258,7 +1269,9 @@ function start_rf_sim_gnb {
         GNB_SYNC=1
         echo "RF-SIM gNB is sync'ed: waiting for UE(s) to connect"
     fi
-    if [ $LOC_S1_CONFIGURATION -eq 0 ]
+
+    # check noS1 config only outside RA test (as it does not support noS1)
+    if [ $LOC_S1_CONFIGURATION -eq 0 ] && [ $LOC_RA_TEST -eq 0 ]
     then
         echo "ifconfig oaitun_enb1 | egrep -c \"inet addr\"" > $1
         # Checking oaitun_enb1 interface has now an IP address
@@ -1341,14 +1354,6 @@ function start_rf_sim_nr_ue {
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
     rm $1
 
-    # In case of RA test mode, no UE sync check for the moment.
-    # To be removed later?
-    if [ $LOC_RA_TEST -eq 1 ] # RA test
-    then
-         sleep 30
-         NR_UE_SYNC=1
-         return 0
-    fi
     local i="0"
     echo "egrep -c \"Initial sync: pbch decoded sucessfully\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
     while [ $i -lt 10 ]
@@ -1372,11 +1377,13 @@ function start_rf_sim_nr_ue {
     else
         echo "RF-SIM NR-UE is sync'ed w/ gNB"
     fi
-    # Checking oaitun_ue1 interface has now an IP address
-    i="0"
-    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
-    while [ $i -lt 10 ]
-    do
+    # Checking oaitun_ue1 interface has now an IP address (only outside RA test)
+    if [ $LOC_RA_TEST -eq  0 ]
+    then
+      i="0"
+      echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+      while [ $i -lt 10 ]
+      do
         sleep 5
         CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1`
         if [ $CONNECTED -eq 1 ]
@@ -1385,21 +1392,20 @@ function start_rf_sim_nr_ue {
         else
             i=$[$i+1]
         fi
-    done
-    echo "echo \"free -m\"" > $1
-    echo "free -m" >> $1
-    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
-    rm $1
-    if [ $i -lt 50 ]
-    then
+      done
+      echo "echo \"free -m\"" > $1
+      echo "free -m" >> $1
+      ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
+      rm $1
+      if [ $i -lt 50 ]
+      then
         NR_UE_SYNC=0
         echo "RF-SIM NR-UE oaitun_ue1 is DOWN or NOT CONFIGURED"
-    else
+      else
         echo "RF-SIM NR-UE oaitun_ue1 is UP and CONFIGURED"
-    fi
-    sleep 10
-
-
+      fi
+      sleep 10
+   fi
 }
 
 
@@ -2196,10 +2202,11 @@ function run_test_on_vm {
         NR_STATUS=0
 
         ######### start of RA TEST loop
-        while [ $try_cnt -lt 1 ]
+        while [ $try_cnt -lt 10 ] #10 because it hardly succeed within CI
         do
 
             SYNC_STATUS=0
+            RA_STATUS=0
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the gNB"
@@ -2241,18 +2248,26 @@ function run_test_on_vm {
             echo "############################################################"
 
             # Proper check to be done when RA test is working!
-            #check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
-
-            try_cnt=$[$try_cnt+1]
-
-        ########### end RA test
+            check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
+            if [ $RA_STATUS -ne 0 ]
+            then
+                echo "RA test NOT OK"
+                try_cnt=$[$try_cnt+1]
+            else
+                try_cnt=$[$try_cnt+10]
+            fi
         done
-        sleep 10
-        try_cnt="0"
+        ########### end RA test
+        
+        sleep 30
+
 
         ######### start of PHY TEST loop
+        try_cnt="0"
         while [ $try_cnt -lt 4 ]
         do
+
+
             SYNC_STATUS=0
             PING_STATUS=0
             IPERF_STATUS=0
@@ -2355,6 +2370,7 @@ function run_test_on_vm {
         echo "Checking run status"
         echo "############################################################"
 
+        if [ $RA_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $PING_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then NR_STATUS=-1; fi

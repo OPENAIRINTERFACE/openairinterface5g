@@ -58,6 +58,11 @@ struct timesync {
 
   int                            timer_num;
   flexran_agent_timer_element_t *timer[MAX_NUM_TIMERS];
+
+  int                            add_num;
+  flexran_agent_timer_element_t *add_list[MAX_NUM_TIMERS];
+  int                            remove_num;
+  int                            remove_list[MAX_NUM_TIMERS];
   pthread_mutex_t                mutex_timer;
 
   int             exit;
@@ -76,8 +81,12 @@ err_code_t flexran_agent_timer_init(mid_t mod_id) {
   sync->current = 0;
   sync->next    = 0;
   sync->timer_num    = 0;
-  for (int i = 0; i < MAX_NUM_TIMERS; ++i)
+  sync->add_num = 0;
+  sync->remove_num = 0;
+  for (int i = 0; i < MAX_NUM_TIMERS; ++i) {
     sync->timer[i] = NULL;
+    sync->add_list[i] = NULL;
+  }
   pthread_mutex_init(&sync->mutex_timer, NULL);
   sync->exit   = 0;
 
@@ -170,12 +179,19 @@ void *flexran_agent_timer_thread(void *args) {
       break;
 
     pthread_mutex_lock(&sync->mutex_timer);
-    sync->current++;
-
-    if (sync->current < sync->next) {
-      pthread_mutex_unlock(&sync->mutex_timer);
-      continue;
+    for (int i = 0; i < sync->add_num; ++i) {
+      sync->timer[sync->timer_num] = sync->add_list[i];
+      sync->timer_num++;
     }
+    sync->add_num = 0;
+    for (int i = 0; i < sync->remove_num; ++i)
+      flexran_agent_timer_remove_internal(sync, sync->remove_list[i]);
+    sync->remove_num = 0;
+    pthread_mutex_unlock(&sync->mutex_timer);
+
+    sync->current++;
+    if (sync->current < sync->next)
+      continue;
 
     for (int i = 0; i < sync->timer_num; ++i) {
       flexran_agent_timer_element_t *t = sync->timer[i];
@@ -186,7 +202,6 @@ void *flexran_agent_timer_thread(void *args) {
       if (sync->next == sync->current || t->next < sync->next)
         sync->next = t->next;
     }
-    pthread_mutex_unlock(&sync->mutex_timer);
   }
   LOG_W(FLEXRAN_AGENT, "terminated timer thread\n");
   return NULL;
@@ -230,45 +245,35 @@ err_code_t flexran_agent_create_timer(mid_t    mod_id,
 
   struct timesync *sync = &timesync[mod_id];
   pthread_mutex_lock(&sync->mutex_timer);
-  if (sync->timer_num >= MAX_NUM_TIMERS) {
+  if (sync->timer_num + sync->add_num >= MAX_NUM_TIMERS) {
     pthread_mutex_unlock(&sync->mutex_timer);
     LOG_E(FLEXRAN_AGENT, "maximum number of timers (%d) reached while adding timer %d\n",
-          sync->timer_num, xid);
+          sync->timer_num + sync->add_num, xid);
     free(t);
     return TIMER_SETUP_FAILED;
   }
   /* TODO check that xid does not exist? */
-  t->next = sync->current + 1;
+  t->next = sync->current + sf;
   if (sync->next <= sync->current || t->next < sync->next)
     sync->next = t->next;
-  sync->timer[sync->timer_num] = t;
-  sync->timer_num++;
+  sync->add_list[sync->add_num] = t;
+  sync->add_num++;
   pthread_mutex_unlock(&sync->mutex_timer);
-  LOG_D(FLEXRAN_AGENT, "added new timer xid %d for agent %d\n", xid, mod_id);
-  return 0;
-}
-
-err_code_t flexran_agent_destroy_timers(mid_t mod_id) {
-  struct timesync *sync = &timesync[mod_id];
-  pthread_mutex_lock(&sync->mutex_timer);
-  for (int i = sync->timer_num - 1; i < 0; --i) {
-    flexran_agent_timer_remove_internal(sync, i);
-  }
-  pthread_mutex_unlock(&sync->mutex_timer);
+  LOG_I(FLEXRAN_AGENT, "added new timer xid %d for agent %d\n", xid, mod_id);
   return 0;
 }
 
 err_code_t flexran_agent_destroy_timer(mid_t mod_id, xid_t xid) {
   struct timesync *sync = &timesync[mod_id];
-  pthread_mutex_lock(&sync->mutex_timer);
   for (int i = 0; i < sync->timer_num; ++i) {
     if (sync->timer[i]->xid == xid) {
-      flexran_agent_timer_remove_internal(sync, i);
+      pthread_mutex_lock(&sync->mutex_timer);
+      sync->remove_list[sync->remove_num] = i;
+      sync->remove_num++;
       pthread_mutex_unlock(&sync->mutex_timer);
       return 0;
     }
   }
-  pthread_mutex_unlock(&sync->mutex_timer);
   LOG_E(FLEXRAN_AGENT, "could not find timer %d\n", xid);
   return TIMER_ELEMENT_NOT_FOUND;
 }
@@ -277,7 +282,8 @@ err_code_t flexran_agent_destroy_timer(mid_t mod_id, xid_t xid) {
 void flexran_agent_timer_remove_internal(struct timesync *sync, int index) {
   LOG_I(FLEXRAN_AGENT, "remove timer xid %d (index %d) for agent %d\n",
         sync->timer[index]->xid, index, sync->timer[index]->mod_id);
-  flexran_agent_destroy_flexran_message(sync->timer[index]->msg);
+  if (sync->timer[index]->msg)
+    flexran_agent_destroy_flexran_message(sync->timer[index]->msg);
   free(sync->timer[index]);
   for (int i = index + 1; i < sync->timer_num; ++i)
     sync->timer[i - 1] = sync->timer[i];

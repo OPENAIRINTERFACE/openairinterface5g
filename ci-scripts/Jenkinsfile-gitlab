@@ -35,6 +35,9 @@ def doFlexranCtrlTest = false
 // Location of the executor node
 def nodeExecutor = params.nodeExecutor
 
+// VM Lockable resources
+def vmResource = params.vmLockableResource
+
 pipeline {
     agent {
         label nodeExecutor
@@ -159,65 +162,81 @@ pipeline {
 
         stage ("Start VM -- basic-sim") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- gnb-usrp") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- nr-ue-usrp") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- enb-usrp") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- phy-sim") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
         
         stage ("Start VM -- enb-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- ue-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
         
         stage ("Start VM -- cppcheck") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
@@ -288,11 +307,14 @@ pipeline {
                 }
                 stage ("Build UE-ethernet") {
                     steps {
+                      // This is typically the last one to finish.
+                      lock (vmResource) {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
+                      }
                     }
                 }
             }
@@ -354,6 +376,7 @@ pipeline {
                     stages {
                         stage ("Test physical simulators") {
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 90, unit: 'MINUTES') {
                                         try {
@@ -365,6 +388,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Build Flexran Controller") {
@@ -372,6 +396,7 @@ pipeline {
                                 expression {doFlexranCtrlTest}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 20, unit: 'MINUTES') {
                                         try {
@@ -381,10 +406,12 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test basic simulator") {
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -396,10 +423,12 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test L1 simulator") {
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -411,10 +440,12 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test RF simulator") {
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 40, unit: 'MINUTES') {
                                         try {
@@ -426,10 +457,12 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test L2 simulator") {
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -441,11 +474,14 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Destroy all Virtual Machines") {
                             steps {
+                              lock (vmResource) {
                                 sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                              }
                             }
                         }
                     }
