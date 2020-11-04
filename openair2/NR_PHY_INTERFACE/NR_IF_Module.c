@@ -289,7 +289,6 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
 
   memcpy ( payload, uci_pdu->csi_part1.csi_part1_payload, payload_size);
   
-  reverse_n_bits(payload, uci_pdu->csi_part1.csi_part1_bit_len);
 
   UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = 0;
   for ( csi_report_id =0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
@@ -335,8 +334,10 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri = UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen.nb_ssbri_cri;
 
       for (csi_ssb_idx = 0; csi_ssb_idx < sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri ; csi_ssb_idx++) {
-	if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
+        if(cri_ssbri_bitlen > 1)
+          reverse_n_bits(payload, cri_ssbri_bitlen);
 
+        if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
           sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
 		  *(UE_list->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	else
@@ -344,13 +345,15 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
 		  *(UE_list->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	  
         *payload >>= cri_ssbri_bitlen;
-	LOG_I(PHY,"SSB_index = %d",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
+        LOG_I(PHY,"SSB_index = %d",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
       }
-
+	
+      reverse_n_bits(payload, 7);
       sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP = (*payload) & 0x7f;
       *payload >>= 7;
 
       for ( diff_rsrp_idx =0; diff_rsrp_idx < sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri - 1; diff_rsrp_idx++ ) {
+        reverse_n_bits(payload,4);
         sched_ctrl->CSI_report[idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx] = (*payload) & 0x0f;
         *payload >>= 4;
       }
