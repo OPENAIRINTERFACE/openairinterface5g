@@ -82,7 +82,7 @@
 
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
-#include "x2ap_eNB.h"
+#include <openair2/X2AP/x2ap_eNB.h>
 
 //#define XER_PRINT
 
@@ -179,26 +179,11 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void init_NR_SI(gNB_RRC_INST *rrc) {
-
+static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration) {
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
-
-  // MIB
   rrc->carrier.MIB             = (uint8_t *) malloc16(4);
   rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
-
-  // SIB 1
-  gNB_RrcConfigurationReq  *configuration;
-  configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
-  configuration->cell_identity = 0x0E00; // TODO: Get value from config file
-  configuration->ssb_SubcarrierOffset = rrc->carrier.ssb_SubcarrierOffset;
-  configuration->pdsch_AntennaPorts = rrc->carrier.pdsch_AntennaPorts;
-  configuration->pusch_TargetSNRx10 = rrc->carrier.pusch_TargetSNRx10;
-  configuration->pucch_TargetSNRx10 = rrc->carrier.pucch_TargetSNRx10;
-  configuration->scc = rrc->carrier.servingcellconfigcommon;
-  if(rrc->carrier.SIB1 == NULL) rrc->carrier.SIB1 = (uint8_t *) malloc16(MAX_NR_SIB_LENGTH/8);
-  rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier, configuration);
-
+  rrc->carrier.sizeof_SIB1     = do_SIB1_NR(&rrc->carrier,configuration);
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,
@@ -288,7 +273,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.pucch_TargetSNRx10 = configuration->pucch_TargetSNRx10;
   /// System Information INIT
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
-  init_NR_SI(rrc);
+  init_NR_SI(rrc, configuration);
   rrc_init_nr_global_param();
   openair_nr_rrc_on(&ctxt);
   return 0;
