@@ -36,8 +36,6 @@
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
 
-#define MAX_ACK_BITS 2 //only format 0 is available for now
-
 void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
@@ -163,6 +161,11 @@ int configure_fapi_dl_pdu_phytest(int Mod_id,
                                   uint16_t *rbSize,
                                   uint16_t *rbStart);
 
+void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
+                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
+
 void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_pusch_pdu_t *pusch_pdu,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
@@ -198,12 +201,23 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
-void nr_update_pucch_scheduling(int Mod_idP,
-                                int UE_id,
-                                frame_t frameP,
-                                sub_frame_t slotP,
-                                int slots_per_tdd,
-                                int *pucch_id);
+void nr_csi_meas_reporting(int Mod_idP,
+                           int UE_id,
+                           frame_t frameP,
+                           sub_frame_t slotP,
+                           int slots_per_tdd,
+                           int ul_slots,
+                           int n_slots_frame);
+
+void nr_acknack_scheduling(int Mod_idP,
+                           int UE_id,
+                           frame_t frameP,
+                           sub_frame_t slotP,
+                           int slots_per_tdd,
+                           int *pucch_id,
+                           int *pucch_occ);
+
+int get_pucch_resource(NR_UE_info_t *UE_info,int UE_id,int k,int l);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -232,10 +246,11 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_ServingCellConfigCommon_t *scc,
 			NR_BWP_Uplink_t *bwp,
+                        uint16_t rnti,
                         uint8_t pucch_resource,
-                        uint16_t O_uci,
+                        uint16_t O_csi,
                         uint16_t O_ack,
-                        uint8_t SR_flag);
+                        uint8_t O_sr);
 
 void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
@@ -306,6 +321,8 @@ void add_nr_ue_list(NR_UE_list_t *listP, int UE_id);
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
+int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
+
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
@@ -314,8 +331,20 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
                      int aggregation,
-                     uint16_t n_RNTI,
-                     int m);
+                     uint16_t Y,
+                     int m,
+                     int nr_of_candidates);
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_tot,
+                                uint16_t O_csi,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl);
+
+void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t *UE_info, int UE_id);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
@@ -385,6 +414,15 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t rssi);
 
 void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu);
+
+int16_t ssb_index_from_prach(module_id_t module_idP,
+                             frame_t frameP,
+			     sub_frame_t slotP,
+                             uint16_t preamble_index,
+                             uint8_t freq_index,
+                             uint8_t symbol);
+
+void find_SSB_and_RO_available(module_id_t module_idP);
 
 void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

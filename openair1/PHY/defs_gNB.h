@@ -752,6 +752,9 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t rb_mask_ul[9];
   int ulmask_symb;
 
+  /// CSI  RS sequence
+  uint32_t ***nr_gold_csi_rs;
+
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
 

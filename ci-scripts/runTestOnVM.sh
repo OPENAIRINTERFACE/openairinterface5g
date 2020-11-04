@@ -281,14 +281,35 @@ function check_ra_result {
     local LOC_GNB_LOG=$1
     local LOC_UE_LOG=$2
 
-    #gNB RA test
-    echo "Checking gNB Log for RA success"
-    egrep "received correctly" $1 
-    egrep "now 5G connected" $1 
- 
-    #UE RA test
-    echo 'Checking UE Log for RA success'
-    egrep "RA procedure succeeded" $2
+    #if log files exist
+    if [ -f $LOC_GNB_LOG ] && [ -f $LOC_UE_LOG ]
+    then
+
+        #gNB RA test
+        #console check
+        echo "Checking gNB Log for RA success"
+        egrep "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1
+        #script check
+        local GNB_COMPLETE=`egrep -c "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $1`
+
+        #UE RA test
+        #console check
+        echo 'Checking UE Log for RA success'
+        egrep "\[RAPROC\] RA procedure succeeded" $2
+        #script check
+        local UE_COMPLETE=`egrep -c "\[RAPROC\] RA procedure succeeded" $2`
+
+        #generate status
+        if [ $GNB_COMPLETE -eq 0 ] || [ $UE_COMPLETE -eq 0 ]
+        then
+            RA_STATUS=-1
+            echo "RA test FAILED, could not find the markers"
+        fi
+    #case where log files do not exist
+    else
+        echo "RA test log files not present"
+        RA_STATUS=-1        
+    fi
 
 }
 
@@ -1214,7 +1235,7 @@ function start_rf_sim_gnb {
         then
             echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
         else #RA test => use --do-ra option
-            echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -1224,6 +1245,7 @@ function start_rf_sim_gnb {
 
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
     rm $1
+
 
     local i="0"
     echo "egrep -c \"got sync\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
@@ -1247,7 +1269,9 @@ function start_rf_sim_gnb {
         GNB_SYNC=1
         echo "RF-SIM gNB is sync'ed: waiting for UE(s) to connect"
     fi
-    if [ $LOC_S1_CONFIGURATION -eq 0 ]
+
+    # check noS1 config only outside RA test (as it does not support noS1)
+    if [ $LOC_S1_CONFIGURATION -eq 0 ] && [ $LOC_RA_TEST -eq 0 ]
     then
         echo "ifconfig oaitun_enb1 | egrep -c \"inet addr\"" > $1
         # Checking oaitun_enb1 interface has now an IP address
@@ -1296,15 +1320,22 @@ function start_rf_sim_nr_ue {
     local LOC_RA_TEST=$8
 
     # Copy the RAW files from the gNB run
-    scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
-    scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+    # In RA test mode, they were not copied from gNB VM
+    if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
+    then
+        scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+        scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+    fi
 
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-    echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-    echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
+    if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
+    then
+        echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+        echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
+    fi
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
@@ -1312,7 +1343,7 @@ function start_rf_sim_nr_ue {
         then
             echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         else #RA test => use --do-ra option
-            echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --do-ra --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1            
+            echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --rfsim --do-ra --log_config.global_log_options level,nocolor\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -1346,11 +1377,13 @@ function start_rf_sim_nr_ue {
     else
         echo "RF-SIM NR-UE is sync'ed w/ gNB"
     fi
-    # Checking oaitun_ue1 interface has now an IP address
-    i="0"
-    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
-    while [ $i -lt 10 ]
-    do
+    # Checking oaitun_ue1 interface has now an IP address (only outside RA test)
+    if [ $LOC_RA_TEST -eq  0 ]
+    then
+      i="0"
+      echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+      while [ $i -lt 10 ]
+      do
         sleep 5
         CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1`
         if [ $CONNECTED -eq 1 ]
@@ -1359,21 +1392,20 @@ function start_rf_sim_nr_ue {
         else
             i=$[$i+1]
         fi
-    done
-    echo "echo \"free -m\"" > $1
-    echo "free -m" >> $1
-    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
-    rm $1
-    if [ $i -lt 50 ]
-    then
+      done
+      echo "echo \"free -m\"" > $1
+      echo "free -m" >> $1
+      ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
+      rm $1
+      if [ $i -lt 50 ]
+      then
         NR_UE_SYNC=0
         echo "RF-SIM NR-UE oaitun_ue1 is DOWN or NOT CONFIGURED"
-    else
+      else
         echo "RF-SIM NR-UE oaitun_ue1 is UP and CONFIGURED"
-    fi
-    sleep 10
-
-
+      fi
+      sleep 10
+   fi
 }
 
 
@@ -2169,26 +2201,24 @@ function run_test_on_vm {
         local try_cnt="0"
         NR_STATUS=0
 
-        ######### start of loop
-        while [ $try_cnt -lt 4 ]
+        ######### start of RA TEST loop
+        while [ $try_cnt -lt 10 ] #10 because it hardly succeed within CI
         do
 
-            #start RA test
             SYNC_STATUS=0
-            PING_STATUS=0
-            IPERF_STATUS=0
+            RA_STATUS=0
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the gNB"
             echo "############################################################"
-            CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb.log
+            CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb_ra_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 1
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the NR-UE"
             echo "############################################################"
-            CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue.log
+            CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_ra_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
             if [ $NR_UE_SYNC -eq 0 ]
@@ -2203,7 +2233,6 @@ function run_test_on_vm {
                 continue
             fi
 
-
             echo "############################################################"
             echo "${CN_CONFIG} : Terminate gNB/NR-UE simulators"
             echo "############################################################"
@@ -2213,21 +2242,30 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
 
-
-
             #check RA markers in gNB and NR UE log files
             echo "############################################################"
             echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
             echo "############################################################"
 
-            mv $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/ra_check_$CURRENT_GNB_LOG_FILE
-            mv $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE  $ARCHIVES_LOC/ra_check_$CURRENT_NR_UE_LOG_FILE
-            check_ra_result $ARCHIVES_LOC/ra_check_$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/ra_check_$CURRENT_NR_UE_LOG_FILE
+            # Proper check to be done when RA test is working!
+            check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
+            if [ $RA_STATUS -ne 0 ]
+            then
+                echo "RA test NOT OK"
+                try_cnt=$[$try_cnt+1]
+            else
+                try_cnt=$[$try_cnt+10]
+            fi
+        done
+        ########### end RA test
+        
+        sleep 30
 
 
-            #end RA test
-
-
+        ######### start of PHY TEST loop
+        try_cnt="0"
+        while [ $try_cnt -lt 4 ]
+        do
 
 
             SYNC_STATUS=0
@@ -2332,6 +2370,7 @@ function run_test_on_vm {
         echo "Checking run status"
         echo "############################################################"
 
+        if [ $RA_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $PING_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then NR_STATUS=-1; fi

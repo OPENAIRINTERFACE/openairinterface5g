@@ -26,6 +26,8 @@
 	<htmlTabName>Test-05MHz-TM2</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>2</repeatCount>
+	<TestUnstable>True</TestUnstable>
+	<TestMinId>040608</TestMinId>
         <TestCaseRequestedList>
  030201
  040101

@@ -36,6 +36,36 @@
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
 
+
+// ===============================================
+// SSB to RO mapping public defines and structures
+// ===============================================
+#define MAX_SSB_PER_RO (16) // Maximum number of SSBs that can be mapped to a single RO
+#define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
+#define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
+
+// PRACH occasion details
+typedef struct prach_occasion_info {
+  uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
+  uint8_t fdm; // 0-7 (possible values of msg1-FDM: 1, 2, 4 or 8)
+  uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
+  uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
+  uint8_t mapped_ssb_idx[MAX_SSB_PER_RO]; // List of mapped SSBs
+  uint8_t nb_mapped_ssb;
+  uint16_t format; // RO preamble format
+} prach_occasion_info_t;
+
+// PRACH occasion slot details
+// A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
+typedef struct prach_occasion_slot {
+  prach_occasion_info_t prach_occasion[MAX_TDM][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot
+  uint8_t nb_of_prach_occasion_in_time;
+  uint8_t nb_of_prach_occasion_in_freq;
+} prach_occasion_slot_t;
+
+// ========================================
+
+
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
   NR_DL_DCI_FORMAT_1_1,
@@ -99,7 +129,24 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint16_t *format,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
-                                 uint8_t *N_dur);
+                                 uint8_t *N_dur,
+                                 uint16_t *RA_sfn_index,
+                                 uint8_t *N_RA_slot,
+																 uint8_t *config_period);
+
+int get_nr_prach_occasion_info_from_index(uint8_t index,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur,
+                                 uint8_t *N_RA_slot,
+                                 uint16_t *N_RA_sfn,
+                                 uint8_t *max_association_period);
+
+uint8_t get_nr_prach_duration(uint8_t prach_format);
 
 uint8_t get_pusch_mcs_table(long *mcs_Table,
                             int is_tp,
@@ -116,6 +163,10 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPreco
 
 int get_format0(uint8_t index, uint8_t unpaired);
 
+int64_t *get_prach_config_info(uint32_t pointa,
+                               uint8_t index,
+                               uint8_t unpaired);
+
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
 int get_num_dmrs(uint16_t dmrs_mask );
@@ -125,4 +176,5 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
+int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 #endif
