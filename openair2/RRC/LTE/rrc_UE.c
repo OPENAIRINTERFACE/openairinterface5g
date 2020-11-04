@@ -4382,12 +4382,15 @@ void *rrc_ue_task( void *args_p ) {
               RRC_MAC_BCCH_DATA_IND (msg_p).frame, RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
         //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
-        decode_BCCH_DLSCH_Message (&ctxt,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).enb_index,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+        if (UE_rrc_inst[ue_mod_id].RrcState != RRC_STATE_INACTIVE)
+        {
+          decode_BCCH_DLSCH_Message(&ctxt,
+                                    RRC_MAC_BCCH_DATA_IND(msg_p).enb_index,
+                                    RRC_MAC_BCCH_DATA_IND(msg_p).sdu,
+                                    RRC_MAC_BCCH_DATA_IND(msg_p).sdu_size,
+                                    RRC_MAC_BCCH_DATA_IND(msg_p).rsrq,
+                                    RRC_MAC_BCCH_DATA_IND(msg_p).rsrp);
+        }
         break;
 
       case RRC_MAC_BCCH_MBMS_DATA_IND:

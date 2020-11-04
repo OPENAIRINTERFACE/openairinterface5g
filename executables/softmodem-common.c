@@ -197,10 +197,10 @@ void set_softmodem_sighandler(void) {
   memset(&act,0,sizeof(act));
   act.sa_handler=signal_handler;
   sigaction(SOFTMODEM_RTSIGNAL,&act,&oldact);
-  printf("Send signal %d to display resource usage...\n",SIGRTMIN+1);
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT,  signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
+  // printf("Send signal %d to display resource usage...\n",SIGRTMIN+1);
+  // signal(SIGSEGV, signal_handler);
+  // signal(SIGINT,  signal_handler);
+  // signal(SIGTERM, signal_handler);
+  // signal(SIGABRT, signal_handler);
 }
 

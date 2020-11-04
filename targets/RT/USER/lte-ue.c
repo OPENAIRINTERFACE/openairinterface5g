@@ -2430,7 +2430,7 @@ void init_UE_single_thread_stub(int nb_inst)
     AssertFatal(PHY_vars_UE_g[i]!=NULL,"PHY_vars_UE_g[inst] is NULL\n");
     AssertFatal(PHY_vars_UE_g[i][0]!=NULL,"PHY_vars_UE_g[inst][0] is NULL\n");
 
-    if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+    if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE_STANDALONE_PNF) {
 #ifdef NAS_UE
       MessageDef *message_p;
       message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
