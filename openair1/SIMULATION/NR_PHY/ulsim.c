@@ -662,8 +662,7 @@ int main(int argc, char **argv)
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
   fapi_nr_tx_request_t tx_req;
-  fapi_nr_tx_request_body_t tx_req_body;
-
+  
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
   uint8_t ptrs_mcs3 = 10;
@@ -899,16 +898,15 @@ int main(int argc, char **argv)
       scheduled_response.dl_config = NULL;
       scheduled_response.ul_config = &ul_config;
       scheduled_response.tx_request = &tx_req;
-      scheduled_response.tx_request->tx_request_body = &tx_req_body;
-
+      
       // Config UL TX PDU
       tx_req.slot = slot;
       tx_req.sfn = frame;
       // tx_req->tx_config // TbD
       tx_req.number_of_pdus = 1;
-      tx_req_body.pdu_length = TBS/8;
-      tx_req_body.pdu_index = 0;
-      tx_req_body.pdu = &ulsch_input_buffer[0];
+      tx_req.tx_request_body[0].pdu_length = TBS/8;
+      tx_req.tx_request_body[0].pdu_index = 0;
+      tx_req.tx_request_body[0].pdu = &ulsch_input_buffer[0];
 
       ul_config.slot = slot;
       ul_config.number_pdus = 1;
