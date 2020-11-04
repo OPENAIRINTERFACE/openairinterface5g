@@ -40,6 +40,7 @@
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
@@ -2099,8 +2100,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   unsigned char i,aarx; //,nsymb,sss_symb,pss_symb=0,l;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
-  int8_t DMRSdist = 15; //temporarily save the distance to the DMRS symbol 
-  static uint8_t validDmrsEst = 0; //store last DMRS Symbol index
+  int8_t validDmrsEst = 0; //store last DMRS Symbol index
 
   unsigned char j=0;
 
@@ -2111,15 +2111,9 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
     k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
 
-    if(validDmrsEst == 0)
-    {
-      validDmrsEst = get_next_dmrs_symbol_in_slot(dlDmrsSymbPos, symbol, DMRSdist);
-    }
-    if(is_dmrs_symbol(symbol,dlDmrsSymbPos ) == 1)
-    {
-      validDmrsEst = symbol;
-    }
-    dl_ch0     = &dl_ch_estimates[aarx][(validDmrsEst*(frame_parms->ofdm_symbol_size))]; //use closest DMRS
+    validDmrsEst = get_valid_dmrs_idx_for_channel_est(dlDmrsSymbPos,symbol);
+
+    dl_ch0     = &dl_ch_estimates[aarx][(validDmrsEst*(frame_parms->ofdm_symbol_size))];
 
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
 

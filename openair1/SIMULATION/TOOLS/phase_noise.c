@@ -37,23 +37,34 @@ void phase_noise(double ts, int16_t * InRe, int16_t * InIm)
   int16_t IdxModulo = ((int32_t)(IdxDouble>0 ? IdxDouble+0.5 : IdxDouble-0.5)) % (ResolSinCos*4);
   IdxModulo = IdxModulo<0 ? IdxModulo+ResolSinCos*4 : IdxModulo;
 
-  if ( IdxModulo>=0 && IdxModulo<ResolSinCos ) {
-    SinValue = LUTSin[IdxModulo];
-    CosValue = LUTSin[ResolSinCos-IdxModulo];
+  if(IdxModulo<2*ResolSinCos)//< 2 check for 1st and 2nd
+  {
+    if(IdxModulo>=ResolSinCos)//>= 1 is 2nd Quadrant
+    {
+      SinValue = LUTSin[2*ResolSinCos-IdxModulo];
+      CosValue = -LUTSin[IdxModulo-ResolSinCos];
+    }
+    else// 1st Quadrant
+    {
+      SinValue = LUTSin[IdxModulo];
+      CosValue = LUTSin[ResolSinCos-IdxModulo];
+    }
   }
-  else if ( IdxModulo>=ResolSinCos && IdxModulo<2*ResolSinCos ) {
-    SinValue = LUTSin[2*ResolSinCos-IdxModulo];
-    CosValue = -LUTSin[IdxModulo-ResolSinCos];
+  else if((IdxModulo>2*ResolSinCos))//> 2 check for 3rd and 4th
+  {
+    if(IdxModulo>=3*ResolSinCos)//> 3 is 4th Quadrant
+    {
+      SinValue = -LUTSin[4*ResolSinCos-IdxModulo];
+      CosValue = LUTSin[IdxModulo-3*ResolSinCos];
+    }
+    else//3rd Quadrant
+    {
+      SinValue = -LUTSin[IdxModulo-2*ResolSinCos];
+      CosValue = -LUTSin[3*ResolSinCos-IdxModulo];
+    }
   }
-  else if ( IdxModulo>=2*ResolSinCos && IdxModulo<3*ResolSinCos ) {
-    SinValue = -LUTSin[IdxModulo-2*ResolSinCos];
-    CosValue = -LUTSin[3*ResolSinCos-IdxModulo];
-  }
-  else if ( IdxModulo>=3*ResolSinCos && IdxModulo<4*ResolSinCos ) {
-    SinValue = -LUTSin[4*ResolSinCos-IdxModulo];
-    CosValue = LUTSin[IdxModulo-3*ResolSinCos];
-  }
-  else {
+  else
+  {
     AssertFatal(0==1,"Error in look-up table of sine function!\n");
   }
   x = ( ((int32_t)InRe[0] * CosValue) - ((int32_t)InIm[0] * SinValue ));
@@ -68,3 +79,4 @@ void InitSinLUT( void ) {
     LUTSin[i] = sin((double)(M_PI*i)/(2*ResolSinCos)) * (1<<14); //Format: Q14
   }
 }
+

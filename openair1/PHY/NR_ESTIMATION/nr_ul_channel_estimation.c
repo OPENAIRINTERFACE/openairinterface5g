@@ -25,6 +25,7 @@
 #include "nr_ul_estimation.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"

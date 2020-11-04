@@ -81,8 +81,8 @@ uint8_t is_ptrs_subcarrier(uint16_t k,
 static inline uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols) { return ((ptrs_symbols >> l) & 1); }
 
 uint8_t get_ptrs_symbols_in_slot(uint16_t l_prime_mask, uint16_t start_symb, uint16_t nb_symb);
-uint8_t get_next_ptrs_symbol_in_slot(uint16_t  ptrsSymbPos, uint8_t counter, uint8_t nb_symb);
-uint8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, uint8_t counter,uint8_t nb_symb);
+int8_t get_next_ptrs_symbol_in_slot(uint16_t  ptrsSymbPos, uint8_t counter, uint8_t nb_symb);
+int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, uint8_t counter,uint8_t nb_symb);
 void get_slope_from_estimates(uint8_t leftSide, uint8_t rightSide, int16_t *est_p, int16_t *slope_p);
 int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
                             uint16_t ptrsSymbPos,

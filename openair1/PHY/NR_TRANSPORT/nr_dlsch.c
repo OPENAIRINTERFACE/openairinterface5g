@@ -37,11 +37,10 @@
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
-// forward declarations for mac function to avoid semantic issues
-extern int get_num_dmrs(uint16_t dmrs_mask );
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
