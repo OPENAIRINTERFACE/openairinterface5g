@@ -324,6 +324,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
   NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[0];
 
+  if (sduP != NULL) {
+    T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
+      T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
+      T_BUFFER(sduP, sdu_lenP));
+  }
+
   // random access pusch with TC-RNTI
   if (ra->state == WAIT_Msg3) {
     if (sduP != NULL) { // if the CRC passed
@@ -340,6 +346,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       LOG_I(MAC, "reset RA state information for RA-RNTI %04x\n", ra->rnti);
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti);
       UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
+      compute_csi_bitlen (ra->secondaryCellGroup, UE_info, UE_id);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
       struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
       AssertFatal(bwpList->list.count == 1,

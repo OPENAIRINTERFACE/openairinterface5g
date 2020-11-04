@@ -128,7 +128,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   uint16_t band;
   int32_t offset;
 
-  get_band((cfg->carrier_config.dl_frequency.value)*1000,
+  get_band((uint64_t)(cfg->carrier_config.dl_frequency.value)*1000,
            &band,
            &offset,
            &frame_type);
@@ -315,6 +315,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 }
 
 
+
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
@@ -367,6 +368,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
       const int UE_id = add_new_nr_ue(Mod_idP,rnti);
       UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      compute_csi_bitlen (secondaryCellGroup, UE_info, UE_id);
       struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
           secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
       AssertFatal(bwpList->list.count == 1,

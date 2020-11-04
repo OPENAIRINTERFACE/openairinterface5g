@@ -283,6 +283,11 @@ def GetParametersFromXML(action):
 			else:
 				ldpc.forced_workspace_cleanup=False
 
+	elif action == 'Initialize_MME':
+		string_field = test.findtext('option')
+		if (string_field is not None):
+			EPC.mmeConfFile = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -489,6 +494,9 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	CiTestObj.RetrieveSystemVersion('UE',HTML,RAN)
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
+	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+	logging.debug('\u001B[1m  Starting Scenario \u001B[0m')
+	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
@@ -524,7 +532,14 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
 		HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 		repeatCount = xmlRoot.findtext('repeatCount',default='1')
+		testStability = xmlRoot.findtext('TestUnstable',default='False')
 		CiTestObj.repeatCounts.append(int(repeatCount))
+		if testStability == 'True':
+			CiTestObj.testUnstable = True
+			HTML.testUnstable = True
+			CiTestObj.testMinStableId = xmlRoot.findtext('TestMinId',default='999999')
+			HTML.testMinStableId = CiTestObj.testMinStableId
+			logging.debug('Test is tagged as Unstable -- starting from TestID ' + str(CiTestObj.testMinStableId))
 	all_tests=xmlRoot.findall('testCase')
 
 	exclusion_tests=exclusion_tests.split()
@@ -605,7 +620,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if (CiTestObj.ADBIPAddress != 'none'):
 						#in these cases, having no devices is critical, GetAllUEDevices function has to manage it as a critical error, reason why terminate_ue_flag is set to True
 						terminate_ue_flag = True 
-						CiTestObj.GetAllUEDevices(terminate_ue_flag)
+						# Now we stop properly the test-suite --> clean reporting
+						status = CiTestObj.GetAllUEDevices(terminate_ue_flag)
+						if not status:
+							RAN.prematureExit = True
+							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
 				elif action == 'WaitEndBuild_eNB':
@@ -681,11 +700,19 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				else:
 					sys.exit('Invalid class (action) from xml')
+				if not RAN.prematureExit:
+					if CiTestObj.testCase_id == CiTestObj.testMinStableId:
+						logging.debug('Scenario has reached minimal stability point')
+						CiTestObj.testStabilityPointReached = True
+						HTML.testStabilityPointReached = True
 		CiTestObj.FailReportCnt += 1
 	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
 		logging.debug('Testsuite failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(False)
-		sys.exit('Failed Scenario')
+		if CiTestObj.testUnstable and (CiTestObj.testStabilityPointReached or CiTestObj.testMinStableId == '999999'):
+			logging.debug('Scenario has reached minimal stability point -- Not a Failure')
+		else:
+			sys.exit('Failed Scenario')
 	else:
 		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(True)

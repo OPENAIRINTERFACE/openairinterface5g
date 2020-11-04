@@ -55,10 +55,6 @@ Description Defines functions used to handle EPS bearer contexts.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef UESIM_EXPANSION
-  #include "openairinterface5g_limits.h"
-  extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -200,7 +196,7 @@ int esm_ebr_context_create(
           char          *tmp          = NULL;
           char           ipv4_addr[INET_ADDRSTRLEN];
           //char           ipv6_addr[INET6_ADDRSTRLEN];
-          char          *netmask      = NULL;
+          int            netmask      = 32;
           char           broadcast[INET_ADDRSTRLEN];
           struct in_addr in_addr;
           char           command_line[500];
@@ -227,7 +223,7 @@ int esm_ebr_context_create(
               strcpy(ipv4_addr, tmp);
 
               if (IN_CLASSA(ntohl(in_addr.s_addr))) {
-                netmask = "255.0.0.0";
+                netmask = 8;
                 in_addr.s_addr = pdn->ip_addr[0] << 24 |
                                  ((255  << 16) & 0x00FF0000) |
                                  ((255 <<  8)  & 0x0000FF00) |
@@ -239,7 +235,7 @@ int esm_ebr_context_create(
                 //                                        in_addr.s_addr);
                 strcpy(broadcast, tmp);
               } else if (IN_CLASSB(ntohl(in_addr.s_addr))) {
-                netmask = "255.255.0.0";
+                netmask = 16;
                 in_addr.s_addr =  pdn->ip_addr[0] << 24 |
                                   ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
                                   ((255 <<  8)  & 0x0000FF00) |
@@ -251,7 +247,7 @@ int esm_ebr_context_create(
                 //                                        in_addr.s_addr);
                 strcpy(broadcast, tmp);
               } else if (IN_CLASSC(ntohl(in_addr.s_addr))) {
-                netmask = "255.255.255.0";
+                netmask = 24;
                 in_addr.s_addr = pdn->ip_addr[0] << 24 |
                                  ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
                                  ((pdn->ip_addr[2] <<  8) & 0x0000FF00) |
@@ -263,56 +259,23 @@ int esm_ebr_context_create(
                 //                                        in_addr.s_addr);
                 strcpy(broadcast, tmp);
               } else {
-                netmask = "255.255.255.255";
+                netmask = 32;
                 strcpy(broadcast, ipv4_addr);
               }
 
-              if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
-                // this is for L2 FAPI simulator.
-                // change for multiple UE's like 256UEs.
-                // if it's made too many tables , OS may crush so we use one table.
-                if(PDCP_USE_NETLINK) {
-#ifdef UESIM_EXPANSION
-                  uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
-                  res = sprintf(command_line,
-                                "ifconfig %s%d %s netmask %s broadcast %s up && "
-                                "ip rule add from %s/24 table %d && "
-                                "ip rule add to %s/24 table %d && "
-                                "ip route add default dev %s%d table %d",
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                inst_nic + 1, ipv4_addr, netmask, broadcast,
-                                ipv4_addr, 201,
-                                ipv4_addr, 201,
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                inst_nic + 1, 201);
-                  inst_pdcp_list[inst_nic] = ueid;
-#else
-                  res = sprintf(command_line,
-                                "ifconfig %s%d %s netmask %s broadcast %s up && "
-                                "ip rule add from %s/32 table %d && "
-                                "ip rule add to %s/32 table %d && "
-                                "ip route add default dev %s%d table %d",
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                ueid + 1, ipv4_addr, netmask, broadcast,
-                                ipv4_addr, ueid + 201,
-                                ipv4_addr, ueid + 201,
-                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                                ueid + 1, ueid + 201);
-#endif
-                } // PDCP_USE_NETLINK
-              } else {
-                res = sprintf(command_line,
-                              "ifconfig %s%d %s netmask %s broadcast %s up && "
-                              "ip rule add from %s/32 table %d && "
-                              "ip rule add to %s/32 table %d && "
-                              "ip route add default dev %s%d table %d",
-                              UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                              ueid + 1, ipv4_addr, netmask, broadcast,
-                              ipv4_addr, ueid + 201,
-                              ipv4_addr, ueid + 201,
-                              UE_NAS_USE_TUN?"oaitun_ue":"oip",
-                              ueid + 1, ueid + 201);
-              }
+              res = sprintf(command_line,
+                            "ip address add %s/%d broadcast %s dev %s%d && "
+                            "ip link set %s%d up && "
+                            "ip rule add from %s/32 table %d && "
+                            "ip rule add to %s/32 table %d && "
+                            "ip route add default dev %s%d table %d",
+                            ipv4_addr, netmask, broadcast,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", ueid + 1,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip", ueid + 1,
+                            ipv4_addr, ueid + 10000,
+                            ipv4_addr, ueid + 10000,
+                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
+                            ueid + 1, ueid + 10000);
 
               if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
