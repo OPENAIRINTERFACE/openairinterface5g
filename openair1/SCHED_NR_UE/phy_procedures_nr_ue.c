@@ -1357,9 +1357,9 @@ void *UE_thread_slot1_dl_processing(void *arg) {
   CPU_ZERO(&cpuset);
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.slot1_proc_one != -1 )
     CPU_SET(threads.slot1_proc_one, &cpuset);
-  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.slot1_proc_two != -1 )
+  if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.slot1_proc_two != -1 )
     CPU_SET(threads.slot1_proc_two, &cpuset);
-  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.slot1_proc_three != -1 )
+  if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.slot1_proc_three != -1 )
     CPU_SET(threads.slot1_proc_three, &cpuset);
 
   init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset,
@@ -1654,8 +1654,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
@@ -1694,12 +1692,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
       
       }
-
-      //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){
-        nr_ue_rsrp_measurements(ue,nr_tti_rx,0);
-      //}
-
-
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
       if (ue->no_timing_correction==0) {
@@ -1846,6 +1838,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
 
+    // FIXME: It was assumed that SIB1 has only one segment
+    int harq_pid = PHY_vars_UE_g[0][0]->dlsch_SI[0]->current_harq_pid;
+    if(ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->harq_ack.ack == 1) {
+      nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
+                                       ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
+    } else {
+      LOG_D(PHY,"SIB1 CRC NOT OK");
+    }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
@@ -1962,33 +1963,6 @@ start_meas(&ue->generic_stat);
        AssertFatal (0,"");
   }
 #endif
-
-  // do procedures for SI-RNTI
-  if ((ue->dlsch_SI[gNB_id]) && (ue->dlsch_SI[gNB_id]->active == 1)) {
-
-    nr_ue_dlsch_procedures(ue,
-                           proc,
-                           gNB_id,
-                           SI_PDSCH,
-                           ue->dlsch_SI[gNB_id],
-                           NULL,
-                           &ue->dlsch_SI_errors[gNB_id],
-                           mode);
-
-    ue->dlsch_SI[gNB_id]->active = 0;
-
-    // FIXME: It was assumed that SIB1 has only one segment
-    int harq_pid = PHY_vars_UE_g[0][0]->dlsch_SI[0]->current_harq_pid;
-
-    if(ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->harq_ack.ack == 1) {
-      nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
-                                       ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
-    } else {
-      LOG_D(PHY,"SIB1 CRC NOT OK");
-    }
-
-
-  }
 
   // do procedures for P-RNTI
   if ((ue->dlsch_p[gNB_id]) && (ue->dlsch_p[gNB_id]->active == 1)) {

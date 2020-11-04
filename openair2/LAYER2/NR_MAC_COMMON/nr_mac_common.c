@@ -117,7 +117,6 @@ const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f
 
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
 
-const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
 const char *prachfmt03[]={"0","1","2","3"};
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 

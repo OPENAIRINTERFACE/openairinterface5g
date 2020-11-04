@@ -205,7 +205,8 @@ void schedule_control_sib1(module_id_t module_id,
                                                           gNB_mac->sched_ctrlCommon->coreset,
                                                           gNB_mac->sched_ctrlCommon->aggregation_level,
                                                           0,
-                                                              0);
+                                                          0,
+                                                          nr_of_candidates);
 
   const uint16_t bwpSize = NRRIV2BW(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
   int rbStart = NRRIV2PRBOFFSET(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);

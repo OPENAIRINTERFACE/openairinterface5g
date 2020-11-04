@@ -39,6 +39,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
+#include <PHY/defs_nr_common.h>
 
 #include "asn1_msg.h"
 #include "RRC/NR/nr_rrc_extern.h"
@@ -267,10 +268,6 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
 	               gNB_RrcConfigurationReq *configuration
                   ) {
   asn_enc_rval_t enc_rval;
-  NR_BCCH_DL_SCH_Message_t *sib1_message ;
-  struct NR_SIB1 *sib1 ;
-  int i;
-  struct NR_PLMN_IdentityInfo nr_plmn_info;
 
   // TODO : Add support for more than one PLMN
   //int num_plmn = configuration->num_plmn;
@@ -278,31 +275,29 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   struct NR_PLMN_Identity nr_plmn[num_plmn];
   NR_MCC_MNC_Digit_t nr_mcc_digit[num_plmn][3];
   NR_MCC_MNC_Digit_t nr_mnc_digit[num_plmn][3];
+  memset(nr_plmn,0,sizeof(nr_plmn));
+  memset(nr_mcc_digit,0,sizeof(nr_mcc_digit));
+  memset(nr_mnc_digit,0,sizeof(nr_mnc_digit));
+
   //  struct NR_UAC_BarringInfoSet nr_uac_BarringInfoSet;
-  sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
-  memset(sib1_message,0,sizeof(NR_BCCH_DL_SCH_Message_t));
+  NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   carrier->siblock1 = sib1_message;
   sib1_message->message.present = NR_BCCH_DL_SCH_MessageType_PR_c1;
   sib1_message->message.choice.c1 = CALLOC(1,sizeof(struct NR_BCCH_DL_SCH_MessageType__c1));
-  memset(sib1_message->message.choice.c1,0,sizeof(struct NR_BCCH_DL_SCH_MessageType__c1));
   sib1_message->message.choice.c1->present = NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1;
   sib1_message->message.choice.c1->choice.systemInformationBlockType1 = CALLOC(1,sizeof(struct NR_SIB1));
-  sib1 = sib1_message->message.choice.c1->choice.systemInformationBlockType1;
-  memset(sib1,0,sizeof(struct NR_SIB1));
-  sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
-  memset(sib1->cellSelectionInfo,0,sizeof(struct NR_SIB1__cellSelectionInfo));
-  sib1->cellSelectionInfo->q_RxLevMin = -50;
-  memset(&nr_plmn_info.plmn_IdentityList,0,sizeof(struct NR_PLMN_IdentityInfo__plmn_IdentityList));
-  asn_set_empty(&nr_plmn_info.plmn_IdentityList.list);
-  memset(&nr_plmn_info,0,sizeof(struct NR_PLMN_IdentityInfo));
-  memset(nr_plmn,0,num_plmn*sizeof(struct NR_PLMN_Identity));
 
-  for (i = 0; i < num_plmn; ++i) {
+  struct NR_SIB1 *sib1 = sib1_message->message.choice.c1->choice.systemInformationBlockType1;
+  sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
+  sib1->cellSelectionInfo->q_RxLevMin = -50;
+
+  struct NR_PLMN_IdentityInfo *nr_plmn_info=CALLOC(1,sizeof(struct NR_PLMN_IdentityInfo));
+  asn_set_empty(&nr_plmn_info->plmn_IdentityList.list);
+  for (int i = 0; i < num_plmn; ++i) {
     nr_mcc_digit[i][0] = (configuration->mcc[i]/100)%10;
     nr_mcc_digit[i][1] = (configuration->mcc[i]/10)%10;
     nr_mcc_digit[i][2] = (configuration->mcc[i])%10;
     nr_plmn[i].mcc = CALLOC(1,sizeof(struct NR_MCC));
-    memset(nr_plmn[i].mcc,0,sizeof(struct NR_MCC));
     asn_set_empty(&nr_plmn[i].mcc->list);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][0]);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][1]);
@@ -310,26 +305,23 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     nr_mnc_digit[i][0] = (configuration->mnc[i]/100)%10;
     nr_mnc_digit[i][1] = (configuration->mnc[i]/10)%10;
     nr_mnc_digit[i][2] = (configuration->mnc[i])%10;
-    memset(&nr_plmn[i].mnc,0,sizeof(NR_MNC_t));
     nr_plmn[i].mnc.list.size=0;
     nr_plmn[i].mnc.list.count=0;
     ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][0]);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][1]);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][2]);
-    ASN_SEQUENCE_ADD(&nr_plmn_info.plmn_IdentityList.list, &nr_plmn[i]);
+    ASN_SEQUENCE_ADD(&nr_plmn_info->plmn_IdentityList.list, &nr_plmn[i]);
   }//end plmn loop
 
-  nr_plmn_info.cellIdentity.buf = MALLOC(8);
-  memset(nr_plmn_info.cellIdentity.buf,0,8);
-  nr_plmn_info.cellIdentity.buf[0]= (configuration->cell_identity >> 20) & 0xff;
-  nr_plmn_info.cellIdentity.buf[1]= (configuration->cell_identity >> 12) & 0xff;
-  nr_plmn_info.cellIdentity.buf[2]= (configuration->cell_identity >> 4) & 0xff;
-  nr_plmn_info.cellIdentity.buf[3]= (configuration->cell_identity << 4) & 0xff;
-  nr_plmn_info.cellIdentity.size= 4;
-  nr_plmn_info.cellIdentity.bits_unused= 4;
-  nr_plmn_info.cellReservedForOperatorUse = 0;
-  memset(&sib1->cellAccessRelatedInfo,0,sizeof(NR_CellAccessRelatedInfo_t));
-  ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list, &nr_plmn_info);
+  nr_plmn_info->cellIdentity.buf = CALLOC(1,8);
+  nr_plmn_info->cellIdentity.buf[0]= (configuration->cell_identity >> 20) & 0xff;
+  nr_plmn_info->cellIdentity.buf[1]= (configuration->cell_identity >> 12) & 0xff;
+  nr_plmn_info->cellIdentity.buf[2]= (configuration->cell_identity >> 4) & 0xff;
+  nr_plmn_info->cellIdentity.buf[3]= (configuration->cell_identity << 4) & 0xff;
+  nr_plmn_info->cellIdentity.size= 4;
+  nr_plmn_info->cellIdentity.bits_unused= 4;
+  nr_plmn_info->cellReservedForOperatorUse = 0;
+  ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list, nr_plmn_info);
 #if 0
   sib1->uac_BarringInfo = CALLOC(1, sizeof(struct NR_SIB1__uac_BarringInfo));
   memset(sib1->uac_BarringInfo, 0, sizeof(struct NR_SIB1__uac_BarringInfo));
@@ -345,11 +337,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1_message->message.choice.c1->choice.systemInformationBlockType1);
 
   //encode SIB1 to data
+  if(carrier->SIB1 == NULL) carrier->SIB1=(uint8_t *) malloc16(MAX_NR_SIB_LENGTH/8);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
                                    NULL,
                                    (void *)sib1_message,
                                    carrier->SIB1,
-                                   100);
+                                   MAX_NR_SIB_LENGTH/8);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
