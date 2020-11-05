@@ -214,7 +214,9 @@ int main(int argc, char **argv)
 
   //logInit();
   randominit(0);
-
+/* initialize the sin table */
+  InitSinLUT();
+  
   while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
