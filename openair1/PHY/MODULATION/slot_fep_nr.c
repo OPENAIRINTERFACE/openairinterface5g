@@ -490,6 +490,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   // clear DC carrier from OFDM symbols
   rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
 
+
   int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
   ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
@@ -499,5 +500,6 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 		    (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
 		    frame_parms->ofdm_symbol_size,
 		    15);
+
   return(0);
 }

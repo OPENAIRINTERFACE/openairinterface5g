@@ -150,9 +150,9 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
-
-    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
     
+    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
+
     if( LOG_DEBUGFLAG(DEBUG_PDCP) )
       log_dump(PDCP, pdcpData, min(sizeToWrite,30) , LOG_DUMP_CHAR,
 	       "Printing first bytes of PDCP SDU before removing it from the list: \n");
@@ -196,6 +196,7 @@ int pdcp_fifo_flush_mbms_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     //}  //  PDCP_USE_NETLINK
 
     //AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
+
     //AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
     delNotifiedFIFO_elt (sdu_p);
     pdcp_nb_sdu_sent ++;

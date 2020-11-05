@@ -214,12 +214,8 @@ void nr_process_mac_pdu(
 		int UE_id = find_nr_UE_id(module_idP, rnti);
 		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+		    log_dump(MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
-                    for (i = 0; i < 32; i++)
-                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
-
-                    LOG_T(MAC, "\n");
                 #endif
                 if(IS_SOFTMODEM_NOS1){
                   mac_rlc_data_ind(module_idP,
@@ -355,6 +351,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
     for (int i = 0; i < sdu_lenP ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
@@ -362,6 +359,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 	  printf("%02x ",(unsigned char)sduP[i]);
     }
     printf("\n");
+
 #endif
 
     if (sduP != NULL){
@@ -420,4 +418,5 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       return;
     }
   }
+
 }

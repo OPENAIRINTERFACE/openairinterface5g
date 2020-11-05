@@ -444,7 +444,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
 
+
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
+
 
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
@@ -466,23 +468,29 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
+
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
+
   // The decision about whether to schedule is done for each UE independently
   // inside
   if (UE_info->active[UE_id] && slot < 10) {
+
     int tda = 1; // time domain assignment hardcoded for now
     schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda, ulsch_in_slot_bitmap);
     nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
   }
 
+
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
       && slot < 10) {
+
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
   }
+
 
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);

@@ -438,9 +438,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       break;
     }
   }
+
   if (!pr_found) {
     LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
           module_idP, preamble_index);
+
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
   }
   // This should be handled differently when we use the initialBWP for RA

@@ -68,6 +68,9 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_TAG.h"
 
+#include <openair3/UICC/usim_interface.h>
+
+
 /* Defs */
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
@@ -386,7 +389,11 @@ typedef struct {
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
+  boolean_t fiveG_connected;
+  uicc_t *uicc;
+} NRUEcontext_t;
 
+typedef struct {
   int lc_bytes_tx[64];
   int lc_bytes_rx[64];
   int dlsch_rounds[8];
@@ -399,12 +406,14 @@ typedef struct {
 } NR_mac_stats_t;
 
 
+
 /*! \brief UNR_E_list_t is a "list" of users within UE_info_t. Especial useful in
  * the scheduler and to keep "classes" of users. */
 typedef struct {
   int head;
   int next[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
+
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
@@ -416,6 +425,7 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_UE_list_t list;
   int num_UEs;
+
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];

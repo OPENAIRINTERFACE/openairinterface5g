@@ -684,14 +684,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     
     pdsch_vars[eNB_id]->llr_offset[symbol] = len*dlsch0_harq->Qm + llr_offset_symbol;
  
-  /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
+  LOG_D(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d energy %d\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
-             (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol_cw0);*/
-             
+	     signal_energy(pdsch_vars[eNB_id]->rxdataF_comp0[0], 7*2*frame_parms->N_RB_DL*12));
+
+
              /*printf("compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,

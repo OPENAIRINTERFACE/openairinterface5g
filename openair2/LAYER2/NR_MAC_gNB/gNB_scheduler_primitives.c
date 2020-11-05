@@ -1830,6 +1830,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 
     /* UE found, remove it */
     UE_id = i;
+
     UE_info->num_UEs--;
     UE_info->active[UE_id] = FALSE;
     UE_info->rnti[UE_id] = 0;
