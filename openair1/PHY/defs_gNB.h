@@ -465,7 +465,7 @@ typedef struct {
   /// bit mask of PT-RS ofdm symbol indicies
   uint16_t ptrs_symbols;
   // PTRS subcarriers per OFDM symbol
-  uint16_t ptrs_sc_per_ofdm_symbol;
+  int32_t ptrs_re_per_slot;
   /// \brief Estimated phase error based upon PTRS on each symbol .
   /// - first index: ? [0..7] Number of Antenna
   /// - second index: ? [0...14] smybol per slot

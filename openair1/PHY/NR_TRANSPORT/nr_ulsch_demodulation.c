@@ -1234,16 +1234,16 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     {
       start_meas(&gNB->ulsch_ptrs_processing_stats);
       nr_pusch_ptrs_processing(gNB,
+                               frame_parms,
                                rel15_ul,
                                ulsch_id,
                                nr_tti_rx,
-                               dmrs_symbol_flag,
                                symbol,
                                nb_re_pusch);
       stop_meas(&gNB->ulsch_ptrs_processing_stats);
 
       /*  Subtract total PTRS RE's in the symbol from PUSCH RE's */
-      gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] -= gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol;
+      gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] -= gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
     }
 
     /*---------------------------------------------------------------------------------------------------- */
