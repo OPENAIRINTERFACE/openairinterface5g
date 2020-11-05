@@ -882,11 +882,11 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   }
 
   /* Initial context request = UE-related procedure -> stream != 0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
-               assoc_id, stream);
-    return -1;
-  }
+  //if (stream == 0) {
+  //  NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+  //             assoc_id, stream);
+  //  return -1;
+  //}
 
   ue_desc_p->rx_stream = stream;
   ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
