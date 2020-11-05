@@ -453,7 +453,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
-
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH

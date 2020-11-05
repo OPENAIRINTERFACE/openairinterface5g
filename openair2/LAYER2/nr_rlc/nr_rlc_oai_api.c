@@ -179,6 +179,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
   } else {
+    LOG_W(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rntiP %x\n", __FUNCTION__, channel_idP, rntiP);
     ret.bytes_in_buffer = 0;
   }
 
@@ -586,8 +587,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
   if (ue->srb[srb_id-1] != NULL) {
-    LOG_D(RLC, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
-          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_W(RLC, "%s:%d:%s: SRB %d already exists for UE with RNTI %x, do nothing\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
     /* hack: hardcode values for NR */
     t_poll_retransmit = 45;
@@ -678,8 +678,7 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
   if (ue->drb[drb_id-1] != NULL) {
-    LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_W(RLC, "%s:%d:%s: DRB %d already exists for UE with RNTI %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
     nr_rlc_am = new_nr_rlc_entity_am(100000,
                                      100000,
@@ -692,8 +691,7 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
                                      sn_field_length);
     nr_rlc_ue_add_drb_rlc_entity(ue, drb_id, nr_rlc_am);
 
-    LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added drb %d to UE with RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
@@ -752,8 +750,7 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
   if (ue->drb[drb_id-1] != NULL) {
-    LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_W(RLC, "DEBUG add_drb_um %s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
     nr_rlc_um = new_nr_rlc_entity_um(1000000,
                                      1000000,
@@ -762,8 +759,7 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
                                      sn_field_length);
     nr_rlc_ue_add_drb_rlc_entity(ue, drb_id, nr_rlc_um);
 
-    LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added drb %d to UE with RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
@@ -782,6 +778,7 @@ static void add_drb(int rnti, struct NR_DRB_ToAddMod *s, struct NR_RLC_BearerCon
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
+  LOG_I(RLC, "%s:%s:%d: added DRB to UE with RNTI %x\n", __FILE__, __FUNCTION__, __LINE__, rnti);
 }
 
 /* Dummy function due to dependency from LTE libraries */
@@ -869,7 +866,7 @@ rlc_op_status_t rrc_rlc_config_req   (
     exit(1);
   }
   nr_rlc_manager_lock(nr_rlc_ue_manager);
-  LOG_D(RLC, "%s:%d:%s: remove rb %ld (is_srb %d) for UE %d\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP, ctxt_pP->rnti);
+  LOG_D(RLC, "%s:%d:%s: remove rb %ld (is_srb %d) for UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP, ctxt_pP->rnti);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, ctxt_pP->rnti);
   if (srb_flagP) {
     if (ue->srb[rb_idP-1] != NULL) {

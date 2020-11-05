@@ -596,7 +596,7 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
 
   int drb_id = s->drb_Identity;
 
-printf("\n\n################# rnti %d add drb %d\n\n\n", rnti, drb_id);
+  LOG_I(PDCP, "%s: adding drb %d for rnti %x\n", __FUNCTION__, drb_id, rnti);
 
   if (drb_id != 1) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad drb id %d\n",
@@ -613,8 +613,7 @@ printf("\n\n################# rnti %d add drb %d\n\n\n", rnti, drb_id);
     pdcp_drb = new_nr_pdcp_entity_drb_am(drb_id, deliver_sdu_drb, ue, deliver_pdu_drb, ue);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
-    LOG_D(PDCP, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -635,6 +634,7 @@ static void add_drb(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_Config_t *rlc_Co
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
+  LOG_I(PDCP, "%s:%s:%d: added DRB for UE RNTI %x\n", __FILE__, __FUNCTION__, __LINE__, rnti);
 }
 
 boolean_t nr_rrc_pdcp_config_asn1_req(
@@ -681,7 +681,6 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
 
   if (drb2add_list != NULL) {
     for (i = 0; i < drb2add_list->list.count; i++) {
-      LOG_I(PDCP, "Before calling add_drb \n");
       add_drb(rnti, drb2add_list->list.array[i], rlc_bearer2add_list->list.array[i]->rlc_Config);
     }
   }
@@ -850,6 +849,9 @@ void nr_DRB_preconfiguration(void)
       rbconfig->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
       Rlc_Bearer_ToAdd_list);
+
+  LOG_D(PDCP, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
+
 }
 
 uint64_t get_pdcp_optmask(void)

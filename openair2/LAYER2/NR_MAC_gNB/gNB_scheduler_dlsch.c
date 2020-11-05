@@ -394,7 +394,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   /* Retrieve amount of data to send for this UE */
   sched_ctrl->num_total_bytes = 0;
   const int lcid = DL_SCH_LCID_DTCH;
-  const uint16_t rnti = UE_info->rnti[UE_id];
+  const rnti_t rnti = UE_info->rnti[UE_id];
   sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                     rnti,
                                                     module_id,
@@ -409,8 +409,9 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   if (sched_ctrl->num_total_bytes == 0
       && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
     return;
-  LOG_D(MAC,
-        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+
+  LOG_D(MAC, "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+        __FUNCTION__,
         frame,
         slot,
         lcid,
@@ -551,8 +552,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
      * Possible improvement: take the periodicity from input file.
      * If such UE is not scheduled now, it will be by the preprocessor later.
      * If we add the CE, ta_apply will be reset */
-    if (frame == (sched_ctrl->ta_frame + 10) % 1024)
+    if (frame == (sched_ctrl->ta_frame + 10) % 1024){
       sched_ctrl->ta_apply = true; /* the timer is reset once TA CE is scheduled */
+      LOG_D(MAC, "[UE %d][%d.%d] UL timing alignment procedures: setting flag for Timing Advance command\n", UE_id, frame, slot);
+    }
 
     if (sched_ctrl->rbSize <= 0)
       continue;
@@ -642,6 +645,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       LOG_W(MAC, "%d.%2d retransmission UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
     } else { /* initial transmission */
 
+      LOG_D(MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
       /* reserve space for timing advance of UE if necessary,
        * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
       const int ta_len = (sched_ctrl->ta_apply) ? 2 : 0;
@@ -695,7 +699,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header_length_total += header_length_last;
         num_sdus++;
       }
-      else if (get_softmodem_params()->phy_test) {
+      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
         LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
         // fill dlsch_buffer with random data
         for (int i = 0; i < TBS; i++)

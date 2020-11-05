@@ -1507,8 +1507,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     }
   } else if (ul_info) {
 
-    // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
-    if (get_softmodem_params()->phy_test) {
+    module_id_t mod_id    = ul_info->module_id;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+
+    if (mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
@@ -1517,14 +1519,12 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint32_t TBS;
       int i, N_PRB_oh;
 
-      module_id_t mod_id    = ul_info->module_id;
       uint32_t gNB_index    = ul_info->gNB_index;
       int cc_id             = ul_info->cc_id;
       frame_t rx_frame      = ul_info->frame_rx;
       slot_t rx_slot        = ul_info->slot_rx;
       frame_t frame_tx      = ul_info->frame_tx;
       slot_t slot_tx        = ul_info->slot_tx;
-      NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
       uint8_t access_mode   = SCHEDULED_ACCESS;
 
       fapi_nr_ul_config_request_t *ul_config_req = get_ul_config_request(mac, slot_tx);
