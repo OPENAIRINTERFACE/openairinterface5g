@@ -713,7 +713,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   // dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
   // dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
-  ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;//sfn
   ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
   ue->dmrs_DownlinkConfig.pdsch_maxLength = pdsch_len1;
   //-------------------------------------------------//
