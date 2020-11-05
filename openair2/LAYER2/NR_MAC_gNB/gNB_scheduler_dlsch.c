@@ -348,6 +348,20 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
+  /* Calculate num of RBG and RBG size from UE_id=0 */
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
+  uint8_t rballoc_mask[bwpSize];
+  int n_rb_sched = 0;
+  for (int i = 0; i < bwpSize; i++) {
+    // calculate mask: init with "NOT" vrb_map:
+    // if any RB in vrb_map is blocked (1), the current RBG will be 0
+    rballoc_mask[i] = !vrb_map[i];
+    n_rb_sched += rballoc_mask[i];
+  }
+
   /* Retrieve amount of data to send for this UE */
   sched_ctrl->num_total_bytes = 0;
   const int lcid = DL_SCH_LCID_DTCH;
@@ -417,11 +431,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
     return;
   }
 
-  uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
   sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   if (sched_ctrl->dl_harq_pid >= 0) { /* retransmission */
     NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[sched_ctrl->dl_harq_pid];
@@ -431,7 +442,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
     while (rbSize < retInfo->rbSize) {
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
-      while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
+      while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart >= bwpSize) {
         LOG_D(MAC,
               "%4d.%2d cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
@@ -445,7 +456,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
         break;
       }
       while (rbStart + rbSize < bwpSize
-             && !vrb_map[rbStart + rbSize]
+             && rballoc_mask[rbStart + rbSize]
              && rbSize < retInfo->rbSize)
         rbSize++;
     }
@@ -472,7 +483,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
     sched_ctrl->numDmrsCdmGrpsNoData = 1;
 
     // Freq-demain allocation
-    while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
+    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
 
     uint8_t N_PRB_DMRS =
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
@@ -497,14 +508,16 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                            0 /* tb_scaling */,
                            1 /* nrOfLayers */)
             >> 3;
-    } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
+    } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
     sched_ctrl->rbSize = rbSize;
     sched_ctrl->rbStart = rbStart;
   }
 
   /* mark the corresponding RBs as used */
-  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
+  for (int rb = 0; rb < sched_ctrl->rbSize; rb++) {
     vrb_map[rb + sched_ctrl->rbStart] = 1;
+    rballoc_mask[rb + sched_ctrl->rbStart] = 0;
+  }
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
