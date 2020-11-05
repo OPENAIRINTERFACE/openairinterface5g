@@ -506,10 +506,10 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq) {
 
   const int nsymb = fp->symbols_per_slot * fp->slots_per_frame/10;
   const double Tc=(1/480e3/4096);
-  const double Nu=2048*64*.5;
+  const double Nu=2048*64*(1/(float)(1<<fp->numerology_index));
   const double f0= (double)CarrierFreq;
-  const double Ncp0=16*64 + (144*64*.5);
-  const double Ncp1=(144*64*.5);
+  const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
+  const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
   double tl=0,poff,exp_re,exp_im;
   double Ncp,Ncpm1=Ncp0;
 
