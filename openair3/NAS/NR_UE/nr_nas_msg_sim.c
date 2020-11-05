@@ -24,6 +24,9 @@ uint8_t k[16] = {0x51, 0x22, 0x25, 0x02, 0x14,0xc3, 0x3e, 0x72, 0x3a, 0x5d, 0xd5
 // OPC: 981d464c7c52eb6e5036234984ad0bcf
 const uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c,0x7c,0x52,0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};
 
+uint8_t  *registration_request_buf;
+uint32_t  registration_request_len;
+
 static int nas_protected_security_header_encode(
   char                                       *buffer,
   const fgs_nas_message_security_header_t    *header,
@@ -291,9 +294,10 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
 
   // encode the message
   initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+  registration_request_buf = initialNasMsg->data;
 
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
-
+  registration_request_len = initialNasMsg->length;
 
 }
 
@@ -464,6 +468,10 @@ void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
   mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitp  = 1;
   mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.oddeven = 0;
   size += 5;
+
+  mm_msg->fgs_security_mode_complete.fgsnasmessagecontainer.nasmessagecontainercontents.value  = registration_request_buf;
+  mm_msg->fgs_security_mode_complete.fgsnasmessagecontainer.nasmessagecontainercontents.length = registration_request_len;
+  size += (registration_request_len + 2);
 
   // encode the message
   initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));

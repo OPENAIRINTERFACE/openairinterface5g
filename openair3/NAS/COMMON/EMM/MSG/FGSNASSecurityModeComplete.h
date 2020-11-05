@@ -16,6 +16,7 @@
 #include "SpareHalfOctet.h"
 #include "FGSMobileIdentity.h"
 #include "MessageType.h"
+#include "FGCNasMessageContainer.h"
 
 #ifndef FGS_NAS_SECURITY_MODE_COMPLETE_H_
 #define FGS_NAS_SECURITY_MODE_COMPLETE_H_
@@ -28,13 +29,13 @@
  */
 
 typedef struct fgs_security_mode_complete_msg_tag {
-  /* Mandatory fields */
-  ExtendedProtocolDiscriminator           protocoldiscriminator;
-  SecurityHeaderType                      securityheadertype:4;
-  SpareHalfOctet                          sparehalfoctet:4;
-  MessageType                             messagetype;
-  FGSMobileIdentity                       fgsmobileidentity;
-
+    /* Mandatory fields */
+    ExtendedProtocolDiscriminator           protocoldiscriminator;
+    SecurityHeaderType                      securityheadertype:4;
+    SpareHalfOctet                          sparehalfoctet:4;
+    MessageType                             messagetype;
+    FGSMobileIdentity                       fgsmobileidentity;
+    FGCNasMessageContainer                  fgsnasmessagecontainer;
 } fgs_security_mode_complete_msg;
 
 int encode_fgs_security_mode_complete(fgs_security_mode_complete_msg *fgs_security_mode_comp, uint8_t *buffer, uint32_t len);

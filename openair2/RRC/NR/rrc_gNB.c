@@ -974,6 +974,7 @@ rrc_gNB_decode_dcch(
                 break;
 
             case NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete:
+		LOG_I(NR_RRC, "Receive RRC Reconfiguration Complete message UE %x\n", ctxt_pP->rnti);
                 if(!ue_context_p) {
                     LOG_I(NR_RRC, "Processing NR_RRCReconfigurationComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
                     break;

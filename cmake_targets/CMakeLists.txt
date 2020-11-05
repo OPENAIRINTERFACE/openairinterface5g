@@ -2468,6 +2468,7 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/IES/FGSRegistrationResult.c
     ${NAS_SRC}COMMON/IES/FGMMCapability.c
     ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
+    ${NAS_SRC}COMMON/IES/FGCNasMessageContainer.c
   )
 
   add_library(LIB_NAS_SIMUE
