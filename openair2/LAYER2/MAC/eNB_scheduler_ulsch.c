@@ -1391,6 +1391,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   UE_info_t *UE_info = &mac->UE_info;
+  //uint8_t aggregation = 2;
 
   int sched_frame = frameP;
 
@@ -1669,8 +1670,12 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       UE_template_ptr->cshift[harq_pid] = cshift;
       /* Setting DCI0 NFAPI struct */
       hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[dci_ul_pdu_idx];
+      //memset((void *) hi_dci0_pdu, 0,sizeof(nfapi_hi_dci0_request_pdu_t));
+      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
       hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_dci_pdu);
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format = NFAPI_UL_DCI_FORMAT_0;
+      //hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = UE_template_ptr->pre_first_nb_rb_ul;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block =
