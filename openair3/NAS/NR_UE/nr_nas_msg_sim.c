@@ -17,6 +17,12 @@
 #include "nr_nas_msg_sim.h"
 #include "aka_functions.h"
 #include "secu_defs.h"
+char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
+char imsi[] = "2089300007487";
+// USIM_API_K: 5122250214c33e723a5dd523fc145fc0
+uint8_t k[16] = {0x51, 0x22, 0x25, 0x02, 0x14,0xc3, 0x3e, 0x72, 0x3a, 0x5d, 0xd5, 0x23, 0xfc, 0x14, 0x5f, 0xc0};
+// OPC: 981d464c7c52eb6e5036234984ad0bcf
+const uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c,0x7c,0x52,0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};
 
 static int nas_protected_security_header_encode(
   char                                       *buffer,
@@ -119,7 +125,6 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
 }
 
 void transferRES(uint8_t ck[16], uint8_t ik[16], uint8_t *input, uint8_t rand[16], uint8_t *output) {
-  char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
   uint8_t S[100];
   S[0] = 0x6B;
   int netNamesize = strlen(netName);
@@ -160,6 +165,63 @@ void transferRES(uint8_t ck[16], uint8_t ik[16], uint8_t *input, uint8_t rand[16
     output[i] = out[16 + i];
 }
 
+void derive_kausf(uint8_t ck[16], uint8_t ik[16], uint8_t sqn[6], uint8_t kausf[32]) {
+  uint8_t S[100];
+  uint8_t key[32];
+  int netNamesize = strlen(netName);
+  memcpy(&key[0], ck, 16);
+  memcpy(&key[16], ik, 16);  //KEY
+  S[0] = 0x6A;
+  memcpy(&S[1], netName, netNamesize);
+  S[1 + netNamesize] = (uint8_t)((netNamesize & 0xff00) >> 8);
+  S[2 + netNamesize] = (uint8_t)(netNamesize & 0x00ff);
+  for (int i = 0; i < 6; i++) {
+   S[3 + netNamesize + i] = sqn[i];
+  }
+  S[9 + netNamesize] = 0x00;
+  S[10 + netNamesize] = 0x06;
+  kdf(key, 32, S, 11 + netNamesize, kausf, 32);
+}
+
+void derive_kseaf(uint8_t kausf[32], uint8_t kseaf[32]) {
+  uint8_t S[100];
+  int netNamesize = strlen(netName);
+  S[0] = 0x6C;  //FC
+  memcpy(&S[1], netName, netNamesize);
+  S[1 + netNamesize] = (uint8_t)((netNamesize & 0xff00) >> 8);
+  S[2 + netNamesize] = (uint8_t)(netNamesize & 0x00ff);
+  kdf(kausf, 32, S, 3 + netNamesize, kseaf, 32);
+}
+
+void derive_kamf(uint8_t *kseaf, uint8_t *kamf, uint16_t abba) {
+  int imsiLen = strlen(imsi);
+  uint8_t S[100];
+  S[0] = 0x6D;  //FC = 0x6D
+  memcpy(&S[1], imsi, imsiLen);
+  S[1 + imsiLen] = (uint8_t)((imsiLen & 0xff00) >> 8);
+  S[2 + imsiLen] = (uint8_t)(imsiLen & 0x00ff);
+  S[3 + imsiLen] = abba & 0x00ff;
+  S[4 + imsiLen] = (abba & 0xff00) >> 8;
+  S[5 + imsiLen] = 0x00;
+  S[6 + imsiLen] = 0x02;
+  kdf(kseaf, 32, S, 7 + imsiLen, kamf, 32);
+}
+
+//------------------------------------------------------------------------------
+void derive_knas(algorithm_type_dist_t nas_alg_type, uint8_t nas_alg_id, uint8_t kamf[32], uint8_t *knas_int) {
+  uint8_t S[20];
+  uint8_t out[32] = { 0 };
+  S[0] = 0x69;  //FC
+  S[1] = (uint8_t)(nas_alg_type & 0xFF);
+  S[2] = 0x00;
+  S[3] = 0x01;
+  S[4] = nas_alg_id;
+  S[5] = 0x00;
+  S[6] = 0x01;
+  kdf(kamf, 32, S, 7, out, 32);
+  for (int i = 0; i < 16; i++)
+    knas_int[i] = out[16 + i];
+}
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   int size = sizeof(mm_msg_header_t);
@@ -275,14 +337,16 @@ void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype
 
 }
 
+OctetString knas_int;
 void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf){
 
   uint8_t ak[6];
 
-  // USIM_API_K: 5122250214c33e723a5dd523fc145fc0
-  uint8_t k[16] = {0x51, 0x22, 0x25, 0x02, 0x14,0xc3, 0x3e, 0x72, 0x3a, 0x5d, 0xd5, 0x23, 0xfc, 0x14, 0x5f, 0xc0};
-  // OPC: 981d464c7c52eb6e5036234984ad0bcf
-  const uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c,0x7c,0x52,0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};
+  uint8_t kausf[32];
+  uint8_t sqn[6];
+  uint8_t kseaf[32];
+  uint8_t kamf[32];
+  OctetString res;
 
   // get RAND for authentication request
   unsigned char rand[16];
@@ -296,7 +360,44 @@ void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf){
 
   transferRES(ck, ik, resTemp, rand, output);
 
-  OctetString res;
+  // get knas_int
+  knas_int.length = 16;
+  knas_int.value = malloc(knas_int.length);
+  for(int index = 0; index < 6; index++){
+    sqn[index] = buf[26+index];
+  }
+
+  derive_kausf(ck, ik, sqn, kausf);
+  derive_kseaf(kausf, kseaf);
+  derive_kamf(kseaf, kamf, 0x0000);
+  derive_knas(0x02, 2, kamf, knas_int.value);
+
+  printf("kausf:");
+  for(int i = 0; i < 32; i++){
+    printf("%x ", kausf[i]);
+  }
+  printf("\n");
+
+  printf("kseaf:");
+  for(int i = 0; i < 32; i++){
+    printf("%x ", kseaf[i]);
+  }
+
+  printf("\n");
+
+  printf("kamf:");
+  for(int i = 0; i < 32; i++){
+    printf("%x ", kamf[i]);
+  }
+  printf("\n");
+
+  printf("knas_int:\n");
+  for(int i = 0; i < 16; i++){
+    printf("%x ", knas_int.value[i]);
+  }
+  printf("\n");
+
+  // set res
   res.length = 16;
   res.value = output;
 
@@ -335,7 +436,8 @@ void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
   memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
 
   MM_msg *mm_msg;
-  int i;
+  nas_stream_cipher_t stream_cipher;
+  uint8_t             mac[4];
   // set security protected header
   nas_msg.header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
   nas_msg.header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
@@ -369,4 +471,23 @@ void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
   int security_header_len = nas_protected_security_header_encode((char*)(initialNasMsg->data),&(nas_msg.header), size);
 
   initialNasMsg->length = security_header_len + mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data+security_header_len), size-security_header_len);
+
+  stream_cipher.key        = knas_int.value;
+  stream_cipher.key_length = 16;
+  stream_cipher.count      = 0;
+  stream_cipher.bearer     = 1;
+  stream_cipher.direction  = 0;
+  stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
+  /* length in bits */
+  stream_cipher.blength    = (initialNasMsg->length - 6) << 3;
+
+  // only for Type of integrity protection algorithm: 128-5G-IA2 (2)
+  nas_stream_encrypt_eia2(
+    &stream_cipher,
+    mac);
+
+  printf("mac %x %x %x %x \n", mac[0], mac[1], mac[2], mac[3]);
+  for(int i = 0; i < 4; i++){
+     initialNasMsg->data[2+i] = mac[i];
+  }
 }
