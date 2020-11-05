@@ -969,6 +969,9 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,
 
   //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
   ue->dlsch_MCH[0]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
+
+  for(int i=0; i<5; i++)
+    ue->dl_stats[i] = 0;
 }
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue) {

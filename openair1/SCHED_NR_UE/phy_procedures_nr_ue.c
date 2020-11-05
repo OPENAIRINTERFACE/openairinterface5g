@@ -936,6 +936,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint16_t bw_scaling, start_symbol;
   float tc_factor;
 
+  if ((frame_rx%64 == 0) && (nr_tti_rx==0)) 
+    LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[3]);
+
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
   start_symbol = dlsch0->harq_processes[harq_pid]->start_symbol;

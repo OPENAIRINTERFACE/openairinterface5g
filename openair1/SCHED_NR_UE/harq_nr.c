@@ -491,6 +491,8 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
 
     dl_harq->round++;
 
+    if (dl_harq->harq_ack.ack) dl_harq->status = SCH_IDLE;
+
     result_harq = RETRANSMISSION_HARQ;
 
     NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] reception of a retransmission \n", harq_pid);

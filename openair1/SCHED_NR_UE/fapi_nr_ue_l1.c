@@ -93,7 +93,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
           if (dlsch0_harq){
 
-	    dlsch0_harq->status   = ACTIVE;
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
             dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
             dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
