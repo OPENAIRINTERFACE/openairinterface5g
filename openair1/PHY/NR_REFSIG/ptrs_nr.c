@@ -277,30 +277,30 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
 
   /* loop over all sub carriers to get compensated RE on ptrs symbols*/
   for (int re = 0; re < nb_re_pdsch; re++)
+  {
+    is_ptrs_re = is_ptrs_subcarrier(re,
+                                    rnti,
+                                    0,
+                                    dmrsConfigType,
+                                    K_ptrs,
+                                    nb_rb,
+                                    ptrsReOffset,
+                                    0,// start_re is 0 here
+                                    ofdm_symbol_size);
+    if(is_ptrs_re)
     {
-      is_ptrs_re = is_ptrs_subcarrier(re,
-                                      rnti,
-                                      0,
-                                      dmrsConfigType,
-                                      K_ptrs,
-                                      nb_rb,
-                                      ptrsReOffset,
-                                      0,// start_re is 0 here
-                                      ofdm_symbol_size);
-      if(is_ptrs_re)
-        {
-          dmrs_comp_p[re_cnt*2]     = rxF_comp[re *2];
-          dmrs_comp_p[(re_cnt*2)+1] = rxF_comp[(re *2)+1];
-          re_cnt++;
-        }
-      else
-        {
-          /* Skip PTRS symbols and keep data in a continuous vector */
-          rxF_comp[cnt *2]= rxF_comp[re *2];
-          rxF_comp[(cnt *2)+1]= rxF_comp[(re *2)+1];
-          cnt++;
-        }
-    }/* RE loop */
+      dmrs_comp_p[re_cnt*2]     = rxF_comp[re *2];
+      dmrs_comp_p[(re_cnt*2)+1] = rxF_comp[(re *2)+1];
+      re_cnt++;
+    }
+    else
+    {
+      /* Skip PTRS symbols and keep data in a continuous vector */
+      rxF_comp[cnt *2]= rxF_comp[re *2];
+      rxF_comp[(cnt *2)+1]= rxF_comp[(re *2)+1];
+      cnt++;
+    }
+  }/* RE loop */
   /* update the total ptrs RE in a symbol */
   *ptrs_sc = re_cnt;
 
@@ -310,10 +310,10 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
   /* loop over all ptrs sub carriers in a symbol */
   /* sum the error vector */
   for(int i = 0;i < sc_per_symbol; i++)
-    {
-      real+= ptrs_ch_p[(2*i)];
-      imag+= ptrs_ch_p[(2*i)+1];
-    }
+  {
+    real+= ptrs_ch_p[(2*i)];
+    imag+= ptrs_ch_p[(2*i)+1];
+  }
 #ifdef DEBUG_PTRS
   alpha = atan(imag/real);
   printf("[PHY][PTRS]: Symbol  %d atan(Im,real):= %f \n",symbol, alpha );
@@ -357,100 +357,100 @@ int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
                             uint16_t startSymbIdx,
                             uint16_t noSymb)
 {
-  int32_t         slope      = 0;
-  int16_t         *slope_p   = (int16_t*)&slope; 
+  double         slope[2]    = {0,0};
+  double         *slope_p    = &slope[0]; 
   uint8_t         symbInSlot = startSymbIdx + noSymb;
   int8_t         rightRef   = 0;
   int8_t         leftRef    = 0;
   int8_t         tmp        = 0;
   for(uint8_t symb = startSymbIdx; symb <symbInSlot;  symb ++)
+  {
+    /* set DMRS estimates to 0 angle with magnitude 1 */
+    if(is_dmrs_symbol(symb,dmrsSymbPos))
     {
-      /* set DMRS estimates to 0 angle with magnitude 1 */
-      if(is_dmrs_symbol(symb,dmrsSymbPos))
-        {
-          /* set DMRS estimation */
-          estPerSymb[symb*2]=(int16_t)((1<<15)-1); // 32767
-          estPerSymb[(symb*2)+1]= 0; // no angle
+      /* set DMRS estimation */
+      estPerSymb[symb*2]=(int16_t)((1<<15)-1); // 32767
+      estPerSymb[(symb*2)+1]= 0; // no angle
 #ifdef DEBUG_PTRS
-          printf("[PHY][PTRS]: DMRS Symbol %d :(%4d %4d)\n", symb, estPerSymb[symb*2],estPerSymb[(symb*2)+1]);
+      printf("[PHY][PTRS]: DMRS Symbol %d :(%4d %4d)\n", symb, estPerSymb[symb*2],estPerSymb[(symb*2)+1]);
 #endif
-        }
-      /* Update left and right reference from an estimated symbol */
-      if((is_ptrs_symbol(symb, ptrsSymbPos)) || (is_dmrs_symbol(symb,dmrsSymbPos)))
-        {
-          leftRef  =  symb;
-          rightRef =  get_next_estimate_in_slot(ptrsSymbPos,dmrsSymbPos,symb+1,symbInSlot);
-        }
-        else
-          {
-            /* The very first symbol must be a PTRS or DMRS */
-            if((symb == startSymbIdx) && (leftRef == -1) && (rightRef == -1))
-              {
-                printf("Wrong PTRS Setup, PTRS compensation will be skipped !");
-                return -1;
-              }
-            /* check for left side first */
-            /*  right side a DMRS symbol then we need to left extrapolate */
-            if(is_dmrs_symbol(rightRef,dmrsSymbPos))
-              {
-                /* calculate slope from next valid estimates*/
-                tmp =  get_next_estimate_in_slot(ptrsSymbPos,dmrsSymbPos,rightRef+1,symbInSlot);
-                /* Special case when DMRS is not followed by PTRS symbol then reuse old slope */
-                if(tmp!=-1)
-                {
-                  get_slope_from_estimates(rightRef, tmp, estPerSymb, slope_p);
-                }
-                ptrs_estimate_from_slope(estPerSymb,slope_p,leftRef, rightRef);
-                symb = rightRef -1;
-              }
-            else if(is_ptrs_symbol(rightRef,ptrsSymbPos))
-              {
-                /* calculate slope from next valid estimates */
-                get_slope_from_estimates(leftRef,rightRef,estPerSymb, slope_p);
-                ptrs_estimate_from_slope(estPerSymb,slope_p,leftRef, rightRef);
-                symb = rightRef -1;
-              }
-            else if((rightRef ==-1) && (symb <symbInSlot))
-              {
-                // in right extrapolation use the last slope
-#ifdef DEBUG_PTRS
-                printf("[PHY][PTRS]: Last Slop Reused :(%4d %4d)\n", slope_p[0],slope_p[1]);
-#endif
-                ptrs_estimate_from_slope(estPerSymb,slope_p,symb-1,symbInSlot);
-                symb = symbInSlot;
-              }
-            else
-              {
-                printf("Wrong PTRS Setup, PTRS compensation will be skipped !");
-                return -1;
-              }
-          }
+    }
+    /* Update left and right reference from an estimated symbol */
+    if((is_ptrs_symbol(symb, ptrsSymbPos)) || (is_dmrs_symbol(symb,dmrsSymbPos)))
+    {
+      leftRef  =  symb;
+      rightRef =  get_next_estimate_in_slot(ptrsSymbPos,dmrsSymbPos,symb+1,symbInSlot);
+    }
+    else
+    {
+      /* The very first symbol must be a PTRS or DMRS */
+      if((symb == startSymbIdx) && (leftRef == -1) && (rightRef == -1))
+      {
+        printf("Wrong PTRS Setup, PTRS compensation will be skipped !");
+        return -1;
       }
+      /* check for left side first */
+      /*  right side a DMRS symbol then we need to left extrapolate */
+      if(is_dmrs_symbol(rightRef,dmrsSymbPos))
+      {
+        /* calculate slope from next valid estimates*/
+        tmp =  get_next_estimate_in_slot(ptrsSymbPos,dmrsSymbPos,rightRef+1,symbInSlot);
+        /* Special case when DMRS is not followed by PTRS symbol then reuse old slope */
+        if(tmp!=-1)
+        {
+          get_slope_from_estimates(rightRef, tmp, estPerSymb, slope_p);
+        }
+        ptrs_estimate_from_slope(estPerSymb,slope_p,leftRef, rightRef);
+        symb = rightRef -1;
+      }
+      else if(is_ptrs_symbol(rightRef,ptrsSymbPos))
+      {
+        /* calculate slope from next valid estimates */
+        get_slope_from_estimates(leftRef,rightRef,estPerSymb, slope_p);
+        ptrs_estimate_from_slope(estPerSymb,slope_p,leftRef, rightRef);
+        symb = rightRef -1;
+      }
+      else if((rightRef ==-1) && (symb <symbInSlot))
+      {
+        // in right extrapolation use the last slope
+#ifdef DEBUG_PTRS
+        printf("[PHY][PTRS]: Last Slop Reused :(%4f %4f)\n", slope_p[0],slope_p[1]);
+#endif
+        ptrs_estimate_from_slope(estPerSymb,slope_p,symb-1,symbInSlot);
+        symb = symbInSlot;
+      }
+      else
+      {
+        printf("Wrong PTRS Setup, PTRS compensation will be skipped !");
+        return -1;
+      }
+    }
+  }
   return 0;
 }
 
 /* Calculate slope from 2 reference points */
-void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, int16_t *slope_p)
+void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double *slope_p)
 {
   uint8_t distance = end - start;
-  slope_p[0] = (est_p[end*2] - est_p[start*2]) /distance;
-  slope_p[1] = (est_p[(end*2)+1] - est_p[(start*2)+1]) /distance;
+  slope_p[0] = (double)(est_p[end*2] - est_p[start*2]) /distance;
+  slope_p[1] = (double)(est_p[(end*2)+1] - est_p[(start*2)+1]) /distance;
 #ifdef DEBUG_PTRS
-  printf("[PHY][PTRS]: Slop is :(%4d %4d) between Symbol %2d & Symbol %2d\n", slope_p[0],slope_p[1], start, end);
+  printf("[PHY][PTRS]: Slop is :(%4f %4f) between Symbol %2d & Symbol %2d\n", slope_p[0],slope_p[1], start, end);
   //printf("%d %d - %d %d\n",est_p[end*2],est_p[(end*2)+1],est_p[start*2],est_p[(start*2)+1]);
 #endif
 }
 
 /* estimate from slope */
-void ptrs_estimate_from_slope(int16_t *error_est, int16_t *slope_p, uint8_t start, uint8_t end)
+void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end)
 {
   for(uint8_t i = 1; i< (end -start);i++)
   {
-    error_est[(start+i)*2]      = (error_est[start*2]   + (i * slope_p[0]));// real
-    error_est[((start +i)*2)+1] = (error_est[(start*2)+1] + ( i * slope_p[1])); //imag
+    error_est[(start+i)*2]      = (error_est[start*2]   + (int16_t)(i * slope_p[0]));// real
+    error_est[((start +i)*2)+1] = (error_est[(start*2)+1] + (int16_t)( i * slope_p[1])); //imag
 #ifdef DEBUG_PTRS
-  printf("[PHY][PTRS]: Estimated Symbol %2d -> %4d %4d from Slope (%4d %4d)\n", start+i,error_est[(start+i)*2],error_est[((start +i)*2)+1],
-         slope_p[0],slope_p[1]);
+    printf("[PHY][PTRS]: Estimated Symbol %2d -> %4d %4d from Slope (%4f %4f)\n", start+i,error_est[(start+i)*2],error_est[((start +i)*2)+1],
+           slope_p[0],slope_p[1]);
 #endif
   }
 }

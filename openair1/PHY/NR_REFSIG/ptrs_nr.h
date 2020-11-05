@@ -83,7 +83,7 @@ static inline uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols) { return 
 uint8_t get_ptrs_symbols_in_slot(uint16_t l_prime_mask, uint16_t start_symb, uint16_t nb_symb);
 int8_t get_next_ptrs_symbol_in_slot(uint16_t  ptrsSymbPos, uint8_t counter, uint8_t nb_symb);
 int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, uint8_t counter,uint8_t nb_symb);
-void get_slope_from_estimates(uint8_t leftSide, uint8_t rightSide, int16_t *est_p, int16_t *slope_p);
+
 int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
                             uint16_t ptrsSymbPos,
                             int16_t *estPerSymb,
@@ -105,6 +105,6 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
                             int16_t *error_est,
                             int32_t *ptrs_sc);
 
-void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, int16_t *slope_p);
-void ptrs_estimate_from_slope(int16_t *error_est, int16_t *slope_p, uint8_t start, uint8_t end);
+void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double *slope_p);
+void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end);
 #endif /* PTRS_NR_H */
