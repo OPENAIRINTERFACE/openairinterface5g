@@ -142,8 +142,6 @@ typedef struct {
   uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
-  /// Msg3 pusch pdu
-  nfapi_nr_pusch_pdu_t pusch_pdu;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4

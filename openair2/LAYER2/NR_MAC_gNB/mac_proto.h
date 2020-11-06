@@ -115,7 +115,9 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
-void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
+void nr_get_Msg3alloc(module_id_t module_id,
+                      int CC_id,
+                      NR_ServingCellConfigCommon_t *scc,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_subframe,
                       frame_t current_frame,
@@ -355,8 +357,6 @@ void nr_generate_Msg2(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
                       sub_frame_t slotP);
-
-void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
