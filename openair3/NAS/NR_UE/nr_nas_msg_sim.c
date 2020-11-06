@@ -515,7 +515,7 @@ void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentCo
   sp_msg->header.security_header_type   = INTEGRITY_PROTECTED_AND_CIPHERED;
   sp_msg->header.message_authentication_code = 0;
   sp_msg->header.sequence_number        = 1;
-  int length = 7;
+  length = 7;
   sp_msg->plain.mm_msg.registration_complete.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
   length += 1;
   sp_msg->plain.mm_msg.registration_complete.securityheadertype    = PLAIN_5GS_MSG;
