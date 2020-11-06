@@ -365,16 +365,6 @@ int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
   int8_t         tmp        = 0;
   for(uint8_t symb = startSymbIdx; symb <symbInSlot;  symb ++)
   {
-    /* set DMRS estimates to 0 angle with magnitude 1 */
-    if(is_dmrs_symbol(symb,dmrsSymbPos))
-    {
-      /* set DMRS estimation */
-      estPerSymb[symb*2]=(int16_t)((1<<15)-1); // 32767
-      estPerSymb[(symb*2)+1]= 0; // no angle
-#ifdef DEBUG_PTRS
-      printf("[PHY][PTRS]: DMRS Symbol %d :(%4d %4d)\n", symb, estPerSymb[symb*2],estPerSymb[(symb*2)+1]);
-#endif
-    }
     /* Update left and right reference from an estimated symbol */
     if((is_ptrs_symbol(symb, ptrsSymbPos)) || (is_dmrs_symbol(symb,dmrsSymbPos)))
     {

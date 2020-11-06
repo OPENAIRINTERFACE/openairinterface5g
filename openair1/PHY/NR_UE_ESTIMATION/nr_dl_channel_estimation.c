@@ -995,19 +995,19 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   uint16_t *nb_rb           = NULL;
 
   if(dlsch0_harq->status == ACTIVE)
-    {
-      symbInSlot      = dlsch0_harq->start_symbol + dlsch0_harq->nb_symbols;
-      startSymbIndex  = &dlsch0_harq->start_symbol;
-      nbSymb          = &dlsch0_harq->nb_symbols;
-      L_ptrs          = &dlsch0_harq->PTRSTimeDensity;
-      K_ptrs          = &dlsch0_harq->PTRSFreqDensity;
-      dmrsSymbPos     = &dlsch0_harq->dlDmrsSymbPos;
-      ptrsSymbPos     = &dlsch0_harq->ptrs_symbols;
-      ptrsSymbIdx     = &dlsch0_harq->ptrs_symbol_index;
-      ptrsReOffset    = &dlsch0_harq->PTRSReOffset;
-      dmrsConfigType  = &dlsch0_harq->ptrs_symbol_index;
-      nb_rb           = &dlsch0_harq->nb_rb;
-    }
+  {
+    symbInSlot      = dlsch0_harq->start_symbol + dlsch0_harq->nb_symbols;
+    startSymbIndex  = &dlsch0_harq->start_symbol;
+    nbSymb          = &dlsch0_harq->nb_symbols;
+    L_ptrs          = &dlsch0_harq->PTRSTimeDensity;
+    K_ptrs          = &dlsch0_harq->PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch0_harq->dlDmrsSymbPos;
+    ptrsSymbPos     = &dlsch0_harq->ptrs_symbols;
+    ptrsSymbIdx     = &dlsch0_harq->ptrs_symbol_index;
+    ptrsReOffset    = &dlsch0_harq->PTRSReOffset;
+    dmrsConfigType  = &dlsch0_harq->ptrs_symbol_index;
+    nb_rb           = &dlsch0_harq->nb_rb;
+  }
   if(dlsch1_harq)
   {
     symbInSlot      = dlsch1_harq->start_symbol + dlsch0_harq->nb_symbols;
@@ -1028,8 +1028,21 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     phase_per_symbol = (int16_t*)pdsch_vars[eNB_id]->ptrs_phase_per_slot[aarx];
     ptrs_re_symbol = (int32_t*)pdsch_vars[eNB_id]->ptrs_re_per_slot[aarx];
     ptrs_re_symbol[symbol] = 0;
-    phase_per_symbol[2*symbol] = 0; // Real
     phase_per_symbol[(2*symbol)+1] = 0; // Imag
+    /* set DMRS estimates to 0 angle with magnitude 1 */
+    if(is_dmrs_symbol(symbol,*dmrsSymbPos))
+    {
+      /* set DMRS real estimation to 32767 */
+      phase_per_symbol[2*symbol]=(int16_t)((1<<15)-1); // 32767
+#ifdef DEBUG_DL_PTRS
+      printf("[PHY][PTRS]: DMRS Symbol %d -> %4d + j*%4d\n", symbol, phase_per_symbol[2*symbol],phase_per_symbol[(2*symbol)+1]);
+#endif
+    }
+    else// real ptrs value is set to 0
+    {
+      phase_per_symbol[2*symbol] = 0; // Real
+    }
+
     if(dlsch0_harq->status == ACTIVE)
     {
       if(symbol == *startSymbIndex)
