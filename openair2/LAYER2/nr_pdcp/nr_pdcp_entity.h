@@ -19,6 +19,8 @@
  *      contact@openairinterface.org
  */
 
+#include <stdint.h>
+
 #ifndef _NR_PDCP_ENTITY_H_
 #define _NR_PDCP_ENTITY_H_
 
@@ -60,6 +62,6 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
                         char *buf, int size, int sdu_id),
     void *deliver_pdu_data);
 
-void nr_DRB_preconfiguration(void);
+void nr_DRB_preconfiguration(uint16_t crnti);
 
 #endif /* _NR_PDCP_ENTITY_H_ */

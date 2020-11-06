@@ -715,7 +715,7 @@ boolean_t rrc_pdcp_config_asn1_req(
   return 0;
 }
 
-void nr_DRB_preconfiguration(void)
+void nr_DRB_preconfiguration(uint16_t crnti)
 {
 
   NR_RadioBearerConfig_t             *rbconfig = NULL;
@@ -824,10 +824,10 @@ void nr_DRB_preconfiguration(void)
   ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
 
   if (ENB_NAS_USE_TUN){
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, crnti, 0, 0, 0);
   }
   else{
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, crnti, 0, 0,0);
   }
 
   nr_rrc_pdcp_config_asn1_req(

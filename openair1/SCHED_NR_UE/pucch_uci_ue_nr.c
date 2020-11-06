@@ -33,6 +33,7 @@
 *
 **************************************************************************/
 
+#include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
@@ -228,13 +229,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
   int       n_HARQ_ACK;
 
-  uint16_t crnti=0x1234;
   int dmrs_scrambling_id=0,data_scrambling_id=0;
-
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_PUCCH_Resource_t *pucch_resource;
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  uint16_t crnti = mac->crnti;
 
   /* update current context */
 
