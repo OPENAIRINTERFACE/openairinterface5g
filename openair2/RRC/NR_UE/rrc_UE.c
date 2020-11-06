@@ -2298,12 +2298,28 @@ nr_rrc_ue_decode_dcch(
                 break;
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
+            {
                 rrc_ue_process_rrcReconfiguration(ctxt_pP,
                                                     dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
                                                     gNB_indexP);
                 nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
                                             gNB_indexP,
                                             dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+#ifdef ITTI_SIM
+                as_nas_info_t initialNasMsg;
+                memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+                generateRegistrationComplete(&initialNasMsg, NULL);
+                if(initialNasMsg.length > 0){
+                    MessageDef *message_p;
+                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
+                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
+                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
+                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+                }
+#endif
+            }
                 break;
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcResume:

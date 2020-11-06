@@ -15,6 +15,7 @@
 #include "FGSIdentityResponse.h"
 #include "FGSAuthenticationResponse.h"
 #include "FGSNASSecurityModeComplete.h"
+#include "RegistrationComplete.h"
 #include "as_message.h"
 
 
@@ -25,6 +26,7 @@
 #define INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX 0b0100         // only for SECURITY MODE COMPLETE
 
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
+#define REGISTRATION_COMPLETE                              0b01000011 /* 67 = 0x43 */
 #define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
 #define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */
 #define FGS_IDENTITY_REQUEST                               0b01011011 /* 91 = 0x5b */
@@ -64,6 +66,7 @@ typedef union {
   fgs_identiy_response_msg               fgs_identity_response;
   fgs_authentication_response_msg        fgs_auth_response;
   fgs_security_mode_complete_msg         fgs_security_mode_complete;
+  registration_complete_msg              registration_complete;
 } MM_msg;
 
 
@@ -88,6 +91,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg);
 void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype);
 void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf);
 void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);
+void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer *sortransparentcontainer);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/
 

@@ -499,3 +499,81 @@ void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
      initialNasMsg->data[2+i] = mac[i];
   }
 }
+
+void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer               *sortransparentcontainer) {
+  int length = sizeof(fgs_nas_message_security_header_t);
+  int size = 0;
+  fgs_nas_message_t nas_msg;
+  nas_stream_cipher_t stream_cipher;
+  uint8_t             mac[4];
+  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
+  fgs_nas_message_security_protected_t *sp_msg;
+
+  sp_msg = &nas_msg.security_protected;
+  // set header
+  sp_msg->header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  sp_msg->header.security_header_type   = INTEGRITY_PROTECTED_AND_CIPHERED;
+  sp_msg->header.message_authentication_code = 0;
+  sp_msg->header.sequence_number        = 1;
+
+  sp_msg->plain.mm_msg.registration_complete.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  length += 1;
+  sp_msg->plain.mm_msg.registration_complete.securityheadertype    = PLAIN_5GS_MSG;
+  sp_msg->plain.mm_msg.registration_complete.sparehalfoctet        = 0;
+  length += 1;
+  sp_msg->plain.mm_msg.registration_complete.messagetype = REGISTRATION_COMPLETE;
+  length += 1;
+
+  if(sortransparentcontainer) {
+    length += sortransparentcontainer->sortransparentcontainercontents.length;
+  }
+
+  // encode the message
+  initialNasMsg->data = (Byte_t *)malloc(length * sizeof(Byte_t));
+
+  /* Encode the first octet of the header (extended protocol discriminator) */
+  ENCODE_U8(initialNasMsg->data + size, sp_msg->header.protocol_discriminator, size);
+  
+  /* Encode the security header type */
+  ENCODE_U8(initialNasMsg->data + size, sp_msg->header.security_header_type, size);
+  
+  /* Encode the message authentication code */
+  ENCODE_U32(initialNasMsg->data + size, sp_msg->header.message_authentication_code, size);
+  
+  /* Encode the sequence number */
+  ENCODE_U8(initialNasMsg->data + size, sp_msg->header.sequence_number, size);
+  
+  
+  /* Encode the extended protocol discriminator */
+  ENCODE_U8(initialNasMsg->data + size, sp_msg->plain.mm_msg.registration_complete.protocoldiscriminator, size);
+    
+  /* Encode the security header type */
+  ENCODE_U8(initialNasMsg->data + size, sp_msg->plain.mm_msg.registration_complete.securityheadertype, size);
+    
+  /* Encode the message type */
+  ENCODE_U8(initialNasMsg->data + size, sp_msg->plain.mm_msg.registration_complete.messagetype, size);
+
+  if(sortransparentcontainer) {
+    encode_registration_complete(&sp_msg->plain.mm_msg.registration_complete, initialNasMsg->data + size, length - size);
+  }
+  
+  initialNasMsg->length = length;
+  stream_cipher.key        = knas_int.value;
+  stream_cipher.key_length = 16;
+  stream_cipher.count      = 0;
+  stream_cipher.bearer     = 1;
+  stream_cipher.direction  = 0;
+  stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
+  /* length in bits */
+  stream_cipher.blength    = (initialNasMsg->length - 6) << 3;
+
+  // only for Type of integrity protection algorithm: 128-5G-IA2 (2)
+  nas_stream_encrypt_eia2(
+    &stream_cipher,
+    mac);
+
+  printf("mac %x %x %x %x \n", mac[0], mac[1], mac[2], mac[3]);
+  for(int i = 0; i < 4; i++){
+     initialNasMsg->data[2+i] = mac[i];
+  }
+}

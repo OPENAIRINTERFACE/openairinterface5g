@@ -2458,6 +2458,7 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/EMM/MSG/FGSIdentityResponse.c
     ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationResponse.c
     ${NAS_SRC}COMMON/EMM/MSG/FGSNASSecurityModeComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationComplete.c
   )
 
   set(libnrnas_ies_OBJS
@@ -2469,6 +2470,7 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/IES/FGMMCapability.c
     ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
     ${NAS_SRC}COMMON/IES/FGCNasMessageContainer.c
+    ${NAS_SRC}COMMON/IES/SORTransparentContainer.c
   )
 
   add_library(LIB_NAS_SIMUE
