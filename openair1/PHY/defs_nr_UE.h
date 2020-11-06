@@ -1122,7 +1122,7 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
   
-  int dl_stats[4];
+  int dl_stats[5];
 
 } PHY_VARS_NR_UE;
 
