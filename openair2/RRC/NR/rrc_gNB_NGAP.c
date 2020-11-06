@@ -468,6 +468,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
         ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).gNB_ue_ngap_id;
         ue_context_p->ue_context.amf_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).amf_ue_ngap_id;
+        ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nas_pdu_flag;
         
         /* NAS PDU */
         if (ue_context_p->ue_context.nas_pdu_flag == 1) {

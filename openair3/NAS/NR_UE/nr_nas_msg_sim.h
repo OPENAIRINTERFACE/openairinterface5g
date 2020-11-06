@@ -26,6 +26,7 @@
 #define INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX 0b0100         // only for SECURITY MODE COMPLETE
 
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
+#define REGISTRATION_ACCEPT                                0b01000010 /* 66 = 0x42 */
 #define REGISTRATION_COMPLETE                              0b01000011 /* 67 = 0x43 */
 #define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
 #define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */

@@ -2199,6 +2199,29 @@ rrc_ue_process_rrcReconfiguration(
             for (list_count = 0; list_count < ie->nonCriticalExtension->dedicatedNAS_MessageList->list.count; list_count++) {
                 pdu_length = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->size;
                 pdu_buffer = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->buf;
+#ifdef ITTI_SIM
+                uint8_t msg_type = 0;
+                if((pdu_buffer + 1) != NULL){
+                  if (*(pdu_buffer + 1) > 0 ) {
+                    if(pdu_buffer + 9){
+                       msg_type = *(pdu_buffer + 9);
+                    } else {
+                      LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
+                      return;
+                    }
+                  } else {
+                    if(pdu_buffer + 2){
+                      msg_type = *(pdu_buffer + 2);
+                    } else {
+                        LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
+                        return;
+                    }
+                  }
+                }
+                if(msg_type == REGISTRATION_ACCEPT){
+                  LOG_I(NR_RRC, "[UE] Received REGISTRATION ACCEPT message\n");
+                }
+#endif
                 msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_ESTABLI_CNF);
                 NAS_CONN_ESTABLI_CNF(msg_p).errCode = AS_SUCCESS;
                 NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length = pdu_length;
@@ -2366,7 +2389,7 @@ nr_rrc_ue_decode_dcch(
                   LOG_I(NR_RRC, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", ctxt_pP->module_id,  messages_info[NAS_DOWNLINK_DATA_IND].name,
                         ctxt_pP->module_id, pdu_length, pdu_buffer);
                   as_nas_info_t initialNasMsg;
-                  uint8_t msg_type;
+                  uint8_t msg_type = 0;
                   memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
                   if((pdu_buffer + 1) != NULL){
                     if (*(pdu_buffer + 1) > 0 ) {
