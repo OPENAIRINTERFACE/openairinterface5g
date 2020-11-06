@@ -560,7 +560,7 @@ void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentCo
   initialNasMsg->length = length;
   stream_cipher.key        = knas_int.value;
   stream_cipher.key_length = 16;
-  stream_cipher.count      = 0;
+  stream_cipher.count      = 1;
   stream_cipher.bearer     = 1;
   stream_cipher.direction  = 0;
   stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
