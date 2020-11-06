@@ -134,7 +134,7 @@ rrc_gNB_allocate_new_UE_context(
   new_p->local_uid = nr_uid_linear_allocator_new(rrc_instance_pP);
 
   for(int i = 0; i < NB_RB_MAX; i++) {
-    new_p->ue_context.e_rab[i].xid = -1;
+    new_p->ue_context.pdusession[i].xid = -1;
     new_p->ue_context.modify_e_rab[i].xid = -1;
   }
 

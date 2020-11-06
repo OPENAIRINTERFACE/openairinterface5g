@@ -257,6 +257,19 @@ typedef struct nr_rrc_guami_s {
   uint8_t  amf_pointer;
 } nr_rrc_guami_t;
 
+typedef enum pdu_session_satus_e {
+  PDU_SESSION_STATUS_NEW
+  //TODO
+} pdu_session_status_t;
+
+typedef struct pdu_session_param_s {
+  pdusession_t param;
+  uint8_t status;
+  uint8_t xid; // transaction_id
+  ngap_Cause_t cause;
+  uint8_t cause_value;
+} __attribute__ ((__packed__)) pdu_session_param_t;
+
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
   LTE_SCellToAddMod_r10_t            sCell_config[2];
@@ -323,14 +336,14 @@ typedef struct gNB_RRC_UE_s {
 
   /* Total number of e_rab already setup in the list */
   uint8_t                           setup_e_rabs;
-  /* Number of e_rab to be setup in the list */
-  uint8_t                            nb_of_e_rabs;
+  /* Number of pdu session to be setup in the list */
+  uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
-  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  pdu_session_param_t                pdusession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
@@ -445,7 +458,6 @@ typedef struct gNB_RRC_INST_s {
   int srs_enable[MAX_NUM_CCs];
 
 } gNB_RRC_INST;
-
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error
 

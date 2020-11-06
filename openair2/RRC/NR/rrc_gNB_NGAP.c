@@ -470,7 +470,21 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         ue_context_p->ue_context.amf_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).amf_ue_ngap_id;
         ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nas_pdu_flag;
         
+        ue_context_p->ue_context.nb_of_pdusessions = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions;
+        for (int i = 0; i < ue_context_p->ue_context.nb_of_pdusessions; i++) {
+            ue_context_p->ue_context.pdusession[i].status = PDU_SESSION_STATUS_NEW;
+            ue_context_p->ue_context.pdusession[i].param  = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[i];
+            //create_tunnel_req.eps_bearer_id[i]       = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].e_rab_id;
+            //create_tunnel_req.sgw_S1u_teid[i]        = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].gtp_teid;
+            //memcpy(&create_tunnel_req.sgw_addr[i],
+            //       &S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].sgw_addr,
+            //       sizeof(transport_layer_addr_t));
+            //inde_list[create_tunnel_req.num_tunnels]= i;
+            //create_tunnel_req.num_tunnels++;
+        } 
+
         /* NAS PDU */
+        ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu_flag;
         if (ue_context_p->ue_context.nas_pdu_flag == 1) {
             ue_context_p->ue_context.nas_pdu.length = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.length;
             ue_context_p->ue_context.nas_pdu.buffer = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.buffer;
@@ -518,25 +532,25 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
 //------------------------------------------------------------------------------
 {
   MessageDef      *msg_p         = NULL;
-  int e_rab;
+  int pdusession;
   int e_rabs_done = 0;
   int e_rabs_failed = 0;
   msg_p = itti_alloc_new_message (TASK_RRC_ENB, NGAP_INITIAL_CONTEXT_SETUP_RESP);
   NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
 
-  for (e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {
-    if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+  for (pdusession = 0; pdusession < ue_context_pP->ue_context.nb_of_pdusessions; pdusession++) {
+    if (ue_context_pP->ue_context.pdusession[pdusession].status == E_RAB_STATUS_DONE) {
       e_rabs_done++;
-      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].pdusession_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[pdusession].pdusession_id = ue_context_pP->ue_context.pdusession[pdusession].param.pdusession_id;
       // TODO add other information from S1-U when it will be integrated
-      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].gtp_teid = ue_context_pP->ue_context.gnb_gtp_teid[e_rab];
-      memcpy(NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].gNB_addr.buffer , ue_context_pP->ue_context.gnb_gtp_addrs[e_rab].buffer, 20);
-      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].gNB_addr.length = 4;
-      ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[pdusession].gtp_teid = ue_context_pP->ue_context.gnb_gtp_teid[pdusession];
+      memcpy(NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[pdusession].gNB_addr.buffer , ue_context_pP->ue_context.gnb_gtp_addrs[pdusession].buffer, 20);
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[pdusession].gNB_addr.length = 4;
+      ue_context_pP->ue_context.pdusession[pdusession].status = E_RAB_STATUS_ESTABLISHED;
     } else {
       e_rabs_failed++;
-      ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
-      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[e_rab].pdusession_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+      ue_context_pP->ue_context.pdusession[pdusession].status = E_RAB_STATUS_FAILED;
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[pdusession].pdusession_id = ue_context_pP->ue_context.pdusession[pdusession].param.pdusession_id;
       // TODO add cause when it will be integrated
     }
   }

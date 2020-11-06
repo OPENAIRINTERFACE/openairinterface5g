@@ -186,14 +186,14 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     if (m->nb_e_rabs_tobeadded>0) {
       for (int i=0; i<m->nb_e_rabs_tobeadded; i++) {
         // Add the new E-RABs at the corresponding rrc ue context of the gNB
-        ue_context_p->ue_context.e_rab[i].param.e_rab_id = m->e_rabs_tobeadded[i].e_rab_id;
-        ue_context_p->ue_context.e_rab[i].param.gtp_teid = m->e_rabs_tobeadded[i].gtp_teid;
-        memcpy(&ue_context_p->ue_context.e_rab[i].param.sgw_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));
-        ue_context_p->ue_context.nb_of_e_rabs++;
+        ue_context_p->ue_context.pdusession[i].param.pdusession_id = m->e_rabs_tobeadded[i].e_rab_id;
+        ue_context_p->ue_context.pdusession[i].param.gtp_teid = m->e_rabs_tobeadded[i].gtp_teid;
+        memcpy(&ue_context_p->ue_context.pdusession[i].param.upf_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));
+        ue_context_p->ue_context.nb_of_pdusessions++;
         //Fill the required E-RAB specific information for the creation of the S1-U tunnel between the gNB and the SGW
-        create_tunnel_req.eps_bearer_id[i]       = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
-        create_tunnel_req.sgw_S1u_teid[i]        = ue_context_p->ue_context.e_rab[i].param.gtp_teid;
-        memcpy(&create_tunnel_req.sgw_addr[i], &ue_context_p->ue_context.e_rab[i].param.sgw_addr, sizeof(transport_layer_addr_t));
+        create_tunnel_req.eps_bearer_id[i]       = ue_context_p->ue_context.pdusession[i].param.pdusession_id;
+        create_tunnel_req.sgw_S1u_teid[i]        = ue_context_p->ue_context.pdusession[i].param.gtp_teid;
+        memcpy(&create_tunnel_req.sgw_addr[i], &ue_context_p->ue_context.pdusession[i].param.upf_addr, sizeof(transport_layer_addr_t));
         inde_list[i] = i;
         LOG_I(RRC,"S1-U tunnel: index %d target sgw ip %d.%d.%d.%d length %d gtp teid %u\n",
               i,
@@ -220,8 +220,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).target_assoc_id = m->target_assoc_id;
 
-      for(int i=0; i<ue_context_p->ue_context.nb_of_e_rabs; i++) {
-        X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
+      for(int i=0; i<ue_context_p->ue_context.nb_of_pdusessions; i++) {
+        X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = ue_context_p->ue_context.pdusession[i].param.pdusession_id;
         X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid = create_tunnel_resp.enb_S1u_teid[i];
         memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr, &create_tunnel_resp.enb_addr, sizeof(transport_layer_addr_t));
         //The length field in the X2AP targetting structure is expected in bits but the create_tunnel_resp returns the address length in bytes
