@@ -44,7 +44,7 @@ def main():
                              "rru.fdd": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "rru.tdd": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "enb.band7.tm1.25PRB.usrpb210": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
-                             "enb.band40.tm1.25PRB.FairScheduler.usrpb210": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}'
+                             "enb.band40.tm1.25PRB.FairScheduler.usrpb210": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "rcc.band7.tm1.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}'
                              }
         if filePrefix in prefix_outputfile:
