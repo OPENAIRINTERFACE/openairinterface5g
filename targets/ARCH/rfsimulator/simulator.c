@@ -533,24 +533,24 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         b->headerMode=false;
 
         if ( t->nextTimestamp == 0 ) { // First block in UE, resync with the eNB current TS
-	  t->nextTimestamp=b->th.timestamp> nsamps_for_initial ?
-	    b->th.timestamp -  nsamps_for_initial :
-	    0;
-	  b->lastReceivedTS=b->th.timestamp> nsamps_for_initial ?
-	    b->th.timestamp :
-	    nsamps_for_initial;
-	  LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
-	  b->trashingPacket=true;
-	} else if ( b->lastReceivedTS < b->th.timestamp) {
+          t->nextTimestamp=b->th.timestamp> nsamps_for_initial ?
+                           b->th.timestamp -  nsamps_for_initial :
+                           0;
+          b->lastReceivedTS=b->th.timestamp> nsamps_for_initial ?
+                            b->th.timestamp :
+                            nsamps_for_initial;
+          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
+          b->trashingPacket=true;
+        } else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 
           if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
-          for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
-            for (int a=0; a < nbAnt; a++) {
-              b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
-              b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
+            for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
+              for (int a=0; a < nbAnt; a++) {
+                b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
+                b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
+              }
             }
-          }
           } else {
 	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
 	  }
@@ -567,7 +567,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
           // normal case
         } else {
           LOG_E(HW, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
-	  b->trashingPacket=true;
+          b->trashingPacket=true;
         }
 
         pthread_mutex_lock(&Sockmutex);
@@ -646,8 +646,8 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         // We can never write is the past from the received time
         // So, the node perform receive but will never write these symbols
         // let's tell this to the opposite node
-	// We send timestamp for nb samples required
-	// assuming this should have been done earlier if a Tx would exist
+        // We send timestamp for nb samples required
+        // assuming this should have been done earlier if a Tx would exist
         pthread_mutex_unlock(&Sockmutex);
         struct complex16 v= {0};
         void *samplesVoid[t->tx_num_channels];
@@ -655,18 +655,18 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         for ( int i=0; i < t->tx_num_channels; i++)
           samplesVoid[i]=(void *)&v;
 
-	LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
-	      t->lastWroteTS, t->nextTimestamp);
+        LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
+              t->lastWroteTS, t->nextTimestamp);
         rfsimulator_write_internal(t, t->nextTimestamp,
                                    samplesVoid, 1,
                                    t->tx_num_channels, 1, true);
       } else {
-	pthread_mutex_unlock(&Sockmutex);
+        pthread_mutex_unlock(&Sockmutex);
         LOG_W(HW, "trx_write came from another thread\n");
       }
     } else
       pthread_mutex_unlock(&Sockmutex);
-    
+
     bool have_to_wait;
 
     do {
@@ -765,7 +765,7 @@ int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cf
 int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
-int rfsimulator_write_init(openair0_device *device){
+int rfsimulator_write_init(openair0_device *device) {
   return 0;
 }
 __attribute__((__visibility__("default")))

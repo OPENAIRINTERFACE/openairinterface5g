@@ -601,11 +601,19 @@ extern int ouput_vcd;
 
 #else /* T_TRACER */
 
+#if ENABLE_VCD
 #define VCD_SIGNAL_DUMPER_INIT(aRgUmEnT)                   vcd_signal_dumper_init(aRgUmEnT)
 #define VCD_SIGNAL_DUMPER_CLOSE()                          vcd_signal_dumper_close()
 #define VCD_SIGNAL_DUMPER_CREATE_HEADER()                  vcd_signal_dumper_create_header()
 #define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(vAr1,vAr2) vcd_signal_dumper_dump_variable_by_name(vAr1,vAr2)
 #define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(vAr1,vAr2) vcd_signal_dumper_dump_function_by_name(vAr1,vAr2)
+#else
+#define VCD_SIGNAL_DUMPER_INIT(aRgUmEnT) 
+#define VCD_SIGNAL_DUMPER_CLOSE()       
+#define VCD_SIGNAL_DUMPER_CREATE_HEADER()
+#define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(vAr1,vAr2) 
+#define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(vAr1,vAr2)
+#endif
 
  
 #endif /* T_TRACER */

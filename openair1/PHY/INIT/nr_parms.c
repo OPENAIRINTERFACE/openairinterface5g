@@ -233,6 +233,20 @@ uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
   return samp_count;
 }
 
+
+uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp)
+{
+   uint32_t slot_idx = 0;
+   int samples_till_the_slot = 0;
+   timestamp_rx = timestamp_rx%fp->samples_per_frame;
+
+    while (timestamp_rx > samples_till_the_slot) {
+        samples_till_the_slot += fp->get_samples_per_slot(slot_idx,fp);
+        slot_idx++;
+     }
+   return slot_idx; 
+}
+
 uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead)
 {
   uint32_t samp_count = 0;
@@ -289,6 +303,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
                              (fp->nb_prefix_samples + fp->ofdm_symbol_size) * (fp->symbols_per_slot * fp->slots_per_subframe - 2); 
   fp->get_samples_per_slot = &get_samples_per_slot;
   fp->get_samples_slot_timestamp = &get_samples_slot_timestamp;
+  fp->get_slot_from_timestamp = &get_slot_from_timestamp;
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 

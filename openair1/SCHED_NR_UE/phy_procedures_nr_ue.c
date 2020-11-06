@@ -356,6 +356,16 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
   } else {
     LOG_E(PHY,"[UE %d] frame %d, nr_tti_rx %d, Error decoding PBCH!\n",
 	  ue->Mod_id,frame_rx, nr_tti_rx);
+    /*FILE *fd;
+    if ((fd = fopen("rxsig_frame0.dat","w")) != NULL) {
+                  fwrite((void *)&ue->common_vars.rxdata[0][0],
+                         sizeof(int32_t),
+                         ue->frame_parms.samples_per_frame,
+                         fd);
+                  LOG_I(PHY,"Dummping Frame ... bye bye \n");
+                  fclose(fd);
+                  exit(0);
+                }*/
 
     /*
     write_output("rxsig0.m","rxs0", ue->common_vars.rxdata[0],ue->frame_parms.samples_per_subframe,1,1);
@@ -1614,6 +1624,59 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 }
 #endif
 
+int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)
+{
+  int mu = fp->numerology_index;
+  //uint8_t half_frame_index = fp->half_frame_bit;
+  //uint8_t i_ssb = fp->ssb_index;
+  uint8_t Lmax = fp->Lmax;
+
+  if (!(frame%(1<<(config->ssb_table.ssb_period-1)))){
+
+    if(Lmax <= 8) {
+      if(slot <=3 && (((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000))
+      return 1;
+      else return 0;
+    
+    }
+    else if(Lmax == 64) {
+      if (mu == NR_MU_3){
+
+        if (slot>=0 && slot <= 7){
+          if(((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000)
+          return 1;
+          else return 0;
+        }
+      else if (slot>=10 && slot <=17){
+         if(((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*(slot-2))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*(slot-2) +1))&0x80000000) == 0x80000000)
+         return 1;
+         else return 0;
+      }
+      else if (slot>=20 && slot <=27){
+         if(((config->ssb_table.ssb_mask_list[1].ssb_mask << 2*(slot-20))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[1].ssb_mask << (2*(slot-20) +1))&0x80000000) == 0x80000000)
+         return 1;
+         else return 0;
+      }
+      else if (slot>=30 && slot <=37){
+         if(((config->ssb_table.ssb_mask_list[1].ssb_mask << 2*(slot-22))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[1].ssb_mask << (2*(slot-22) +1))&0x80000000) == 0x80000000)
+         return 1;
+         else return 0;
+       }
+      else return 0;
+
+    }
+
+
+    else if (mu == NR_MU_4) {
+         AssertFatal(0==1, "not implemented for mu =  %d yet\n", mu);
+    }
+    else AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+   }
+   else AssertFatal(0==1, "Invalid Lmax %u for the synchronization block\n", Lmax);
+  }
+  else return 0;
+
+}
 
 int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)  {
 
@@ -1644,6 +1707,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
+  //int slot_ssb;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
@@ -1669,6 +1733,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
   
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp);
+  //slot_ssb = is_ssb_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)

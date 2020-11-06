@@ -97,7 +97,7 @@ static void *scope_thread_eNB(void *arg) {
       }
     }
 
-    sleep(1);
+    usleep(100*1000);
   }
 
   //  printf("%s",stats_buffer);

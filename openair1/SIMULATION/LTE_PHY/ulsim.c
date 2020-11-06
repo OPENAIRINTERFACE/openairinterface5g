@@ -80,6 +80,9 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
+static int cmpdouble(const void *p1, const void *p2) {
+  return *(double *)p1 > *(double *)p2;
+}
 
 
 int split73=0;
@@ -345,7 +348,7 @@ int main(int argc, char **argv) {
   unsigned short input_buffer_length;
   unsigned int ret;
   unsigned int coded_bits_per_codeword,nsymb;
-  unsigned int tx_lev=0,tx_lev_dB,trials,errs[4]= {0,0,0,0},round_trials[4]= {0,0,0,0};
+  unsigned int tx_lev=0,tx_lev_dB,trials,errs[5]= {0,0,0,0,0},round_trials[4]= {0,0,0,0};
   FILE *bler_fd=NULL;
   char bler_fname[512];
   FILE *time_meas_fd=NULL;

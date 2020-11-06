@@ -19,6 +19,9 @@
  *      contact@openairinterface.org
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include "nr_pdcp_ue_manager.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
@@ -42,6 +45,7 @@ static uint64_t pdcp_optmask;
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
 /****************************************************************************/
+
 
 #include <pthread.h>
 
@@ -92,6 +96,7 @@ static void *rlc_data_req_thread(void *_)
 {
   int i;
 
+  pthread_setname_np(pthread_self(), "RLC queue");
   while (1) {
     if (pthread_mutex_lock(&q.m) != 0) abort();
     while (q.length == 0)
@@ -203,6 +208,7 @@ static void *enb_tun_read_thread(void *_)
   protocol_ctxt_t ctxt;
 
   int rb_id = 1;
+  pthread_setname_np( pthread_self(),"enb_tun_read");
 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
@@ -247,7 +253,7 @@ static void *ue_tun_read_thread(void *_)
   protocol_ctxt_t ctxt;
 
   int rb_id = 1;
-
+  pthread_setname_np( pthread_self(),"ue_tun_read"); 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
     if (len == -1) {

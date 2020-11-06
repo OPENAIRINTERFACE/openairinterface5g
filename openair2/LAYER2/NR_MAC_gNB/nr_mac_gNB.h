@@ -68,6 +68,9 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_TAG.h"
 
+#include <openair3/UICC/usim_interface.h>
+
+
 /* Defs */
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
@@ -188,9 +191,9 @@ typedef struct {
   /// Template for RA computations
   NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels
-  uint8_t vrb_map[275];
+  uint16_t vrb_map[275];
   /// VRB map for common channels and retransmissions by PHICH
-  uint8_t vrb_map_UL[275];
+  uint16_t vrb_map_UL[275];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
   ///Number of active SSBs
@@ -372,7 +375,7 @@ typedef struct {
   /// Retransmission-related information
   NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
 
-  uint16_t ta_timer;
+  uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
   uint8_t tpc0;
@@ -386,7 +389,11 @@ typedef struct {
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
+  boolean_t fiveG_connected;
+  uicc_t *uicc;
+} NRUEcontext_t;
 
+typedef struct {
   int lc_bytes_tx[64];
   int lc_bytes_rx[64];
   int dlsch_rounds[8];
@@ -399,12 +406,14 @@ typedef struct {
 } NR_mac_stats_t;
 
 
+
 /*! \brief UNR_E_list_t is a "list" of users within UE_info_t. Especial useful in
  * the scheduler and to keep "classes" of users. */
 typedef struct {
   int head;
   int next[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
+
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
@@ -416,6 +425,7 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_UE_list_t list;
   int num_UEs;
+
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
@@ -426,6 +436,11 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
+
+typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
+                              frame_t frame,
+                              sub_frame_t slot,
+                              int num_slots_per_tdd);
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -489,6 +504,9 @@ typedef struct gNB_MAC_INST_s {
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
   /// current slot
   int current_slot;
+
+  /// DL preprocessor for differentiated scheduling
+  nr_pp_impl_dl pre_processor_dl;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
