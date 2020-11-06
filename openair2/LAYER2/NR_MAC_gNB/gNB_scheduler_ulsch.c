@@ -536,6 +536,12 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   sched_ctrl->sched_pusch->rbStart = 0;
   sched_ctrl->sched_pusch->rbSize = get_softmodem_params()->phy_test ?
     50 : NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
+  /* mark the corresponding RBs as used */
+  for (int rb = 0; rb < sched_ctrl->sched_pusch->rbSize; rb++)
+    vrb_map_UL[rb + sched_ctrl->sched_pusch->rbStart] = 1;
 }
 
 void nr_schedule_ulsch(module_id_t module_id,
