@@ -449,7 +449,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       break;
 
     default:
-      AssertFatal(1==0,"Undefined tdd period %d\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+      AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   }
 
   int num_slots_per_tdd = (slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
