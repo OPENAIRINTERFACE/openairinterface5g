@@ -102,7 +102,40 @@ nfapi_vnf_pnf_info_t* nfapi_vnf_pnf_list_find(nfapi_vnf_config_t* config, int p5
 
 	return 0;
 }
+/*
+void vnf_nr_handle_pnf_param_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_t* config, int p5_idx)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || config == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s : NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "Received PNF_PARAM.reponse\n");
 
+		nfapi_nr_pnf_param_response_t msg;
+			
+		// unpack the message
+		if (nfapi_nr_p5_message_unpack(pRecvMsg, recvMsgLen, &msg, sizeof(msg), &config->codec_config) >= 0)
+		{
+			// Invoke the call back
+			if(config->pnf_nr_param_resp)
+			{
+				(config->pnf_nr_param_resp)(config, p5_idx, &msg);
+			}
+		}	
+		else
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Unpack message failed, ignoring\n", __FUNCTION__);
+		}
+		
+		// make sure to release any dyanmic part of the message
+		if(msg.vendor_extension)
+			config->codec_config.deallocate(msg.vendor_extension);
+	}
+}
+*/
 void vnf_handle_pnf_param_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_t* config, int p5_idx)
 {
 	// ensure it's valid
@@ -820,6 +853,123 @@ void vnf_handle_vendor_extension(void* pRecvMsg, int recvMsgLen, nfapi_vnf_confi
 	}
 }
 
+#if 0
+void vnf_nr_handle_p4_p5_message(void *pRecvMsg, int recvMsgLen, int p5_idx, nfapi_vnf_config_t* config)
+{
+	nfapi_p4_p5_message_header_t messageHeader;
+
+	// validate the input params
+	if(pRecvMsg == NULL || recvMsgLen < NFAPI_HEADER_LENGTH || config == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "vnf_handle_p4_p5_message: invalid input params\n");
+		return;
+	}
+
+	// unpack the message header
+	if (nfapi_p5_message_header_unpack(pRecvMsg, recvMsgLen, &messageHeader, sizeof(nfapi_p4_p5_message_header_t), &config->codec_config) < 0)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "Unpack message header failed, ignoring\n");
+		return;
+	}
+
+	switch (messageHeader.message_id)
+	{
+		case NFAPI_PNF_PARAM_RESPONSE:
+			vnf_nr_handle_pnf_param_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_PNF_CONFIG_RESPONSE:
+			vnf_handle_pnf_config_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_PNF_START_RESPONSE:
+			vnf_handle_pnf_start_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_PNF_STOP_RESPONSE:
+			vnf_handle_pnf_stop_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_PARAM_RESPONSE:
+			vnf_handle_param_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_CONFIG_RESPONSE:
+			vnf_handle_config_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_START_RESPONSE:
+			vnf_handle_start_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_STOP_RESPONSE:
+			vnf_handle_stop_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_MEASUREMENT_RESPONSE:
+			vnf_handle_measurement_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_RSSI_RESPONSE:
+			vnf_handle_rssi_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_RSSI_INDICATION:
+			vnf_handle_rssi_indication(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_CELL_SEARCH_RESPONSE:
+			vnf_handle_cell_search_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_CELL_SEARCH_INDICATION:
+			vnf_handle_cell_search_indication(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_BROADCAST_DETECT_RESPONSE:
+			vnf_handle_broadcast_detect_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_BROADCAST_DETECT_INDICATION:
+			vnf_handle_broadcast_detect_indication(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_SYSTEM_INFORMATION_SCHEDULE_RESPONSE:
+			vnf_handle_system_information_schedule_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_SYSTEM_INFORMATION_SCHEDULE_INDICATION:
+			vnf_handle_system_information_schedule_indication(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_SYSTEM_INFORMATION_RESPONSE:
+			vnf_handle_system_information_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_SYSTEM_INFORMATION_INDICATION:
+			vnf_handle_system_information_indication(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		case NFAPI_NMM_STOP_RESPONSE:
+			vnf_handle_nmm_stop_response(pRecvMsg, recvMsgLen, config, p5_idx);
+			break;
+
+		default:
+			{
+				if(messageHeader.message_id >= NFAPI_VENDOR_EXT_MSG_MIN &&
+				   messageHeader.message_id <= NFAPI_VENDOR_EXT_MSG_MAX)
+				{
+					vnf_handle_vendor_extension(pRecvMsg, recvMsgLen, config, p5_idx, messageHeader.message_id);
+				}
+				else
+				{
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s P5 Unknown message ID %d\n", __FUNCTION__, messageHeader.message_id);
+				}
+			}
+			break;
+	}
+}
+#endif
 void vnf_handle_p4_p5_message(void *pRecvMsg, int recvMsgLen, int p5_idx, nfapi_vnf_config_t* config)
 {
 	nfapi_p4_p5_message_header_t messageHeader;
@@ -935,6 +1085,7 @@ void vnf_handle_p4_p5_message(void *pRecvMsg, int recvMsgLen, int p5_idx, nfapi_
 			break;
 	}
 }
+
 int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* pnf)
 {
 	if(1)
@@ -1091,6 +1242,31 @@ static int vnf_send_p5_msg(nfapi_vnf_pnf_info_t* pnf, const void *msg, int len, 
 
 	return 0;
 }
+
+/*
+int vnf_nr_pack_and_send_p5_message(vnf_t* vnf, uint16_t p5_idx, nfapi_p4_p5_message_header_t* msg, uint16_t msg_len)
+{
+	nfapi_vnf_pnf_info_t* pnf = nfapi_vnf_pnf_list_find(&(vnf->_public), p5_idx);
+	
+	if(pnf)
+	{
+		// pack the message for transmission
+		int packedMessageLength = nfapi_nr_p5_message_pack(msg, msg_len, vnf->tx_message_buffer, sizeof(vnf->tx_message_buffer), &vnf->_public.codec_config);
+
+		if (packedMessageLength < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "nfapi_p5_message_pack failed with return %d\n", packedMessageLength);
+			return -1;
+		}
+		return vnf_send_p5_msg(pnf, vnf->tx_message_buffer, packedMessageLength, 0);
+	}
+	else
+	{
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() cannot find pnf info for p5_idx:%d\n", __FUNCTION__, p5_idx);
+		return -1;
+	}
+}
+*/
 
 
 int vnf_pack_and_send_p5_message(vnf_t* vnf, uint16_t p5_idx, nfapi_p4_p5_message_header_t* msg, uint16_t msg_len)

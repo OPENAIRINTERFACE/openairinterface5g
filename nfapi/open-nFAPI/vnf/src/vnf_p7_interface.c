@@ -28,6 +28,7 @@
 
 #define FAPI2_IP_DSCP	0
 
+
 nfapi_vnf_p7_config_t* nfapi_vnf_p7_config_create()
 {
 	vnf_p7_t* _this = (vnf_p7_t*)calloc(1, sizeof(vnf_p7_t));
@@ -145,7 +146,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	//struct timespec original_pselect_timeout;
 	struct timespec pselect_timeout;
 	pselect_timeout.tv_sec = 0;
-	pselect_timeout.tv_nsec = 500000; // ns in a 1 ms (Change?)
+	pselect_timeout.tv_nsec = 500000; // ns in a 0.5 ms
 	//pselect_timeout.tv_nsec = 500000;
 
 	struct timespec pselect_start;
@@ -161,21 +162,21 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 //	sf_duration.tv_nsec = 0.5e6; // We want 1ms pause //We want 0.5 ms pause for NR
 	struct timespec slot_duration; 
 	slot_duration.tv_sec = 0;
+	//slot_duration.tv_nsec = 0.5e6;
 	slot_duration.tv_nsec = 0.5e6;
-	 
 
 
 //	struct timespec sf_start; //Change to slot_start?
 	struct timespec slot_start;
 //	clock_gettime(CLOCK_MONOTONIC, &sf_start);
 	clock_gettime(CLOCK_MONOTONIC, &slot_start);
-//	long millisecond = sf_start.tv_nsec / 1e6; //Check if we have to change
-	long millisecond = slot_start.tv_nsec / 1e6;
+	long millisecond = slot_start.tv_nsec / 1e6; //Check if we have to change
+	//long millisecond = slot_start.tv_nsec / 0.5e6;
 //	sf_start = timespec_add(sf_start, sf_duration);
 	slot_start = timespec_add(slot_start, slot_duration);
 
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "next slot will start at %d.%d\n", slot_start.tv_sec, slot_start.tv_nsec);
-
+    //printf("next slot will start at %d.%d\n",slot_start.tv_sec, slot_start.tv_nsec);
 	while(vnf_p7->terminate == 0)
 	{
 		fd_set rfds;
@@ -346,8 +347,8 @@ NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d]
 
 //                                        NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Subframe minor adjustment %dus sf_start.tv_nsec:%d duration:%u\n", 
 //                                            phy->insync_minor_adjustment, sf_start.tv_nsec, phy->insync_minor_adjustment_duration);
-										NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Slot minor adjustment %dus slot_start.tv_nsec:%d duration:%u\n", 
-                                            phy->insync_minor_adjustment, slot_start.tv_nsec, phy->insync_minor_adjustment_duration);
+										// NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Slot minor adjustment %dus slot_start.tv_nsec:%d duration:%u\n", 
+                                        //     phy->insync_minor_adjustment, slot_start.tv_nsec, phy->insync_minor_adjustment_duration);
 
                                         if (phy->insync_minor_adjustment_duration==0)
                                         {
@@ -391,37 +392,31 @@ NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d]
 		{
 			//vnf_p7->sf_start_time_hr = vnf_get_current_time_hr();
 			vnf_p7->slot_start_time_hr = vnf_get_current_time_hr();
-
+struct timespec current_time;
+	clock_gettime(CLOCK_MONOTONIC, &current_time);
 			// pselect timed out
 			nfapi_vnf_p7_connection_info_t* curr = vnf_p7->p7_connections;
-
 			while(curr != 0)
 			{
-			
 				if (curr->slot == 19)
-				{
-					curr->sfn++;
-					curr->slot = 0; //Correct? - gokul
-				}
-				else if(curr->slot > 19)
-				{
-					//error
+				{  //curr->slot = 0; 
+				if(curr->sfn == 1023)
+				curr->sfn=0;
+				else	
+				curr->sfn++;
+				curr->slot=0;
 				}
 				else
 				{
 				curr->slot++;
 				}
-				//curr->sfn_sf = increment_sfn_sf(curr->sfn_sf);
-				
-				vnf_sync(vnf_p7, curr);
-				//printf("sfn:%d, slot:%d",curr->sfn,curr->slot); //remove later - gokul 	
-				curr = curr->next;
-				
+				vnf_sync(vnf_p7, curr);	
+				//printf("\nsfn:%d, slot:%d\n current time:%d.%d",curr->sfn,curr->slot,current_time.tv_sec, current_time.tv_nsec); //remove later - gokul
+				//printf("next slot will start at %d.%d\n",current_time.tv_sec, current_time.tv_nsec);
+				curr = curr->next;	
 			}
-		
 			//send_mac_subframe_indications(vnf_p7);
 			send_mac_slot_indications(vnf_p7);
-
 		}
 		else if(selectRetval > 0)
 		{

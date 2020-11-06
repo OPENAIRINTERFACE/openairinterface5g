@@ -284,17 +284,17 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 		push8(value->precoderGranularity, ppWritePackedMsg, end) &&
 		push16(value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray16(value->RNTI, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray16(value->ScramblingId, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray16(value->dci_pdu.RNTI, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray16(value->dci_pdu.ScramblingId, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
 
-		pusharray16(value->ScramblingRNTI, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray8(value->CceIndex, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray8(value->AggregationLevel, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray8(value->beta_PDCCH_1_0, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray16(value->dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray8(value->dci_pdu.CceIndex, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray8(value->dci_pdu.AggregationLevel, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray8(value->dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
 
-		pusharray8(value->powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray16(value->PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray8(value->Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->numDlDci, ppWritePackedMsg, end)		
+		pusharray8(value->dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray16(value->dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
+		pusharray8(value->dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->numDlDci, ppWritePackedMsg, end)		
 	);
 
 }
@@ -1085,7 +1085,7 @@ static uint8_t pack_ul_tti_request_pusch_pdu(nfapi_nr_pusch_pdu_t* pusch_pdu, ui
 	push8(pusch_pdu->num_dmrs_cdm_grps_no_data, ppWritePackedMsg, end) &&
 	push16(pusch_pdu->dmrs_ports, ppWritePackedMsg, end) &&
 	push8(pusch_pdu->resource_alloc, ppWritePackedMsg, end) &&
-	pusharray8(pusch_pdu->resource_alloc,36,36,ppWritePackedMsg, end) &&
+	push8(pusch_pdu->resource_alloc,ppWritePackedMsg, end) &&
 	push16(pusch_pdu->dmrs_ports, ppWritePackedMsg, end) &&
 	push16(pusch_pdu->rb_start, ppWritePackedMsg, end) &&
 	push16(pusch_pdu->rb_size, ppWritePackedMsg, end) &&
@@ -2054,17 +2054,17 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, ppWritePackedMsg, end) &&
 			push16(value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.RNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.ScramblingId, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.RNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingId, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
 
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.ScramblingRNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.CceIndex, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.AggregationLevel, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.CceIndex, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.AggregationLevel, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
 
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.powerControlOffsetSS, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.PayloadSizeBits, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, ppWritePackedMsg, end)
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, ppWritePackedMsg, end)
 	);
 		  
 	
@@ -2123,7 +2123,8 @@ static uint8_t pack_tx_data_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg
 			push16(value->TLVs[i].tag, ppWritePackedMsg, end)))
 			return 0;
 
-		switch(value->TLVs[i].tag){
+		switch(value->TLVs[i].tag)
+		{
 			case 0:
 			{
 				if(!pusharray32(value->TLVs[i].value.direct, 16384, value->TLVs[i].length, ppWritePackedMsg, end))
@@ -3577,17 +3578,17 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 		pull8(ppReadPackedMsg, &value->precoderGranularity, end) &&
 		pull16(ppReadPackedMsg, &value->numDlDci, end) &&
-		pullarray16(ppReadPackedMsg, &value->RNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray16(ppReadPackedMsg, &value->ScramblingId, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, &value->dci_pdu.RNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, &value->dci_pdu.ScramblingId, MAX_DCI_CORESET, value->numDlDci, end) &&
 
-		pullarray16(ppReadPackedMsg, &value->ScramblingRNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray8(ppReadPackedMsg, &value->CceIndex, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray8(ppReadPackedMsg, &value->AggregationLevel, MAX_DCI_CORESET,value->numDlDci, end) && 
-		pullarray8(ppReadPackedMsg, &value->beta_PDCCH_1_0, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, &value->dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray8(ppReadPackedMsg, &value->dci_pdu.CceIndex, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray8(ppReadPackedMsg, &value->dci_pdu.AggregationLevel, MAX_DCI_CORESET,value->numDlDci, end) && 
+		pullarray8(ppReadPackedMsg, &value->dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, value->numDlDci, end) &&
 
-		pullarray8(ppReadPackedMsg, &value->powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray16(ppReadPackedMsg, &value->PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray8(ppReadPackedMsg, &value->Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->numDlDci, end)		
+		pullarray8(ppReadPackedMsg, &value->dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, &value->dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray8(ppReadPackedMsg, &value->dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->numDlDci, end)		
 	);
 
 }
@@ -4375,9 +4376,9 @@ static uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
 		))
 			return 0;
-	if(pNfapiMsg->Slot % 2 != 0){
-	printf("\nEntering unpack_dl_tti_request Odd sfn=%d,slot=%d\n",pNfapiMsg->SFN,pNfapiMsg->Slot);
-	}
+	// if(pNfapiMsg->Slot % 2 != 0){
+	// printf("\nEntering unpack_dl_tti_request Odd sfn=%d,slot=%d\n",pNfapiMsg->SFN,pNfapiMsg->Slot);
+	// }
 
 	int arr[12];
 	for(int i=0;i<pNfapiMsg->nGroup;i++)
@@ -4481,7 +4482,7 @@ static uint8_t unpack_ul_tti_request_pusch_pdu(void *tlv, uint8_t **ppReadPacked
 	pull8(ppReadPackedMsg, &pusch_pdu->num_dmrs_cdm_grps_no_data, end) &&
 	pull16(ppReadPackedMsg, &pusch_pdu->dmrs_ports, end) &&
 	pull8(ppReadPackedMsg, &pusch_pdu->resource_alloc, end) &&
-	pullarray8(ppReadPackedMsg, &pusch_pdu->resource_alloc,36,36,end) &&
+	pull8(ppReadPackedMsg, &pusch_pdu->resource_alloc,end) &&
 	pull16(ppReadPackedMsg, &pusch_pdu->dmrs_ports, end) &&
 	pull16(ppReadPackedMsg, &pusch_pdu->rb_start, end) &&
 	pull16(ppReadPackedMsg, &pusch_pdu->rb_size, end) &&
@@ -5649,17 +5650,17 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, end) &&
 			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.RNTI, MAX_DCI_CORESET, 1, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.ScramblingId, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.RNTI, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingId, MAX_DCI_CORESET, 1, end) &&
 
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.ScramblingRNTI, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CceIndex, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.AggregationLevel, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.CceIndex, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.AggregationLevel, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, end) &&
 
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.powerControlOffsetSS, MAX_DCI_CORESET, 1, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.PayloadSizeBits, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, end)
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, end)
 	);
 		  
 }

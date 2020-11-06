@@ -570,7 +570,7 @@ void nr_generate_Msg2(module_id_t module_idP,
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    nfapi_nr_dl_tti_request_body_t *dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
+    nfapi_nr_dl_tti_request_t *dl_req = &nr_mac->DL_req[CC_id];
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];

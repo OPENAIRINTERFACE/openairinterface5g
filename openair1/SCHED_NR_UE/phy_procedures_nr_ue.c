@@ -3870,7 +3870,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            uint8_t eNB_id,
                            uint8_t do_pdcch_flag,
                            runmode_t mode)
-{
+{ struct timespec curr_time;
+  clock_gettime(CLOCK_MONOTONIC,&curr_time);
+  //printf("Current time: %d.%d",curr_time.tv_sec,curr_time.tv_nsec);
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
@@ -3974,7 +3976,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if (dci_cnt > 0) {
 
-    LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
+    LOG_I(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
 
     NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1){

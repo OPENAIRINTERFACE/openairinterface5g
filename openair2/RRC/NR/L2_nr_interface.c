@@ -78,10 +78,11 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                                      carrier->MIB,
                                      24);
     LOG_D(NR_RRC,"Encoded MIB for frame %d sfn_msb %d (%p), bits %lu\n",frameP,sfn_msb,carrier->MIB,enc_rval.encoded);
+  
     buffer_pP[0]=carrier->MIB[0];
     buffer_pP[1]=carrier->MIB[1];
     buffer_pP[2]=carrier->MIB[2];
-    LOG_D(NR_RRC,"MIB PDU buffer_pP[0]=%x , buffer_pP[1]=%x, buffer_pP[2]=%x\n",buffer_pP[0],buffer_pP[1],buffer_pP[2]);
+    LOG_I(NR_RRC,"MIB PDU buffer_pP[0]=%x , buffer_pP[1]=%x, buffer_pP[2]=%x\n",buffer_pP[0],buffer_pP[1],buffer_pP[2]);
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                  enc_rval.failed_type->name, enc_rval.encoded);
     return(3);

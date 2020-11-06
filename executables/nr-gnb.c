@@ -142,10 +142,13 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
+struct timespec current;
+clock_gettime(CLOCK_MONOTONIC, &current);
+//LOG_I(PHY,"%sCurrent time %d.%d,frame_rx %d,slot_rx %d,frame_tx %d,slot_tx %d\n", __FUNCTION__, current.tv_sec,current.tv_nsec,frame_rx,slot_rx,frame_tx,slot_tx);
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-
+  
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
@@ -157,6 +160,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
     // oai_subframe_ind(frame_rx, slot_rx);
+
     oai_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
@@ -340,15 +344,21 @@ static void *gNB_L1_thread( void *param ) {
 
 
   while (!oai_exit) {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC,&t);
+    //printf("\nbefore time %d.%d\n",t.tv_sec,t.tv_nsec);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
+    clock_gettime(CLOCK_MONOTONIC,&t);
 
     int frame_rx          = L1_proc->frame_rx;
     int slot_rx           = L1_proc->slot_rx;
     int frame_tx          = L1_proc->frame_tx;
     int slot_tx           = L1_proc->slot_tx;
     uint64_t timestamp_tx = L1_proc->timestamp_tx;
+    
+    //printf("\nframe %d slot %d after wait time %d.%d\n",frame_rx,slot_rx,t.tv_sec,t.tv_nsec);
 
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,slot_tx);

@@ -98,6 +98,21 @@ int nfapi_pnf_stop(nfapi_pnf_config_t* config)
 	return 0;
 }
 
+/*
+int nfapi_nr_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_response_t* resp)
+{
+	// ensure it's valid
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+
+	pnf_t* _this = (pnf_t*)(config);
+
+	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_pnf_param_response_t));
+}
+*/
 int nfapi_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_pnf_param_response_t* resp)
 {
 	// ensure it's valid

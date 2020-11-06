@@ -69,8 +69,16 @@ typedef enum {
   NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION= 0X86,
   NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION= 0X87,
   NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION= 0X88,
-  NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89
+  NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89,
   //RESERVED 0X8a ~ 0xff
+  NFAPI_NR_PHY_MSG_TYPE_PNF_PARAM_REQUEST = 0x0100,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_PARAM_RESPONSE = 0x0101,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_CONFIG_REQUEST= 0x0102,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_CONFIG_RESPONSE= 0x0103,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_START_REQUEST= 0x0104,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_START_RESPONSE= 0x0105,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_REQUEST= 0x0106,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_RESPONSE= 0x0107
 } nfapi_nr_phy_msg_type_e;
 
 // SCF222_5G-FAPI_PHY_SPI_Specificayion.pdf Section 3.3
@@ -454,6 +462,54 @@ typedef enum {    // Table 2-27
 	NFAPI_NR_START_MSG_INVALID_STATE
 } nfapi_nr_start_errors_e;
 
+//PNF P5 NR 
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_param_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_pnf_param_general_t pnf_param_general;
+	nfapi_pnf_phy_t pnf_phy;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_param_response_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint8_t num_tlvs;
+	nfapi_pnf_phy_rf_config_t pnf_phy_rf_config;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_config_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_config_response_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_start_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_start_response_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_stop_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_stop_response_t;
 
 
 /* PARAM.REQUEST */

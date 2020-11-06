@@ -38,6 +38,7 @@
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req);
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req);
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req);
 
 
 extern uint8_t nfapi_mode;
@@ -49,7 +50,7 @@ void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
   AssertFatal(dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag== 1, "bchPayloadFlat %d != 1\n",
               dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag);
 
-  LOG_D(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
+  LOG_I(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
   memcpy((void*)&gNB->ssb_pdu,&dl_tti_pdu->ssb_pdu,sizeof(dl_tti_pdu->ssb_pdu));
 }
 
@@ -142,7 +143,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
-  
+   //LOG_I(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d\n",frame,slot);
+
 
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
@@ -171,7 +173,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB->pbch_configured=0;
 
   for (int i=0;i<number_dl_pdu;i++) {
-    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_pdu_list[i];
+    volatile nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
@@ -208,31 +210,53 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   }
 
   //  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
-  
-  if(nfapi_mode != 2)
-  for (int i=0;i<number_ul_dci_pdu;i++) {
+   if(nfapi_mode != 2)
+   for (int i=0;i<number_ul_dci_pdu;i++) {
     handle_nfapi_nr_ul_dci_pdu(gNB, frame, slot, &UL_dci_req->ul_dci_pdu_list[i]);
   }
-  if (nfapi_mode != 0 ) 
-  {
-    if (Sched_INFO->TX_req->Number_of_PDUs > 0)
-    {
-      Sched_INFO->TX_req->SFN = frame;
-      Sched_INFO->TX_req->Slot = slot;
-       oai_nfapi_tx_data_req(Sched_INFO->TX_req);
+
+if(nfapi_mode != 2)
+  for (int i = 0; i < number_ul_tti_pdu; i++) {
+    switch (UL_tti_req->pdus_list[i].pdu_type) {
+      case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUSCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+        nr_fill_ulsch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pusch_pdu);
+        break;
+      case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
+        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUCCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+        nr_fill_pucch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pucch_pdu);
+        break;
+      case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
+        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PRACH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+        nfapi_nr_prach_pdu_t *prach_pdu = &UL_tti_req->pdus_list[i].prach_pdu;
+        nr_fill_prach(gNB, UL_tti_req->SFN, UL_tti_req->Slot, prach_pdu);
+        if (gNB->RU_list[0]->if_south == LOCAL_RF) nr_fill_prach_ru(gNB->RU_list[0], UL_tti_req->SFN, UL_tti_req->Slot, prach_pdu);
+        break;
     }
-    //if(Sched_INFO->DL_req->nPDUs > 0)
-   { 
+  }
+
+// if(nfapi_mode != 0 && number_ul_tti_pdu>0)
+// {
+//   oai_nfapi_ul_tti_req(UL_tti_req);
+// } Test only DL 
+ 
+ 
+  if (nfapi_mode != 0) 
+  { if(Sched_INFO->DL_req->nPDUs > 0)
+   {
     Sched_INFO->DL_req->SFN = frame;
     Sched_INFO->DL_req->Slot = slot;
     oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req);
    }
+    if (Sched_INFO->TX_req->Number_of_PDUs > 0)
+    {
+       oai_nfapi_tx_data_req(Sched_INFO->TX_req);
+    }
+   
   }
    
   if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
   {
-    Sched_INFO->UL_dci_req->SFN=frame;
-    Sched_INFO->UL_dci_req->Slot=slot;
     oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
   }
 }

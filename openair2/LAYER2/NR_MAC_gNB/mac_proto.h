@@ -127,7 +127,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   subframeP);
 
 int configure_fapi_dl_pdu(int Mod_id,
-                         int *CCEIndeces,
                          nfapi_nr_dl_tti_request_t *dl_tti_req,
                          NR_sched_pucch *pucch_sched,
                          uint8_t *mcsIndex,

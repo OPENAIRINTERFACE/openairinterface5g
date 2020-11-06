@@ -130,6 +130,9 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int frame,int slot,
                            int do_meas) {
+  // struct timespec time;
+  //  clock_gettime(CLOCK_MONOTONIC, &time);
+  // LOG_I(PHY,"\nphy_procedures_gNB_TX frame tx %d slot tx %d time %d.%d\n",frame,slot,time.tv_sec,time.tv_nsec);
   int aa;
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -168,7 +171,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 	gNB->Mod_id,frame,slot,pdcch_pdu_id,ul_pdcch_pdu_id);
 
   if (pdcch_pdu_id >= 0 || ul_pdcch_pdu_id >= 0) {
-    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+    LOG_I(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
 	  gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
 	  gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
@@ -193,7 +196,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
  
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
-    LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
+    LOG_I(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
     nr_generate_pdsch(gNB,frame, slot);
     if ((frame&127) == 0) dump_pdsch_stats(gNB);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);

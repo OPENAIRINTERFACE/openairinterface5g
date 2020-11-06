@@ -1096,6 +1096,14 @@ void handle_nfapi_hi_dci0_hi_pdu(
     nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
 }
 
+void rrc_pdcp_config_req (
+  const protocol_ctxt_t *const  ctxt_pP,
+  const srb_flag_t  srb_flagP,
+  const uint32_t    actionP,
+  const rb_id_t     rb_idP,
+  const uint8_t     security_modeP){
+}
+
 void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
                              int frame,
                              int subframe,

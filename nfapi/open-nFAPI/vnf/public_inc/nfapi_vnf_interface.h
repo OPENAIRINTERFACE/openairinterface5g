@@ -121,6 +121,7 @@ typedef struct nfapi_vnf_config
 	 * 
 	 *  \todo Do we need to send the address information of the PNF?
 	 */
+	int (*pnf_nr_connection_indication)(nfapi_vnf_config_t* config, int p5_idx);
 	int (*pnf_connection_indication)(nfapi_vnf_config_t* config, int p5_idx);
 	
 	/*! \brief Callback indicating that a pnf has lost connection 
@@ -161,6 +162,7 @@ typedef struct nfapi_vnf_config
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
+	int (*pnf_nr_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_param_response_t* resp);
 	int (*pnf_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_response_t* resp);
 	
 	/*! A callback for the PNF_CONFIG.resp 
@@ -471,6 +473,8 @@ void nfapi_vnf_config_destory(nfapi_vnf_config_t* config);
  * 
  * This function will not return untill nfapi_vnf_stop is called
  */
+//int nfapi_nr_vnf_start(nfapi_vnf_config_t* config);
+
 int nfapi_vnf_start(nfapi_vnf_config_t* config);
 
 /*! Stop the VNF library. 
@@ -502,6 +506,7 @@ int nfapi_vnf_allocate_phy(nfapi_vnf_config_t* config, int p5_idx, uint16_t* phy
  * \return  0 means success, -1 failure
  */
 int nfapi_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_request_t* req);
+//int nfapi_nr_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_param_request_t* req);
 
 /*! Send the PNF_CONFIG.request
  * \param config A pointer to a vnf config
@@ -953,7 +958,7 @@ int nfapi_vnf_p7_nr_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_nr_dl_tti
  *  may be released after this function call has returned or at a later pointer
  */
 int nfapi_vnf_p7_ul_config_req(nfapi_vnf_p7_config_t* config, nfapi_ul_config_request_t* req);
-
+int nfapi_vnf_p7_ul_tti_req(nfapi_vnf_p7_config_t* config, nfapi_nr_ul_tti_request_t* req);
 /*! Send the HI_DCI0.request
  *  \param config A pointer to the vnf p7 configuration
  *  \param req A data structure for the decoded HI_DCI0.request.
@@ -963,7 +968,7 @@ int nfapi_vnf_p7_ul_config_req(nfapi_vnf_p7_config_t* config, nfapi_ul_config_re
  *  may be released after this function call has returned or at a later pointer
  */
 int nfapi_vnf_p7_hi_dci0_req(nfapi_vnf_p7_config_t* config, nfapi_hi_dci0_request_t* req);
-
+int nfapi_vnf_p7_ul_dci_req(nfapi_vnf_p7_config_t* config, nfapi_nr_ul_dci_request_t* req);
 /*! Send the TX.req
  *  \param config A pointer to the vnf p7 configuration
  *  \param req A data structure for the decoded HI_DCI0.request.
@@ -973,7 +978,7 @@ int nfapi_vnf_p7_hi_dci0_req(nfapi_vnf_p7_config_t* config, nfapi_hi_dci0_reques
  *  may be released after this function call has returned or at a later pointer
  */
 int nfapi_vnf_p7_tx_req(nfapi_vnf_p7_config_t* config, nfapi_tx_request_t* req);
-
+int nfapi_vnf_p7_tx_data_req(nfapi_vnf_p7_config_t* config, nfapi_nr_tx_data_request_t* req);
 /*! Send the LBT_DL_CONFIG.requst
  *  \param config A pointer to the vnf p7 configuration
  *  \param req A data structure for the decoded LBT_DL_CONFIG.request.

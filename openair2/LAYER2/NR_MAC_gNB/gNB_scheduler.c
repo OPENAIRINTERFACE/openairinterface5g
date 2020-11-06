@@ -449,7 +449,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // hardcoding dlsch to be in slot 1
   if (!(slot%num_slots_per_tdd)) {
     if(slot==0) {
-      *dlsch_in_slot_bitmap = 0x02;
+      *dlsch_in_slot_bitmap = 0x04;
       *ulsch_in_slot_bitmap = 0x100;
     }
     else {
@@ -508,7 +508,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
   } else
     UE_list->fiveG_connected[UE_id] = true;
-
+//printf("UE connected %d \n",UE_list->fiveG_connected[UE_id]);
   if (get_softmodem_params()->phy_test) {
 
     // TbD once RACH is available, start ta_timer when UE is connected
@@ -526,12 +526,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     }
   }
 
-  // This schedules the DCI for Uplink and subsequently PUSCH
+  //This schedules the DCI for Uplink and subsequently PUSCH
   if (UE_list->fiveG_connected[UE_id]) {
     int tda = 1; // time domain assignment hardcoded for now
     schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda);
     nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
-  }
+  } //Testing DL only
 
   if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot%num_slots_per_tdd))) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;

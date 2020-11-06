@@ -251,7 +251,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 
 int configure_fapi_dl_pdu(int Mod_idP,
-                          int *CCEIndex,
                           nfapi_nr_dl_tti_request_t *dl_tti_req,
 			  NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
@@ -592,12 +591,12 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config){
 
-  LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest frame %d slot %d\n",frameP,slotP);
+  
 
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int lcid, offset, i, header_length_last, TBS_bytes = 0;
-  int UE_id = 0, CC_id = 0;
-
+  int UE_id = 0,CC_id = 0;
+LOG_I(MAC, "In nr_schedule_uss_dlsch_phytest frame %d slot %d DL req sfn %d slot %d\n",frameP,slotP,RC.nrmac[module_idP]->DL_req[CC_id].SFN,RC.nrmac[module_idP]->DL_req[CC_id].Slot);
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   //NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
@@ -621,7 +620,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   ta_len = gNB_mac->ta_len;
 
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
-                                    CCEIndices,
                                     dl_tti_req,
 				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
@@ -690,7 +688,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     // fill dlsch_buffer with random data
     for (i = 0; i < TBS_bytes; i++){
-      mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+      //mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+      mac_sdus[i] = (unsigned char) (0x01);//for testing
       //((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
     }
     //Sending SDUs with size 1

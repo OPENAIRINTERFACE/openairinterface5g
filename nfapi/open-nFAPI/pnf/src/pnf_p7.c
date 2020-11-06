@@ -203,7 +203,7 @@ nfapi_ul_config_request_t* allocate_nfapi_ul_config_request(pnf_p7_t* pnf_p7)
 void deallocate_nfapi_ul_tti_request(nfapi_nr_ul_tti_request_t* req, pnf_p7_t* pnf_p7) 
 { 
   //printf("%s() SFN/SF:%d %s req:%p pdu_list:%p\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), pnf_p7->_public.codec_config.deallocate ? "DEALLOCATE" : "FREE", req, req->ul_config_request_body.ul_config_pdu_list);
-	if(pnf_p7->_public.codec_config.deallocate)
+	/*if(pnf_p7->_public.codec_config.deallocate)
 	{
 		(pnf_p7->_public.codec_config.deallocate)(req->pdus_list);
 		(pnf_p7->_public.codec_config.deallocate)(req->groups_list);
@@ -213,7 +213,7 @@ void deallocate_nfapi_ul_tti_request(nfapi_nr_ul_tti_request_t* req, pnf_p7_t* p
 		free(req->pdus_list);
 		free(req->groups_list);
 	}
-
+	*/
 	pnf_p7_free(pnf_p7, req);
 }
 
@@ -246,14 +246,14 @@ nfapi_hi_dci0_request_t* allocate_nfapi_hi_dci0_request(pnf_p7_t* pnf_p7)
 void deallocate_nfapi_ul_dci_request(nfapi_nr_ul_dci_request_t* req, pnf_p7_t* pnf_p7) 
 { 
   //printf("%s() SFN/SF:%d %s req:%p pdu_list:%p\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), pnf_p7->_public.codec_config.deallocate ? "DEALLOCATE" : "FREE", req, req->hi_dci0_request_body.hi_dci0_pdu_list);
-	if(pnf_p7->_public.codec_config.deallocate)
-	{
-		(pnf_p7->_public.codec_config.deallocate)(req->ul_dci_pdu_list);
-	}
-	else
-	{
-		free(req->ul_dci_pdu_list);
-	}
+	// if(pnf_p7->_public.codec_config.deallocate)
+	// {
+	// 	(pnf_p7->_public.codec_config.deallocate)(req->ul_dci_pdu_list);
+	// }
+	// else
+	// {
+	// 	free(req->ul_dci_pdu_list);
+	// }
 
 	pnf_p7_free(pnf_p7, req);
 }
@@ -800,7 +800,6 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 	
 	// todo : consider a more efficent lock mechasium
 	//uint16_t NUM_SLOTS = 20;//10* 2^mu
-
 	if(pthread_mutex_lock(&(pnf_p7->mutex)) != 0)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to lock mutex\n");
@@ -810,6 +809,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 	// save the curren time, sfn and slot
 	pnf_p7->slot_start_time_hr = pnf_get_current_time_hr();
 	pnf_p7->sfn = sfn;
+	
 	pnf_p7->slot = slot;
 
 
@@ -882,13 +882,18 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 
 		//printf("tx_subframe_buffer->sfn_sf:%d sfn_sf_tx:%d\n", tx_subframe_buffer->sfn_sf, sfn_sf_tx);
 		//printf("subframe_buffer->sfn_sf:%d sfn_sf:%d\n", subframe_buffer->sfn_sf, sfn_sf);
-		if(tx_slot_buffer->slot == slot_tx && tx_slot_buffer->sfn == sfn_tx)
-		{
+		//printf("tx_slot_buff_sfn - %d, tx_slot_buf_slot - %d, sfn_tx = %d, sllot_tx - %d \n",tx_slot_buffer->sfn,tx_slot_buffer->slot,sfn_tx,slot_tx);
+		// if(tx_slot_buffer->slot == slot_tx && tx_slot_buffer->sfn == sfn_tx)
+		// {	
+			
 			if(tx_slot_buffer->tx_data_req != 0)
 			{
+				
 				if(pnf_p7->_public.tx_data_req_fn)
-					(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), tx_slot_buffer->tx_data_req);
-
+					{
+						
+						(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), tx_slot_buffer->tx_data_req);
+					}
 				//deallocate_nfapi_tx_request(slot_buffer->tx_req, pnf_p7);
 			}
 			else 
@@ -902,7 +907,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 					(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), pnf_p7->_public.dummy_slot.tx_data_req);
 				}
 			}
-		} 
+		//} 
 
 		if( tx_slot_buffer->dl_tti_req != 0) // ADDED & TO BYPASS ERROR
 		{
@@ -1092,18 +1097,18 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 
 
         //printf("pnf_p7->tick:%d\n", pnf_p7->tick);
-	if(pnf_p7->tick == 1000) // why?
-	{
-		// TODO: change stats to nr_stats
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF P7:%d] (ONTIME/LATE) DL:(%d/%d) UL:(%d/%d) HI:(%d/%d) TX:(%d/%d)\n", pnf_p7->_public.phy_id,
-					pnf_p7->stats.dl_conf_ontime, pnf_p7->stats.dl_conf_late, 
-					pnf_p7->stats.ul_conf_ontime, pnf_p7->stats.ul_conf_late, 
-					pnf_p7->stats.hi_dci0_ontime, pnf_p7->stats.hi_dci0_late, 
-					pnf_p7->stats.tx_ontime, pnf_p7->stats.tx_late);
-		pnf_p7->tick = 0;
-		memset(&pnf_p7->stats, 0, sizeof(pnf_p7->stats));
-	}
-	pnf_p7->tick++;
+	// if(pnf_p7->tick == 1000) // why?
+	// {
+	// 	// TODO: change stats to nr_stats
+	// 	NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF P7:%d] (ONTIME/LATE) DL:(%d/%d) UL:(%d/%d) HI:(%d/%d) TX:(%d/%d)\n", pnf_p7->_public.phy_id,
+	// 				pnf_p7->stats.dl_conf_ontime, pnf_p7->stats.dl_conf_late, 
+	// 				pnf_p7->stats.ul_conf_ontime, pnf_p7->stats.ul_conf_late, 
+	// 				pnf_p7->stats.hi_dci0_ontime, pnf_p7->stats.hi_dci0_late, 
+	// 				pnf_p7->stats.tx_ontime, pnf_p7->stats.tx_late);
+	// 	pnf_p7->tick = 0;
+	// 	memset(&pnf_p7->stats, 0, sizeof(pnf_p7->stats));
+	// }
+	// pnf_p7->tick++;
 
 
 	if(pthread_mutex_unlock(&(pnf_p7->mutex)) != 0)
@@ -1413,50 +1418,68 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 {
 	uint32_t recv_sfn_slot_dec = NFAPI_SFNSLOT2DEC(sfn,slot);
 	uint32_t current_sfn_slot_dec = NFAPI_SFNSLOT2DEC(phy->sfn,phy->slot);
-
+	printf("p7_msg_sfn: %d, p7_msg_slot: %d, phy_sfn:%d , phy_slot:%d \n",sfn,slot,phy->sfn,phy->slot);
 	uint8_t in_window = 0;
 	uint8_t timing_window = phy->_public.slot_buffer_size;
 
-	if(recv_sfn_slot_dec <= current_sfn_slot_dec)
-	{
-		// Need to check for wrap in window
-		if(((current_sfn_slot_dec + timing_window) % NFAPI_MAX_SFNSLOTDEC) < current_sfn_slot_dec)
-		{
-			if(recv_sfn_slot_dec > ((current_sfn_slot_dec + timing_window) % NFAPI_MAX_SFNSLOTDEC))
-			{
-				// out of window
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is late %d (with wrap)\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
-			}
-			else
-			{
-				// ok
-				//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d (with wrap)\n", current_sfn_sf_dec, name, recv_sfn_sf_dec);
-				in_window = 1;
-			}
-		}
-		else
-		{
-			// too late
-			NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in late %d (delta:%d)\n", current_sfn_slot_dec, name, recv_sfn_slot_dec, (current_sfn_slot_dec - recv_sfn_slot_dec));
-		}
+	// if(recv_sfn_slot_dec <= current_sfn_slot_dec)
+	// {
+	// 	// Need to check for wrap in window
+	// 	if(((recv_sfn_slot_dec + timing_window) % NFAPI_MAX_SFNSLOTDEC) < recv_sfn_slot_dec)
+	// 	{
+	// 		if(current_sfn_slot_dec > ((recv_sfn_slot_dec + timing_window) % NFAPI_MAX_SFNSLOTDEC))
+	// 		{
+	// 			// out of window
+	// 			NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is late %d (with wrap)\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
+	// 		}
+	// 		else
+	// 		{
+	// 			// ok
+	// 			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d (with wrap)\n", current_sfn_sf_dec, name, recv_sfn_sf_dec);
+	// 			in_window = 1;
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		if((current_sfn_slot_dec - recv_sfn_slot_dec) <= timing_window)
+	// 			{
+	// 				// in window
+	// 				//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
+	// 				in_window = 1;
+	// 			}
+	// 		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in late %d (delta:%d)\n", current_sfn_slot_dec, name, recv_sfn_slot_dec, (current_sfn_slot_dec - recv_sfn_slot_dec));
+	// 	}
 
+	// }
+	// else
+	// {
+	// 	// Need to check it is in window
+	// 	if((recv_sfn_slot_dec - current_sfn_slot_dec) <= timing_window)
+	// 	{
+	// 		// in window
+	// 		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_sf_dec, name, recv_sfn_sf_dec);
+	// 		in_window = 1;
+	// 	}
+	// 	else
+	// 	{
+	// 		// too far in the future
+	// 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (recv_sfn_slot_dec - current_sfn_slot_dec), timing_window);
+	// 	}
+
+	// }
+	if(current_sfn_slot_dec <= recv_sfn_slot_dec + timing_window){
+		in_window = 1;
+		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
+	}
+	else if(current_sfn_slot_dec + NFAPI_MAX_SFNSLOTDEC <= recv_sfn_slot_dec + timing_window){ //checking for wrap
+		in_window = 1;
+		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
 	}
 	else
 	{
-		// Need to check it is in window
-		if((recv_sfn_slot_dec - current_sfn_slot_dec) <= timing_window)
-		{
-			// in window
-			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_sf_dec, name, recv_sfn_sf_dec);
-			in_window = 1;
-		}
-		else
-		{
-			// too far in the future
-			NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (recv_sfn_slot_dec - current_sfn_slot_dec), timing_window);
-		}
-
+		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
 	}
+	
 
 	return in_window;
 }
@@ -1563,7 +1586,7 @@ void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
                         struct timespec t;
                         clock_gettime(CLOCK_MONOTONIC, &t);
 
-                  NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE DL_TTI_REQ sfn_slot:%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, sfn_slot_dec, buffer_index);
+                  //NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE DL_TTI_REQ sfn_slot:%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, sfn_slot_dec, buffer_index);
 
 			// if there is already an dl_config_req make sure we free it.
 			if(pnf_p7->slot_buffer[buffer_index].dl_tti_req != 0)
@@ -1581,7 +1604,6 @@ void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 			pnf_p7->slot_buffer[buffer_index].dl_tti_req = req;
 
 			pnf_p7->stats.dl_tti_ontime++;
-			
 		}
 		else
 		{
@@ -2334,7 +2356,7 @@ uint32_t calculate_t2(uint32_t now_time_hr, uint16_t sfn,uint16_t slot, uint32_t
 {
 	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
 	uint32_t t2 = (NFAPI_SFNSLOT2DEC(sfn, slot) * 500) + slot_time_us;
-
+	
         if (0)
         {
           static uint32_t prev_t2 = 0;
@@ -2360,7 +2382,7 @@ uint32_t calculate_t3(uint16_t sfn, uint16_t slot, uint32_t slot_start_time_hr)
 	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
 
 	uint32_t t3 = (NFAPI_SFNSLOT2DEC(sfn, slot) * 500) + slot_time_us;
-
+	
 	return t3;
 }
 

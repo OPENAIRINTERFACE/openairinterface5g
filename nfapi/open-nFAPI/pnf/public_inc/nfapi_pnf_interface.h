@@ -127,6 +127,7 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the PNF_PARAM.response after receiving the
 	 *  PNF_PARAM.request. This can be done in the call back. 
 	 */
+	//int (*pnf_nr_param_req)(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_request_t* req);
 	int (*pnf_param_req)(nfapi_pnf_config_t* config, nfapi_pnf_param_request_t* req);
 	
 	/*! A callback for the PNF_CONFIG.request

@@ -1125,15 +1125,13 @@ typedef struct {
 	uint32_t error_code;
 	nfapi_pnf_param_general_t pnf_param_general;
 	nfapi_pnf_phy_t pnf_phy;
-	/*
-	nfapi_pnf_rf_t pnf_rf;
-	nfapi_pnf_phy_rel10_t pnf_phy_rel10;
-	nfapi_pnf_phy_rel11_t pnf_phy_rel11;
-	nfapi_pnf_phy_rel12_t pnf_phy_rel12;
-	nfapi_pnf_phy_rel13_t pnf_phy_rel13;
-	nfapi_pnf_phy_rel13_nb_iot_t pnf_phy_rel13_nb_iot;
+	// nfapi_pnf_rf_t pnf_rf;
+	// nfapi_pnf_phy_rel10_t pnf_phy_rel10;
+	// nfapi_pnf_phy_rel11_t pnf_phy_rel11;
+	// nfapi_pnf_phy_rel12_t pnf_phy_rel12;
+	// nfapi_pnf_phy_rel13_t pnf_phy_rel13;
+	// nfapi_pnf_phy_rel13_nb_iot_t pnf_phy_rel13_nb_iot;
   nfapi_pnf_phy_rel15_t pnf_phy_rel15;
-  */
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_pnf_param_response_t;
 
@@ -3957,6 +3955,7 @@ int nfapi_p4_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
  * 
  */
 int nfapi_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t* config);
+//int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t* config);
 
 /*! \brief Decodes an NFAPI P5 message header
  *  \param pMessageBuf A pointer to an encoded P5 message header
@@ -3980,6 +3979,7 @@ int nfapi_p5_message_header_unpack(void *pMessageBuf, uint32_t messageBufLen, vo
  *
  * The function will decode a byte stream pointed to by pMessageBuf into a nfapi p5 message structure pointer to by pUnpackedBuf 
  */
+//int nfapi_nr_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t* config);
 int nfapi_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t* config);
 
 /*! \brief Encodes an NFAPI P7 message to a buffer
