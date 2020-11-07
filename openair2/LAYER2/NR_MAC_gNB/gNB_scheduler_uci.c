@@ -39,51 +39,59 @@ void nr_schedule_pucch(int Mod_idP,
                        int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP) {
-
-  uint16_t O_csi, O_ack, O_uci;
-  uint8_t O_sr = 0; // no SR in PUCCH implemented for now
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
-  int bwp_id=1;
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
-
-  NR_sched_pucch *curr_pucch;
-
   for (int k=0; k<nr_ulmix_slots; k++) {
     for (int l=0; l<2; l++) {
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
-      O_ack = curr_pucch->dai_c;
-      O_csi = curr_pucch->csi_bits;
-      O_uci = O_ack + O_csi + O_sr;
-      if ((O_uci>0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
-        UL_tti_req->SFN = curr_pucch->frame;
-        UL_tti_req->Slot = curr_pucch->ul_slot;
-        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-        nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
-        memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
-        UL_tti_req->n_pdus+=1;
+      NR_sched_pucch *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
+      const uint16_t O_ack = curr_pucch->dai_c;
+      const uint16_t O_csi = curr_pucch->csi_bits;
+      const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
+      if (O_ack + O_csi + O_sr == 0
+          || frameP != curr_pucch->frame
+          || slotP != curr_pucch->ul_slot)
+        continue;
 
-        LOG_D(MAC,"Scheduling pucch reception for frame %d slot %d with (%d, %d, %d) (SR ACK, CSI) bits\n",
-              frameP,slotP,O_sr,O_ack,curr_pucch->csi_bits);
+      nfapi_nr_ul_tti_request_t *future_ul_tti_req =
+          &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][curr_pucch->ul_slot];
+      AssertFatal(future_ul_tti_req->SFN == curr_pucch->frame
+                  && future_ul_tti_req->Slot == curr_pucch->ul_slot,
+                  "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
+                  future_ul_tti_req->SFN,
+                  future_ul_tti_req->Slot,
+                  curr_pucch->frame,
+                  curr_pucch->ul_slot);
+      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+      nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
+      memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
+      future_ul_tti_req->n_pdus += 1;
 
-        nr_configure_pucch(pucch_pdu,
-                           scc,
-                           ubwp,
-                           UE_info->rnti[UE_id],
-                           curr_pucch->resource_indicator,
-                           O_csi,
-                           O_ack,
-                           O_sr);
+      LOG_D(MAC,
+            "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d, k %d l %d\n",
+            frameP,
+            slotP,
+            curr_pucch->frame,
+            curr_pucch->ul_slot,
+            O_sr,
+            O_ack,
+            O_csi,
+            k, l);
 
-        memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
-               0,
-               sizeof(NR_sched_pucch));
-      }
+      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+      nr_configure_pucch(pucch_pdu,
+                         scc,
+                         UE_info->UE_sched_ctrl[UE_id].active_ubwp,
+                         UE_info->rnti[UE_id],
+                         curr_pucch->resource_indicator,
+                         O_csi,
+                         O_ack,
+                         O_sr);
+
+      memset(&UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
+             0,
+             sizeof(NR_sched_pucch));
     }
   }
 }

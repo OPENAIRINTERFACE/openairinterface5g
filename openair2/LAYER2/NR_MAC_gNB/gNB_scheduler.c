@@ -457,8 +457,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }
 
-  nr_schedule_pusch(module_idP, frame, slot);
-
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
       && slot < 10) {
@@ -470,6 +468,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
+
+  nr_schedule_pusch(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   
