@@ -309,6 +309,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 
 
 
+extern uint16_t sl_ahead;
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
@@ -328,6 +329,18 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
     AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
                 "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
+    /* fill in slot/frame numbers: slot is fixed, frame will be updated by
+     * scheduler */
+    for (int i = 0; i < n; ++i) {
+      nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
+      /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
+       * already "in the past" and thus we put frame 1 instead of 0!  Note that
+       * variable sl_ahead seems to not be correctly initialized, but I leave
+       * it for information purposes here (the fix would always put 0, what
+       * happens now, too) */
+      req->SFN = i < sl_ahead;
+      req->Slot = i;
+    }
 
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 

@@ -539,8 +539,14 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_slot];
-    future_ul_tti_req->SFN = sched_frame;
-    future_ul_tti_req->Slot = sched_slot;
+    AssertFatal(future_ul_tti_req->SFN == sched_frame
+                && future_ul_tti_req->Slot == sched_slot,
+                "%d.%d future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",
+                frame, slot,
+                future_ul_tti_req->SFN,
+                future_ul_tti_req->Slot,
+                sched_frame,
+                sched_slot);
     nfapi_nr_ul_dci_request_t *ul_dci_req = &RC.nrmac[module_id]->UL_dci_req[0];
     ul_dci_req->SFN = frame;
     ul_dci_req->Slot = slot;

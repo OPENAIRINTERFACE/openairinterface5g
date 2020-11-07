@@ -92,9 +92,13 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
                                 frame_t frameP,
                                 sub_frame_t slotP){
+  NR_ServingCellConfigCommon_t *scc = gNB->common_channels->ServingCellConfigCommon;
+  const int num_slots = slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
   nfapi_nr_ul_tti_request_t    *UL_tti_req = &gNB->UL_tti_req[0];
+  nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
+      &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
   nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
   nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
 
@@ -118,6 +122,14 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     UL_tti_req[CC_idP].n_ulsch                     = 0;
     UL_tti_req[CC_idP].n_ulcch                     = 0;
     UL_tti_req[CC_idP].n_group                     = 0;
+
+    /* advance last round's future UL_tti_req to be ahead of current frame/slot */
+    future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
+    /* future_ul_tti_req->Slot is fixed! */
+    future_ul_tti_req->n_pdus = 0;
+    future_ul_tti_req->n_ulsch = 0;
+    future_ul_tti_req->n_ulcch = 0;
+    future_ul_tti_req->n_group = 0;
 
     TX_req[CC_idP].Number_of_PDUs                  = 0;
 
