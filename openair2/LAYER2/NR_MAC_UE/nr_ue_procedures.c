@@ -3915,7 +3915,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
   #endif
   */
 
-  /*
   #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
     for (i = 0; i < 32; i++) {
@@ -3923,7 +3922,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
     }
     LOG_T(MAC, "\n");
   #endif
-  */
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
@@ -4578,6 +4576,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
               LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
 	      //#endif
 
+        LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", rx_lcid, pdu_len);
         switch(rx_lcid){
             //  MAC CE
 

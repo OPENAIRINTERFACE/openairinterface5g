@@ -128,7 +128,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   uint16_t band;
   int32_t offset;
 
-  get_band((uint64_t)(cfg->carrier_config.dl_frequency.value)*1000,
+  get_band(((uint64_t)cfg->carrier_config.dl_frequency.value)*1000,
            &band,
            &offset,
            &frame_type);

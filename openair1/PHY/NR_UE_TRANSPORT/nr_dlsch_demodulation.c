@@ -145,8 +145,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_UE_DLSCH_t   **dlsch;
 
   int avg[4];
-  //  int avg_0[2];
-  //  int avg_1[2];
+//  int avg_0[2];
+//  int avg_1[2];
 
 #if UE_TIMING_TRACE
   uint8_t slot = 0;
@@ -694,31 +694,31 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     pdsch_vars[eNB_id]->dl_valid_re[symbol-1] = len;
 
     if(dlsch0_harq->status == ACTIVE)
-      {
-        startSymbIdx = dlsch0_harq->start_symbol;
-        nbSymb = dlsch0_harq->nb_symbols;
-        pduBitmap = dlsch0_harq->pduBitmap;
-      }
+    {
+      startSymbIdx = dlsch0_harq->start_symbol;
+      nbSymb = dlsch0_harq->nb_symbols;
+      pduBitmap = dlsch0_harq->pduBitmap;
+    }
     if(dlsch1_harq)
-      {
-        startSymbIdx = dlsch1_harq->start_symbol;
-        nbSymb = dlsch1_harq->nb_symbols;
-        pduBitmap = dlsch1_harq->pduBitmap;
-      }
+    {
+      startSymbIdx = dlsch1_harq->start_symbol;
+      nbSymb = dlsch1_harq->nb_symbols;
+      pduBitmap = dlsch1_harq->pduBitmap;
+    }
 
     /* Check for PTRS bitmap and process it respectively */
     if((pduBitmap & 0x1) && (type == PDSCH))
-      {
-        nr_pdsch_ptrs_processing(ue,
-                                 pdsch_vars,
-                                 frame_parms,
-                                 dlsch0_harq, dlsch1_harq,
-                                 eNB_id, nr_tti_rx,
-                                 symbol, (nb_rb*12),
-                                 harq_pid,
-                                 dlsch[0]->rnti,rx_type);
-        pdsch_vars[eNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[eNB_id]->ptrs_re_per_slot[0][symbol];
-      }
+    {
+      nr_pdsch_ptrs_processing(ue,
+                               pdsch_vars,
+                               frame_parms,
+                               dlsch0_harq, dlsch1_harq,
+                               eNB_id, nr_tti_rx,
+                               symbol, (nb_rb*12),
+                               harq_pid,
+                               dlsch[0]->rnti,rx_type);
+      pdsch_vars[eNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[eNB_id]->ptrs_re_per_slot[0][symbol];
+    }
 
     /* at last symbol in a slot calculate LLR's for whole slot */
     if(symbol == (startSymbIdx + nbSymb -1))
@@ -727,13 +727,13 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       {
         /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
         if(i == startSymbIdx && i < 3)
-          {
-            first_symbol_flag =1;
-          }
+        {
+          first_symbol_flag =1;
+        }
         else
-          {
-            first_symbol_flag=0;
-          }
+        {
+          first_symbol_flag=0;
+        }
         /* Calculate LLR's for each symbol */
         nr_dlsch_llr(pdsch_vars, frame_parms,
                      rxdataF_comp_ptr, dl_ch_mag_ptr,
@@ -746,20 +746,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                      pdsch_vars[eNB_id]->dl_valid_re[i-1],
                      nr_tti_rx, beamforming_mode);
       }
-
-      //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
-      if (rx_type==rx_IC_dual_stream) {  
-        nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
-                                 dlsch[0]->harq_processes[harq_pid]->Nl,
-                                 dlsch[0]->harq_processes[harq_pid]->Qm,
-                                 dlsch[0]->harq_processes[harq_pid]->G,
-                                 pdsch_vars[eNB_id]->layer_llr);
-      }
     }
 
-    //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
-  
-    if (rx_type==rx_IC_dual_stream) {  
+  //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
+
+    if (rx_type==rx_IC_dual_stream) {
       nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
                                dlsch[0]->harq_processes[harq_pid]->Nl,
                                dlsch[0]->harq_processes[harq_pid]->Qm,

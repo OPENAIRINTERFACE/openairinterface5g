@@ -1736,13 +1736,23 @@ uint32_t to_nrarfcn(int nr_bandP,
 	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
  
   int deltaFglobal = 60;
+  uint32_t N_REF_Offs = 2016667;
+  uint64_t F_REF_Offs_khz = 24250080;
 
-  if (dl_CarrierFreq < 3e9) deltaFglobal = 15;
-  if (dl_CarrierFreq < 24.25e9) deltaFglobal = 5;
+  if (dl_CarrierFreq < 24.25e9) {
+    deltaFglobal = 15;
+    N_REF_Offs = 600000;
+    F_REF_Offs_khz = 3000000;
+  }
+  if (dl_CarrierFreq < 3e9) {
+    deltaFglobal = 5;
+    N_REF_Offs = 0;
+    F_REF_Offs_khz = 0;
+  }   
 
   // This is equation before Table 5.4.2.1-1 in 38101-1-f30
   // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
-  nrarfcn =  (((dl_CarrierFreq_by_1k - nr_bandtable[i].dl_min)/deltaFglobal)+nr_bandtable[i].N_OFFs_DL);
+  nrarfcn =  (((dl_CarrierFreq_by_1k - F_REF_Offs_khz)/deltaFglobal)+N_REF_Offs);
 
   delta_arfcn = nrarfcn - nr_bandtable[i].N_OFFs_DL;
   if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
@@ -1759,13 +1769,21 @@ uint64_t from_nrarfcn(int nr_bandP,
 {
   int i;
   int deltaFglobal = 5;
+  uint32_t N_REF_Offs = 0;
+  uint64_t F_REF_Offs_khz = 0;
   int scs_khz = 15<<scs_index;
   uint32_t delta_arfcn;
 
-  if (dl_nrarfcn > 599999 && dl_nrarfcn < 2016667)
-    deltaFglobal = 15; 
-  if (dl_nrarfcn > 2016666 && dl_nrarfcn < 3279166)
+  if (dl_nrarfcn > 599999 && dl_nrarfcn < 2016667) {
+    deltaFglobal = 15;
+    N_REF_Offs = 600000;
+    F_REF_Offs_khz = 3000000;
+  }
+  if (dl_nrarfcn > 2016666 && dl_nrarfcn < 3279166) {
     deltaFglobal = 60; 
+    N_REF_Offs = 2016667;
+    F_REF_Offs_khz = 24250080;
+  }
   
   AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
   for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
@@ -1779,14 +1797,11 @@ uint64_t from_nrarfcn(int nr_bandP,
   if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
     AssertFatal(1==0,"dl_nrarfcn %u is not on the raster for step size %lu",dl_nrarfcn,nr_bandtable[i].step_size);
 
-  LOG_I(PHY,"Computing dl_frequency (pointA %llu => %llu (dlmin %llu, nr_bandtable[%d].N_OFFs_DL %llu))\n",
+  LOG_I(PHY,"Computing dl_frequency (arfcn %llu => %llu)\n",
 	(unsigned long long)dl_nrarfcn,
-	(unsigned long long)(1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal)),
-	(unsigned long long)nr_bandtable[i].dl_min,
-	i,
-	(unsigned long long)nr_bandtable[i].N_OFFs_DL); 
+	(unsigned long long)(1000*(F_REF_Offs_khz + (dl_nrarfcn - N_REF_Offs) * deltaFglobal)));
 
-  return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
+  return 1000*(F_REF_Offs_khz + (dl_nrarfcn - N_REF_Offs) * deltaFglobal);
 }
 
 

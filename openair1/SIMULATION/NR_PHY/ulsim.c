@@ -60,9 +60,11 @@
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+
 //#define DEBUG_ULSIM
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -75,7 +77,6 @@ int sf_ahead=4 ;
 int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
-uint16_t NB_UE_INST = 1;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 
@@ -163,6 +164,8 @@ int main(int argc, char **argv)
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
 
+  NB_UE_INST = 1;
+
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_INFO;
@@ -210,294 +213,295 @@ int main(int argc, char **argv)
   int params_from_file = 0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
-        }
+  }
 
-        //logInit();
-        randominit(0);
-/* initialize the sin table */
-        InitSinLUT();
+  //logInit();
+  randominit(0);
+
+  /* initialize the sin-cos table */
+   InitSinLUT();
+
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:")) != -1) {
+    printf("handling optarg %c\n",c);
+    switch (c) {
+
+      /*case 'd':
+        frame_type = 1;
+        break;*/
+
+    case 'a':
+      start_symbol = atoi(optarg);
+      AssertFatal(start_symbol >= 0 && start_symbol < 13,"start_symbol %d is not in 0..12\n",start_symbol);
+      break;
+
+    case 'b':
+      nb_symb_sch = atoi(optarg);
+      AssertFatal(nb_symb_sch > 0 && nb_symb_sch < 15,"start_symbol %d is not in 1..14\n",nb_symb_sch);
+      break;
+    case 'c':
+      n_rnti = atoi(optarg);
+      AssertFatal(n_rnti > 0 && n_rnti<=65535,"Illegal n_rnti %x\n",n_rnti);
+      break;
+
+    case 'd':
+      delay = atoi(optarg);
+      break;
+      
+    case 'e':
+      msg3_flag = 1;
+      break;
+      
+    case 'f':
+      scg_fd = fopen(optarg, "r");
+      
+      if (scg_fd == NULL) {
+	printf("Error opening %s\n", optarg);
+	exit(-1);
+      }
+
+      break;
+      
+    case 'g':
+      switch ((char) *optarg) {
+      case 'A':
+	channel_model = SCM_A;
+	break;
+	
+      case 'B':
+	channel_model = SCM_B;
+	break;
+	
+      case 'C':
+	channel_model = SCM_C;
+	break;
+	
+      case 'D':
+	channel_model = SCM_D;
+	break;
+	
+      case 'E':
+	channel_model = EPA;
+	break;
+	
+      case 'F':
+	channel_model = EVA;
+	break;
+	
+      case 'G':
+	channel_model = ETU;
+	break;
+
+      case 'H':
+        channel_model = TDL_C;
+	DS_TDL = .030; // 30 ns
+	break;
   
-        while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:")) != -1) {
-          printf("handling optarg %c\n",c);
-          switch (c) {
-
-            /*case 'd':
-              frame_type = 1;
-              break;*/
-
-          case 'a':
-            start_symbol = atoi(optarg);
-            AssertFatal(start_symbol >= 0 && start_symbol < 13,"start_symbol %d is not in 0..12\n",start_symbol);
-            break;
-
-          case 'b':
-            nb_symb_sch = atoi(optarg);
-            AssertFatal(nb_symb_sch > 0 && nb_symb_sch < 15,"start_symbol %d is not in 1..14\n",nb_symb_sch);
-            break;
-          case 'c':
-            n_rnti = atoi(optarg);
-            AssertFatal(n_rnti > 0 && n_rnti<=65535,"Illegal n_rnti %x\n",n_rnti);
-            break;
-
-          case 'd':
-            delay = atoi(optarg);
-            break;
-      
-          case 'e':
-            msg3_flag = 1;
-            break;
-      
-          case 'f':
-            scg_fd = fopen(optarg, "r");
-      
-            if (scg_fd == NULL) {
-              printf("Error opening %s\n", optarg);
-              exit(-1);
-            }
-
-            break;
-      
-          case 'g':
-            switch ((char) *optarg) {
-            case 'A':
-              channel_model = SCM_A;
-              break;
-	
-            case 'B':
-              channel_model = SCM_B;
-              break;
-	
-            case 'C':
-              channel_model = SCM_C;
-              break;
-	
-            case 'D':
-              channel_model = SCM_D;
-              break;
-	
-            case 'E':
-              channel_model = EPA;
-              break;
-	
-            case 'F':
-              channel_model = EVA;
-              break;
-	
-            case 'G':
-              channel_model = ETU;
-              break;
-
-            case 'H':
-              channel_model = TDL_C;
-              DS_TDL = .030; // 30 ns
-              break;
-  
-            case 'I':
-              channel_model = TDL_C;
-              DS_TDL = .3;  // 300ns
-              break;
+      case 'I':
+	channel_model = TDL_C;
+	DS_TDL = .3;  // 300ns
+        break;
      
-            case 'J':
-              channel_model=TDL_D;
-              DS_TDL = .03;
-              break;
+      case 'J':
+	channel_model=TDL_D;
+	DS_TDL = .03;
+	break;
 
-            default:
-              printf("Unsupported channel model!\n");
-              exit(-1);
-            }
+      default:
+	printf("Unsupported channel model!\n");
+	exit(-1);
+      }
       
-            break;
+      break;
       
-            /*case 'i':
-              interf1 = atoi(optarg);
-              break;
+      /*case 'i':
+        interf1 = atoi(optarg);
+        break;
 	
-              case 'j':
-              interf2 = atoi(optarg);
-              break;*/
+	case 'j':
+        interf2 = atoi(optarg);
+        break;*/
 
-          case 'k':
-            printf("Setting threequarter_fs_flag\n");
-            openair0_cfg[0].threequarter_fs= 1;
-            break;
+    case 'k':
+      printf("Setting threequarter_fs_flag\n");
+      openair0_cfg[0].threequarter_fs= 1;
+      break;
 
-          case 'l':
-            nb_symb_sch = atoi(optarg);
-            break;
+    case 'l':
+      nb_symb_sch = atoi(optarg);
+      break;
       
-          case 'm':
-            Imcs = atoi(optarg);
-            break;
+    case 'm':
+      Imcs = atoi(optarg);
+      break;
       
-          case 'n':
-            n_trials = atoi(optarg);
-            break;
+    case 'n':
+      n_trials = atoi(optarg);
+      break;
       
-          case 'p':
-            extended_prefix_flag = 1;
-            break;
+    case 'p':
+      extended_prefix_flag = 1;
+      break;
       
-          case 'r':
-            nb_rb = atoi(optarg);
-            break;
+    case 'r':
+      nb_rb = atoi(optarg);
+      break;
       
-          case 's':
-            snr0 = atof(optarg);
-            printf("Setting SNR0 to %f\n", snr0);
-            break;
+    case 's':
+      snr0 = atof(optarg);
+      printf("Setting SNR0 to %f\n", snr0);
+      break;
 
 /*
-  case 't':
-  eff_tp_check = (float)atoi(optarg)/100;
-  break;
+    case 't':
+      eff_tp_check = (float)atoi(optarg)/100;
+      break;
 */
-            /*
-              case 'r':
-              ricean_factor = pow(10,-.1*atof(optarg));
-              if (ricean_factor>1) {
-              printf("Ricean factor must be between 0 and 1\n");
-              exit(-1);
-              }
-              break;
-            */
+      /*
+	case 'r':
+	ricean_factor = pow(10,-.1*atof(optarg));
+	if (ricean_factor>1) {
+	printf("Ricean factor must be between 0 and 1\n");
+	exit(-1);
+	}
+	break;
+      */
       
-            /*case 'x':
-              transmission_mode = atoi(optarg);
-              break;*/
+      /*case 'x':
+        transmission_mode = atoi(optarg);
+        break;*/
       
-          case 'y':
-            n_tx = atoi(optarg);
+    case 'y':
+      n_tx = atoi(optarg);
       
-            if ((n_tx == 0) || (n_tx > 2)) {
-              printf("Unsupported number of tx antennas %d\n", n_tx);
-              exit(-1);
-            }
+      if ((n_tx == 0) || (n_tx > 2)) {
+	printf("Unsupported number of tx antennas %d\n", n_tx);
+	exit(-1);
+      }
       
-            break;
+      break;
       
-          case 'z':
-            n_rx = atoi(optarg);
+    case 'z':
+      n_rx = atoi(optarg);
       
-            if ((n_rx == 0) || (n_rx > 2)) {
-              printf("Unsupported number of rx antennas %d\n", n_rx);
-              exit(-1);
-            }
+      if ((n_rx == 0) || (n_rx > 2)) {
+	printf("Unsupported number of rx antennas %d\n", n_rx);
+	exit(-1);
+      }
       
-            break;
+      break;
       
-          case 'F':
-            input_fd = fopen(optarg, "r");
+    case 'F':
+      input_fd = fopen(optarg, "r");
       
-            if (input_fd == NULL) {
-              printf("Problem with filename %s\n", optarg);
-              exit(-1);
-            }
+      if (input_fd == NULL) {
+	printf("Problem with filename %s\n", optarg);
+	exit(-1);
+      }
       
-            break;
+      break;
 
-          case 'G':
-            file_offset = atoi(optarg);
-            break;
+    case 'G':
+      file_offset = atoi(optarg);
+      break;
 
-          case 'H':
-            slot = atoi(optarg);
-            break;
+    case 'H':
+      slot = atoi(optarg);
+      break;
 
-          case 'M':
-            // SSB_positions = atoi(optarg);
-            break;
+    case 'M':
+     // SSB_positions = atoi(optarg);
+      break;
       
-          case 'N':
-            // Nid_cell = atoi(optarg);
-            break;
+    case 'N':
+     // Nid_cell = atoi(optarg);
+      break;
       
-          case 'R':
-            N_RB_DL = atoi(optarg);
-            N_RB_UL = N_RB_DL;
-            break;
+    case 'R':
+      N_RB_DL = atoi(optarg);
+      N_RB_UL = N_RB_DL;
+      break;
       
-          case 'S':
-            snr1 = atof(optarg);
-            snr1set = 1;
-            printf("Setting SNR1 to %f\n", snr1);
-            break;
+    case 'S':
+      snr1 = atof(optarg);
+      snr1set = 1;
+      printf("Setting SNR1 to %f\n", snr1);
+      break;
       
-          case 'P':
-            print_perf=1;
-            opp_enabled=1;
-            break;
+    case 'P':
+      print_perf=1;
+      opp_enabled=1;
+      break;
       
-          case 'L':
-            loglvl = atoi(optarg);
-            break;
+    case 'L':
+      loglvl = atoi(optarg);
+      break;
 
-          case 'T':
-            enable_ptrs=1;
-            for(i=0; i < atoi(optarg); i++){
-              ptrs_arg[i] = atoi(argv[optind++]);
-            }
-            break;
+   case 'T':
+      enable_ptrs=1;
+      for(i=0; i < atoi(optarg); i++){
+        ptrs_arg[i] = atoi(argv[optind++]);
+      }
+      break;
 
-          case 'U':
-            modify_dmrs = 1;
-            for(i=0; i < atoi(optarg); i++){
-              dmrs_arg[i] = atoi(argv[optind++]);
-            }
-            break;
+    case 'U':
+      modify_dmrs = 1;
+      for(i=0; i < atoi(optarg); i++){
+        dmrs_arg[i] = atoi(argv[optind++]);
+      }
+      break;
 
-          case 'Q':
-            params_from_file = 1;
-            break;
+    case 'Q':
+      params_from_file = 1;
+      break;
 
-          default:
-          case 'h':
-            printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
-            //printf("-d Use TDD\n");
-            printf("-d Introduce delay in terms of number of samples\n");
-            printf("-f Number of frames to simulate\n");
-            printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
-            printf("-h This message\n");
-            //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-            //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-            printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
-            printf("-m MCS value\n");
-            printf("-n Number of trials to simulate\n");
-            printf("-p Use extended prefix mode\n");
-            printf("-t Delay spread for multipath channel\n");
-            //printf("-x Transmission mode (1,2,6 for the moment)\n");
-            printf("-y Number of TX antennas used in eNB\n");
-            printf("-z Number of RX antennas used in UE\n");
-            printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-            //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-            printf("-F Input filename (.txt format) for RX conformance testing\n");
-            printf("-G Offset of samples to read from file (0 default)\n");
-            printf("-M Multiple SSB positions in burst\n");
-            printf("-N Nid_cell\n");
-            printf("-O oversampling factor (1,2,4,8,16)\n");
-            printf("-R N_RB_DL\n");
-            printf("-t Acceptable effective throughput (in percentage)\n");
-            printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-            printf("-P Print ULSCH performances\n");
-            printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
-            printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
-            printf("-Q If -F used, read parameters from file\n");
-            exit(-1);
-            break;
+    default:
+    case 'h':
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
+      //printf("-d Use TDD\n");
+      printf("-d Introduce delay in terms of number of samples\n");
+      printf("-f Number of frames to simulate\n");
+      printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+      printf("-h This message\n");
+      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
+      printf("-m MCS value\n");
+      printf("-n Number of trials to simulate\n");
+      printf("-p Use extended prefix mode\n");
+      printf("-t Delay spread for multipath channel\n");
+      //printf("-x Transmission mode (1,2,6 for the moment)\n");
+      printf("-y Number of TX antennas used in eNB\n");
+      printf("-z Number of RX antennas used in UE\n");
+      printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+      printf("-F Input filename (.txt format) for RX conformance testing\n");
+      printf("-G Offset of samples to read from file (0 default)\n");
+      printf("-M Multiple SSB positions in burst\n");
+      printf("-N Nid_cell\n");
+      printf("-O oversampling factor (1,2,4,8,16)\n");
+      printf("-R N_RB_DL\n");
+      printf("-t Acceptable effective throughput (in percentage)\n");
+      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+      printf("-P Print ULSCH performances\n");
+      printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
+      printf("-Q If -F used, read parameters from file\n");
+      exit(-1);
+      break;
 
-          }
-        }
+    }
+  }
   
-        logInit();
-        set_glog(loglvl);
-        T_stdout = 1;
+  logInit();
+  set_glog(loglvl);
+  T_stdout = 1;
 
-        get_softmodem_params()->phy_test = 1;
-        get_softmodem_params()->do_ra = 0;
-        get_softmodem_params()->usim_test = 1;
+  get_softmodem_params()->phy_test = 1;
+  get_softmodem_params()->do_ra = 0;
+  get_softmodem_params()->usim_test = 1;
 
 
-        if (snr1set == 0)
+  if (snr1set == 0)
     snr1 = snr0 + 10;
   double sampling_frequency;
   double bandwidth;

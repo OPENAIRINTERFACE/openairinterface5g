@@ -814,6 +814,7 @@ static inline unsigned long long int vcd_get_time(void)
   return (long long unsigned int)((time.tv_nsec - g_time_start.tv_nsec)) +
          ((long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec) * 1000000000UL;
 #endif
+  return 0;
 }
 
 void vcd_signal_dumper_create_header(void)

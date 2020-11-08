@@ -483,11 +483,6 @@ function main() {
   echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
   echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
-  if [ -n "$UHD_IMAGES_DIR" ] && [ -z "$INSTALL_EXTERNAL" ]; then
-    echo_error "UHD images download settings will not be applied without -I present"
-    exit
-  fi
-  
   #######################################################
   # Setting and printing OAI envs, we should check here #
   #######################################################
