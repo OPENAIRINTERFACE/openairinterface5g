@@ -897,7 +897,7 @@ class RANManagement():
 			#FR1 NSA test : add new markers to make sure gNB is used
 			if NSA_RAPROC_PUSCH_check:
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
-			else
+			else:
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			htmleNBFailureMsg += statMsg + '\n'	
