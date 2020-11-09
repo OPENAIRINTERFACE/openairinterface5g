@@ -705,6 +705,9 @@ class RANManagement():
 		systemTime = ''
 		maxPhyMemUsage = ''
 		nbContextSwitches = ''
+		#NSA FR1
+		NSA_RAPROC_PUSCH_check = 0
+		
 		for line in enb_log_file.readlines():
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
@@ -855,12 +858,19 @@ class RANManagement():
 				result = re.search('MBMS USER-PLANE.*Requesting.*bytes from RLC', str(line))
 				if result is not None:
 					mbmsRequestMsg += 1
+			#FR1 NSA test : add new markers to make sure gNB is used
+			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI [0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI [0-9a-fA-F]+', str(line))
+			if result is not None:
+				NSA_RAPROC_PUSCH_check = 1
+
+
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
+			
 		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
@@ -874,6 +884,14 @@ class RANManagement():
 				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
+			#FR1 NSA test : add new markers to make sure gNB is used
+			if NSA_RAPROC_PUSCH_check:
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
+			else
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			htmleNBFailureMsg += statMsg + '\n'		
+
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
