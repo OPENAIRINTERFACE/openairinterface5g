@@ -96,7 +96,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   const int num_slots = slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
-  nfapi_nr_ul_tti_request_t    *UL_tti_req = &gNB->UL_tti_req[0];
   nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
       &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
   nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
@@ -116,13 +115,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     UL_dci_req[CC_idP].Slot                        = slotP;
     UL_dci_req[CC_idP].numPdus                     = 0;
 
-    UL_tti_req[CC_idP].SFN                         = frameP;
-    UL_tti_req[CC_idP].Slot                        = slotP;
-    UL_tti_req[CC_idP].n_pdus                      = 0;
-    UL_tti_req[CC_idP].n_ulsch                     = 0;
-    UL_tti_req[CC_idP].n_ulcch                     = 0;
-    UL_tti_req[CC_idP].n_group                     = 0;
-
     /* advance last round's future UL_tti_req to be ahead of current frame/slot */
     future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
     /* future_ul_tti_req->Slot is fixed! */
@@ -130,6 +122,10 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     future_ul_tti_req->n_ulsch = 0;
     future_ul_tti_req->n_ulcch = 0;
     future_ul_tti_req->n_group = 0;
+
+    /* UL_tti_req is a simple pointer into the current UL_tti_req_ahead, i.e.,
+     * it walks over UL_tti_req_ahead in a circular fashion */
+    gNB->UL_tti_req = &gNB->UL_tti_req_ahead[CC_idP][slotP];
 
     TX_req[CC_idP].Number_of_PDUs                  = 0;
 
@@ -297,37 +293,6 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 */
 
 
-void nr_schedule_pusch(int mod_id, frame_t frame, sub_frame_t slot) {
-  nfapi_nr_ul_tti_request_t *ul_tti_req = &RC.nrmac[mod_id]->UL_tti_req[0];
-  nfapi_nr_ul_tti_request_t *future_ul_tti_req =
-      &RC.nrmac[mod_id]->UL_tti_req_ahead[0][slot];
-
-  if (future_ul_tti_req->Slot == slot
-      && future_ul_tti_req->SFN == frame
-      && future_ul_tti_req->n_pdus > 0) {
-    LOG_D(MAC, "%4d.%2d copy %d PDUs from future_ul_tti_req\n", frame, slot, future_ul_tti_req->n_pdus);
-    /* the future_UL_tti_req_has data for the current frame/slot pair, copy
-     * everything into the "real" UL_tti_req */
-    ul_tti_req->SFN = future_ul_tti_req->SFN;
-    ul_tti_req->Slot = future_ul_tti_req->Slot;
-    ul_tti_req->n_pdus = future_ul_tti_req->n_pdus;
-    ul_tti_req->rach_present = future_ul_tti_req->rach_present;
-    ul_tti_req->n_ulsch = future_ul_tti_req->n_ulsch;
-    ul_tti_req->n_ulcch = future_ul_tti_req->n_ulcch;
-    ul_tti_req->n_group = future_ul_tti_req->n_group;
-    memcpy(ul_tti_req->pdus_list,
-           future_ul_tti_req->pdus_list,
-           ul_tti_req->n_pdus * sizeof(nfapi_nr_ul_tti_request_number_of_pdus_t));
-    memcpy(ul_tti_req->groups_list,
-           future_ul_tti_req->groups_list,
-           ul_tti_req->n_group * sizeof(nfapi_nr_ul_tti_request_number_of_groups_t));
-    future_ul_tti_req->n_pdus = 0;
-    future_ul_tti_req->n_ulsch = 0;
-    future_ul_tti_req->n_ulcch = 0;
-    future_ul_tti_req->n_group = 0;
-  }
-}
-
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   return (bitmap >> slot) & 0x01;
 }
@@ -468,8 +433,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
-
-  nr_schedule_pusch(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

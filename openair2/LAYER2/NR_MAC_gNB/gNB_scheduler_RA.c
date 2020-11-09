@@ -200,7 +200,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
+  nfapi_nr_ul_tti_request_t *UL_tti_req = RC.nrmac[module_idP]->UL_tti_req;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   if (is_nr_UL_slot(scc,slotP)) {
@@ -247,8 +247,12 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
     }
 
 
-    UL_tti_req->SFN = frameP;
-    UL_tti_req->Slot = slotP;
+    AssertFatal(UL_tti_req->SFN == frameP && UL_tti_req->Slot == slotP,
+                "%d.%d UL_tti_req frame.slot %d.%d does not match PRACH %d.%d\n",
+                frameP, slotP,
+                UL_tti_req->SFN,
+                UL_tti_req->Slot,
+                frameP, slotP);
     for (int fdm_index=0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
     for (int td_index=0; td_index<N_t_slot; td_index++) {
 
