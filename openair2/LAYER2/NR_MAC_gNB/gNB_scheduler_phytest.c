@@ -368,13 +368,13 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
 
       dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
-      dci_pdu_rel15->mcs = 9;
+      dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
 
       dci_pdu_rel15->format_indicator = 0;
-      dci_pdu_rel15->ndi = 1;
-      dci_pdu_rel15->rv = 0;
-      dci_pdu_rel15->harq_pid = 0;
-      dci_pdu_rel15->tpc = 1;
+      dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+      dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
+      dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
+      dci_pdu_rel15->tpc = tpc;
       break;
     case NR_UL_DCI_FORMAT_0_1:
       dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
