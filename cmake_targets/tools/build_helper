@@ -256,7 +256,7 @@ install_protobuf_from_source(){
     then
       rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
       wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
+      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $($id -u) --group $(id -g) --no-same-owner
       cd protobuf-3.3.0/
     else
       export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
