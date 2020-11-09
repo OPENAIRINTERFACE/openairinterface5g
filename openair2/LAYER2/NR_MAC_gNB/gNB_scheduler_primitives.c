@@ -637,6 +637,81 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   dl_req->nPDUs += 2;
 }
 
+void config_uldci(NR_BWP_Uplink_t *ubwp,
+                  nfapi_nr_pusch_pdu_t *pusch_pdu,
+                  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                  dci_pdu_rel15_t *dci_pdu_rel15,
+                  int *dci_formats, int *rnti_types,
+                  int time_domain_assignment, uint8_t tpc,
+                  int n_ubwp, int bwp_id) {
+  const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  switch (dci_formats[(pdcch_pdu_rel15->numDlDci) - 1]) {
+    case NR_UL_DCI_FORMAT_0_0:
+      dci_pdu_rel15->frequency_domain_assignment.val =
+          PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
+
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
+      dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
+      dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
+
+      dci_pdu_rel15->format_indicator = 0;
+      dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+      dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
+      dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
+      dci_pdu_rel15->tpc = tpc;
+      break;
+    case NR_UL_DCI_FORMAT_0_1:
+      dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+      dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
+      dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
+      dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
+      dci_pdu_rel15->dai[0].val = 0; //TODO
+      // bwp indicator
+      if (n_ubwp < 4)
+        dci_pdu_rel15->bwp_indicator.val = bwp_id;
+      else
+        dci_pdu_rel15->bwp_indicator.val = bwp_id - 1; // as per table 7.3.1.1.2-1 in 38.212
+      // frequency domain assignment
+      AssertFatal(ubwp->bwp_Dedicated->pusch_Config->choice.setup->resourceAllocation
+                      == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
+                  "Only frequency resource allocation type 1 is currently supported\n");
+      dci_pdu_rel15->frequency_domain_assignment.val =
+          PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
+      // time domain assignment
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
+      // mcs
+      dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
+      // tpc command for pusch
+      dci_pdu_rel15->tpc = tpc;
+      // SRS resource indicator
+      if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
+        AssertFatal(*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
+                    "Non Codebook configuration non supported\n");
+        dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
+      }
+      // Antenna Ports
+      dci_pdu_rel15->antenna_ports.val = 0; // TODO for now it is hardcoded, it should depends on cdm group no data and rank
+      // DMRS sequence initialization
+      dci_pdu_rel15->dmrs_sequence_initialization.val = pusch_pdu->scid;
+      break;
+    default :
+      AssertFatal(0, "Valid UL formats are 0_0 and 0_1\n");
+  }
+
+  LOG_D(MAC,
+        "%s() ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, "
+        "time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+        __func__,
+        pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci],
+        dci_pdu_rel15->frequency_domain_assignment.val,
+        dci_pdu_rel15->time_domain_assignment.val,
+        dci_pdu_rel15->frequency_hopping_flag.val,
+        dci_pdu_rel15->mcs,
+        dci_pdu_rel15->tpc,
+        dci_pdu_rel15->ndi,
+        dci_pdu_rel15->rv);
+}
+
 void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         uint16_t rnti,
