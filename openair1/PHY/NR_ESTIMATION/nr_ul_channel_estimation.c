@@ -605,12 +605,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                              gNB->nr_gold_pusch_dmrs[rel15_ul->scid][nr_tti_rx][symbol],
                              &phase_per_symbol[2* symbol],
                              ptrs_re_symbol);
-      /* if very first symbol is PTRS then we need to undo conjugate done in estimation */
-      /* The PTRS estimation before DMRS symbol is pure error, shall be used as it is*/
-      if(symbol == *startSymbIndex)
-      {
-        phase_per_symbol[(2* symbol)+1] = (-1) * phase_per_symbol[(2* symbol)+1];
-      }
     }
     /* For last OFDM symbol at each antenna perform interpolation and compensation for the slot*/
     if(symbol == (symbInSlot -1))
