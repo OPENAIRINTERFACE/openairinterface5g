@@ -475,6 +475,7 @@ typedef struct {
   int dlsch_rounds[8];
   int dlsch_errors;
   int dlsch_total_bytes;
+  int dlsch_current_bytes;
   int ulsch_rounds[8];
   int ulsch_errors;
   int ulsch_total_bytes_scheduled;
