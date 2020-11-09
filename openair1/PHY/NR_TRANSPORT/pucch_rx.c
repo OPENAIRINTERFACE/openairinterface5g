@@ -337,8 +337,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
     }
   }
-  int32_t corr_re,corr_im,temp,no_corr=0;
-  int32_t av_corr=0;
+  int32_t corr_re,corr_im;
+  uint32_t temp,no_corr=0;
+  uint32_t av_corr=0;
   int seq_index;
 
   for(i=0;i<nr_sequences;i++){
@@ -1395,7 +1396,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       rp2_im[aa] = (__m256i*)r_im_ext2[aa];
     }
     __m256i prod_re[Prx2],prod_im[Prx2];
-    int64_t corr=0;
+    uint64_t corr=0;
     int cw_ML=0;
     
     
@@ -1409,7 +1410,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
       printf("\n");
 #endif
-      int64_t corr_tmp = 0;
+      uint64_t corr_tmp = 0;
 
       for (int group=0;group<ngroup;group++) {
 	// do complex correlation
@@ -1441,8 +1442,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
 	}
 	int64_t corr_re=0,corr_im=0;
-	
-	
+
+
 	for (int aa=0;aa<Prx;aa++) {
 	  LOG_D(PHY,"pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
 		corr32_re[group][aa],corr32_im[group][aa],
@@ -1463,7 +1464,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	cw_ML=cw;
       }
     } // cw loop
-    corr_dB = dB_fixed64((uint64_t)corr);
+    corr_dB = dB_fixed64(corr);
     LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
     decodedPayload[0]=(uint64_t)cw_ML;
   }
