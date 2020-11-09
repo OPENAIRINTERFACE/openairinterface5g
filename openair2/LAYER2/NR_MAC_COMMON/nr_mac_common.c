@@ -1744,6 +1744,15 @@ uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
 
 }
 
+void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
+
+  uint32_t delta_arfcn = nrarfcn - N_OFFs;
+
+  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
+    AssertFatal(1 == 0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
+
+}
+
 uint32_t to_nrarfcn(int nr_bandP,
                     uint64_t dl_CarrierFreq,
                     uint8_t scs_index,
@@ -1751,7 +1760,7 @@ uint32_t to_nrarfcn(int nr_bandP,
 {
   uint64_t dl_CarrierFreq_by_1k = dl_CarrierFreq / 1000;
   int bw_kHz = bw / 1000;
-  uint32_t nrarfcn, delta_arfcn;
+  uint32_t nrarfcn;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
   LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
@@ -1783,16 +1792,12 @@ uint32_t to_nrarfcn(int nr_bandP,
   // This is equation before Table 5.4.2.1-1 in 38101-1-f30
   // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
   nrarfcn =  (((dl_CarrierFreq_by_1k - F_REF_Offs_khz)/deltaFglobal)+N_REF_Offs);
-
-  delta_arfcn = nrarfcn - nr_bandtable[i].N_OFFs_DL;
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0,"dl_CarrierFreq %lu corresponds to %u which is not on the raster for step size %lu",
-                dl_CarrierFreq,nrarfcn,nr_bandtable[i].step_size);
+  get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
 
   return nrarfcn;
 }
 
-// This function computes the frequency from the NR-ARFCN according to 5.4.2.1. of 3GPP TS 38.104
+// This function computes the RF reference frequency from the NR-ARFCN according to 5.4.2.1 of 3GPP TS 38.104
 // this function applies to both DL and UL
 uint64_t from_nrarfcn(int nr_bandP,
                       uint8_t scs_index,
@@ -1801,8 +1806,6 @@ uint64_t from_nrarfcn(int nr_bandP,
   int deltaFglobal = 5;
   uint32_t N_REF_Offs = 0;
   uint64_t F_REF_Offs_khz = 0;
-  int scs_khz = 15<<scs_index;
-  uint32_t delta_arfcn;
   int32_t delta_duplex;
   uint64_t N_OFFs, frequency, freq_min;
   int i = get_nr_table_idx(nr_bandP, scs_index);
@@ -1841,10 +1844,7 @@ uint64_t from_nrarfcn(int nr_bandP,
   LOG_D(MAC, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
 
   AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
-
-  delta_arfcn = nrarfcn - N_OFFs;
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1 == 0, "nrarfcn %u is not on the raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
+  get_delta_arfcn(i, nrarfcn, N_OFFs);
 
   frequency = 1000*(F_REF_Offs_khz + (nrarfcn - N_REF_Offs) * deltaFglobal);
 
