@@ -285,35 +285,6 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 */
 
 
-/*
-void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
-{
-  int CC_id;
-  gNB_MAC_INST *mac = RC.nrmac[module_idP];
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-
-    nfapi_ul_config_request_t *ul_req                 = &mac->UL_tti_req[CC_id];
-
-    *ul_req = *ul_req_tmp;
-
-    // Restore the pointer
-    ul_req->ul_config_request_body.ul_config_pdu_list = ul_req_pdu;
-    ul_req->sfn_sf                                    = (frameP<<7) + slotP;
-    ul_req_tmp->ul_config_request_body.number_of_pdus = 0;
-
-    if (ul_req->ul_config_request_body.number_of_pdus>0)
-      {
-        LOG_D(PHY, "%s() active NOW (frameP:%d slotP:%d) pdus:%d\n", __FUNCTION__, frameP, slotP, ul_req->ul_config_request_body.number_of_pdus);
-      }
-
-    memcpy((void*)ul_req->ul_config_request_body.ul_config_pdu_list,
-     (void*)ul_req_tmp->ul_config_request_body.ul_config_pdu_list,
-     ul_req->ul_config_request_body.number_of_pdus*sizeof(nfapi_ul_config_request_pdu_t));
-  }
-}
-*/
-
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
                        int num_slots_per_tdd,
