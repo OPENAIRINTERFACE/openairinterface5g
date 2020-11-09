@@ -705,8 +705,10 @@ class RANManagement():
 		systemTime = ''
 		maxPhyMemUsage = ''
 		nbContextSwitches = ''
-		#NSA FR1
+		#NSA FR1 check
 		NSA_RAPROC_PUSCH_check = 0
+		#dlsch and ulsch statistics (dictionary)
+		dlsch_ulsch_stats = {}
 		
 		for line in enb_log_file.readlines():
 			# Runtime statistics
@@ -862,7 +864,15 @@ class RANManagement():
 			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI [0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI [0-9a-fA-F]+', str(line))
 			if result is not None:
 				NSA_RAPROC_PUSCH_check = 1
-
+			#dlsch and ulsch statistics
+			#keys below are are the markers we are loooking for, looping over this keys list
+			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
+			#eventually we record only the last one
+			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+			for k in keys:
+				result = re.search(k, str(line))
+				if result is not None:
+					dlsch_ulsch_stats[k]=str(line)
 
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
@@ -870,7 +880,7 @@ class RANManagement():
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
-			
+
 		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
@@ -890,7 +900,14 @@ class RANManagement():
 			else
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			htmleNBFailureMsg += statMsg + '\n'		
+			htmleNBFailureMsg += statMsg + '\n'	
+			#ulsch and dlsch statistics
+			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
+				statMsg=''
+				for key in dlsch_ulsch_stats: #for each dictionary key
+					statMsg += dlsch_ulsch_stats[key] + '\n'
+					logging.debug('\u001B[1;30;43m ' + dlsch_ulsch_stats[key] + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
