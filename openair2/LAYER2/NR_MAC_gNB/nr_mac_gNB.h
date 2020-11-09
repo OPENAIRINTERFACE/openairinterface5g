@@ -453,6 +453,11 @@ typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot,
                               int num_slots_per_tdd);
+typedef void (*nr_pp_impl_ul)(module_id_t mod_id,
+                              frame_t frame,
+                              sub_frame_t slot,
+                              int num_slots_per_tdd,
+                              uint64_t ulsch_in_slot_bitmap);
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -522,6 +527,8 @@ typedef struct gNB_MAC_INST_s {
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
+  /// UL preprocessor for differentiated scheduling
+  nr_pp_impl_ul pre_processor_ul;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
