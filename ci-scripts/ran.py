@@ -568,6 +568,10 @@ class RANManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
+		#RH debug
+		print(self.air_interface)
+		print(self.eNB_instance)
+		#
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
@@ -877,7 +881,7 @@ class RANManagement():
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		#RH debug
-        print(self.air_interface[self.eNB_instance]+'\n')
+		print(self.air_interface[self.eNB_instance]+'\n')
 		#
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
@@ -899,18 +903,18 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg + '\n'
 			#FR1 NSA test : add new markers to make sure gNB is used
 		if NSA_RAPROC_PUSCH_check:
-				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
+			statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
 		else:
-				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			htmleNBFailureMsg += statMsg + '\n'	
-			#ulsch and dlsch statistics
+			statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+		logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+		htmleNBFailureMsg += statMsg + '\n'	
+		#ulsch and dlsch statistics
 		if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
-				statMsg=''
-				for key in dlsch_ulsch_stats: #for each dictionary key
-					statMsg += dlsch_ulsch_stats[key] + '\n'
-					logging.debug('\u001B[1;30;43m ' + dlsch_ulsch_stats[key] + ' \u001B[0m')
-				htmleNBFailureMsg += statMsg + '\n'
+			statMsg=''
+			for key in dlsch_ulsch_stats: #for each dictionary key
+				statMsg += dlsch_ulsch_stats[key] + '\n'
+				logging.debug('\u001B[1;30;43m ' + dlsch_ulsch_stats[key] + ' \u001B[0m')
+			htmleNBFailureMsg += statMsg + '\n'
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
