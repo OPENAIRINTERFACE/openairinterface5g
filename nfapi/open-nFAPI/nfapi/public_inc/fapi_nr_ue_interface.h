@@ -170,6 +170,7 @@ typedef struct {
   uint8_t  prach_format;
   /// Num RA
   uint8_t  num_ra;
+  uint8_t  prach_slot;
   uint8_t  prach_start_symbol;
   /// 38.211 (NCS 38.211 6.3.3.1).
   uint16_t num_cs;
@@ -179,6 +180,8 @@ typedef struct {
   uint8_t  restricted_set;
   /// see TS 38.211 (6.3.3.2).
   uint16_t freq_msg1;
+  // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
+  uint8_t ssb_nb_in_ro;
   // nfapi_nr_ul_beamforming_t beamforming;
 } fapi_nr_ul_config_prach_pdu;
 

@@ -1260,7 +1260,7 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t  pdu_idx;//This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 65535
+  uint8_t  pdu_idx;//This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
 
 } nfapi_nr_ul_tti_request_number_of_ue_t;
 
@@ -1541,7 +1541,7 @@ typedef struct
 }nfapi_nr_uci_pucch_pdu_format_2_3_4_t;
 
 typedef enum {
-  NFAPI_NR_UCI_PDCCH_PDU_TYPE  = 0,
+  NFAPI_NR_UCI_PUSCH_PDU_TYPE  = 0,
   NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE  = 1,
   NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE = 2,
 } nfapi_nr_uci_pdu_type_e;

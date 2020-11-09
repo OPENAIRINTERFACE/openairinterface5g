@@ -344,9 +344,8 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP) {
 
-  uint16_t O_uci;
-  uint16_t O_ack;
-  uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
+  uint16_t O_csi, O_ack, O_uci;
+  uint8_t O_sr = 0; // no SR in PUCCH implemented for now
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
@@ -359,31 +358,36 @@ void nr_schedule_pucch(int Mod_idP,
   NR_sched_pucch *curr_pucch;
 
   for (int k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k];
-    if ((curr_pucch->dai_c > 0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
-      UL_tti_req->SFN = curr_pucch->frame;
-      UL_tti_req->Slot = curr_pucch->ul_slot;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-      nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
-      memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
-      UL_tti_req->n_pdus+=1;
+    for (int l=0; l<2; l++) {
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
       O_ack = curr_pucch->dai_c;
-      O_uci = O_ack; // for now we are just sending acknacks in pucch
+      O_csi = curr_pucch->csi_bits;
+      O_uci = O_ack + O_csi + O_sr;
+      if ((O_uci>0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+        UL_tti_req->SFN = curr_pucch->frame;
+        UL_tti_req->Slot = curr_pucch->ul_slot;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
+        memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
+        UL_tti_req->n_pdus+=1;
 
-      LOG_D(MAC, "Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
+        LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d with (%d, %d, %d) (SR ACK, CSI) bits\n",
+              frameP,slotP,O_sr,O_ack,curr_pucch->csi_bits);
 
-      nr_configure_pucch(pucch_pdu,
-			 scc,
-			 ubwp,
-                         curr_pucch->resource_indicator,
-                         O_uci,
-                         O_ack,
-                         SR_flag);
+        nr_configure_pucch(pucch_pdu,
+                           scc,
+                           ubwp,
+                           UE_info->rnti[UE_id],
+                           curr_pucch->resource_indicator,
+                           O_csi,
+                           O_ack,
+                           O_sr);
 
-      memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));
+        memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
+               0,
+               sizeof(NR_sched_pucch));
+      }
     }
   }
 }
@@ -395,9 +399,12 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
+
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
+  int nb_periods_per_frame;
+
   const int UE_id = 0;
   const int bwp_id = 1;
 
@@ -406,23 +413,48 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int num_slots_per_tdd = slots_per_frame[*scc->ssbSubcarrierSpacing] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
-  const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
-  if (slot == 0 && UE_info->active[UE_id]) {
-    for (int k=0; k<nr_ulmix_slots; k++) {
-      /* Seems to be covered 384? */
-      /*memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));*/
-      /* Seems to be covered in line 335? */
-      /*memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
-             0,
-             sizeof(NR_sched_pusch));*/
-    }
+  switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
+    case 0:
+      nb_periods_per_frame = 20; // 10ms/0p5ms
+      break;
+
+    case 1:
+      nb_periods_per_frame = 16; // 10ms/0p625ms
+      break;
+
+    case 2:
+      nb_periods_per_frame = 10; // 10ms/1ms
+      break;
+
+    case 3:
+      nb_periods_per_frame = 8; // 10ms/1p25ms
+      break;
+
+    case 4:
+      nb_periods_per_frame = 5; // 10ms/2ms
+      break;
+
+    case 5:
+      nb_periods_per_frame = 4; // 10ms/2p5ms
+      break;
+
+    case 6:
+      nb_periods_per_frame = 2; // 10ms/5ms
+      break;
+
+    case 7:
+      nb_periods_per_frame = 1; // 10ms/10ms
+      break;
+
+    default:
+      AssertFatal(1==0,"Undefined tdd period %d\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   }
+
+  int num_slots_per_tdd = (slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
+
+  const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -446,18 +478,18 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     //mbsfn_status[CC_id] = 0;
 
     // clear vrb_maps
-    memset(cc[CC_id].vrb_map, 0, 275);
-    memset(cc[CC_id].vrb_map_UL, 0, 275);
+    memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
+    memset(cc[CC_id].vrb_map_UL, 0, sizeof(uint16_t) * 275);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
 
+
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
 
+
   // This schedules MIB
-  if((slot == 0) && (frame & 7) == 0){
-    schedule_nr_mib(module_idP, frame, slot);
-  }
+  schedule_nr_mib(module_idP, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0)
@@ -466,8 +498,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule SR
   // TODO
 
-  // This schedule CSI
-  // TODO
+  // This schedule CSI measurement reporting
+  if (UE_info->active[UE_id])
+    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
@@ -475,39 +508,29 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
-  }
 
-  if (UE_info->active[UE_id]) {
-    // TbD once RACH is available, start ta_timer when UE is connected
-    if (ue_sched_ctl->ta_timer)
-      ue_sched_ctl->ta_timer--;
-    if (ue_sched_ctl->ta_timer == 0) {
-      ue_sched_ctl->ta_apply = true;
-      /* if time is up, then set the timer to not send it for 5 frames
-      // regardless of the TA value */
-      ue_sched_ctl->ta_timer = 100;
-    }
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
+
   // The decision about whether to schedule is done for each UE independently
   // inside
   if (UE_info->active[UE_id] && slot < 10) {
+
     int tda = 1; // time domain assignment hardcoded for now
     schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda, ulsch_in_slot_bitmap);
     nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
   }
 
+
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
       && slot < 10) {
+
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
-    //int pucch_sched;
-    //nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
-    //nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_info->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
-    ue_sched_ctl->ta_apply = false;
   }
+
 
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
