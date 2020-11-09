@@ -876,6 +876,9 @@ class RANManagement():
 
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
+		#RH debug
+        print(self.air_interface[self.eNB_instance]+'\n')
+		#
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
@@ -895,14 +898,14 @@ class RANManagement():
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 			#FR1 NSA test : add new markers to make sure gNB is used
-			if NSA_RAPROC_PUSCH_check:
+		if NSA_RAPROC_PUSCH_check:
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
-			else:
+		else:
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			htmleNBFailureMsg += statMsg + '\n'	
 			#ulsch and dlsch statistics
-			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
+		if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
 				statMsg=''
 				for key in dlsch_ulsch_stats: #for each dictionary key
 					statMsg += dlsch_ulsch_stats[key] + '\n'
