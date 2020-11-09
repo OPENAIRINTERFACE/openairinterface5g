@@ -80,7 +80,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          sub_frame_t slot,
                          int num_slots_per_tdd);
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+/* \brief default preprocessor */
+void nr_simple_dlsch_preprocessor(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot,
+                                  int num_slots_per_tdd);
+
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
@@ -124,42 +130,32 @@ uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 
 /////// Phy test scheduler ///////
 
+/* \brief preprocessor for phytest: schedules UE_id 0 with fixed MCS on all
+ * freq resources */
+void nr_preprocessor_phytest(module_id_t module_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             int num_slots_per_tdd);
+
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
 void nr_fill_nfapi_dl_pdu(int Mod_id,
-                          int UE_id,
-                          int bwp_id,
-                          NR_SearchSpace_t *ss,
-                          NR_ControlResourceSet_t *coreset,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
+                          rnti_t rnti,
+                          NR_CellGroupConfig_t *secondaryCellGroup,
+                          NR_UE_sched_ctrl_t *sched_ctrl,
                           NR_sched_pucch *pucch_sched,
-                          int nrOfLayers,
-                          uint8_t mcs,
-                          uint16_t rbSize,
-                          uint16_t rbStart,
-                          uint8_t numDmrsCdmGrpsNoData,
                           nfapi_nr_dmrs_type_e dmrsConfigType,
-                          uint8_t table_idx,
                           uint16_t R,
                           uint8_t Qm,
                           uint32_t tbs,
-                          int time_domain_assignment,
                           int StartSymbolIndex,
                           int NrOfSymbols,
-                          uint8_t aggregation_level,
-                          int CCEIndex,
                           int harq_pid,
                           int ndi,
                           int round);
-
-int configure_fapi_dl_pdu_phytest(int Mod_id,
-                                  nfapi_nr_dl_tti_request_body_t *dl_req,
-                                  NR_sched_pucch *pucch_sched,
-                                  uint8_t *mcsIndex,
-                                  uint16_t *rbSize,
-                                  uint16_t *rbStart);
 
 void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
                    nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
@@ -173,20 +169,6 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   int *dci_formats, int *rnti_types,
                   int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id);
-
-void configure_fapi_dl_Tx(module_id_t Mod_idP,
-                          frame_t       frameP,
-                          sub_frame_t   slotP,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
-                          nfapi_nr_pdu_t *tx_req,
-                          int tbs_bytes,
-                          int16_t pdu_index);
-
-void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
-                                   frame_t       frameP,
-                                   sub_frame_t   slotP,
-                                   NR_sched_pucch *pucch_sched,
-                                   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
@@ -391,6 +373,8 @@ void nr_process_mac_pdu(
 int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
+
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.

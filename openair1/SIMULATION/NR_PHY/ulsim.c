@@ -60,9 +60,11 @@
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+
 //#define DEBUG_ULSIM
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -75,7 +77,6 @@ int sf_ahead=4 ;
 int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
-uint16_t NB_UE_INST = 1;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 
@@ -164,6 +165,7 @@ int main(int argc, char **argv)
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   double tx_gain=1.0;
   double N0=30;
+  NB_UE_INST = 1;
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
