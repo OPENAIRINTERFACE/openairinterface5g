@@ -34,6 +34,7 @@
 #define ENB_PARAMDEF_H_
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
+#include "s1ap_eNB_default_values.h"
 
 #define ENB_CONFIG_STRING_CC_NODE_FUNCTION  "node_function"
 #define ENB_CONFIG_STRING_CC_NODE_TIMING    "node_timing"
@@ -923,7 +924,7 @@ typedef struct srb1_params_s {
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE,              NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6},    \
-  {ENB_CONFIG_STRING_MME_PORT,                           NULL,      0,         u16ptr:NULL, defuintval:0,        TYPE_UINT16,    0},    \
+  {ENB_CONFIG_STRING_MME_PORT,                           NULL,      0,         u16ptr:NULL, defuintval:S1AP_PORT_NUMBER, TYPE_UINT16, 0},    \
 }
 
 
