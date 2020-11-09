@@ -427,3 +427,95 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
 	dci_pdu_rel15->rv);
 
 }
+
+void nr_ul_preprocessor_phytest(module_id_t module_id,
+                                frame_t frame,
+                                sub_frame_t slot,
+                                int num_slots_per_tdd,
+                                uint64_t ulsch_in_slot_bitmap) {
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  NR_COMMON_channels_t *cc = nr_mac->common_channels;
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
+
+  AssertFatal(UE_info->num_UEs <= 1,
+              "%s() cannot handle more than one UE, but found %d\n",
+              __func__,
+              UE_info->num_UEs);
+  if (UE_info->num_UEs == 0)
+    return;
+
+  const int UE_id = 0;
+  const int CC_id = 0;
+
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  const int tda = 1;
+  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
+    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count,
+              "time domain assignment %d >= %d\n",
+              tda,
+              tdaList->list.count);
+  int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
+  const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
+  const int sched_slot = (slot + K2) % num_slots_per_tdd;
+  /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
+   * limitations).  Note that if K2 or the TDD configuration is changed, below
+   * conditions might exclude each other and never be true */
+  if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
+    return;
+
+  const uint16_t rbStart = 0;
+  const uint16_t rbSize = 50; /* due to OAI UE limitations */
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
+  for (int i = rbStart; i < rbStart + rbSize; ++i) {
+    if (vrb_map_UL[i]) {
+      LOG_E(MAC,
+            "%s(): %4d.%2d RB %d is already reserved, cannot schedule UE\n",
+            __func__,
+            frame,
+            slot,
+            i);
+      return;
+    }
+  }
+
+  sched_ctrl->sched_pusch->time_domain_allocation = tda;
+  sched_ctrl->sched_pusch->slot = sched_slot;
+  sched_ctrl->sched_pusch->frame = sched_frame;
+
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  uint8_t nr_of_candidates;
+  find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  sched_ctrl->coreset = get_coreset(
+      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
+  const int m = UE_info->num_pdcch_cand[UE_id][cid];
+  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                           sched_ctrl->active_bwp,
+                                           sched_ctrl->coreset,
+                                           sched_ctrl->aggregation_level,
+                                           Y,
+                                           m,
+                                           nr_of_candidates);
+  if (sched_ctrl->cce_index < 0) {
+    LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
+    return;
+  }
+  UE_info->num_pdcch_cand[UE_id][cid]++;
+
+  sched_ctrl->sched_pusch->mcs = 9;
+  sched_ctrl->sched_pusch->rbStart = rbStart;
+  sched_ctrl->sched_pusch->rbSize = rbSize;
+
+  /* mark the corresponding RBs as used */
+  for (int rb = rbStart; rb < rbStart + rbSize; rb++)
+    vrb_map_UL[rb] = 1;
+}

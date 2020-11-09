@@ -481,7 +481,6 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
 
   const int UE_id = 0;
   const int CC_id = 0;
-
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   const int tda = 1;
@@ -494,15 +493,18 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
   const int sched_slot = (slot + K2) % num_slots_per_tdd;
-  /* check if slot is UL, and for phy test verify that it is in first TDD
-   * period, slot 8 (for K2=6, this is at slot 2 in the gNB; because of UE
-   * limitations).  Note that if K2 or the TDD configuration is changed, below
-   * conditions might exclude each other and never be true */
-  const bool transmit =
-      is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot)
-      && (!get_softmodem_params()->phy_test || sched_slot == 8);
-  if (!transmit)
+  if (!is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot))
     return;
+
+  /* get first, largest unallocated region */
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
+  uint16_t rbStart = 0;
+  while (vrb_map_UL[rbStart]) rbStart++;
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  uint16_t rbSize = 1;
+  while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize])
+    rbSize++;
 
   sched_ctrl->sched_pusch->time_domain_allocation = tda;
   sched_ctrl->sched_pusch->slot = sched_slot;
@@ -533,12 +535,9 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
   sched_ctrl->sched_pusch->mcs = 9;
-  sched_ctrl->sched_pusch->rbStart = 0;
-  sched_ctrl->sched_pusch->rbSize = get_softmodem_params()->phy_test ?
-    50 : NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  sched_ctrl->sched_pusch->rbStart = rbStart;
+  sched_ctrl->sched_pusch->rbSize = rbSize;
 
-  uint16_t *vrb_map_UL =
-      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->sched_pusch->rbSize; rb++)
     vrb_map_UL[rb + sched_ctrl->sched_pusch->rbStart] = 1;
