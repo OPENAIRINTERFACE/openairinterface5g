@@ -451,9 +451,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       break;
     }
   }
+
   if (!pr_found) {
     LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
           module_idP, preamble_index);
+
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
   }
   // This should be handled differently when we use the initialBWP for RA
@@ -499,17 +501,17 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     ra->Msg2_slot = msg2_slot;
 
     LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-    if(pr_found)
-    do {
-      ra->rnti = (taus() % 65518) + 1;
-      loop++;
+    if (!ra->cfra) {
+      do {
+        ra->rnti = (taus() % 65518) + 1;
+        loop++;
+      }
+      while (loop != 100 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1) && ra->rnti >= 1 && ra->rnti <= 65519));
+      if (loop == 100) {
+        LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+        abort();
+      }
     }
-    while (loop != 100 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1) && ra->rnti >= 1 && ra->rnti <= 65519));
-    if (loop == 100) {
-      LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
-      abort();
-    }
-
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     ra->beam_id = beam_index;
@@ -881,13 +883,13 @@ void nr_generate_Msg2(module_id_t module_idP,
     uint8_t nr_of_candidates, aggregation_level;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
     NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0 /* common */);
-    int CCEIndex = allocate_nr_CCEs(
-        nr_mac,
-        bwp,
-        coreset,
-        aggregation_level,
-        0, /* n_RNTI 0: common search space */
-        0); // m
+    int CCEIndex = allocate_nr_CCEs(nr_mac,
+                                    bwp,
+                                    coreset,
+                                    aggregation_level,
+                                    0, // Y
+                                    0, // m
+                                    nr_of_candidates);
 
     if (CCEIndex < 0) {
       LOG_E(MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -940,8 +942,12 @@ void nr_generate_Msg2(module_id_t module_idP,
     nr_mac->TX_req[CC_id].Slot = slotP;
     memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length);
 
+    T(T_GNB_MAC_DL_RAR_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id),
+      T_INT(RA_rnti), T_INT(frameP), T_INT(slotP), T_INT(0) /* harq pid, meaningful? */,
+      T_BUFFER(&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length));
+
     /* mark the corresponding RBs as used */
-    uint8_t *vrb_map = cc[CC_id].vrb_map;
+    uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
       vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
   }

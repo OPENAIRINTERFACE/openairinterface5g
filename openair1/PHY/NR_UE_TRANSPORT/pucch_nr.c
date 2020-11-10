@@ -1045,7 +1045,11 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   for (int l=0; l<nrofSymbols; l++) {
     x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*dmrs_scrambling_id) + 1)) + (2*dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
 
-    s = lte_gold_generic(&x1, &x2, 1);
+    int reset = 1;
+    for (int ii=0; ii<=(startingPRB>>2); ii++) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      reset = 0;
+    }
     m = 0;
     for (int rb=0; rb<nrofPRB; rb++) {
       //startingPRB = startingPRB + rb;

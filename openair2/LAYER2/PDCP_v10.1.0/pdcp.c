@@ -996,17 +996,7 @@ pdcp_data_ind(
            * TODO: be sure of this
            */
           if (NFAPI_MODE == NFAPI_UE_STUB_PNF ) {
-#ifdef UESIM_EXPANSION
-
-            if (UE_NAS_USE_TUN) {
-              pdcpHead->inst  = ctxt_pP->module_id;
-            } else {
-              pdcpHead->inst  = 0;
-            }
-
-#else
             pdcpHead->inst  = ctxt_pP->module_id;
-#endif
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
               pdcpHead->inst  = ctxt_pP->module_id;
@@ -1035,7 +1025,7 @@ pdcp_data_ind(
       pushNotifiedFIFO(&pdcp_sdu_list, new_sdu_p); 
 
     /* Print octets of incoming data in hexadecimal form */
-    LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
+      LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
           sdu_buffer_sizeP  - payload_offset + (int)sizeof(pdcp_data_ind_header_t),
           sdu_buffer_sizeP  - payload_offset);
     //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
@@ -2287,7 +2277,7 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("ue",num_if);
       if (IS_SOFTMODEM_NOS1)
     	  nas_config(1, 1, 2, "ue");

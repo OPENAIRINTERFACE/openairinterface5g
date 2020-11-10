@@ -1,8 +1,4 @@
 
-static int cmpdouble(const void *p1, const void *p2) {
-  return *(double *)p1 > *(double *)p2;
-}
-
 double median(varArray_t *input) {
   return *(double *)((uint8_t *)(input+1)+(input->size/2)*input->atomSize);
 }

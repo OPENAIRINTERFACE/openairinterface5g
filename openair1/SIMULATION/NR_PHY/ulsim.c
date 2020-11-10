@@ -60,9 +60,11 @@
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+
 //#define DEBUG_ULSIM
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -75,7 +77,6 @@ int sf_ahead=4 ;
 int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
-uint16_t NB_UE_INST = 1;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 
@@ -119,6 +120,12 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+// Dummy function to avoid linking error at compilation of nr-ulsim
+int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -158,6 +165,7 @@ int main(int argc, char **argv)
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   double tx_gain=1.0;
   double N0=30;
+  NB_UE_INST = 1;
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -559,13 +567,14 @@ int main(int argc, char **argv)
   uint64_t ssb_bitmap;
   fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
 
+  fix_scc(scc,ssb_bitmap);
+
   fill_default_secondaryCellGroup(scc,
 				  secondaryCellGroup,
 				  0,
 				  1,
 				  n_tx,
 				  0);
-  fix_scc(scc,ssb_bitmap);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 

@@ -44,5 +44,6 @@ enum flex_type {
      FLPT_RECONFIGURE_AGENT = 16;
      FLPT_RRC_TRIGGERING = 17;
      FLPT_UL_MAC_CONFIG = 18;
+     FLPT_DELEGATE_REQUEST = 22;
 }
 
