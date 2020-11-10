@@ -182,6 +182,14 @@ static void UE_synch(void *arg) {
 
   if (UE->UE_scan == 0) {
 
+    #ifdef FR2_TEST
+    // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0){
+       UE->frame_parms.dl_CarrierFreq = downlink_frequency[0][0];
+       UE->frame_parms.ul_CarrierFreq = downlink_frequency[0][0];
+    }
+    #endif
+
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
 
       LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f (RF card %d, oai_exit %d, channel %d, rx_num_channels %d)\n",

@@ -554,6 +554,14 @@ int main( int argc, char **argv ) {
     init_symbol_rotation(&UE[CC_id]->frame_parms, UE[CC_id]->frame_parms.dl_CarrierFreq);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
+    #ifdef FR2_TEST
+    // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0){
+      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+      if (frame_parms[CC_id]->frame_type == TDD)
+        frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    }
+    #endif
   }
 
   init_openair0();

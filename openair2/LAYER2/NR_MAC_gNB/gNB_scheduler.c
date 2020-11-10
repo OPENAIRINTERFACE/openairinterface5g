@@ -403,6 +403,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
+  int nb_periods_per_frame;
+
   const int UE_id = 0;
   const int bwp_id = 1;
 
@@ -411,9 +413,47 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int num_slots_per_tdd = slots_per_frame[*scc->ssbSubcarrierSpacing] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
+
+  switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
+    case 0:
+      nb_periods_per_frame = 20; // 10ms/0p5ms
+      break;
+
+    case 1:
+      nb_periods_per_frame = 16; // 10ms/0p625ms
+      break;
+
+    case 2:
+      nb_periods_per_frame = 10; // 10ms/1ms
+      break;
+
+    case 3:
+      nb_periods_per_frame = 8; // 10ms/1p25ms
+      break;
+
+    case 4:
+      nb_periods_per_frame = 5; // 10ms/2ms
+      break;
+
+    case 5:
+      nb_periods_per_frame = 4; // 10ms/2p5ms
+      break;
+
+    case 6:
+      nb_periods_per_frame = 2; // 10ms/5ms
+      break;
+
+    case 7:
+      nb_periods_per_frame = 1; // 10ms/10ms
+      break;
+
+    default:
+      AssertFatal(1==0,"Undefined tdd period %d\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+  }
+
+  int num_slots_per_tdd = (slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
+
   const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
@@ -438,18 +478,18 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     //mbsfn_status[CC_id] = 0;
 
     // clear vrb_maps
-    memset(cc[CC_id].vrb_map, 0, 275);
-    memset(cc[CC_id].vrb_map_UL, 0, 275);
+    memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
+    memset(cc[CC_id].vrb_map_UL, 0, sizeof(uint16_t) * 275);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
 
+
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
 
+
   // This schedules MIB
-  if((slot == 0) && (frame & 7) == 0){
-    schedule_nr_mib(module_idP, frame, slot);
-  }
+  schedule_nr_mib(module_idP, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0)
@@ -468,39 +508,29 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
-  }
 
-  if (UE_info->active[UE_id]) {
-    // TbD once RACH is available, start ta_timer when UE is connected
-    if (ue_sched_ctl->ta_timer)
-      ue_sched_ctl->ta_timer--;
-    if (ue_sched_ctl->ta_timer == 0) {
-      ue_sched_ctl->ta_apply = true;
-      /* if time is up, then set the timer to not send it for 5 frames
-      // regardless of the TA value */
-      ue_sched_ctl->ta_timer = 100;
-    }
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
+
   // The decision about whether to schedule is done for each UE independently
   // inside
   if (UE_info->active[UE_id] && slot < 10) {
+
     int tda = 1; // time domain assignment hardcoded for now
     schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda, ulsch_in_slot_bitmap);
     nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
   }
 
+
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
       && slot < 10) {
+
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
-    //int pucch_sched;
-    //nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
-    //nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_info->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
-    ue_sched_ctl->ta_apply = false;
   }
+
 
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
