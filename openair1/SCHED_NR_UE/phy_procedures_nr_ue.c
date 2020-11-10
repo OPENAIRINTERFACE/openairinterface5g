@@ -270,21 +270,6 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
 	T_INT((int)ue->common_vars.freq_offset));
 #endif
   }
-#if 0
-  if (l==(6-ue->frame_parms.Ncp)) {
-
-    // make sure we have signal from PSS/SSS for N0 measurement
-    // LOG_I(PHY," l==(6-ue->frame_parms.Ncp) ue_rrc_measurements\n");
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_IN);
-    ue_rrc_measurements(ue,
-			slot,
-			abstraction_flag);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_OUT);
-
-
-  }
-#endif
 
   // accumulate and filter timing offset estimation every subframe (instead of every frame)
   if (( slot == 2) && (l==(2-frame_parms->Ncp))) {
@@ -1717,8 +1702,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
-
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
@@ -1791,7 +1774,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
-    
+
 #if UE_TIMING_TRACE
     start_meas(&ue->ofdm_demod_stats);
 #endif
