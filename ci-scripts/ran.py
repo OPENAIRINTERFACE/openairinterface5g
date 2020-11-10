@@ -872,8 +872,9 @@ class RANManagement():
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
-					#remove all char before u(lsch) or d(lsch)
-					dlsch_ulsch_stats[k]=re.sub(r'^.*([du])', r'\g<1>' , line.rstrip())
+					#remove all char before u(lsch) or d(lsch) -> not working for the moment
+					#dlsch_ulsch_stats[k]=re.sub(r'^.*([du])', r'\g<1>' , line.rstrip())
+					dlsch_ulsch_stats[k]=line.rstrip()
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
@@ -907,7 +908,7 @@ class RANManagement():
 			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
 				statMsg=''
 				for key in dlsch_ulsch_stats: #for each dictionary key
-					statMsg += dlsch_ulsch_stats[key]
+					statMsg += dlsch_ulsch_stats[key] + '\n' 
 					logging.debug(dlsch_ulsch_stats[key])
 				htmleNBFailureMsg += statMsg
 
