@@ -465,7 +465,6 @@ void pf_dl(module_id_t module_id,
     const float a = 0.0005f; // corresponds to 200ms window
     const uint32_t b = UE_info->mac_stats[UE_id].dlsch_current_bytes;
     thr_ue[UE_id] = (1 - a) * thr_ue[UE_id] + a * b;
-    LOG_I(MAC,"thr_ue[%d] %f\n",UE_id, thr_ue[UE_id]);
 
     /* retransmission */
     if (sched_ctrl->dl_harq_pid >= 0) {
@@ -503,12 +502,33 @@ void pf_dl(module_id_t module_id,
       max_num_ue--;
       if (max_num_ue < 0) return;
     } else {
-      /* Check DL buffer */
+      /* Check DL buffer and skip this UE if no bytes and no TA necessary */
+      if (sched_ctrl->num_total_bytes == 0 && frame != (sched_ctrl->ta_frame + 10) % 1024)
+        continue;
 
       /* Calculate coeff */
-
-      /* Create UE_sched list for transmission*/
-
+      sched_ctrl->time_domain_allocation = 2;
+      sched_ctrl->mcsTableIdx = 0;
+      sched_ctrl->mcs = 9;
+      sched_ctrl->numDmrsCdmGrpsNoData = 1;
+      uint8_t N_PRB_DMRS =
+              getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
+      int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
+                                       sched_ctrl->time_domain_allocation);
+      uint32_t tbs = nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                                    nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                                    1,  // rbSize
+                                    nrOfSymbols,
+                                    N_PRB_DMRS,  // FIXME // This should be multiplied by the
+                                    // number of dmrs symbols
+                                    0 /* N_PRB_oh, 0 for initialBWP */, 0 /* tb_scaling */,
+                                    1 /* nrOfLayers */)
+                     >> 3;
+      coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
+      LOG_I(MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
+            b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
+      /* Create UE_sched list for UEs eligible for new transmission*/
+      add_tail_nr_list(&UE_sched, UE_id);
     }
   }
 
