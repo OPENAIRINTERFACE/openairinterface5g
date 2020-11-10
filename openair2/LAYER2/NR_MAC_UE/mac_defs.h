@@ -292,10 +292,6 @@ typedef enum channel_bandwidth_e {
     bw_100MHz = 0x32
 } channel_bandwidth_t;
 
-typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
-} frequency_range_t;
 
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:
