@@ -59,7 +59,7 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
     for (uint8_t symb=0; symb<frame_parms.symbols_per_slot; symb++) {
       reset = 1;
       x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-      for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
+      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
         gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
@@ -516,12 +516,12 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
 
   if (rho < 1) {
     if (csi_params.freq_density == 0)
-      csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1; 
+      csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1;
     else
       csi_length = ((((csi_bw + csi_start)>>1)<<kprime)+1)<<1;
   }
   else
-    csi_length = (((uint16_t) rho*(csi_bw + csi_start))<<kprime)<<1; 
+    csi_length = (((uint16_t) rho*(csi_bw + csi_start))<<kprime)<<1;
 
 #ifdef NR_CSIRS_DEBUG
     printf(" start rb %d, n. rbs %d, csi length %d\n",csi_start,csi_bw,csi_length);
@@ -535,41 +535,36 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
 
   // NZP CSI RS
   if (csi_params.csi_type == 1) {
-   // assuming amp is the amplitude of SSB channels
-   switch (csi_params.power_control_offset_ss) {
-   case 0:
-    beta = (amp*ONE_OVER_SQRT2_Q15)>>15;
-    break;
-  
-   case 1:
-    beta = amp;
-    break;
+    // assuming amp is the amplitude of SSB channels
+    switch (csi_params.power_control_offset_ss) {
+    case 0:
+      beta = (amp*ONE_OVER_SQRT2_Q15)>>15;
+      break;
+    case 1:
+      beta = amp;
+      break;
+    case 2:
+      beta = (amp*ONE_OVER_SQRT2_Q15)>>14;
+      break;
+    case 3:
+      beta = amp<<1;
+      break;
+    default:
+      AssertFatal(0==1, "Invalid SS power offset density index for CSI\n");
+    }
 
-   case 2:
-    beta = (amp*ONE_OVER_SQRT2_Q15)>>14;
-    break;
-
-   case 3:
-    beta = amp<<1;
-    break;
-
-  default:
-    AssertFatal(0==1, "Invalid SS power offset density index for CSI\n");
-   }
-
-   for (lp=0; lp<=lprime; lp++){
-     symb = csi_params.symb_l0;
-     nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
-     if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
-       nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]); 
-     if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
-       symb = csi_params.symb_l1;
-       nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
-       if ((csi_params.row == 13) || (csi_params.row == 16))
-         nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]); 
-     }
-   }
-      
+    for (lp=0; lp<=lprime; lp++){
+      symb = csi_params.symb_l0;
+      nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+      if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
+        nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
+      if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
+        symb = csi_params.symb_l1;
+        nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+        if ((csi_params.row == 13) || (csi_params.row == 16))
+          nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
+      }
+    }
   }
 
   uint16_t start_sc = frame_parms.first_carrier_offset;
