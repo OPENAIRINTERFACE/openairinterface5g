@@ -705,7 +705,7 @@ int main(int argc, char **argv){
         //  printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
         if (awgn_flag == 0) {
-          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_tti<<1, 0);
+          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_frame, 0);
         }
 
         if (n_frames==1) {

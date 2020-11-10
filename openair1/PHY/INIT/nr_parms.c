@@ -84,8 +84,6 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
 {
 
-  fp->ttis_per_subframe = 1;
-
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
