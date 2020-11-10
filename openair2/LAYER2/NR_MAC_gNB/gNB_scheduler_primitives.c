@@ -2038,7 +2038,7 @@ uint16_t nr_get_csi_bitlen(int Mod_idP,
   csi_bitlen = ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
                CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
                (CSI_report_bitlen->nb_ssbri_cri -1 )) *UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report);
-printf("%d\n",csi_bitlen);
+
   return csi_bitlen;
 }
 

@@ -1073,7 +1073,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  nzpcsi0->powerControlOffset = 0;
  nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
  *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
- nzpcsi0->scramblingID = 50;
+ nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
  nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
  nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
  nzpcsi0->periodicityAndOffset->choice.slots320 = 0;

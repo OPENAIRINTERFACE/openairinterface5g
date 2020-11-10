@@ -205,7 +205,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 	(csirs->slot == slot) ) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(gNB, AMP, csi_params, slot);
+      nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
       csirs->active = 0;
     }
   }

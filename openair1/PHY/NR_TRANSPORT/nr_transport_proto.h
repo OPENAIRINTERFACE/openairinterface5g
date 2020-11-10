@@ -329,6 +329,7 @@ void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
                         int16_t amp,
                         nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        uint16_t cell_id,
                         int slot);
 
 void nr_decode_pucch1(int32_t **rxdataF,

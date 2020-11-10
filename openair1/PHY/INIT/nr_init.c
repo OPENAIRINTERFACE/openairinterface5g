@@ -196,7 +196,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  nr_init_csi_rs(gNB, 0); // TODO scramblingID currently hardcoded to 0, to be taken from higher layer parameter scramblingID when implemented
+  nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value); // TODO scramblingID currently hardcoded to 0, to be taken from higher layer parameter scramblingID when implemented
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
