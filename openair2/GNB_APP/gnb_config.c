@@ -231,8 +231,8 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
       scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] |= curr_bit<<i;   
     }
   }else if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
-	  scc->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
-	  scc->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.mediumBitmap.buf = CALLOC(1,1);
     scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0;
     for (int i=0; i<8; i++)
