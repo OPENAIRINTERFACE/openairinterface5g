@@ -133,7 +133,7 @@ class RANManagement():
 				self.air_interface[self.eNB_instance] = 'nr-softmodem'
 			else:
 				self.air_interface[self.eNB_instance] = 'lte-softmodem'
-				
+		
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
@@ -427,7 +427,7 @@ class RANManagement():
 		# Launch eNB with the modified config file
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
-		if self.air_interface == 'nr':
+		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		# NOTE: WE SHALL do a check if the executable is present (in case build went wrong)
@@ -568,10 +568,6 @@ class RANManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		#RH debug
-		print(self.air_interface)
-		print(self.eNB_instance)
-		#
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
@@ -869,20 +865,17 @@ class RANManagement():
 			if result is not None:
 				NSA_RAPROC_PUSCH_check = 1
 			#dlsch and ulsch statistics
-			#keys below are are the markers we are loooking for, looping over this keys list
+			#keys below are the markers we are loooking for, loop over this keys list
 			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
-			#eventually we record only the last one
+			#eventually we record only the last occurence 
 			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
 			for k in keys:
-				result = re.search(k, str(line))
+				result = re.search(k, line)
 				if result is not None:
-					dlsch_ulsch_stats[k]=str(line)
-
+					#remove all char before u(lsch) or d(lsch)
+					dlsch_ulsch_stats[k]=re.sub(r'^.*([du])', r'\g<1>' , line.rstrip())
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
-		#RH debug
-		print(self.air_interface[self.eNB_instance]+'\n')
-		#
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
@@ -902,19 +895,21 @@ class RANManagement():
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 			#FR1 NSA test : add new markers to make sure gNB is used
-		if NSA_RAPROC_PUSCH_check:
-			statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
-		else:
-			statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
-		logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-		htmleNBFailureMsg += statMsg + '\n'	
-		#ulsch and dlsch statistics
-		if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
-			statMsg=''
-			for key in dlsch_ulsch_stats: #for each dictionary key
-				statMsg += dlsch_ulsch_stats[key] + '\n'
-				logging.debug('\u001B[1;30;43m ' + dlsch_ulsch_stats[key] + ' \u001B[0m')
-			htmleNBFailureMsg += statMsg + '\n'
+			if NSA_RAPROC_PUSCH_check:
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
+				htmlMsg = statMsg+'\n'
+			else:
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+				htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#ulsch and dlsch statistics
+			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
+				statMsg=''
+				for key in dlsch_ulsch_stats: #for each dictionary key
+					statMsg += dlsch_ulsch_stats[key]
+					logging.debug(dlsch_ulsch_stats[key])
+				htmleNBFailureMsg += statMsg
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
