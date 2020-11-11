@@ -705,6 +705,8 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
 
   int nr_tti_rx = proc->nr_tti_rx;
+  int nr_frame_rx = proc->frame_rx;//LOG_M
+  char filename[100];//LOG_M
   int m;
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
@@ -728,15 +730,23 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     // do channel estimation for first DMRS only
     for (m = s0; m < 3; m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
-	nr_pdsch_channel_estimation(ue,
+    	  for (uint8_t aatx=0; aatx<1; aatx++) {//for MIMO Config: it shall loop over no_layers
+    		  nr_pdsch_channel_estimation(ue,
 				    0 /*eNB_id*/,
 				    nr_tti_rx,
-				    0 /*p*/,
+				    aatx /*p*/,
 				    m,
 				    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
 				    pdsch_nb_rb);
-	LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
-	break;
+    		  ///LOG_M: the channel estimation
+    		  LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_tti_rx,m);
+    		  for (uint8_t aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+    			  sprintf(filename,"PDSCH_CHANNEL_frame%d_slot%d_sym%d_port%d_rx%d.m", nr_frame_rx, nr_tti_rx, m, aatx,aarx);//LOG_M
+    			  int **dl_ch_estimates = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates;
+    			  //LOG_M(filename,"channel_F",&dl_ch_estimates[aatx*ue->frame_parms.nb_antennas_rx+aarx][ue->frame_parms.ofdm_symbol_size*m],ue->frame_parms.ofdm_symbol_size, 1, 1);
+    		  }
+    	  }
+    	  break;
       }
     }
     for (m = s0; m < (s1 + s0); m++) {
@@ -1039,7 +1049,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-		 LOG_T(PHY,"UE_DLSCH_PARALLELISATION is defined, ret = %d\n", ret);
+		 LOG_I(PHY,"UE_DLSCH_PARALLELISATION is defined, ret = %d\n", ret);
 #else
       ret = nr_dlsch_decoding(ue,
 			   pdsch_vars->llr[0],
@@ -1052,7 +1062,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-      LOG_T(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret = %d\n", ret);
+      LOG_I(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret = %d\n", ret);
       //printf("start cW0 dlsch decoding\n");
 #endif
 

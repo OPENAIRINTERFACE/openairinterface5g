@@ -726,7 +726,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 	  }
   } else {//pdsch_dmrs_type2
 	  nushift = delta;
-	  ue->frame_parms.nushift = nushift>>1;//SFN:fixMe IT MUST BE WITHOUT >>1
+	  ue->frame_parms.nushift = nushift;
 	  switch (delta) {
 	  case 0://port 0,1
 		  fl = filt8_l2;//left interpolation Filter should be fml
