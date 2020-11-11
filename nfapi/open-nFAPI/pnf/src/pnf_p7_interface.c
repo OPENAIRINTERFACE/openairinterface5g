@@ -76,6 +76,26 @@ int nfapi_pnf_p7_start(nfapi_pnf_p7_config_t* config)
 	return 0;
 }
 
+int nfapi_nr_pnf_p7_start(nfapi_pnf_p7_config_t* config)
+{
+	// Verify that config is not null
+	if(config == 0)
+		return -1;
+
+	// Make sure to set the defined trace function before using NFAPI_TRACE
+	if(config->trace)
+		nfapi_trace_g = config->trace;
+
+	pnf_p7_t* _this = (pnf_p7_t*)(config);
+
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
+
+	pnf_nr_p7_message_pump(_this);
+
+	return 0;
+}
+
+
 int nfapi_pnf_p7_stop(nfapi_pnf_p7_config_t* config)
 {
 	// Verify that config is not null

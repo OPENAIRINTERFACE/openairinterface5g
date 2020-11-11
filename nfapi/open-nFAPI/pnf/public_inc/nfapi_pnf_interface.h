@@ -127,7 +127,7 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the PNF_PARAM.response after receiving the
 	 *  PNF_PARAM.request. This can be done in the call back. 
 	 */
-	//int (*pnf_nr_param_req)(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_request_t* req);
+	int (*pnf_nr_param_req)(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_request_t* req);
 	int (*pnf_param_req)(nfapi_pnf_config_t* config, nfapi_pnf_param_request_t* req);
 	
 	/*! A callback for the PNF_CONFIG.request
@@ -140,7 +140,8 @@ typedef struct nfapi_pnf_config
 	 *  PNF_CONFIG.request. This can be done in the call back. 
 	 */
 	int (*pnf_config_req)(nfapi_pnf_config_t* config, nfapi_pnf_config_request_t* req);
-	
+	int (*pnf_nr_config_req)(nfapi_pnf_config_t* config, nfapi_nr_pnf_config_request_t* req);
+
 	/*! A callback for the PNF_START.request
 	 *  \param config A pointer to the pnf configuration
 	 *  \param req A data structure for the decoded PNF_CONFIG.request. This will have
@@ -151,7 +152,8 @@ typedef struct nfapi_pnf_config
 	 *  PNF_START.request. This can be done in the call back. 
 	 */
 	int (*pnf_start_req)(nfapi_pnf_config_t* config, nfapi_pnf_start_request_t* req);
-	
+	int (*pnf_nr_start_req)(nfapi_pnf_config_t* config, nfapi_nr_pnf_start_request_t* req);
+
 	/*! A callback for the PNF_STOP.request
 	 *  \param config A pointer to the pnf configuration
 	 *  \param req A data structure for the decoded PNF_STOP.request. This will have
@@ -173,8 +175,9 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the PARAM.response after receiving the
 	 *  PARAM.request. This can be done in the call back. 
 	 */
-	int (*param_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_nr_param_request_scf_t* req);
-	
+	int (*param_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_param_request_t* req);
+	int (*nr_param_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_nr_param_request_scf_t* req);
+
 	/*! A callback for the CONFIG.request
 	 *  \param config A pointer to the pnf configuration
 	 *  \param phy A pointer to the pnf phy configuration
@@ -185,7 +188,8 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the CONFIG.response after receiving the
 	 *  CONFIG.request. This can be done in the call back. 
 	 */
-	int (*config_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_nr_config_request_scf_t* req);
+	int (*config_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_config_request_t* req);
+	int (*nr_config_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_nr_config_request_scf_t* req);
 	
 	/*! A callback for the START.request
 	 *  \param config A pointer to the pnf configuration
@@ -197,8 +201,8 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the START.response after the client has received the
 	 *  first subframe indication from FAPI.
 	 */
-	int (*start_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy,  nfapi_nr_start_request_scf_t* req);
-	
+	int (*start_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy,  nfapi_start_request_t* req);
+	int (*nr_start_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy,  nfapi_nr_start_request_scf_t* req);
 	/*! A callback for the STOP.request
 	 *  \param config A pointer to the pnf configuration
 	 *  \param phy A pointer to the pnf phy configuration
@@ -362,6 +366,7 @@ int nfapi_pnf_config_destroy(nfapi_pnf_config_t* config);
  * \endcode
  */
 int nfapi_pnf_start(nfapi_pnf_config_t* config);
+int nfapi_nr_pnf_start(nfapi_pnf_config_t* config);
 
 /*! Stop the PNF library. 
  * \param config A pointer to the pnf configuration
@@ -378,6 +383,8 @@ int nfapi_pnf_stop(nfapi_pnf_config_t* config);
  * 
  */
 int nfapi_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_pnf_param_response_t* resp);
+int nfapi_nr_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_response_t* resp);
+
 
 /*! Send the PNF_CONFIG.response
  * \param config A pointer to a pnf configuraiton
@@ -386,6 +393,7 @@ int nfapi_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_pnf_param_respons
  * 
  */
 int nfapi_pnf_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_pnf_config_response_t* resp);
+int nfapi_nr_pnf_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_config_response_t* resp);
 
 /*! Send the PNF_START.response
  * \param config A pointer to a pnf configuraiton
@@ -394,7 +402,7 @@ int nfapi_pnf_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_pnf_config_respo
  * 
  */
 int nfapi_pnf_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_pnf_start_response_t* resp);
-
+int nfapi_nr_pnf_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_start_response_t* resp);
 /*! Send the PNF_STOP.response
  * \param config A pointer to a pnf configuraiton
  * \param resp A pointer to the message structure
@@ -409,7 +417,8 @@ int nfapi_pnf_pnf_stop_resp(nfapi_pnf_config_t* config, nfapi_pnf_stop_response_
  * \return 0 for success, -1 for failure
  * 
  */
-int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf_t* resp);
+int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_param_response_t* resp);
+int nfapi_nr_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf_t* resp);
 
 /*! Send the CONFIG.response
  * \param config A pointer to a pnf configuraiton
@@ -417,15 +426,16 @@ int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf
  * \return 0 for success, -1 for failure
  * 
  */
-int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_scf_t* resp);
-
+int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_config_response_t* resp);
+int nfapi_nr_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_scf_t* resp);
 /*! Send the START.response
  * \param config A pointer to a pnf configuraiton
  * \param resp A pointer to the message structure
  * \return 0 for success, -1 for failure
  * 
  */
-int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_scf_t* resp);
+int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_start_response_t* resp);
+int nfapi_nr_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_scf_t* resp);
 
 /*! Send the STOP.response
  * \param config A pointer to a pnf configuraiton
@@ -738,6 +748,7 @@ int nfapi_pnf_p7_config_destroy(nfapi_pnf_p7_config_t* config);
  * This function will not return until nfapi_pnf_p7_stop is called.
  */
 int nfapi_pnf_p7_start(nfapi_pnf_p7_config_t* config);
+int nfapi_nr_pnf_p7_start(nfapi_pnf_p7_config_t* config);
 
 /*! Stop the PNF P7 library. 
  * \param config A pointer to a PNF P7 config

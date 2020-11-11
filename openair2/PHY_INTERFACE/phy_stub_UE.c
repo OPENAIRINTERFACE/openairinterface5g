@@ -1096,13 +1096,6 @@ void handle_nfapi_hi_dci0_hi_pdu(
     nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
 }
 
-void rrc_pdcp_config_req (
-  const protocol_ctxt_t *const  ctxt_pP,
-  const srb_flag_t  srb_flagP,
-  const uint32_t    actionP,
-  const rb_id_t     rb_idP,
-  const uint8_t     security_modeP){
-}
 
 void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
                              int frame,
@@ -1163,23 +1156,3 @@ int l1_north_init_eNB(void) {
 void init_eNB_afterRU(void) {
 }
 
-void nr_phy_config_request(NR_PHY_Config_t *gNB){}
-
-void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu){}
-        
-void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu){}
-
-void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                             nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu){}
-
-int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type){}
-void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                            nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
-                            uint8_t *sdu){
-                            }
-int l1_north_init_gNB(void){}
-uint8_t nfapi_mode;

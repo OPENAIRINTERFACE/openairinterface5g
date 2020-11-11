@@ -83,6 +83,40 @@ int nfapi_pnf_start(nfapi_pnf_config_t* config)
 	return 0;
 }
 
+int nfapi_nr_pnf_start(nfapi_pnf_config_t* config)
+{
+	// Verify that config is not null
+	if(config == 0)
+		return -1;
+
+	// Make sure to set the defined trace function before using NFAPI_TRACE
+	if(config->trace)
+		nfapi_trace_g = config->trace;
+
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
+
+	pnf_t* _this = (pnf_t*)(config);
+
+	while (_this->terminate == 0)
+	{
+		int connect_result = pnf_connect(_this);
+
+		if(connect_result > 0)
+		{
+			pnf_nr_message_pump(_this);
+		}
+		else if(connect_result < 0)
+		{
+			return connect_result;
+		}
+
+		sleep(1);
+	}
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() terminate=1 - EXITTING............\n", __FUNCTION__);
+
+	return 0;
+}
+
 int nfapi_pnf_stop(nfapi_pnf_config_t* config)
 {
 	// Verify that config is not null
@@ -98,7 +132,7 @@ int nfapi_pnf_stop(nfapi_pnf_config_t* config)
 	return 0;
 }
 
-/*
+
 int nfapi_nr_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_response_t* resp)
 {
 	// ensure it's valid
@@ -112,7 +146,7 @@ int nfapi_nr_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_param_r
 
 	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_pnf_param_response_t));
 }
-*/
+
 int nfapi_pnf_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_pnf_param_response_t* resp)
 {
 	// ensure it's valid
@@ -146,6 +180,27 @@ int nfapi_pnf_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_pnf_config_respo
 	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_pnf_config_response_t));
 }
 
+
+int nfapi_nr_pnf_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_config_response_t* resp)
+{
+	// ensure it's valid
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+
+	if(resp->error_code == NFAPI_MSG_OK)
+	{
+		config->state = NFAPI_PNF_CONFIGURED;
+	}
+
+	pnf_t* _this = (pnf_t*)(config);
+
+	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_pnf_config_response_t));
+}
+
+
 int nfapi_pnf_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_pnf_start_response_t* resp)
 {
 	// ensure it's valid
@@ -165,6 +220,26 @@ int nfapi_pnf_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_pnf_start_respons
 	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_pnf_start_response_t));
 }
 
+int nfapi_nr_pnf_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_pnf_start_response_t* resp)
+{
+	// ensure it's valid
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+
+	if(resp->error_code == NFAPI_MSG_OK)
+	{
+		config->state = NFAPI_PNF_RUNNING;
+	}
+
+	pnf_t* _this = (pnf_t*)(config);
+
+	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_pnf_start_response_t));
+}
+
+
 int nfapi_pnf_pnf_stop_resp(nfapi_pnf_config_t* config, nfapi_pnf_stop_response_t* resp)
 {
 	// ensure it's valid
@@ -183,8 +258,7 @@ int nfapi_pnf_pnf_stop_resp(nfapi_pnf_config_t* config, nfapi_pnf_stop_response_
 
 	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_pnf_stop_response_t));
 }
-
-int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf_t* resp)
+int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_param_response_t* resp)
 {
 	if (config == NULL || resp == NULL)
 	{
@@ -194,10 +268,24 @@ int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf
 	
 	pnf_t* _this = (pnf_t*)(config);
 
-	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_param_response_scf_t));
+	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_param_response_t));
 }
 
-int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_scf_t* resp)
+
+int nfapi_nr_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf_t* resp)
+{
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+	
+	pnf_t* _this = (pnf_t*)(config);
+
+	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_param_response_scf_t));
+}
+
+int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_config_response_t* resp)
 {
 	if (config == NULL || resp == NULL)
 	{
@@ -222,10 +310,39 @@ int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_s
 		return -1;
 	}
 
-	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_config_response_scf_t));
+	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_config_response_t));
 }
 
-int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_scf_t* resp)
+int nfapi_nr_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_scf_t* resp)
+{
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+
+	pnf_t* _this = (pnf_t*)(config);
+
+	nfapi_pnf_phy_config_t* phy = nfapi_pnf_phy_config_find(config, resp->header.phy_id);
+
+	if(phy)
+	{
+		if(resp->error_code == NFAPI_MSG_OK)
+		{
+			phy->state = NFAPI_PNF_PHY_CONFIGURED;
+		}
+	}
+	else
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: unknow phy id %d\n", __FUNCTION__, resp->header.phy_id);
+		return -1;
+	}
+
+	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_config_response_scf_t));
+}
+
+
+int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_start_response_t* resp)
 {
 	if (config == NULL || resp == NULL)
 	{
@@ -249,8 +366,36 @@ int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_scf
 		return -1;
 	}
 
-	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_start_response_scf_t));
+	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_start_response_t));
 }
+
+int nfapi_nr_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_scf_t* resp)
+{
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+
+	pnf_t* _this = (pnf_t*)(config);
+
+	nfapi_pnf_phy_config_t* phy = nfapi_pnf_phy_config_find(config, resp->header.phy_id);
+	if(phy)
+	{
+		if(resp->error_code == NFAPI_MSG_OK)
+		{
+			phy->state = NFAPI_PNF_PHY_RUNNING;
+		}
+	}
+	else
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: unknown phy id %d\n", __FUNCTION__, resp->header.phy_id);
+		return -1;
+	}
+
+	return pnf_nr_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_start_response_scf_t));
+}
+
 
 int nfapi_pnf_stop_resp(nfapi_pnf_config_t* config, nfapi_stop_response_t* resp)
 {

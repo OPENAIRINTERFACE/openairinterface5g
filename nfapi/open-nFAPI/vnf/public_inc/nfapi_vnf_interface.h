@@ -185,7 +185,8 @@ typedef struct nfapi_vnf_config
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
 	int (*pnf_config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_config_response_t* resp);
-	
+	int (*pnf_nr_config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_config_response_t* resp);
+
 	/*! A callback for the PNF_START.resp
 	 *  \param config A pointer to the vnf configuration
 	 *  \param p5_idx The p5 index used to indicate a particular pnf p5 connection
@@ -206,7 +207,8 @@ typedef struct nfapi_vnf_config
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
 	int (*pnf_start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_start_response_t* resp);
-	
+	int (*pnf_nr_start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_start_response_t* resp);
+
 	/*! A callback for the PNF_STOP.resp
 	 *  \param config A pointer to the vnf configuration
 	 *  \param p5_idx The p5 index used to indicate a particular pnf p5 connection
@@ -252,6 +254,7 @@ typedef struct nfapi_vnf_config
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
 	int (*param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_response_scf_t* resp);
+	int (*nr_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_response_scf_t* resp);
 	
 	/*! A callback for the CONFIG.response
      *  \param config A pointer to the vnf configuration
@@ -269,9 +272,9 @@ typedef struct nfapi_vnf_config
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
-	//TODO: Add nfapi_nr_config_response_scf_t struct
-	int (*config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_response_scf_t* resp);
-	
+	int (*nr_config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_response_scf_t* resp);
+	int (*config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_response_t* resp);
+
 	/*! A callback for the START.resp
      *  \param config A pointer to the vnf configuration
 	 *  \param p5_idx The p5 index used to indicate a particular pnf p5 connection
@@ -288,7 +291,8 @@ typedef struct nfapi_vnf_config
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
-	int (*start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_response_scf_t* resp);
+	int (*start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_start_response_t* resp);
+	int (*nr_start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_response_scf_t* resp);
 	
 	/*! A callback for the STOP.resp
      *  \param config A pointer to the vnf configuration
@@ -506,7 +510,7 @@ int nfapi_vnf_allocate_phy(nfapi_vnf_config_t* config, int p5_idx, uint16_t* phy
  * \return  0 means success, -1 failure
  */
 int nfapi_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_request_t* req);
-//int nfapi_nr_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_param_request_t* req);
+int nfapi_nr_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_param_request_t* req);
 
 /*! Send the PNF_CONFIG.request
  * \param config A pointer to a vnf config
@@ -515,6 +519,7 @@ int nfapi_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_pa
  * \return  0 means success, -1 failure
  */
 int nfapi_vnf_pnf_config_req(nfapi_vnf_config_t* config,int p5_idx, nfapi_pnf_config_request_t* req);
+int nfapi_nr_vnf_pnf_config_req(nfapi_vnf_config_t* config,int p5_idx, nfapi_nr_pnf_config_request_t* req);
 
 /*! Send the PNF_START.request
  * \param config A pointer to a vnf config
@@ -523,6 +528,7 @@ int nfapi_vnf_pnf_config_req(nfapi_vnf_config_t* config,int p5_idx, nfapi_pnf_co
  * \return  0 means success, -1 failure
  */
 int nfapi_vnf_pnf_start_req(nfapi_vnf_config_t* config,int p5_idx, nfapi_pnf_start_request_t* req);
+int nfapi_nr_vnf_pnf_start_req(nfapi_vnf_config_t* config,int p5_idx, nfapi_nr_pnf_start_request_t* req);
 
 /*! Send the PNF_STOP.request
  * \param config A pointer to a vnf config
@@ -539,6 +545,7 @@ int nfapi_vnf_pnf_stop_req(nfapi_vnf_config_t* config,int p5_idx, nfapi_pnf_stop
  * \return  0 means success, -1 failure
  */
 int nfapi_vnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_request_t* req);
+int nfapi_nr_vnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_request_scf_t* req);
 
 /*! Send the CONFIG.request
  * \param config A pointer to a vnf config
@@ -546,7 +553,8 @@ int nfapi_vnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_requ
  * \param req A pointer to a CONFIG.request message structure
  * \return  0 means success, -1 failure
  */
-int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_request_scf_t* req);
+int nfapi_nr_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_request_scf_t* req);
+int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_request_t* req);
 
 /*! Send the START.request
  * \param config A pointer to a vnf config
@@ -554,7 +562,8 @@ int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config
  * \param req A pointer to a START.request message structure
  * \return  0 means success, -1 failure
  */
-int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_request_scf_t* req);
+int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_start_request_t* req);
+int nfapi_nr_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_request_scf_t* req);
 
 /*! Send the STOP.request
  * \param config A pointer to a vnf config
@@ -893,6 +902,8 @@ void nfapi_vnf_p7_config_destory(nfapi_vnf_p7_config_t* config);
  */
  
 int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config);
+int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config);
+
 
 /*! Stop the VNF P7 library. 
  *  \param config A pointer to an vnf p7 configuration structure

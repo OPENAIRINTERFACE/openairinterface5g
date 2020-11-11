@@ -187,7 +187,6 @@ typedef enum {
 	NFAPI_DL_NODE_SYNC,
 	NFAPI_TIMING_INFO,
 
-
 	NFAPI_RSSI_REQUEST = 0x0200,
 	NFAPI_RSSI_RESPONSE,
 	NFAPI_RSSI_INDICATION,
@@ -1125,12 +1124,12 @@ typedef struct {
 	uint32_t error_code;
 	nfapi_pnf_param_general_t pnf_param_general;
 	nfapi_pnf_phy_t pnf_phy;
-	// nfapi_pnf_rf_t pnf_rf;
-	// nfapi_pnf_phy_rel10_t pnf_phy_rel10;
-	// nfapi_pnf_phy_rel11_t pnf_phy_rel11;
-	// nfapi_pnf_phy_rel12_t pnf_phy_rel12;
-	// nfapi_pnf_phy_rel13_t pnf_phy_rel13;
-	// nfapi_pnf_phy_rel13_nb_iot_t pnf_phy_rel13_nb_iot;
+	nfapi_pnf_rf_t pnf_rf;
+	nfapi_pnf_phy_rel10_t pnf_phy_rel10;
+	nfapi_pnf_phy_rel11_t pnf_phy_rel11;
+	nfapi_pnf_phy_rel12_t pnf_phy_rel12;
+	nfapi_pnf_phy_rel13_t pnf_phy_rel13;
+	nfapi_pnf_phy_rel13_nb_iot_t pnf_phy_rel13_nb_iot;
   nfapi_pnf_phy_rel15_t pnf_phy_rel15;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_pnf_param_response_t;
@@ -2498,8 +2497,7 @@ typedef struct {
 typedef struct {
 	nfapi_p7_message_header_t header;
 	uint32_t t1;
-	//int32_t delta_sfn_sf;
-	int32_t delta_sfn_slot;
+	int32_t delta_sfn_sf;	
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_dl_node_sync_t;
 
@@ -2514,35 +2512,49 @@ typedef struct {
 typedef struct {
 	nfapi_p7_message_header_t header;
 	uint32_t last_sfn_sf;
-	uint32_t last_sfn;
-	uint32_t last_slot;
+
 	uint32_t time_since_last_timing_info;
 	uint32_t dl_config_jitter;
 	uint32_t tx_request_jitter;
 	uint32_t ul_config_jitter;
 	uint32_t hi_dci0_jitter;
-	uint32_t dl_tti_jitter;
-	uint32_t tx_data_request_jitter;
-	uint32_t ul_tti_jitter;
-	uint32_t ul_dci_jitter;
+
 	int32_t dl_config_latest_delay;
 	int32_t tx_request_latest_delay;
 	int32_t ul_config_latest_delay;
 	int32_t hi_dci0_latest_delay;
-	int32_t dl_tti_latest_delay;
-	int32_t tx_data_request_latest_delay;
-	int32_t ul_tti_latest_delay;
-	int32_t ul_dci_latest_delay;
+
 	int32_t dl_config_earliest_arrival;
 	int32_t tx_request_earliest_arrival;
 	int32_t ul_config_earliest_arrival;
 	int32_t hi_dci0_earliest_arrival;
+	
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_timing_info_t;
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	
+	uint32_t last_sfn;
+	uint32_t last_slot;
+	uint32_t time_since_last_timing_info;
+	
+	uint32_t dl_tti_jitter;
+	uint32_t tx_data_request_jitter;
+	uint32_t ul_tti_jitter;
+	uint32_t ul_dci_jitter;
+
+	int32_t dl_tti_latest_delay;
+	int32_t tx_data_request_latest_delay;
+	int32_t ul_tti_latest_delay;
+	int32_t ul_dci_latest_delay;
+	
 	int32_t dl_tti_earliest_arrival;
 	int32_t tx_data_request_earliest_arrival;
 	int32_t ul_tti_earliest_arrival;
 	int32_t ul_dci_earliest_arrival;
 	nfapi_vendor_extension_tlv_t vendor_extension;
-} nfapi_timing_info_t;
+} nfapi_nr_timing_info_t;
 
 typedef struct {
 	nfapi_tl_t tl;
@@ -3955,7 +3967,7 @@ int nfapi_p4_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
  * 
  */
 int nfapi_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t* config);
-//int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t* config);
+int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t* config);
 
 /*! \brief Decodes an NFAPI P5 message header
  *  \param pMessageBuf A pointer to an encoded P5 message header
@@ -3979,7 +3991,7 @@ int nfapi_p5_message_header_unpack(void *pMessageBuf, uint32_t messageBufLen, vo
  *
  * The function will decode a byte stream pointed to by pMessageBuf into a nfapi p5 message structure pointer to by pUnpackedBuf 
  */
-//int nfapi_nr_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t* config);
+int nfapi_nr_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t* config);
 int nfapi_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t* config);
 
 /*! \brief Encodes an NFAPI P7 message to a buffer
@@ -3993,6 +4005,7 @@ int nfapi_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
  * 
  */
 int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen, nfapi_p7_codec_config_t* config);
+int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen, nfapi_p7_codec_config_t* config);
 
 /*! \brief Decodes an NFAPI P7 message header
  *  \param pMessageBuf A pointer to an encoded P7 message header
@@ -4018,6 +4031,7 @@ int nfapi_p7_message_header_unpack(void *pMessageBuf, uint32_t messageBufLen, vo
  * The function will decode a byte stream pointed to by pMessageBuf into a nfapi p7 message structure pointer to by pUnpackedBuf 
  */
 int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p7_codec_config_t* config);
+int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p7_codec_config_t* config);
 
 /*! \brief Calculates the checksum of a  message
  *

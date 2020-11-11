@@ -78,7 +78,11 @@ typedef enum {
 	NFAPI_NR_PHY_MSG_TYPE_PNF_START_REQUEST= 0x0104,
 	NFAPI_NR_PHY_MSG_TYPE_PNF_START_RESPONSE= 0x0105,
 	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_REQUEST= 0x0106,
-	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_RESPONSE= 0x0107
+	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_RESPONSE= 0x0107,
+
+  NFAPI_NR_PHY_MSG_TYPE_UL_NODE_SYNC = 0x0180,
+	NFAPI_NR_PHY_MSG_TYPE_DL_NODE_SYNC,
+	NFAPI_NR_PHY_MSG_TYPE_TIMING_INFO
 } nfapi_nr_phy_msg_type_e;
 
 // SCF222_5G-FAPI_PHY_SPI_Specificayion.pdf Section 3.3
@@ -88,10 +92,6 @@ typedef enum {
 
 
 //same with nfapi_param_request_t
-typedef struct {
-	nfapi_p4_p5_message_header_t header;
-	nfapi_vendor_extension_tlv_t vendor_extension;
-} nfapi_nr_param_request_t;
 
 
 /*typedef struct {
@@ -1048,6 +1048,22 @@ typedef struct {
   uint8_t PduIdx[256][12];
 } nfapi_nr_dl_tti_request_body_t;
 */
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	uint32_t t1;
+	int32_t delta_sfn_slot;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_dl_node_sync_t;
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	uint32_t t1;
+	uint32_t t2;
+	uint32_t t3;	
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_ul_node_sync_t;
+
 
 typedef struct {
   nfapi_p7_message_header_t header;

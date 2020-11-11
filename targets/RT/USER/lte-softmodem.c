@@ -566,6 +566,19 @@ int main ( int argc, char **argv )
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
+    init_pdcp();
+    
+    if (create_tasks(1) < 0) {
+      printf("cannot create ITTI tasks\n");
+      exit(-1);
+    }
+
+    for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+    }
+    node_type = RC.rrc[0]->node_type;
   } else {
     printf("RC.nb_inst = 0, Initializing L1\n");
     RCconfig_L1();
@@ -580,28 +593,16 @@ int main ( int argc, char **argv )
           RC.nb_L1_inst, RC.nb_RU, get_nprocs());
   }
 
-  if (RC.nb_inst > 0) {
-    /* Start the agent. If it is turned off in the configuration, it won't start */
-    for (i = 0; i < RC.nb_inst; i++) {
-      flexran_agent_start(i);
-    }
+  // if (RC.nb_inst > 0) {
+  //   /* Start the agent. If it is turned off in the configuration, it won't start */
+  //   for (i = 0; i < RC.nb_inst; i++) {
+  //     flexran_agent_start(i);
+  //   }
     
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
-   init_pdcp();
-    
-    if (create_tasks(1) < 0) {
-      printf("cannot create ITTI tasks\n");
-      exit(-1);
-    }
-
-    for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
-      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
-      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
-      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-    }
-    node_type = RC.rrc[0]->node_type;
-  }
+   
+  //}
 
   if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
     protocol_ctxt_t ctxt;

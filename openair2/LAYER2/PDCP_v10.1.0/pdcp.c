@@ -2117,8 +2117,7 @@ pdcp_config_set_security(
 }
 
 //-----------------------------------------------------------------------------
-void
-rrc_pdcp_config_req (
+void rrc_pdcp_config_req (
   const protocol_ctxt_t *const  ctxt_pP,
   const srb_flag_t srb_flagP,
   const uint32_t actionP,

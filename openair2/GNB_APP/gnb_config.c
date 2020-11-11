@@ -425,7 +425,7 @@ void RCconfig_NR_L1(void) {
 
         mac_top_init_gNB();
 
-        configure_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
+        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
       }else { // other midhaul
       } 
     }// for (j = 0; j < RC.nb_nr_L1_inst; j++)
@@ -496,7 +496,7 @@ void RCconfig_nr_macrlc() {
         //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.nrmac[j]->eth_params_s.my_portc);
-        configure_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
+        configure_nr_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
         printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.nrmac[j]->eth_params_s.my_portc);
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));

@@ -89,8 +89,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
-uint16_t sf_ahead=6; //??? value ???
-uint16_t slot_ahead = 6;
+uint16_t sf_ahead=4; //??? value ???
+// uint16_t slot_ahead = 6;
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
