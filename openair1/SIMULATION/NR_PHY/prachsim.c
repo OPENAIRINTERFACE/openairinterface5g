@@ -153,7 +153,7 @@ int main(int argc, char **argv){
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -241,6 +241,10 @@ int main(int argc, char **argv){
 
     case 'E':
       threequarter_fs=1;
+      break;
+
+    case 'm':
+      mu = atoi(optarg);
       break;
 
     case 'n':
@@ -370,13 +374,6 @@ int main(int argc, char **argv){
     }
   }
 
-  
-  if (config_index<67)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
-  uint16_t N_ZC;
-  N_ZC = prach_sequence_length == 0 ? 839 : 139;
-
-  printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
-
   // Configure log
   logInit();
   set_glog(loglvl);
@@ -416,7 +413,18 @@ int main(int argc, char **argv){
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  //nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
+  absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
+				       frame_parms->dl_CarrierFreq,
+				       frame_parms->numerology_index,
+				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
+
+  subframe = slot/frame_parms->slots_per_subframe;
+  
+  if (config_index<67 && mu==1)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
+  uint16_t N_ZC = prach_sequence_length == 0 ? 839 : 139;
+
+  printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
+
 
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Frame type %s, Frequency Range %s\n",
          NUMBER_OF_OFDM_CARRIERS,
@@ -432,7 +440,14 @@ int main(int argc, char **argv){
 
   gNB->gNB_config.carrier_config.num_tx_ant.value = 1;
   gNB->gNB_config.carrier_config.num_rx_ant.value = 1;
-  gNB->gNB_config.tdd_table.tdd_period.value = 6;
+  if (mu==1)
+    gNB->gNB_config.tdd_table.tdd_period.value = 6;
+  else if (mu==3)
+    gNB->gNB_config.tdd_table.tdd_period.value = 3;
+  else {
+    printf("unsupported numerology %d\n",mu);
+    exit(-1);
+  }
 
   gNB->gNB_config.prach_config.num_prach_fd_occasions.value = num_prach_fd_occasions;
   gNB->gNB_config.prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *) malloc(num_prach_fd_occasions*sizeof(nfapi_nr_num_prach_fd_occasions_t));
@@ -752,7 +767,7 @@ int main(int argc, char **argv){
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
             LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
-            LOG_M("rxsigF0.m","rxsF0", gNB->prach_vars.rxsigF[0], N_ZC, 1, 1);
+            LOG_M("ru_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
             LOG_M("prach_preamble.m","prachp", &gNB->X_u[0], N_ZC, 1, 1);
             LOG_M("ue_prach_preamble.m","prachp", &UE->X_u[0], N_ZC, 1, 1);
           #endif
