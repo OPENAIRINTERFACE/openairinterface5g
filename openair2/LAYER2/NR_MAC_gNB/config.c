@@ -278,7 +278,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   int num_ssb=0;
   for (int i=0;i<32;i++) {
     cfg->ssb_table.ssb_beam_id_list[i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
-    if ((cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1) {
+    if ((cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>(31-i))&1) {
       cfg->ssb_table.ssb_beam_id_list[i].beam_id.value = num_ssb;
       num_ssb++;
     }
@@ -286,7 +286,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
   for (int i=0;i<32;i++) {
     cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;      
-    if ((cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1) {
+    if ((cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>(31-i))&1) {
       cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.value = num_ssb;
       num_ssb++;
     }

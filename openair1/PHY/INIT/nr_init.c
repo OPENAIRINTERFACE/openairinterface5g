@@ -215,6 +215,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 	    i,common_vars->txdataF[i],
 	    fp->samples_per_frame_wCP*sizeof(int32_t));
       common_vars->beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
+      memset(common_vars->beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
   }
   for (i=0;i<Prx;i++){
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));

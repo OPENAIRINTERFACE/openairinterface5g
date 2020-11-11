@@ -131,16 +131,16 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 			 ssb_start_symbol,
 			 n_hf, frame, cfg, fp);
 
-      }
-
-      // SSB beamforming is handled at PHY
-      // currently our PHY does not support switching more than once a slot. 
-      if (ssb_per_slot>1) {
-	LOG_W(PHY,"beamforming currently not supported for more than one SSB per slot\n");
-      }
-      else if (ssb_per_slot==1) {
-	for (int j=0;j<fp->symbols_per_slot;j++) 
-	  gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
+	// SSB beamforming is handled at PHY
+	// currently our PHY does not support switching more than once a slot. 
+	if (ssb_per_slot>1) {
+	  LOG_W(PHY,"beamforming currently not supported for more than one SSB per slot\n");
+	}
+	else if (ssb_per_slot==1) {
+	  LOG_I(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
+	  for (int j=0;j<fp->symbols_per_slot;j++) 
+	    gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
+	}	
       }
     }
   }
