@@ -700,7 +700,11 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
       pdcch_pdu->ShiftIndex = 0;
     }
 
-    pdcch_pdu->CoreSetType = 1; 
+    if(coreset->controlResourceSetId == 0) {
+      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+    } else{
+      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+    }
     
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;

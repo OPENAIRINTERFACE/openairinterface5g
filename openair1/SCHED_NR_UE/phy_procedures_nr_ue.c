@@ -1668,7 +1668,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
-  
+
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
@@ -1725,25 +1725,36 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     // note: this only works if RBs for PDCCH are contigous!
     LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
 	  fp->first_carrier_offset,pdcch_vars->pdcch_config[0].BWPStart,coreset_start_rb);
-    if (coreset_nb_rb > 0)
-      nr_pdcch_channel_estimation(ue,
-				  0,
-				  nr_tti_rx,
-				  l,
-				  fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12,
-				  coreset_nb_rb);
-    
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
-#if UE_TIMING_TRACE
-    stop_meas(&ue->ofdm_demod_stats);
-#endif
-    
-    //printf("phy procedure pdcch start measurement l =%d\n",l);
-    //nr_ue_measurement_procedures(l,ue,proc,gNB_id,(nr_tti_rx),mode);
-      
-  }
 
-  dci_cnt = nr_ue_pdcch_procedures(gNB_id, ue, proc);
+    int cset_offset_sc;
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
+
+    for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+
+      cset_offset_sc = 0;
+      rel15 = &pdcch_vars->pdcch_config[n_ss];
+      if(rel15->coreset.CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
+        NR_UE_MAC_INST_t *mac = get_mac_inst(ue->Mod_id);
+        cset_offset_sc = (ue->frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB - mac->type0_PDCCH_CSS_config.rb_offset)*NR_NB_SC_PER_RB;
+      }
+
+      if (coreset_nb_rb > 0)
+        nr_pdcch_channel_estimation(ue,
+            0,
+            nr_tti_rx,
+            l,
+            fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12 + cset_offset_sc,
+            coreset_nb_rb);
+
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
+  #if UE_TIMING_TRACE
+      stop_meas(&ue->ofdm_demod_stats);
+  #endif
+
+      dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
+
+    }
+  }
 
   if (dci_cnt > 0) {
 

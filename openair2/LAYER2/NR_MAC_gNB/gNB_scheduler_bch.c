@@ -76,7 +76,6 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
     dl_tti_request = &gNB_mac->DL_req[CC_id];
     dl_req = &dl_tti_request->dl_tti_request_body;
     cc = &gNB_mac->common_channels[CC_id];
-    cc = &gNB_mac->common_channels[CC_id];
 #if 0
    //SSB is transmitted based on SSB periodicity
     if((frameP % cfg->ssb_table.ssb_period.value) == 0) {
@@ -270,6 +269,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+
+  pdcch_pdu_rel15->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
 
   pdsch_pdu_rel15->pduBitmap = 0;
   pdsch_pdu_rel15->rnti = SI_RNTI;

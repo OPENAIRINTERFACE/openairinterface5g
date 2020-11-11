@@ -38,6 +38,7 @@
 #include "common/utils/nr/nr_common.h"
 #include "executables/softmodem-common.h"
 #include <stdio.h>
+#include "nfapi_nr_interface.h"
 
 #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
 #define LOG_DCI_D(a...) printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) ->" a)
@@ -53,16 +54,22 @@ dci_pdu_rel15_t *def_dci_pdu_rel15;
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
 
   LOG_D(MAC,"Filling search candidates for DCI\n");
-  
-  rel15->number_of_candidates=4;
-  rel15->CCE[0]=0;
-  rel15->L[0]=4;
-  rel15->CCE[1]=4;
-  rel15->L[1]=4;
-  rel15->CCE[2]=8;
-  rel15->L[2]=4;
-  rel15->CCE[3]=12;
-  rel15->L[3]=4;
+
+  if(ss->searchSpaceId == 0) {
+    rel15->number_of_candidates=1;
+    rel15->CCE[0]=0;
+    rel15->L[0]=6;
+  } else {
+    rel15->number_of_candidates=4;
+    rel15->CCE[0]=0;
+    rel15->L[0]=4;
+    rel15->CCE[1]=4;
+    rel15->L[1]=4;
+    rel15->CCE[2]=8;
+    rel15->L[2]=4;
+    rel15->CCE[3]=12;
+    rel15->L[3]=4;
+  }
 
 }
 
@@ -82,9 +89,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   if(ss_id>=0) {
     ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
     coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
+    rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
     ss = mac->search_space_zero;
     coreset = mac->coreset0;
+    rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
   }
 
   rel15->coreset.duration = coreset->duration;
@@ -103,7 +112,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->coreset.InterleaverSize = 0;
     rel15->coreset.ShiftIndex = 0;
   }
-  rel15->coreset.CoreSetType = 1;
+
   rel15->coreset.precoder_granularity = coreset->precoderGranularity;
 
   // Scrambling RNTI

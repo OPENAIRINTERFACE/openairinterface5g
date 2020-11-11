@@ -424,8 +424,8 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
   mac->search_space_zero->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   mac->search_space_zero->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
-  mac->search_space_zero->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
   mac->search_space_zero->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
   mac->search_space_zero->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
 
@@ -443,10 +443,10 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   mac->coreset0->frequencyDomainResources.size = 6;
   mac->coreset0->frequencyDomainResources.bits_unused = 3;
   mac->coreset0->duration = 1;
-  mac->coreset0->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved; // FIXME: Interleaved
-  //coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset->cce_REG_MappingType.choice.interleaved));
-  //coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
-  //coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = scc->physCellId;
+  //mac->coreset0->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved; // FIXME: Interleaved
+  mac->coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*mac->coreset0->cce_REG_MappingType.choice.interleaved));
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = 0; //scc->physCellId;
   mac->coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
   if(mac->coreset0->tci_StatesPDCCH_ToAddList == NULL) mac->coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*mac->coreset0->tci_StatesPDCCH_ToAddList));
   NR_TCI_StateId_t *tci[8];
