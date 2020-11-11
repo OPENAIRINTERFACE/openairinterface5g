@@ -642,7 +642,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
      * If such UE is not scheduled now, it will be by the preprocessor later.
      * If we add the CE, ta_apply will be reset */
     if (frame == (sched_ctrl->ta_frame + 10) % 1024)
-      sched_ctrl->ta_apply = true; /* the timer is reset once TA CE is scheduled */
+      sched_ctrl->ta_apply = false; /* the timer is reset once TA CE is scheduled */
 
     if (sched_ctrl->rbSize <= 0)
       continue;
