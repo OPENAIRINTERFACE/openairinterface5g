@@ -1049,7 +1049,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-		 LOG_I(PHY,"UE_DLSCH_PARALLELISATION is defined, ret = %d\n", ret);
+		 LOG_T(PHY,"UE_DLSCH_PARALLELISATION is defined, ret = %d\n", ret);
 #else
       ret = nr_dlsch_decoding(ue,
 			   pdsch_vars->llr[0],
@@ -1062,7 +1062,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-      LOG_I(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret = %d\n", ret);
+      LOG_T(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret = %d\n", ret);
       //printf("start cW0 dlsch decoding\n");
 #endif
 

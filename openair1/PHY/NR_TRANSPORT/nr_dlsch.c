@@ -347,7 +347,6 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
       } // symbol loop
     }// layer loop
 
-    /// RE Precoding
 
     dlsch->slot_tx[slot]=0;
   }// dlsch loop

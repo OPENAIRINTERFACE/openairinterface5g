@@ -133,7 +133,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0; // Point A
     
-    pdsch_pdu_rel15->dmrsConfigType = 1; // Type 1 by default for InitialBWP
+    pdsch_pdu_rel15->dmrsConfigType = 0; // Type 1 by default for InitialBWP
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
     pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 1;

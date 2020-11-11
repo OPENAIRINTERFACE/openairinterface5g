@@ -815,7 +815,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0;
-    pdsch_pdu_rel15->dmrsConfigType = 1;
+    pdsch_pdu_rel15->dmrsConfigType = 0;
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
     pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 2;
