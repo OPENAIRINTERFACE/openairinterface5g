@@ -412,7 +412,12 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (!alreadyLocked)
     pthread_mutex_lock(&Sockmutex);
 
-  LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
+  int flags_lsb = flags&0xff;
+  int flags_msb = (flags>>8)&0xff;
+  int beam_enabled = (flags_msb>>3)&1;
+  int beam_id = flags_msb&7;
+  LOG_I(HW,"sending %d samples at time: %ld, beam_enabled %d, beam_id %d\n", nsamps, timestamp, beam_enabled, beam_id);
+
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
