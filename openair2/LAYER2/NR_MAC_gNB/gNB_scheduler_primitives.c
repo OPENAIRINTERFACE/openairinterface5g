@@ -2092,7 +2092,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     if ( (frame%(period/n_slots_frame)==(offset/n_slots_frame)) && (slot==((sched_slot/slots_per_tdd)*slots_per_tdd))) {
 
       // we are scheduling pucch for csi in the first pucch occasion (this comes before ack/nack)
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[sched_slot-slots_per_tdd+ul_slots][0];
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[(sched_slot%slots_per_tdd)-slots_per_tdd+ul_slots][0];
 
       NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
 
