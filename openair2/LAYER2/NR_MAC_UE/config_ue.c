@@ -203,13 +203,15 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   lte_frame_type_t frame_type;
   uint16_t band;
   int32_t offset;
+  frequency_range_t frequency_range;
 
   get_band((uint64_t)(cfg->carrier_config.dl_frequency)*1000,
            &band,
            &offset,
            &frame_type);
 
-
+  frequency_range = band<100?FR1:FR2;
+ 
   // cell config
 
   cfg->cell_config.phy_cell_id = *scc->physCellId;
@@ -317,7 +319,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
     cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, frame_type);
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, frame_type,frequency_range);
     //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
   }
 
