@@ -365,10 +365,8 @@ void generate_dmrs_pbch(uint32_t dmrs_pbch_bitmap[DMRS_PBCH_I_SSB][DMRS_PBCH_N_H
 /* return the position of next dmrs symbol in a slot */
 int8_t get_next_dmrs_symbol_in_slot(uint16_t  ul_dmrs_symb_pos, uint8_t counter, uint8_t end_symbol)
 {
-  for(uint8_t symbol = counter; symbol < end_symbol; symbol++)
-  {
-    if((ul_dmrs_symb_pos >> symbol) & 0x01 )
-    {
+  for(uint8_t symbol = counter; symbol < end_symbol; symbol++) {
+    if((ul_dmrs_symb_pos >> symbol) & 0x01 ) {
       return symbol;
     }
   }
@@ -380,8 +378,7 @@ int8_t get_next_dmrs_symbol_in_slot(uint16_t  ul_dmrs_symb_pos, uint8_t counter,
 uint8_t get_dmrs_symbols_in_slot(uint16_t l_prime_mask,  uint16_t nb_symb)
 {
   uint8_t tmp = 0;
-  for (int i = 0; i < nb_symb; i++)
-  {
+  for (int i = 0; i < nb_symb; i++) {
     tmp += (l_prime_mask >> i) & 0x01;
   }
   return tmp;
@@ -392,22 +389,18 @@ int8_t get_valid_dmrs_idx_for_channel_est(uint16_t  dmrs_symb_pos, uint8_t count
 {
   int8_t  symbIdx = -1;
   /* if current symbol is DMRS then return this index */
-  if(is_dmrs_symbol(counter,  dmrs_symb_pos ) ==1)
-  {
+  if(is_dmrs_symbol(counter,  dmrs_symb_pos ) ==1) {
     return counter;
   }
   /* find previous DMRS symbol */
-  for(int8_t symbol = counter;symbol >=0 ; symbol--)
-  {
-    if((1<<symbol & dmrs_symb_pos)> 0)
-    {
+  for(int8_t symbol = counter;symbol >=0 ; symbol--) {
+    if((1<<symbol & dmrs_symb_pos)> 0) {
       symbIdx = symbol;
       break;
     }
   }
   /* if there is no previous dmrs available then find the next possible*/
-  if(symbIdx == -1)
-  {
+  if(symbIdx == -1) {
     symbIdx = get_next_dmrs_symbol_in_slot(dmrs_symb_pos,counter,15);
   }
   return symbIdx;

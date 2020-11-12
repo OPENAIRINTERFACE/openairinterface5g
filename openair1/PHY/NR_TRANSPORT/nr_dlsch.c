@@ -169,8 +169,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint16_t n_ptrs = 0;
     uint16_t ptrs_idx = 0;
     uint8_t is_ptrs_re = 0;
-    if(rel15->pduBitmap & 0x1)
-    {
+    if(rel15->pduBitmap & 0x1) {
       set_ptrs_symb_idx(&dlPtrsSymPos,
                           rel15->NrOfSymbols,
                           rel15->StartSymbolIndex,
@@ -325,11 +324,9 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
         /* calculate if current symbol is PTRS symbols */
         ptrs_idx = 0;
 
-        if(rel15->pduBitmap & 0x1)
-        {         
+        if(rel15->pduBitmap & 0x1) {
           ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
-          if(ptrs_symbol)
-          {
+          if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
             nr_modulation(pdsch_dmrs[l][0], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
           }

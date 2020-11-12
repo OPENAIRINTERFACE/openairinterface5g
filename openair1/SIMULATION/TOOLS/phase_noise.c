@@ -37,28 +37,22 @@ void phase_noise(double ts, int16_t * InRe, int16_t * InIm)
   int16_t IdxModulo = ((int32_t)(IdxDouble>0 ? IdxDouble+0.5 : IdxDouble-0.5)) % (ResolSinCos*4);
   IdxModulo = IdxModulo<0 ? IdxModulo+ResolSinCos*4 : IdxModulo;
 
-  if(IdxModulo<2*ResolSinCos)//< 2 check for 1st and 2nd
-  {
-    if(IdxModulo < ResolSinCos)// 1st Quadrant
-    {
+  if(IdxModulo<2*ResolSinCos) {//< 2 check for 1st and 2nd
+    if(IdxModulo < ResolSinCos) {// 1st Quadrant
       SinValue = LUTSin[IdxModulo];
       CosValue = LUTSin[ResolSinCos-IdxModulo];
     }
-    else// 2nd Quadrant
-    {
+    else {// 2nd Quadrant
       SinValue = LUTSin[2*ResolSinCos-IdxModulo];
       CosValue = -LUTSin[IdxModulo-ResolSinCos];
     }
   }
-  else // 3rd and 4th Quadrant
-  {
-    if(IdxModulo < 3*ResolSinCos)// 3rd Quadrant
-    {
+  else {// 3rd and 4th Quadrant
+    if(IdxModulo < 3*ResolSinCos) {// 3rd Quadrant
       SinValue = -LUTSin[IdxModulo-2*ResolSinCos];
       CosValue = -LUTSin[3*ResolSinCos-IdxModulo];
     }
-    else//4th Quadrant
-    {
+    else {//4th Quadrant
       SinValue = -LUTSin[4*ResolSinCos-IdxModulo];
       CosValue = LUTSin[IdxModulo-3*ResolSinCos];
     }

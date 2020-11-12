@@ -979,40 +979,45 @@ int main(int argc, char **argv)
       }	
       else n_trials = 1;
 
-      if (input_fd == NULL )
-      {
-        sigma_dB  = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;
-        sigma    = pow(10,sigma_dB/10);
-        if (n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)frame_parms->ofdm_symbol_size/(12*nb_rb));
-        for (i=0; i<slot_length; i++) {
-          for (int aa=0; aa<1; aa++) {
-            s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
-            s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
-          }
-        }
+      if (input_fd == NULL ) {
 
-        if (UE2gNB->max_Doppler == 0) {
-          multipath_channel(UE2gNB,s_re,s_im,r_re,r_im,
-                            slot_length,0,(n_trials==1)?1:0);
-        } else {
-          multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
-                               2*slot_length,0);
-        }
-        for (i=0; i<slot_length; i++) {
-          for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]    = (int16_t)(r_re[ap][i] + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]  = (int16_t)(r_im[ap][i] + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+	sigma_dB = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
+	sigma    = pow(10,sigma_dB/10);
+
+
+	if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)frame_parms->ofdm_symbol_size/(12*nb_rb));
+
+	for (i=0; i<slot_length; i++) {
+	  for (int aa=0; aa<1; aa++) {
+	    s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
+	    s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
+	  }
+	}
+	
+
+	if (UE2gNB->max_Doppler == 0) {
+	  multipath_channel(UE2gNB,s_re,s_im,r_re,r_im,
+			    slot_length,0,(n_trials==1)?1:0);
+	} else {
+	  multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
+			       2*slot_length,0);
+	}
+	for (i=0; i<slot_length; i++) {
+	  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
+	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
                           &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1]);
             }
-          }
-        }
+	  }
+	}
+
       }
 
-      if(pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS)
-      {
+
+      if(pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
         set_ptrs_symb_idx(&ptrsSymPos,
                           pusch_pdu->nr_of_symbols,
                           pusch_pdu->start_symbol_index,
@@ -1020,9 +1025,8 @@ int main(int argc, char **argv)
                           pusch_pdu->ul_dmrs_symb_pos);
         ptrsSymbPerSlot = get_ptrs_symbols_in_slot(ptrsSymPos, pusch_pdu->start_symbol_index, pusch_pdu->nr_of_symbols);
         ptrsRePerSymb = ((pusch_pdu->rb_size + ptrs_freq_density - 1)/ptrs_freq_density);
-        printf("[ULSIM] PTRS Symbols in a slot: %2d, RE per Symbol: %3d, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
+        printf("[ULSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
       }
-
 	////////////////////////////////////////////////////////////
 	
 	//----------------------------------------------------------
@@ -1087,7 +1091,7 @@ int main(int argc, char **argv)
             }
             /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
             available_bits -= 2 * ptrs_symbols * ((nb_rb + ptrs_freq_density - 1) /ptrs_freq_density);
-            printf("[ULSIM][PTRS] Available bits are: %5d, removed PTRS bits are: %5d \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * 2) );
+            printf("[ULSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5d \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * 2) );
         }
 
 	for (i = 0; i < available_bits; i++) {

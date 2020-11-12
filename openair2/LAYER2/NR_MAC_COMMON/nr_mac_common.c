@@ -2813,31 +2813,26 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   bool valid = true;
 
   /* as defined in T 38.214 5.1.6.3 */
-  if(rbSize < 3)
-  {
+  if(rbSize < 3) {
     valid = false;
     return valid;
   }
   /* Check for Frequency Density values */
-  if(ptrs_config->frequencyDensity->list.count < 2)
-  {
+  if(ptrs_config->frequencyDensity->list.count < 2) {
     /* Default value for K_PTRS = 2 as defined in T 38.214 5.1.6.3 */
     *K_ptrs = 2;
   }
-  else
-  {
+  else {
     *K_ptrs = get_K_ptrs(*ptrs_config->frequencyDensity->list.array[0],
                          *ptrs_config->frequencyDensity->list.array[1],
                          rbSize);
   }
   /* Check for time Density values */
-  if(ptrs_config->timeDensity->list.count < 3)
-  {
+  if(ptrs_config->timeDensity->list.count < 3) {
     /* Default value for L_PTRS = 1 as defined in T 38.214 5.1.6.3 */
        *L_ptrs = 1;
   }
-  else
-  {
+  else {
     *L_ptrs = get_L_ptrs(*ptrs_config->timeDensity->list.array[0],
                          *ptrs_config->timeDensity->list.array[1],
                          *ptrs_config->timeDensity->list.array[2],
@@ -2847,25 +2842,20 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   *portIndex =*ptrs_config->epre_Ratio;
   *nERatio = *ptrs_config->resourceElementOffset;
   *reOffset  = 0;
-  
   /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
    * 5.1.6.3-1 and Table 5.1.6.3-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
    */
-  if(*K_ptrs ==2  || *K_ptrs ==4 )
-  {
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
     valid = true;
   }
-  else
-  {
+  else {
     valid = false;
     return valid;
   }
-  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  )
-  {
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
     valid = true;
   }
-  else
-  {
+  else {
     valid = false;
     return valid;
   }
@@ -2875,8 +2865,7 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
    * When the UE is receiving a PDSCH with allocation duration of 2 symbols as defined in Clause 7.4.1.1.2 of [4, TS
    * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
    */
-  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0)))
-  {
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
     valid = false;
     return valid;
   }

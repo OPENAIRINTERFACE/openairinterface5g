@@ -693,22 +693,19 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   /* Store the valid DL RE's */
     pdsch_vars[eNB_id]->dl_valid_re[symbol-1] = len;
 
-    if(dlsch0_harq->status == ACTIVE)
-    {
+    if(dlsch0_harq->status == ACTIVE) {
       startSymbIdx = dlsch0_harq->start_symbol;
       nbSymb = dlsch0_harq->nb_symbols;
       pduBitmap = dlsch0_harq->pduBitmap;
     }
-    if(dlsch1_harq)
-    {
+    if(dlsch1_harq) {
       startSymbIdx = dlsch1_harq->start_symbol;
       nbSymb = dlsch1_harq->nb_symbols;
       pduBitmap = dlsch1_harq->pduBitmap;
     }
 
     /* Check for PTRS bitmap and process it respectively */
-    if((pduBitmap & 0x1) && (type == PDSCH))
-    {
+    if((pduBitmap & 0x1) && (type == PDSCH)) {
       nr_pdsch_ptrs_processing(ue,
                                pdsch_vars,
                                frame_parms,
@@ -721,17 +718,13 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     }
 
     /* at last symbol in a slot calculate LLR's for whole slot */
-    if(symbol == (startSymbIdx + nbSymb -1))
-    {
-      for(uint8_t i =startSymbIdx; i <= nbSymb;i++)
-      {
+    if(symbol == (startSymbIdx + nbSymb -1)) {
+      for(uint8_t i =startSymbIdx; i <= nbSymb;i++) {
         /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
-        if(i == startSymbIdx && i < 3)
-        {
+        if(i == startSymbIdx && i < 3) {
           first_symbol_flag =1;
         }
-        else
-        {
+        else {
           first_symbol_flag=0;
         }
         /* Calculate LLR's for each symbol */

@@ -460,19 +460,19 @@ int main(int argc, char **argv)
       eff_tp_check = (float)atoi(optarg)/100;
       break;
 
-     case 'w':
-       output_fd = fopen("txdata.dat", "w+");
-       break;
+    case 'w':
+      output_fd = fopen("txdata.dat", "w+");
+      break;
       
      case 'T':
        enable_ptrs=1;
-       for(i=0; i < atoi(optarg); i++){
+       for(i=0; i < atoi(optarg); i++) {
          ptrs_arg[i] = atoi(argv[optind++]);
        }
        break;
     case 'U':
       modify_dmrs = 1;
-      for(i=0; i < atoi(optarg); i++){
+      for(i=0; i < atoi(optarg); i++) {
         dmrs_arg[i] = atoi(argv[optind++]);
       }
       break;
@@ -610,13 +610,11 @@ int main(int argc, char **argv)
 				  0);
 
   /* -U option modify DMRS */
-  if(modify_dmrs)
-  {
+  if(modify_dmrs) {
     update_dmrs_config(secondaryCellGroup, NULL,dmrs_arg);
   }
   /* -T option enable PTRS */
-  if(enable_ptrs)
-  {
+  if(enable_ptrs) {
     update_ptrs_config(secondaryCellGroup, &rbSize, &mcsIndex, ptrs_arg);
   }
 
@@ -737,8 +735,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  if(modify_dmrs)
-  {
+  if(modify_dmrs) {
     update_dmrs_config( NULL,UE,dmrs_arg);
   }
   init_nr_ue_transport(UE,0);
@@ -891,7 +888,7 @@ int main(int argc, char **argv)
         nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[1];
         nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
         pdu_bit_map = pdsch_pdu_rel15->pduBitmap;
-        if(pdu_bit_map & 0x1){
+        if(pdu_bit_map & 0x1) {
           set_ptrs_symb_idx(&dlPtrsSymPos,
                             pdsch_pdu_rel15->NrOfSymbols,
                             pdsch_pdu_rel15->StartSymbolIndex,
@@ -899,7 +896,7 @@ int main(int argc, char **argv)
                             pdsch_pdu_rel15->dlDmrsSymbPos);
           ptrsSymbPerSlot = get_ptrs_symbols_in_slot(dlPtrsSymPos, pdsch_pdu_rel15->StartSymbolIndex, pdsch_pdu_rel15->NrOfSymbols);
           ptrsRePerSymb = ((rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity);
-          printf("[DLSIM] PTRS Symbols in a slot: %2d, RE per Symbol: %3d, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
+          printf("[DLSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
         }
         if (run_initial_sync)
           nr_common_signal_procedures(gNB,frame,slot);
@@ -998,8 +995,7 @@ int main(int argc, char **argv)
             ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
-            if (pdu_bit_map & 0x1)
-            {
+            if (pdu_bit_map & 0x1) {
               phase_noise(ts, &((short*) UE->common_vars.rxdata[aa])[2*i],
                           &((short*) UE->common_vars.rxdata[aa])[2*i+1]);
             }
@@ -1037,10 +1033,9 @@ int main(int argc, char **argv)
       uint8_t  nb_symb_sch = rel15->NrOfSymbols;
       
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
-      if(pdu_bit_map & 0x1)
-      {
+      if(pdu_bit_map & 0x1) {
         available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
-        printf("[DLSIM][PTRS] Available bits are: %5d, removed PTRS bits are: %5d \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
+        printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
       }
       
       for (i = 0; i < available_bits; i++) {
@@ -1093,7 +1088,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
     dump_pdsch_stats(gNB);
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
     printf("\n");
 
     if (print_perf==1) {
@@ -1219,38 +1214,31 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
   int epre_Ratio = 0;
   int reOffset = 0;
 
-  if(ptrs_arg[0] ==0)
-    {
-      ptrsTimeDenst[2]= *mcsIndex -1;
-    }
-  else if(ptrs_arg[0] == 1)
-    {
-      ptrsTimeDenst[1]= *mcsIndex - 1;
-      ptrsTimeDenst[2]= *mcsIndex + 1;
-    }
-  else if(ptrs_arg[0] ==2)
-    {
-      ptrsTimeDenst[0]= *mcsIndex - 1;
-      ptrsTimeDenst[1]= *mcsIndex + 1;
-    }
-  else
-  {
+  if(ptrs_arg[0] ==0) {
+    ptrsTimeDenst[2]= *mcsIndex -1;
+  }
+  else if(ptrs_arg[0] == 1) {
+    ptrsTimeDenst[1]= *mcsIndex - 1;
+    ptrsTimeDenst[2]= *mcsIndex + 1;
+  }
+  else if(ptrs_arg[0] ==2) {
+    ptrsTimeDenst[0]= *mcsIndex - 1;
+    ptrsTimeDenst[1]= *mcsIndex + 1;
+  }
+  else {
     printf("[DLSIM] Wrong L_PTRS value, using default values 1\n");
   }
   /* L = 4 if Imcs < MCS4 */
-  if(ptrs_arg[1] ==2)
-    {
-      ptrsFreqDenst[0]= *rbSize - 1;
-      ptrsFreqDenst[1]= *rbSize + 1;
-    }
-  else if(ptrs_arg[1] == 4)
-    {
-      ptrsFreqDenst[1]= *rbSize - 1;
-    }
-  else
-    {
-      printf("[DLSIM] Wrong K_PTRS value, using default values 2\n");
-    }
+  if(ptrs_arg[1] ==2) {
+    ptrsFreqDenst[0]= *rbSize - 1;
+    ptrsFreqDenst[1]= *rbSize + 1;
+  }
+  else if(ptrs_arg[1] == 4) {
+    ptrsFreqDenst[1]= *rbSize - 1;
+  }
+  else {
+    printf("[DLSIM] Wrong K_PTRS value, using default values 2\n");
+  }
   printf("[DLSIM] PTRS Enabled with L %d, K %d \n", 1<<ptrs_arg[0], ptrs_arg[1] );
   /* overwrite the values */
   rrc_config_dl_ptrs_params(bwp, ptrsFreqDenst, ptrsTimeDenst, &epre_Ratio, &reOffset);
@@ -1260,33 +1248,26 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
 {
   int8_t  mapping_type = typeA;//default value
   int8_t  add_pos = pdsch_dmrs_pos0;//default value
-  if(dmrs_arg[0] == 0)
-  {
+  if(dmrs_arg[0] == 0) {
     mapping_type = typeA;
   }
-  else if (dmrs_arg[0] == 1)
-  {
+  else if (dmrs_arg[0] == 1) {
     mapping_type = typeB;
   }
   /* Additional DMRS positions 0 ,1 and 2 */
-  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <3 )
-  {
+  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <3 ) {
     add_pos = dmrs_arg[1];
   }
 
-  if(scg != NULL)
-  {
+  if(scg != NULL) {
     NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
     *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = add_pos;
-    for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++)
-    {
+    for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
       bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
     }
   }
-  if(ue != NULL)
-  {
-    for (int i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++)
-    {
+  if(ue != NULL) {
+    for (int i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++) {
       ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = mapping_type;
     }
     ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = add_pos;
