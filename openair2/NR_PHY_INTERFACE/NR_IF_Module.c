@@ -244,7 +244,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
-      sched_info->UL_tti_req  = &mac->UL_tti_req[CC_id];
+      sched_info->UL_tti_req  = mac->UL_tti_req[CC_id];
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
 #ifdef DUMP_FAPI

@@ -484,7 +484,7 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_dl_tti_request_t         DL_req[NFAPI_CC_MAX];
   /// NFAPI UL TTI Request Structure, simple pointer into structure
   /// UL_tti_req_ahead for current frame/slot
-  nfapi_nr_ul_tti_request_t        *UL_tti_req;
+  nfapi_nr_ul_tti_request_t        *UL_tti_req[NFAPI_CC_MAX];
   /// NFAPI UL TTI Request Structure for future TTIs, dynamically allocated
   /// because length depends on number of slots
   nfapi_nr_ul_tti_request_t        *UL_tti_req_ahead[NFAPI_CC_MAX];

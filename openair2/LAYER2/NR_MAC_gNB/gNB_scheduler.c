@@ -125,7 +125,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
     /* UL_tti_req is a simple pointer into the current UL_tti_req_ahead, i.e.,
      * it walks over UL_tti_req_ahead in a circular fashion */
-    gNB->UL_tti_req = &gNB->UL_tti_req_ahead[CC_idP][slotP];
+    gNB->UL_tti_req[CC_idP] = &gNB->UL_tti_req_ahead[CC_idP][slotP];
 
     TX_req[CC_idP].Number_of_PDUs                  = 0;
 
