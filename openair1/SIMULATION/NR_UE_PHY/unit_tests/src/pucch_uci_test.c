@@ -182,7 +182,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
   /* set a tx slot with no ack */
   NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
-  harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+  harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
 
   printf("\n  => Test : Error due to acknownlegment not set \n");
 
@@ -300,7 +300,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
   harq_status->send_harq_status = 1;
   harq_status->vDAI_DL = 2;
   harq_status->ack = DL_ACK;
-  harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+  harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: two positive downlink ACKnowledgments \n");
 
@@ -567,7 +567,7 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 
   harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
-  harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+  harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
   harq_status->vDAI_DL = 1;
   harq_status->ack = DL_ACK;
@@ -586,7 +586,7 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 
     NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
-    harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+    harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
     harq_status->send_harq_status = 1;
     harq_status->vDAI_DL = i+1;
     harq_status->ack = DL_ACK;
@@ -620,7 +620,7 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 
     NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
-    harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+    harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
     harq_status->send_harq_status = 1;
     harq_status->vDAI_DL = i+1;
     harq_status->ack = DL_ACK;
@@ -684,7 +684,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
 
-      harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+      harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
       harq_status->send_harq_status = 1;
       harq_status->vDAI_DL = i+1;
       harq_status->ack = DL_ACK;
@@ -727,7 +727,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
 
-      harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+      harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
       harq_status->send_harq_status = 1;
       harq_status->vDAI_DL = i+1;
       harq_status->ack = DL_ACK;
@@ -761,7 +761,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
 
-      harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+      harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
       harq_status->send_harq_status = 1;
       harq_status->vDAI_DL = i+1;
       harq_status->ack = DL_ACK;
@@ -980,7 +980,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
-  harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+  harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
   harq_status->vDAI_DL = 1;
   harq_status->ack = DL_ACK;
@@ -1019,7 +1019,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_SECOND].harq_ack;
 
-  harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+  harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
   harq_status->vDAI_DL = 2;
   harq_status->ack = DL_ACK;
@@ -1094,7 +1094,7 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
-  harq_status->slot_for_feedback_ack  = proc->nr_tti_tx;
+  harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
   harq_status->vDAI_DL = 1;
   harq_status->ack = DL_ACK;
@@ -1168,9 +1168,13 @@ int test_pucch(PHY_VARS_NR_UE *ue)
     assert(0);
   }
 
-  proc->frame_tx = 0;
-  proc->nr_tti_rx = 0;
-  proc->nr_tti_tx = (proc->nr_tti_rx + NR_UE_CAPABILITY_SLOT_RX_TO_TX)%(ue->frame_parms.ttis_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+  proc->frame_rx   = 0;
+  proc->nr_slot_rx = 0;
+  proc->nr_tti_rx  = 0;
+
+  proc->frame_tx   = proc->frame_rx + (proc->nr_slot_rx + NR_UE_CAPABILITY_SLOT_RX_TO_TX) / ue->frame_parms.slots_per_frame;
+  proc->nr_slot_tx = (proc->nr_slot_rx + NR_UE_CAPABILITY_SLOT_RX_TO_TX) % ue->frame_parms.slots_per_frame;
+  proc->nr_tti_tx  = proc->nr_slot_tx % ue->frame_parms.slots_per_subframe;
 
   init_pucch_power_configuration( ue, gNB_id);
 

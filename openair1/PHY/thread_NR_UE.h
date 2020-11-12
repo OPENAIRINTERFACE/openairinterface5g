@@ -11,9 +11,9 @@ typedef struct {
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   //#ifdef UE_NR_PHY_DEMO
-  /// NR TTI index within subframe_tx [0 .. ttis_per_subframe - 1] to act upon for transmission
+  /// NR TTI index within subframe_tx [0 .. slots_per_subframe - 1] to act upon for transmission
   int nr_tti_tx;
-  /// NR TTI index within subframe_rx [0 .. ttis_per_subframe - 1] to act upon for reception
+  /// NR TTI index within subframe_rx [0 .. slots_per_subframe - 1] to act upon for reception
   int nr_tti_rx;
   /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_tx;
