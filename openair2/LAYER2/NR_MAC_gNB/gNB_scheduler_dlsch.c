@@ -625,13 +625,11 @@ void pf_dl(module_id_t module_id,
     } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
     sched_ctrl->rbSize = rbSize;
     sched_ctrl->rbStart = rbStart;
-    n_rb_sched -= sched_ctrl->rbSize;
 
-    /* mark the corresponding RBs as used */
-    for (int rb = 0; rb < sched_ctrl->rbSize; rb++) {
-      //vrb_map[rb + sched_ctrl->rbStart] = 1;
-      rballoc_mask[rb + sched_ctrl->rbStart] = 0;
-    }
+    /* transmissions: directly allocate */
+    n_rb_sched -= sched_ctrl->rbSize;
+    for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
+      rballoc_mask[rb+sched_ctrl->rbStart] = 0;
   }
 }
 
