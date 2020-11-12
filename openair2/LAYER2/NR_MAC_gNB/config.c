@@ -261,8 +261,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       for (i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[3-i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-i]<<i*8);
       }
       break;
     default:
