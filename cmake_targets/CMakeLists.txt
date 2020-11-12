@@ -2459,6 +2459,8 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationResponse.c
     ${NAS_SRC}COMMON/EMM/MSG/FGSNASSecurityModeComplete.c
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSUplinkNasTransport.c
+    ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishRequest.c
   )
 
   set(libnrnas_ies_OBJS

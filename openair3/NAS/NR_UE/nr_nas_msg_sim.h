@@ -17,7 +17,7 @@
 #include "FGSNASSecurityModeComplete.h"
 #include "RegistrationComplete.h"
 #include "as_message.h"
-
+#include "FGSUplinkNasTransport.h"
 
 #define PLAIN_5GS_MSG                                      0b0000
 #define INTEGRITY_PROTECTED                                0b0001
@@ -34,6 +34,10 @@
 #define FGS_IDENTITY_RESPONSE                              0b01011100 /* 92 = 0x5c */
 #define FGS_SECURITY_MODE_COMMAND                          0b01011101 /* 93 = 0x5d */
 #define FGS_SECURITY_MODE_COMPLETE                         0b01011110 /* 94 = 0x5e */
+#define FGS_UPLINK_NAS_TRANSPORT                           0b01100111 /* 103= 0x67 */
+
+// message type for 5GS session management
+#define FGS_PDU_SESSION_ESTABLISHMENT_REQ                  0b11000001 /* 193= 0xc1 */
 
 #define INITIAL_REGISTRATION                               0b001
 
@@ -68,6 +72,7 @@ typedef union {
   fgs_authentication_response_msg        fgs_auth_response;
   fgs_security_mode_complete_msg         fgs_security_mode_complete;
   registration_complete_msg              registration_complete;
+  fgs_uplink_nas_transport_msg           uplink_nas_transport;
 } MM_msg;
 
 
@@ -93,6 +98,7 @@ void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype
 void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf);
 void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);
 void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer *sortransparentcontainer);
+void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/
 

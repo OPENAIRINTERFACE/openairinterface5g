@@ -2341,6 +2341,18 @@ nr_rrc_ue_decode_dcch(
                     itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
                     LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
                 }
+                as_nas_info_t pduEstablishMsg;
+                memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
+                generatePduSessionEstablishRequest(&pduEstablishMsg);
+                if(initialNasMsg.length > 0){
+                    MessageDef *message_p;
+                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
+                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
+                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
+                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
+                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+                }
 #endif
             }
                 break;

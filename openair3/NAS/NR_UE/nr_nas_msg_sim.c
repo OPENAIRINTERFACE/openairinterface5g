@@ -17,6 +17,7 @@
 #include "nr_nas_msg_sim.h"
 #include "aka_functions.h"
 #include "secu_defs.h"
+#include "PduSessionEstablishRequest.h"
 char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
 char imsi[] = "2089300007487";
 // USIM_API_K: 5122250214c33e723a5dd523fc145fc0
@@ -107,6 +108,9 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
       break;
     case FGS_SECURITY_MODE_COMPLETE:
       encode_result = encode_fgs_security_mode_complete(&mm_msg->fgs_security_mode_complete, buffer, len);
+      break;
+    case FGS_UPLINK_NAS_TRANSPORT:
+      encode_result = encode_fgs_uplink_nas_transport(&mm_msg->uplink_nas_transport, buffer, len);
       break;
     default:
       LOG_TRACE(ERROR, "EMM-MSG   - Unexpected message type: 0x%x",
@@ -561,6 +565,91 @@ void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentCo
   stream_cipher.key        = knas_int.value;
   stream_cipher.key_length = 16;
   stream_cipher.count      = 1;
+  stream_cipher.bearer     = 1;
+  stream_cipher.direction  = 0;
+  stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
+  /* length in bits */
+  stream_cipher.blength    = (initialNasMsg->length - 6) << 3;
+
+  // only for Type of integrity protection algorithm: 128-5G-IA2 (2)
+  nas_stream_encrypt_eia2(
+    &stream_cipher,
+    mac);
+
+  printf("mac %x %x %x %x \n", mac[0], mac[1], mac[2], mac[3]);
+  for(int i = 0; i < 4; i++){
+     initialNasMsg->data[2+i] = mac[i];
+  }
+}
+
+void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
+  int size = 0;
+  fgs_nas_message_t nas_msg;
+  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
+
+  // setup pdu session establishment request
+  uint16_t req_length = 6;
+  uint8_t *req_buffer = malloc(req_length);
+  pdu_session_establishment_request_msg pdu_session_establish;
+  pdu_session_establish.protocoldiscriminator = FGS_SESSION_MANAGEMENT_MESSAGE;
+  pdu_session_establish.pdusessionid = 10;
+  pdu_session_establish.pti = 0;
+  pdu_session_establish.pdusessionestblishmsgtype = FGS_PDU_SESSION_ESTABLISHMENT_REQ;
+  pdu_session_establish.maxdatarate = 0xffff;
+  encode_pdu_session_establishment_request(&pdu_session_establish, req_buffer);
+
+
+
+  MM_msg *mm_msg;
+  nas_stream_cipher_t stream_cipher;
+  uint8_t             mac[4];
+  uint8_t             nssai[]={1,1,2,3};
+  uint8_t             dnn[9]={0x8,0x69,0x6e,0x74,0x65,0x72,0x6e,0x65,0x74};
+  // set security protected header
+  nas_msg.header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  nas_msg.header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
+  size += 7;
+
+  mm_msg = &nas_msg.security_protected.plain.mm_msg;
+
+  // set header
+  mm_msg->header.ex_protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  mm_msg->header.security_header_type = PLAIN_5GS_MSG;
+  mm_msg->header.message_type = FGS_UPLINK_NAS_TRANSPORT;
+
+  // set uplink nas transport
+  mm_msg->uplink_nas_transport.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  size += 1;
+  mm_msg->uplink_nas_transport.securityheadertype    = PLAIN_5GS_MSG;
+  size += 1;
+  mm_msg->uplink_nas_transport.messagetype = FGS_UPLINK_NAS_TRANSPORT;
+  size += 1;
+
+  mm_msg->uplink_nas_transport.payloadcontainertype.iei = 0;
+  mm_msg->uplink_nas_transport.payloadcontainertype.type = 1;
+  size += 1;
+  mm_msg->uplink_nas_transport.fgspayloadcontainer.payloadcontainercontents.length = req_length;
+  mm_msg->uplink_nas_transport.fgspayloadcontainer.payloadcontainercontents.value = req_buffer;
+  size += (2+req_length);
+  mm_msg->uplink_nas_transport.pdusessionid = 10;
+  mm_msg->uplink_nas_transport.requesttype = 1;
+  size += 3;
+  mm_msg->uplink_nas_transport.snssai.length = 4;
+  mm_msg->uplink_nas_transport.snssai.value = nssai;
+  size += (1+1+4);
+  mm_msg->uplink_nas_transport.dnn.length = 9;
+  mm_msg->uplink_nas_transport.dnn.value = dnn;
+  size += (1+1+9);
+
+  // encode the message
+  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+  int security_header_len = nas_protected_security_header_encode((char*)(initialNasMsg->data),&(nas_msg.header), size);
+
+  initialNasMsg->length = security_header_len + mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data+security_header_len), size-security_header_len);
+
+  stream_cipher.key        = knas_int.value;
+  stream_cipher.key_length = 16;
+  stream_cipher.count      = 0;
   stream_cipher.bearer     = 1;
   stream_cipher.direction  = 0;
   stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
