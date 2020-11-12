@@ -867,14 +867,13 @@ class RANManagement():
 			#dlsch and ulsch statistics
 			#keys below are the markers we are loooking for, loop over this keys list
 			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
-			#eventually we record only the last occurence 
+			#eventually we record and print only the last occurence 
 			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
-					#remove all char before u(lsch) or d(lsch) -> not working for the moment
-					#dlsch_ulsch_stats[k]=re.sub(r'^.*([du])', r'\g<1>' , line.rstrip())
-					dlsch_ulsch_stats[k]=line.rstrip()
+					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
+					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
