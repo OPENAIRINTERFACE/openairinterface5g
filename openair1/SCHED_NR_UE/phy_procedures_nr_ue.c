@@ -735,6 +735,14 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 				    m,
 				    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
 				    pdsch_nb_rb);
+
+
+	printf("===== BWPStart = %i\n", BWPStart);
+	printf("===== pdsch_start_rb = %i\n", pdsch_start_rb);
+
+	//getchar();
+
+
 	LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
 	break;
       }
@@ -1722,28 +1730,22 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 0,
                 0);
 
-    // note: this only works if RBs for PDCCH are contigous!
-    LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-	  fp->first_carrier_offset,pdcch_vars->pdcch_config[0].BWPStart,coreset_start_rb);
-
-    int cset_offset_sc;
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
 
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
 
-      cset_offset_sc = 0;
+      // note: this only works if RBs for PDCCH are contigous!
+      LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
+            fp->first_carrier_offset,pdcch_vars->pdcch_config[n_ss].BWPStart,coreset_start_rb);
+
       rel15 = &pdcch_vars->pdcch_config[n_ss];
-      if(rel15->coreset.CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-        NR_UE_MAC_INST_t *mac = get_mac_inst(ue->Mod_id);
-        cset_offset_sc = (ue->frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB - mac->type0_PDCCH_CSS_config.rb_offset)*NR_NB_SC_PER_RB;
-      }
 
       if (coreset_nb_rb > 0)
         nr_pdcch_channel_estimation(ue,
             0,
             nr_tti_rx,
             l,
-            fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12 + cset_offset_sc,
+            fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
             coreset_nb_rb);
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);

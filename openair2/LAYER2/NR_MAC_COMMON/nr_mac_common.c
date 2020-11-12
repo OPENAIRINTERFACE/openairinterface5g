@@ -2292,11 +2292,19 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
   long rbg_size_config;
   int num_entries = 0;
   int pusch_antenna_ports = 1; // TODO hardcoded number of antenna ports for pusch
-  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_PDSCH_Config_t *pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
-  NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
-  NR_SRS_Config_t *srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
+
+  NR_BWP_Downlink_t *bwp = NULL;
+  NR_BWP_Uplink_t *ubwp = NULL;
+  NR_PDSCH_Config_t *pdsch_config = NULL;
+  NR_PUSCH_Config_t *pusch_Config = NULL;
+  NR_SRS_Config_t *srs_config = NULL;
+  if(bwp_id > 0) {
+    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+    ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+    pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+    pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
+    srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
+  }
 
   switch(format) {
     /*Only sizes for 0_0 and 1_0 are correct at the moment*/

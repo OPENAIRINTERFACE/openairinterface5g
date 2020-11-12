@@ -181,7 +181,14 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   int coreset_id = coreset->controlResourceSetId;
-  int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
+
+  int *cce_list;
+  if(bwp->bwp_Id == 0) {
+    cce_list = nr_mac->cce_list[1][0];
+  } else {
+    cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
+  }
+
 
   int n_rb=0;
   for (int i=0;i<6;i++)

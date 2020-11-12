@@ -312,7 +312,6 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
                                  NR_DL_FRAME_PARMS *frame_parms,
                                  uint8_t *coreset_freq_dom,
                                  uint32_t coreset_nbr_rb,
-                                 int cset_offset_sc,
                                  uint32_t n_BWP_start) {
   /*
    * This function is demapping DM-RS PDCCH RE
@@ -372,7 +371,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
     LOG_DDD("n_BWP_start=%d, coreset_nbr_rb=%d\n",n_BWP_start,coreset_nbr_rb);
     int c_rb_by6;
-    c_rb = n_BWP_start;
+    c_rb = 0;
     for (int rb=0;rb<coreset_nbr_rb;rb++,c_rb++) {
       c_rb_by6 = c_rb/6;
       // skip zeros in frequency domain bitmap
@@ -384,7 +383,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       // first we set initial conditions for pointer to rxdataF depending on the situation of the first RB within the CORESET (c_rb = n_BWP_start)
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): even case
-        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+cset_offset_sc];
+        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
         LOG_DDD("in even case c_rb (%d) is lower than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
       }
@@ -392,7 +391,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb >= (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         // number of RBs is even  and c_rb is higher than half system bandwidth (we don't skip DC)
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF
-        rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))+cset_offset_sc]; // we point at the 1st part of the rxdataF in symbol
+        rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12]; // we point at the 1st part of the rxdataF in symbol
         LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
         //rxF = &rxdataF[aarx][(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
@@ -404,7 +403,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): odd case
-        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+cset_offset_sc];
+        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
 #ifdef NR_PDCCH_DCI_DEBUG
         LOG_D(PHY,"in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
@@ -414,7 +413,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb > (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         // number of RBs is odd  and   c_rb is higher than half system bandwidth + 1
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF just after the first IQ symbols of the RB containing DC
-        rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size)))+cset_offset_sc]; // we point at the 1st part of the rxdataF in symbol
+        rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12]; // we point at the 1st part of the rxdataF in symbol
 #ifdef NR_PDCCH_DCI_DEBUG
         LOG_D(PHY,"in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - frame_parms->N_RB_DL) - 5 + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size))));
@@ -424,7 +423,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb == (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) { // treatment of RB containing the DC
         // if odd number RBs in system bandwidth and first RB to be treated is higher than middle system bandwidth (around DC)
         // we have to treat the RB in two parts: first part from i=0 to 5, the data is at the end of rxdataF (pointing at the end of the table)
-        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+cset_offset_sc];
+        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
 #ifdef NR_PDCCH_DCI_DEBUG
         LOG_D(PHY,"in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
@@ -684,14 +683,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
     rel15 = &pdcch_vars->pdcch_config[i];
     int n_rb,rb_offset;
-    int cset_offset_sc = 0;
 
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
-
-    if(rel15->coreset.CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-      NR_UE_MAC_INST_t *mac = get_mac_inst(ue->Mod_id);
-      cset_offset_sc = (frame_parms->ssb_start_subcarrier / NR_NB_SC_PER_RB - mac->type0_PDCCH_CSS_config.rb_offset) * NR_NB_SC_PER_RB;;
-    }
 
     for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
       LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
@@ -704,7 +697,6 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 				  frame_parms,
 				  rel15->coreset.frequency_domain_resource,
 				  n_rb,
-				  cset_offset_sc,
 				  rel15->BWPStart);
 
       LOG_D(PHY,"we enter nr_pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);

@@ -303,6 +303,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   pilots = ((1<<symbol)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
 
   if (frame_parms->nb_antenna_ports_gNB>1 && beamforming_mode==0) {
+
+    printf("=== 1\n");
+
 #ifdef DEBUG_DLSCH_MOD
     LOG_I(PHY,"dlsch: using pmi %x (%p)\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0]);
 #endif
@@ -332,6 +335,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
    if (rx_type >= rx_IC_single_stream) {
+
+     printf("=== 2\n");
+
       if (eNB_id_i<ue->n_connected_eNB) // we are in TM5
       nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
     		  	  	  	  	  	       pdsch_vars[eNB_id]->dl_ch_estimates,
@@ -378,6 +384,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 					nr_tti_rx,
 					ue->high_speed_flag,
 					frame_parms);
+
+    printf("QQQQQQQQQQQQQQ\n");
   
   } /*else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation: beamforming mode not supported yet.\n");
@@ -2382,12 +2390,12 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
 
     rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
-    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
+    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size))) +31*12];
     
     for (rb = 0; rb < nb_rb_pdsch; rb++) {
       if (k>frame_parms->ofdm_symbol_size) {
         k = k-frame_parms->ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
+        rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size))) +31*12];
         }
       if (pilots==0) {
 	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
