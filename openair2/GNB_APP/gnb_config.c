@@ -242,10 +242,10 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
     scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.longBitmap.buf = CALLOC(1,8);
     for (int j=0; j<8; j++) {
-       scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-j] = 0;
+       scc->ssb_PositionsInBurst->choice.longBitmap.buf[j] = 0;
        curr_bit = (ssbmap>>(j<<3))&(0xff);
        for (int i=0; i<8; i++)
-         scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-j] |= (((curr_bit>>(7-i))&0x01)<<i);
+         scc->ssb_PositionsInBurst->choice.longBitmap.buf[j] |= (((curr_bit>>(7-i))&0x01)<<i);
     }
   }
 
