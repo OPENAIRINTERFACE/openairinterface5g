@@ -86,11 +86,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                       
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                         UE_nr_rxtx_proc_t *proc,
-                        unsigned int subframe_offset,
-                        unsigned char N0_symbol,
-                        unsigned char abstraction_flag,
-                        unsigned char rank_adaptation,
-                        uint8_t subframe);
+                        uint8_t slot);
 
 void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,

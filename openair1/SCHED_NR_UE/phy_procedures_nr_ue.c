@@ -230,14 +230,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
 }
 
-void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0..6]
-								  PHY_VARS_NR_UE *ue,
-								  UE_nr_rxtx_proc_t *proc,
-								  uint8_t eNB_id,
-								  uint16_t slot, // slot index of each radio frame [0..19]
-								  runmode_t mode)
-{
-  LOG_D(PHY,"ue_measurement_procedures l %u Ncp %d\n",l,ue->frame_parms.Ncp);
+void nr_ue_measurement_procedures(uint16_t l,
+                                  PHY_VARS_NR_UE *ue,
+                                  UE_nr_rxtx_proc_t *proc,
+                                  uint8_t eNB_id,
+                                  uint16_t slot,
+                                  runmode_t mode){
 
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int frame_rx   = proc->frame_rx;
@@ -245,18 +243,14 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
 
   if (l==2) {
-    // UE measurements on symbol 0
-    LOG_D(PHY,"Calling measurements nr_slot_rx %d, rxdata %p\n",nr_slot_rx,ue->common_vars.rxdata);
-/*
-    nr_ue_measurements(ue,
-                       proc,
-                       0,
-                       0,
-                       0,
-                       0,
-                       nr_slot_rx);
-*/
-			  //(nr_slot_rx*frame_parms->samples_per_slot+ue->rx_offset) % frame_parms->samples_per_frame
+
+    LOG_D(PHY,"Doing UE measurement procedures in symbol l %u Ncp %d nr_slot_rx %d, rxdata %p\n",
+      l,
+      ue->frame_parms.Ncp,
+      nr_slot_rx,
+      ue->common_vars.rxdata);
+
+    nr_ue_measurements(ue, proc, nr_slot_rx);
 
 #if T_TRACER
     if(slot == 0)
@@ -1761,6 +1755,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            0,
                            16384);
       }
+
+      LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
+      nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
     }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
@@ -1865,19 +1862,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   NULL);
 
-    //printf("phy procedure pdsch start measurement\n"); 
-    nr_ue_measurement_procedures(2,ue,proc,gNB_id,nr_slot_rx,mode);
-
-    /*
-    write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][0],fp->ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates[0][0],fp->ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
-    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[proc->thread_id][gNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
-    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[proc->thread_id][gNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
-    write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[proc->thread_id][gNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
-    */
-
-    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
+    nr_ue_measurement_procedures(2, ue, proc, gNB_id, nr_slot_rx, mode);
   }
 
   // do procedures for SI-RNTI
