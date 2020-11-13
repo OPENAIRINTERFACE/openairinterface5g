@@ -334,8 +334,6 @@ int get_ulscs(nfapi_nr_config_request_t *cfg);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
-int32_t get_nr_uldl_offset(int nr_bandP);
-
 void config_nr_mib(int Mod_idP, 
                    int CC_idP,
                    int p_gNBP,

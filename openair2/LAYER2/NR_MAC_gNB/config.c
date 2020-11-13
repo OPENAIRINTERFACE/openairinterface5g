@@ -125,14 +125,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
 
   lte_frame_type_t frame_type;
-  uint16_t band;
-  int32_t offset;
-
-  get_band(((uint64_t)cfg->carrier_config.dl_frequency.value)*1000,
-           &band,
-           &offset,
-           &frame_type);
-
+  get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
   RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
 
   // Cell configuration
@@ -297,8 +290,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
     cfg->tdd_table.tdd_period.value = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   }
-  LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
   if(cfg->cell_config.frame_duplex_type.value == TDD){
+    LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
     int return_tdd = set_tdd_config_nr(cfg,
 		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
@@ -306,10 +299,10 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
-  if (return_tdd !=0){
-     LOG_E(PHY,"TDD configuration can not be done\n");
-  }
-  else LOG_I(PHY,"TDD has been properly configurated\n");
+    if (return_tdd != 0)
+      LOG_E(MAC,"TDD configuration can not be done\n");
+    else 
+      LOG_I(MAC,"TDD has been properly configurated\n");
   }
 
 }

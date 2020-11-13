@@ -169,7 +169,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
   //int K_PUCCH = 0;
   if (O_ACK != 0) {
     /* it assumes that PDCCH is in the first symbol of receive slot FFS TDDO NR */
-    //int slots_gap = (proc->nr_tti_tx > proc->nr_tti_rx ? (proc->nr_tti_tx - proc->nr_tti_rx - 1) : ((proc->nr_tti_tx + ue->frame_parms.ttis_per_subframe) - proc->nr_tti_rx - 1));
+    //int slots_gap = (proc->nr_tti_tx > proc->nr_tti_rx ? (proc->nr_tti_tx - proc->nr_tti_rx - 1) : ((proc->nr_tti_tx + ue->frame_parms.slots_per_subframe) - proc->nr_tti_rx - 1));
     //K_PUCCH = (slots_gap * (ue->frame_parms.symbols_per_tti)) - 1;
   }
   else {
