@@ -935,7 +935,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
     /* Prepare the S1AP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = S1AP_S1AP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_E_RABModify;
+    pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_E_RABSetup;
     pdu.choice.successfulOutcome.criticality = S1AP_Criticality_reject;
     pdu.choice.successfulOutcome.value.present = S1AP_SuccessfulOutcome__value_PR_E_RABSetupResponse;
     out = &pdu.choice.successfulOutcome.value.choice.E_RABSetupResponse;
@@ -1032,7 +1032,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
                 break;
             }
 
-            S1AP_DEBUG("e_rab_modify_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
+            S1AP_DEBUG("e_rab_setup_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
             ASN_SEQUENCE_ADD(&ie->value.choice.E_RABList.list, item);
         }
 
