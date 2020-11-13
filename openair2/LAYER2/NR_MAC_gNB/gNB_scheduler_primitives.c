@@ -641,7 +641,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_pusch_pdu_t *pusch_pdu,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
-                  int *dci_formats, int *rnti_types,
+                  int *dci_formats,
                   int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id) {
   const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
