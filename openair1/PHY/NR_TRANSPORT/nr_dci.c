@@ -31,6 +31,7 @@
 */
 
 #include <LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
+#include <LAYER2/NR_MAC_gNB/mac_proto.h>
 #include "nr_dci.h"
 #include "nr_dlsch.h"
 #include "nr_sch_dmrs.h"
@@ -87,7 +88,11 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
   cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
   if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-    cset_start_sc = cset_start_sc + RC.nrmac[gNB->Mod_id]->type0_PDCCH_CSS_config.cset_start_rb*NR_NB_SC_PER_RB;
+  //  cset_start_sc = cset_start_sc + RC.nrmac[gNB->Mod_id]->type0_PDCCH_CSS_config.cset_start_rb*NR_NB_SC_PER_RB;
+
+    gNB_MAC_INST *gNB_mac = RC.nrmac[gNB->Mod_id];
+    int BWPStart = NRRIV2PRBOFFSET(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+    cset_start_sc = cset_start_sc + BWPStart*NR_NB_SC_PER_RB;
   }
 
   printf("==== cset_start_sc = %i\n", cset_start_sc);

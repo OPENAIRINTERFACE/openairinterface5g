@@ -303,9 +303,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   pilots = ((1<<symbol)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
 
   if (frame_parms->nb_antenna_ports_gNB>1 && beamforming_mode==0) {
-
-    printf("=== 1\n");
-
 #ifdef DEBUG_DLSCH_MOD
     LOG_I(PHY,"dlsch: using pmi %x (%p)\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0]);
 #endif
@@ -335,9 +332,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
    if (rx_type >= rx_IC_single_stream) {
-
-     printf("=== 2\n");
-
       if (eNB_id_i<ue->n_connected_eNB) // we are in TM5
       nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
     		  	  	  	  	  	       pdsch_vars[eNB_id]->dl_ch_estimates,

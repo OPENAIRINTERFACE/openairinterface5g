@@ -733,7 +733,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 				    nr_tti_rx,
 				    0 /*p*/,
 				    m,
-				    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
+				    ue->frame_parms.first_carrier_offset+pdsch_start_rb*12,
 				    pdsch_nb_rb);
 
 

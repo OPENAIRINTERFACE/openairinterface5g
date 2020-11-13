@@ -171,13 +171,22 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
       rel15->rnti = 0xFFFF; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
 
-      //rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-      //rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-
-
-      rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-      rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
       rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+
+      //rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
+      //rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
+      //rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
+
+      //rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+      //rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+      //rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+
+      printf("nr_ue_dci_configuration:  rnti = %i\n", rel15->rnti);
+      printf("nr_ue_dci_configuration:  BWPSize = %i\n", rel15->BWPSize);
+      printf("nr_ue_dci_configuration:  BWPStart = %i\n", rel15->BWPStart);
+      printf("nr_ue_dci_configuration:  SubcarrierSpacing = %i\n", rel15->SubcarrierSpacing);
 
       for (int i = 0; i < rel15->num_dci_options; i++) {
         rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, 0);
