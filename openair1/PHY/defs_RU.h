@@ -624,6 +624,8 @@ typedef struct RU_t_s {
   int wakeup_L1_sleep_cnt_max;
   /// DL IF frequency in Hz
   uint64_t if_frequency;
+  /// UL IF frequency offset to DL IF frequency in Hz
+  int if_freq_offset;
 } RU_t;
 
 
