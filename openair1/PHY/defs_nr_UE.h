@@ -379,6 +379,8 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_magb1[8][8];
+  /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
+  int32_t **dl_ch_magr0;
   /// \brief Cross-correlation of two eNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]

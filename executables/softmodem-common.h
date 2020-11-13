@@ -70,7 +70,7 @@ extern "C"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
-
+#define CONFIG_HLP_256QAM        "Use the 256 QAM mcs table for PDSCH\n"
 
 //#define CONFIG_HLP_NUMUES        "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
@@ -109,6 +109,7 @@ extern "C"
 #define TIMING_SOURCE       softmodem_params.timing_source
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
+#define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -137,6 +138,7 @@ extern "C"
     {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
+    {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
   }
 
   
@@ -222,6 +224,7 @@ typedef struct {
   uint32_t       timing_source;
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
+  int            use_256qam_table;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);
