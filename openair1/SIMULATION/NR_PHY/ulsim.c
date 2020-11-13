@@ -833,7 +833,8 @@ int main(int argc, char **argv)
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
 
-      UE_proc.nr_tti_tx = slot;
+      UE_proc.thread_id = 0;
+      UE_proc.nr_slot_tx = slot;
       UE_proc.frame_tx = frame;
 
       UL_tti_req->SFN = frame;
@@ -904,6 +905,7 @@ int main(int argc, char **argv)
       scheduled_response.CC_id = 0;
       scheduled_response.frame = frame;
       scheduled_response.slot = slot;
+      scheduled_response.thread_id = UE_proc.thread_id;
       scheduled_response.dl_config = NULL;
       scheduled_response.ul_config = &ul_config;
       scheduled_response.tx_request = &tx_req;
@@ -959,7 +961,7 @@ int main(int argc, char **argv)
 	  /////////////////////////phy_procedures_nr_ue_TX///////////////////////
 	  ///////////
 	  
-	  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+	  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
 	  
 	  
 	  if (n_trials==1) {

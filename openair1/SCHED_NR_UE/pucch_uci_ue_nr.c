@@ -99,7 +99,7 @@ void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
@@ -110,7 +110,7 @@ void nr_generate_pucch1(int32_t **txdataF,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB,
@@ -123,7 +123,7 @@ void nr_generate_pucch2(int32_t **txdataF,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint8_t nrofPRB,
@@ -136,7 +136,7 @@ void nr_generate_pucch3_4(int32_t **txdataF,
                          PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                          uint64_t payload,
                          int16_t amp,
-                         int nr_tti_tx,
+                         int nr_slot_tx,
                          uint8_t nrofSymbols,
                          uint8_t startingSymbolIndex,
                          uint8_t nrofPRB,
@@ -210,7 +210,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   uint64_t  pucch_payload = 0;
   uint32_t  csi_payload = 0;
   int       frame_tx = proc->frame_tx;
-  int       nr_tti_tx = proc->nr_tti_tx;
+  int       nr_slot_tx = proc->nr_slot_tx;
   int       Mod_id = ue->Mod_id;
   int       CC_id = ue->CC_id;
 
@@ -241,15 +241,15 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int subframe_number = proc->nr_slot_rx / ue->frame_parms.slots_per_subframe;
   nb_pucch_format_4_in_subframes[subframe_number] = 0; /* reset pucch format 4 counter at current rx position */
 
-  int dl_harq_pid = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid;
+  int dl_harq_pid = ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid;
 
-  if (dl_harq_pid < ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch) {
+  if (dl_harq_pid < ue->dlsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pdsch) {
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
-    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
+    pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
 
   /* Part - I
-   * Collect feedback that should be transmitted at this nr_tti_tx :
+   * Collect feedback that should be transmitted at this nr_slot_tx :
    * - ACK/NACK, SR, CSI (CQI, RI, ...)
    */
 
@@ -261,11 +261,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
       sr_payload = nr_ue_get_SR(Mod_id,
-  			CC_id,
-  			frame_tx,
-  			gNB_id,
-  			0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
-  			nr_tti_tx); // nr_tti_rx used for meas gap
+                                CC_id,
+                                frame_tx,
+                                gNB_id,
+                                0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
+                                nr_slot_tx); // nr_slot_rx used for meas gap
     }
     else {
       sr_payload = 1;
@@ -287,7 +287,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
 
   //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-	  if (report_slot_csi == proc->nr_tti_tx)
+	  if (report_slot_csi == proc->nr_slot_tx)
 		csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
 	  else
 	    csi_status = 0;
@@ -301,8 +301,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   if(O_ACK == 0) {
     N_UCI = O_SR + O_CSI;
     if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
-      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
-      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       return (FALSE);
     }
     else {
@@ -354,7 +354,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_length = 0;
   int occ_Index = 0;
 
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
 
   if (select_pucch_resource(ue, mac, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
@@ -389,7 +389,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       if ((ue->UE_mode[gNB_id] != PUSCH) && (O_ACK > 1)) {
         O_ACK = 1;
         pucch_ack_payload &= 0x1; /* take only first ack */
-        LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+        LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       }
       NR_TST_PHY_PRINTF("PUCCH common configuration with index %d \n", initial_pucch_id);
     }
@@ -442,7 +442,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
   }
   else {
-    LOG_W(PHY,"PUCCH No PUCCH resource found at AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+    LOG_W(PHY,"PUCCH No PUCCH resource found at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
     return (FALSE);
   }
 
@@ -490,7 +490,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       //}
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       nb_of_prbs = 1;
-      subframe_number = nr_tti_tx / ue->frame_parms.slots_per_subframe;
+      subframe_number = nr_slot_tx / ue->frame_parms.slots_per_subframe;
       nb_pucch_format_4_in_subframes[subframe_number]++; /* increment number of transmit pucch 4 in current subframe */
       NR_TST_PHY_PRINTF("PUCCH Number of pucch format 4 in subframe %d is %d \n", subframe_number, nb_pucch_format_4_in_subframes[subframe_number]);
       N_sc_ctrl_RB = N_SC_RB/(nb_pucch_format_4_in_subframes[subframe_number]);
@@ -595,7 +595,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   pucch_payload = pucch_payload | (csi_payload << (O_ACK + O_SR)) |  (sr_payload << O_ACK) | pucch_ack_payload;
 
   NR_TST_PHY_PRINTF("PUCCH ( AbsSubframe : %d.%d ) ( total payload size %d data 0x%02x ) ( ack length %d data 0x%02x ) ( sr length %d value %d ) ( csi length %d data : 0x%02x ) \n",
-                         frame_tx%1024, nr_tti_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
+                         frame_tx%1024, nr_slot_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
 
   NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols total: %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
                              format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
@@ -612,8 +612,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                   O_CRC, n_HARQ_ACK);
 
   /* set tx power */
-  ue->tx_power_dBm[nr_tti_tx] = pucch_tx_power;
-  ue->tx_total_RE[nr_tti_tx] = nb_of_prbs*N_SC_RB;
+  ue->tx_power_dBm[nr_slot_tx] = pucch_tx_power;
+  ue->tx_total_RE[nr_slot_tx] = nb_of_prbs*N_SC_RB;
 
   int tx_amp;
 
@@ -635,7 +635,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,
                          mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0],
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          (uint8_t)m_CS,
                          nb_symbols_total,
@@ -650,7 +650,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          nb_symbols_total,
                          starting_symbol_index,
@@ -671,7 +671,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
@@ -683,14 +683,14 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format4_nr:
     {
       nr_generate_pucch3_4(ue,
-                           0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
                            &ue->pucch_config_dedicated[gNB_id],
                            pucch_payload,
                            tx_amp,
-                           nr_tti_tx,
+                           nr_slot_tx,
                            nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
@@ -743,7 +743,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int number_harq_feedback = 0;
   uint32_t dai_current = 0;
   uint32_t dai_max = 0;
-  int number_pid_dl = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch;
+  int number_pid_dl = ue->dlsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pdsch;
   bool two_transport_blocks = FALSE;
   int number_of_code_word = 1;
   int U_DAI_c = 0;
@@ -776,7 +776,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
         harq_status = &ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]->harq_ack;
 
         /* check if current tx slot should transmit downlink acknowlegment */
-        if (harq_status->slot_for_feedback_ack == proc->nr_tti_tx) {
+        if (harq_status->slot_for_feedback_ack == proc->nr_slot_tx) {
 
           if (harq_status->ack == DL_ACKNACK_NO_SET) {
             LOG_E(PHY,"PUCCH Downlink acknowledgment has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
@@ -1278,7 +1278,7 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
   }
 
   int16_t N_slot_frame = ue->frame_parms.slots_per_frame;
-  if (((proc->frame_tx * N_slot_frame) + proc->nr_tti_tx - SR_offset)%SR_periodicity == 0) {
+  if (((proc->frame_tx * N_slot_frame) + proc->nr_slot_tx - SR_offset)%SR_periodicity == 0) {
     return (1);
   }
   else {
