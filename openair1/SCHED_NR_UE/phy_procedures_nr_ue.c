@@ -737,9 +737,11 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 				    pdsch_nb_rb);
 
 
+	printf("===== Total = %i\n", ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12);
+	printf("===== ue->frame_parms.first_carrier_offset = %i\n", ue->frame_parms.first_carrier_offset);
 	printf("===== BWPStart = %i\n", BWPStart);
 	printf("===== pdsch_start_rb = %i\n", pdsch_start_rb);
-
+	printf("===== pdsch_nb_rb = %i\n", pdsch_nb_rb);
 	//getchar();
 
 

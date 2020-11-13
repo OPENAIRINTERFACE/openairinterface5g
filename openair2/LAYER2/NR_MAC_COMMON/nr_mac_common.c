@@ -2879,7 +2879,8 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
                                           NR_MIB_t *mib,
                                           uint8_t extra_bits,
                                           uint32_t ssb_length,
-                                          uint32_t ssb_index) {
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a) {
 
   //  deafult for testing
   subcarrier_spacing_t scs_ssb = scs_30kHz;
@@ -3234,13 +3235,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
   type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
-
-  /*printf("\nbig_o = %f\n", big_o);
-  printf("scs_pdcch = %u\n", scs_pdcch);
-  printf("ssb_index = %u\n", type0_PDCCH_CSS_config->ssb_index);
-  printf("big_m = %f\n", big_m);
-  printf("num_slot_per_frame = %u\n", num_slot_per_frame);*/
-
+  type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
   return 0;
 }

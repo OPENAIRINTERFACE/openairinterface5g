@@ -883,7 +883,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-      
+
       // for proper allignment of SIMD vectors
       if((ue->frame_parms.N_RB_DL&1)==0) {
         

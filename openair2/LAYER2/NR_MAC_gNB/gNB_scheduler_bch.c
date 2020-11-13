@@ -164,7 +164,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
     gNB_xtra_byte |= ((gNB->pbch.pbch_a >> (31 - i)) & 1) << (7 - i);
   }
   get_type0_PDCCH_CSS_config_parameters(&gNB_mac->type0_PDCCH_CSS_config, mib, gNB_xtra_byte, frame_parms->Lmax,
-                                        frame_parms->ssb_index);
+                                        frame_parms->ssb_index, frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB);
 }
 
 void schedule_control_sib1(module_id_t module_id,
@@ -229,6 +229,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   // Calculate number of symbols
   struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  //tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength = 53;
   const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
@@ -245,11 +246,14 @@ void schedule_control_sib1(module_id_t module_id,
                            rbSize, nrOfSymbols, N_PRB_DMRS,0, 0,1) >> 3;
   } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
-  gNB_mac->sched_ctrlCommon->rbStart = rbStart;
+
+  if(rbStart >= gNB_mac->type0_PDCCH_CSS_config.cset_start_rb) {
+    gNB_mac->sched_ctrlCommon->rbStart = rbStart - gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
+  }
 
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->rbSize; rb++) {
-    vrb_map[rb + gNB_mac->sched_ctrlCommon->rbStart] = 1;
+    vrb_map[rb + rbStart] = 1;
   }
 
 }
@@ -303,7 +307,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;
   pdsch_pdu_rel15->transmissionScheme = 0;
-  pdsch_pdu_rel15->refPoint = 0; // Point A
+  pdsch_pdu_rel15->refPoint = 0; // Point A FIXME 1
   pdsch_pdu_rel15->dmrsConfigType = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
@@ -312,7 +316,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->resourceAlloc = 1;
   pdsch_pdu_rel15->rbStart = gNB_mac->sched_ctrlCommon->rbStart;
   pdsch_pdu_rel15->rbSize = gNB_mac->sched_ctrlCommon->rbSize;
-  pdsch_pdu_rel15->VRBtoPRBMapping = 0;
+  pdsch_pdu_rel15->VRBtoPRBMapping = 1; // FIXME 0
   pdsch_pdu_rel15->qamModOrder[0] = nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx);
   pdsch_pdu_rel15->TBSize[0] = TBS;
   pdsch_pdu_rel15->mcsTable[0] = gNB_mac->sched_ctrlCommon->mcsTableIdx;
@@ -320,6 +324,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
   pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols);
+
+
+  printf("oooo scc->dmrs_TypeA_Position = %li\n", scc->dmrs_TypeA_Position);
+
 
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
   memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
@@ -332,10 +340,11 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                                         pdsch_pdu_rel15->rbStart,
                                 NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
 
+
   printf("==== pdsch_pdu_rel15->rbSize = %i\n", pdsch_pdu_rel15->rbSize);
   printf("==== pdsch_pdu_rel15->rbStart = %i\n", pdsch_pdu_rel15->rbStart);
   printf("==== BW = %i\n", NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
-
+  printf("==== RIV = %i\n", dci_pdu_rel15[0].frequency_domain_assignment.val);
 
 
   dci_pdu_rel15[0].time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
@@ -369,6 +378,24 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
   dl_req->nPDUs += 2;
+
+  printf("\n===================================================\n");
+  LOG_I(MAC,"pdcch_pdu_rel15->BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
+  LOG_I(MAC,"pdcch_pdu_rel15->BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
+  LOG_I(MAC,"pdcch_pdu_rel15->SubcarrierSpacing: %i\n", pdcch_pdu_rel15->SubcarrierSpacing);
+  LOG_I(MAC,"pdcch_pdu_rel15->CyclicPrefix: %i\n", pdcch_pdu_rel15->CyclicPrefix);
+  LOG_I(MAC,"pdcch_pdu_rel15->StartSymbolIndex: %i\n", pdcch_pdu_rel15->StartSymbolIndex);
+  LOG_I(MAC,"pdcch_pdu_rel15->DurationSymbols: %i\n", pdcch_pdu_rel15->DurationSymbols);
+  for(int n=0;n<6;n++) LOG_I(MAC,"pdcch_pdu_rel15->FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
+  LOG_I(MAC,"pdcch_pdu_rel15->CceRegMappingType: %i\n", pdcch_pdu_rel15->CceRegMappingType);
+  LOG_I(MAC,"pdcch_pdu_rel15->RegBundleSize: %i\n", pdcch_pdu_rel15->RegBundleSize);
+  LOG_I(MAC,"pdcch_pdu_rel15->InterleaverSize: %i\n", pdcch_pdu_rel15->InterleaverSize);
+  LOG_I(MAC,"pdcch_pdu_rel15->CoreSetType: %i\n", pdcch_pdu_rel15->CoreSetType);
+  LOG_I(MAC,"pdcch_pdu_rel15->ShiftIndex: %i\n", pdcch_pdu_rel15->ShiftIndex);
+  LOG_I(MAC,"pdcch_pdu_rel15->precoderGranularity: %i\n", pdcch_pdu_rel15->precoderGranularity);
+  LOG_I(MAC,"pdcch_pdu_rel15->numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
+  printf("\n===================================================\n");
+
 }
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
@@ -401,8 +428,13 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
     struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    //tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength = 53;
     const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+
+    printf("oooo SLIV = %i\n", startSymbolAndLength);
+    printf("oooo startSymbolIndex = %i\n", startSymbolIndex);
+    printf("oooo nrOfSymbols = %i\n", nrOfSymbols);
 
     //startSymbolIndex = 3;
     //nrOfSymbols = 12;

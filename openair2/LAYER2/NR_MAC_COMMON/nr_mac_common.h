@@ -146,7 +146,7 @@ typedef enum {
 typedef struct Type0_PDCCH_CSS_config_s {
   int32_t num_rbs;
   int32_t num_symbols;
-  int32_t rb_offset;
+  int32_t rb_offset; // Offset from SSB RB0
   uint32_t type0_pdcch_ss_mux_pattern;
   uint16_t frame;
   SFN_C_TYPE sfn_c;
@@ -157,6 +157,7 @@ typedef struct Type0_PDCCH_CSS_config_s {
   uint32_t search_space_duration;
   uint32_t ssb_length;
   uint32_t ssb_index;
+  uint32_t cset_start_rb;
 } NR_Type0_PDCCH_CSS_config_t;
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
@@ -245,7 +246,8 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
                                           NR_MIB_t *mib,
                                           uint8_t extra_bits,
                                           uint32_t ssb_length,
-                                          uint32_t ssb_index);
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a);
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 #endif

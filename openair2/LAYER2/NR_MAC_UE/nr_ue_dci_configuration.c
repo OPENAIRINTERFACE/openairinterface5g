@@ -171,8 +171,12 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
       rel15->rnti = 0xFFFF; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
 
+      //rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      //rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+
+
       rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-      rel15->BWPStart = mac->phy_config.config_req.ssb_table.ssb_offset_point_a - mac->type0_PDCCH_CSS_config.rb_offset;
+      rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
 
       for (int i = 0; i < rel15->num_dci_options; i++) {

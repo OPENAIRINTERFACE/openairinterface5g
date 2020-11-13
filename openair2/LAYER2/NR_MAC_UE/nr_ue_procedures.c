@@ -1000,7 +1000,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
 
-  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config, mac->mib, extra_bits, ssb_length, ssb_index);
+  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config, mac->mib, extra_bits, ssb_length, ssb_index,
+                                        mac->phy_config.config_req.ssb_table.ssb_offset_point_a);
 
   ssb_index = mac->type0_PDCCH_CSS_config.ssb_index; //  TODO: ssb_index should obtain from L1 in case Lssb != 64
   mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
@@ -1122,6 +1123,27 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
       */
     }
+
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15 = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+
+    printf("\n===================================================\n");
+    LOG_I(MAC,"rnti: %i\n", dci_config_rel15.rnti);
+    LOG_I(MAC,"pdcch_pdu_rel15->BWPSize: %i\n", dci_config_rel15.BWPSize);
+    LOG_I(MAC,"pdcch_pdu_rel15->BWPStart: %i\n", dci_config_rel15.BWPStart);
+    LOG_I(MAC,"pdcch_pdu_rel15->SubcarrierSpacing: %i\n", dci_config_rel15.SubcarrierSpacing);
+    //LOG_I(MAC,"pdcch_pdu_rel15->CyclicPrefix: %i\n", dci_config_rel15.coreset.CyclicPrefix);
+    LOG_I(MAC,"pdcch_pdu_rel15->StartSymbolIndex: %i\n", dci_config_rel15.coreset.StartSymbolIndex);
+    LOG_I(MAC,"pdcch_pdu_rel15->DurationSymbols: %i\n", dci_config_rel15.coreset.duration);
+    for(int n=0;n<6;n++) LOG_I(MAC,"pdcch_pdu_rel15->FreqDomainResource[%i]: %x\n",n, dci_config_rel15.coreset.frequency_domain_resource[n]);
+    LOG_I(MAC,"pdcch_pdu_rel15->CceRegMappingType: %i\n", dci_config_rel15.coreset.CceRegMappingType);
+    LOG_I(MAC,"pdcch_pdu_rel15->RegBundleSize: %i\n", dci_config_rel15.coreset.RegBundleSize);
+    LOG_I(MAC,"pdcch_pdu_rel15->InterleaverSize: %i\n", dci_config_rel15.coreset.InterleaverSize);
+    LOG_I(MAC,"pdcch_pdu_rel15->CoreSetType: %i\n", dci_config_rel15.coreset.CoreSetType);
+    LOG_I(MAC,"pdcch_pdu_rel15->ShiftIndex: %i\n", dci_config_rel15.coreset.ShiftIndex);
+    LOG_I(MAC,"pdcch_pdu_rel15->precoderGranularity: %i\n", dci_config_rel15.coreset.precoder_granularity);
+    LOG_I(MAC,"pdcch_pdu_rel15->numDlDci: %i\n", dl_config->number_pdus);
+    printf("\n===================================================\n");
+
   } else if (ul_info) {
 
     if (get_softmodem_params()->phy_test && ul_info->slot_tx == 8) { // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
@@ -2702,6 +2724,13 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       SLIV2SL(startSymbolAndLength,&S,&L);
       dlsch_config_pdu->start_symbol=S;
       dlsch_config_pdu->number_symbols=L;
+
+
+      printf("SLIV = %i\n", startSymbolAndLength);
+      printf("dlsch_config_pdu->start_symbol = %i\n", dlsch_config_pdu->start_symbol);
+      printf("dlsch_config_pdu->number_symbols = %i\n", dlsch_config_pdu->number_symbols);
+
+
     }
     else {// Default configuration from tables
 //      k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
@@ -3227,23 +3256,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
      */
 
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
-    //fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_pdu_1_0 = dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
-    /*dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;*/
-
-      dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-      dlsch_config_pdu_1_0->BWPStart = mac->phy_config.config_req.ssb_table.ssb_offset_point_a - mac->type0_PDCCH_CSS_config.rb_offset;
-      dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+    dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+    dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+    dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
 
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
-
-    printf("==== dlsch_config_pdu_1_0,dci->time_domain_assignment.val = %i\n", dci->time_domain_assignment.val);
-
+    // TODO: Check if dlsch_config_pdu_1_0->BWPSize is correct
+    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,dlsch_config_pdu_1_0->BWPSize,dci->frequency_domain_assignment.val);
 
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0)

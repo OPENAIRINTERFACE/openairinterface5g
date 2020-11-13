@@ -384,8 +384,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 					nr_tti_rx,
 					ue->high_speed_flag,
 					frame_parms);
-
-    printf("QQQQQQQQQQQQQQ\n");
   
   } /*else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation: beamforming mode not supported yet.\n");
@@ -2382,6 +2380,11 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
     k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
 
+    printf("k = %i\n", k);
+    printf("frame_parms->first_carrier_offset = %i\n", frame_parms->first_carrier_offset);
+    printf("nr_dlsch_extract_rbs_single: start_rb = %i\n", start_rb);
+    //getchar();
+
     if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];
     else
@@ -2390,12 +2393,12 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
 
     rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
-    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size))) +31*12];
+    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
     
     for (rb = 0; rb < nb_rb_pdsch; rb++) {
       if (k>frame_parms->ofdm_symbol_size) {
         k = k-frame_parms->ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size))) +31*12];
+        rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
         }
       if (pilots==0) {
 	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
