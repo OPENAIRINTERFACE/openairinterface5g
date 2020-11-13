@@ -1000,13 +1000,14 @@ static int get_dlsch_pdu_indicies(const nfapi_dl_config_request_t *req, int *pdu
   return num_pdu_indicies;
 }
 
-typedef struct dlsch_pdu_indicies_t
+typedef struct dlsch_pdu_indicies_and_request_t
 {
   size_t num_indicies;
   int *indicies;
-}dlsch_pdu_indicies_t;
+  nfapi_dl_config_request_t *req;
+}dlsch_pdu_indicies_and_request_t;
 
-static void print_lists(const dlsch_pdu_indicies_t *dlsch_list, const nfapi_tx_req_pdu_list_t *tx_pdu_list)
+static void print_lists(const dlsch_pdu_indicies_and_request_t *dlsch_list, const nfapi_tx_req_pdu_list_t *tx_pdu_list)
 {
   const size_t max_result = 1024;
   uint16_t num_pdus = tx_pdu_list->num_pdus;
@@ -1034,7 +1035,7 @@ static void print_lists(const dlsch_pdu_indicies_t *dlsch_list, const nfapi_tx_r
 
 static bool match_dl_config_req(void *wanted_vp, void *candidate_vp)
 {
-  dlsch_pdu_indicies_t *wanted = wanted_vp;
+  dlsch_pdu_indicies_and_request_t *wanted = wanted_vp;
   const nfapi_tx_req_pdu_list_t *candidate = candidate_vp;
 
   int num_pdus = candidate->num_pdus;
@@ -1043,13 +1044,23 @@ static bool match_dl_config_req(void *wanted_vp, void *candidate_vp)
     LOG_E(MAC, "tx_req_pdus not equal to dlsch_pdus:: %zu != %d\n", wanted->num_indicies, num_pdus);
     return false;
   }
+
   for (int i = 0; i < num_pdus; ++i)
   {
     bool found = false;
     const nfapi_tx_request_pdu_t *pdu = &candidate->pdus[i];
     for (int j = 0; j < num_pdus; ++j)
     {
-      if (pdu->pdu_index == wanted->indicies[i])
+      size_t dlsch_index = wanted->indicies[j];
+      AssertFatal(dlsch_index < wanted->req->dl_config_request_body.number_pdu, "dlsch_index is out of range of pdu_list\n");
+      nfapi_dl_config_request_pdu_t *dlsch_pdu = &wanted->req->dl_config_request_body.dl_config_pdu_list[dlsch_index];
+
+      // This may be redundant but wont hurt.
+      AssertFatal(dlsch_pdu->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE,
+                  "dlsch_index: %zu does not map to a DLSCH_PDU in dl_config_req sfn.sf = %d.%d pdu_type = %d\n",
+                  dlsch_index, wanted->req->sfn_sf >> 4, wanted->req->sfn_sf & 15, dlsch_pdu->pdu_type);
+
+      if (pdu->pdu_index == dlsch_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index)
       {
         found = true;
         break;
@@ -1058,7 +1069,7 @@ static bool match_dl_config_req(void *wanted_vp, void *candidate_vp)
     if (!found)
     {
       LOG_E(MAC, "Could not find tx_req_pdu index to match dlsch_index for pdu_index: %d\n",
-      pdu->pdu_index);
+            pdu->pdu_index);
       print_lists(wanted, candidate);
       return false;
     }
@@ -1084,21 +1095,22 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
             req->sfn_sf >> 4, req->sfn_sf & 15);
       return 0;
     }
-    dlsch_pdu_indicies_t wanted =
+    dlsch_pdu_indicies_and_request_t wanted =
     {
       num_dlsch_pdu_indicies,
       dlsch_pdu_indicies,
+      req,
     };
     nfapi_tx_req_pdu_list_t *matched =
       unqueue_matching(&tx_req_pdu_queue, /*max_depth=*/ 2,
                        match_dl_config_req, &wanted);
     if (!matched)
     {
-      LOG_W(MAC, "Could not unqueue_matching\n");
+      LOG_E(MAC, "Could not unqueue_matching\n");
       return 0;
     }
 
-    LOG_E(MAC, "REMOVING.. dl_config_req & tx_req\n");
+    LOG_I(MAC, "REMOVING.. dl_config_req & tx_req\n");
     free(matched);
 
     return 0;
