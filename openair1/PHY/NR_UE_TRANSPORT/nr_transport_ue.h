@@ -139,6 +139,8 @@ typedef struct {
   uint32_t num_of_mod_symbols;
   // decode phich
   uint8_t decode_phich;
+  // Encoder BG
+  uint8_t BG;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
