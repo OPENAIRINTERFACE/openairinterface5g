@@ -942,6 +942,11 @@ uint8_t do_NR_RRCConnectionRelease(uint8_t                            *buffer,
                                    (void *)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
+  if(enc_rval.encoded == -1) {
+    LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+        enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
   return((enc_rval.encoded+7)/8);
 }
 
