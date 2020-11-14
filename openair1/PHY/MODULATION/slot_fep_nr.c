@@ -211,7 +211,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
-    
+
   }
   
 

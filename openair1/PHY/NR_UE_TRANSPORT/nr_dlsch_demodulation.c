@@ -373,7 +373,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 					pdsch_vars[eNB_id]->pmi_ext,
 					symbol,
 					pilots,
-					start_rb,
+					start_rb + dlsch0_harq->BWPStart,
 					nb_rb_pdsch,
 					nr_tti_rx,
 					ue->high_speed_flag,
@@ -1019,7 +1019,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         return(-1);
         break;
     }
-  }  
+  }
 
   //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
   
@@ -2373,11 +2373,6 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
     k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
-
-    printf("k = %i\n", k);
-    printf("frame_parms->first_carrier_offset = %i\n", frame_parms->first_carrier_offset);
-    printf("nr_dlsch_extract_rbs_single: start_rb = %i\n", start_rb);
-    //getchar();
 
     if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];

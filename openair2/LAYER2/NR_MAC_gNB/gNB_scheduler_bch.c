@@ -307,7 +307,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;
   pdsch_pdu_rel15->transmissionScheme = 0;
-  pdsch_pdu_rel15->refPoint = 0; // Point A FIXME 1
+  pdsch_pdu_rel15->refPoint = 1;
   pdsch_pdu_rel15->dmrsConfigType = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
@@ -316,7 +316,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->resourceAlloc = 1;
   pdsch_pdu_rel15->rbStart = gNB_mac->sched_ctrlCommon->rbStart;
   pdsch_pdu_rel15->rbSize = gNB_mac->sched_ctrlCommon->rbSize;
-  pdsch_pdu_rel15->VRBtoPRBMapping = 1; // FIXME 0
+  pdsch_pdu_rel15->VRBtoPRBMapping = 0;
   pdsch_pdu_rel15->qamModOrder[0] = nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx);
   pdsch_pdu_rel15->TBSize[0] = TBS;
   pdsch_pdu_rel15->mcsTable[0] = gNB_mac->sched_ctrlCommon->mcsTableIdx;
@@ -324,10 +324,6 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
   pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols);
-
-
-  printf("oooo scc->dmrs_TypeA_Position = %li\n", scc->dmrs_TypeA_Position);
-
 
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
   memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
@@ -345,7 +341,6 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   printf("==== pdsch_pdu_rel15->rbStart = %i\n", pdsch_pdu_rel15->rbStart);
   printf("==== BW = %i\n", NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
   printf("==== RIV = %i\n", dci_pdu_rel15[0].frequency_domain_assignment.val);
-
 
   dci_pdu_rel15[0].time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
   dci_pdu_rel15[0].mcs = gNB_mac->sched_ctrlCommon->mcs;
@@ -379,22 +374,20 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   dl_req->nPDUs += 2;
 
-  printf("\n===================================================\n");
-  LOG_I(MAC,"pdcch_pdu_rel15->BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
-  LOG_I(MAC,"pdcch_pdu_rel15->BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
-  LOG_I(MAC,"pdcch_pdu_rel15->SubcarrierSpacing: %i\n", pdcch_pdu_rel15->SubcarrierSpacing);
-  LOG_I(MAC,"pdcch_pdu_rel15->CyclicPrefix: %i\n", pdcch_pdu_rel15->CyclicPrefix);
-  LOG_I(MAC,"pdcch_pdu_rel15->StartSymbolIndex: %i\n", pdcch_pdu_rel15->StartSymbolIndex);
-  LOG_I(MAC,"pdcch_pdu_rel15->DurationSymbols: %i\n", pdcch_pdu_rel15->DurationSymbols);
-  for(int n=0;n<6;n++) LOG_I(MAC,"pdcch_pdu_rel15->FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
-  LOG_I(MAC,"pdcch_pdu_rel15->CceRegMappingType: %i\n", pdcch_pdu_rel15->CceRegMappingType);
-  LOG_I(MAC,"pdcch_pdu_rel15->RegBundleSize: %i\n", pdcch_pdu_rel15->RegBundleSize);
-  LOG_I(MAC,"pdcch_pdu_rel15->InterleaverSize: %i\n", pdcch_pdu_rel15->InterleaverSize);
-  LOG_I(MAC,"pdcch_pdu_rel15->CoreSetType: %i\n", pdcch_pdu_rel15->CoreSetType);
-  LOG_I(MAC,"pdcch_pdu_rel15->ShiftIndex: %i\n", pdcch_pdu_rel15->ShiftIndex);
-  LOG_I(MAC,"pdcch_pdu_rel15->precoderGranularity: %i\n", pdcch_pdu_rel15->precoderGranularity);
-  LOG_I(MAC,"pdcch_pdu_rel15->numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
-  printf("\n===================================================\n");
+  LOG_D(MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
+  LOG_D(MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
+  LOG_D(MAC,"SubcarrierSpacing: %i\n", pdcch_pdu_rel15->SubcarrierSpacing);
+  LOG_D(MAC,"CyclicPrefix: %i\n", pdcch_pdu_rel15->CyclicPrefix);
+  LOG_D(MAC,"StartSymbolIndex: %i\n", pdcch_pdu_rel15->StartSymbolIndex);
+  LOG_D(MAC,"DurationSymbols: %i\n", pdcch_pdu_rel15->DurationSymbols);
+  for(int n=0;n<6;n++) LOG_I(MAC,"FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
+  LOG_D(MAC,"CceRegMappingType: %i\n", pdcch_pdu_rel15->CceRegMappingType);
+  LOG_D(MAC,"RegBundleSize: %i\n", pdcch_pdu_rel15->RegBundleSize);
+  LOG_D(MAC,"InterleaverSize: %i\n", pdcch_pdu_rel15->InterleaverSize);
+  LOG_D(MAC,"CoreSetType: %i\n", pdcch_pdu_rel15->CoreSetType);
+  LOG_D(MAC,"ShiftIndex: %i\n", pdcch_pdu_rel15->ShiftIndex);
+  LOG_D(MAC,"precoderGranularity: %i\n", pdcch_pdu_rel15->precoderGranularity);
+  LOG_D(MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
 
 }
 

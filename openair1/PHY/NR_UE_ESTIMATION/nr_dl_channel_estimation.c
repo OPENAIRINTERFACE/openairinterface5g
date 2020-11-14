@@ -645,6 +645,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                unsigned short BWPStart,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch)
 {
@@ -715,7 +716,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 
   // generate pilot
-  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12;
+  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12 - BWPStart;
   int config_type = 0; // needs to be updated from higher layer
   nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][0], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
 
@@ -868,7 +869,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          dl_ch,
                                          8);
     //}
-    
+
     // check if PRB crosses DC and improve estimates around DC
     if ((bwp_start_subcarrier < ue->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pdsch*12 >= ue->frame_parms.ofdm_symbol_size)) {
       dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
@@ -931,7 +932,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       }
       printf("%d\n",idxP);
     }
-#endif    
+#endif
   }
 
   return(0);

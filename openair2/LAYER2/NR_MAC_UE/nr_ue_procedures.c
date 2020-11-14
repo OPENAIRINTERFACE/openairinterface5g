@@ -1126,24 +1126,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
     fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15 = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
 
-    /*printf("\n===================================================\n");
-    LOG_I(MAC,"rnti: %i\n", dci_config_rel15.rnti);
-    LOG_I(MAC,"pdcch_pdu_rel15->BWPSize: %i\n", dci_config_rel15.BWPSize);
-    LOG_I(MAC,"pdcch_pdu_rel15->BWPStart: %i\n", dci_config_rel15.BWPStart);
-    LOG_I(MAC,"pdcch_pdu_rel15->SubcarrierSpacing: %i\n", dci_config_rel15.SubcarrierSpacing);
-    //LOG_I(MAC,"pdcch_pdu_rel15->CyclicPrefix: %i\n", dci_config_rel15.coreset.CyclicPrefix);
-    LOG_I(MAC,"pdcch_pdu_rel15->StartSymbolIndex: %i\n", dci_config_rel15.coreset.StartSymbolIndex);
-    LOG_I(MAC,"pdcch_pdu_rel15->DurationSymbols: %i\n", dci_config_rel15.coreset.duration);
-    for(int n=0;n<6;n++) LOG_I(MAC,"pdcch_pdu_rel15->FreqDomainResource[%i]: %x\n",n, dci_config_rel15.coreset.frequency_domain_resource[n]);
-    LOG_I(MAC,"pdcch_pdu_rel15->CceRegMappingType: %i\n", dci_config_rel15.coreset.CceRegMappingType);
-    LOG_I(MAC,"pdcch_pdu_rel15->RegBundleSize: %i\n", dci_config_rel15.coreset.RegBundleSize);
-    LOG_I(MAC,"pdcch_pdu_rel15->InterleaverSize: %i\n", dci_config_rel15.coreset.InterleaverSize);
-    LOG_I(MAC,"pdcch_pdu_rel15->CoreSetType: %i\n", dci_config_rel15.coreset.CoreSetType);
-    LOG_I(MAC,"pdcch_pdu_rel15->ShiftIndex: %i\n", dci_config_rel15.coreset.ShiftIndex);
-    LOG_I(MAC,"pdcch_pdu_rel15->precoderGranularity: %i\n", dci_config_rel15.coreset.precoder_granularity);
-    LOG_I(MAC,"pdcch_pdu_rel15->numDlDci: %i\n", dl_config->number_pdus);
-    printf("\n===================================================\n");*/
-
   } else if (ul_info) {
 
     if (get_softmodem_params()->phy_test && ul_info->slot_tx == 8) { // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
@@ -2561,13 +2543,10 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
     dlsch_config_pdu->number_rbs = NRRIV2BW(riv,n_RB_DLBWP);
     dlsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_DLBWP);
 
-
-    printf("nr_ue_process_dci_freq_dom_resource_assignment: riv = %i\n", riv);
-    printf("nr_ue_process_dci_freq_dom_resource_assignment: n_RB_DLBWP = %i\n", n_RB_DLBWP);
-    printf("nr_ue_process_dci_freq_dom_resource_assignment: dlsch_config_pdu->number_rbs = %i\n", dlsch_config_pdu->number_rbs);
-    printf("nr_ue_process_dci_freq_dom_resource_assignment: dlsch_config_pdu->start_rb = %i\n", dlsch_config_pdu->start_rb);
-
-
+    LOG_D(MAC,"riv = %i\n", riv);
+    LOG_D(MAC,"n_RB_DLBWP = %i\n", n_RB_DLBWP);
+    LOG_D(MAC,"number_rbs = %i\n", dlsch_config_pdu->number_rbs);
+    LOG_D(MAC,"start_rb = %i\n", dlsch_config_pdu->start_rb);
 
   }
   if(pusch_config_pdu != NULL){
@@ -2733,11 +2712,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       dlsch_config_pdu->start_symbol=S;
       dlsch_config_pdu->number_symbols=L;
 
-
-      printf("SLIV = %i\n", startSymbolAndLength);
-      printf("dlsch_config_pdu->start_symbol = %i\n", dlsch_config_pdu->start_symbol);
-      printf("dlsch_config_pdu->number_symbols = %i\n", dlsch_config_pdu->number_symbols);
-
+      LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
+      LOG_D(MAC,"start_symbol = %i\n", dlsch_config_pdu->start_symbol);
+      LOG_D(MAC,"number_symbols = %i\n", dlsch_config_pdu->number_symbols);
 
     }
     else {// Default configuration from tables

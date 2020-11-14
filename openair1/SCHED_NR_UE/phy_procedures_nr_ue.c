@@ -728,25 +728,16 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     // do channel estimation for first DMRS only
     for (m = s0; m < 3; m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
-	nr_pdsch_channel_estimation(ue,
-				    0 /*eNB_id*/,
-				    nr_tti_rx,
-				    0 /*p*/,
-				    m,
-				    ue->frame_parms.first_carrier_offset+pdsch_start_rb*12,
-				    pdsch_nb_rb);
-
-
-	printf("===== Total = %i\n", ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12);
-	printf("===== ue->frame_parms.first_carrier_offset = %i\n", ue->frame_parms.first_carrier_offset);
-	printf("===== BWPStart = %i\n", BWPStart);
-	printf("===== pdsch_start_rb = %i\n", pdsch_start_rb);
-	printf("===== pdsch_nb_rb = %i\n", pdsch_nb_rb);
-	//getchar();
-
-
-	LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
-	break;
+        nr_pdsch_channel_estimation(ue,
+                  0 /*eNB_id*/,
+                  nr_tti_rx,
+                  0 /*p*/,
+                  m,
+                  BWPStart,
+                  ue->frame_parms.first_carrier_offset+(BWPStart+pdsch_start_rb)*12,
+                  pdsch_nb_rb);
+        LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
+        break;
       }
     }
     for (m = s0; m < (s1 + s0); m++) {
@@ -1840,7 +1831,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            SI_PDSCH,
                            ue->dlsch_SI[gNB_id],
                            NULL);
-    
+
     nr_ue_dlsch_procedures(ue,
                            proc,
                            gNB_id,
