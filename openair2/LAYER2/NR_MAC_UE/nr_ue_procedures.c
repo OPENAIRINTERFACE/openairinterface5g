@@ -2712,9 +2712,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       dlsch_config_pdu->start_symbol=S;
       dlsch_config_pdu->number_symbols=L;
 
-      LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
-      LOG_D(MAC,"start_symbol = %i\n", dlsch_config_pdu->start_symbol);
-      LOG_D(MAC,"number_symbols = %i\n", dlsch_config_pdu->number_symbols);
+      LOG_I(MAC,"SLIV = %i\n", startSymbolAndLength);
+      LOG_I(MAC,"start_symbol = %i\n", dlsch_config_pdu->start_symbol);
+      LOG_I(MAC,"number_symbols = %i\n", dlsch_config_pdu->number_symbols);
 
     }
     else {// Default configuration from tables
@@ -3247,28 +3247,28 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     NR_ServingCellConfigCommon_t *scc = mac->scc;
     NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
 
-    dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-    dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-    dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-
-    //dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    //dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    //dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
-
-    //dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-    //dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
-    //dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-
-    printf("nr_ue_procedures:  rnti = %i\n", rnti);
-    printf("nr_ue_procedures:  BWPSize = %i\n", dlsch_config_pdu_1_0->BWPSize);
-    printf("nr_ue_procedures:  BWPStart = %i\n", dlsch_config_pdu_1_0->BWPStart);
-    printf("nr_ue_procedures:  SubcarrierSpacing = %i\n", dlsch_config_pdu_1_0->SubcarrierSpacing);
+    if (mac->RA_window_cnt >= 0 && rnti == mac->ra_rnti){
+      dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
+      dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+    }
+    else if(rnti == SI_RNTI) {
+      dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH;
+      dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+      dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+      dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+    }
+    else {
+      dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+      dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+      dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+      dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+    }
 
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    // TODO: Check if dlsch_config_pdu_1_0->BWPSize is correct
     nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,dlsch_config_pdu_1_0->BWPSize,dci->frequency_domain_assignment.val);
-    //nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
 
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0)
@@ -3348,16 +3348,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
 	  dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
 	  dlsch_config_pdu_1_0->pucch_resource_id,
 	  dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
-
-    if (mac->RA_window_cnt >= 0 && rnti == mac->ra_rnti){
-      dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
-    }
-    else if(rnti == SI_RNTI) {
-      dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH;
-    }
-    else {
-      dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-    }
 
     //	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
 	    
@@ -3640,9 +3630,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
 // N_RB configuration according to 7.3.1.0 (DCI size alignment) of TS 38.212
 int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-
   int N_RB = 0, start_RB;
   switch(rnti_type) {
     case NR_RNTI_RA:
@@ -3659,7 +3646,7 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
       }
       break;
     case NR_RNTI_SI:
-      N_RB = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
       break;
     case NR_RNTI_C:
       N_RB = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, 275);

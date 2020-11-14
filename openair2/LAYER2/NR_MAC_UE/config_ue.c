@@ -443,10 +443,9 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   mac->coreset0->frequencyDomainResources.size = 6;
   mac->coreset0->frequencyDomainResources.bits_unused = 3;
   mac->coreset0->duration = 1;
-  //mac->coreset0->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved; // FIXME: Interleaved
   mac->coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*mac->coreset0->cce_REG_MappingType.choice.interleaved));
   mac->coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
-  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = 0; //scc->physCellId;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = 0; // FIXME: mac->scc->physCellId;
   mac->coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
   if(mac->coreset0->tci_StatesPDCCH_ToAddList == NULL) mac->coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*mac->coreset0->tci_StatesPDCCH_ToAddList));
   NR_TCI_StateId_t *tci[8];

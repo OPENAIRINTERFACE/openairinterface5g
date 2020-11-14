@@ -272,12 +272,6 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint16_t start_sc = frame_parms->first_carrier_offset + (rel15->rbStart+rel15->BWPStart)*NR_NB_SC_PER_RB;
 
 
-    printf("nr_dlsch: rel15->BWPStart = %i\n", rel15->BWPStart);
-    printf("nr_dlsch: rel15->rbStart = %i\n", rel15->rbStart);
-    printf("nr_dlsch: frame_parms->first_carrier_offset = %i\n", frame_parms->first_carrier_offset);
-    printf("nr_dlsch: start_sc = %i\n", start_sc);
-
-
     if (start_sc >= frame_parms->ofdm_symbol_size)
       start_sc -= frame_parms->ofdm_symbol_size;
     

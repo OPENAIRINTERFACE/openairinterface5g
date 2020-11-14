@@ -73,7 +73,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
 void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon);
 
-void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0);
+void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon);
 
 void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0);
 
