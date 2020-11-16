@@ -1197,7 +1197,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
         hi_dci0_req_UE_MAC(NFAPI_SFNSF2SFN(hi_dci0_req->sfn_sf),
                            NFAPI_SFNSF2SF(hi_dci0_req->sfn_sf),
                            pdu,
-                           ue_num);
+                           ue_num); // This function doesnt do anything? - Andrew
       }
     }
 
