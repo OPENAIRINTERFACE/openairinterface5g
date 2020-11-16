@@ -1818,15 +1818,15 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
   short rb, ch_amp;
   unsigned char aatx,aarx;
   __m128i *dl_ch128, ch_amp128;
-  
+
   uint32_t nb_rb_0 = len/12 + ((len%12)?1:0);
- 
+
   // Determine scaling amplitude based the symbol
 
   ch_amp = 1024*8; //((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
-    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
-   // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
+  LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
+  // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
 
@@ -2379,11 +2379,11 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   unsigned char j=0;
 
   if (config_type==pdsch_dmrs_type1)
-	  AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 1,
-	      "nushift %d is illegal\n",frame_parms->nushift);
+    AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 1,
+                "nushift %d is illegal\n",frame_parms->nushift);
   else
-	  AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 2 || frame_parms->nushift == 4,
-	  	      "nushift %d is illegal\n",frame_parms->nushift);
+    AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 2 || frame_parms->nushift == 4,
+                "nushift %d is illegal\n",frame_parms->nushift);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
@@ -2403,50 +2403,44 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
       if (k>frame_parms->ofdm_symbol_size) {
         k = k-frame_parms->ofdm_symbol_size;
         rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
-        }
+      }
       if (pilots==0) {
 	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
 	memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
 	dl_ch0_ext+=12;
 	rxF_ext+=12;
       } else {//the symbol contains DMRS
-    j=0;
-	if (config_type==pdsch_dmrs_type1){
-		for (i = (1-frame_parms->nushift);
-	     i<12; 
-	     i+=2) {
-			rxF_ext[j]=rxF[i];
-			dl_ch0_ext[j]=dl_ch0[i];
-			j++;
-		}
-		dl_ch0_ext+=6;
-		rxF_ext+=6;
-	} else {
-		for (i = (2+frame_parms->nushift);
-	     i<6;
-	     i++) {
-				rxF_ext[j]=rxF[i];
-				dl_ch0_ext[j]=dl_ch0[i];
-				j++;
-		}
-		for (i = (8+frame_parms->nushift);
-			     i<12;
-			     i++) {
-						rxF_ext[j]=rxF[i];
-						dl_ch0_ext[j]=dl_ch0[i];
-						j++;
-				}
-		dl_ch0_ext+= 8;
-		rxF_ext+= 8;
-	}
+        j=0;
+        if (config_type==pdsch_dmrs_type1){
+          for (i = (1-frame_parms->nushift); i<12; i+=2) {
+            rxF_ext[j]=rxF[i];
+            dl_ch0_ext[j]=dl_ch0[i];
+            j++;
+          }
+          dl_ch0_ext+=6;
+          rxF_ext+=6;
+        } else {
+          for (i = (2+frame_parms->nushift); i<6; i++) {
+            rxF_ext[j]=rxF[i];
+            dl_ch0_ext[j]=dl_ch0[i];
+            j++;
+          }
+          for (i = (8+frame_parms->nushift); i<12; i++) {
+            rxF_ext[j]=rxF[i];
+            dl_ch0_ext[j]=dl_ch0[i];
+            j++;
+          }
+          dl_ch0_ext+= 8;
+          rxF_ext+= 8;
+        }
       }
-      
+
       dl_ch0+=12;
       rxF+=12;
       k+=12;
       if (k>=frame_parms->ofdm_symbol_size) {
-        k=k-(frame_parms->ofdm_symbol_size);
-	rxF       = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
+        k = k-(frame_parms->ofdm_symbol_size);
+        rxF = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
       }
     }
   }
