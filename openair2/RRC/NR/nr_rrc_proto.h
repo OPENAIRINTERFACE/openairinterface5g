@@ -110,6 +110,8 @@ rrc_gNB_generate_UECapabilityEnquiry(
   rrc_gNB_ue_context_t  *const ue_context_pP
 );
 
+void nr_rrc_rx_tx(void);
+
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_gnb_task(void *args_p);

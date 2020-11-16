@@ -981,7 +981,7 @@ if(!IS_SOFTMODEM_NOS1)
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
   if(IS_SOFTMODEM_DOFORMS) {
-  	
+    sleep(1);	
     scopeParms_t p;
     p.argc=&argc;
     p.argv=argv;

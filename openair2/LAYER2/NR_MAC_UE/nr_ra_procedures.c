@@ -75,9 +75,9 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
-                            uint8_t t_id,
                             uint8_t first_Msg3,
                             NR_PRACH_RESOURCES_t *prach_resources,
+                            fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
@@ -87,8 +87,8 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
-  int messagePowerOffsetGroupB = 0, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA = 0, numberOfRA_Preambles, i, deltaPreamble_Msg3 = 0;
-  uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, prach_ConfigIndex, SFN_nbr, Msg3_size;
+  int messagePowerOffsetGroupB = 0, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA = 0, numberOfRA_Preambles, deltaPreamble_Msg3 = 0;
+  uint8_t noGroupB = 0, s_id, t_id, f_id, ul_carrier_id, Msg3_size;
 
   AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
   nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
@@ -99,6 +99,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   ///////////////////////////////////////////////////////////
   //////////* UE Random Access Resource Selection *//////////
   ///////////////////////////////////////////////////////////
+
 
   // todo: 
   // - switch initialisation cases
@@ -129,11 +130,80 @@ void nr_get_prach_resources(module_id_t mod_id,
 
     // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
 
+    // Determine the SSB to RACH mapping ratio
+    // =======================================
+    NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
+    boolean_t multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
+    uint8_t ssb_rach_ratio; // Nb of SSBs per RACH or RACHs per SSB
+    long cb_preambles_per_ssb; // Nb of preambles per SSB
+    int total_preambles_per_ssb;
+    int starting_preamble_nb = 0;
+    uint8_t ssb_nb_in_ro;
+
+    switch (ssb_perRACH_config){
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
+        multiple_ssb_per_ro = false;
+        ssb_rach_ratio = 8;
+        cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneEighth + 1);
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth:
+        multiple_ssb_per_ro = false;
+        ssb_rach_ratio = 4;
+        cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneFourth + 1);
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf:
+        multiple_ssb_per_ro = false;
+        ssb_rach_ratio = 2;
+        cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneHalf + 1);
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one:
+        multiple_ssb_per_ro = true;
+        ssb_rach_ratio = 1;
+        cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.one + 1);
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two:
+        multiple_ssb_per_ro = true;
+        ssb_rach_ratio = 2;
+        cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.two + 1);
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four:
+        multiple_ssb_per_ro = true;
+        ssb_rach_ratio = 4;
+        cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.four;
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight:
+        multiple_ssb_per_ro = true;
+        ssb_rach_ratio = 8;
+        cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.eight;
+        break;
+      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen:
+        multiple_ssb_per_ro = true;
+        ssb_rach_ratio = 16;
+        cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.sixteen;
+        break;
+      default:
+        AssertFatal(1 == 0, "Unsupported ssb_perRACH_config %d\n", ssb_perRACH_config);
+        break;
+    }
+
     Msg3_size = mac->RA_Msg3_size;
 
     numberOfRA_Preambles = 64;
     if(nr_rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
       numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
+
+    // Compute the proper Preamble selection params according to the selected SSB and the ssb_perRACH_OccasionAndCB_PreamblesPerSSB configuration
+    if ((true == multiple_ssb_per_ro) &&
+        (ssb_rach_ratio > 1)) {
+      total_preambles_per_ssb = numberOfRA_Preambles / ssb_rach_ratio;
+
+      ssb_nb_in_ro = prach_pdu->ssb_nb_in_ro;
+      starting_preamble_nb = total_preambles_per_ssb * ssb_nb_in_ro;
+    }
+    else {
+      total_preambles_per_ssb = numberOfRA_Preambles;
+      starting_preamble_nb = 0;
+    }
 
     if (!nr_rach_ConfigCommon->groupBconfigured) {
       noGroupB = 1;
@@ -220,29 +290,30 @@ void nr_get_prach_resources(module_id_t mod_id,
     if (first_Msg3 == 1) {
       if (noGroupB == 1) {
         // use Group A preamble
-        prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
+        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % cb_preambles_per_ssb);
         mac->RA_usedGroupA = 1;
       } else if ((Msg3_size < messageSizeGroupA) && (get_nr_PL(mod_id, CC_id, gNB_id) > PLThreshold)) {
         // Group B is configured and RA preamble Group A is used
         // - todo add condition on CCCH_sdu_size for initiation by CCCH
-        prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
+        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
         mac->RA_usedGroupA = 1;
       } else {
         // Group B preamble is configured and used
         // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
         // the remaining belong to RA Preambles Group B
-        prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
+        prach_resources->ra_PreambleIndex = starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
         mac->RA_usedGroupA = 0;
       }
     } else { // Msg3 is being retransmitted
       if (mac->RA_usedGroupA == 1 && noGroupB == 1) {
-        prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
+        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % cb_preambles_per_ssb);
       } else if (mac->RA_usedGroupA == 1 && noGroupB == 0){
-        prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
+        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
       } else {
-        prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
+        prach_resources->ra_PreambleIndex = starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
       }
     }
+
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
   }
 
@@ -268,27 +339,16 @@ void nr_get_prach_resources(module_id_t mod_id,
    // 1) this does not apply to contention-free RA Preamble for beam failure recovery request
    // 2) getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
 
-   prach_ConfigIndex = rach_ConfigGeneric->prach_ConfigurationIndex;
-
    // ra_RNTI computation
-   // - todo: this is for TDD FR1 only
    // - ul_carrier_id: UL carrier used for RA preamble transmission, hardcoded for NUL carrier
    // - f_id: index of the PRACH occasion in the frequency domain
    // - s_id is starting symbol of the PRACH occasion [0...14]
    // - t_id is the first slot of the PRACH occasion in a system frame [0...80]
-
    ul_carrier_id = 0; // NUL
-   f_id = rach_ConfigGeneric->msg1_FrequencyStart;
-   SFN_nbr = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]; 
-   s_id = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][5];
+   f_id = prach_pdu->num_ra;
+   t_id = prach_pdu->prach_slot;
+   s_id = prach_pdu->prach_start_symbol;
 
-   // Pick the first slot of the PRACH occasion in a system frame
-   for (i = 0; i < 10; i++){
-    if (((SFN_nbr & (1 << i)) >> i) == 1){
-      t_id = 2*i;
-      break;
-    }
-   }
    prach_resources->ra_RNTI = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
    mac->ra_rnti = prach_resources->ra_RNTI;
 
@@ -335,6 +395,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 // - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
 
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                       fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
                        UE_MODE_t UE_mode,
@@ -363,7 +424,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
-  if (UE_mode < PUSCH && prach_resources->init_msg1) {
+  if (prach_resources->init_msg1) {
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
 
@@ -449,7 +510,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, prach_resources, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -576,7 +637,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       } else {
 
@@ -590,7 +651,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       }
     }
