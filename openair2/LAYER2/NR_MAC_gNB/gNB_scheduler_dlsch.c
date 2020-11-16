@@ -306,7 +306,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   for (i = 0; i < num_sdus; i++) {
     LOG_D(MAC, "[gNB] Generate DLSCH header num sdu %d len sdu %d\n", num_sdus, sdu_lengths[i]);
 
-    if (sdu_lengths[i] < 128) {
+    if (sdu_lengths[i] < 256) {
       ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
       ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
       ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
@@ -316,7 +316,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
       ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
       ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
       ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->LCID = sdu_lcids[i];
-      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L1 = ((unsigned short) sdu_lengths[i] >> 8) & 0x7f;
+      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L1 = ((unsigned short) sdu_lengths[i] >> 8) & 0xff;
       ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L2 = (unsigned short) sdu_lengths[i] & 0xff;
       last_size = 3;
     }
@@ -789,7 +789,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           mac_sdus[i] = (unsigned char) (lrand48()&0xff);
         sdu_lcids[0] = 0x3f; // DRB
         sdu_lengths[0] = TBS - ta_len - 3;
-        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        header_length_total += 2 + (sdu_lengths[0] >= 256);
         sdu_length_total += sdu_lengths[0];
         num_sdus +=1;
       }
