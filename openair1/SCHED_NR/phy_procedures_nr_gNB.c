@@ -380,7 +380,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     case 245: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
     case 66:  timing_advance_update /= 12; break;
-    default: abort();
+    case 32:  timing_advance_update /= 12; break;
+    default: AssertFatal(0==1,"No case defined for PRB %d to calculate timing_advance_update\n",gNB->frame_parms.N_RB_DL);
   }
 
   // put timing advance command in 0..63 range
@@ -531,7 +532,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
-  fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+  if (gNB->frame_parms.frame_type == TDD)
+    fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+
   gNB_I0_measurements(gNB);
 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){

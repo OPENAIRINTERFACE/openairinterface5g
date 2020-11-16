@@ -36,7 +36,7 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/INIT/phy_init.h"
 
-//#define DEBUG_PBCH 1
+//#define DEBUG_PBCH 
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
@@ -61,7 +61,8 @@ uint16_t nr_pbch_extract(int **rxdataF,
   int nushiftmod4 = frame_parms->nushift;
   unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
 
-  if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
+ // if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
+          rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
 
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
@@ -103,8 +104,8 @@ uint16_t nr_pbch_extract(int **rxdataF,
             j++;
           }
 
-          //rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
-          rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
+          rx_offset=(rx_offset+1)%(frame_parms->ofdm_symbol_size);
+          //rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
 	}
 
         rxF_ext+=9;
@@ -126,12 +127,14 @@ uint16_t nr_pbch_extract(int **rxdataF,
               j++;
             }
 
-            //rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
-            rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
+            rx_offset=(rx_offset+1)%(frame_parms->ofdm_symbol_size);
+            //rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
           }
 
           rxF_ext+=9;
-        } else rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 12) : (rx_offset+12);//rx_offset = (rx_offset+12)&(frame_parms->ofdm_symbol_size-1);
+        } else{ //rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 12) : (rx_offset+12);
+                rx_offset = (rx_offset+12)%(frame_parms->ofdm_symbol_size);
+          }
       }
     }
 

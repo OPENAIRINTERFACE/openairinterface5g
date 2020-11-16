@@ -96,7 +96,9 @@ typedef enum {
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
-void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
+void get_frame_type(uint16_t nr_bandP, uint8_t scs_index, lte_frame_type_t *current_type);
+
+void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex);
 
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 

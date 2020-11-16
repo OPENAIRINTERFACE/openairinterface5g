@@ -297,9 +297,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 
       rx_sss_nr(ue,&metric_tdd_ncp,&phase_tdd_ncp);
 
-      //FK: why do we need to do this again here?
-      //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
-
       nr_gold_pbch(ue);
       ret = nr_pbch_detection(proc, ue,1,mode);  // start pbch detection at first symbol after pss
 

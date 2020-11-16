@@ -63,6 +63,7 @@ extern "C"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
 #define CONFIG_HLP_DLF           "Set the downlink frequency for all component carriers\n"
+#define CONFIG_HLP_ULF           "Set the uplink frequency offset for all component carriers\n"
 #define CONFIG_HLP_CHOFF         "Channel id offset\n"
 #define CONFIG_HLP_SOFTS         "Enable soft scope and L1 and L2 stats (Xforms)\n"
 #define CONFIG_HLP_EXMCAL        "Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n"
@@ -123,6 +124,7 @@ extern "C"
     {"wait-for-sync",        NULL,                    PARAMFLAG_BOOL, iptr:&WAIT_FOR_SYNC,                defintval:0,           TYPE_INT,    0},                     \
     {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
     {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]), defuintval:0, TYPE_UINT64,   0},                     \
+    {"CO" ,                  CONFIG_HLP_ULF,          0,              iptr:&(uplink_frequency_offset[0][0]), defintval:0, TYPE_INT,   0},                     \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
@@ -230,6 +232,7 @@ extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 #define SOFTMODEM_RTSIGNAL  (SIGRTMIN+1)
 extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
+extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 #ifdef __cplusplus
 }
 #endif

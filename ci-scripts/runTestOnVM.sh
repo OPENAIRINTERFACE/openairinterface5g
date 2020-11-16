@@ -1220,6 +1220,8 @@ function start_rf_sim_gnb {
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
     echo "echo \"source oaienv\"" >> $1
     echo "source oaienv" >> $1
+    echo "echo \"export RFSIMULATOR=server\"" >> $1
+    echo "export RFSIMULATOR=server" >> $1
     echo "cd ci-scripts/conf_files/" >> $1
     echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
     #echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_ENB_VM_IP_ADDR#' -e 's#CI_UE_IP_ADDR#$LOC_UE_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
@@ -1233,9 +1235,9 @@ function start_rf_sim_gnb {
     then
         if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
         then
-            echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
         else #RA test => use --do-ra option
-            echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -1320,30 +1322,25 @@ function start_rf_sim_nr_ue {
     local LOC_RA_TEST=$8
 
     # Copy the RAW files from the gNB run
-    # In RA test mode, they were not copied from gNB VM
-    if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
-    then
-        scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
-        scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
-    fi
+    scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+    scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
 
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "echo \"export RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}\"" >> $1
+    echo "export RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-    if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
-    then
-        echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-        echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
-    fi
+    echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+    echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
         if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
         then
-            echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         else #RA test => use --do-ra option
-            echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --rfsim --do-ra --log_config.global_log_options level,nocolor\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-uesoftmodem --rfsim --do-ra --log_config.global_log_options level,nocolor --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -2198,15 +2195,21 @@ function run_test_on_vm {
         PRB=106
         FREQUENCY=3510
 
+        if [ ! -d $ARCHIVES_LOC ]
+        then
+            mkdir --parents $ARCHIVES_LOC
+        fi
+
         local try_cnt="0"
         NR_STATUS=0
 
         ######### start of RA TEST loop
-        while [ $try_cnt -lt 10 ] #10 because it hardly succeed within CI
+        while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
         do
 
             SYNC_STATUS=0
             RA_STATUS=0
+            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}*ra_test.log
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the gNB"
@@ -2271,6 +2274,9 @@ function run_test_on_vm {
             SYNC_STATUS=0
             PING_STATUS=0
             IPERF_STATUS=0
+            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_gnb.log $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_ue.log 
+            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
+            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_iperf_dl*txt $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_iperf_ul*txt
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the gNB"

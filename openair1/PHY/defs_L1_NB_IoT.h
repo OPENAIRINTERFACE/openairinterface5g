@@ -32,7 +32,9 @@
 #ifndef __PHY_DEFS_NB_IOT__H__
 #define __PHY_DEFS_NB_IOT__H__
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
