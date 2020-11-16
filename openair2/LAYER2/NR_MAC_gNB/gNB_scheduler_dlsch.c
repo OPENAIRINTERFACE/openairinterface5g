@@ -604,6 +604,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                      sched_ctrl->time_domain_allocation);
 
     int rbSize = 0;
+    const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
+                 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     uint32_t TBS = 0;
     do {
       rbSize++;
@@ -617,7 +619,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                            0 /* tb_scaling */,
                            1 /* nrOfLayers */)
             >> 3;
-    } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes);
+    } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
     sched_ctrl->rbSize = rbSize;
     sched_ctrl->rbStart = rbStart;
   }
@@ -748,12 +750,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
       unsigned char sdu_lcids[NB_RB_MAX] = {0};
       const int lcid = DL_SCH_LCID_DTCH;
       if (sched_ctrl->num_total_bytes > 0) {
+        /* this is the data from the RLC we would like to request (e.g., only
+         * some bytes for first LC and some more from a second one */
+        const rlc_buffer_occupancy_t ndata = sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+        /* this is the maximum data we can transport based on TBS minus headers */
+        const int mindata = min(ndata, TBS - ta_len - header_length_total - sdu_length_total -  2 - (ndata >= 256));
         LOG_D(MAC,
               "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
               "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
               module_id,
               frame,
-              TBS - ta_len - header_length_total - sdu_length_total - 3,
+              mindata,
               lcid,
               header_length_total,
               TBS);
@@ -765,7 +772,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             ENB_FLAG_YES,
             MBMS_FLAG_NO,
             lcid,
-            TBS - ta_len - header_length_total - sdu_length_total - 3,
+            mindata,
             (char *)&mac_sdus[sdu_length_total],
             0,
             0);
