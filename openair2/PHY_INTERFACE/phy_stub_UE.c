@@ -975,7 +975,7 @@ static bool is_my_dl_config_req(const nfapi_dl_config_request_t *req)
 static int get_dlsch_pdu_indicies(const nfapi_dl_config_request_t *req, int *pdu_indicies, size_t max_pdu_indicies)
 {
 
-  const rnti_t my_rnti = UE_mac_inst[0].crnti;
+  const rnti_t my_rnti = UE_mac_inst[0].crnti; // This is 0 representing the num_ues is 1
   int num_pdus = req->dl_config_request_body.number_pdu;
   size_t num_pdu_indicies = 0;
   for (int i = 0; i < num_pdus; i++)
@@ -1253,12 +1253,34 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
+static bool is_my_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req)
+{
+  bool is_my_rnti = false;
+  const rnti_t rnti = UE_mac_inst[0].crnti; // This is 0 representing the num_ues is 1
+  nfapi_hi_dci0_request_body_t *hi_dci0_body = &hi_dci0_req->hi_dci0_request_body;
+  for (int i = 0; i < hi_dci0_body->number_of_dci + hi_dci0_body->number_of_hi; i++)
+  {
+    nfapi_hi_dci0_request_pdu_t *hi_dci0 = &hi_dci0_body->hi_dci0_pdu_list[i];
+    if (hi_dci0->pdu_type != NFAPI_HI_DCI0_DCI_PDU_TYPE || hi_dci0->dci_pdu.dci_pdu_rel8.cqi_csi_request)
+    {
+      continue;
+    }
+    if (hi_dci0->dci_pdu.dci_pdu_rel8.rnti == rnti)
+    {
+      is_my_rnti = true;
+      break;
+    }
+  }
+
+  return is_my_rnti;
+}
+
 int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t* pnf_p7,
 			nfapi_hi_dci0_request_t* req) {
+  if (!is_my_hi_dci0_req(req)) return 0;
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
-
 
   p->sfn_sf = req->sfn_sf;
   p->vendor_extension = req->vendor_extension;
