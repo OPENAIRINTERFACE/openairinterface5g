@@ -252,7 +252,7 @@ typedef struct {
   uint8_t generate_nr_prach;
 
   ////	FAPI-like interface message
-  fapi_nr_ul_config_request_t ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;
 
   ///     Interface module instances

@@ -301,8 +301,6 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_slot0;
   /// Number of samples in other slots of the subframe
   uint32_t samples_per_slotN0;
-  /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
-  uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
   uint32_t samples_per_frame;
   /// Number of samples in a subframe without CP
@@ -311,15 +309,8 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_slot_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
-  /// Number of samples in a tti (same as subrame in LTE, slot in NR)
-  uint32_t samples_per_tti;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;
-  /// NR number of ttis per subframe deduced from numerology (cf 38.211): 1, 2, 4, 8(not supported),16(not supported),32(not supported)
-  uint8_t ttis_per_subframe;
-  /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
-  uint8_t slots_per_tti;
-//#endif
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node

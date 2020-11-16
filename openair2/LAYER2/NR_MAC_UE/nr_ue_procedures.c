@@ -1346,6 +1346,61 @@ uint32_t get_ssb_frame(uint32_t test){
   return test;
 }
 
+/*
+ * This function returns the slot offset K2 corresponding to a given time domain
+ * indication value from RRC configuration.
+ */
+long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
+  long k2 = -1;
+  // Get K2 from RRC configuration
+  NR_PUSCH_Config_t *pusch_config=mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+  if (pusch_config->pusch_TimeDomainAllocationList) {
+    pusch_TimeDomainAllocationList = pusch_config->pusch_TimeDomainAllocationList->choice.setup;
+  }
+  else if (mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+    pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  }
+  if (pusch_TimeDomainAllocationList) {
+    if (time_domain_ind >= pusch_TimeDomainAllocationList->list.count) {
+      LOG_E(MAC, "time_domain_ind %d >= pusch->TimeDomainAllocationList->list.count %d\n",
+            time_domain_ind, pusch_TimeDomainAllocationList->list.count);
+      return -1;
+    }
+    k2 = *pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2;
+  }
+  
+  LOG_D(MAC, "get_k2(): k2 is %ld\n", k2);
+  return k2;
+}
+
+/*
+ * This function returns the UL config corresponding to a given UL slot
+ * from MAC instance .
+ */
+fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot) {
+  //Check if request to access ul_config is for a UL slot
+  if (is_nr_UL_slot(mac->scc, slot) == 0) {
+    LOG_W(MAC, "Slot %d is not a UL slot. get_ul_config_request() called for wrong slot!!!\n", slot);
+    return NULL;
+  }
+  
+  // Calculate the index of the UL slot in mac->ul_config_request list. This is
+  // based on the TDD pattern (slot configuration period) and number of UL+mixed
+  // slots in the period. TS 38.213 Sec 11.1
+  int mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+  NR_TDD_UL_DL_Pattern_t *tdd_pattern = &mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  const int num_slots_per_tdd = nr_slots_per_frame[mu] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
+  const int num_slots_ul = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
+  int index = slot + num_slots_ul - num_slots_per_tdd;
+  LOG_D(MAC, "nr_ue_procedures: get_ul_config_request() slots per tdd %d, num_slots_ul %d, index %d\n", 
+                num_slots_per_tdd,
+                num_slots_ul,
+                index);
+
+  return &mac->ul_config_request[index];
+}
+
 // Performs :
 // 1. TODO: Call RRC for link status return to PHY
 // 2. TODO: Perform SR/BSR procedures for scheduling feedback
@@ -1451,7 +1506,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     }
   } else if (ul_info) {
 
-    if (get_softmodem_params()->phy_test && ul_info->slot_tx == 8) { // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
+    // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
+    if (get_softmodem_params()->phy_test) {
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
@@ -1470,167 +1526,140 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
       uint8_t access_mode   = SCHEDULED_ACCESS;
 
-      // program PUSCH with UL DCI parameters
-      nr_dcireq_t dcireq;
-      nr_scheduled_response_t scheduled_response;
-      fapi_nr_tx_request_t tx_req;
-      fapi_nr_tx_request_body_t tx_req_body;
-      fapi_nr_ul_config_request_t *ul_config = &dcireq.ul_config_req;
-      nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
+      fapi_nr_ul_config_request_t *ul_config_req = get_ul_config_request(mac, slot_tx);
 
-      fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &mac->ul_config_request.ul_config_list[0];
+      // Schedule ULSCH only if the current frame and slot match those in ul_config_req
+      // AND if a UL DCI has been received (as indicated by num_pdus).
+      if ((frame_tx == ul_config_req->sfn && slot_tx == ul_config_req->slot) &&
+          ul_config_req->number_pdus > 0) {
+      
+        // program PUSCH with UL DCI parameters
+        nr_scheduled_response_t scheduled_response;
+        fapi_nr_tx_request_t tx_req;
+        nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
 
-      uint16_t rnti               = ulcfg_pdu->pusch_config_pdu.rnti;
-      uint32_t rb_size            = ulcfg_pdu->pusch_config_pdu.rb_size;
-      uint32_t rb_start           = ulcfg_pdu->pusch_config_pdu.rb_start;
-      uint8_t  nr_of_symbols      = ulcfg_pdu->pusch_config_pdu.nr_of_symbols;
-      uint8_t  start_symbol_index = ulcfg_pdu->pusch_config_pdu.start_symbol_index;
-      uint8_t  nrOfLayers         = 1;
-      uint8_t  mcs_index          = ulcfg_pdu->pusch_config_pdu.mcs_index;
-      uint8_t  mcs_table          = ulcfg_pdu->pusch_config_pdu.mcs_table;
-      uint8_t  harq_process_id    = ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id;
-      uint8_t  rv_index           = ulcfg_pdu->pusch_config_pdu.pusch_data.rv_index;
-      uint16_t l_prime_mask       = get_l_prime(nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
-      uint8_t  dmrs_config_type   = 0;
-      uint16_t pdu_bit_map        = PUSCH_PDU_BITMAP_PUSCH_DATA;
-      // These should come from RRC config!!!
-      uint8_t  ptrs_mcs1          = 2;
-      uint8_t  ptrs_mcs2          = 4;
-      uint8_t  ptrs_mcs3          = 10;
-      uint16_t n_rb0              = 25;
-      uint16_t n_rb1              = 75;
-      uint8_t  ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, mcs_table);
-      uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, rb_size);
-      uint16_t number_dmrs_symbols = 0;
-      uint16_t ul_dmrs_symb_pos   = l_prime_mask << start_symbol_index;
+        for (int j = 0; j < ul_config_req->number_pdus; j++) {
+          fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &ul_config_req->ul_config_list[j];
 
-#ifdef DEBUG_DCI      
-      LOG_I(MAC, " UL config params \n rnti: %x \n rb_size: %d \n", 
-                rnti, rb_size);
-      LOG_I(MAC, "rb_start: %x \n nr_of_symbols: %d \n start_symbol_index: %d \n nrOfLayers: %d \n mcs_index: %d \n \
-                mcs_table: %d \n harq_process_id: %d \n ndi: %d \n num_cb: %d \n rv_index: %d \n", 
-                rb_start, nr_of_symbols, start_symbol_index, nrOfLayers, mcs_index,
-                mcs_table, harq_process_id, ndi, num_cb, rv_index);
-#endif
+          if (ulcfg_pdu->pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH) {
 
-      // PTRS ports configuration
-      // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
-      ptrs_ports_list.ptrs_re_offset = 0;
+            // These should come from RRC config!!!
+            uint8_t  ptrs_mcs1          = 2;
+            uint8_t  ptrs_mcs2          = 4;
+            uint8_t  ptrs_mcs3          = 10;
+            uint16_t n_rb0              = 25;
+            uint16_t n_rb1              = 75;
+            uint8_t  ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, ulcfg_pdu->pusch_config_pdu.mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
+            uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, ulcfg_pdu->pusch_config_pdu.rb_size);
+            uint16_t l_prime_mask       = get_l_prime(ulcfg_pdu->pusch_config_pdu.nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+            uint16_t ul_dmrs_symb_pos   = l_prime_mask << ulcfg_pdu->pusch_config_pdu.start_symbol_index;
 
-      // Num PRB Overhead from PUSCH-ServingCellConfig
-      if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead == NULL)
-        N_PRB_oh = 0;
-      else
-        N_PRB_oh = *mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
+            uint8_t  dmrs_config_type   = 0;
+            uint16_t number_dmrs_symbols = 0;
 
-      ul_config->slot = ul_info->slot_tx;
-      ul_config->number_pdus = 1;
-      ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-      ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
-      ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
-      ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
-      ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
-      ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
-      ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = ul_dmrs_symb_pos;
-      ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
-      ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
-      ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-      ul_config->ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
-      ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
-      ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
-      ul_config->ul_config_list[0].pusch_config_pdu.target_code_rate = nr_get_code_rate_ul(mcs_index, mcs_table);
-      ul_config->ul_config_list[0].pusch_config_pdu.qam_mod_order = nr_get_Qm_ul(mcs_index, mcs_table);
+            // PTRS ports configuration
+            // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
+            ptrs_ports_list.ptrs_re_offset = 0;
 
-      if (1 << ptrs_time_density >= nr_of_symbols) {
-        ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
-      }
+            // Num PRB Overhead from PUSCH-ServingCellConfig
+            if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead == NULL)
+              N_PRB_oh = 0;
+            else
+              N_PRB_oh = *mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
 
-      get_num_re_dmrs(&ul_config->ul_config_list[0].pusch_config_pdu,
-                      &nb_dmrs_re_per_rb,
-                      &number_dmrs_symbols);
+            ulcfg_pdu->pusch_config_pdu.ul_dmrs_symb_pos = ul_dmrs_symb_pos;
+            ulcfg_pdu->pusch_config_pdu.dmrs_config_type = dmrs_config_type;
+            ulcfg_pdu->pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
+            ulcfg_pdu->pusch_config_pdu.nrOfLayers = 1;
+            ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator = 0;
+            ulcfg_pdu->pusch_config_pdu.pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
+            ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
+            ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+            ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
+            //ulcfg_pdu->pusch_config_pdu.target_code_rate = nr_get_code_rate_ul(ulcfg_pdu->pusch_config_pdu.mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
+            //ulcfg_pdu->pusch_config_pdu.qam_mod_order = nr_get_Qm_ul(ulcfg_pdu->pusch_config_pdu.mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
 
-      TBS = nr_compute_tbs(ul_config->ul_config_list[0].pusch_config_pdu.qam_mod_order,
-                           ul_config->ul_config_list[0].pusch_config_pdu.target_code_rate,
-                           rb_size,
-                           nr_of_symbols,
-                           nb_dmrs_re_per_rb*number_dmrs_symbols,
-                           N_PRB_oh,
-                           0,
-                           nrOfLayers);
-      TBS_bytes = TBS/8;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS_bytes;
+            if (1 << ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_time_density >= ulcfg_pdu->pusch_config_pdu.nr_of_symbols) {
+              ulcfg_pdu->pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+            }
 
-        if (IS_SOFTMODEM_NOS1){
-          // Getting IP traffic to be transmitted
-          data_existing = nr_ue_get_sdu(mod_id,
-                                        cc_id,
-                                        frame_tx,
-                                        slot_tx,
-                                        0,
-                                        ulsch_input_buffer,
-                                        TBS_bytes,
-                                        &access_mode);
-        }
+            get_num_re_dmrs(&ulcfg_pdu->pusch_config_pdu,
+                            &nb_dmrs_re_per_rb,
+                            &number_dmrs_symbols);
 
-        //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-        if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-          //and block this traffic from being forwarded to the upper layers at the gNB
-          LOG_D(PHY, "Random data to be tranmsitted: \n");
+            TBS = nr_compute_tbs(ulcfg_pdu->pusch_config_pdu.qam_mod_order,
+                                ulcfg_pdu->pusch_config_pdu.target_code_rate,
+                                ulcfg_pdu->pusch_config_pdu.rb_size,
+                                ulcfg_pdu->pusch_config_pdu.nr_of_symbols,
+                                nb_dmrs_re_per_rb*number_dmrs_symbols,
+                                N_PRB_oh,
+                                0,
+                                ulcfg_pdu->pusch_config_pdu.nrOfLayers);
+            TBS_bytes = TBS/8;
+            ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size = TBS_bytes;
 
-          //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-          //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-          //have a valid LCID (nr_process_mac_pdu function)
-          ulsch_input_buffer[0] = 0x31;
+            if (IS_SOFTMODEM_NOS1){
+              // Getting IP traffic to be transmitted
+              data_existing = nr_ue_get_sdu(mod_id,
+                                            cc_id,
+                                            frame_tx,
+                                            slot_tx,
+                                            0,
+                                            ulsch_input_buffer,
+                                            TBS_bytes,
+                                            &access_mode);
+            }
 
-          for (i = 1; i < TBS_bytes; i++) {
-            ulsch_input_buffer[i] = (unsigned char) rand();
-            //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+            //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+            if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+              //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+              //and block this traffic from being forwarded to the upper layers at the gNB
+              LOG_D(PHY, "Random data to be tranmsitted: \n");
+
+              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+              //have a valid LCID (nr_process_mac_pdu function)
+              ulsch_input_buffer[0] = 0x31;
+
+              for (i = 1; i < TBS_bytes; i++) {
+                ulsch_input_buffer[i] = (unsigned char) rand();
+                //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+              }
+            }
+
+    #ifdef DEBUG_MAC_PDU
+
+            LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
+            LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS_bytes);
+            for (i = 0; i < TBS_bytes; i++) {
+              printf("%02x", ulsch_input_buffer[i]);
+            }
+            printf("\n");
+
+    #endif
+
+            // Config UL TX PDU
+            tx_req.slot = slot_tx;
+            tx_req.sfn = frame_tx;
+            // tx_req->tx_config // TbD
+            tx_req.number_of_pdus++;
+            tx_req.tx_request_body[j].pdu_length = TBS_bytes;
+            tx_req.tx_request_body[j].pdu_index = j;
+            tx_req.tx_request_body[j].pdu = ulsch_input_buffer;
           }
         }
 
-#ifdef DEBUG_MAC_PDU
-
-        LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
-        LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS_bytes);
-        for (i = 0; i < TBS_bytes; i++) {
-          printf("%02x", ulsch_input_buffer[i]);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config_req, &tx_req, mod_id, cc_id, rx_frame, rx_slot);
+        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
+          mac->if_module->scheduled_response(&scheduled_response);
         }
-        printf("\n");
 
-#endif
+        // TODO: expand
+        // Note: Contention resolution is currently not active
+        if (mac->RA_contention_resolution_timer_active == 1)
+          ue_contention_resolution(mod_id, gNB_index, cc_id, ul_info->frame_tx);
 
-      dcireq.module_id = mod_id;
-      dcireq.gNB_index = gNB_index;
-      dcireq.cc_id     = cc_id;
-      dcireq.frame     = rx_frame;
-      dcireq.slot      = rx_slot;
-
-      // Config UL TX PDU
-      tx_req.slot = slot_tx;
-      tx_req.sfn = frame_tx;
-      // tx_req->tx_config // TbD
-      tx_req.number_of_pdus = 1;
-      tx_req_body.pdu_length = TBS_bytes;
-      tx_req_body.pdu_index = 0;
-      tx_req_body.pdu = ulsch_input_buffer;
-      tx_req.tx_request_body = &tx_req_body;
-
-      fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, rx_frame, rx_slot);
-      if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
-        mac->if_module->scheduled_response(&scheduled_response);
       }
-
-      // TODO: expand
-      // Note: Contention resolution is currently not active
-      if (mac->RA_contention_resolution_timer_active == 1)
-        ue_contention_resolution(mod_id, gNB_index, cc_id, ul_info->frame_tx);
 
     } else if (get_softmodem_params()->do_ra){
 
@@ -1641,8 +1670,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
         fapi_nr_tx_request_t tx_req;
-        fapi_nr_tx_request_body_t tx_req_body;
-        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+        //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
+        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
         fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
         uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
 
@@ -1683,10 +1712,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         tx_req.slot = ul_info->slot_tx;
         tx_req.sfn = ul_info->frame_tx;
         tx_req.number_of_pdus = 1;
-        tx_req_body.pdu_length = TBS_bytes;
-        tx_req_body.pdu_index = 0;
-        tx_req_body.pdu = ulsch_input_buffer;
-        tx_req.tx_request_body = &tx_req_body;
+        tx_req.tx_request_body[0].pdu_length = TBS_bytes;
+        tx_req.tx_request_body[0].pdu_index = 0;
+        tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
         ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
         ul_config->number_pdus++;
         // scheduled_response
@@ -1753,7 +1781,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
@@ -3087,7 +3116,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
   return 0;
 }
 //////////////
-int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index,fapi_nr_dci_indication_pdu_t *dci) {
+int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -3095,16 +3124,19 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
   int dci_format = nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,def_dci_pdu_rel15);
-  return (nr_ue_process_dci(module_id, cc_id, gNB_index, def_dci_pdu_rel15, dci->rnti, dci_format));
+  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
 }
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
   int bwp_id = 1;
+  int mu = 0;
+  long k2 = 0;
+  uint16_t frame_tx = 0, slot_tx = 0;
   bool valid_ptrs_setup = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config = NULL;
     
   //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
@@ -3134,6 +3166,28 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
      *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
      *    50 SUL_IND_0_0:
      */
+    // Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,
+    // where K2 is the offset between the slot in which UL DCI is received and the slot
+    // in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
+    
+    // Get the numerology to calculate the Tx frame and slot
+    mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+    // Get slot offset K2 which will be used to calculate TX slot
+    k2 = get_k2(mac, dci->time_domain_assignment.val);
+    if (k2 < 0)           // This can happen when a false DCI is received
+      return -1;
+    // Calculate TX slot and frame
+    slot_tx = (slot + k2) % nr_slots_per_frame[mu];
+    frame_tx = ((slot + k2) > nr_slots_per_frame[mu]) ? (frame + 1) % 1024 : frame;
+    
+    // Get UL config request corresponding slot_tx 
+    ul_config = get_ul_config_request(mac, slot_tx);
+    //AssertFatal(ul_config != NULL, "nr_ue_process_dci(): ul_config is NULL\n");
+    if (!ul_config) {
+      LOG_W(MAC, "nr_ue_process_dci(): ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n",frame,slot);
+      return -1;
+    }
+
     ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
     nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
@@ -3172,7 +3226,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     }
     /* SUL_IND_0_0 */ // To be implemented, FIXME!!!
 
+    ul_config->slot = slot_tx;
+    ul_config->sfn = frame_tx;
     ul_config->number_pdus = ul_config->number_pdus + 1;
+    LOG_D(MAC, "nr_ue_process_dci(): Calculated frame and slot for pusch Tx: %d.%d, number of pdus %d\n", ul_config->sfn, ul_config->slot, ul_config->number_pdus);
     break;
 
   case NR_UL_DCI_FORMAT_0_1:
@@ -3204,6 +3261,28 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
      *    48 UL_SCH_IND
      *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
      */
+    // Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,
+    // where K2 is the offset between the slot in which UL DCI is received and the slot
+    // in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
+    
+    // Get the numerology to calculate the Tx frame and slot
+    mu = mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+    // Get slot offset K2 which will be used to calculate TX slot
+    k2 = get_k2(mac, dci->time_domain_assignment.val);
+    if (k2 < 0)           // This can happen when a false DCI is received
+      return -1;
+    // Calculate TX slot and frame
+    slot_tx = (slot + k2) % nr_slots_per_frame[mu];
+    frame_tx = ((slot + k2) > nr_slots_per_frame[mu]) ? (frame + 1) % 1024 : frame;
+    
+    // Get UL config request corresponding slot_tx 
+    ul_config = get_ul_config_request(mac, slot_tx);
+    //AssertFatal(ul_config != NULL, "nr_ue_process_dci(): ul_config is NULL\n");
+    if (!ul_config) {
+      LOG_W(MAC, "nr_ue_process_dci(): ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n",frame,slot);
+      return -1;
+    }
+
     ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
     nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
@@ -3240,6 +3319,13 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
       pusch_config_pdu_0_1->mcs_table = get_pusch_mcs_table(pusch_config->mcs_TableTransformPrecoder, 1,
                                                  dci_format, NR_RNTI_C, NR_SearchSpace__searchSpaceType_PR_ue_Specific, false);
     
+    pusch_config_pdu_0_1->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu_0_1->mcs_index, pusch_config_pdu_0_1->mcs_table);
+    pusch_config_pdu_0_1->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu_0_1->mcs_index, pusch_config_pdu_0_1->mcs_table);
+    if (pusch_config_pdu_0_1->target_code_rate == 0 || pusch_config_pdu_0_1->qam_mod_order == 0) {
+      LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected UL DCI. Ignoring DCI! \n");
+      return -1;
+    }
+
     /* NDI */
     pusch_config_pdu_0_1->pusch_data.new_data_indicator = dci->ndi;
     /* RV */
@@ -3497,8 +3583,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     /* UL_SCH_IND */
     // A value of "1" indicates UL-SCH shall be transmitted on the PUSCH and
     // a value of "0" indicates UL-SCH shall not be transmitted on the PUSCH
-
+    
+    ul_config->slot = slot_tx;
+    ul_config->sfn = frame_tx;
     ul_config->number_pdus = ul_config->number_pdus + 1;
+    LOG_D(MAC, "nr_ue_process_dci(): Calculated frame and slot for pusch Tx: %d.%d, number of pdus %d\n", ul_config->sfn, ul_config->slot, ul_config->number_pdus);
     break;
 
   case NR_DL_DCI_FORMAT_1_0:

@@ -254,9 +254,11 @@ The NAS layer is based on **3GPP 24.301** and implements the following functions
 The following features are valid for the gNB and the 5G-NR UE.
 
 *  Static TDD, 
+*  FDD
 *  Normal CP
 *  30 kHz subcarrier spacing
 *  Bandwidths up to 80MHz (217 Physical Resource Blocks)
+*  Intermediate downlink and uplink frequencies to interface with IF equipment
 *  Single antenna port (single beam)
 *  Slot format: 14 OFDM symbols in UL or DL
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 supported)

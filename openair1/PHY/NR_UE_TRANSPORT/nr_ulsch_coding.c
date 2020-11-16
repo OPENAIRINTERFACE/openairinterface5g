@@ -398,9 +398,13 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       .toutput = NULL};
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
-    
-    nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
-    
+
+    for(int j = 0; j < (harq_process->C/8 + 1); j++)
+    {
+      impp.macro_num = j;
+      nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
+    }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
     //stop_meas(te_stats);
