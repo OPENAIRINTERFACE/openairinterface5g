@@ -557,7 +557,8 @@ void nr_schedule_ulsch(module_id_t module_id,
   const NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    if (sched_ctrl->sched_pusch.rbSize <= 0)
+    NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+    if (sched_pusch->rbSize <= 0)
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
@@ -566,14 +567,14 @@ void nr_schedule_ulsch(module_id_t module_id,
     if (harq_id < 0) return;
     NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
     cur_harq->state = ACTIVE_SCHED;
-    cur_harq->last_tx_slot = sched_ctrl->sched_pusch.slot;
+    cur_harq->last_tx_slot = sched_pusch->slot;
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     int dci_formats[2] = { f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0 , 0 };
     int rnti_types[2] = { NR_RNTI_C, 0 };
 
     //Resource Allocation in time domain
-    const int tda = sched_ctrl->sched_pusch.time_domain_allocation;
+    const int tda = sched_pusch->time_domain_allocation;
     const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
       sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
     const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
@@ -604,15 +605,15 @@ void nr_schedule_ulsch(module_id_t module_id,
                                       false);
 
     /* PUSCH in a later slot, but corresponding DCI now! */
-    nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_ctrl->sched_pusch.slot];
-    AssertFatal(future_ul_tti_req->SFN == sched_ctrl->sched_pusch.frame
-                && future_ul_tti_req->Slot == sched_ctrl->sched_pusch.slot,
+    nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
+    AssertFatal(future_ul_tti_req->SFN == sched_pusch->frame
+                && future_ul_tti_req->Slot == sched_pusch->slot,
                 "%d.%d future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",
                 frame, slot,
                 future_ul_tti_req->SFN,
                 future_ul_tti_req->Slot,
-                sched_ctrl->sched_pusch.frame,
-                sched_ctrl->sched_pusch.slot);
+                sched_pusch->frame,
+                sched_pusch->slot);
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
     nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
@@ -639,7 +640,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
     pusch_pdu->transform_precoding = transform_precoding;
-    pusch_pdu->mcs_index = sched_ctrl->sched_pusch.mcs;
+    pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = mcs_table;
 
     pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
@@ -657,8 +658,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
-    pusch_pdu->rb_start = sched_ctrl->sched_pusch.rbStart;
-    pusch_pdu->rb_size = sched_ctrl->sched_pusch.rbSize;
+    pusch_pdu->rb_start = sched_pusch->rbStart;
+    pusch_pdu->rb_size = sched_pusch->rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
 
     if (pusch_Config->frequencyHopping==NULL)
@@ -813,6 +814,6 @@ void nr_schedule_ulsch(module_id_t module_id,
                        pusch_pdu->bwp_size,
                        sched_ctrl->active_bwp->bwp_Id);
 
-    memset(&sched_ctrl->sched_pusch, 0, sizeof(sched_ctrl->sched_pusch));
+    memset(sched_pusch, 0, sizeof(*sched_pusch));
   }
 }
