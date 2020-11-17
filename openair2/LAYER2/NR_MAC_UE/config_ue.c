@@ -153,7 +153,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   
   // carrier config
 
-  LOG_I(MAC,"UE Config Common\n");  
+  LOG_I(MAC, "Entering UE Config Common\n");
 
   cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                                       scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
@@ -200,18 +200,12 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     }
   }
 
-  lte_frame_type_t frame_type;
-  uint16_t band;
-  int32_t offset;
-  frequency_range_t frequency_range;
-
-  get_band((uint64_t)(cfg->carrier_config.dl_frequency)*1000,
-           &band,
-           &offset,
-           &frame_type);
-
-  frequency_range = band<100?FR1:FR2;
+  uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t  frequency_range = band<100?FR1:FR2;
  
+  lte_frame_type_t frame_type;
+  get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
+
   // cell config
 
   cfg->cell_config.phy_cell_id = *scc->physCellId;
@@ -261,8 +255,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
     cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   }
-  LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period);
   if(cfg->cell_config.frame_duplex_type == TDD){
+    LOG_I(MAC,"Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period);
     int return_tdd = set_tdd_config_nr_ue(cfg,
 		     scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                      scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,

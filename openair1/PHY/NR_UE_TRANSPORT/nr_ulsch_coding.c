@@ -232,7 +232,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint8_t mod_order; 
   uint16_t Kr,r;
   uint32_t r_offset;
-  uint8_t BG;
   uint32_t E,Kb;
   uint8_t Ilbrm; 
   uint32_t Tbslbrm; 
@@ -255,7 +254,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   R = nr_get_code_rate_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
   Kr=0;
   r_offset=0;
-  BG = 1;
   F=0;
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
@@ -327,10 +325,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-      BG = 2;
+      harq_process->BG = 2;
     }
     else{
-      BG = 1;
+      harq_process->BG = 1;
     }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_IN);
@@ -341,7 +339,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                        &harq_process->K,
                        pz,
                        &harq_process->F,
-                       BG);
+                       harq_process->BG);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_OUT);
 
     F = harq_process->F;
@@ -390,17 +388,20 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       }
       printf("\n");*/
     encoder_implemparams_t impp;
-    impp.n_segments=harq_process->C;
-    impp.macro_num=0;
-    impp.tinput  = NULL;
-    impp.tprep   = NULL;
-    impp.tparity = NULL;
-    impp.toutput = NULL;
+    impp.n_segments = harq_process->C;
+    impp.tinput     = NULL;
+    impp.tprep      = NULL;
+    impp.tparity    = NULL;
+    impp.toutput    = NULL;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
-    
-    nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
-    
+
+    for(int j = 0; j < (harq_process->C/8 + 1); j++)
+    {
+      impp.macro_num = j;
+      nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,harq_process->BG,&impp);
+    }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
     //stop_meas(te_stats);
@@ -448,7 +449,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
-                          BG,
+                          harq_process->BG,
                           *pz,
                           harq_process->d[r],
                           harq_process->e+r_offset,
