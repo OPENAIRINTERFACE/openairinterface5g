@@ -917,6 +917,9 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 void nr_rlc_tick(int frame, int subframe)
 {
   if (frame != nr_rlc_current_time_last_frame ||
-      subframe != nr_rlc_current_time_last_subframe)
+      subframe != nr_rlc_current_time_last_subframe) {
+    nr_rlc_current_time_last_frame = frame;
+    nr_rlc_current_time_last_subframe = subframe;
     nr_rlc_current_time++;
+  }
 }
