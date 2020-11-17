@@ -215,7 +215,7 @@ next:
     uint16_t *in;
     uint16_t *out;
     in = (uint16_t *)s->buffers.prach[*slot];
-    out = (uint16_t *)ru->prach_rxsigF[antenna];
+    out = (uint16_t *)ru->prach_rxsigF[0][antenna];
     for (i = 0; i < 839*2; i++)
       out[i] = ntohs(in[i]);
     s->buffers.prach_busy[*slot] = 0;
@@ -275,6 +275,7 @@ void benetel_fh_if4p5_south_out(RU_t *ru,
                                 int slot,
                                 uint64_t timestamp)
 {
+
 //printf("XXX benetel_fh_if4p5_south_out %d %d %ld\n", frame, slot, timestamp);
   benetel_eth_state_t *s = ru->ifdevice.priv;
   NR_DL_FRAME_PARMS *fp;
