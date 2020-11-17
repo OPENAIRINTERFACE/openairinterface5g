@@ -304,7 +304,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
 
   // 2) Generation of DLSCH MAC subPDUs including subheaders and MAC SDUs
   for (i = 0; i < num_sdus; i++) {
-    LOG_D(MAC, "[gNB] Generate DLSCH header num sdu %d len sdu %d\n", num_sdus, sdu_lengths[i]);
 
     if (sdu_lengths[i] < 256) {
       ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
@@ -326,6 +325,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr += sdu_lengths[i];
     mac_pdu_ptr += sdu_lengths[i];
+    LOG_D(MAC, "Generate DLSCH header num sdu %d len header %d len sdu %d -> offset %ld\n", num_sdus, last_size, sdu_lengths[i], (unsigned char *)mac_pdu_ptr - mac_pdu);
   }
 
   // 4) Compute final offset for padding
@@ -333,6 +333,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = DL_SCH_LCID_PADDING;
     mac_pdu_ptr++;
+    LOG_D(MAC, "Generate Padding -> offset %ld\n", (unsigned char *)mac_pdu_ptr - mac_pdu);
   } else {
     // no MAC subPDU with padding
   }
@@ -509,11 +510,12 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
       && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
     return;
   LOG_D(MAC,
-        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
+        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
         frame,
         slot,
         lcid,
-        sched_ctrl->rlc_status[lcid].bytes_in_buffer);
+        sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+        sched_ctrl->ta_apply);
 
   /* Find a free CCE */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
@@ -690,6 +692,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->feedback_slot = pucch->ul_slot;
     harq->is_waiting = 1;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
+
+    LOG_D(MAC, "%4d.%2d RNTI %04x start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
+          frame, slot, rnti, sched_ctrl->rbStart, sched_ctrl->rbSize, sched_ctrl->mcs,
+          TBS, current_harq_pid, harq->round, harq->ndi);
 
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
     nr_fill_nfapi_dl_pdu(module_id,
