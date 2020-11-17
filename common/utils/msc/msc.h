@@ -54,6 +54,7 @@ typedef enum {
   MSC_S1AP_ENB,
   MSC_NGAP_GNB,
   MSC_GTPU_ENB,
+  MSC_GTPU_GNB,
   MSC_GTPU_SGW,
   MSC_S1AP_MME,
   MSC_NGAP_AMF,

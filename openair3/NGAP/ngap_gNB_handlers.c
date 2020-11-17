@@ -49,6 +49,7 @@
 #include "assertions.h"
 #include "conversions.h"
 #include "msc.h"
+#include "NGAP_NonDynamic5QIDescriptor.h"
 
 static
 int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
@@ -955,7 +956,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
       }
 
 
-      dec_rval = uper_decode(NULL,
+      dec_rval = aper_decode(NULL,
                                &asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer,
                                (void **)&pdusessionTransfer_p,
                                item_p->pDUSessionResourceSetupRequestTransfer.buf,
@@ -1028,7 +1029,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                 qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.array[qosIdx];
                 
                 /* Set the QOS informations */
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].qci = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
               
                 NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.priority_level =
                   qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.priorityLevelARP;
@@ -1289,11 +1290,11 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   }
 
   /* Initial context request = UE-related procedure -> stream != 0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
-               assoc_id, stream);
-    return -1;
-  }
+  // if (stream == 0) {
+  //   NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+  //              assoc_id, stream);
+  //   return -1;
+  // }
 
   ue_desc_p->rx_stream = stream;
 
@@ -1338,7 +1339,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
         NGAP_WARN("NAS PDU is not provided, generate a PDUSESSION_SETUP Failure (TBD) back to AMF \n");
       }
 
-      dec_rval = uper_decode(NULL,
+      dec_rval = aper_decode(NULL,
                                &asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer,
                                (void **)&pdusessionTransfer_p,
                                item_p->pDUSessionResourceSetupRequestTransfer.buf,
@@ -1407,8 +1408,13 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
               qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.array[qosIdx];
 
               /* Set the QOS informations */
-              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].qci = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
-
+              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+              if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI){
+                if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI != NULL){
+                  NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].fiveQI = 
+                    (uint64_t)qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI->fiveQI;
+                }
+              }
               NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                 qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.priorityLevelARP;
               NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
@@ -1668,7 +1674,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
         continue;
       }
 
-      dec_rval = uper_decode(NULL,
+      dec_rval = aper_decode(NULL,
                              &asn_DEF_NGAP_PDUSessionResourceModifyRequestTransfer,
                              (void **)&pdusessionTransfer_p,
                              item_p->pDUSessionResourceModifyRequestTransfer.buf,
@@ -1709,7 +1715,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
                 qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.array[qosIdx];
                 
                 /* Set the QOS informations */
-                NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].qci = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
                 if(qosFlowItem_p->qosFlowLevelQosParameters) {
                   NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                     qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.priorityLevelARP;

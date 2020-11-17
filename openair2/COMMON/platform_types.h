@@ -222,7 +222,7 @@ typedef enum config_action_e {
 //-----------------------------------------------------------------------------
 typedef uint32_t           teid_t; // tunnel endpoint identifier
 typedef uint8_t            ebi_t;  // eps bearer id
-
+typedef uint8_t            pdusessionid_t;
 
 
 //-----------------------------------------------------------------------------

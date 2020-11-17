@@ -93,4 +93,18 @@ rrc_gNB_send_NGAP_UPLINK_NAS(
   NR_UL_DCCH_Message_t     *const ul_dcch_msg
 );
 
+void
+rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  uint8_t                   xid
+);
+
+int
+rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
+    MessageDef *msg_p,
+    const char *msg_name,
+    instance_t instance
+);
+
 #endif

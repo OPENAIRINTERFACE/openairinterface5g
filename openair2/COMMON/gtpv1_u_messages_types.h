@@ -26,6 +26,7 @@
 
 
 #define GTPV1U_MAX_BEARERS_PER_UE max_val_LTE_DRB_Identity
+#define NR_GTPV1U_MAX_BEARERS_PER_UE max_val_NR_DRB_Identity
 
 #define GTPV1U_ENB_UPDATE_TUNNEL_REQ(mSGpTR)  (mSGpTR)->ittiMsg.Gtpv1uUpdateTunnelReq
 #define GTPV1U_ENB_UPDATE_TUNNEL_RESP(mSGpTR) (mSGpTR)->ittiMsg.Gtpv1uUpdateTunnelResp
@@ -39,6 +40,7 @@
 #define GTPV1U_ENB_END_MARKER_IND(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerInd
 
 #define GTPV1U_ENB_S1_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uS1Req
+#define GTPV1U_GNB_NG_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uNGReq
 
 #define GTPV1U_ALL_TUNNELS_TEID (teid_t)0xFFFFFFFF
 
@@ -170,4 +172,26 @@ typedef struct {
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
   tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
 } Gtpv1uS1Req;
+
+typedef struct {
+  in_addr_t             gnb_ip_address_for_NGu_up;
+  tcp_udp_port_t        gnb_port_for_NGu_up;
+} Gtpv1uNGReq;
+typedef struct gtpv1u_gnb_create_tunnel_req_s {
+  rnti_t                 rnti;
+  int                    num_tunnels;
+  teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
+  pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  transport_layer_addr_t upf_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
+} gtpv1u_gnb_create_tunnel_req_t;
+
+typedef struct gtpv1u_gnb_create_tunnel_resp_s {
+  uint8_t                status;               ///< Status of S1U endpoint creation (Failed = 0xFF or Success = 0x0)
+  rnti_t                 rnti;
+  int                    num_tunnels;
+  teid_t                 gnb_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
+  pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  transport_layer_addr_t gnb_addr;
+} gtpv1u_gnb_create_tunnel_resp_t;
+
 #endif /* GTPV1_U_MESSAGES_TYPES_H_ */

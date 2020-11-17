@@ -750,7 +750,7 @@ int ngap_gNB_initial_ctxt_resp(
               ass_qos_item_p = (NGAP_AssociatedQosFlowItem_t *)calloc(1, sizeof(NGAP_AssociatedQosFlowItem_t));
 
               /* qosFlowIdentifier */
-              ass_qos_item_p->qosFlowIdentifier = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qci;
+              ass_qos_item_p->qosFlowIdentifier = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qfi;
 
               /* qosFlowMappingIndication */
               if(initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
@@ -1039,6 +1039,8 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
             pdusessionTransfer_p = (NGAP_PDUSessionResourceSetupResponseTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseTransfer_t));
 
             pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel =
+                calloc(1, sizeof(struct NGAP_GTPTunnel));
 
             GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->gTP_TEID);
 
@@ -1064,7 +1066,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
               ass_qos_item_p = (NGAP_AssociatedQosFlowItem_t *)calloc(1, sizeof(NGAP_AssociatedQosFlowItem_t));
 
               /* qosFlowIdentifier */
-              ass_qos_item_p->qosFlowIdentifier = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qci;
+              ass_qos_item_p->qosFlowIdentifier = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qfi;
 
               /* qosFlowMappingIndication */
               if(pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
@@ -1075,11 +1077,19 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
             }
 
             memset(&res, 0, sizeof(res));
-            res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
-            item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
-            item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
+//            res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+//            item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
+//            item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
+            char buffer[100];
+            asn_enc_rval_t  enc_rval = aper_encode_to_buffer(&asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, 
+                                        NULL, 
+                                        pdusessionTransfer_p, 
+                                        buffer,100);
+            AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+            item->pDUSessionResourceSetupResponseTransfer.buf = buffer;
+            item->pDUSessionResourceSetupResponseTransfer.size = enc_rval.encoded;
 
-            ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+            //ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
 
             ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceSetupListSURes.list, item);
         }

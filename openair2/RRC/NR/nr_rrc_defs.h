@@ -182,6 +182,13 @@ typedef enum nr_e_rab_satus_e {
   NR_E_RAB_STATUS_FAILED,
 } nr_e_rab_status_t;
 
+typedef enum nr_pdu_session_status_e {
+  NR_PDU_SESSION_STATUS_NEW,
+  NR_PDU_SESSION_STATUS_DONE,           // from the gNB perspective
+  NR_PDU_SESSION_STATUS_ESTABLISHED,    // get the reconfigurationcomplete form UE
+  NR_PDU_SESSION_STATUS_FAILED,
+} nr_pdu_session_status_t;
+
 typedef struct nr_e_rab_param_s {
   e_rab_t param;
   uint8_t status;
@@ -336,6 +343,8 @@ typedef struct gNB_RRC_UE_s {
 
   /* Total number of e_rab already setup in the list */
   uint8_t                           setup_e_rabs;
+  /* Total number of pdu session already setup in the list */
+  uint8_t                           setup_pdu_sessions;
   /* Number of pdu session to be setup in the list */
   uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
@@ -351,12 +360,15 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_psi[S1AP_MAX_E_RAB];
 
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
   uint32_t                           ue_release_timer_s1;
   uint32_t                           ue_release_timer_thres_s1;
+  uint32_t                           ue_release_timer_ng;
+  uint32_t                           ue_release_timer_thres_ng;
   uint32_t                           ue_release_timer_rrc;
   uint32_t                           ue_release_timer_thres_rrc;
   uint32_t                           ue_reestablishment_timer;

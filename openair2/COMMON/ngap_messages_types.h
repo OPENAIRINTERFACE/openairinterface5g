@@ -263,8 +263,8 @@ typedef struct ngap_transport_layer_addr_s {
   } while (0)
 
 typedef struct pdusession_level_qos_parameter_s {
-  uint8_t qci;
-
+  uint8_t  qfi;
+  uint64_t fiveQI;
   ngap_allocation_retention_priority_t allocation_retention_priority;
 } pdusession_level_qos_parameter_t;
 
@@ -291,7 +291,7 @@ typedef enum pdusession_qosflow_mapping_ind_e{
 }pdusession_qosflow_mapping_ind_t;
 
 typedef struct pdusession_associate_qosflow_s{
-  uint8_t                           qci;
+  uint8_t                           qfi;
   pdusession_qosflow_mapping_ind_t  qos_flow_mapping_ind;
 }pdusession_associate_qosflow_t;
 
