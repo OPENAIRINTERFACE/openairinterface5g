@@ -126,6 +126,7 @@ nr_rrc_pdcp_config_security(
 //------------------------------------------------------------------------------
 {
   NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  (void)SRB_configList;
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
