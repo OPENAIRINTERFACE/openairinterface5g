@@ -372,7 +372,7 @@ int test_srs(PHY_VARS_NR_UE *PHY_vars_UE)
   /* start test of sounding reference signals */
   default_srs_configuration(frame_parms);
 
-  txptr = calloc(frame_parms->samples_per_tti , sizeof(int32_t));
+  txptr = calloc(frame_parms->samples_per_slot , sizeof(int32_t));
   if (txptr == NULL) {
     printf("Error test_srs: memory allocation problem txptr \n");
     assert(0);

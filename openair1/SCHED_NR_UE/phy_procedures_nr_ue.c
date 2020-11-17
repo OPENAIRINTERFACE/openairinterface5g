@@ -256,7 +256,7 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
                        0,
                        nr_slot_rx);
 */
-			  //(nr_slot_rx*frame_parms->samples_per_tti+ue->rx_offset)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
+			  //(nr_slot_rx*frame_parms->samples_per_slot+ue->rx_offset) % frame_parms->samples_per_frame
 
 #if T_TRACER
     if(slot == 0)
@@ -1768,7 +1768,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       }
     }
 
-  if ((frame_rx%64 == 0) && (nr_tti_rx==0)) {
+  if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
     printf("============================================\n");
     LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
     printf("============================================\n");

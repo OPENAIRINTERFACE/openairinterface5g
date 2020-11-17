@@ -245,7 +245,7 @@ void set_sequence_sss(PHY_VARS_NR_UE *PHY_vars_UE, int offset, int slot_offset)
 void insert_sequence_sss(PHY_VARS_NR_UE *PHY_vars_UE, int offset)
 {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
-  int samples_for_half_frame = (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti)>>1;
+  int samples_for_half_frame = frame_parms->samples_per_frame / 2;
 
   set_sequence_sss(PHY_vars_UE, offset, 0);
 
@@ -328,7 +328,7 @@ int test_synchro_pss_sss(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, int s
 
   int sync_pos2 = synchro_position - frame_parms->nb_prefix_samples;
 
-  int sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
+  int sync_pos_slot = (frame_parms->samples_per_slot>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
 
   if (sync_pos2 >= sync_pos_slot)
     PHY_vars_UE->rx_offset = sync_pos2 - sync_pos_slot;
