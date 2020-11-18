@@ -28,7 +28,6 @@
  * \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
-
 #include "platform_types.h"
 #include "nr_rrc_defs.h"
 #include "common/utils/LOG/log.h"
@@ -152,10 +151,9 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   asn_enc_rval_t enc_rval;
   uint8_t Sdu_size = 0;
   uint8_t sfn_msb = (uint8_t)((frameP>>4)&0x3f);
-
-
+  
 #ifdef DEBUG_RRC
-    LOG_D(RRC, "[eNB %d] mac_rrc_data_req to SRB ID=%ld\n", Mod_idP, Srb_id);
+  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
 #endif
 
     rrc_gNB_carrier_data_t *carrier;

@@ -143,7 +143,7 @@ void (*rlc_rrc_data_conf)(
   const protocol_ctxt_t *const ctxtP,
   const rb_id_t         rb_idP,
   const mui_t           muiP,
-  const rlc_tx_status_t statusP);
+  const rlc_tx_status_t statusP) __attribute__ ((aligned(32)));
 
 typedef void (rrc_data_ind_cb_t)(
   const protocol_ctxt_t *const ctxtP,

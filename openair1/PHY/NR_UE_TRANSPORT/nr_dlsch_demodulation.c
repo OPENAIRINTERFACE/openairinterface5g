@@ -242,6 +242,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   dlsch0_harq->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
   dlsch0_harq->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
+  if (dlsch0_harq->Qm == 0 || dlsch0_harq->R == 0) {
+    LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
+      return -1;
+  }
 
   #ifdef DEBUG_HARQ
     printf("[DEMOD] MIMO mode = %d\n", dlsch0_harq->mimo_mode);
@@ -684,14 +688,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     
     pdsch_vars[eNB_id]->llr_offset[symbol] = len*dlsch0_harq->Qm + llr_offset_symbol;
  
-  /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
+  LOG_D(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d energy %d\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
-             (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol_cw0);*/
-             
+	     signal_energy(pdsch_vars[eNB_id]->rxdataF_comp0[0], 7*2*frame_parms->N_RB_DL*12));
+
+
              /*printf("compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,
@@ -981,7 +985,12 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   if (dlsch1_harq) {
-    switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
+    uint8_t Qm = nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table);
+    if (Qm == 0){
+      LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
+        return -1;
+    }
+    switch (Qm) {
       case 2 :
         if (rx_type==rx_standard) {
             nr_dlsch_qpsk_llr(frame_parms,

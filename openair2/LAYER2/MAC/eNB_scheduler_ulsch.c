@@ -56,6 +56,8 @@
 #include "flexran.pb-c.h"
 #include "flexran_agent_mac.h"
 #include <dlfcn.h>
+#include <openair2/LAYER2/MAC/mac.h>
+
 
 #include "T.h"
 

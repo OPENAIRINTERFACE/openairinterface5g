@@ -357,6 +357,16 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
   } else {
     LOG_E(PHY,"[UE %d] frame %d, nr_tti_rx %d, Error decoding PBCH!\n",
 	  ue->Mod_id,frame_rx, nr_tti_rx);
+    /*FILE *fd;
+    if ((fd = fopen("rxsig_frame0.dat","w")) != NULL) {
+                  fwrite((void *)&ue->common_vars.rxdata[0][0],
+                         sizeof(int32_t),
+                         ue->frame_parms.samples_per_frame,
+                         fd);
+                  LOG_I(PHY,"Dummping Frame ... bye bye \n");
+                  fclose(fd);
+                  exit(0);
+                }*/
 
     /*
     write_output("rxsig0.m","rxs0", ue->common_vars.rxdata[0],ue->frame_parms.samples_per_subframe,1,1);
@@ -1619,6 +1629,59 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 }
 #endif
 
+int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)
+{
+  int mu = fp->numerology_index;
+  //uint8_t half_frame_index = fp->half_frame_bit;
+  //uint8_t i_ssb = fp->ssb_index;
+  uint8_t Lmax = fp->Lmax;
+
+  if (!(frame%(1<<(config->ssb_table.ssb_period-1)))){
+
+    if(Lmax <= 8) {
+      if(slot <=3 && (((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000))
+      return 1;
+      else return 0;
+
+    }
+    else if(Lmax == 64) {
+      if (mu == NR_MU_3){
+
+        if (slot>=0 && slot <= 7){
+          if(((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000)
+          return 1;
+          else return 0;
+        }
+      else if (slot>=10 && slot <=17){
+         if(((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*(slot-2))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*(slot-2) +1))&0x80000000) == 0x80000000)
+         return 1;
+         else return 0;
+      }
+      else if (slot>=20 && slot <=27){
+         if(((config->ssb_table.ssb_mask_list[1].ssb_mask << 2*(slot-20))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[1].ssb_mask << (2*(slot-20) +1))&0x80000000) == 0x80000000)
+         return 1;
+         else return 0;
+      }
+      else if (slot>=30 && slot <=37){
+         if(((config->ssb_table.ssb_mask_list[1].ssb_mask << 2*(slot-22))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[1].ssb_mask << (2*(slot-22) +1))&0x80000000) == 0x80000000)
+         return 1;
+         else return 0;
+       }
+      else return 0;
+
+    }
+
+
+    else if (mu == NR_MU_4) {
+         AssertFatal(0==1, "not implemented for mu =  %d yet\n", mu);
+    }
+    else AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+   }
+   else AssertFatal(0==1, "Invalid Lmax %u for the synchronization block\n", Lmax);
+  }
+  else return 0;
+
+}
 
 int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)  {
 
@@ -1644,11 +1707,13 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           runmode_t mode) {
+                           runmode_t mode)
+{
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
-  NR_UE_PDCCH *pdcch_vars = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
+  //int slot_ssb;
+  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(ue->Mod_id);
@@ -1667,57 +1732,68 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
   */
 
-  int coreset_nb_rb = 0;
-  int coreset_start_rb = 0;
+  int coreset_nb_rb=0;
+  int coreset_start_rb=0;
 
   if (pdcch_vars->nb_search_space > 0)
-    get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource, &coreset_nb_rb,
-                        &coreset_start_rb);
-
+    get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
+  
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp);
+  //slot_ssb = is_ssb_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
-  if ((ue->decode_MIB == 1) && slot_pbch) {
-    LOG_D(PHY, " ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx % 1024, nr_tti_rx);
-    for (int i = 1; i < 4; i++) {
+  if ((ue->decode_MIB == 1) && slot_pbch)
+    {
+      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+      for (int i=1; i<4; i++) {
 
-      nr_slot_fep(ue,
-                  (ue->symbol_offset + i) % (fp->symbols_per_slot),
-                  nr_tti_rx,
-                  0,
-                  0);
+	nr_slot_fep(ue,
+		    (ue->symbol_offset+i)%(fp->symbols_per_slot),
+		    nr_tti_rx,
+		    0,
+		    0);
 
 #if UE_TIMING_TRACE
-      start_meas(&ue->dlsch_channel_estimation_stats);
+  	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-      nr_pbch_channel_estimation(ue, 0, nr_tti_rx, (ue->symbol_offset + i) % (fp->symbols_per_slot), i - 1,
-                                 (fp->ssb_index) & 7, fp->half_frame_bit);
+   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
 #if UE_TIMING_TRACE
-      stop_meas(&ue->dlsch_channel_estimation_stats);
+  	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+      
+      }
+      
+      //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+        nr_ue_rsrp_measurements(ue,nr_tti_rx,0);
+      //}
+	
 
-    }
-    nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
-    if (ue->no_timing_correction == 0) {
-      LOG_D(PHY, "start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
-      nr_adjust_synch_ue(fp,
-                         ue,
-                         gNB_id,
-                         frame_rx,
-                         nr_tti_rx,
-                         0,
-                         16384);
+      if (ue->no_timing_correction==0) {
+        LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
+        nr_adjust_synch_ue(fp,
+                           ue,
+                           gNB_id,
+                           frame_rx,
+                           nr_tti_rx,
+                           0,
+                           16384);
+      }
     }
+
+  if ((frame_rx%64 == 0) && (nr_tti_rx==0)) {
+    printf("============================================\n");
+    LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
+    printf("============================================\n");
   }
 
 #ifdef NR_PDCCH_SCHED
   nr_gold_pdcch(ue, 0, 2);
 
-  LOG_D(PHY, " ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx % 1024, nr_tti_rx);
-
-  for (uint16_t l = 0; l < nb_symb_pdcch; l++) {
-
+  LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+  for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+    
 #if UE_TIMING_TRACE
     start_meas(&ue->ofdm_demod_stats);
 #endif
@@ -1853,7 +1929,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            SI_PDSCH,
                            ue->dlsch_SI[gNB_id],
                            NULL);
-
+    
     nr_ue_dlsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -2031,10 +2107,6 @@ LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_tti_rx,ue->phy_proc_
 //#endif //pdsch
 
 LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
-
- // }
-
-
 return (0);
 }
 

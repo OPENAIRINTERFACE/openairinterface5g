@@ -57,10 +57,21 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
       
       if (IS_SOFTMODEM_NOS1){
         if (rlc_module_init(0) != 0) {
-	  LOG_I(RLC, "Problem at RLC initiation \n");
-    	}
-    	pdcp_layer_init();
-    	nr_DRB_preconfiguration();
+          LOG_I(RLC, "Problem at RLC initiation \n");
+        }
+        pdcp_layer_init();
+        nr_DRB_preconfiguration();
+      }
+
+      // Allocate memory for ul_config_request in the mac instance. This is now a pointer and will
+      // point to a list of structures (one for each UL slot) to store PUSCH scheduling parameters
+      // received from UL DCI.
+      if (nr_ue_mac_inst->scc) {
+        int num_slots_ul = nr_ue_mac_inst->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+        if (nr_ue_mac_inst->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0)
+          num_slots_ul++;
+        LOG_D(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
+        nr_ue_mac_inst->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
       }
     }
     else LOG_I(MAC,"Running without RRC instance\n");
