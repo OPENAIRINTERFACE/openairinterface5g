@@ -185,7 +185,7 @@ void fh_if5_south_in(RU_t *ru,
   recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL);
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->tti_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-  //LOG_I(PHY,"%d.%d (TS %llu) => %d.%d\n",*frame,*subframe,(unsigned long long)proc->timestamp_rx,proc->frame_rx,proc->tti_rx);
+  
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *subframe) {
       LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d), resynching\n",proc->tti_rx,*subframe);
@@ -680,7 +680,7 @@ void rx_rf(RU_t *ru,
           (int)ru->ts_offset,
           proc->frame_rx,
           proc->tti_rx);
-    LOG_D(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+    LOG_I(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
           ru->idx,
           0,
           (unsigned long long int)proc->timestamp_rx,

@@ -394,6 +394,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 }
       
 
+#define NOSHIFT 1
 
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void *buff, int nsamps, int *cc) {
   
@@ -473,7 +474,10 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
     eth->rx_actual_nsamps=payload_size>>2;
     eth->rx_count++;
   }	 
- 
+
+#ifdef NOSHIFT
+  memcpy(buff,(void*)(temp_rx+1),payload_size); 
+#else
   // populate receive buffer in lower 12-bits from 16-bit representation
   for (int j=1; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
@@ -486,7 +490,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
        ((int16x8_t *)buff)[j] = vshrq_n_s16(temp_rx[i][j],2);
 #endif
   }
-
+#endif
   
   return (payload_size>>2);
 }

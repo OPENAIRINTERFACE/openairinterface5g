@@ -1106,7 +1106,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
     } else if (eth->compression == NO_COMPRESS) {
 
       for (i=0; i < ru->nb_tx; i++)
-        txp[i] = (void*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
+        txp[i] = (int32_t*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         for (int aid=0; aid<ru->nb_tx;aid++) {
@@ -1114,11 +1114,12 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
           ru->ifdevice.trx_write_func2(&ru->ifdevice,
-	  			       (proc_timestamp + packet_id*spp_eth),
+	  			       (proc_timestamp + packet_id*spp_eth-500)*(30720/spsf),
 				       (void*)txp[aid],
 				       spp_eth,
 				       aid,
 				       0); 
+          LOG_D(HW,"SF %d : packet %d, TS %llu\n",subframe,packet_id,(unsigned long long)(proc_timestamp+packet_id*spp_eth));
           clock_gettime( CLOCK_MONOTONIC, &end_comp);
           LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
@@ -1454,7 +1455,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 				   &aid);
         clock_gettime( CLOCK_MONOTONIC, &if_time);
         timeout[packet_id] = if_time.tv_nsec;
-
+        timestamp[packet_id] /= (30720/spsf);
         LOG_D(PHY,"subframe %d: Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",subframe,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
         if (aid==0) {
            if (firstTS==1) firstTS=0;
