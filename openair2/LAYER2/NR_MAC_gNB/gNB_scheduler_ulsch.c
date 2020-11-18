@@ -473,12 +473,7 @@ void nr_schedule_ulsch(module_id_t module_id,
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
-  AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-              "downlinkBWP_ToAddModList has %d BWP!\n",
-              secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-  NR_BWP_Downlink_t *bwp =
-      secondaryCellGroup->spCellConfig->spCellConfigDedicated
-          ->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   NR_BWP_Uplink_t *ubwp =
       secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig
@@ -505,15 +500,15 @@ void nr_schedule_ulsch(module_id_t module_id,
         && (!get_softmodem_params()->phy_test || sched_slot == 8)) {
 
     const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    NR_SearchSpace_t *ss = get_searchspace(bwp, target_ss);
+    NR_SearchSpace_t *ss = get_searchspace(sched_ctrl->active_bwp, target_ss);
     uint8_t nr_of_candidates, aggregation_level;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
-    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
+    NR_ControlResourceSet_t *coreset = get_coreset(sched_ctrl->active_bwp, ss, 1 /* dedicated */);
     const int cid = coreset->controlResourceSetId;
     const uint16_t Y = UE_info->Y[UE_id][cid][nr_mac->current_slot];
     const int m = UE_info->num_pdcch_cand[UE_id][cid];
     int CCEIndex = allocate_nr_CCEs(nr_mac,
-                                    bwp,
+                                    sched_ctrl->active_bwp,
                                     coreset,
                                     aggregation_level,
                                     Y,
@@ -761,7 +756,7 @@ void nr_schedule_ulsch(module_id_t module_id,
                        ss,
                        coreset,
                        scc,
-                       bwp,
+                       sched_ctrl->active_bwp,
                        aggregation_level,
                        CCEIndex);
 
