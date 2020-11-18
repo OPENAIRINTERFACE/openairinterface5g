@@ -797,7 +797,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
       UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += sdu_length_total;
 
-      const int post_padding = TBS >= 2 + header_length_total + sdu_length_total + ta_len;
+      const int post_padding = TBS > header_length_total + sdu_length_total + ta_len;
 
       const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
