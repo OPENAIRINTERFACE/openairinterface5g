@@ -107,4 +107,32 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     instance_t instance
 );
 
+void
+rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
+  const module_id_t gnb_mod_idP,
+  const rrc_gNB_ue_context_t *const ue_context_pP,
+  const ngap_Cause_t causeP,
+  const long cause_valueP
+);
+
+int 
+rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ (
+  MessageDef *msg_p, 
+  const char *msg_name, 
+  instance_t instance
+);
+
+int
+rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t instance
+);
+
+void
+rrc_gNB_NGAP_remove_ue_ids(
+  gNB_RRC_INST *const rrc_instance_pP,
+  struct rrc_ue_ngap_ids_s *const ue_ids_pP
+);
+
 #endif

@@ -946,3 +946,164 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     return(0);
   }
 }
+
+void
+rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
+  const module_id_t gnb_mod_idP,
+  const rrc_gNB_ue_context_t *const ue_context_pP,
+  const ngap_Cause_t causeP,
+  const long cause_valueP)
+//------------------------------------------------------------------------------
+{
+  if (ue_context_pP == NULL) {
+    LOG_E(RRC, "[gNB] In NGAP_UE_CONTEXT_RELEASE_REQ: invalid UE\n");
+  } else {
+    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+                       MSC_NGAP_GNB,
+                       NULL,
+                       0,
+                       "0 NGAP_UE_CONTEXT_RELEASE_REQ gNB_ue_ngap_id 0x%06"PRIX32" ",
+                       ue_context_pP->ue_context.gNB_ue_ngap_id);
+    MessageDef *msg_context_release_req_p = NULL;
+    msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_REQ);
+    NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).gNB_ue_ngap_id    = ue_context_pP->ue_context.gNB_ue_ngap_id;
+    NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause             = causeP;
+    NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause_value       = cause_valueP;
+    NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).nb_of_pdusessions = ue_context_pP->ue_context.setup_pdu_sessions;
+    for (int pdusession = 0; pdusession < ue_context_pP->ue_context.setup_pdu_sessions; pdusession++) {
+      NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).pdusessions[pdusession].pdusession_id = ue_context_pP->ue_context.pdusession[pdusession].param.pdusession_id;
+    }
+    itti_send_msg_to_task(TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_mod_idP), msg_context_release_req_p);
+  }
+}
+/*------------------------------------------------------------------------------*/
+int 
+rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ (
+  MessageDef *msg_p, 
+  const char *msg_name, 
+  instance_t instance) 
+{
+  uint32_t gNB_ue_ngap_id;
+  struct rrc_gNB_ue_context_s *ue_context_p = NULL;
+  gNB_ue_ngap_id = NGAP_UE_CONTEXT_RELEASE_REQ(msg_p).gNB_ue_ngap_id;
+  ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, UE_INITIAL_ID_INVALID, gNB_ue_ngap_id);
+
+  if (ue_context_p == NULL) {
+    /* Can not associate this message to an UE index, send a failure to ngAP and discard it! */
+    MessageDef *msg_fail_p;
+    LOG_W(RRC, "[gNB %d] In NGAP_UE_CONTEXT_RELEASE_REQ: unknown UE from gNB_ue_ngap_id (%d)\n",
+          instance,
+          gNB_ue_ngap_id);
+    msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_RESP); /* TODO change message ID. */
+    NGAP_UE_CONTEXT_RELEASE_RESP(msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
+    // TODO add failure cause when defined!
+    itti_send_msg_to_task(TASK_NGAP, instance, msg_fail_p);
+    return (-1);
+  } else {
+    /* TODO release context. */
+    /* Send the response */
+    {
+      MessageDef *msg_resp_p;
+      msg_resp_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_RESP);
+      NGAP_UE_CONTEXT_RELEASE_RESP(msg_resp_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
+      itti_send_msg_to_task(TASK_NGAP, instance, msg_resp_p);
+    }
+    return (0);
+  }
+}
+
+//-----------------------------------------------------------------------------
+/*
+* Process the NG command NGAP_UE_CONTEXT_RELEASE_COMMAND, sent by AMF.
+* The gNB should remove all pdu session, NG context, and other context of the UE.
+*/
+int
+rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t instance) {
+  //-----------------------------------------------------------------------------
+  uint32_t gNB_ue_ngap_id = 0;
+  protocol_ctxt_t ctxt;
+  struct rrc_gNB_ue_context_s *ue_context_p = NULL;
+  struct rrc_ue_ngap_ids_s *rrc_ue_ngap_ids = NULL;
+  gNB_ue_ngap_id = NGAP_UE_CONTEXT_RELEASE_COMMAND(msg_p).gNB_ue_ngap_id;
+  ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, UE_INITIAL_ID_INVALID, gNB_ue_ngap_id);
+
+  if (ue_context_p == NULL) {
+    /* Can not associate this message to an UE index */
+    MessageDef *msg_complete_p = NULL;
+    LOG_W(RRC, "[gNB %d] In NGAP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from gNB_ue_ngap_id (%d)\n",
+          instance,
+          gNB_ue_ngap_id);
+    MSC_LOG_EVENT(MSC_RRC_GNB, "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" context not found",
+                  gNB_ue_ngap_id);
+    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+                       MSC_NGAP_GNB,
+                       NULL,
+                       0,
+                       "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" ",
+                       gNB_ue_ngap_id);
+    msg_complete_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
+    NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
+    itti_send_msg_to_task(TASK_NGAP, instance, msg_complete_p);
+    rrc_ue_ngap_ids = rrc_gNB_NGAP_get_ue_ids(RC.nrrrc[instance], UE_INITIAL_ID_INVALID, gNB_ue_ngap_id);
+
+    if (rrc_ue_ngap_ids != NULL) {
+      rrc_gNB_NGAP_remove_ue_ids(RC.nrrrc[instance], rrc_ue_ngap_ids);
+    }
+
+    return -1;
+  } else {
+    ue_context_p->ue_context.ue_release_timer_ng = 0;
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    rrc_gNB_generate_RRCRelease(&ctxt, ue_context_p);
+    return 0;
+  }
+}
+//------------------------------------------------------------------------------
+/*
+* Remove UE ids (ue_initial_id and ng_id) from hashtables.
+*/
+void
+rrc_gNB_NGAP_remove_ue_ids(
+  gNB_RRC_INST *const rrc_instance_pP,
+  struct rrc_ue_ngap_ids_s *const ue_ids_pP
+)
+//------------------------------------------------------------------------------
+{
+  hashtable_rc_t h_rc;
+
+  if (rrc_instance_pP == NULL) {
+    LOG_E(NR_RRC, "Bad NR RRC instance\n");
+    return;
+  }
+
+  if (ue_ids_pP == NULL) {
+    LOG_E(NR_RRC, "Trying to free a NULL NGAP UE IDs\n");
+    return;
+  }
+
+  const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
+  const uint32_t gNB_ue_ngap_id = ue_ids_pP->gNB_ue_ngap_id;
+
+  if (gNB_ue_ngap_id > 0) {
+    h_rc = hashtable_remove(rrc_instance_pP->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_id);
+
+    if (h_rc != HASH_TABLE_OK) {
+      LOG_W(NR_RRC, "NGAP Did not find entry in hashtable ngap_id2_ngap_ids for gNB_ue_ngap_id %u\n", gNB_ue_ngap_id);
+    } else {
+      LOG_W(NR_RRC, "NGAP removed entry in hashtable ngap_id2_ngap_ids for gNB_ue_ngap_id %u\n", gNB_ue_ngap_id);
+    }
+  }
+
+  if (ue_initial_id != UE_INITIAL_ID_INVALID) {
+    h_rc = hashtable_remove(rrc_instance_pP->initial_id2_ngap_ids, (hash_key_t)ue_initial_id);
+
+    if (h_rc != HASH_TABLE_OK) {
+      LOG_W(NR_RRC, "NGAP Did not find entry in hashtable initial_id2_ngap_ids for ue_initial_id %u\n", ue_initial_id);
+    } else {
+      LOG_W(NR_RRC, "NGAP removed entry in hashtable initial_id2_ngap_ids for ue_initial_id %u\n", ue_initial_id);
+    }
+  }
+}
