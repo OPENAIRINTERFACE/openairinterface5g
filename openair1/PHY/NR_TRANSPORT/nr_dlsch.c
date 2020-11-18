@@ -140,7 +140,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
     int16_t **tx_layers = (int16_t**)dlsch->txdataF;
-    int8_t Wf[2], Wt[2], l0, l_prime, delta;
+    int8_t Wf[2], Wt[2], l0, l_prime, l_overline, delta;
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
     uint16_t n_dmrs;
@@ -286,6 +286,8 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
       delta = get_delta(ap, dmrs_Type);
       l_prime = 0; // single symbol ap 0
       l0 = get_l0(rel15->dlDmrsSymbPos);
+      l_overline = l0;
+
 #ifdef DEBUG_DLSCH_MAPPING
       uint8_t dmrs_symbol = l0+l_prime;
       printf("DMRS Type %d params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n",
@@ -308,10 +310,10 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
           if ((rel15->dlDmrsSymbPos & (1 << l)) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_Type))%(frame_parms->ofdm_symbol_size)))) {
 
-            if (l==(l0+1)) //take into account the double DMRS symbols
+            if (l==(l_overline+1)) //take into account the double DMRS symbols
               l_prime = 1;
-            else if (l>(l0+1)) {//new DMRS pair
-              l0 = l;
+            else if (l>(l_overline+1)) {//new DMRS pair
+              l_overline = l;
               l_prime = 0;
             }
 
