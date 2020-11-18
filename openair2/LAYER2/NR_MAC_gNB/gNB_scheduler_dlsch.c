@@ -628,7 +628,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
   /* PREPROCESSOR */
-  gNB_mac->pre_processor_dl(module_id, frame, slot, num_slots_per_tdd);
+  //gNB_mac->pre_processor_dl(module_id, frame, slot, num_slots_per_tdd);
+  nr_simple_dlsch_preprocessor(module_id, frame, slot, num_slots_per_tdd); // FIXME: gNB_mac->pre_processor_dl(module_id, frame, slot, num_slots_per_tdd); - Exit by assert
 
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
