@@ -927,6 +927,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 	
 	// todo : consider a more efficent lock mechasium
 	//uint16_t NUM_SLOTS = 20;//10* 2^mu
+	
 	if(pthread_mutex_lock(&(pnf_p7->mutex)) != 0)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to lock mutex\n");
@@ -1039,8 +1040,14 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		if( tx_slot_buffer->dl_tti_req != 0) // ADDED & TO BYPASS ERROR
 		{
 			if(pnf_p7->_public.dl_tti_req_fn)
-				(pnf_p7->_public.dl_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->dl_tti_req);
+			{
+				struct timespec curr;
+	clock_gettime(CLOCK_MONOTONIC,&curr);
+	printf("\npnf slot ind time %d.%d\n",curr.tv_sec,curr.tv_nsec);
+	printf("\nIn pnf_phy_dl_tti_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d slot buffer sfn %d %d \n",tx_slot_buffer->dl_tti_req->SFN,tx_slot_buffer->dl_tti_req->Slot,pnf_p7->sfn,pnf_p7->slot);
 
+				(pnf_p7->_public.dl_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->dl_tti_req);
+			}
 			//deallocate_nfapi_dl_config_request(subframe_buffer->dl_config_req, pnf_p7);
 		}
 
@@ -1090,7 +1097,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			}
 		}
     #endif
-		// TODO: add deallocate fns for the new structs
+		//TODO: add deallocate fns for the new structs
 		if(tx_slot_buffer->dl_tti_req != 0)
 		{
 			deallocate_nfapi_dl_tti_request(tx_slot_buffer->dl_tti_req, pnf_p7);
@@ -1670,7 +1677,9 @@ uint8_t is_p7_request_in_window(uint16_t sfnsf, const char* name, pnf_p7_t* phy)
 void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 {
 	//NFAPI_TRACE(NFAPI_TRACE_INFO, "DL_CONFIG.req Received\n");
-
+struct timespec curr;
+	clock_gettime(CLOCK_MONOTONIC,&curr);
+	printf("\npnf_handle_dl_tti_request %d.%d\n",curr.tv_sec,curr.tv_nsec);
 	nfapi_nr_dl_tti_request_t* req  = allocate_nfapi_dl_tti_request(pnf_p7);
 
 	if(req == NULL)

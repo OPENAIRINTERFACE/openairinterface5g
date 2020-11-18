@@ -593,16 +593,16 @@ int main ( int argc, char **argv )
           RC.nb_L1_inst, RC.nb_RU, get_nprocs());
   }
 
-  // if (RC.nb_inst > 0) {
-  //   /* Start the agent. If it is turned off in the configuration, it won't start */
-  //   for (i = 0; i < RC.nb_inst; i++) {
-  //     flexran_agent_start(i);
-  //   }
+  //  if (RC.nb_inst > 0) {
+  //    /* Start the agent. If it is turned off in the configuration, it won't start */
+  //    for (i = 0; i < RC.nb_inst; i++) {
+  //      flexran_agent_start(i);
+  //    }
     
-    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
-     * for monolithic/F1 modes */
+  //   /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
+  //    * for monolithic/F1 modes */
    
-  //}
+  //  }
 
   if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
     protocol_ctxt_t ctxt;

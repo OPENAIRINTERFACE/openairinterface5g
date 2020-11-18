@@ -97,7 +97,7 @@ extern void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
 
 
 nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_num_pdus]
-
+uint8_t nr_tx_pdus[32][16][4096];
 nfapi_nr_pdu_t *tx_data_request[1023][20][10]; //[frame][slot][max_num_pdus]
 uint8_t tx_pdus[32][8][4096];
 
@@ -1252,7 +1252,7 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
 
   for (int i=0; i<req->numPdus; i++) {
     //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
-    if (req->ul_dci_pdu_list[i].PDUType == NFAPI_NR_UL_DCI_FORMAT_0_0 || req->ul_dci_pdu_list[i].PDUType == NFAPI_NR_UL_DCI_FORMAT_0_1 ) {
+    if (req->ul_dci_pdu_list[i].PDUType == 0) {
       //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
       //nfapi_hi_dci0_request_pdu_t *hi_dci0_req_pdu = &req->hi_dci0_request_body.hi_dci0_pdu_list[i];
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i];
@@ -1329,7 +1329,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
 
   int sfn = req->SFN;
   int slot =  req->Slot;
-printf("In pnf_phy_dl_tti_req sfn %d slot %d\n",sfn,slot);
+
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   if (proc==NULL)
      proc = &gNB->proc.L1_proc;
@@ -1357,7 +1357,10 @@ printf("In pnf_phy_dl_tti_req sfn %d slot %d\n",sfn,slot);
     // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
 
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
-      handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i].pdcch_pdu);
+      nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu=&dl_tti_pdu_list[i];
+      memcpy(dl_tti_pdu,&dl_tti_pdu_list[i],sizeof(nfapi_nr_dl_tti_request_pdu_t));
+      //sfn=sfn+2;
+      handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu->pdcch_pdu);
       //dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
@@ -1390,9 +1393,9 @@ printf("In pnf_phy_dl_tti_req sfn %d slot %d\n",sfn,slot);
           LOG_E(PHY,"pnf_phy_dl_config_req illegal harq_pid %d\n", harq_pid);
           return(-1);
         }
-        uint8_t *dlsch_sdu = (uint8_t *)tx_data->TLVs[0].value.direct;
-        //uint8_t *dlsch_sdu = tx_data[UE_id][harq_pid];
-       // memcpy(dlsch_sdu, tx_data->pdu_list[0], tx_data->pdu_list[0].PDU_length);//TODO: Check if required
+        //uint8_t *dlsch_sdu = (uint8_t *)tx_data->TLVs[0].value.direct;
+        uint8_t *dlsch_sdu = nr_tx_pdus[UE_id][harq_pid];
+       memcpy(dlsch_sdu, tx_data->TLVs[0].value.direct,tx_data->PDU_length);//TODO: Check if required
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
         handle_nr_nfapi_pdsch_pdu(gNB, sfn, slot,pdsch_pdu, dlsch_sdu);
        } else {

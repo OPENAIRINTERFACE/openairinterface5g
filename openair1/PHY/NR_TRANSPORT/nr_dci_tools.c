@@ -203,8 +203,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
   return ret;
 }*/
 int16_t find_nr_pdcch(int frame,int slot, PHY_VARS_gNB *gNB,find_type_t type) {
- // if(slot==2)
-//LOG_I(PHY,"\nFRAME %d SLOT %d gNB pdcch pdu frame %d,slot %d",frame,slot,gNB->pdcch_pdu[0].frame,gNB->pdcch_pdu[0].slot);
+//  if(slot==2)
+// LOG_I(PHY,"\nFRAME %d SLOT %d gNB pdcch pdu frame %d,slot %d",frame,slot,gNB->pdcch_pdu[0].frame,gNB->pdcch_pdu[0].slot);
   uint16_t i;
   int16_t first_free_index=-1;
 
@@ -235,7 +235,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
   int pdcch_id = find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST_OR_FREE);
   AssertFatal(pdcch_id>=0 && pdcch_id<NUMBER_OF_NR_PDCCH_MAX,"Cannot find space for PDCCH, exiting\n");
   memcpy((void*)&gNB->pdcch_pdu[pdcch_id].pdcch_pdu,(void*)pdcch_pdu,sizeof(*pdcch_pdu));
-  gNB->pdcch_pdu[pdcch_id].frame = frame+2;
+  gNB->pdcch_pdu[pdcch_id].frame = frame+2;//Hardcoded as PNF has offset of 2 frames
   gNB->pdcch_pdu[pdcch_id].slot  = slot;
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {

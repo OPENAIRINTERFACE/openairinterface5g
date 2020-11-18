@@ -255,8 +255,8 @@ if(nfapi_mode != 2)
    
   }
    
-  if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
-  {
-    oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
-  }
-}
+//   if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
+//   {
+//     oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
+//   }//Only DL
+ }
