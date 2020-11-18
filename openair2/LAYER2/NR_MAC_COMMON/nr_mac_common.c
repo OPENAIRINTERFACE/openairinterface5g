@@ -2756,8 +2756,8 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
 	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
 	  return(1<<l0);
-	
-	
+
+
 	switch (NrOfSymbols) {
 	case 2 :
 	case 3 :

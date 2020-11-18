@@ -379,7 +379,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
   // static values
   const int CC_id = 0;
-  int time_domain_allocation = 0;
+  int time_domain_allocation = 2;
   uint8_t mcsTableIdx = 0;
   uint8_t mcs = 0;
   uint8_t numDmrsCdmGrpsNoData = 1;
