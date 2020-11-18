@@ -379,6 +379,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (gNB->frame_parms.N_RB_DL) {
+    case 24: timing_advance_update /= 4; break;
     case 106: timing_advance_update /= 16; break;
     case 217: timing_advance_update /= 32; break;
     case 245: timing_advance_update /= 32; break;
