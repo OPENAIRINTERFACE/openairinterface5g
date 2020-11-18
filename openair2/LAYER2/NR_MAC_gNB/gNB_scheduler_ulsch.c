@@ -399,6 +399,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                   bwpList->list.count);
       const int bwp_id = 1;
       UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+      struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
+      AssertFatal(ubwpList->list.count == 1,
+                  "uplinkBWP_ToAddModList has %d BWP!\n",
+                  ubwpList->list.count);
+      UE_info->UE_sched_ctrl[UE_id].active_ubwp = ubwpList->list.array[bwp_id - 1];
       LOG_I(MAC,
             "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
             "adding UE MAC Context UE_id %d/RNTI %04x\n",
@@ -466,7 +471,6 @@ void nr_schedule_ulsch(module_id_t module_id,
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
 
-  const int bwp_id=1;
   const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   const int UE_id = 0;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
@@ -475,21 +479,15 @@ void nr_schedule_ulsch(module_id_t module_id,
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  NR_BWP_Uplink_t *ubwp =
-      secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig
-          ->uplinkBWP_ToAddModList->list.array[bwp_id - 1];
-  const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-  NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
-
   const int tda = 1; // hardcoded for the moment
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
-    ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   AssertFatal(tda < tdaList->list.count,
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
 
-  int K2 = get_K2(ubwp, tda, mu);
+  int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
   /* check if slot is UL, and for phy test verify that it is in first TDD
    * period, slot 8 (for K2=2, this is at slot 6 in the gNB; because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
@@ -523,7 +521,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     const uint8_t mcs = 9;
     const uint16_t rbStart = 0;
     const uint16_t rbSize = get_softmodem_params()->phy_test ?
-      50 : NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+      50 : NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
     nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[module_id]->UL_dci_req[0];
     UL_dci_req->SFN = frame;
@@ -572,11 +570,12 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->rnti = rnti;
     pusch_pdu->handle = 0; //not yet used
 
-    pusch_pdu->bwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pusch_pdu->subcarrier_spacing = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+    pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pusch_pdu->subcarrier_spacing = sched_ctrl->active_ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
 
+    NR_PUSCH_Config_t *pusch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pusch_Config->choice.setup;
     if (!pusch_Config->transformPrecoder)
       pusch_pdu->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
     else
@@ -762,7 +761,8 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
     memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15));
-    config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,tda,UE_info->UE_sched_ctrl[UE_id].tpc0,n_ubwp,bwp_id);
-    fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+    const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+    config_uldci(sched_ctrl->active_ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,tda,UE_info->UE_sched_ctrl[UE_id].tpc0,n_ubwp,sched_ctrl->active_bwp->bwp_Id);
+    fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,sched_ctrl->active_bwp->bwp_Id);
   }
 }

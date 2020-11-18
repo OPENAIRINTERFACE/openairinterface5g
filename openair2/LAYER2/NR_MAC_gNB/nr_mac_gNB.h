@@ -348,6 +348,9 @@ typedef struct {
 
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
+  /// the currently active BWP in UL
+  NR_BWP_Uplink_t *active_ubwp;
+
   NR_sched_pucch **sched_pucch;
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
