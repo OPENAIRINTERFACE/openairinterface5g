@@ -295,6 +295,9 @@ typedef struct NR_sched_pusch {
   uint16_t rbSize;
   uint16_t rbStart;
 
+  // time-domain allocation for scheduled RBs
+  int time_domain_allocation;
+
   /// MCS
   uint8_t mcs;
 } NR_sched_pusch_t;
