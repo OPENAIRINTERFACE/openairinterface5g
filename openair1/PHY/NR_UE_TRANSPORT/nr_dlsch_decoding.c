@@ -255,13 +255,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
+  // HARQ stats
+  phy_vars_ue->dl_stats[harq_process->round]++;
     
   int16_t z [68*384];
   int8_t l [68*384];
   //__m128i l;
   //int16_t inv_d [68*384];
   uint8_t kc;
-  uint8_t Ilbrm = 0;
+  uint8_t Ilbrm = 1;
 
   uint32_t Tbslbrm;// = 950984;
   uint16_t nb_rb;// = 30;
@@ -665,6 +667,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
+      phy_vars_ue->dl_stats[4]++;
     }
 
     if(is_crnti)
