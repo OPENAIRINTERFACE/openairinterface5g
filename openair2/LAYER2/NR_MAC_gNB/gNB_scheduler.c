@@ -415,7 +415,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     // clear vrb_maps
     memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
-    memset(cc[CC_id].vrb_map_UL, 0, sizeof(uint16_t) * 275);
+    // clear last scheduled slot's content (only)!
+    const int num_slots = slots_per_frame[*scc->ssbSubcarrierSpacing];
+    const int last_slot = (slot + num_slots - 1) % num_slots;
+    uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
+    memset(&vrb_map_UL[last_slot * 275], 0, sizeof(uint16_t) * 275);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }

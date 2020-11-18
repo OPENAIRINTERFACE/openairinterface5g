@@ -342,6 +342,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       req->Slot = i;
     }
 
+    RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
+        calloc(n * 275, sizeof(uint16_t));
+    AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
+                "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
+
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
