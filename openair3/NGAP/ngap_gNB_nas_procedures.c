@@ -1069,10 +1069,10 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
               ass_qos_item_p->qosFlowIdentifier = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qfi;
 
               /* qosFlowMappingIndication */
-              if(pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
-                ass_qos_item_p->qosFlowMappingIndication = malloc(sizeof(*ass_qos_item_p->qosFlowMappingIndication));
-                *ass_qos_item_p->qosFlowMappingIndication = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind;
-              }
+              //if(pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
+              //  ass_qos_item_p->qosFlowMappingIndication = malloc(sizeof(*ass_qos_item_p->qosFlowMappingIndication));
+              //  *ass_qos_item_p->qosFlowMappingIndication = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind;
+              //}
               ASN_SEQUENCE_ADD(&pdusessionTransfer_p->dLQosFlowPerTNLInformation.associatedQosFlowList.list, ass_qos_item_p);
             }
 
@@ -1080,7 +1080,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 //            res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
 //            item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
 //            item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
-            char buffer[100];
+            uint8_t buffer[100];
             asn_enc_rval_t  enc_rval = aper_encode_to_buffer(&asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, 
                                         NULL, 
                                         pdusessionTransfer_p, 
@@ -1089,7 +1089,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
             item->pDUSessionResourceSetupResponseTransfer.buf = buffer;
             item->pDUSessionResourceSetupResponseTransfer.size = enc_rval.encoded;
 
-            //ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+            ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
 
             ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceSetupListSURes.list, item);
         }

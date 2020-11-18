@@ -848,7 +848,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
     ue_context_pP->ue_context.pdusession[i].xid = -1;
   }
 
-  return 0;
+  return;
 }
 
 //------------------------------------------------------------------------------

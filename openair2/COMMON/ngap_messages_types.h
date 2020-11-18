@@ -738,10 +738,19 @@ typedef struct ngap_ue_release_command_s {
 
 //-------------------------------------------------------------------------------------------//
 // NGAP <-- RRC messages
+typedef struct pdusession_release_s {
+  /* Unique pdusession_id for the UE. */
+  uint8_t                     pdusession_id;
+} pdusession_release_t;
+
 typedef struct ngap_ue_release_req_s {
-  uint32_t  gNB_ue_ngap_id;
-  ngap_Cause_t  cause;
-  long          cause_value;
+  uint32_t             gNB_ue_ngap_id;
+  /* Number of pdusession resource in the list */
+  uint8_t              nb_of_pdusessions;
+  /* list of pdusession resource by RRC layers */
+  pdusession_release_t pdusessions[NGAP_MAX_PDUSESSION];
+  ngap_Cause_t         cause;
+  long                 cause_value;
 } ngap_ue_release_req_t, ngap_ue_release_resp_t;
 
 typedef struct ngap_pdusession_modify_req_s {
@@ -774,11 +783,6 @@ typedef struct ngap_pdusession_modify_resp_s {
   /* list of pdusessions that failed to be modify */
   pdusession_failed_t pdusessions_failed[NGAP_MAX_PDUSESSION];
 } ngap_pdusession_modify_resp_t;
-
-typedef struct pdusession_release_s {
-  /* Unique pdusession_id for the UE. */
-  uint8_t                     pdusession_id;
-} pdusession_release_t;
 
 typedef struct ngap_pdusession_release_command_s {
   /* AMF UE id  */
