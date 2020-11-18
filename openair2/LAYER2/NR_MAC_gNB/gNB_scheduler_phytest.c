@@ -407,9 +407,9 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
     }
   }
 
-  sched_ctrl->sched_pusch->time_domain_allocation = tda;
-  sched_ctrl->sched_pusch->slot = sched_slot;
-  sched_ctrl->sched_pusch->frame = sched_frame;
+  sched_ctrl->sched_pusch.time_domain_allocation = tda;
+  sched_ctrl->sched_pusch.slot = sched_slot;
+  sched_ctrl->sched_pusch.frame = sched_frame;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
@@ -435,9 +435,9 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
-  sched_ctrl->sched_pusch->mcs = 9;
-  sched_ctrl->sched_pusch->rbStart = rbStart;
-  sched_ctrl->sched_pusch->rbSize = rbSize;
+  sched_ctrl->sched_pusch.mcs = 9;
+  sched_ctrl->sched_pusch.rbStart = rbStart;
+  sched_ctrl->sched_pusch.rbSize = rbSize;
 
   /* mark the corresponding RBs as used */
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)

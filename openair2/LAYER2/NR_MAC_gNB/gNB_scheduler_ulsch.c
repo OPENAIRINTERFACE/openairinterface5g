@@ -506,9 +506,9 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize])
     rbSize++;
 
-  sched_ctrl->sched_pusch->time_domain_allocation = tda;
-  sched_ctrl->sched_pusch->slot = sched_slot;
-  sched_ctrl->sched_pusch->frame = sched_frame;
+  sched_ctrl->sched_pusch.time_domain_allocation = tda;
+  sched_ctrl->sched_pusch.slot = sched_slot;
+  sched_ctrl->sched_pusch.frame = sched_frame;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
@@ -534,13 +534,13 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
-  sched_ctrl->sched_pusch->mcs = 9;
-  sched_ctrl->sched_pusch->rbStart = rbStart;
-  sched_ctrl->sched_pusch->rbSize = rbSize;
+  sched_ctrl->sched_pusch.mcs = 9;
+  sched_ctrl->sched_pusch.rbStart = rbStart;
+  sched_ctrl->sched_pusch.rbSize = rbSize;
 
   /* mark the corresponding RBs as used */
-  for (int rb = 0; rb < sched_ctrl->sched_pusch->rbSize; rb++)
-    vrb_map_UL[rb + sched_ctrl->sched_pusch->rbStart] = 1;
+  for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
+    vrb_map_UL[rb + sched_ctrl->sched_pusch.rbStart] = 1;
 }
 
 void nr_schedule_ulsch(module_id_t module_id,
@@ -556,21 +556,21 @@ void nr_schedule_ulsch(module_id_t module_id,
   const NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    if (sched_ctrl->sched_pusch->rbSize <= 0)
+    if (sched_ctrl->sched_pusch.rbSize <= 0)
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
 
     /* PUSCH in a later slot, but corresponding DCI now! */
-    nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_ctrl->sched_pusch->slot];
-    AssertFatal(future_ul_tti_req->SFN == sched_ctrl->sched_pusch->frame
-                && future_ul_tti_req->Slot == sched_ctrl->sched_pusch->slot,
+    nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_ctrl->sched_pusch.slot];
+    AssertFatal(future_ul_tti_req->SFN == sched_ctrl->sched_pusch.frame
+                && future_ul_tti_req->Slot == sched_ctrl->sched_pusch.slot,
                 "%d.%d future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",
                 frame, slot,
                 future_ul_tti_req->SFN,
                 future_ul_tti_req->Slot,
-                sched_ctrl->sched_pusch->frame,
-                sched_ctrl->sched_pusch->slot);
+                sched_ctrl->sched_pusch.frame,
+                sched_ctrl->sched_pusch.slot);
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
     nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
@@ -587,7 +587,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     int rnti_types[2] = { NR_RNTI_C, 0 };
 
     //Resource Allocation in time domain
-    const int tda = sched_ctrl->sched_pusch->time_domain_allocation;
+    const int tda = sched_ctrl->sched_pusch.time_domain_allocation;
     const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
       sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
     const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
@@ -617,7 +617,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
-    pusch_pdu->mcs_index = sched_ctrl->sched_pusch->mcs;
+    pusch_pdu->mcs_index = sched_ctrl->sched_pusch.mcs;
     const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
     if (pusch_pdu->transform_precoding)
       pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
@@ -650,8 +650,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
-    pusch_pdu->rb_start = sched_ctrl->sched_pusch->rbStart;
-    pusch_pdu->rb_size = sched_ctrl->sched_pusch->rbSize;
+    pusch_pdu->rb_start = sched_ctrl->sched_pusch.rbStart;
+    pusch_pdu->rb_size = sched_ctrl->sched_pusch.rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
 
     if (pusch_Config->frequencyHopping==NULL)
@@ -741,7 +741,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
 
     cur_harq->state = ACTIVE_SCHED;
-    cur_harq->last_tx_slot = sched_ctrl->sched_pusch->slot;
+    cur_harq->last_tx_slot = sched_ctrl->sched_pusch.slot;
 
     uint8_t num_dmrs_symb = 0;
     for(int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++)
@@ -813,6 +813,6 @@ void nr_schedule_ulsch(module_id_t module_id,
                        pusch_pdu->bwp_size,
                        sched_ctrl->active_bwp->bwp_Id);
 
-    sched_ctrl->sched_pusch->rbSize = 0;
+    memset(&sched_ctrl->sched_pusch, 0, sizeof(sched_ctrl->sched_pusch));
   }
 }

@@ -287,8 +287,6 @@ typedef struct NR_sched_pucch {
 typedef struct NR_sched_pusch {
   int frame;
   int slot;
-  bool active;
-  nfapi_nr_pusch_pdu_t pusch_pdu;
 
   /// RB allocation within active uBWP
   uint16_t rbSize;
@@ -364,7 +362,7 @@ typedef struct {
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
   int pucch_occ_idx;
-  NR_sched_pusch_t *sched_pusch;
+  NR_sched_pusch_t sched_pusch;
 
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
