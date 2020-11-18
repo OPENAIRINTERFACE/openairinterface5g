@@ -461,6 +461,48 @@ int8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
   return -1;
 }
 
+void nr_simple_ulsch_preprocessor(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot) {
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+
+  AssertFatal(UE_info->num_UEs <= 1,
+              "%s() cannot handle more than one UE, but found %d\n",
+              __func__,
+              UE_info->num_UEs);
+  if (UE_info->num_UEs == 0)
+    return;
+
+  const int UE_id = 0;
+  const int CC_id = 0;
+
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  uint8_t nr_of_candidates;
+  find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  sched_ctrl->coreset = get_coreset(
+      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
+  const int m = UE_info->num_pdcch_cand[UE_id][cid];
+  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                           sched_ctrl->active_bwp,
+                                           sched_ctrl->coreset,
+                                           sched_ctrl->aggregation_level,
+                                           Y,
+                                           m,
+                                           nr_of_candidates);
+  if (sched_ctrl->cce_index < 0) {
+    LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
+    return;
+  }
+  UE_info->num_pdcch_cand[UE_id][cid]++;
+}
+
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,
@@ -497,27 +539,6 @@ void nr_schedule_ulsch(module_id_t module_id,
   if (is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot)
         && (!get_softmodem_params()->phy_test || sched_slot == 8)) {
 
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    NR_SearchSpace_t *ss = get_searchspace(sched_ctrl->active_bwp, target_ss);
-    uint8_t nr_of_candidates, aggregation_level;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
-    NR_ControlResourceSet_t *coreset = get_coreset(sched_ctrl->active_bwp, ss, 1 /* dedicated */);
-    const int cid = coreset->controlResourceSetId;
-    const uint16_t Y = UE_info->Y[UE_id][cid][nr_mac->current_slot];
-    const int m = UE_info->num_pdcch_cand[UE_id][cid];
-    int CCEIndex = allocate_nr_CCEs(nr_mac,
-                                    sched_ctrl->active_bwp,
-                                    coreset,
-                                    aggregation_level,
-                                    Y,
-                                    m,
-                                    nr_of_candidates);
-    if (CCEIndex < 0) {
-      LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-      return;
-    }
-    UE_info->num_pdcch_cand[UE_id][cid]++;
-
     const uint8_t mcs = 9;
     const uint16_t rbStart = 0;
     const uint16_t rbSize = get_softmodem_params()->phy_test ?
@@ -552,7 +573,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
 
     int dci_formats[2];
-    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
+    if (sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats)
       dci_formats[0]  = NR_UL_DCI_FORMAT_0_1;
     else
       dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
@@ -587,6 +608,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
     pusch_pdu->mcs_index = mcs;
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
     if (pusch_pdu->transform_precoding)
       pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
                                                  0,
@@ -752,12 +774,12 @@ void nr_schedule_ulsch(module_id_t module_id,
     nr_configure_pdcch(nr_mac,
                        pdcch_pdu_rel15,
                        rnti,
-                       ss,
-                       coreset,
+                       sched_ctrl->search_space,
+                       sched_ctrl->coreset,
                        scc,
                        sched_ctrl->active_bwp,
-                       aggregation_level,
-                       CCEIndex);
+                       sched_ctrl->aggregation_level,
+                       sched_ctrl->cce_index);
 
     dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
     memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15));
