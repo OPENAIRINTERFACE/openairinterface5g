@@ -412,12 +412,21 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet));
 
+ int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+
  NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
  coreset->controlResourceSetId=1;
- // frequencyDomainResources '11111111 11111111 00000000 00000000 00000000 00000'B,
+ // frequency domain resources depends on BWP size
+ // options are 24, 48 or 96
  coreset->frequencyDomainResources.buf = calloc(1,6);
- coreset->frequencyDomainResources.buf[0] = 0xff;
- coreset->frequencyDomainResources.buf[1] = 0xff;
+ if (curr_bwp < 48)
+   coreset->frequencyDomainResources.buf[0] = 0xf0;
+ else
+   coreset->frequencyDomainResources.buf[0] = 0xff;
+ if (curr_bwp < 96)
+   coreset->frequencyDomainResources.buf[1] = 0;
+ else
+   coreset->frequencyDomainResources.buf[1] = 0xff;
  coreset->frequencyDomainResources.buf[2] = 0;
  coreset->frequencyDomainResources.buf[3] = 0;
  coreset->frequencyDomainResources.buf[4] = 0;
@@ -531,7 +540,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
  ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
- ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
+ if (curr_bwp < 48)
+   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+ else if (curr_bwp < 96)
+   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n2;
+ else
+   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
  ss2->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
  ss2->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
  ss2->searchSpaceType=calloc(1,sizeof(*ss2->searchSpaceType));
@@ -915,7 +929,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
  NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
  pucchres0->pucch_ResourceId=1;
- pucchres0->startingPRB=48;
+ pucchres0->startingPRB=8;
  pucchres0->intraSlotFrequencyHopping=NULL;
  pucchres0->secondHopPRB=NULL;
  pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -926,7 +940,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
 
  pucchres1->pucch_ResourceId=2;
- pucchres1->startingPRB=48;
+ pucchres1->startingPRB=8;
  pucchres1->intraSlotFrequencyHopping=NULL;
  pucchres1->secondHopPRB=NULL;
  pucchres1->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -937,7 +951,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres1);
 
  pucchres2->pucch_ResourceId=3;
- pucchres2->startingPRB=40;
+ pucchres2->startingPRB=0;
  pucchres2->intraSlotFrequencyHopping=NULL;
  pucchres2->secondHopPRB=NULL;
  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
@@ -948,7 +962,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
 
  pucchres3->pucch_ResourceId=4;
- pucchres3->startingPRB=40;
+ pucchres3->startingPRB=0;
  pucchres3->intraSlotFrequencyHopping=NULL;
  pucchres3->secondHopPRB=NULL;
  pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;
