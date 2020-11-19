@@ -1716,16 +1716,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
-  NR_UE_MAC_INST_t *mac = get_mac_inst(ue->Mod_id);
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
+  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
-  LOG_D(PHY, " ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx % 1024, nr_tti_rx);
+  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
   /*
   uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
@@ -1882,13 +1881,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for C-RNTI
   int ret_pdsch = 0;
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1) {
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
-
-    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-    dlsch_config_pdu->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    dlsch_config_pdu->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    dlsch_config_pdu->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
-
+    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ret_pdsch = nr_ue_pdsch_procedures(ue,
 			   proc,
 			   gNB_id,
@@ -1896,33 +1889,24 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
 			   NULL);
 
-    if (ret_pdsch >= 0)
-      nr_ue_dlsch_procedures(ue,
-                             proc,
-                             gNB_id,
-                             PDSCH,
-                             ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
-                             ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][1],
-                             &ue->dlsch_errors[gNB_id],
-                             mode);
-
+    //printf("phy procedure pdsch start measurement\n");
     nr_ue_measurement_procedures(2,ue,proc,gNB_id,nr_tti_rx,mode);
 
-    // deactivate dlsch once dlsch proc is done
-    ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active = 0;
+    /*
+    write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],fp->ofdm_symbol_size*14,1,1);
+    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->dl_ch_estimates[0][0],fp->ofdm_symbol_size*14,1,1);
+    write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
+    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
+    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
+    write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
+    */
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
+    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[gNB_id]) && (ue->dlsch_SI[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
-
-    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-    dlsch_config_pdu->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-    dlsch_config_pdu->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
-    dlsch_config_pdu->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-
     nr_ue_pdsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -1957,12 +1941,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for P-RNTI
   if ((ue->dlsch_p[gNB_id]) && (ue->dlsch_p[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
-
-    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-    dlsch_config_pdu->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    dlsch_config_pdu->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
-    dlsch_config_pdu->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
-
     nr_ue_pdsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -1988,12 +1966,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[gNB_id]) && (ue->dlsch_ra[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
-
-    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-    dlsch_config_pdu->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-    dlsch_config_pdu->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-    dlsch_config_pdu->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-
     nr_ue_pdsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -2016,6 +1988,45 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
+  // do procedures for C-RNTI
+  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1) {
+
+    LOG_D(PHY, "DLSCH data reception at nr_tti_rx: %d \n \n", nr_tti_rx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
+
+#if UE_TIMING_TRACE
+    start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
+#endif
+
+    if (ret_pdsch >= 0)
+      nr_ue_dlsch_procedures(ue,
+			   proc,
+			   gNB_id,
+			   PDSCH,
+			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
+			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][1],
+			   &ue->dlsch_errors[gNB_id],
+			   mode);
+
+
+#if UE_TIMING_TRACE
+  stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
+#if DISABLE_LOG_X
+  printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_tti_rx,ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
+  printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_tti_rx,ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
+#else
+  LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_tti_rx,ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
+  LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_tti_rx,ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
+#endif
+
+#endif
+
+  // deactivate dlsch once dlsch proc is done
+  ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active = 0;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
+
+ }
 #if UE_TIMING_TRACE
 start_meas(&ue->generic_stat);
 #endif
