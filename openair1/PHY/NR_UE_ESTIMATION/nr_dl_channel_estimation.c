@@ -445,7 +445,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       assert(0);
     }
 
-    if( symbol == 3)
+    if ( symbol == (ue->symbol_offset+1)%(ue->frame_parms.symbols_per_slot))
     {
         // do ifft of channel estimate
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)

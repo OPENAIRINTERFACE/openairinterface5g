@@ -241,7 +241,7 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 	unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
 	if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 	
-	symbol_offset = ue->frame_parms.ofdm_symbol_size*(ue->symbol_offset+1);
+	symbol_offset = ue->frame_parms.ofdm_symbol_size*((ue->symbol_offset+1)%(ue->frame_parms.symbols_per_slot));
 
     ue->measurements.rsrp[eNB_offset] = 0;
 
