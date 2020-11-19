@@ -63,7 +63,11 @@
 #include "NR_PhysicalCellGroupConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
-
+#include "NR_MeasConfig.h"
+#include "fapi_nr_ue_interface.h"
+#include "NR_IF_Module.h"
+#include "PHY/defs_nr_common.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 
 #define NB_NR_UE_MAC_INST 1
 /*!\brief Maximum number of logical channl group IDs */
@@ -158,6 +162,7 @@ typedef struct {
   NR_CellGroupConfig_t            *scg;
   NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
   int                             servCellIndex;
+  NR_CSI_ReportConfig_t           *csirc;
   ////  MAC config
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
@@ -221,6 +226,10 @@ typedef struct {
   uint32_t RA_tx_frame;
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
+  /// Scheduled TX frame for RA Msg3
+  frame_t msg3_frame;
+  /// Scheduled TX slot for RA Msg3
+  slot_t msg3_slot;
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
   /// Random-access variable for backoff (subframe of last change in backoff counter)
@@ -243,13 +252,11 @@ typedef struct {
   uint8_t generate_nr_prach;
 
   ////	FAPI-like interface message
-  fapi_nr_tx_request_t tx_request;
-  fapi_nr_ul_config_request_t ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;
 
   ///     Interface module instances
   nr_ue_if_module_t       *if_module;
-  nr_scheduled_response_t scheduled_response;
   nr_phy_config_t         phy_config;
 
   /// BSR report flag management

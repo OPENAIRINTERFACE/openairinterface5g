@@ -24,6 +24,8 @@
 	<htmlTabRef>test-20-tm1-defSched</htmlTabRef>
 	<htmlTabName>Test-20MHz-TM1-default-scheduler</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
+	<TestUnstable>True</TestUnstable>
+	<TestMinId>040522</TestMinId>
 	<TestCaseRequestedList>
  030201
  040101

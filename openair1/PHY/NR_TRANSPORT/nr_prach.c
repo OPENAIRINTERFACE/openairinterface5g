@@ -37,6 +37,7 @@
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
+<<<<<<< HEAD
 extern const char *prachfmt[9];
 
 void init_prach_list(PHY_VARS_gNB *gNB) {
@@ -165,6 +166,160 @@ void rx_nr_prach_ru(RU_t *ru,
     prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
   } 
 
+=======
+extern const char *prachfmt[];
+
+void init_prach_list(PHY_VARS_gNB *gNB) {
+
+  AssertFatal(gNB!=NULL,"gNB is null\n");
+  for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++){
+		gNB->prach_vars.list[i].frame = -1;
+		gNB->prach_vars.list[i].slot  = -1;
+	}
+}
+
+void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id) {
+
+  gNB->prach_vars.list[prach_id].frame = -1;
+	gNB->prach_vars.list[prach_id].slot  = -1;
+
+}
+
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame, int slot, find_type_t type) {
+
+  AssertFatal(gNB!=NULL,"gNB is null\n");
+  for (uint16_t i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) {
+    LOG_D(PHY,"searching for PRACH in %d.%d prach_index %d=> %d.%d\n", frame,slot,i,
+	  gNB->prach_vars.list[i].frame,gNB->prach_vars.list[i].slot);
+		if((type == SEARCH_EXIST_OR_FREE) &&
+		  (gNB->prach_vars.list[i].frame == -1) &&
+		  (gNB->prach_vars.list[i].slot == -1)) {
+		  return i;
+		}
+    else if ((type == SEARCH_EXIST) &&
+		  (gNB->prach_vars.list[i].frame == frame) &&
+      (gNB->prach_vars.list[i].slot  == slot)) {
+		  return i;
+		}
+  }
+  return -1;
+}
+
+void nr_fill_prach(PHY_VARS_gNB *gNB,
+		   int SFN,
+		   int Slot,
+		   nfapi_nr_prach_pdu_t *prach_pdu) {
+
+  int prach_id = find_nr_prach(gNB,SFN,Slot,SEARCH_EXIST_OR_FREE);
+  AssertFatal( ((prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX)) || (prach_id < 0),
+              "illegal or no prach_id found!!! prach_id %d\n",prach_id);
+
+  gNB->prach_vars.list[prach_id].frame=SFN;
+  gNB->prach_vars.list[prach_id].slot=Slot;
+  memcpy((void*)&gNB->prach_vars.list[prach_id].pdu,(void*)prach_pdu,sizeof(*prach_pdu));
+
+}
+
+void init_prach_ru_list(RU_t *ru) {
+
+  AssertFatal(ru!=NULL,"ruis null\n");
+  for (int i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
+			ru->prach_list[i].frame = -1;
+			ru->prach_list[i].slot  = -1;
+	}		
+  pthread_mutex_init(&ru->prach_list_mutex,NULL);
+}
+
+int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type) {
+
+  AssertFatal(ru!=NULL,"ru is null\n");
+  pthread_mutex_lock(&ru->prach_list_mutex);
+  for (uint16_t i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
+    LOG_D(PHY,"searching for PRACH in %d.%d : prach_index %d=> %d.%d\n", frame,slot,i,
+	  ru->prach_list[i].frame,ru->prach_list[i].slot);
+		if((type == SEARCH_EXIST_OR_FREE) &&
+		  (ru->prach_list[i].frame == -1) &&
+		  (ru->prach_list[i].slot == -1)) {
+      pthread_mutex_unlock(&ru->prach_list_mutex);
+		  return i;
+		}	
+    else if ((type == SEARCH_EXIST) &&
+		  (ru->prach_list[i].frame == frame) &&
+      (ru->prach_list[i].slot  == slot)) {
+      pthread_mutex_unlock(&ru->prach_list_mutex);
+      return i;
+    }
+  }
+  pthread_mutex_unlock(&ru->prach_list_mutex);
+  return -1;
+}
+
+void nr_fill_prach_ru(RU_t *ru,
+		      int SFN,
+		      int Slot,
+		      nfapi_nr_prach_pdu_t *prach_pdu) {
+
+  int prach_id = find_nr_prach_ru(ru,SFN,Slot,SEARCH_EXIST_OR_FREE);
+  AssertFatal( ((prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX)) || (prach_id < 0) ,
+              "illegal or no prach_id found!!! prach_id %d\n",prach_id);
+
+  pthread_mutex_lock(&ru->prach_list_mutex);
+  ru->prach_list[prach_id].frame              = SFN;
+  ru->prach_list[prach_id].slot               = Slot;
+  ru->prach_list[prach_id].fmt                = prach_pdu->prach_format;
+  ru->prach_list[prach_id].numRA              = prach_pdu->num_ra;
+  ru->prach_list[prach_id].prachStartSymbol   = prach_pdu->prach_start_symbol;
+  ru->prach_list[prach_id].num_prach_ocas     = prach_pdu->num_prach_ocas;
+  pthread_mutex_unlock(&ru->prach_list_mutex);  
+
+}
+
+void free_nr_ru_prach_entry(RU_t *ru,
+			    int prach_id) {
+
+  pthread_mutex_lock(&ru->prach_list_mutex);
+  ru->prach_list[prach_id].frame = -1;
+	ru->prach_list[prach_id].slot  = -1;
+  pthread_mutex_unlock(&ru->prach_list_mutex);
+
+}
+
+
+void rx_nr_prach_ru(RU_t *ru,
+		    int prachFormat,
+		    int numRA,
+		    int prachStartSymbol,
+		    int prachOccasion,
+		    int frame,
+		    int slot) {
+
+  AssertFatal(ru!=NULL,"ru is null\n");
+
+  int16_t            **rxsigF=NULL;
+  NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
+  int slot2=slot;
+
+  int16_t *prach[ru->nb_rx];
+  int prach_sequence_length = ru->config.prach_config.prach_sequence_length.value;
+
+  int msg1_frequencystart   = ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
+
+  int sample_offset_slot = (prachStartSymbol==0?0:fp->ofdm_symbol_size*prachStartSymbol+fp->nb_prefix_samples0+fp->nb_prefix_samples*(prachStartSymbol-1));
+  //to be checked for mu=0;
+
+  LOG_D(PHY,"frame %d, slot %d: doing rx_nr_prach_ru for format %d, numRA %d, prachStartSymbol %d, prachOccasion %d\n",frame,slot,prachFormat,numRA,prachStartSymbol,prachOccasion);
+
+  rxsigF            = ru->prach_rxsigF[prachOccasion];
+
+  AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
+
+  for (int aa=0; aa<ru->nb_rx; aa++){ 
+    if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
+    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))+sample_offset_slot-ru->N_TA_offset];
+  } 
+
+
+>>>>>>> fork_develop_new
   int dftlen=0;
   int mu = fp->numerology_index;
   int Ncp = 0;
@@ -198,6 +353,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	  ru->idx,frame,slot,prachfmt[prachFormat],msg1_frequencystart,prachStartSymbol);
 
     switch (prachFormat) {
+<<<<<<< HEAD
     case 0: //A1
       Ncp = 288/(1<<mu);
       break;
@@ -214,6 +370,26 @@ void rx_nr_prach_ru(RU_t *ru,
       Ncp = 216/(1<<mu);
     break;
     
+=======
+    case 4: //A1
+      Ncp = 288/(1<<mu);
+      break;
+      
+    case 5: //A2
+      Ncp = 576/(1<<mu);
+      break;
+      
+    case 6: //A3
+      Ncp = 864/(1<<mu);
+      break;
+      
+    case 7: //B1
+      Ncp = 216/(1<<mu);
+    break;
+    
+    /*
+    // B2 and B3 do not exist in FAPI
+>>>>>>> fork_develop_new
     case 4: //B2
       Ncp = 360/(1<<mu);
       break;
@@ -221,6 +397,7 @@ void rx_nr_prach_ru(RU_t *ru,
     case 5: //B3
       Ncp = 504/(1<<mu);
       break;
+<<<<<<< HEAD
       
     case 6: //B4
       Ncp = 936/(1<<mu);
@@ -231,6 +408,18 @@ void rx_nr_prach_ru(RU_t *ru,
       break;
       
     case 8: //C2
+=======
+    */
+    case 8: //B4
+      Ncp = 936/(1<<mu);
+      break;
+      
+    case 9: //C0
+      Ncp = 1240/(1<<mu);
+      break;
+      
+    case 10: //C2
+>>>>>>> fork_develop_new
       Ncp = 2048/(1<<mu);
       break;
       
@@ -265,7 +454,8 @@ void rx_nr_prach_ru(RU_t *ru,
   if (k<0) k+=(fp->ofdm_symbol_size);
   
   k*=K;
-  k+=kbar; 
+  k+=kbar;
+
   int reps=1;
 
   for (int aa=0; aa<ru->nb_rx; aa++) {
@@ -308,21 +498,37 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
             dftlen=2048;
             dft(DFT_2048,prach2,rxsigF[aa],1);
+<<<<<<< HEAD
 	    if (prachFormat != 7) { // !=C0
 	      dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
 	      reps++;
 	    }
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+=======
+	    if (prachFormat != 9/*C0*/) { 
+	      dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
+	      reps++;
+	    }
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
+>>>>>>> fork_develop_new
               dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
               dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
 	      reps+=2;
 	    }
+<<<<<<< HEAD
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+=======
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
+>>>>>>> fork_develop_new
               dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
               dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 6) {
+=======
+	    if (prachFormat == 8/*B4*/) {
+>>>>>>> fork_develop_new
 	      for (int i=6;i<12;i++) dft(DFT_2048,prach2+(4096*i),rxsigF[aa]+(4096*i),1);
 	      reps+=6;
 	    }
@@ -363,22 +569,38 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
 	    dftlen=1536;
 	    dft(DFT_1536,prach2,rxsigF[aa],1);
+<<<<<<< HEAD
 	    if (prachFormat != 7) {
+=======
+	    if (prachFormat != 9/*C0*/) {
+>>>>>>> fork_develop_new
 	      dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
 	      reps++;
 	    }
 	    
+<<<<<<< HEAD
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+=======
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
+>>>>>>> fork_develop_new
 	      dft(DFT_1536,prach2+3072*2,rxsigF[aa]+3072*2,1);
 	      dft(DFT_1536,prach2+3072*3,rxsigF[aa]+3072*3,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+=======
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
+>>>>>>> fork_develop_new
 	      dft(DFT_1536,prach2+3072*4,rxsigF[aa]+3072*4,1);
 	      dft(DFT_1536,prach2+3072*5,rxsigF[aa]+3072*5,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 6) {
+=======
+	    if (prachFormat == 8/*B4*/) {
+>>>>>>> fork_develop_new
 	      for (int i=6;i<12;i++) dft(DFT_1536,prach2+(3072*i),rxsigF[aa]+(3072*i),1);
 	      reps+=6;
 	    }
@@ -423,22 +645,38 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
 	    dftlen=4096;
 	    dft(DFT_4096,prach2,rxsigF[aa],1);
+<<<<<<< HEAD
 	    if (prachFormat != 7) { //!=C0 
+=======
+	    if (prachFormat != 9/*C0*/) { 
+>>>>>>> fork_develop_new
 	      dft(DFT_4096,prach2+8192,rxsigF[aa]+8192,1);
 	      reps++;
 	    }
 	    
+<<<<<<< HEAD
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+=======
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
+>>>>>>> fork_develop_new
               dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
               dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+=======
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
+>>>>>>> fork_develop_new
               dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
               dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 6) {
+=======
+	    if (prachFormat == 8/*B4*/) {
+>>>>>>> fork_develop_new
 	      for (int i=6;i<12;i++) dft(DFT_4096,prach2+(8192*i),rxsigF[aa]+(8192*i),1);
 	      reps+=6;
 	    }
@@ -475,22 +713,38 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
 	    dftlen=3072;
 	    dft(DFT_3072,prach2,rxsigF[aa],1);
+<<<<<<< HEAD
 	    if (prachFormat != 7) { //!=C0
+=======
+	    if (prachFormat != 9/*C0*/) {
+>>>>>>> fork_develop_new
 	      dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
 	      reps++;
 	    }
 	    
+<<<<<<< HEAD
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+=======
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
+>>>>>>> fork_develop_new
               dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
               dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+=======
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
+>>>>>>> fork_develop_new
               dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
               dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
 	      reps+=2;
 	    } 
+<<<<<<< HEAD
 	    if (prachFormat == 6) {
+=======
+	    if (prachFormat == 8/*B4*/) {
+>>>>>>> fork_develop_new
 	      for (int i=6;i<12;i++) dft(DFT_3072,prach2+(6144*i),rxsigF[aa]+(6144*i),1);
 	      reps+=6;
 	    }
@@ -515,13 +769,16 @@ void rx_nr_prach_ru(RU_t *ru,
       for (int i=1;i<reps;i++) rxsigF_tmp[j] += rxsigF2[k2+(i*dftlen<<1)];
     }
     memcpy((void*)rxsigF2,(void *)rxsigF_tmp,N_ZC<<2);
-
   }
 
 }
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 nfapi_nr_prach_pdu_t *prach_pdu,
+<<<<<<< HEAD
+=======
+		 int prachOccasion,
+>>>>>>> fork_develop_new
 		 int frame,
 		 int subframe,
 		 uint16_t *max_preamble,
@@ -570,6 +827,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   fp = &gNB->frame_parms;
 
   nb_rx = gNB->gNB_config.carrier_config.num_rx_ant.value;
+<<<<<<< HEAD
   
   rootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].prach_root_sequence_index.value;
   numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].num_root_sequences.value;
@@ -577,6 +835,13 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   int prach_sequence_length = cfg->prach_sequence_length.value;
 
   int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[0].k1.value;
+=======
+  rootSequenceIndex   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].prach_root_sequence_index.value;
+  numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].num_root_sequences.value;
+  NCS          = prach_pdu->num_cs;//cfg->num_prach_fd_occasions_list[0].prach_zero_corr_conf.value;
+  int prach_sequence_length = cfg->prach_sequence_length.value;
+  int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].k1.value;
+>>>>>>> fork_develop_new
   //  int num_unused_root_sequences = cfg->num_prach_fd_occasions_list[0].num_unused_root_sequences.value;
   // cfg->num_prach_fd_occasions_list[0].unused_root_sequences_list
 
@@ -585,7 +850,11 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint8_t prach_fmt = prach_pdu->prach_format;
   uint16_t N_ZC = (prach_sequence_length==0)?839:139;
 
+<<<<<<< HEAD
   LOG_D(PHY,"L1 PRACH RX: rooSequenceIndex %d, numRootSeqeuences %d, NCS %d, N_ZC %d \n",  rootSequenceIndex,numrootSequenceIndex,NCS,N_ZC);
+=======
+  LOG_D(PHY,"L1 PRACH RX: rooSequenceIndex %d, numRootSeqeuences %d, NCS %d, N_ZC %d, format %d \n",rootSequenceIndex,numrootSequenceIndex,NCS,N_ZC,prach_fmt);
+>>>>>>> fork_develop_new
 
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;

@@ -25,6 +25,11 @@
 	<htmlTabName>Test-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>2</repeatCount>
+<<<<<<< HEAD
+=======
+	<TestUnstable>True</TestUnstable>
+	<TestMinId>040612</TestMinId>
+>>>>>>> fork_develop_new
 	<TestCaseRequestedList>
  030201
  040101

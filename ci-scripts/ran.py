@@ -90,6 +90,7 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.htmlObj = None
 		self.epcObj = None
+		self.runtime_stats= ''
 
 
 
@@ -132,7 +133,7 @@ class RANManagement():
 				self.air_interface[self.eNB_instance] = 'nr-softmodem'
 			else:
 				self.air_interface[self.eNB_instance] = 'lte-softmodem'
-				
+		
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
@@ -426,7 +427,7 @@ class RANManagement():
 		# Launch eNB with the modified config file
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
-		if self.air_interface == 'nr':
+		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		# NOTE: WE SHALL do a check if the executable is present (in case build went wrong)
@@ -614,7 +615,7 @@ class RANManagement():
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
 			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+				self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
 			analyzeFile = False
@@ -643,10 +644,10 @@ class RANManagement():
 					return
 				else:
 					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+						self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+					self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
@@ -704,6 +705,11 @@ class RANManagement():
 		systemTime = ''
 		maxPhyMemUsage = ''
 		nbContextSwitches = ''
+		#NSA FR1 check
+		NSA_RAPROC_PUSCH_check = 0
+		#dlsch and ulsch statistics (dictionary)
+		dlsch_ulsch_stats = {}
+		
 		for line in enb_log_file.readlines():
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
@@ -712,16 +718,20 @@ class RANManagement():
 			if runTime != '':
 				result = re.search('Time executing user inst', str(line))
 				if result is not None:
-					userTime = 'to be decoded - 1'
+					fields=line.split(':')
+					userTime = 'userTime : ' + fields[1].replace('\n','')
 				result = re.search('Time executing system inst', str(line))
 				if result is not None:
-					systemTime = 'to be decoded - 2'
+					fields=line.split(':')
+					systemTime = 'systemTime : ' + fields[1].replace('\n','')
 				result = re.search('Max. Phy. memory usage:', str(line))
 				if result is not None:
-					maxPhyMemUsage = 'to be decoded - 3'
+					fields=line.split(':')
+					maxPhyMemUsage = 'maxPhyMemUsage : ' + fields[1].replace('\n','')
 				result = re.search('Number of context switch.*process origin', str(line))
 				if result is not None:
-					nbContextSwitches = 'to be decoded - 4'
+					fields=line.split(':')
+					nbContextSwitches = 'nbContextSwitches : ' + fields[1].replace('\n','')
 			if X2HO_state == CONST.X2_HO_REQ_STATE__IDLE:
 				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
 				if result is not None:
@@ -850,6 +860,20 @@ class RANManagement():
 				result = re.search('MBMS USER-PLANE.*Requesting.*bytes from RLC', str(line))
 				if result is not None:
 					mbmsRequestMsg += 1
+			#FR1 NSA test : add new markers to make sure gNB is used
+			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI [0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI [0-9a-fA-F]+', str(line))
+			if result is not None:
+				NSA_RAPROC_PUSCH_check = 1
+			#dlsch and ulsch statistics
+			#keys below are the markers we are loooking for, loop over this keys list
+			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
+			#eventually we record and print only the last occurence 
+			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+			for k in keys:
+				result = re.search(k, line)
+				if result is not None:
+					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
+					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
@@ -869,6 +893,23 @@ class RANManagement():
 				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
+			#FR1 NSA test : add new markers to make sure gNB is used
+			if NSA_RAPROC_PUSCH_check:
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
+				htmlMsg = statMsg+'\n'
+			else:
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+				htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#ulsch and dlsch statistics
+			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
+				statMsg=''
+				for key in dlsch_ulsch_stats: #for each dictionary key
+					statMsg += dlsch_ulsch_stats[key] + '\n' 
+					logging.debug(dlsch_ulsch_stats[key])
+				htmleNBFailureMsg += statMsg
+
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -978,11 +1019,12 @@ class RANManagement():
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
 			self.htmlObj.htmleNBFailureMsg=htmleNBFailureMsg
-		# Runtime statistics
+		# Runtime statistics for console output and HTML
 		if runTime != '':
 			logging.debug(runTime)
-			logging.debug('Time executing user inst   : ' + userTime)
-			logging.debug('Time executing system inst : ' + systemTime)
-			logging.debug('Max Physical Memory Usage  : ' + maxPhyMemUsage)
-			logging.debug('Nb Context Switches        : ' + nbContextSwitches)
+			logging.debug(userTime)
+			logging.debug(systemTime)
+			logging.debug(maxPhyMemUsage)
+			logging.debug(nbContextSwitches)
+			self.runtime_stats='<pre>'+runTime + '\n'+ userTime + '\n' + systemTime + '\n' + maxPhyMemUsage + '\n' + nbContextSwitches+'</pre>'
 		return global_status

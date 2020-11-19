@@ -27,8 +27,6 @@
  * \company Eurecom
  * \email: raymond.knopp@eurecom.fr
  */
-#ifndef RRC_GNB_NSA_C
-#define RRC_GNB_NSA_C
 
 #include "nr_rrc_defs.h"
 #include "NR_RRCReconfiguration.h"
@@ -247,15 +245,21 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       LOG_W(RRC, "No E-RAB to be added received from SgNB Addition Request message \n");
   }
 
-  //X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = CG_Config_size; //Need to verify correct value for the buffer_size
-  // Send to X2 entity to transport to MeNB
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_Config,
-                            NULL,
-                            (void *)CG_Config,
-                            X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer,
-                            1024);
-  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
-  itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
+  if (m != NULL) {
+    X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).MeNB_ue_x2_id = m->ue_x2_id;
+    X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).SgNB_ue_x2_id = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
+
+    //X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = CG_Config_size; //Need to verify correct value for the buffer_size
+    // Send to X2 entity to transport to MeNB
+    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_Config,
+                              NULL,
+                              (void *)CG_Config,
+                              X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer,
+                              1024);
+    X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
+    itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
+  }
+
   rrc->Nb_ue++;
   // configure MAC and RLC
   rrc_mac_config_req_gNB(rrc->module_id,
@@ -290,5 +294,45 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
 }
 
+void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
+  protocol_ctxt_t      ctxt;
+  rrc_gNB_ue_context_t *ue_context;
+  MessageDef           *msg_delete_tunnels_p;
+  int                  e_rab;
 
-#endif
+  LOG_D(RRC, "calling rrc_remove_nsa_user rnti %d\n", rnti);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, rnti, 0, 0, rrc->module_id);
+
+  ue_context = rrc_gNB_get_ue_context(rrc, rnti);
+  if (ue_context == NULL) {
+    LOG_W(RRC, "rrc_remove_nsa_user: rnti %d not found\n", rnti);
+    return;
+  }
+
+  pdcp_remove_UE(&ctxt);
+
+  rrc_rlc_remove_ue(&ctxt);
+
+  mac_remove_nr_ue(rrc->module_id, rnti);
+
+  /* delete gtp tunnel */
+  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = rnti;
+  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 1;
+
+  LOG_D(RRC, "ue_context->ue_context.nb_of_e_rabs %d\n", ue_context->ue_context.nb_of_e_rabs);
+  for (e_rab = 0; e_rab < ue_context->ue_context.nb_of_e_rabs; e_rab++) {
+    GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
+      ue_context->ue_context.gnb_gtp_ebi[e_rab];
+    // erase data
+    ue_context->ue_context.gnb_gtp_teid[e_rab] = 0;
+    memset(&ue_context->ue_context.gnb_gtp_addrs[e_rab], 0, sizeof(ue_context->ue_context.gnb_gtp_addrs[e_rab]));
+    ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
+  }
+
+  itti_send_msg_to_task(TASK_GTPV1_U, rrc->module_id, msg_delete_tunnels_p);
+
+  /* remove context */
+  rrc_gNB_remove_ue_context(&ctxt, rrc, ue_context);
+}

@@ -29,7 +29,11 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          nfapi_nr_rnti_type_e rnti_type,
                          uint16_t N_RB);
 
+<<<<<<< HEAD
 uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
+=======
+void nr_generate_dci_top(PHY_VARS_gNB *gNB,
+>>>>>>> fork_develop_new
 			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 			    nfapi_nr_dl_tti_pdcch_pdu *ul_pdcch_pdu,
 			    uint32_t **gold_pdcch_dmrs,

@@ -20,7 +20,7 @@
  */
 
 /*! \file nr_l1_helper.c
-* \brief PHY helper functions for PRACH adapted to NR
+* \brief PHY/MAC helper functions
 * \author Guido Casati
 * \date 2019
 * \version 2.0
@@ -150,4 +150,24 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
   receivedTargerPower = preambleReceivedTargetPower + delta_preamble + (mac->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP;
 
   return receivedTargerPower;
+}
+
+void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
+                     uint8_t *nb_dmrs_re_per_rb,
+                     uint16_t *number_dmrs_symbols){
+
+  int start_symbol          = pusch_pdu->start_symbol_index;
+  uint8_t number_of_symbols = pusch_pdu->nr_of_symbols;
+  uint16_t ul_dmrs_symb_pos = pusch_pdu->ul_dmrs_symb_pos;
+  uint8_t dmrs_type         = pusch_pdu->dmrs_config_type;
+  uint8_t cdm_grps_no_data  = pusch_pdu->num_dmrs_cdm_grps_no_data;
+
+  *number_dmrs_symbols = 0;
+  for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
+    if((ul_dmrs_symb_pos >> i) & 0x01)
+      *number_dmrs_symbols += 1;
+  }
+
+  *nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*cdm_grps_no_data;
+
 }

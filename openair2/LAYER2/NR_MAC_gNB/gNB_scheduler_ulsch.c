@@ -212,14 +212,10 @@ void nr_process_mac_pdu(
 
                 LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 		int UE_id = find_nr_UE_id(module_idP, rnti);
-		RC.nrmac[module_idP]->UE_list.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
+		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+		    log_dump(MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
-                    for (i = 0; i < 32; i++)
-                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
-
-                    LOG_T(MAC, "\n");
                 #endif
                 if(IS_SOFTMODEM_NOS1){
                   mac_rlc_data_ind(module_idP,
@@ -247,6 +243,7 @@ void nr_process_mac_pdu(
                       1,
                       NULL);
                 }
+
 
 
             break;
@@ -313,19 +310,25 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t rssi){
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
-  NR_UE_list_t *UE_list = NULL;
+  NR_UE_info_t *UE_info = NULL;
   NR_UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   current_rnti = rntiP;
   UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
   gNB_mac = RC.nrmac[gnb_mod_idP];
-  UE_list = &gNB_mac->UE_list;
+  UE_info = &gNB_mac->UE_info;
   int target_snrx10 = gNB_mac->pusch_target_snrx10;
 
-  if (UE_id != -1) {
-    UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
+  if (sduP != NULL) {
+    T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
+      T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
+      T_BUFFER(sduP, sdu_lenP));
+  }
 
-    UE_list->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
+  if (UE_id != -1) {
+    UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
+
+    UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
     LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
@@ -339,7 +342,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     // if not missed detection (10dB threshold for now)
     if (UE_scheduling_control->ul_rssi < (100+rssi)) {
       UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
-      UE_scheduling_control->ta_update = timing_advance;
+      if (timing_advance != 0xffff)
+        UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->ul_rssi = rssi;
       LOG_D(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
     }
@@ -364,21 +368,55 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     else {
 
     }
-  }
-  else {
-    // random access pusch with TC-RNTI
-    if (sduP != NULL) { // if the CRC passed
-      for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-        if (UE_list->active[i] == TRUE) {
-          if (UE_list->tc_rnti[i] == current_rnti) {
-            // for now the only thing we are doing is set the UE as 5G connected
-            UE_list->fiveG_connected[i] = true;
-            LOG_I(MAC, "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly and UE_id %d is now 5G connected\n",
-                  gnb_mod_idP, current_rnti, i);
-          }
-        }
+  } else {
+    if (!sduP) // check that CRC passed
+      return;
+
+    /* we don't know this UE (yet). Check whether there is a ongoing RA (Msg 3)
+     * and check the corresponding UE's RNTI match, in which case we activate
+     * it. */
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
+      NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
+      if (ra->state != WAIT_Msg3)
+        continue;
+
+      // random access pusch with TC-RNTI
+      if (ra->rnti != current_rnti) {
+        LOG_W(MAC,
+              "expected TC-RNTI %04x to match current RNTI %04x\n",
+              ra->rnti,
+              current_rnti);
+        continue;
       }
+      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti);
+      UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
+      compute_csi_bitlen(ra->secondaryCellGroup, UE_info, UE_id);
+      UE_info->UE_beam_index[UE_id] = ra->beam_id;
+      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+      AssertFatal(bwpList->list.count == 1,
+                  "downlinkBWP_ToAddModList has %d BWP!\n",
+                  bwpList->list.count);
+      const int bwp_id = 1;
+      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+      LOG_I(MAC,
+            "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
+            "adding UE MAC Context UE_id %d/RNTI %04x\n",
+            gnb_mod_idP,
+            current_rnti,
+            UE_id,
+            ra->rnti);
+      // re-initialize ta update variables afrer RA procedure completion
+      UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
+      free(ra->preambles.preamble_list);
+      ra->state = RA_IDLE;
+      LOG_I(MAC,
+            "reset RA state information for RA-RNTI %04x/index %d\n",
+            ra->rnti,
+            i);
+      return;
     }
   }
+
 }
 

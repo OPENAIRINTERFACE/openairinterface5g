@@ -260,7 +260,11 @@ crc6 (unsigned char * inptr, int bitlen)
   }
 
   if (resbit > 0)
+<<<<<<< HEAD
     crc = (crc << resbit) ^ (crc8Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 24);
+=======
+    crc = (crc << resbit) ^ (crc6Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 24);
+>>>>>>> fork_develop_new
 
   return crc;
 }

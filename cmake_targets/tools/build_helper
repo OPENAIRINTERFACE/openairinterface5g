@@ -40,7 +40,15 @@ esac
 KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
-SUDO='sudo -E'
+#check if we run inside a container
+IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup || true`
+#sudo is not needed when we are root
+if [ "$UID" = 0 ]
+then
+  SUDO=''
+else
+  SUDO='sudo -S -E'
+fi
 
 ###############################
 ## echo and  family
@@ -104,6 +112,8 @@ check_supported_distribution() {
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
+        "rhel7.8")     return 0 ;;
+        "rhel8.2")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -241,10 +251,21 @@ install_protobuf_from_source(){
     #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
-    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
-    cd protobuf-3.3.0/
+
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+      wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
+      cd protobuf-3.3.0/
+    else
+      export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
+      rm -rf /tmp/protobuf
+      git clone --depth=1 --branch=v3.3.0 https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
+      cd /tmp/protobuf
+      git submodule update --init --recursive
+      ./autogen.sh
+    fi
     ./configure
     echo "Compiling protobuf"
     make -j`nproc`
@@ -279,12 +300,12 @@ install_usrp_uhd_driver_from_source(){
     uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
     echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
     (
-    cd /tmp
+    pushd /tmp
     echo "Downloading UHD driver"
     rm -rf /tmp/uhd
     git clone https://github.com/EttusResearch/uhd.git
     cd uhd
-    git checkout tags/v3.13.0.2
+    git checkout tags/v4.0.0.0
     mkdir -p host/build
     cd host/build
     $CMAKE ../
@@ -292,7 +313,9 @@ install_usrp_uhd_driver_from_source(){
     make -j`nproc`
     make test
     $SUDO make install
-    $SUDO ldconfig
+    $SUDO ldconfig -v
+    popd
+    rm -rf /tmp/uhd
     ) >& $uhd_install_log
 }
 
@@ -324,11 +347,20 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-        $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
-        $SUDO -H pip install requests
+        if [ $IS_CONTAINER -eq 0 ]
+        then
+            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+            $SUDO -H pip install requests
+        else
+            $SUDO $INSTALLER -y install boost boost-devel cmake3
+            $SUDO pip3 install mako requests
+        fi
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
-            # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
-            $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            if [ $IS_CONTAINER -eq 0 ]
+            then
+                # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
+                $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            fi
             install_usrp_uhd_driver_from_source
         else
             $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
@@ -750,6 +782,8 @@ check_install_oai_software() {
       libxml2 \
       libxml2-devel \
       libxslt-devel \
+      ninja-build \
+      make \
       openssh-clients \
       openssh-server \
       openssl \

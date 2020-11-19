@@ -333,7 +333,6 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t Kr=0,r;
   uint32_t r_offset=0;
-  uint8_t BG=1;
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
@@ -431,9 +430,9 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
       Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
-		BG = 2;
+		dlsch->harq_processes[harq_pid]->BG = 2;
     else
-		BG = 1;
+		dlsch->harq_processes[harq_pid]->BG = 1;
 
     start_meas(dlsch_segmentation_stats);
     Kb = nr_segmentation(dlsch->harq_processes[harq_pid]->b,
@@ -443,7 +442,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		         &dlsch->harq_processes[harq_pid]->K,
 		         Zc, 
 		         &dlsch->harq_processes[harq_pid]->F,
-                         BG);
+             dlsch->harq_processes[harq_pid]->BG);
     stop_meas(dlsch_segmentation_stats);
     F = dlsch->harq_processes[harq_pid]->F;
 
@@ -480,7 +479,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
     for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
       impp.macro_num=j;
-      nrLDPC_encoder(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,&impp);
+      nrLDPC_encoder(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,dlsch->harq_processes[harq_pid]->BG,&impp);
     }
 
 
@@ -527,12 +526,12 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     if (rel15->nrOfLayers < Nl)
       Nl = rel15->nrOfLayers;
 
-    Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
+    Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
 
     start_meas(dlsch_rate_matching_stats);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
-                          BG,
+                          dlsch->harq_processes[harq_pid]->BG,
                           *Zc,
                           dlsch->harq_processes[harq_pid]->d[r],
                           dlsch->harq_processes[harq_pid]->e+r_offset,

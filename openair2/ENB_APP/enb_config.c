@@ -1576,6 +1576,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             } // !NODE_IS_DU(node_type)
           }
 
+          RRC_CONFIGURATION_REQ (msg_p).nr_scg_ssb_freq = ccparams_lte.nr_scg_ssb_freq;
+
           if (!NODE_IS_DU(rrc->node_type)) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
             sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
@@ -2509,6 +2511,9 @@ int RCconfig_S1(
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
               }
 
+              /* set S1-mme port (sctp) */
+              S1AP_REGISTER_ENB_REQ(msg_p).mme_port[l] = *S1ParamList.paramarray[l][ENB_MME_PORT_IDX].u16ptr;
+
               AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
                           "List of broadcast PLMN to be sent to MME can not be longer than actual "
                           "PLMN list (max %d, but is %d)\n",
@@ -2731,20 +2736,28 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             {
               int t_reloc_prep = 0;
               int tx2_reloc_overall = 0;
+              int t_dc_prep = 0;
+              int t_dc_overall = 0;
               paramdef_t p[] = {
                 { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
-                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 }
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 },
+                { "t_dc_prep", "t_dc_prep", 0, iptr:&t_dc_prep, defintval:0, TYPE_INT, 0 },
+                { "t_dc_overall", "t_dc_overall", 0, iptr:&t_dc_overall, defintval:0, TYPE_INT, 0 }
               };
               config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
 
               if (t_reloc_prep <= 0 || t_reloc_prep > 10000 ||
-                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000) {
-                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000]\n");
+                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000 ||
+                  t_dc_prep <= 0 || t_dc_prep > 10000 ||
+                  t_dc_overall <= 0 || t_dc_overall > 20000) {
+                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000] and [0 < t_dc_prep <= 10000] and [0 < t_dc_overall <= 20000]\n");
                 exit(1);
               }
 
               X2AP_REGISTER_ENB_REQ (msg_p).t_reloc_prep = t_reloc_prep;
               X2AP_REGISTER_ENB_REQ (msg_p).tx2_reloc_overall = tx2_reloc_overall;
+              X2AP_REGISTER_ENB_REQ (msg_p).t_dc_prep = t_dc_prep;
+              X2AP_REGISTER_ENB_REQ (msg_p).t_dc_overall = t_dc_overall;
             }
             // SCTP SETTING
             X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;

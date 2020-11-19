@@ -112,6 +112,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 			  int frame,
 			  int slot) {
+<<<<<<< HEAD
 
   NR_gNB_DLSCH_t *dlsch;
   uint32_t ***pdsch_dmrs = gNB->nr_gold_pdsch_dmrs[slot];
@@ -134,6 +135,29 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     dlsch = gNB->dlsch[dlsch_id][0];
     if (dlsch->slot_tx[slot] == 0)
      continue;
+=======
+
+  NR_gNB_DLSCH_t *dlsch;
+  uint32_t ***pdsch_dmrs = gNB->nr_gold_pdsch_dmrs[slot];
+  int32_t** txdataF = gNB->common_vars.txdataF;
+  int16_t amp = AMP;
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  int xOverhead = 0;
+  time_stats_t *dlsch_encoding_stats=&gNB->dlsch_encoding_stats;
+  time_stats_t *dlsch_scrambling_stats=&gNB->dlsch_scrambling_stats;
+  time_stats_t *dlsch_modulation_stats=&gNB->dlsch_modulation_stats;
+  time_stats_t *tinput=&gNB->tinput;
+  time_stats_t *tprep=&gNB->tprep;
+  time_stats_t *tparity=&gNB->tparity;
+  time_stats_t *toutput=&gNB->toutput;
+  time_stats_t *dlsch_rate_matching_stats=&gNB->dlsch_rate_matching_stats;
+  time_stats_t *dlsch_interleaving_stats=&gNB->dlsch_interleaving_stats;
+  time_stats_t *dlsch_segmentation_stats=&gNB->dlsch_segmentation_stats;
+
+  for (int dlsch_id=0;dlsch_id<NUMBER_OF_NR_DLSCH_MAX;dlsch_id++) {
+    dlsch = gNB->dlsch[dlsch_id][0];
+    if (dlsch->slot_tx[slot] == 0) continue;
+>>>>>>> fork_develop_new
 
     int harq_pid = dlsch->harq_ids[frame%2][slot];
     NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
@@ -235,6 +259,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 		     rel15->nrOfLayers,
 		     nb_re,
 		     tx_layers);
+<<<<<<< HEAD
 #ifdef DEBUG_DLSCH
     printf("Layer mapping (%d layers):\n", rel15->nrOfLayers);
     for (int l=0; l<rel15->nrOfLayers; l++)
@@ -257,6 +282,30 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
     
 #ifdef DEBUG_DLSCH
+=======
+#ifdef DEBUG_DLSCH
+    printf("Layer mapping (%d layers):\n", rel15->nrOfLayers);
+    for (int l=0; l<rel15->nrOfLayers; l++)
+      for (int i=0; i<(nb_re/rel15->nrOfLayers)>>3; i++) {
+	printf("layer %d, Re %d..%d : ",l,i<<3,(i<<3)+7);
+	for (int j=0; j<8; j++) {
+	  printf("l%d %d\t", tx_layers[l][((i<<3)+j)<<1], tx_layers[l][(((i<<3)+j)<<1)+1]);
+	}
+	printf("\n");
+      }
+#endif
+    
+    /// Antenna port mapping
+    //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
+    
+    /// DMRS QPSK modulation
+    
+    
+    l0 = get_l0(rel15->dlDmrsSymbPos);
+    nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+    
+#ifdef DEBUG_DLSCH
+>>>>>>> fork_develop_new
     printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_Type);
     for (int i=0; i<n_dmrs>>4; i++) {
       for (int j=0; j<8; j++) {
@@ -342,7 +391,11 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
     if (gNB->dlsch_stats[i].rnti > 0)
+<<<<<<< HEAD
       LOG_D(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
+=======
+      LOG_I(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
+>>>>>>> fork_develop_new
 	    gNB->dlsch_stats[i].rnti,
 	    gNB->dlsch_stats[i].round_trials[0],
 	    (double)gNB->dlsch_stats[i].round_trials[1]/gNB->dlsch_stats[i].round_trials[0],

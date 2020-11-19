@@ -362,4 +362,25 @@ void generate_dmrs_pbch(uint32_t dmrs_pbch_bitmap[DMRS_PBCH_I_SSB][DMRS_PBCH_N_H
   free(dmrs_sequence);
 #endif
 }
+/* return the position of next dmrs symbol in a slot */
+int get_next_dmrs_symbol_in_slot(uint16_t  ul_dmrs_symb_pos, uint8_t counter, uint8_t end_symbol)
+{
+  for(uint8_t symbol = counter; symbol < end_symbol; symbol++)
+    if((ul_dmrs_symb_pos >>symbol)&0x01 )
+    {
+      return symbol;
+    }
+  return 0;
+}
 
+
+/* return the total number of dmrs symbol in a slot */
+uint8_t get_dmrs_symbols_in_slot(uint16_t l_prime_mask,  uint16_t nb_symb)
+{
+  uint8_t tmp = 0;
+  for (int i = 0; i < nb_symb; i++)
+  {
+    tmp += (l_prime_mask >> i) & 0x01;
+  }
+  return tmp;
+}

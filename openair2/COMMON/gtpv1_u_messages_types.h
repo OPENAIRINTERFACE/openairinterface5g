@@ -98,6 +98,7 @@ typedef struct gtpv1u_enb_delete_tunnel_req_s {
   uint8_t                num_erab;
   ebi_t                  eps_bearer_id[GTPV1U_MAX_BEARERS_PER_UE];
   //teid_t                 enb_S1u_teid;         ///< local SGW S11 Tunnel Endpoint Identifier
+  int                    from_gnb;             ///< Indicates if the message comes from gNB or eNB (1 = comes from gNB, 0 from eNB)
 } gtpv1u_enb_delete_tunnel_req_t;
 
 typedef struct gtpv1u_enb_delete_tunnel_resp_s {
@@ -170,4 +171,5 @@ typedef struct {
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
   tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
 } Gtpv1uS1Req;
+
 #endif /* GTPV1_U_MESSAGES_TYPES_H_ */

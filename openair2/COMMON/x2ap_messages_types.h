@@ -25,22 +25,34 @@
 #include "s1ap_messages_types.h"
 #include "LTE_PhysCellId.h"
 
+typedef enum {
+  X2AP_CAUSE_T_DC_PREP_TIMEOUT,
+  X2AP_CAUSE_T_DC_OVERALL_TIMEOUT,
+  X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST,
+} x2ap_cause_t;
+
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 
-#define X2AP_REGISTER_ENB_REQ(mSGpTR)           		(mSGpTR)->ittiMsg.x2ap_register_enb_req
-#define X2AP_SETUP_REQ(mSGpTR)                  		(mSGpTR)->ittiMsg.x2ap_setup_req
-#define X2AP_SETUP_RESP(mSGpTR)                 		(mSGpTR)->ittiMsg.x2ap_setup_resp
-#define X2AP_HANDOVER_REQ(mSGpTR)               		(mSGpTR)->ittiMsg.x2ap_handover_req
-#define X2AP_HANDOVER_REQ_ACK(mSGpTR)           		(mSGpTR)->ittiMsg.x2ap_handover_req_ack
-#define X2AP_REGISTER_ENB_CNF(mSGpTR)           		(mSGpTR)->ittiMsg.x2ap_register_enb_cnf
-#define X2AP_DEREGISTERED_ENB_IND(mSGpTR)       		(mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
-#define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         		(mSGpTR)->ittiMsg.x2ap_ue_context_release
-#define X2AP_HANDOVER_CANCEL(mSGpTR)            		(mSGpTR)->ittiMsg.x2ap_handover_cancel
-#define X2AP_SENB_ADDITION_REQ(mSGpTR)              	(mSGpTR)->ittiMsg.x2ap_senb_addition_req
-#define X2AP_ENDC_SGNB_ADDITION_REQ(mSGpTR)         	(mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req
-#define X2AP_ENDC_SGNB_ADDITION_REQ_ACK(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req_ACK
-#define X2AP_ENDC_SGNB_RECONF_COMPLETE(mSGpTR)          (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_reconf_complete
+
+#define X2AP_REGISTER_ENB_REQ(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_req
+#define X2AP_SETUP_REQ(mSGpTR)                                  (mSGpTR)->ittiMsg.x2ap_setup_req
+#define X2AP_SETUP_RESP(mSGpTR)                                 (mSGpTR)->ittiMsg.x2ap_setup_resp
+#define X2AP_HANDOVER_REQ(mSGpTR)                               (mSGpTR)->ittiMsg.x2ap_handover_req
+#define X2AP_HANDOVER_REQ_ACK(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_handover_req_ack
+#define X2AP_REGISTER_ENB_CNF(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
+#define X2AP_DEREGISTERED_ENB_IND(mSGpTR)                       (mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
+#define X2AP_UE_CONTEXT_RELEASE(mSGpTR)                         (mSGpTR)->ittiMsg.x2ap_ue_context_release
+#define X2AP_HANDOVER_CANCEL(mSGpTR)                            (mSGpTR)->ittiMsg.x2ap_handover_cancel
+#define X2AP_SENB_ADDITION_REQ(mSGpTR)                          (mSGpTR)->ittiMsg.x2ap_senb_addition_req
+#define X2AP_ENDC_SGNB_ADDITION_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req
+#define X2AP_ENDC_SGNB_ADDITION_REQ_ACK(mSGpTR)                 (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req_ACK
+#define X2AP_ENDC_SGNB_RECONF_COMPLETE(mSGpTR)                  (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_reconf_complete
+#define X2AP_ENDC_SGNB_RELEASE_REQUEST(mSGpTR)                  (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_release_request
+#define X2AP_ENDC_SGNB_RELEASE_REQUIRED(mSGpTR)                 (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_release_required
+#define X2AP_ENDC_DC_PREP_TIMEOUT(mSGpTR)                       (mSGpTR)->ittiMsg.x2ap_ENDC_dc_prep_timeout
+#define X2AP_ENDC_DC_OVERALL_TIMEOUT(mSGpTR)                    (mSGpTR)->ittiMsg.x2ap_ENDC_dc_overall_timeout
+#define X2AP_ENDC_SETUP_REQ(mSGpTR)                             (mSGpTR)->ittiMsg.x2ap_ENDC_setup_req
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
@@ -144,6 +156,8 @@ typedef struct x2ap_register_enb_req_s {
   /* timers (unit: millisecond) */
   int t_reloc_prep;
   int tx2_reloc_overall;
+  int t_dc_prep;
+  int t_dc_overall;
 } x2ap_register_enb_req_t;
 
 typedef struct x2ap_subframe_process_s {
@@ -288,10 +302,6 @@ typedef struct x2ap_senb_addition_req_s {
 
 }x2ap_senb_addition_req_t;
 
-
-
-
-//Panos: Have to see what should be the additional/different elements comparing to handover req ack
 typedef struct x2ap_senb_addition_req_ack_s {
 
   int MeNB_UE_X2_id;
@@ -312,6 +322,13 @@ typedef struct x2ap_senb_addition_req_ack_s {
   int rrc_buffer_size;
 
 } x2ap_senb_addition_req_ack_t;
+
+
+typedef struct x2ap_ENDC_setup_req_s {
+  uint32_t Nid_cell[MAX_NUM_CCs];
+  int num_cc;
+  uint32_t servedNrCell_band[MAX_NUM_CCs];
+} x2ap_ENDC_setup_req_t;
 
 typedef struct x2ap_ENDC_sgnb_addition_req_s {
   int ue_x2_id;
@@ -357,6 +374,8 @@ typedef struct x2ap_ENDC_sgnb_addition_req_ACK_s {
 
   int SgNB_ue_x2_id;
 
+  int gnb_x2_assoc_id;  // to be stored in the rrc's ue context, used when sending 'sgnb reconfiguration complete'
+
   /* used for X2AP->RRC in source eNB */
   int rnti;
 
@@ -384,16 +403,26 @@ typedef struct x2ap_ENDC_sgnb_addition_req_ACK_s {
 
 typedef struct x2ap_ENDC_reconf_complete_s {
   int MeNB_ue_x2_id;
-
   int SgNB_ue_x2_id;
-  LTE_PhysCellId_t target_physCellId;
-
-  x2ap_sgNB_reconf_response_information_t reconf_response;
-
-  uint8_t rrc_buffer[4096 /* arbitrary, big enough */];
-  int rrc_buffer_size;
-
+  int gnb_x2_assoc_id;
 } x2ap_ENDC_reconf_complete_t;
 
+typedef struct x2ap_ENDC_sgnb_release_request_s {
+  int          rnti;
+  x2ap_cause_t cause;
+  int          assoc_id;
+} x2ap_ENDC_sgnb_release_request_t;
+
+typedef struct x2ap_ENDC_sgnb_release_required_s {
+  int gnb_rnti;
+} x2ap_ENDC_sgnb_release_required_t;
+
+typedef struct x2ap_ENDC_dc_prep_timeout_s {
+  int rnti;
+} x2ap_ENDC_dc_prep_timeout_t;
+
+typedef struct x2ap_ENDC_dc_overall_timeout_s {
+  int rnti;
+} x2ap_ENDC_dc_overall_timeout_t;
 
 #endif /* X2AP_MESSAGES_TYPES_H_ */

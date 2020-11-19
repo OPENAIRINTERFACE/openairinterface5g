@@ -86,10 +86,16 @@ static struct rte_eth_dev_tx_buffer *tx_buffer[RTE_MAX_ETHPORTS];
 static struct rte_eth_conf port_conf = {
         .rxmode = {
                 .split_hdr_size = 0,
+<<<<<<< HEAD
                 .offloads = DEV_RX_OFFLOAD_CRC_STRIP,        
 				.offloads       = DEV_RX_OFFLOAD_JUMBO_FRAME,
 				.split_hdr_size = 0,
 				.max_rx_pkt_len = 9500,
+=======
+		.offloads       = DEV_RX_OFFLOAD_JUMBO_FRAME,
+		.split_hdr_size = 0,
+		.max_rx_pkt_len = 9500,
+>>>>>>> fork_develop_new
         },
         .txmode = {
                 .mq_mode = ETH_MQ_TX_NONE,
@@ -234,7 +240,11 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 	}
 
 	// Trigger start send DL packets
+<<<<<<< HEAD
 	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4 && SYMBOL == 0x46 && ANT_NUM == 0x00 && SUBFRAME == 0x00 && dl_start == 0){
+=======
+	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4 && SYMBOL == 0x44 && ANT_NUM == 0x00 && SUBFRAME == 0x00 && dl_start == 0){
+>>>>>>> fork_develop_new
 
 		printf("\nU-Plane Started\n");
 		printf("\n====================================================\n");
@@ -253,7 +263,11 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
           p.antenna = 0;
           memcpy(p.iq, IQ_ptr, 5088);
           store_ul(bs, &p);
+<<<<<<< HEAD
           //if (p.symbol==0) printf("store ul f.sl.sy %d.%d.%d\n", p.frame, p.slot, p.symbol);
+=======
+     //     if (p.symbol==0) printf("store ul f.sl.sy %d.%d.%d\n", p.frame, p.slot, p.symbol);
+>>>>>>> fork_develop_new
         }
 
 	// U-PLANE UL ANT_0 PROCESSING
@@ -268,7 +282,11 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
                 int tx_frame    = frame;
                 int tx_subframe = subframe;
                 int tx_slot     = slot;
+<<<<<<< HEAD
                 int tx_symbol   = symbol + 8;
+=======
+                int tx_symbol   = symbol + 10;
+>>>>>>> fork_develop_new
 
                 if (tx_symbol > 13) {
                   tx_symbol -= 14;
@@ -286,7 +304,11 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 		ANT_NUM = 0x00;
 
 		// Mask the symbol bits from UL packet received and apply the shift.
+<<<<<<< HEAD
 		SYMBOL = ((SYMBOL & 0b00111111) + 8) % 14;
+=======
+		SYMBOL = ((SYMBOL & 0b00111111) + 10) % 14;
+>>>>>>> fork_develop_new
 
 		ANT_NUM = 0x00;
 		SUBFRAME = sf;
@@ -307,6 +329,10 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
                   memcpy(IQ_ptr, bs->buffers->dl[oai_slot] + tx_symbol * 1272*4,
                          1272*4);
                 }
+<<<<<<< HEAD
+=======
+//printf("DL buffer f sf slot symbol %d %d %d %d (sf %d)\n", tx_frame, tx_subframe, tx_slot, tx_symbol, (int)sf);
+>>>>>>> fork_develop_new
                 bs->buffers->dl_busy[oai_slot] &= ~(1 << tx_symbol);
                 unlock_dl_buffer(bs->buffers, oai_slot);
 
@@ -319,7 +345,11 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 	{
 
 		// Mask the symbol bits from UL packet received and apply the shift.
+<<<<<<< HEAD
 		SYMBOL = ((SYMBOL & 0b00111111) + 8) % 14;
+=======
+		SYMBOL = ((SYMBOL & 0b00111111) +10) % 14;
+>>>>>>> fork_develop_new
 
 		ANT_NUM = 0x01;
 		SUBFRAME = sf;
@@ -348,10 +378,17 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 	else if(PAYLOAD_1 == 0x0d && PAYLOAD_2 == 0x28){
                 if (ANT_NUM == 0) {
                   int subframe = SUBFRAME >> 4;
+<<<<<<< HEAD
                   int slot = ((SUBFRAME & 0x0f) << 2) | ((SYMBOL >> 6) & 0x03);
                   if (subframe==9) {
                      //printf("store prach f.sf.sl %d.%d.%d %d\n", FRAME, subframe, slot, subframe * 2 + slot);
                      store_prach(bs, FRAME, slot /*subframe * 2 + slot*/, IQ_ptr);
+=======
+                  //int slot = ((SUBFRAME & 0x0f) << 2) | ((SYMBOL >> 6) & 0x03);
+                  if (subframe==9) {
+                     //printf("store prach f.sf.sl %d.%d.%d %d\n", FRAME, subframe, slot, subframe * 2 + slot);
+                     store_prach(bs, FRAME, subframe * 2 + 1, IQ_ptr);
+>>>>>>> fork_develop_new
                   } 
                 }
 		rte_pktmbuf_free(m);

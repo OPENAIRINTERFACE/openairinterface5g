@@ -45,6 +45,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "common/utils/threadPool/thread-pool.h"
 
 //#define DEBUG_NR_ULSCHSIM
 
@@ -67,6 +68,44 @@ PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
+  ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
+  NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
+  NR_gNB_ULSCH_t *ulsch = rdata->ulsch;
+  int r = rdata->segment_r;
+
+  bool decodeSuccess = (rdata->decodeIterations <= rdata->decoderParms.numMaxIter);
+  ulsch_harq->processedSegments++;
+  gNB->nbDecode--;
+
+  if (decodeSuccess) {
+    memcpy(ulsch_harq->b+rdata->offset,
+           ulsch_harq->c[r],
+           rdata->Kr_bytes- - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
+  } else {
+    if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
+      int nb=abortTpool(gNB->threadPool, req->key);
+      nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
+      gNB->nbDecode-=nb;
+      AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
+      ulsch_harq->processedSegments, nb, rdata->nbSegments);
+      ulsch_harq->processedSegments=rdata->nbSegments;
+      return 1;
+    }
+  }
+
+  // if all segments are done 
+  if (rdata->nbSegments == ulsch_harq->processedSegments) {
+    if (decodeSuccess) {
+      return 0;
+    } else {
+      return 1;
+      }
+
+    }
+    ulsch->last_iteration_cnt = rdata->decodeIterations;
+  return 0;
+}
 int main(int argc, char **argv)
 {
   char c;
@@ -92,7 +131,7 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   double sigma;
   unsigned char qbits = 8;
-  int ret;
+  int ret=0;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
@@ -338,6 +377,11 @@ int main(int argc, char **argv)
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  char tp_param[] = "n";
+  initTpool(tp_param, gNB->threadPool, true);
+  initNotifiedFIFO(gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -408,7 +452,7 @@ int main(int argc, char **argv)
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
   rel15_ul->target_code_rate    = code_rate;
-  rel15_ul->pusch_data.tb_size  = TBS>>3;
+  rel15_ul->pusch_data.tb_size  = TBS/8;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -444,7 +488,7 @@ int main(int argc, char **argv)
     harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
     harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
-    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS;
+    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
     harq_process_ul_ue->a = &test_input[0];
 
   }
@@ -531,10 +575,15 @@ int main(int argc, char **argv)
                            rel15_ul->qam_mod_order,
                            rel15_ul->nrOfLayers);
 
-      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
+      nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
                               frame, subframe, harq_pid, G);
+      while (gNB->nbDecode > 0) {
+        notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
+        ret = nr_postDecode_sim(gNB, req);
+        delNotifiedFIFO_elt(req);
+      }
 
-      if (ret > ulsch_gNB->max_ldpc_iterations)
+      if (ret)
         n_errors++;
 
       //count errors

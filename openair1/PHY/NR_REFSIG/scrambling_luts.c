@@ -45,8 +45,12 @@ void init_byte2m64(void) {
     byte2m64_im[s] = _mm_insert_pi16(byte2m64_im[s],(1-2*((s>>5)&1)),2);
     byte2m64_re[s] = _mm_insert_pi16(byte2m64_re[s],(1-2*((s>>6)&1)),3);
     byte2m64_im[s] = _mm_insert_pi16(byte2m64_im[s],(1-2*((s>>7)&1)),3);
+<<<<<<< HEAD
      /*
      printf("init_scrambling_luts: s %x (%d) ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+=======
+     LOG_T(PHY,"init_scrambling_luts: s %x (%d) ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+>>>>>>> fork_develop_new
 	    ((uint16_t*)&s)[0],
 	    (1-2*(s&1)),
 	    ((int16_t*)&byte2m64_re[s])[0],((int16_t*)&byte2m64_im[s])[0],    

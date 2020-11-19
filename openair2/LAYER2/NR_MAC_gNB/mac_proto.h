@@ -36,8 +36,6 @@
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
 
-#define MAX_ACK_BITS 2 //only format 0 is available for now
-
 void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
@@ -67,6 +65,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 int nr_generate_dlsch_pdu(module_id_t Mod_idP,
+                          NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *sdus_payload,
                           unsigned char *mac_pdu,
                           unsigned char num_sdus,
@@ -76,9 +75,18 @@ int nr_generate_dlsch_pdu(module_id_t Mod_idP,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding);
 
-void nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_schedule_ue_spec(module_id_t module_id,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int num_slots_per_tdd);
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+/* \brief default preprocessor */
+void nr_simple_dlsch_preprocessor(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot,
+                                  int num_slots_per_tdd);
+
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
@@ -122,16 +130,37 @@ uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 
 /////// Phy test scheduler ///////
 
+/* \brief preprocessor for phytest: schedules UE_id 0 with fixed MCS on all
+ * freq resources */
+void nr_preprocessor_phytest(module_id_t module_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             int num_slots_per_tdd);
+
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
-int configure_fapi_dl_pdu(int Mod_id,
-                         nfapi_nr_dl_tti_request_t *dl_tti_req,
-                         NR_sched_pucch *pucch_sched,
-                         uint8_t *mcsIndex,
-                         uint16_t *rbSize,
-                         uint16_t *rbStart);
+void nr_fill_nfapi_dl_pdu(int Mod_id,
+                          nfapi_nr_dl_tti_request_body_t *dl_req,
+                          rnti_t rnti,
+                          NR_CellGroupConfig_t *secondaryCellGroup,
+                          NR_UE_sched_ctrl_t *sched_ctrl,
+                          NR_sched_pucch *pucch_sched,
+                          nfapi_nr_dmrs_type_e dmrsConfigType,
+                          uint16_t R,
+                          uint8_t Qm,
+                          uint32_t tbs,
+                          int StartSymbolIndex,
+                          int NrOfSymbols,
+                          int harq_pid,
+                          int ndi,
+                          int round);
+
+void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
+                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -140,20 +169,6 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   int *dci_formats, int *rnti_types,
                   int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id);
-
-void configure_fapi_dl_Tx(module_id_t Mod_idP,
-                          frame_t       frameP,
-                          sub_frame_t   slotP,
-                          nfapi_nr_dl_tti_request_t *dl_tti_req,
-                          nfapi_nr_pdu_t *tx_req,
-                          int tbs_bytes,
-                          int16_t pdu_index);
-
-void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
-                                   frame_t       frameP,
-                                   sub_frame_t   slotP,
-                                   NR_sched_pucch *pucch_sched,
-                                   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
@@ -168,12 +183,23 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
-void nr_update_pucch_scheduling(int Mod_idP,
-                                int UE_id,
-                                frame_t frameP,
-                                sub_frame_t slotP,
-                                int slots_per_tdd,
-                                int *pucch_id);
+void nr_csi_meas_reporting(int Mod_idP,
+                           int UE_id,
+                           frame_t frameP,
+                           sub_frame_t slotP,
+                           int slots_per_tdd,
+                           int ul_slots,
+                           int n_slots_frame);
+
+void nr_acknack_scheduling(int Mod_idP,
+                           int UE_id,
+                           frame_t frameP,
+                           sub_frame_t slotP,
+                           int slots_per_tdd,
+                           int *pucch_id,
+                           int *pucch_occ);
+
+int get_pucch_resource(NR_UE_info_t *UE_info,int UE_id,int k,int l);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -202,22 +228,25 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_ServingCellConfigCommon_t *scc,
 			NR_BWP_Uplink_t *bwp,
+                        uint16_t rnti,
                         uint8_t pucch_resource,
-                        uint16_t O_uci,
+                        uint16_t O_csi,
                         uint16_t O_ack,
-                        uint8_t SR_flag);
+                        uint8_t O_sr);
 
 void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                       nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-                       uint16_t rnti,
-                       int ss_type,
-                       NR_SearchSpace_t *ss,
-                       NR_ServingCellConfigCommon_t *scc,
-                       NR_BWP_Downlink_t *bwp);
+void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+                        uint16_t rnti,
+                        NR_SearchSpace_t *ss,
+                        NR_ControlResourceSet_t *coreset,
+                        NR_ServingCellConfigCommon_t *scc,
+                        NR_BWP_Downlink_t *bwp,
+                        uint8_t aggregation_level,
+                        int CCEIndex);
 
 void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *secondaryCellGroup,
@@ -232,6 +261,16 @@ void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
+
+/* find coreset within the search space */
+NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
+                                     NR_SearchSpace_t *ss,
+                                     int ss_type);
+
+/* find a search space within a BWP */
+NR_SearchSpace_t *get_searchspace(
+    NR_BWP_Downlink_t *bwp,
+    NR_SearchSpace__searchSpaceType_PR target_ss);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
@@ -259,28 +298,41 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB);
 
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 
-void dump_nr_ue_list(NR_UE_list_t *listP, int ul_flag);
+void dump_nr_ue_list(NR_UE_list_t *listP);
+void add_nr_ue_list(NR_UE_list_t *listP, int UE_id);
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
+int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
+
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
+void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
-                     int bwp_id,
-                     int coreset_id,
+                     NR_BWP_Downlink_t *bwp,
+                     NR_ControlResourceSet_t *coreset,
                      int aggregation,
-                     int search_space, // 0 common, 1 ue-specific
-                     int UE_id,
-                     int m
-                     );
+                     uint16_t Y,
+                     int m,
+                     int nr_of_candidates);
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_tot,
+                                uint16_t O_csi,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl);
+
+void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t *UE_info, int UE_id);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
 int get_ulscs(nfapi_nr_config_request_t *cfg);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
-
-int32_t get_nr_uldl_offset(int nr_bandP);
 
 void config_nr_mib(int Mod_idP, 
                    int CC_idP,
@@ -305,7 +357,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
                           int ul_slots,
-                          int time_domain_assignment);
+                          int time_domain_assignment,
+                          uint64_t ulsch_in_slot_bitmap);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -318,6 +371,8 @@ void nr_process_mac_pdu(
 int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
+
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.
@@ -341,6 +396,15 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t rssi);
 
 void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu);
+
+int16_t ssb_index_from_prach(module_id_t module_idP,
+                             frame_t frameP,
+			     sub_frame_t slotP,
+                             uint16_t preamble_index,
+                             uint8_t freq_index,
+                             uint8_t symbol);
+
+void find_SSB_and_RO_available(module_id_t module_idP);
 
 void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

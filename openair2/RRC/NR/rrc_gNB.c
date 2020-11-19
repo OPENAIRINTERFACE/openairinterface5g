@@ -82,6 +82,7 @@
 
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include <openair2/X2AP/x2ap_eNB.h>
 
 //#define XER_PRINT
 
@@ -178,10 +179,11 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void init_NR_SI(gNB_RRC_INST *rrc) {
+static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration) {
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
   rrc->carrier.MIB             = (uint8_t *) malloc16(4);
   rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
+  rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,
@@ -271,7 +273,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.pucch_TargetSNRx10 = configuration->pucch_TargetSNRx10;
   /// System Information INIT
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
-  init_NR_SI(rrc);
+  init_NR_SI(rrc, configuration);
   rrc_init_nr_global_param();
   openair_nr_rrc_on(&ctxt);
   return 0;
@@ -301,6 +303,28 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
   parse_CG_ConfigInfo(rrc,cg_configinfo,m);
 }
 
+void rrc_gNB_process_release_request(const module_id_t gnb_mod_idP, x2ap_ENDC_sgnb_release_request_t *m)
+{
+  gNB_RRC_INST *rrc = RC.nrrrc[gnb_mod_idP];
+  rrc_remove_nsa_user(rrc, m->rnti);
+}
+
+void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC_dc_overall_timeout_t *m)
+{
+  gNB_RRC_INST *rrc = RC.nrrrc[gnb_mod_idP];
+  rrc_remove_nsa_user(rrc, m->rnti);
+}
+
+void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
+  MessageDef *msg;
+
+  /* send a tick to x2ap */
+  if (is_x2ap_enabled()){
+    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_SUBFRAME_PROCESS);
+    itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
+  }
+}
+
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 void *rrc_gnb_task(void *args_p) {
@@ -319,7 +343,10 @@ void *rrc_gnb_task(void *args_p) {
     itti_receive_msg(TASK_RRC_GNB, &msg_p);
     msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_INSTANCE(msg_p);
-    LOG_I(NR_RRC,"Received message %s\n",msg_name_p);
+
+    /* RRC_SUBFRAME_PROCESS is sent every subframe, do not log it */
+    if (ITTI_MSG_ID(msg_p) != RRC_SUBFRAME_PROCESS)
+      LOG_I(NR_RRC,"Received message %s\n",msg_name_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
@@ -332,6 +359,10 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       /* Messages from MAC */
+
+      case RRC_SUBFRAME_PROCESS:
+        nr_rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
+        break;
 
       /* Messages from PDCP */
 
@@ -406,6 +437,20 @@ void *rrc_gnb_task(void *args_p) {
         LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
         break;
 
+      case X2AP_ENDC_SGNB_RELEASE_REQUEST:
+        LOG_I(NR_RRC, "Received ENDC sgNB release request from X2AP \n");
+        rrc_gNB_process_release_request(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_RELEASE_REQUEST(msg_p));
+        break;
+
+      case X2AP_ENDC_DC_OVERALL_TIMEOUT:
+        rrc_gNB_process_dc_overall_timeout(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_DC_OVERALL_TIMEOUT(msg_p));
+        break;
+
+      /* Messages from GTP */
+      case GTPV1U_ENB_DELETE_TUNNEL_RESP:
+        /* nothing to do? */
+        break;
+
       default:
         LOG_E(NR_RRC, "[gNB %d] Received unexpected message %s\n", instance, msg_name_p);
         break;
@@ -417,3 +462,11 @@ void *rrc_gnb_task(void *args_p) {
   }
 }
 
+void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe)
+{
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message(TASK_RRC_GNB, RRC_SUBFRAME_PROCESS);
+  RRC_SUBFRAME_PROCESS(message_p).ctxt  = *ctxt;
+  RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
+  itti_send_msg_to_task(TASK_RRC_GNB, ctxt->module_id, message_p);
+}

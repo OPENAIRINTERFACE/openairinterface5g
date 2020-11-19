@@ -1413,9 +1413,6 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
 
 
 int pnf_phy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
-  if (RC.ru == 0) {
-    return -1;
-  }
 
   if (RC.eNB == 0) {
     return -2;
@@ -1627,9 +1624,6 @@ int pnf_phy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, n
                 req->ul_config_request_body.srs_present
                );
 
-  if (RC.ru == 0) {
-    return -1;
-  }
 
   if (RC.eNB == 0) {
     return -2;

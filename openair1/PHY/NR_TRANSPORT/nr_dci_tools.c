@@ -203,8 +203,12 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
   return ret;
 }*/
 int16_t find_nr_pdcch(int frame,int slot, PHY_VARS_gNB *gNB,find_type_t type) {
+<<<<<<< HEAD
 //  if(slot==2)
 // LOG_I(PHY,"\nFRAME %d SLOT %d gNB pdcch pdu frame %d,slot %d",frame,slot,gNB->pdcch_pdu[0].frame,gNB->pdcch_pdu[0].slot);
+=======
+
+>>>>>>> fork_develop_new
   uint16_t i;
   int16_t first_free_index=-1;
 
@@ -238,10 +242,21 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
   gNB->pdcch_pdu[pdcch_id].frame = frame+2;//Hardcoded as PNF has offset of 2 frames
   gNB->pdcch_pdu[pdcch_id].slot  = slot;
 
+  int pdcch_id = find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST_OR_FREE);
+  AssertFatal(pdcch_id>=0 && pdcch_id<NUMBER_OF_NR_PDCCH_MAX,"Cannot find space for PDCCH, exiting\n");
+  memcpy((void*)&gNB->pdcch_pdu[pdcch_id].pdcch_pdu,(void*)pdcch_pdu,sizeof(*pdcch_pdu));
+  gNB->pdcch_pdu[pdcch_id].frame = frame;
+  gNB->pdcch_pdu[pdcch_id].slot  = slot;
+
+<<<<<<< HEAD
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
+
+=======
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
     //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
 
+>>>>>>> fork_develop_new
     int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu.RNTI[i],gNB,SEARCH_EXIST_OR_FREE);
     if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
       LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->dci_pdu.RNTI[i],dlsch_id);

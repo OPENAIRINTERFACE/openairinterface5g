@@ -8,5 +8,11 @@ log/
 lte_build_oai/
 targets/bin/
 
-.vscode/*
+# vscode
+.vscode
 
+# Tags for vim/global
+GPATH
+GRTAGS
+GTAGS
+tags

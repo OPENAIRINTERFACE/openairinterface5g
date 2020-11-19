@@ -19,6 +19,9 @@
  *      contact@openairinterface.org
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include "nr_pdcp_ue_manager.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
@@ -92,6 +95,7 @@ static void *rlc_data_req_thread(void *_)
 {
   int i;
 
+  pthread_setname_np(pthread_self(), "RLC queue");
   while (1) {
     if (pthread_mutex_lock(&q.m) != 0) abort();
     while (q.length == 0)
@@ -203,6 +207,7 @@ static void *enb_tun_read_thread(void *_)
   protocol_ctxt_t ctxt;
 
   int rb_id = 1;
+  pthread_setname_np( pthread_self(),"enb_tun_read");
 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
@@ -247,7 +252,7 @@ static void *ue_tun_read_thread(void *_)
   protocol_ctxt_t ctxt;
 
   int rb_id = 1;
-
+  pthread_setname_np( pthread_self(),"ue_tun_read"); 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
     if (len == -1) {
@@ -368,7 +373,7 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("ue",num_if);
       //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
@@ -431,9 +436,9 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-    printf("!!!!!!! deliver_sdu_drb (drb %d) sending message to gtp size %d: ", rb_id, size);
-    //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
-    printf("\n");
+      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
+      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
+      //printf("\n");
       itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
 
   }
@@ -474,9 +479,9 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-printf("!!!!!!! deliver_pdu_drb (srb %d) calling rlc_data_req size %d: ", rb_id, size);
-//for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
-printf("\n");
+  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
+  //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
 }
 
@@ -854,7 +859,12 @@ uint64_t get_pdcp_optmask(void)
 boolean_t pdcp_remove_UE(
   const protocol_ctxt_t *const  ctxt_pP)
 {
-  TODO;
+  int rnti = ctxt_pP->rnti;
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager, rnti);
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
   return 1;
 }
 
@@ -872,7 +882,7 @@ static boolean_t pdcp_data_req_drb(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer)
 {
-printf("pdcp_data_req called size %d\n", sdu_buffer_size);
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
   int rnti = ctxt_pP->rnti;
@@ -897,9 +907,9 @@ printf("pdcp_data_req called size %d\n", sdu_buffer_size);
     rb = ue->drb[rb_id - 1];
 
   if (rb == NULL) {
-    LOG_E(PDCP, "%s:%d:%s: fatal: no DRB found (rnti %d, rb_id %ld)\n",
+    LOG_E(PDCP, "%s:%d:%s: no DRB found (rnti %d, rb_id %ld)\n",
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
-    exit(1);
+    return 0;
   }
 
   rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
