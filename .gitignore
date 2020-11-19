@@ -12,9 +12,3 @@ targets/bin/
 
 # vscode
 .vscode
-
-# Tags for vim/global
-GPATH
-GRTAGS
-GTAGS
-tags
