@@ -775,7 +775,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              module_id_t mod_id,
                              int cc_id,
                              frame_t frame,
-                             int slot){
+                             int slot,
+                             int thread_id){
 
   scheduled_response->dl_config  = dl_config;
   scheduled_response->ul_config  = ul_config;
@@ -784,7 +785,7 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
   scheduled_response->CC_id      = cc_id;
   scheduled_response->frame      = frame;
   scheduled_response->slot       = slot;
-
+  scheduled_response->thread_id  = thread_id;
 }
 
 uint32_t get_ssb_slot(uint32_t ssb_index){
@@ -1471,7 +1472,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         */
         dl_config->number_pdus = dl_config->number_pdus + 1;
 
-        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot);
+        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
           mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -1485,7 +1486,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot);
+      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -1649,7 +1650,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           }
         }
 
-        fill_scheduled_response(&scheduled_response, NULL, ul_config_req, &tx_req, mod_id, cc_id, rx_frame, rx_slot);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config_req, &tx_req, mod_id, cc_id, rx_frame, rx_slot, ul_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -1718,7 +1719,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
         ul_config->number_pdus++;
         // scheduled_response
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx, ul_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -1773,7 +1774,7 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id) {
 
   uint16_t format, format0, format1, ncs;
   int is_nr_prach_slot;
@@ -1901,7 +1902,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       } // if format1
     } // is_nr_prach_slot
 
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP);
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   } // if is_nr_UL_slot
@@ -1967,7 +1968,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
   csi_MeasConfig_t csi_MeasConfig = ue->csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig= ue->PUSCH_ServingCellConfig;
   PDSCH_ServingCellConfig_t PDSCH_ServingCellConfig= ue->PDSCH_ServingCellConfig;
-  NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
+  NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[proc->thread_id][eNB_id];
   // 1  CARRIER_IN
   // crossCarrierSchedulingConfig from higher layers, variable crossCarrierSchedulingConfig indicates if 'cross carrier scheduling' is enabled or not:
   //      if No cross carrier scheduling: number of bits for CARRIER_IND is 0

@@ -58,7 +58,7 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue) {
   int occ_Index = 0;
   uint64_t  pucch_payload = 0;
   int tx_amp = 512;
-  int nr_tti_tx = 0;
+  int nr_slot_tx = 0;
   int N_UCI = 0;      /* size in bits for Uplink Control Information */
 
   switch(format) {
@@ -67,7 +67,7 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue) {
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          (uint8_t)m_CS,
                          nb_symbols_total,
@@ -82,7 +82,7 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue) {
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          nb_symbols_total,
                          starting_symbol_index,
@@ -95,13 +95,13 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue) {
 
     case pucch_format2_nr: {
       nr_generate_pucch2(ue,
-                         ue->pdcch_vars[ue->current_thread_id[nr_tti_tx]][gNB_id]->crnti,
+                         ue->pdcch_vars[thread_number][gNB_id]->crnti,
                          ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
@@ -113,14 +113,14 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue) {
     case pucch_format3_nr:
     case pucch_format4_nr: {
       nr_generate_pucch3_4(ue,
-                           ue->pdcch_vars[ue->current_thread_id[nr_tti_tx]][gNB_id]->crnti,
+                           ue->pdcch_vars[thread_number][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
                            &ue->pucch_config_dedicated_nr[gNB_id],
                            pucch_payload,
                            tx_amp,
-                           nr_tti_tx,
+                           nr_slot_tx,
                            nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
