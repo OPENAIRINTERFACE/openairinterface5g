@@ -1452,6 +1452,31 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     runmode_t mode,
                     int n_frames);
 
+/*!
+  \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the availability of the latter
+  @param fp         Pointer to frame params
+  @param dl_Carrier Pointer to DL carrier to be set
+  @param ul_Carrier Pointer to UL carrier to be set
+*/
+void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp,
+                                uint64_t *dl_Carrier,
+                                uint64_t *ul_Carrier);
+
+/*!
+  \brief This function sets the OAI RF card rx/tx params
+  @param openair0_cfg   Pointer OAI config for a specific card
+  @param tx_gain_off    Tx gain offset
+  @param rx_gain_off    Rx gain offset
+  @param ul_Carrier     UL carrier to be set
+  @param dl_Carrier     DL carrier to be set
+  @param freq_offset    Freq offset to be set
+*/
+void nr_rf_card_config(openair0_config_t *openair0_cfg,
+                       double rx_gain_off,
+                       uint64_t ul_Carrier,
+                       uint64_t dl_Carrier,
+                       int freq_offset);
+
 
 /*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212.

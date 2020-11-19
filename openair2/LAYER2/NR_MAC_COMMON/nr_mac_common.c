@@ -49,6 +49,7 @@ uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,8
 uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
+const char *duplex_mode[]={"FDD","TDD"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
@@ -156,93 +157,93 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
 // E.g. in row 20 and column 5 we have set value 66  ('0001000010') which means RACH can be sent at subframe 1 or 6
 int64_t table_6_3_3_2_2_prachConfig_Index [256][9] = {
 //format,   format,       x,          y,        SFN_nbr,   star_symb,   slots_sfn,    occ_slot,  duration
-{0,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          8,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
-{0,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
-{0,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
-{0,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
-{0,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
-{0,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3, 6, 9
-{0,          -1,          1,          0,          341,        0,         -1,         -1,          0},          // (subframe number)           0,2,4,6,8
-{0,          -1,          1,          0,          682,        0,         -1,         -1,          0},          // (subframe number)           1,3,5,7,9
-{0,          -1,          1,          0,          1023,       0,         -1,         -1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
-{1,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          8,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
-{1,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
-{1,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
-{1,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
-{1,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
-{1,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3,6,9
-{2,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          4,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          2,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          2,          0,          32,         0,         -1,         -1,          0},          // (subframe number)           5
-{2,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          1,          0,          32,         0,         -1,         -1,          0},          // (subframe number)           5
-{3,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{3,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{3,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{3,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
-{3,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
-{3,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
-{3,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
-{3,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
-{3,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3, 6, 9
-{3,          -1,          1,          0,          341,        0,         -1,         -1,          0},          // (subframe number)           0,2,4,6,8
-{3,          -1,          1,          0,          682,        0,         -1,         -1,          0},          // (subframe number)           1,3,5,7,9
-{3,          -1,          1,          0,          1023,       0,         -1,         -1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          16,         1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          16,         1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          16,         1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          8,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          8,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          8,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          4,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          4,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          4,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          4,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          2,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          2,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          2,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          2,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          1,          0,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          1,          0,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          1,          0,          66,         0,         1,         1,          0},          // (subframe number)           1,6
+{0,          -1,          1,          0,          132,        0,         1,         1,          0},          // (subframe number)           2,7
+{0,          -1,          1,          0,          264,        0,         1,         1,          0},          // (subframe number)           3,8
+{0,          -1,          1,          0,          146,        0,         1,         1,          0},          // (subframe number)           1,4,7
+{0,          -1,          1,          0,          292,        0,         1,         1,          0},          // (subframe number)           2,5,8
+{0,          -1,          1,          0,          584,        0,         1,         1,          0},          // (subframe number)           3, 6, 9
+{0,          -1,          1,          0,          341,        0,         1,         1,          0},          // (subframe number)           0,2,4,6,8
+{0,          -1,          1,          0,          682,        0,         1,         1,          0},          // (subframe number)           1,3,5,7,9
+{0,          -1,          1,          0,          1023,       0,         1,         1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{1,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          16,         1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          16,         1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          16,         1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          8,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          8,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          8,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          4,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          4,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          4,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          4,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          2,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          2,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          2,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          2,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          1,          0,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          1,          0,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          1,          0,          66,         0,         1,         1,          0},          // (subframe number)           1,6
+{1,          -1,          1,          0,          132,        0,         1,         1,          0},          // (subframe number)           2,7
+{1,          -1,          1,          0,          264,        0,         1,         1,          0},          // (subframe number)           3,8
+{1,          -1,          1,          0,          146,        0,         1,         1,          0},          // (subframe number)           1,4,7
+{1,          -1,          1,          0,          292,        0,         1,         1,          0},          // (subframe number)           2,5,8
+{1,          -1,          1,          0,          584,        0,         1,         1,          0},          // (subframe number)           3,6,9
+{2,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          4,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          2,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          2,          0,          32,         0,         1,         1,          0},          // (subframe number)           5
+{2,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          1,          0,          32,         0,         1,         1,          0},          // (subframe number)           5
+{3,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          16,         1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          16,         1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          16,         1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{3,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          8,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          8,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          4,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          4,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          4,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          4,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{3,          -1,          2,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          2,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          2,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          2,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{3,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          1,          0,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          1,          0,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          1,          0,          66,         0,         1,         1,          0},          // (subframe number)           1,6
+{3,          -1,          1,          0,          132,        0,         1,         1,          0},          // (subframe number)           2,7
+{3,          -1,          1,          0,          264,        0,         1,         1,          0},          // (subframe number)           3,8
+{3,          -1,          1,          0,          146,        0,         1,         1,          0},          // (subframe number)           1,4,7
+{3,          -1,          1,          0,          292,        0,         1,         1,          0},          // (subframe number)           2,5,8
+{3,          -1,          1,          0,          584,        0,         1,         1,          0},          // (subframe number)           3, 6, 9
+{3,          -1,          1,          0,          341,        0,         1,         1,          0},          // (subframe number)           0,2,4,6,8
+{3,          -1,          1,          0,          682,        0,         1,         1,          0},          // (subframe number)           1,3,5,7,9
+{3,          -1,          1,          0,          1023,       0,         1,         1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
 {0xa1,       -1,          16,         0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
 {0xa1,       -1,          16,         1,          16,         0,          2,          6,          2},          // (subframe number)           4
 {0xa1,       -1,          8,          0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
@@ -416,73 +417,73 @@ int64_t table_6_3_3_2_2_prachConfig_Index [256][9] = {
 // Table 6.3.3.2-3: Random access configurations for FR1 and unpaired spectrum
 int64_t table_6_3_3_2_3_prachConfig_Index [256][9] = {
 //format,     format,      x,         y,     SFN_nbr,   star_symb,   slots_sfn,  occ_slot,  duration
-{0,            -1,         16,        1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         8,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         4,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         2,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         2,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         2,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{0,            -1,         2,         1,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{0,            -1,         1,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         1,         0,         256,         0,        -1,        -1,         0},         // (subrame number 8)
-{0,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{0,            -1,         1,         0,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{0,            -1,         1,         0,         32,          0,        -1,        -1,         0},         // (subrame number 5)
-{0,            -1,         1,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{0,            -1,         1,         0,         8,           0,        -1,        -1,         0},         // (subrame number 3)
-{0,            -1,         1,         0,         4,           0,        -1,        -1,         0},         // (subrame number 2)
-{0,            -1,         1,         0,         66,          0,        -1,        -1,         0},         // (subrame number 1,6)
-{0,            -1,         1,         0,         66,          7,        -1,        -1,         0},         // (subrame number 1,6)
-{0,            -1,         1,         0,         528,         0,        -1,        -1,         0},         // (subrame number 4,9)
-{0,            -1,         1,         0,         264,         0,        -1,        -1,         0},         // (subrame number 3,8)
-{0,            -1,         1,         0,         132,         0,        -1,        -1,         0},         // (subrame number 2,7)
-{0,            -1,         1,         0,         768,         0,        -1,        -1,         0},         // (subrame number 8,9)
-{0,            -1,         1,         0,         784,         0,        -1,        -1,         0},         // (subrame number 4,8,9)
-{0,            -1,         1,         0,         536,         0,        -1,        -1,         0},         // (subrame number 3,4,9)
-{0,            -1,         1,         0,         896,         0,        -1,        -1,         0},         // (subrame number 7,8,9)
-{0,            -1,         1,         0,         792,         0,        -1,        -1,         0},         // (subrame number 3,4,8,9)
-{0,            -1,         1,         0,         960,         0,        -1,        -1,         0},         // (subrame number 6,7,8,9)
-{0,            -1,         1,         0,         594,         0,        -1,        -1,         0},         // (subrame number 1,4,6,9)
-{0,            -1,         1,         0,         682,         0,        -1,        -1,         0},         // (subrame number 1,3,5,7,9)
-{1,            -1,         16,        1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         8,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         4,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         2,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         2,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{2,            -1,         16,        1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         8,         1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         4,         1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         2,         0,         64,          7,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         2,         1,         64,          7,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         1,         0,         64,          7,        -1,        -1,         0},         // (subrame number 6)
-{3,            -1,         16,        1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         8,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         4,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         2,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         2,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         2,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{3,            -1,         2,         1,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{3,            -1,         1,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         1,         0,         256,         0,        -1,        -1,         0},         // (subrame number 8)
-{3,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{3,            -1,         1,         0,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{3,            -1,         1,         0,         32,          0,        -1,        -1,         0},         // (subrame number 5)
-{3,            -1,         1,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{3,            -1,         1,         0,         8,           0,        -1,        -1,         0},         // (subrame number 3)
-{3,            -1,         1,         0,         4,           0,        -1,        -1,         0},         // (subrame number 2)
-{3,            -1,         1,         0,         66,          0,        -1,        -1,         0},         // (subrame number 1,6)
-{3,            -1,         1,         0,         66,          7,        -1,        -1,         0},         // (subrame number 1,6)
-{3,            -1,         1,         0,         528,         0,        -1,        -1,         0},         // (subrame number 4,9)
-{3,            -1,         1,         0,         264,         0,        -1,        -1,         0},         // (subrame number 3,8)
-{3,            -1,         1,         0,         132,         0,        -1,        -1,         0},         // (subrame number 2,7)
-{3,            -1,         1,         0,         768,         0,        -1,        -1,         0},         // (subrame number 8,9)
-{3,            -1,         1,         0,         784,         0,        -1,        -1,         0},         // (subrame number 4,8,9)
-{3,            -1,         1,         0,         536,         0,        -1,        -1,         0},         // (subrame number 3,4,9)
-{3,            -1,         1,         0,         896,         0,        -1,        -1,         0},         // (subrame number 7,8,9)
-{3,            -1,         1,         0,         792,         0,        -1,        -1,         0},         // (subrame number 3,4,8,9)
-{3,            -1,         1,         0,         594,         0,        -1,        -1,         0},         // (subrame number 1,4,6,9)
-{3,            -1,         1,         0,         682,         0,        -1,        -1,         0},         // (subrame number 1,3,5,7,9)
+{0,            -1,         16,        1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         8,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         4,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         2,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         2,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         2,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{0,            -1,         2,         1,         16,          0,        1,        1,         0},         // (subrame number 4)
+{0,            -1,         1,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         1,         0,         256,         0,        1,        1,         0},         // (subrame number 8)
+{0,            -1,         1,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{0,            -1,         1,         0,         64,          0,        1,        1,         0},         // (subrame number 6)
+{0,            -1,         1,         0,         32,          0,        1,        1,         0},         // (subrame number 5)
+{0,            -1,         1,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{0,            -1,         1,         0,         8,           0,        1,        1,         0},         // (subrame number 3)
+{0,            -1,         1,         0,         4,           0,        1,        1,         0},         // (subrame number 2)
+{0,            -1,         1,         0,         66,          0,        1,        1,         0},         // (subrame number 1,6)
+{0,            -1,         1,         0,         66,          7,        1,        1,         0},         // (subrame number 1,6)
+{0,            -1,         1,         0,         528,         0,        1,        1,         0},         // (subrame number 4,9)
+{0,            -1,         1,         0,         264,         0,        1,        1,         0},         // (subrame number 3,8)
+{0,            -1,         1,         0,         132,         0,        1,        1,         0},         // (subrame number 2,7)
+{0,            -1,         1,         0,         768,         0,        1,        1,         0},         // (subrame number 8,9)
+{0,            -1,         1,         0,         784,         0,        1,        1,         0},         // (subrame number 4,8,9)
+{0,            -1,         1,         0,         536,         0,        1,        1,         0},         // (subrame number 3,4,9)
+{0,            -1,         1,         0,         896,         0,        1,        1,         0},         // (subrame number 7,8,9)
+{0,            -1,         1,         0,         792,         0,        1,        1,         0},         // (subrame number 3,4,8,9)
+{0,            -1,         1,         0,         960,         0,        1,        1,         0},         // (subrame number 6,7,8,9)
+{0,            -1,         1,         0,         594,         0,        1,        1,         0},         // (subrame number 1,4,6,9)
+{0,            -1,         1,         0,         682,         0,        1,        1,         0},         // (subrame number 1,3,5,7,9)
+{1,            -1,         16,        1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         8,         1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         4,         1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         2,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         2,         1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         1,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{2,            -1,         16,        1,         64,          0,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         8,         1,         64,          0,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         4,         1,         64,          0,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         2,         0,         64,          7,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         2,         1,         64,          7,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         1,         0,         64,          7,        1,        1,         0},         // (subrame number 6)
+{3,            -1,         16,        1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         8,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         4,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         2,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         2,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         2,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{3,            -1,         2,         1,         16,          0,        1,        1,         0},         // (subrame number 4)
+{3,            -1,         1,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         1,         0,         256,         0,        1,        1,         0},         // (subrame number 8)
+{3,            -1,         1,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{3,            -1,         1,         0,         64,          0,        1,        1,         0},         // (subrame number 6)
+{3,            -1,         1,         0,         32,          0,        1,        1,         0},         // (subrame number 5)
+{3,            -1,         1,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{3,            -1,         1,         0,         8,           0,        1,        1,         0},         // (subrame number 3)
+{3,            -1,         1,         0,         4,           0,        1,        1,         0},         // (subrame number 2)
+{3,            -1,         1,         0,         66,          0,        1,        1,         0},         // (subrame number 1,6)
+{3,            -1,         1,         0,         66,          7,        1,        1,         0},         // (subrame number 1,6)
+{3,            -1,         1,         0,         528,         0,        1,        1,         0},         // (subrame number 4,9)
+{3,            -1,         1,         0,         264,         0,        1,        1,         0},         // (subrame number 3,8)
+{3,            -1,         1,         0,         132,         0,        1,        1,         0},         // (subrame number 2,7)
+{3,            -1,         1,         0,         768,         0,        1,        1,         0},         // (subrame number 8,9)
+{3,            -1,         1,         0,         784,         0,        1,        1,         0},         // (subrame number 4,8,9)
+{3,            -1,         1,         0,         536,         0,        1,        1,         0},         // (subrame number 3,4,9)
+{3,            -1,         1,         0,         896,         0,        1,        1,         0},         // (subrame number 7,8,9)
+{3,            -1,         1,         0,         792,         0,        1,        1,         0},         // (subrame number 3,4,8,9)
+{3,            -1,         1,         0,         594,         0,        1,        1,         0},         // (subrame number 1,4,6,9)
+{3,            -1,         1,         0,         682,         0,        1,        1,         0},         // (subrame number 1,3,5,7,9)
 {0xa1,         -1,         16,        1,         512,         0,         2,         6,         2},         // (subrame number 9)
 {0xa1,         -1,         8,         1,         512,         0,         2,         6,         2},         // (subrame number 9)
 {0xa1,         -1,         4,         1,         512,         0,         1,         6,         2},         // (subrame number 9)
@@ -1418,7 +1419,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
     else {
       r = L_ra/NCS;
       found_sequences = (nb_preambles/r) + (nb_preambles%r!=0); //ceil(nb_preambles/r)
-      printf(" found_sequences %u\n", found_sequences);
+      LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
       return (found_sequences);
     }
   }
@@ -1456,12 +1457,17 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
         AssertFatal(1==0,"Procedure to find nb of sequences for restricted type B not implemented yet");
       }
     }
-    printf(" found_sequences %u\n", found_sequences);
+    LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
     return found_sequences;
   }
 }
 
-
+// Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
+// Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
+// Notes:
+// - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
+// - Frequencies are expressed in KHz
+// - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
 nr_bandentry_t nr_bandtable[] = {
   {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
   {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
@@ -1470,17 +1476,27 @@ nr_bandentry_t nr_bandtable[] = {
   {7,   2500000, 2570000, 2620000, 2690000, 20, 524000, 100},
   {8,    880000,  915000,  925000,  960000, 20, 185000, 100},
   {12,   698000,  716000,  729000,  746000, 20, 145800, 100},
+  {14,   788000,  798000,  758000,  768000, 20, 151600, 100},
+  {18,   815000,  830000,  860000,  875000, 20, 172000, 100},
   {20,   832000,  862000,  791000,  821000, 20, 158200, 100},
   {25,  1850000, 1915000, 1930000, 1995000, 20, 386000, 100},
+  {26,   814000,  849000,  859000,  894000, 20, 171800, 100},
   {28,   703000,  758000,  758000,  813000, 20, 151600, 100},
+  {29,      000,     000,  717000,  728000, 20, 143400, 100},
+  {30,  2305000, 2315000, 2350000, 2360000, 20, 470000, 100},
   {34,  2010000, 2025000, 2010000, 2025000, 20, 402000, 100},
   {38,  2570000, 2620000, 2570000, 2630000, 20, 514000, 100},
   {39,  1880000, 1920000, 1880000, 1920000, 20, 376000, 100},
   {40,  2300000, 2400000, 2300000, 2400000, 20, 460000, 100},
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
+  {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
+  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
+  {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
+  {65,  1920000, 2010000, 2110000, 2200000, 20, 422000, 100},
   {66,  1710000, 1780000, 2110000, 2200000, 20, 422000, 100},
   {70,  1695000, 1710000, 1995000, 2020000, 20, 399000, 100},
   {71,   663000,  698000,  617000,  652000, 20, 123400, 100},
@@ -1499,6 +1515,15 @@ nr_bandentry_t nr_bandtable[] = {
   {83,   703000,  748000,     000,     000, 20, 140600, 100},
   {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
   {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
+  {89,   824000,  849000,     000,     000, 20, 342000, 100},
+  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
+  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
+  {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
+  {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
+  {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
+  {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
+  {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
+  {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
   {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
   {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
   {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
@@ -1552,46 +1577,58 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
-void get_band(uint64_t downlink_frequency,
-              uint16_t *current_band,
-              int32_t *current_offset,
-              lte_frame_type_t *current_type)
-{
-    int ind;
-    uint64_t center_frequency_khz;
-    uint64_t center_freq_diff_khz;
-    uint64_t dl_freq_khz = downlink_frequency/1000;
+// Returns the corresponding row index of the NR table
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
 
-    center_freq_diff_khz = 999999999999999999; // 2^64
-    *current_band = 0;
+  int i, j;
+  int scs_khz = 15 << scs_index;
+  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
+  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
 
-    for ( ind=0;
-          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
-          ind++) {
+  for(j = 0; j < s; j++){
+    if (nr_bandP == supplementary_bands[j])
+      AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
+  }
 
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+  AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
+  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
 
-      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
+  // selection of correct Deltaf raster according to SCS
+  if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
+    i++;
 
-        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-          *current_band = nr_bandtable[ind].band;
-	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
-          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+  LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
-	  if (*current_offset == 0)
-	    *current_type = TDD;
-	  else
-	    *current_type = FDD;
-        }
-      }
-    }
+  return i;
 
-    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
-         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
+}
 
-    AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
+// Computes the duplex spacing (either positive or negative) in KHz
+void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
+
+  int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
+
+  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+
+  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+
+}
+
+void get_frame_type(uint16_t current_band,
+                    uint8_t scs_index,
+                    lte_frame_type_t *current_type){
+
+  int32_t current_offset;
+  get_delta_duplex(current_band, scs_index, &current_offset);
+
+  current_offset *= 1000;
+  if (current_offset == 0)
+    *current_type = TDD;
+  else
+    *current_type = FDD;
+
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
+
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1707,6 +1744,15 @@ uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
 
 }
 
+void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
+
+  uint32_t delta_arfcn = nrarfcn - N_OFFs;
+
+  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
+    AssertFatal(1 == 0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
+
+}
+
 uint32_t to_nrarfcn(int nr_bandP,
                     uint64_t dl_CarrierFreq,
                     uint8_t scs_index,
@@ -1714,17 +1760,10 @@ uint32_t to_nrarfcn(int nr_bandP,
 {
   uint64_t dl_CarrierFreq_by_1k = dl_CarrierFreq / 1000;
   int bw_kHz = bw / 1000;
-  int scs_khz = 15<<scs_index;
-  int i;
-  uint32_t nrarfcn, delta_arfcn;
+  uint32_t nrarfcn;
+  int i = get_nr_table_idx(nr_bandP, scs_index);
 
   LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
-  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-
-  // selection of correct Deltaf raster according to SCS
-  if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-   i++;
 
   AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
@@ -1753,69 +1792,72 @@ uint32_t to_nrarfcn(int nr_bandP,
   // This is equation before Table 5.4.2.1-1 in 38101-1-f30
   // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
   nrarfcn =  (((dl_CarrierFreq_by_1k - F_REF_Offs_khz)/deltaFglobal)+N_REF_Offs);
-
-  delta_arfcn = nrarfcn - nr_bandtable[i].N_OFFs_DL;
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0,"dl_CarrierFreq %lu corresponds to %u which is not on the raster for step size %lu",
-                dl_CarrierFreq,nrarfcn,nr_bandtable[i].step_size);
+  get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
 
   return nrarfcn;
 }
 
-
+// This function computes the RF reference frequency from the NR-ARFCN according to 5.4.2.1 of 3GPP TS 38.104
+// this function applies to both DL and UL
 uint64_t from_nrarfcn(int nr_bandP,
                       uint8_t scs_index,
-                      uint32_t dl_nrarfcn)
+                      uint32_t nrarfcn)
 {
-  int i;
   int deltaFglobal = 5;
   uint32_t N_REF_Offs = 0;
   uint64_t F_REF_Offs_khz = 0;
-  int scs_khz = 15<<scs_index;
-  uint32_t delta_arfcn;
+  int32_t delta_duplex;
+  uint64_t N_OFFs, frequency, freq_min;
+  int i = get_nr_table_idx(nr_bandP, scs_index);
 
-  if (dl_nrarfcn > 599999 && dl_nrarfcn < 2016667) {
+  if (nrarfcn > 599999 && nrarfcn < 2016667) {
     deltaFglobal = 15;
     N_REF_Offs = 600000;
     F_REF_Offs_khz = 3000000;
   }
-  if (dl_nrarfcn > 2016666 && dl_nrarfcn < 3279166) {
+  if (nrarfcn > 2016666 && nrarfcn < 3279166) {
     deltaFglobal = 60; 
     N_REF_Offs = 2016667;
     F_REF_Offs_khz = 24250080;
   }
-  
-  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL[%d] %llu\n",dl_nrarfcn, nr_bandtable[i].band,(long long unsigned int)nr_bandtable[i].N_OFFs_DL);
- 
-  // selection of correct Deltaf raster according to SCS
-  if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-   i++;
 
-  delta_arfcn = dl_nrarfcn - nr_bandtable[i].N_OFFs_DL;
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0,"dl_nrarfcn %u is not on the raster for step size %lu",dl_nrarfcn,nr_bandtable[i].step_size);
+  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
 
-  LOG_I(PHY,"Computing dl_frequency (arfcn %llu => %llu)\n",
-	(unsigned long long)dl_nrarfcn,
-	(unsigned long long)(1000*(F_REF_Offs_khz + (dl_nrarfcn - N_REF_Offs) * deltaFglobal)));
+  if (delta_duplex <= 0){ // DL band >= UL band
+    if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL;
+      freq_min = nr_bandtable[i].dl_min;
+    } else {// is FDD UL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal;
+      freq_min = nr_bandtable[i].ul_min;
+    }
+  } else { // UL band > DL band
+    if (nrarfcn >= nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal){ // is FDD UL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal;
+      freq_min = nr_bandtable[i].ul_min;
+    } else { // is FDD DL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL;
+      freq_min = nr_bandtable[i].dl_min;
+    }
+  }
 
-  return 1000*(F_REF_Offs_khz + (dl_nrarfcn - N_REF_Offs) * deltaFglobal);
+  LOG_D(MAC, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
+
+  AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
+  get_delta_arfcn(i, nrarfcn, N_OFFs);
+
+  frequency = 1000*(F_REF_Offs_khz + (nrarfcn - N_REF_Offs) * deltaFglobal);
+
+  LOG_I(MAC, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
+    (unsigned long long)nrarfcn,
+    (unsigned long long)frequency/1000,
+    (unsigned long long)freq_min,
+    nr_bandP,
+    (unsigned long long)N_OFFs);
+
+  return frequency;
+
 }
-
-
-int32_t get_nr_uldl_offset(int nr_bandP)
-{
-  int i;
-
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-
-  AssertFatal(i < NR_BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, NR_BANDTABLE_SIZE);
-
-  return (nr_bandtable[i].dl_min - nr_bandtable[i].ul_min);
-}
-
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
@@ -1897,7 +1939,7 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][0]);
     break;
@@ -1905,7 +1947,7 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][0]);
     break;
@@ -1913,13 +1955,14 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][0]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      return 0;
   }
 }
 
@@ -1928,7 +1971,7 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][1]);
     break;
@@ -1936,7 +1979,7 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][1]);
     break;
@@ -1944,13 +1987,14 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][1]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      return 0;
   }
 }
 
@@ -1959,7 +2003,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][0]);
     break;
@@ -1967,7 +2011,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][0]);
     break;
@@ -1975,7 +2019,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][0]);
     break;
@@ -1983,7 +2027,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 3:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 3 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61411[Imcs][0]);
     break;
@@ -1991,13 +2035,14 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 4:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 4 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61412[Imcs][0]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      return 0;
   }
 }
 
@@ -2006,7 +2051,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][1]);
     break;
@@ -2014,7 +2059,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][1]);
     break;
@@ -2022,7 +2067,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][1]);
     break;
@@ -2030,7 +2075,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 3:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 3 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61411[Imcs][1]);
     break;
@@ -2038,13 +2083,14 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 4:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 4 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61412[Imcs][1]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      return 0;
   }
 }
 

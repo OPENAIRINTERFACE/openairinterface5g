@@ -207,7 +207,7 @@ next:
     uint16_t *in;
     uint16_t *out;
     in = (uint16_t *)s->buffers.prach[*subframe];
-    out = (uint16_t *)ru->prach_rxsigF[antenna];
+    out = (uint16_t *)ru->prach_rxsigF[0][antenna];
     for (i = 0; i < 840*2; i++)
       out[i] = ntohs(in[i]);
     s->buffers.prach_busy[*subframe] = 0;

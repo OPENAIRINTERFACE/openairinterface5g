@@ -372,7 +372,7 @@ void nr_schedule_pucch(int Mod_idP,
         memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
         UL_tti_req->n_pdus+=1;
 
-        LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d with (%d, %d, %d) (SR ACK, CSI) bits\n",
+        LOG_D(MAC,"Scheduling pucch reception for frame %d slot %d with (%d, %d, %d) (SR ACK, CSI) bits\n",
               frameP,slotP,O_sr,O_ack,curr_pucch->csi_bits);
 
         nr_configure_pucch(pucch_pdu,
@@ -449,7 +449,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       break;
 
     default:
-      AssertFatal(1==0,"Undefined tdd period %d\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+      AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   }
 
   int num_slots_per_tdd = (slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
