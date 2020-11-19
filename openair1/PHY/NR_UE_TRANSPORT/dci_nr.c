@@ -776,7 +776,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
 #endif
 
-void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
+#if 0
+void nr_pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
                       uint8_t nr_tti_rx,
                       uint8_t *e,
                       uint32_t length) {
@@ -799,6 +800,7 @@ void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
       e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
   }
 }
+#endif
 
 
 #ifdef NR_PDCCH_DCI_RUN

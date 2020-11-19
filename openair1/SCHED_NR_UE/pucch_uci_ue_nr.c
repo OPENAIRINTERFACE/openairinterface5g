@@ -1124,7 +1124,7 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
         break;
       }
       else {
-	pucch_resource_set_id = 1;
+        pucch_resource_set_id = 1;
         return (pucch_resource_set_id);
         break;
       }
