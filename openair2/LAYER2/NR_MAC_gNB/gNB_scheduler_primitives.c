@@ -1692,7 +1692,7 @@ inline void add_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
 /*
  * Remove a UE from NR_UE_list listP
  */
-inline int remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
+static inline void remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
   int *cur = &listP->head;
   while (*cur != -1 && *cur != UE_id)
     cur = &listP->next[*cur];
@@ -1700,7 +1700,7 @@ inline int remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
   int *next = &listP->next[*cur];
   *cur = listP->next[*cur];
   *next = -1;
-  return 1;
+  return; 
 }
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
