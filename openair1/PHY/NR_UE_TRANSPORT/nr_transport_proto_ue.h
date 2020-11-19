@@ -714,9 +714,10 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         unsigned short pmi,
                                         unsigned char *pmi_ext,
                                         unsigned char symbol,
-										uint8_t pilots,
-										unsigned short start_rb,
-										unsigned short nb_pdsch_rb,
+                                        uint8_t pilots,
+                                        uint8_t config_type,
+                                        unsigned short start_rb,
+                                        unsigned short nb_pdsch_rb,
                                         unsigned char nr_tti_rx,
                                         uint32_t high_speed_flag,
                                         NR_DL_FRAME_PARMS *frame_parms);
@@ -1002,7 +1003,8 @@ void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          NR_UE_DLSCH_t **dlsch_ue,
                          uint8_t symbol,
-						 uint8_t start_symbol,
+                         uint8_t start_symbol,
+                         uint32_t len,
                          uint16_t nb_rb);
 
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several

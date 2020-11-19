@@ -738,15 +738,27 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     // do channel estimation for first DMRS only
     for (m = s0; m < 3; m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
-	nr_pdsch_channel_estimation(ue,
-				    0 /*eNB_id*/,
-				    nr_tti_rx,
-				    0 /*p*/,
-				    m,
-				    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
-				    pdsch_nb_rb);
-	LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
-	break;
+        for (uint8_t aatx=0; aatx<1; aatx++) {//for MIMO Config: it shall loop over no_layers
+          nr_pdsch_channel_estimation(ue,
+                                      0 /*eNB_id*/,
+                                      nr_tti_rx,
+                                      aatx /*p*/,
+                                      m,
+                                      ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
+                                      pdsch_nb_rb);
+          LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_tti_rx,m);
+#if 0
+          ///LOG_M: the channel estimation
+          int nr_frame_rx = proc->frame_rx;
+          char filename[100];
+          for (uint8_t aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+            sprintf(filename,"PDSCH_CHANNEL_frame%d_slot%d_sym%d_port%d_rx%d.m", nr_frame_rx, nr_tti_rx, m, aatx,aarx);
+            int **dl_ch_estimates = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates;
+            LOG_M(filename,"channel_F",&dl_ch_estimates[aatx*ue->frame_parms.nb_antennas_rx+aarx][ue->frame_parms.ofdm_symbol_size*m],ue->frame_parms.ofdm_symbol_size, 1, 1);
+          }
+#endif
+        }
+        break;
       }
     }
     for (m = s0; m < (s1 + s0); m++) {

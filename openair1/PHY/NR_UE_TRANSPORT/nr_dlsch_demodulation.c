@@ -151,6 +151,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   uint32_t llr_offset_symbol;
   //uint16_t bundle_L = 2;
   uint8_t pilots=0;
+  uint8_t config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   uint16_t n_tx=1, n_rx=1;
   int32_t median[16];
   uint32_t len;
@@ -377,6 +378,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 					pdsch_vars[eNB_id]->pmi_ext,
 					symbol,
 					pilots,
+					config_type,
 					start_rb,
 					nb_rb_pdsch,
 					nr_tti_rx,
@@ -393,7 +395,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
   }
 
-  len = (pilots==1)? (nb_rb*6):(nb_rb*12);
+  len = (pilots==1)? ((config_type==pdsch_dmrs_type1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
   
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
@@ -417,6 +419,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 			 dlsch,
 			 symbol,
 			 pilots,
+			 len,
 			 nb_rb);
 
 #if UE_TIMING_TRACE
@@ -1806,6 +1809,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 			    NR_UE_DLSCH_t **dlsch_ue,
 			    uint8_t symbol,
 			    uint8_t pilots,
+			    uint32_t len,
 			    unsigned short nb_rb)
 {
 
@@ -1815,17 +1819,14 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
   unsigned char aatx,aarx;
   __m128i *dl_ch128, ch_amp128;
 
-  
-  if (pilots==1){
-	  nb_rb = nb_rb>>1;
-  }
+  uint32_t nb_rb_0 = len/12 + ((len%12)?1:0);
 
   // Determine scaling amplitude based the symbol
 
   ch_amp = 1024*8; //((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
-    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
-   // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
+  LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
+  // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
 
@@ -1834,7 +1835,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*nb_rb*12];
 
-      for (rb=0;rb<nb_rb;rb++) {
+      for (rb=0;rb<nb_rb_0;rb++) {
 
         dl_ch128[0] = _mm_mulhi_epi16(dl_ch128[0],ch_amp128);
         dl_ch128[0] = _mm_slli_epi16(dl_ch128[0],3);
@@ -2360,6 +2361,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 					   unsigned char *pmi_ext,
 					   unsigned char symbol,
 					   uint8_t pilots,
+					   uint8_t config_type,
 					   unsigned short start_rb,
 					   unsigned short nb_rb_pdsch,
 					   unsigned char nr_tti_rx,
@@ -2376,8 +2378,12 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   unsigned char j=0;
 
-  AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 1,
-	      "nushift %d is illegal\n",frame_parms->nushift);
+  if (config_type==pdsch_dmrs_type1)
+    AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 1,
+                "nushift %d is illegal\n",frame_parms->nushift);
+  else
+    AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 2 || frame_parms->nushift == 4,
+                "nushift %d is illegal\n",frame_parms->nushift);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
@@ -2397,34 +2403,44 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
       if (k>frame_parms->ofdm_symbol_size) {
         k = k-frame_parms->ofdm_symbol_size;
         rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
-        }
+      }
       if (pilots==0) {
 	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
 	memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
 	dl_ch0_ext+=12;
 	rxF_ext+=12;
-      } else {
-	j=0;
-		
-	for (i = (1-frame_parms->nushift);
-	     i<12; 
-	     i+=2) {
-	  rxF_ext[j]=rxF[i];
-	  dl_ch0_ext[j]=dl_ch0[i];
-	  j++;
-	}
-	
-	
-	dl_ch0_ext+=6;
-	rxF_ext+=6;
+      } else {//the symbol contains DMRS
+        j=0;
+        if (config_type==pdsch_dmrs_type1){
+          for (i = (1-frame_parms->nushift); i<12; i+=2) {
+            rxF_ext[j]=rxF[i];
+            dl_ch0_ext[j]=dl_ch0[i];
+            j++;
+          }
+          dl_ch0_ext+=6;
+          rxF_ext+=6;
+        } else {
+          for (i = (2+frame_parms->nushift); i<6; i++) {
+            rxF_ext[j]=rxF[i];
+            dl_ch0_ext[j]=dl_ch0[i];
+            j++;
+          }
+          for (i = (8+frame_parms->nushift); i<12; i++) {
+            rxF_ext[j]=rxF[i];
+            dl_ch0_ext[j]=dl_ch0[i];
+            j++;
+          }
+          dl_ch0_ext+= 8;
+          rxF_ext+= 8;
+        }
       }
-      
+
       dl_ch0+=12;
       rxF+=12;
       k+=12;
       if (k>=frame_parms->ofdm_symbol_size) {
-        k=k-(frame_parms->ofdm_symbol_size);
-	rxF       = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
+        k = k-(frame_parms->ofdm_symbol_size);
+        rxF = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
       }
     }
   }
