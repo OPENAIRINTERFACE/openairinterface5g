@@ -252,7 +252,7 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms) {
   while(p_current_TDD_UL_DL_SlotConfig != NULL) {
     int slot_index = p_current_TDD_UL_DL_SlotConfig->slotIndex;
 
-    if (slot_index < TDD_CONFIG_NB_FRAMES*(frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)) {
+    if (slot_index < TDD_CONFIG_NB_FRAMES * frame_parms->slots_per_frame) {
       if (p_current_TDD_UL_DL_SlotConfig->nrofDownlinkSymbols != 0) {
         if (p_current_TDD_UL_DL_SlotConfig->nrofDownlinkSymbols == NR_TDD_SET_ALL_SYMBOLS) {
           if (p_current_TDD_UL_DL_SlotConfig->nrofUplinkSymbols == 0) {

@@ -77,7 +77,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   uint8_t nb_dmrs_re_per_rb;
   uint16_t number_dmrs_symbols = 0;
   int N_PRB_oh;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
   nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
@@ -274,15 +274,22 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
     if (ue_mac->RA_RAPID_found) {
 
       uint8_t freq_hopping, mcs, Msg3_t_alloc, Msg3_f_alloc;
-      unsigned char tpc_command, csi_req;
+      unsigned char tpc_command;
+#ifdef DEBUG_RAR
+      unsigned char csi_req;
+#endif
 
       // TC-RNTI
       *t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
       ue_mac->t_crnti = *t_crnti;
       // TA command
       ta_command = rar->TA2 + (rar->TA1 << 5);
+
+#ifdef DEBUG_RAR
       // CSI
       csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
+#endif
+
       // TPC
       tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
       switch (tpc_command){

@@ -34,6 +34,7 @@
 #define ENB_PARAMDEF_H_
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
+#include "s1ap_eNB_default_values.h"
 
 #define ENB_CONFIG_STRING_CC_NODE_FUNCTION  "node_function"
 #define ENB_CONFIG_STRING_CC_NODE_TIMING    "node_timing"
@@ -96,6 +97,7 @@ typedef enum {
 #define CONFIG_STRING_RU_OTA_SYNC_ENABLE          "ota_sync_enabled"
 #define CONFIG_STRING_RU_BF_WEIGHTS_LIST          "bf_weights"
 #define CONFIG_STRING_RU_IF_FREQUENCY             "if_freq"
+#define CONFIG_STRING_RU_IF_FREQ_OFFSET           "if_offset"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -124,6 +126,7 @@ typedef enum {
 #define RU_OTA_SYNC_ENABLE_IDX        24
 #define RU_BF_WEIGHTS_LIST_IDX        25
 #define RU_IF_FREQUENCY               26
+#define RU_IF_FREQ_OFFSET             27
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
@@ -157,6 +160,7 @@ typedef enum {
     {CONFIG_STRING_RU_OTA_SYNC_ENABLE,             NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_BF_WEIGHTS_LIST,             NULL,       0,       iptr:NULL,       defintarrayval:DEFBFW,   TYPE_INTARRAY,    0}, \
     {CONFIG_STRING_RU_IF_FREQUENCY,                NULL,       0,       u64ptr:NULL,     defuintval:0,            TYPE_UINT64,      0}, \
+    {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,     defintval:0,             TYPE_INT,         0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -907,6 +911,7 @@ typedef struct srb1_params_s {
 
 #define ENB_CONFIG_STRING_MME_IPV4_ADDRESS              "ipv4"
 #define ENB_CONFIG_STRING_MME_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_MME_PORT                      "port"
 #define ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE         "active"
 #define ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE     "preference"
 #define ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX      "broadcast_plmn_index"
@@ -921,14 +926,20 @@ typedef struct srb1_params_s {
   {ENB_CONFIG_STRING_MME_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE,              NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
-  {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6}     \
+  {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6},    \
+  {ENB_CONFIG_STRING_MME_PORT,                           NULL,      0,         u16ptr:NULL, defuintval:S1AP_PORT_NUMBER, TYPE_UINT16, 0},    \
 }
+
+
+
+
 
 #define ENB_MME_IPV4_ADDRESS_IDX          0
 #define ENB_MME_IPV6_ADDRESS_IDX          1
 #define ENB_MME_IP_ADDRESS_ACTIVE_IDX     2
 #define ENB_MME_IP_ADDRESS_PREFERENCE_IDX 3
 #define ENB_MME_BROADCAST_PLMN_INDEX      4
+#define ENB_MME_PORT_IDX                  5
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* X2 configuration parameters section name */

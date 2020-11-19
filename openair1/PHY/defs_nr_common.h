@@ -82,6 +82,9 @@
 #define NR_MAX_PDSCH_DMRS_LENGTH 3300      //275*6(k)*2(QPSK real+imag) 
 #define NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD 104  // ceil(NR_MAX_PDSCH_DMRS_LENGTH/32)
 
+#define NR_MAX_CSI_RS_LENGTH 4400 //275*8(max allocation per RB)*2(QPSK)
+#define NR_MAX_CSI_RS_INIT_LENGTH_DWORD 138  // ceil(NR_MAX_CSI_RS_LENGTH/32)
+
 #define NR_MAX_PUSCH_DMRS_LENGTH NR_MAX_PDSCH_DMRS_LENGTH 
 #define NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD
 
@@ -233,6 +236,7 @@ typedef struct {
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
+typedef uint32_t (*get_slot_from_timestamp_t)(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp);
 
 typedef uint32_t (*get_samples_slot_timestamp_t)(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead);
 
@@ -289,14 +293,14 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_subframe;
   /// Number of samples in current slot
   get_samples_per_slot_t get_samples_per_slot;
+  /// slot calculation from timestamp
+  get_slot_from_timestamp_t get_slot_from_timestamp;
   /// Number of samples before slot
   get_samples_slot_timestamp_t get_samples_slot_timestamp;
   /// Number of samples in 0th and center slot of a subframe
   uint32_t samples_per_slot0;
   /// Number of samples in other slots of the subframe
   uint32_t samples_per_slotN0;
-  /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
-  uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
   uint32_t samples_per_frame;
   /// Number of samples in a subframe without CP
@@ -305,15 +309,8 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_slot_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
-  /// Number of samples in a tti (same as subrame in LTE, slot in NR)
-  uint32_t samples_per_tti;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;
-  /// NR number of ttis per subframe deduced from numerology (cf 38.211): 1, 2, 4, 8(not supported),16(not supported),32(not supported)
-  uint8_t ttis_per_subframe;
-  /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
-  uint8_t slots_per_tti;
-//#endif
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node

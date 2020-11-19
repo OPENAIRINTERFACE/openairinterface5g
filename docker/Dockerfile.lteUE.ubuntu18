@@ -58,6 +58,7 @@ RUN apt-get update && \
         libconfig9 \
         openssl \
         net-tools \
+        iputils-ping \
         iproute2 \
         libyaml-0-2 && \
     # Install UHD driver from ettus ppa 
@@ -114,8 +115,9 @@ RUN ldconfig
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-lte-ue/etc
 COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* ./
+COPY --from=lte-ue-build /oai-ran/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf ./ue_usim.conf
 
 WORKDIR /opt/oai-lte-ue
 #CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
-
+CMD ["sleep", "infinity"]

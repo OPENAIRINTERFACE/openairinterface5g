@@ -42,12 +42,12 @@ KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
 #check if we run inside a container
 IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup || true`
-#sudo is not needed inside a container
-if [ $IS_CONTAINER -eq 0 ]
+#sudo is not needed when we are root
+if [ "$UID" = 0 ]
 then
-  SUDO='sudo -S -E'
-else
   SUDO=''
+else
+  SUDO='sudo -S -E'
 fi
 
 ###############################
@@ -251,18 +251,13 @@ install_protobuf_from_source(){
     #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
-    
+
     if [ $IS_CONTAINER -eq 0 ]
     then
       rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
       wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
+      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
       cd protobuf-3.3.0/
-      ./configure
-      echo "Compiling protobuf"
-      make -j`nproc`
-      $SUDO make install
-      $SUDO ldconfig
     else
       export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
       rm -rf /tmp/protobuf
@@ -270,11 +265,12 @@ install_protobuf_from_source(){
       cd /tmp/protobuf
       git submodule update --init --recursive
       ./autogen.sh
-      ./configure
-      make -j`nproc`
-      make install
-      ldconfig
     fi
+    ./configure
+    echo "Compiling protobuf"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
     ) >& $protobuf_install_log
 }
 

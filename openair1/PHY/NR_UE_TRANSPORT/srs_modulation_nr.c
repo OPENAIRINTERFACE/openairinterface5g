@@ -278,7 +278,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
           n_SRS = l/R;
         }
         else {
-          int8_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * frame_parms->ttis_per_subframe;
+          int8_t N_slot_frame = frame_parms->slots_per_frame;
           n_SRS = ((N_slot_frame*frame_number + slot_number - T_offset)/T_SRS)*(N_symb_SRS/R)+(l/R);
         }
 
@@ -399,7 +399,7 @@ int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource, NR_DL_FRAME_PARMS *frame_pa
     return (-1);
   }
 
-  int16_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * frame_parms->ttis_per_subframe;
+  int16_t N_slot_frame = frame_parms->slots_per_frame;
   if ((N_slot_frame*frame_tx + slot_tx - T_offset)%T_SRS == 0) {
     return (0);
   }

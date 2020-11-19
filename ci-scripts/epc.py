@@ -65,6 +65,7 @@ class EPCManagement():
 		self.testCase_id = ''
 		self.MmeIPAddress = ''
 		self.containerPrefix = 'prod'
+		self.mmeConfFile = 'mme.conf'
 
 
 #-----------------------------------------------------------
@@ -127,7 +128,7 @@ class EPCManagement():
 			logging.debug('Using the OAI EPC Release 14 MME in Docker')
 			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
 			time.sleep(5)
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup ./bin/oai_mme -c ./etc/mme.conf > mme_check_run.log 2>&1"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup ./bin/oai_mme -c ./etc/' + self.mmeConfFile + ' > mme_check_run.log 2>&1"', '\$', 5)
 		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 MME')
 			mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)

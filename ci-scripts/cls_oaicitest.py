@@ -72,6 +72,9 @@ class OaiCiTest():
 		self.ADBCentralized = True
 		self.testCase_id = ''
 		self.testXMLfiles = []
+		self.testUnstable = False
+		self.testMinStableId = '999999'
+		self.testStabilityPointReached = False
 		self.desc = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
@@ -211,7 +214,7 @@ class OaiCiTest():
 			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', CONST.ALL_PROCESSES_OK, 'OAI UE')
 			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.ConditionalExit()
 
 	def CheckFlexranCtrlInstallation(self,RAN,EPC):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
@@ -335,7 +338,7 @@ class OaiCiTest():
 				if (pStatus < 0):
 					HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'KO', pStatus)
 					HTML.CreateHtmlTabFooter(False)
-					sys.exit(1)
+					self.ConditionalExit()
 			UE_prefix = ''
 		else:
 			UE_prefix = 'NR '
@@ -719,7 +722,7 @@ class OaiCiTest():
 				logging.debug('Using the OAI EPC HSS: not implemented yet')
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 				HTML.CreateHtmlTabFooter(False)
-				sys.exit(1)
+				self.ConditionalExit()
 			else:
 				SSH.command('egrep --color=never "Allocated ipv4 addr" /opt/ltebox/var/log/xGwLog.0', '\$', 5)
 				result = re.search('Allocated ipv4 addr: (?P<ipaddr>[0-9\.]+) from Pool', SSH.getBefore())
@@ -1046,7 +1049,7 @@ class OaiCiTest():
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.ConditionalExit()
 		multi_jobs = []
 		for device_id in self.UEDevices:
 			p = Process(target = self.RebootUE_common, args = (device_id,))
@@ -1154,15 +1157,18 @@ class OaiCiTest():
 						self.UEDevicesRebootCmd.append(comma_split[5])
 					phone_list_file.close()
 
+		# better handling of the case when no UE detected
+		# Sys-exit is now dealt by the calling function
 		if terminate_ue_flag == True:
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
-				sys.exit(1)
+				return False
 		if len(self.UEDevicesStatus) == 0:
 			cnt = 0
 			while cnt < len(self.UEDevices):
 				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 				cnt += 1
+		return True
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -1248,7 +1254,7 @@ class OaiCiTest():
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.ConditionalExit()
 		multi_jobs = []
 		lock = Lock()
 		status_queue = SimpleQueue()
@@ -1386,7 +1392,14 @@ class OaiCiTest():
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 				SSH.command('cd scripts', '\$', 5)
-				ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				# In case of a docker-based deployment, we need to ping from the trf-gen container
+				launchFromTrfContainer = False
+				if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+					launchFromTrfContainer = True
+				if launchFromTrfContainer:
+					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				else:
+					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
 			else:
 				cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 > ping_' + self.testCase_id + '_' + device_id + '.log' 
 				message = cmd + '\n'
@@ -2028,7 +2041,8 @@ class OaiCiTest():
 					SSH.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ls /data/local/tmp"\'', '\$', 60)
-				result = re.search('iperf3', SSH.getBefore())
+				# DEBUG: disabling iperf3 usage for the moment
+				result = re.search('iperf4', SSH.getBefore())
 				if result is None:
 					result = re.search('iperf', SSH.getBefore())
 					if result is None:
@@ -2105,6 +2119,10 @@ class OaiCiTest():
 			launchFromEpc = True
 			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 				launchFromEpc = False
+			# When using a docker-based deployment, IPERF client shall be launched from trf container
+			launchFromTrfContainer = False
+			if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+				launchFromTrfContainer = True
 			if launchFromEpc:
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
@@ -2129,7 +2147,16 @@ class OaiCiTest():
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue,SSH)
 			else:
 				if launchFromEpc:
-					iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+					if launchFromTrfContainer:
+						if self.ueIperfVersion == self.dummyIperfVersion:
+							prefix = ''
+						else:
+							prefix = ''
+							if self.ueIperfVersion == '2.0.5':
+								prefix = '/iperf-2.0.5/bin/'
+						iperf_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "' + prefix + 'iperf -c ' + UE_IPAddress + ' ' + modified_options + '" 2>&1 | tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+					else:
+						iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 				else:
 					if self.ueIperfVersion == self.dummyIperfVersion:
 						prefix = ''
@@ -3147,6 +3174,12 @@ class OaiCiTest():
 			logging.debug('cpu_mhz: ' + CpuMHz)
 			HTML.CpuMHz[idx]=CpuMHz
 		SSH.close()
+
+	def ConditionalExit(self):
+		if self.testUnstable:
+			if self.testStabilityPointReached or self.testMinStableId == '999999':
+				sys.exit(0)
+		sys.exit(1)
 
 	def ShowTestID(self):
 		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
