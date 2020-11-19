@@ -83,6 +83,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];
+            dlsch0->rnti_type = _SI_RNTI_;
           }
 
           fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
@@ -96,6 +97,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
           if (dlsch0_harq){
 
+	          dlsch0_harq->status   = ACTIVE;
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
             dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
             dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
