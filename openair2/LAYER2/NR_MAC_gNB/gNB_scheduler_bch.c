@@ -213,8 +213,9 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
 }
 
 
+
 void schedule_nr_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
-//----------------------------------------  
+//----------------------------------------
 }
 
 void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id) {

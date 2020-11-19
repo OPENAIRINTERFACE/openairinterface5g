@@ -957,6 +957,10 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
+  // fill in the elements in config request inside P5 message
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_id;
+
   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
@@ -1174,6 +1178,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
       */
     }
+
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15 = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+
   } else if (ul_info) {
 
     // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
@@ -3729,7 +3736,7 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
       N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
       break;
     case NR_RNTI_C:
-    N_RB = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, 275);
+      N_RB = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, 275);
     break;
   }
   return N_RB;
@@ -4314,8 +4321,8 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
       }
     break;
-       }
-    
+  }
+
     return dci_format;
 }
 

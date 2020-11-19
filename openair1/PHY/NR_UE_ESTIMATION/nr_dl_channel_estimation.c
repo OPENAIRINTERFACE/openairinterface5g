@@ -869,7 +869,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          dl_ch,
                                          8);
     //}
-    
+
     // check if PRB crosses DC and improve estimates around DC
     if ((bwp_start_subcarrier < ue->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pdsch*12 >= ue->frame_parms.ofdm_symbol_size)) {
       dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
@@ -884,7 +884,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-      
+
       // for proper allignment of SIMD vectors
       if((ue->frame_parms.N_RB_DL&1)==0) {
         
@@ -932,7 +932,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       }
       printf("%d\n",idxP);
     }
-#endif    
+#endif
   }
 
   return(0);

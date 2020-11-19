@@ -678,11 +678,14 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   uint8_t log2_maxh, aarx;
   int32_t avgs;
   int32_t avgP[4];
+
   for (int i=0;i<pdcch_vars->nb_search_space;i++) {
 
     rel15 = &pdcch_vars->pdcch_config[i];
     int n_rb,rb_offset;
+
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+
     for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
       LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
@@ -875,7 +878,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
         #endif
 
         uint16_t crc = polar_decoder_int16(tmp_e,
-                                          dci_estimation,
+                                           dci_estimation,
                                           1,
                                           currentPtrDCI);
 

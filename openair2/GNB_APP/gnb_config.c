@@ -984,13 +984,9 @@ void NRRCConfig(void) {
   paramdef_t GNBSParams[]         = GNBSPARAMS_DESC;
   
 /* get global parameters, defined outside any section in the config file */
- 
   LOG_I(GNB_APP, "Getting GNBSParams\n");
- 
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
- 
-
 	// Get num MACRLC instances
   config_getlist( &MACRLCParamList,NULL,0, NULL);
   RC.nb_macrlc_inst  = MACRLCParamList.numelt;

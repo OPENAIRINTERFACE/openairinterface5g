@@ -180,7 +180,7 @@ int16_t table_6_3_3_2_1[16][5] = {
 /* Function to get number of RBs required for prach occasion based on
  * 38.211 Table 6.3.3.2-1 */
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
-	
+
 	int8_t index = 0;
 	switch(delta_f_RA_PRACH) {
 			case 0 : index = 6;
@@ -206,8 +206,8 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
 			         index += 0;
 		         else
 			         index += 1;
-		         break;		
-		
+		         break;
+
 		case 3: index = 13;
 		          if (delta_f_PUSCH == 2)
 			          index += 0;
@@ -216,11 +216,11 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
 		          break;
 
 		default : index = 10;/*30khz prach scs and 30khz pusch scs*/
-				
+
 	}
-  
+
 	return table_6_3_3_2_1[index][3];
-}	
+}
 // Table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
 // the column 5, (SFN_nbr is a bitmap where we set bit to '1' in the position of the subframe where the RACH can be sent.
 // E.g. in row 4, and column 5 we have set value 512 ('1000000000') which means RACH can be sent at subframe 9.
@@ -1131,14 +1131,14 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
       }
     }
     *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
-    *max_association_period = 160/(x * 10); 
+    *max_association_period = 160/(x * 10);
     if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
       *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];//multiple prach occasions in diff slot
       *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
       *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
       if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
         format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
-        
+
       *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
       LOG_D(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
             index,
@@ -1163,7 +1163,7 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
 				}
       }
       *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
-      *max_association_period = 160/(x * 10); 
+      *max_association_period = 160/(x * 10);
       if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
         *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
         *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
@@ -1352,8 +1352,8 @@ int get_nr_prach_info_from_index(uint8_t index,
          *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
           if (mu == 1) {
             if ( (*N_RA_slot <= 1) && (slot%2 == 0) )
-              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
-          } 
+              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+          }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *config_period = x;
             *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
@@ -2570,7 +2570,7 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
 
     case NR_DL_DCI_FORMAT_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
-      size += 28;
+      size = 28;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
 
       dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
@@ -2817,8 +2817,8 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
 	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
 	  return(1<<l0);
-	
-	
+
+
 	switch (NrOfSymbols) {
 	case 2 :
 	case 3 :

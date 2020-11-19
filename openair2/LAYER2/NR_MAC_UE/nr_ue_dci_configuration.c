@@ -97,6 +97,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   }
 
   rel15->coreset.duration = coreset->duration;
+
   for (int i = 0; i < 6; i++)
     rel15->coreset.frequency_domain_resource[i] = coreset->frequencyDomainResources.buf[i];
   rel15->coreset.CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved ? FAPI_NR_CCE_REG_MAPPING_TYPE_INTERLEAVED : FAPI_NR_CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;

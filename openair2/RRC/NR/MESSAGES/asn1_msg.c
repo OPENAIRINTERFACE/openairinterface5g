@@ -282,7 +282,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   memset(nr_plmn,0,sizeof(nr_plmn));
   memset(nr_mcc_digit,0,sizeof(nr_mcc_digit));
   memset(nr_mnc_digit,0,sizeof(nr_mnc_digit));
-  
+
   //  struct NR_UAC_BarringInfoSet nr_uac_BarringInfoSet;
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   carrier->siblock1 = sib1_message;
@@ -290,7 +290,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   sib1_message->message.choice.c1 = CALLOC(1,sizeof(struct NR_BCCH_DL_SCH_MessageType__c1));
   sib1_message->message.choice.c1->present = NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1;
   sib1_message->message.choice.c1->choice.systemInformationBlockType1 = CALLOC(1,sizeof(struct NR_SIB1));
-  
+
   struct NR_SIB1 *sib1 = sib1_message->message.choice.c1->choice.systemInformationBlockType1;
   sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
   sib1->cellSelectionInfo->q_RxLevMin = -50;
