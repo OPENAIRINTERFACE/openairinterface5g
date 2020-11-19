@@ -81,6 +81,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
           }
+          else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];
+          }
 
           fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
           uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;

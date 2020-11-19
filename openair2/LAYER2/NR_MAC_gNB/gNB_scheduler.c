@@ -491,6 +491,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
+  // This schedules SIB1
+  schedule_nr_sib1(module_idP, frame, slot);
+
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0)
     schedule_nr_prach(module_idP, frame, slot);

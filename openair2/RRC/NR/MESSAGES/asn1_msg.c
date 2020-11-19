@@ -39,6 +39,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
+#include <PHY/defs_nr_common.h>
 
 #include "asn1_msg.h"
 #include "RRC/NR/nr_rrc_extern.h"
@@ -201,11 +202,13 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
 
   mib->message.choice.mib->ssb_SubcarrierOffset = (carrier->ssb_SubcarrierOffset)&15;
   /*
-   * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
-   * the reverse allocation is in nr_ue_decode_mib()
-   */
-  mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
-  mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
+  * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
+  * the reverse allocation is in nr_ue_decode_mib()
+  */
+  mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = rrc->carrier.pdcch_ConfigSIB1->controlResourceSetZero;
+  mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = rrc->carrier.pdcch_ConfigSIB1->searchSpaceZero;
+
+
   AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
   switch (*scc->ssbSubcarrierSpacing) {
   case NR_SubcarrierSpacing_kHz15:
@@ -334,13 +337,16 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.bits_unused = 1;
   ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, &nr_uac_BarringInfoSet);
 #endif
+
+  xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1_message->message.choice.c1->choice.systemInformationBlockType1);
+
   //encode SIB1 to data
-  carrier->SIB1=(uint8_t *) malloc16(128);
+  if(carrier->SIB1 == NULL) carrier->SIB1=(uint8_t *) malloc16(MAX_NR_SIB_LENGTH/8);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
                                    NULL,
                                    (void *)sib1_message,
                                    carrier->SIB1,
-                                   128);
+                                   MAX_NR_SIB_LENGTH/8);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 

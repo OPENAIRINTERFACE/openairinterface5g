@@ -80,6 +80,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          sub_frame_t slot,
                          int num_slots_per_tdd);
 
+void schedule_control_sib1(module_id_t module_id,
+                           int CC_id,
+                           int time_domain_allocation,
+                           uint8_t mcsTableIdx,
+                           uint8_t mcs,
+                           uint8_t numDmrsCdmGrpsNoData,
+                           int num_total_bytes);
+
+void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 /* \brief default preprocessor */
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,

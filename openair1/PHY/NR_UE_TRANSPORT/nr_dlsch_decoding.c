@@ -591,19 +591,21 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
-	if (r==0)
-	  for (int i=0;i<10;i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t*)llrProcBuf)[i]);
+
+        LOG_I(PHY,"Segment %u CRC OK\n\033[0m",r);
+
+        if (r==0) {
+          for (int i=0;i<10;i++) LOG_I(PHY,"byte %d : %x\n",i,((uint8_t*)llrProcBuf)[i]);
+        }
 
         //Temporary hack
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
       }
       else {
-        LOG_D(PHY,"CRC NOK\n\033[0m");
+        LOG_I(PHY,"CRC NOT OK\n\033[0m");
         ret = 1 + dlsch->max_ldpc_iterations;
       }
-
 
       nb_total_decod++;
       if (no_iteration_ldpc > dlsch->max_ldpc_iterations){

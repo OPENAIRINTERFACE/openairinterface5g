@@ -442,6 +442,14 @@ typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               sub_frame_t slot,
                               int num_slots_per_tdd);
 
+typedef void (*nr_pp_impl_sib1)(module_id_t module_id,
+                                int CC_id,
+                                int time_domain_allocation,
+                                uint8_t mcsTableIdx,
+                                uint8_t mcs,
+                                uint8_t numDmrsCdmGrpsNoData,
+                                int num_total_bytes);
+
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
@@ -507,6 +515,12 @@ typedef struct gNB_MAC_INST_s {
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
+
+  NR_UE_sched_ctrl_t *sched_ctrlCommon;
+  NR_CellGroupConfig_t *secondaryCellGroupCommon;
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  nr_pp_impl_sib1 pre_processor_sib1;
+
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

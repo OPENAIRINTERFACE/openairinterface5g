@@ -32,6 +32,7 @@
 
 #define _GNU_SOURCE
 
+#include <nr/nr_common.h>
 #include "assertions.h"
 #include "defs.h"
 #include "PHY/defs_nr_UE.h"
@@ -738,15 +739,16 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     // do channel estimation for first DMRS only
     for (m = s0; m < 3; m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
-	nr_pdsch_channel_estimation(ue,
-				    0 /*eNB_id*/,
-				    nr_tti_rx,
-				    0 /*p*/,
-				    m,
-				    ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
-				    pdsch_nb_rb);
-	LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
-	break;
+        nr_pdsch_channel_estimation(ue,
+                  0 /*eNB_id*/,
+                  nr_tti_rx,
+                  0 /*p*/,
+                  m,
+                  BWPStart,
+                  ue->frame_parms.first_carrier_offset+(BWPStart+pdsch_start_rb)*12,
+                  pdsch_nb_rb);
+        LOG_D(PHY,"Channel Estimation in symbol %d\n",m);
+        break;
       }
     }
     for (m = s0; m < (s1 + s0); m++) {
@@ -782,8 +784,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                       return -1;
       }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
-	else if (pdsch == PDSCH) {
+	if (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
+	else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
           if (nr_rx_pdsch(ue,
                     pdsch,
                     eNB_id,
@@ -797,7 +799,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     dlsch0->current_harq_pid) < 0)
                       return -1;
         }
-	else AssertFatal(1==0,"not RA_PDSCH or PDSCH\n");
+	else AssertFatal(1==0,"not RA_PDSCH, SI_PDSCH or PDSCH\n");
       }
       if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]);
 #if UE_TIMING_TRACE
@@ -1190,6 +1192,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           case PDSCH:
           rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
           break;
+          case SI_PDSCH:
+            rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
           default:
           break;
         }
@@ -1711,15 +1716,16 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
+  NR_UE_MAC_INST_t *mac = get_mac_inst(ue->Mod_id);
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
-  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
+  LOG_D(PHY, " ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx % 1024, nr_tti_rx);
 
   /*
   uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
@@ -1798,28 +1804,35 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 0,
                 0);
 
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
+
+    dci_cnt = 0;
+    for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+
     // note: this only works if RBs for PDCCH are contigous!
-    LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-	  fp->first_carrier_offset,pdcch_vars->pdcch_config[0].BWPStart,coreset_start_rb);
+    LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
+          fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
+
+    rel15 = &pdcch_vars->pdcch_config[n_ss];
+
     if (coreset_nb_rb > 0)
       nr_pdcch_channel_estimation(ue,
-				  0,
-				  nr_tti_rx,
-				  l,
-				  fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12,
-				  coreset_nb_rb);
-    
+                                  0,
+                                  nr_tti_rx,
+                                  l,
+                                  fp->first_carrier_offset +
+                                  (pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb) * 12,
+                                  coreset_nb_rb);
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
 #endif
-    
-    //printf("phy procedure pdcch start measurement l =%d\n",l);
-    //nr_ue_measurement_procedures(l,ue,proc,gNB_id,(nr_tti_rx),mode);
-      
-  }
 
-  dci_cnt = nr_ue_pdcch_procedures(gNB_id, ue, proc);
+    dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
+
+    }
+  }
 
   if (dci_cnt > 0) {
 
@@ -1828,6 +1841,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1){
       dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0];
+    } else if (ue->dlsch_SI[0]->active == 1){
+      dlsch = ue->dlsch_SI[0];
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }
@@ -1867,7 +1882,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for C-RNTI
   int ret_pdsch = 0;
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1) {
-    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
+
+    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+    dlsch_config_pdu->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+    dlsch_config_pdu->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+    dlsch_config_pdu->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+
     ret_pdsch = nr_ue_pdsch_procedures(ue,
 			   proc,
 			   gNB_id,
@@ -1875,24 +1896,33 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
 			   NULL);
 
-    //printf("phy procedure pdsch start measurement\n"); 
+    if (ret_pdsch >= 0)
+      nr_ue_dlsch_procedures(ue,
+                             proc,
+                             gNB_id,
+                             PDSCH,
+                             ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
+                             ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][1],
+                             &ue->dlsch_errors[gNB_id],
+                             mode);
+
     nr_ue_measurement_procedures(2,ue,proc,gNB_id,nr_tti_rx,mode);
 
-    /*
-    write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],fp->ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->dl_ch_estimates[0][0],fp->ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
-    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
-    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
-    write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
-    */
+    // deactivate dlsch once dlsch proc is done
+    ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active = 0;
 
-    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[gNB_id]) && (ue->dlsch_SI[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
+
+    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+    dlsch_config_pdu->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+    dlsch_config_pdu->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+    dlsch_config_pdu->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+
     nr_ue_pdsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -1912,12 +1942,27 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
 
+    // FIXME: It was assumed that SIB1 has only one segment
+    int harq_pid = PHY_vars_UE_g[0][0]->dlsch_SI[0]->current_harq_pid;
+    if(ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->harq_ack.ack == 1) {
+      nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
+                                       ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
+    } else {
+      LOG_D(PHY,"SIB1 CRC NOT OK");
+    }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
   // do procedures for P-RNTI
   if ((ue->dlsch_p[gNB_id]) && (ue->dlsch_p[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
+
+    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+    dlsch_config_pdu->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+    dlsch_config_pdu->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+    dlsch_config_pdu->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+
     nr_ue_pdsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -1943,6 +1988,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[gNB_id]) && (ue->dlsch_ra[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
+
+    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+    dlsch_config_pdu->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+    dlsch_config_pdu->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+    dlsch_config_pdu->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+
     nr_ue_pdsch_procedures(ue,
                            proc,
                            gNB_id,
@@ -1964,46 +2015,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
-    
-  // do procedures for C-RNTI
-  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1) {
 
-    LOG_D(PHY, "DLSCH data reception at nr_tti_rx: %d \n \n", nr_tti_rx);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
-
-#if UE_TIMING_TRACE
-    start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
-#endif
-
-    if (ret_pdsch >= 0)
-      nr_ue_dlsch_procedures(ue,
-			   proc,
-			   gNB_id,
-			   PDSCH,
-			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
-			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][1],
-			   &ue->dlsch_errors[gNB_id],
-			   mode);
-
-
-#if UE_TIMING_TRACE
-  stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
-#if DISABLE_LOG_X
-  printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_tti_rx,ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
-  printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_tti_rx,ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
-#else
-  LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_tti_rx,ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
-  LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_tti_rx,ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
-#endif
-
-#endif
-
-  // deactivate dlsch once dlsch proc is done
-  ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active = 0;
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
-
- }
 #if UE_TIMING_TRACE
 start_meas(&ue->generic_stat);
 #endif
