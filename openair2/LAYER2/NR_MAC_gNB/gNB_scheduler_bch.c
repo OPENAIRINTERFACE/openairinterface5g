@@ -454,9 +454,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     for (int i=0;i<sib1_sdu_length;i++) LOG_I(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
 
     // Configure sched_ctrlCommon for SIB1
-    //schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, numDmrsCdmGrpsNoData, sib1_sdu_length);
-
-    gNB_mac->pre_processor_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, numDmrsCdmGrpsNoData, sib1_sdu_length);;
+    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, numDmrsCdmGrpsNoData, sib1_sdu_length);
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
