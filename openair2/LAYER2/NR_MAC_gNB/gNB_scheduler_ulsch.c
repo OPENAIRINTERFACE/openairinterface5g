@@ -562,6 +562,12 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     uint16_t rnti = UE_info->rnti[UE_id];
 
+    int8_t harq_id = select_ul_harq_pid(sched_ctrl);
+    if (harq_id < 0) return;
+    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
+    cur_harq->state = ACTIVE_SCHED;
+    cur_harq->last_tx_slot = sched_ctrl->sched_pusch.slot;
+
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     int dci_formats[2] = { f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0 , 0 };
     int rnti_types[2] = { NR_RNTI_C, 0 };
@@ -733,15 +739,9 @@ void nr_schedule_ulsch(module_id_t module_id,
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
     }
 
-    int8_t harq_id = select_ul_harq_pid(&UE_info->UE_sched_ctrl[UE_id]);
-    if (harq_id < 0) return;
-    NR_UE_ul_harq_t *cur_harq = &UE_info->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
-
-    cur_harq->state = ACTIVE_SCHED;
-    cur_harq->last_tx_slot = sched_ctrl->sched_pusch.slot;
 
     uint8_t num_dmrs_symb = 0;
     for(int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++)
