@@ -60,9 +60,11 @@
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+
 //#define DEBUG_ULSIM
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -75,7 +77,6 @@ int sf_ahead=4 ;
 int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
-uint16_t NB_UE_INST = 1;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 
@@ -164,6 +165,7 @@ int main(int argc, char **argv)
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   double tx_gain=1.0;
   double N0=30;
+  NB_UE_INST = 1;
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -669,8 +671,7 @@ int main(int argc, char **argv)
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
   fapi_nr_tx_request_t tx_req;
-  fapi_nr_tx_request_body_t tx_req_body;
-
+  
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
   uint8_t ptrs_mcs3 = 10;
@@ -906,16 +907,15 @@ int main(int argc, char **argv)
       scheduled_response.dl_config = NULL;
       scheduled_response.ul_config = &ul_config;
       scheduled_response.tx_request = &tx_req;
-      scheduled_response.tx_request->tx_request_body = &tx_req_body;
-
+      
       // Config UL TX PDU
       tx_req.slot = slot;
       tx_req.sfn = frame;
       // tx_req->tx_config // TbD
       tx_req.number_of_pdus = 1;
-      tx_req_body.pdu_length = TBS/8;
-      tx_req_body.pdu_index = 0;
-      tx_req_body.pdu = &ulsch_input_buffer[0];
+      tx_req.tx_request_body[0].pdu_length = TBS/8;
+      tx_req.tx_request_body[0].pdu_index = 0;
+      tx_req.tx_request_body[0].pdu = &ulsch_input_buffer[0];
 
       ul_config.slot = slot;
       ul_config.number_pdus = 1;

@@ -45,11 +45,13 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "nr_unitary_defs.h"
 #include "OCG_vars.h"
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
 
-unsigned char NB_eNB_INST=0;
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -59,7 +61,6 @@ RAN_CONTEXT_t RC;
 RU_t *ru;
 double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
-uint16_t NB_UE_INST=1;
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint8_t nfapi_mode=0;
 int sl_ahead = 0;
@@ -115,15 +116,16 @@ int main(int argc, char **argv){
   int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
   uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format=0;
-  uint8_t frame = 1, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, num_root_sequences = 16, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
+  uint8_t frame = 1, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
-  uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
+  uint32_t tx_lev = 10000, prach_errors = 0; //,tx_lev_dB;
   uint64_t SSB_positions = 0x01;
   uint16_t RA_sfn_index;
   uint8_t N_RA_slot;
   uint8_t config_period;
   int prachOccasion = 0;
   double DS_TDL = .03;
+  NB_UE_INST=1;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
@@ -718,7 +720,7 @@ int main(int argc, char **argv){
         //  printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
         if (awgn_flag == 0) {
-          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_tti<<1, 0);
+          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_frame, 0);
         }
 
         if (n_frames==1) {

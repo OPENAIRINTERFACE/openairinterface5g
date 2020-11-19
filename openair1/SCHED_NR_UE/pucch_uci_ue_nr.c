@@ -238,7 +238,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   /* update current context */
 
-  int subframe_number = (proc->nr_tti_rx)/(ue->frame_parms.slots_per_subframe);//ttis_per_subframe);
+  int subframe_number = proc->nr_slot_rx / ue->frame_parms.slots_per_subframe;
   nb_pucch_format_4_in_subframes[subframe_number] = 0; /* reset pucch format 4 counter at current rx position */
 
   int dl_harq_pid = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid;
@@ -490,7 +490,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       //}
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       nb_of_prbs = 1;
-      subframe_number = nr_tti_tx/(ue->frame_parms.slots_per_subframe);//ttis_per_subframe);
+      subframe_number = nr_tti_tx / ue->frame_parms.slots_per_subframe;
       nb_pucch_format_4_in_subframes[subframe_number]++; /* increment number of transmit pucch 4 in current subframe */
       NR_TST_PHY_PRINTF("PUCCH Number of pucch format 4 in subframe %d is %d \n", subframe_number, nb_pucch_format_4_in_subframes[subframe_number]);
       N_sc_ctrl_RB = N_SC_RB/(nb_pucch_format_4_in_subframes[subframe_number]);
@@ -1277,7 +1277,7 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
     return (1); /* period is slot */
   }
 
-  int16_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * ue->frame_parms.slots_per_subframe;//ttis_per_subframe;
+  int16_t N_slot_frame = ue->frame_parms.slots_per_frame;
   if (((proc->frame_tx * N_slot_frame) + proc->nr_tti_tx - SR_offset)%SR_periodicity == 0) {
     return (1);
   }

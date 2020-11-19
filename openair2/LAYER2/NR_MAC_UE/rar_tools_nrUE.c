@@ -77,7 +77,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   uint8_t nb_dmrs_re_per_rb;
   uint16_t number_dmrs_symbols = 0;
   int N_PRB_oh;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
   nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];

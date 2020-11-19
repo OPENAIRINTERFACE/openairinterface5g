@@ -253,13 +253,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
+  // HARQ stats
+  phy_vars_ue->dl_stats[harq_process->round]++;
     
   int16_t z [68*384];
   int8_t l [68*384];
   //__m128i l;
   //int16_t inv_d [68*384];
   uint8_t kc;
-  uint8_t Ilbrm = 0;
+  uint8_t Ilbrm = 1;
 
   uint32_t Tbslbrm;// = 950984;
   uint16_t nb_rb;// = 30;
@@ -296,7 +298,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     return(dlsch->max_ldpc_iterations + 1);
   }
 
-  /*if (nr_tti_rx> (10*frame_parms->ttis_per_subframe-1)) {
+  /*if (nr_tti_rx> (frame_parms->slots_per_subframe-1)) {
     printf("dlsch_decoding.c: Illegal subframe index %d\n",nr_tti_rx);
     return(dlsch->max_ldpc_iterations + 1);
   }*/
@@ -649,14 +651,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     }
   }
 
-  int32_t frame_rx_prev = frame;
-  int32_t tti_rx_prev = nr_tti_rx - 1;
-  if (tti_rx_prev < 0) {
-    frame_rx_prev--;
-    tti_rx_prev += 10*frame_parms->ttis_per_subframe;
-  }
-  frame_rx_prev = frame_rx_prev%1024;
-
   if (err_flag == 1) {
 //#if UE_DEBUG_TRACE
     LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
@@ -671,6 +665,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
+      phy_vars_ue->dl_stats[4]++;
     }
 
     if(is_crnti)
@@ -843,7 +838,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     return(dlsch->max_ldpc_iterations);
   }
 
- /* if (nr_tti_rx> (10*frame_parms->ttis_per_subframe-1)) {
+ /* if (nr_tti_rx> (frame_parms->slots_per_subframe-1)) {
     printf("dlsch_decoding.c: Illegal subframe index %d\n",nr_tti_rx);
     return(dlsch->max_ldpc_iterations);
   }
@@ -1245,14 +1240,6 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       err_flag = 1;
     }
   //} //loop r
-
-  int32_t frame_rx_prev = frame;
-  int32_t tti_rx_prev = nr_tti_rx - 1;
-  if (tti_rx_prev < 0) {
-    frame_rx_prev--;
-    tti_rx_prev += 10*frame_parms->ttis_per_subframe;
-  }
-  frame_rx_prev = frame_rx_prev%1024;
 
   if (err_flag == 1) {
 #if UE_DEBUG_TRACE
