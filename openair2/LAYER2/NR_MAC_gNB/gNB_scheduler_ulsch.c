@@ -562,6 +562,18 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     uint16_t rnti = UE_info->rnti[UE_id];
 
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    int dci_formats[2] = { f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0 , 0 };
+    int rnti_types[2] = { NR_RNTI_C, 0 };
+
+    //Resource Allocation in time domain
+    const int tda = sched_ctrl->sched_pusch.time_domain_allocation;
+    const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
+      sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+    const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+    int StartSymbolIndex, NrOfSymbols;
+    SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
+
     NR_PUSCH_Config_t *pusch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pusch_Config->choice.setup;
     uint8_t transform_precoding = 0;
     if (!pusch_Config->transformPrecoder)
@@ -586,21 +598,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     future_ul_tti_req->n_pdus += 1;
 
     LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
-
-    int dci_formats[2];
-    if (sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats)
-      dci_formats[0]  = NR_UL_DCI_FORMAT_0_1;
-    else
-      dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
-    int rnti_types[2] = { NR_RNTI_C, 0 };
-
-    //Resource Allocation in time domain
-    const int tda = sched_ctrl->sched_pusch.time_domain_allocation;
-    const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
-      sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-    const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
-    int StartSymbolIndex, NrOfSymbols;
-    SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
 
     pusch_pdu->start_symbol_index = StartSymbolIndex;
     pusch_pdu->nr_of_symbols = NrOfSymbols;
