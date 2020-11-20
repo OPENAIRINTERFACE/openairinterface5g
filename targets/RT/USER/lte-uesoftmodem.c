@@ -121,7 +121,6 @@ uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
-
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 
@@ -280,7 +279,7 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 extern int16_t dlsch_demod_shift;
-
+uint16_t ue_idx_standalone = 0xFFFF;
 static void get_options(void) {
   int CC_id=0;
   int tddflag=0;
@@ -529,7 +528,7 @@ int restart_L1L2(module_id_t enb_id) {
 
 void init_pdcp(void) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
-
+  // Do we need to include standalone mode here? - Andrew
   if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
@@ -731,8 +730,7 @@ int main( int argc, char **argv ) {
     //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   } else if (NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
-    init_queue(&dl_config_req_queue);
-    init_queue(&tx_req_pdu_queue);
+    init_queue(&dl_config_req_tx_req_queue);
     init_queue(&hi_dci0_req_queue);
     init_queue(&ul_config_req_queue);
 

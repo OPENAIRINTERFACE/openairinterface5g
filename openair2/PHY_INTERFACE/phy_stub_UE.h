@@ -103,6 +103,12 @@ typedef struct nfapi_tx_req_pdu_list_t
     nfapi_tx_request_pdu_t pdus[]; /* see "struct hack" */
 } nfapi_tx_req_pdu_list_t;
 
+typedef struct nfapi_dl_config_req_tx_req_t
+{
+    nfapi_dl_config_request_t *dl_config_req;
+    nfapi_tx_req_pdu_list_t *tx_req_pdu_list;
+} nfapi_dl_config_req_tx_req_t;
+
 void nfapi_free_tx_req_pdu_list(nfapi_tx_req_pdu_list_t *);
 
 void dl_config_req_UE_MAC_dci(int sfn,
@@ -142,6 +148,10 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfa
 
 void UE_config_stub_pnf(void);
 
+void *memcpy_tx_req_standalone(nfapi_tx_request_t *tx_req);
+
+void *memcpy_dl_config_req_standalone(nfapi_dl_config_request_t *dl_config_req);
+
 // open an SCTP socket with a standalone PNF module
 void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port);
 
@@ -149,6 +159,7 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port);
 void *ue_standalone_pnf_task(void *context);
 void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type);
 void send_standalone_dummy(void);
+void enqueue_dl_config_req_tx_req(nfapi_dl_config_request_t *dl_config_req, nfapi_tx_request_t *tx_req);
 
 // Convert downlink nfapi messages to a string.
 // Returned memory is malloc'ed, caller is responsible for freeing.
@@ -160,8 +171,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req);
 const char *dl_pdu_type_to_string(uint8_t pdu_type);
 const char *ul_pdu_type_to_string(uint8_t pdu_type);
 
-extern queue_t dl_config_req_queue;
-extern queue_t tx_req_pdu_queue; /* items in this queue are nfapi_tx_req_pdu_list_t* */
+extern queue_t dl_config_req_tx_req_queue;
 extern queue_t ul_config_req_queue;
 extern queue_t hi_dci0_req_queue;
 
