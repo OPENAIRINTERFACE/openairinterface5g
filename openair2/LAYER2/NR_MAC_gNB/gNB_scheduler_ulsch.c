@@ -588,6 +588,15 @@ void nr_schedule_ulsch(module_id_t module_id,
     else
       transform_precoding = *pusch_Config->transformPrecoder;
     const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+
+    /* DMRS calculations */
+    const int mapping_type = tdaList->list.array[tda]->mappingType;
+    const NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig =
+        mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA
+            ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup
+            : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+    const uint8_t dmrs_config_type = NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1;
+
     uint8_t mcs_table = 0;
     if (transform_precoding)
       mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
@@ -671,16 +680,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     // --------------------
     // ------- DMRS -------
     // --------------------
-    const int mapping_type = tdaList->list.array[tda]->mappingType;
-    NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
-    if (mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA)
-      NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
-    else
-      NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-    if (NR_DMRS_UplinkConfig->dmrs_Type == NULL)
-      pusch_pdu->dmrs_config_type = 0;
-    else
-      pusch_pdu->dmrs_config_type = 1;
+    pusch_pdu->dmrs_config_type = dmrs_config_type;
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
     if (pusch_pdu->transform_precoding) { // transform precoding disabled
       long *scramblingid;
