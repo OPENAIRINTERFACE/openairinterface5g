@@ -2902,13 +2902,17 @@ class OaiCiTest():
 			self.ShowTestID()
 			self.TerminateOAIUE(HTML,RAN,COTS_UE)
 		if (RAN.Initialize_eNB_args != ''):
-			self.testCase_id = 'AUTO-KILL-eNB'
+			self.testCase_id = 'AUTO-KILL-RAN'
 			HTML.testCase_id=self.testCase_id
-			self.desc = 'Automatic Termination of eNB'
-			HTML.desc='Automatic Termination of eNB'
+			self.desc = 'Automatic Termination of all RAN nodes'
+			HTML.desc='Automatic Termination of RAN nodes'
 			self.ShowTestID()
-			RAN.eNB_instance=0
-			RAN.TerminateeNB()
+			#terminate all RAN nodes eNB/gNB/OCP
+			for instance in range(0, len(RAN.air_interface)):
+				if RAN.air_interface[instance]!=''
+					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					RAN.eNB_instance=instance
+					RAN.TerminateeNB()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.testCase_id=self.testCase_id
