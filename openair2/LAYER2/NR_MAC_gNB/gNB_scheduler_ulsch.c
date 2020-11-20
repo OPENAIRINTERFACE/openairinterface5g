@@ -638,6 +638,20 @@ void nr_schedule_ulsch(module_id_t module_id,
       R >>= 1;
       Qm <<= 1;
     }
+    const uint32_t tb_size = nr_compute_tbs(Qm,
+                                            R,
+                                            sched_pusch->rbSize,
+                                            NrOfSymbols,
+                                            N_PRB_DMRS * num_dmrs_symb,
+                                            0,  // nb_rb_oh
+                                            0,
+                                            1 /* NrOfLayers */) >> 3;
+
+    /* Statistics */
+    UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
+    if (cur_harq->round == 0)
+      UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += tb_size;
+
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
@@ -746,20 +760,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
-
-    pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                                                   pusch_pdu->target_code_rate,
-                                                   pusch_pdu->rb_size,
-                                                   pusch_pdu->nr_of_symbols,
-                                                   N_PRB_DMRS * num_dmrs_symb,
-                                                   0, //nb_rb_oh
-                                                   0,
-                                                   pusch_pdu->nrOfLayers)>>3;
-
-    UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
-    if (cur_harq->round == 0)
-      UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += pusch_pdu->pusch_data.tb_size;
-
+    pusch_pdu->pusch_data.tb_size = tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &RC.nrmac[module_id]->UL_dci_req[0];
