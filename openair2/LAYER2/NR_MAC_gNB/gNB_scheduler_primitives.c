@@ -1830,6 +1830,76 @@ bool find_free_CCE(module_id_t module_id,
   return true;
 }
 
+int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, int Mod_idP, int UE_id) {
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id] ;
+  int nb_tci_states = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
+  NR_TCI_State_t *tci =NULL;
+  int i;
+
+  for(i=0; i<nb_tci_states && i<64; i++) {
+    tci = (NR_TCI_State_t *)secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
+
+    if(tci != NULL) {
+      if(tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+        if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t)
+          return tci->tci_StateId;  // returned TCI state ID
+      }
+      // if type2 is configured
+      else if(tci->qcl_Type2 != NULL && tci->qcl_Type2->referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+        if(tci->qcl_Type2->referenceSignal.choice.ssb == ssb_index_t)
+          return tci->tci_StateId; // returned TCI state ID
+      } else LOG_I(MAC,"SSB index is not found in first 64 TCI states of TCI_statestoAddModList[%d]", i);
+    }
+  }
+
+  // tci state not identified in first 64 TCI States of PDSCH Config
+  return -1;
+}
+
+
+int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_id) {
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id] ;
+  int nb_tci_states = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
+  NR_TCI_State_t *tci =NULL;
+  NR_TCI_StateId_t *tci_id = NULL;
+  int bwp_id = 1;
+  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  NR_ControlResourceSet_t *coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1];
+  int i;
+  int flag = 0;
+  int tci_stateID = -1;
+
+  for(i=0; i<nb_tci_states && i<128; i++) {
+    tci = (NR_TCI_State_t *)secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
+
+    if(tci != NULL && tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+      if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t) {
+        flag = 1;
+        tci_stateID = tci->tci_StateId;
+        break;
+      } else if(tci->qcl_Type2 != NULL && tci->qcl_Type2->referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+        flag = 1;
+        tci_stateID = tci->tci_StateId;
+        break;
+      }
+    }
+
+    if(flag != 0 && tci_stateID != -1 && coreset != NULL) {
+      for(i=0; i<64 && i<coreset->tci_StatesPDCCH_ToAddList->list.count; i++) {
+        tci_id = coreset->tci_StatesPDCCH_ToAddList->list.array[i];
+
+        if(tci_id != NULL && *tci_id == tci_stateID)
+          return tci_stateID;
+      }
+    }
+  }
+
+  // Need to implement once configuration is received
+  return -1;
+}
+
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
 					  nfapi_nr_search_space_t *search_space) {

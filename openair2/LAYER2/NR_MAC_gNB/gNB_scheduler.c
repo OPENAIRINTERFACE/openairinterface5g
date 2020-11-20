@@ -56,141 +56,6 @@
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
-#define MAX_SSB_SCHED 8
-#define L1_RSRP_HYSTERIS 10 //considering 10 dBm as hysterisis for avoiding frequent SSB Beam Switching. !Fixme provide exact value if any
-//#define L1_DIFF_RSRP_STEP_SIZE 2
-#define MAX_NUM_SSB 128
-#define MIN_RSRP_VALUE -141
-//Measured RSRP Values Table 10.1.16.1-1 from 36.133
-//Stored all the upper limits[Max RSRP Value of corresponding index]
-//stored -1 for invalid values
-int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //0 - 9
-    -1, -1, -1, -1, -1, -1, -140, -139, -138, -137, //10 - 19
-    -136, -135, -134, -133, -132, -131, -130, -129, -128, -127, //20 - 29
-    -126, -125, -124, -123, -122, -121, -120, -119, -118, -117, //30 - 39
-    -116, -115, -114, -113, -112, -111, -110, -109, -108, -107, //40 - 49
-    -106, -105, -104, -103, -102, -101, -100, -99, -98, -97, //50 - 59
-    -96, -95, -94, -93, -92, -91, -90, -89, -88, -87, //60 - 69
-    -86, -85, -84, -83, -82, -81, -80, -79, -78, -77, //70 - 79
-    -76, -75, -74, -73, -72, -71, -70, -69, -68, -67, //80 - 89
-    -66, -65, -64, -63, -62, -61, -60, -59, -58, -57, //90 - 99
-    -56, -55, -54, -53, -52, -51, -50, -49, -48, -47, //100 - 109
-    -46, -45, -44, -44, -1, -1, -1, -1, -1, -1, //110 - 119
-    -1, -1, -1, -1, -1, -1, -1, -1//120 - 127
-  };
-
-//Differential RSRP values Table 10.1.6.1-2 from 36.133
-//Stored the upper limits[MAX RSRP Value]
-int diff_rsrp_ssb_csi_meas_10_1_6_1_2[16] = {
-  0, -2, -4, -6, -8, -10, -12, -14, -16, -18, //0 - 9
-  -20, -22, -24, -26, -28, -30 //10 - 15
-};
-
-
-//returns the measured RSRP value (upper limit)
-int get_measured_rsrp(uint8_t index) {
-  //if index is invalid returning minimum rsrp -140
-  if((index >= 0 && index <= 15) || index >= 114)
-    return MIN_RSRP_VALUE;
-
-  return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
-}
-
-//returns the differential RSRP value (upper limit)
-int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
-  if(strongest_rsrp != -1) {
-    return strongest_rsrp + diff_rsrp_ssb_csi_meas_10_1_6_1_2[index];
-  } else
-    return MIN_RSRP_VALUE;
-}
-
-int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, int Mod_idP, int UE_id) {
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id] ;
-  int nb_tci_states = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
-  NR_TCI_State_t *tci =NULL;
-  int i;
-
-  for(i=0; i<nb_tci_states && i<64; i++) {
-    tci = (NR_TCI_State_t *)secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
-
-    if(tci != NULL) {
-      if(tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
-        if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t)
-          return tci->tci_StateId;  // returned TCI state ID
-      }
-      // if type2 is configured
-      else if(tci->qcl_Type2 != NULL && tci->qcl_Type2->referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
-        if(tci->qcl_Type2->referenceSignal.choice.ssb == ssb_index_t)
-          return tci->tci_StateId; // returned TCI state ID
-      } else LOG_I(MAC,"SSB index is not found in first 64 TCI states of TCI_statestoAddModList[%d]", i);
-    }
-  }
-
-  // tci state not identified in first 64 TCI States of PDSCH Config
-  return -1;
-}
-
-int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_id) {
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id] ;
-  int nb_tci_states = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
-  NR_TCI_State_t *tci =NULL;
-  NR_TCI_StateId_t *tci_id = NULL;
-  int bwp_id = 1;
-  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_ControlResourceSet_t *coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1];
-  int i;
-  int flag = 0;
-  int tci_stateID = -1;
-
-  for(i=0; i<nb_tci_states && i<128; i++) {
-    tci = (NR_TCI_State_t *)secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
-
-    if(tci != NULL && tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
-      if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t) {
-        flag = 1;
-        tci_stateID = tci->tci_StateId;
-        break;
-      } else if(tci->qcl_Type2 != NULL && tci->qcl_Type2->referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
-        flag = 1;
-        tci_stateID = tci->tci_StateId;
-        break;
-      }
-    }
-
-    if(flag != 0 && tci_stateID != -1 && coreset != NULL) {
-      for(i=0; i<64 && i<coreset->tci_StatesPDCCH_ToAddList->list.count; i++) {
-        tci_id = coreset->tci_StatesPDCCH_ToAddList->list.array[i];
-
-        if(tci_id != NULL && *tci_id == tci_stateID)
-          return tci_stateID;
-      }
-    }
-  }
-
-  // Need to implement once configuration is received
-  return -1;
-}
-
-int ssb_index_sorted[MAX_NUM_SSB] = {0};
-int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
-//Sorts ssb_index and ssb_rsrp array data and keeps in ssb_index_sorted and
-//ssb_rsrp_sorted respectively
-void ssb_rsrp_sort(int *ssb_index, int *ssb_rsrp) {
-  int i, j;
-
-  for(i = 0; *(ssb_index+i) != 0; i++) {
-    for(j = i; *(ssb_index+j) != 0; j++) {
-      if(*(ssb_rsrp+j) >= *(ssb_rsrp+i)) {
-        ssb_index_sorted[i] = *(ssb_index+j);
-        ssb_rsrp_sorted[i] = *(ssb_rsrp+j);
-      }
-    }
-  }
-}
-
 void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
@@ -224,223 +89,6 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
   }
 }
 
-//identifies the target SSB Beam index
-//keeps the required date for PDCCH and PDSCH TCI state activation/deactivation CE consutruction globally
-//handles triggering of PDCCH and PDSCH MAC CEs
-void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_ctrl, frame_t frame, slot_t slot) {
-
-  int strongest_ssb_rsrp = 0;
-  int cqi_idx = 0;
-  int curr_ssb_beam_index = 0; //ToDo: yet to know how to identify the serving ssb beam index
-  uint8_t target_ssb_beam_index = curr_ssb_beam_index;
-  //uint8_t max_reported_RSRP = 16;
-  //int serving_SSB_Beam_RSRP;
-  uint8_t is_triggering_ssb_beam_switch =0;
-  uint8_t ssb_idx = 0;
-  int pdsch_bwp_id =0;
-  int ssb_index[MAX_NUM_SSB] = {0};
-  int ssb_rsrp[MAX_NUM_SSB] = {0};
-  uint8_t idx = 0;
-  int bwp_id  = 1;
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  //NR_COMMON_channels_t *cc = RC.nrmac[Mod_idP]->common_channels;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  //NR_CSI_MeasConfig_t *csi_MeasConfig = UE_list->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-  //bwp indicator
-  int n_dl_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
-  uint8_t nr_ssbri_cri = 0;
-  uint8_t nb_of_csi_ssb_report = UE_list->csi_report_template[UE_id][cqi_idx].nb_of_csi_ssb_report;
-  //uint8_t bitlen_ssbri = log (nb_of_csi_ssb_report)/log (2);
-  //uint8_t max_rsrp_reported = -1;
-  int better_rsrp_reported = -140-(-0); /*minimum_measured_RSRP_value - minimum_differntail_RSRP_value*///considering the minimum RSRP value as better RSRP initially
-  uint8_t diff_rsrp_idx = 0;
-  uint8_t i, j;
-
-  if (n_dl_bwp < 4)
-    pdsch_bwp_id = bwp_id;
-  else
-    pdsch_bwp_id = bwp_id - 1; // as per table 7.3.1.1.2-1 in 38.212
-
-  /*Example:
-  CRI_SSBRI: 1 2 3 4| 5 6 7 8| 9 10 1 2|
-  nb_of_csi_ssb_report = 3 //3 sets as above
-  nr_ssbri_cri = 4 //each set has 4 elements
-  storing ssb indexes in ssb_index array as ssb_index[0] = 1 .. ssb_index[4] = 5
-  ssb_rsrp[0] = strongest rsrp in first set, ssb_rsrp[4] = strongest rsrp in second set, ..
-  idx: resource set index
-  */
-
-  //for all reported SSB
-  for (idx = 0; idx < nb_of_csi_ssb_report; idx++) {
-    nr_ssbri_cri = sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri;
-    //if group based beam Reporting is disabled
-    /*if(NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
-        csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {*/
-      //extracting the ssb indexes
-      for (ssb_idx = 0; ssb_idx < nr_ssbri_cri; ssb_idx++) {
-        ssb_index[idx * nb_of_csi_ssb_report + ssb_idx] = sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[ssb_idx];
-      }
-
-      //if strongest measured RSRP is configured
-      strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
-      ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
-		  LOG_I(MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
-
-      //if current ssb rsrp is greater than better rsrp
-      if(ssb_rsrp[idx * nb_of_csi_ssb_report] > better_rsrp_reported) {
-        better_rsrp_reported = ssb_rsrp[idx * nb_of_csi_ssb_report];
-        target_ssb_beam_index = idx * nb_of_csi_ssb_report;
-      }
-
-      for(diff_rsrp_idx =1; diff_rsrp_idx < nr_ssbri_cri; diff_rsrp_idx++) {
-        ssb_rsrp[idx * nb_of_csi_ssb_report + diff_rsrp_idx] = get_diff_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx-1], strongest_ssb_rsrp);
-
-        //if current reported rsrp is greater than better rsrp
-        if(ssb_rsrp[idx * nb_of_csi_ssb_report + diff_rsrp_idx] > better_rsrp_reported) {
-          better_rsrp_reported = ssb_rsrp[idx * nb_of_csi_ssb_report + diff_rsrp_idx];
-          target_ssb_beam_index = idx * nb_of_csi_ssb_report + diff_rsrp_idx;
-        }
-      }
-#if 0
-      //}
-    //if group based beam reporting is enabled
-    else if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled !=
-             csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {
-      //extracting the ssb indexes
-      //for group based reporting only 2 SSB RS are reported, 38.331
-      for (ssb_idx = 0; ssb_idx < 2; ssb_idx++) {
-        ssb_index[idx * nb_of_csi_ssb_report + ssb_idx] = sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.CRI_SSBRI[ssb_idx];
-      }
-
-      strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.RSRP);
-      ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
-
-      if(ssb_rsrp[idx * nb_of_csi_ssb_report] > better_rsrp_reported) {
-        better_rsrp_reported = ssb_rsrp[idx * nb_of_csi_ssb_report];
-        target_ssb_beam_index = idx * nb_of_csi_ssb_report;
-      }
-
-      ssb_rsrp[idx * nb_of_csi_ssb_report + 1] = get_diff_rsrp(sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx], strongest_ssb_rsrp);
-
-      if(ssb_rsrp[idx * nb_of_csi_ssb_report + 1] > better_rsrp_reported) {
-        better_rsrp_reported = ssb_rsrp[idx * nb_of_csi_ssb_report + 1];
-        target_ssb_beam_index = idx * nb_of_csi_ssb_report + 1;
-      }
-    }
-#endif
-  }
-
-
-  if(ssb_index[target_ssb_beam_index] != ssb_index[curr_ssb_beam_index] && ssb_rsrp[target_ssb_beam_index] > ssb_rsrp[curr_ssb_beam_index]) {
-    if( ssb_rsrp[target_ssb_beam_index] - ssb_rsrp[curr_ssb_beam_index] > L1_RSRP_HYSTERIS) {
-      is_triggering_ssb_beam_switch = 1;
-      LOG_I(MAC, "Triggering ssb beam switching using tci\n");
-    }
-  }
-
-  if(is_triggering_ssb_beam_switch) {
-    //filling pdcch tci state activativation mac ce structure fields
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.is_scheduled = 1;
-    //OAI currently focusing on Non CA usecase hence 0 is considered as serving
-    //cell id
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.servingCellId = 0; //0 for PCell as 38.331 v15.9.0 page 353 //serving cell id for which this MAC CE applies
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId = 0; //coreset id for which the TCI State id is being indicated
-
-    /* 38.321 v15.8.0 page 66
-    TCI State ID: This field indicates the TCI state identified by TCI-StateId as specified in TS 38.331 [5] applicable
-    to the Control Resource Set identified by CORESET ID field.
-    If the field of CORESET ID is set to 0,
-      this field indicates a TCI-StateId for a TCI state of the first 64 TCI-states configured by tci-States-ToAddModList and tciStates-ToReleaseList in the PDSCH-Config in the active BWP.
-    If the field of CORESET ID is set to the other value than 0,
-     this field indicates a TCI-StateId configured by tci-StatesPDCCH-ToAddList and tciStatesPDCCH-ToReleaseList in the controlResourceSet identified by the indicated CORESET ID.
-    The length of the field is 7 bits
-     */
-    if(sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId == 0) {
-      int tci_state_id = checkTargetSSBInFirst64TCIStates_pdschConfig(ssb_index[target_ssb_beam_index], Mod_idP, UE_id);
-
-      if( tci_state_id != -1)
-        sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId = tci_state_id;
-      else {
-        //identify the best beam within first 64 TCI States of PDSCH
-        //Config TCI-states-to-addModList
-        int flag = 0;
-
-        for(i =0; ssb_index_sorted[i]!=0; i++) {
-          tci_state_id = checkTargetSSBInFirst64TCIStates_pdschConfig(ssb_index_sorted[i], Mod_idP, UE_id) ;
-
-          if(tci_state_id != -1 && ssb_rsrp_sorted[i] > ssb_rsrp[curr_ssb_beam_index] && ssb_rsrp_sorted[i] - ssb_rsrp[curr_ssb_beam_index] > L1_RSRP_HYSTERIS) {
-            sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId = tci_state_id;
-            flag = 1;
-            break;
-          }
-        }
-
-        if(flag == 0 || ssb_rsrp_sorted[i] < ssb_rsrp[curr_ssb_beam_index] || ssb_rsrp_sorted[i] - ssb_rsrp[curr_ssb_beam_index] < L1_RSRP_HYSTERIS) {
-          sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.is_scheduled = 0;
-        }
-      }
-    } else {
-      int tci_state_id = checkTargetSSBInTCIStates_pdcchConfig(ssb_index[target_ssb_beam_index], Mod_idP, UE_id);
-
-      if (tci_state_id !=-1)
-        sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId = tci_state_id;
-      else {
-        //identify the best beam within CORESET/PDCCH
-        ////Config TCI-states-to-addModList
-        int flag = 0;
-
-        for(i =0; ssb_index_sorted[i]!=0; i++) {
-          tci_state_id = checkTargetSSBInTCIStates_pdcchConfig(ssb_index_sorted[i], Mod_idP, UE_id);
-
-          if( tci_state_id != -1 && ssb_rsrp_sorted[i] > ssb_rsrp[curr_ssb_beam_index] && ssb_rsrp_sorted[i] - ssb_rsrp[curr_ssb_beam_index] > L1_RSRP_HYSTERIS) {
-            sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId = tci_state_id;
-            flag = 1;
-            break;
-          }
-        }
-
-        if(flag == 0 || ssb_rsrp_sorted[i] < ssb_rsrp[curr_ssb_beam_index] || ssb_rsrp_sorted[i] - ssb_rsrp[curr_ssb_beam_index] < L1_RSRP_HYSTERIS) {
-          sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.is_scheduled = 0;
-        }
-      }
-    }
-
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI;
-
-    //filling pdsch tci state activation deactivation mac ce structure fields
-    if(sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI) {
-      sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.is_scheduled = 1;
-      /*
-      Serving Cell ID: This field indicates the identity of the Serving Cell for which the MAC CE applies
-      Considering only PCell exists. Serving cell index of PCell is always 0, hence configuring 0
-      */
-      sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.servingCellId = 0;
-      /*
-      BWP ID: This field indicates a DL BWP for which the MAC CE applies as the codepoint of the DCI bandwidth
-      part indicator field as specified in TS 38.212
-      */
-      sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.bwpId = pdsch_bwp_id;
-
-      /*
-       * TODO ssb_rsrp_sort() API yet to code to find 8 best beams, rrc configuration
-       * is required
-       */
-      for(i = 0; i<8; i++) {
-        sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.tciStateActDeact[i] = i;
-      }
-
-      sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.highestTciStateActivated = 8;
-
-      for(i = 0, j =0; i<MAX_TCI_STATES; i++) {
-        if(sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.tciStateActDeact[i]) {
-          sched_ctrl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.codepoint[j] = i;
-          j++;
-        }
-      }
-    }//tci_presentInDCI
-  }//is-triggering_beam_switch
-}//tci handling
 
 void clear_nr_nfapi_information(gNB_MAC_INST *gNB,
                                 int CC_idP,
@@ -645,6 +293,59 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   }
 }
 */
+/*
+void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+{
+  int CC_id;
+  gNB_MAC_INST *mac = RC.nrmac[module_idP];
+
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+
+    nfapi_ul_config_request_t *ul_req                 = &mac->UL_tti_req[CC_id];
+
+    *ul_req = *ul_req_tmp;
+
+    // Restore the pointer
+    ul_req->ul_config_request_body.ul_config_pdu_list = ul_req_pdu;
+    ul_req->sfn_sf                                    = (frameP<<7) + slotP;
+    ul_req_tmp->ul_config_request_body.number_of_pdus = 0;
+
+    if (ul_req->ul_config_request_body.number_of_pdus>0)
+      {
+        LOG_D(PHY, "%s() active NOW (frameP:%d slotP:%d) pdus:%d\n", __FUNCTION__, frameP, slotP, ul_req->ul_config_request_body.number_of_pdus);
+      }
+
+    memcpy((void*)ul_req->ul_config_request_body.ul_config_pdu_list,
+     (void*)ul_req_tmp->ul_config_request_body.ul_config_pdu_list,
+     ul_req->ul_config_request_body.number_of_pdus*sizeof(nfapi_ul_config_request_pdu_t));
+  }
+}
+*/
+
+
+void nr_schedule_pusch(int Mod_idP,
+                       int UE_id,
+                       int num_slots_per_tdd,
+                       int ul_slots,
+                       frame_t frameP,
+                       sub_frame_t slotP) {
+
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  int k = slotP + ul_slots - num_slots_per_tdd;
+  NR_sched_pusch *pusch = &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k];
+  if ((pusch->active == true) && (frameP == pusch->frame) && (slotP == pusch->slot)) {
+    UL_tti_req->SFN = pusch->frame;
+    UL_tti_req->Slot = pusch->slot;
+    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pusch_pdu = pusch->pusch_pdu;
+    UL_tti_req->n_pdus+=1;
+    memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
+           0, sizeof(NR_sched_pusch));
+  }
+}
+
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   return (bitmap >> slot) & 0x01;
