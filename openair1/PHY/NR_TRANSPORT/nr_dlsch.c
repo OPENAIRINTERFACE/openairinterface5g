@@ -342,7 +342,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     // since PHY can only handle BF on slot basis we set the whole slot
 
     // first check if this slot has not already been allocated to another beam
-    if (gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot]!=255) {
+    if (gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot]==255) {
       for (int j=0;j<frame_parms->symbols_per_slot;j++) 
 	gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
     }
