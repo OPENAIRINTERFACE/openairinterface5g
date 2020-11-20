@@ -361,6 +361,7 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
         // if the gNB received ack with a good confidence
         if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
               (uci_01->harq->harq_confidence_level == 0)) {
             // toggle NDI and reset round
@@ -380,8 +381,10 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
           break;
         }
         // if feedback slot processing is aborted
-        else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
-                 (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+        else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
+                 && (UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
+                 && sched_ctrl->harq_processes[harq_idx].is_waiting) {
+          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
@@ -405,6 +408,7 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
         // if the gNB received ack with a good confidence or if the max harq rounds was reached
         if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
           // TODO add some confidence level for when there is no CRC
+          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_234->harq.harq_crc != 1) && acknack) {
             // toggle NDI and reset round
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
@@ -423,8 +427,10 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
           break;
         }
         // if feedback slot processing is aborted
-        else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
-                 (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+        else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
+                 && (UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
+                 && sched_ctrl->harq_processes[harq_idx].is_waiting) {
+          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
