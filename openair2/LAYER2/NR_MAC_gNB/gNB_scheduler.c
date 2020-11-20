@@ -650,6 +650,8 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   return (bitmap >> slot) & 0x01;
 }
+
+
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
