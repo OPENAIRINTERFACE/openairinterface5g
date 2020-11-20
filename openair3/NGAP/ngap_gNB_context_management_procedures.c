@@ -207,7 +207,7 @@ int ngap_ue_context_release_req(instance_t instance,
   /* optional */
   if (ue_release_req_p->nb_of_pdusessions > 0) {
     ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
+    ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceListCxtRelReq;
     ie->criticality = NGAP_Criticality_reject;
     ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_PDUSessionResourceListCxtRelReq;
     for (int i = 0; i < ue_release_req_p->nb_of_pdusessions; i++) {
