@@ -611,6 +611,9 @@ void nr_schedule_ulsch(module_id_t module_id,
     for(int i = StartSymbolIndex; i < StartSymbolIndex + NrOfSymbols; i++)
       num_dmrs_symb += (ul_dmrs_symb_pos >> i) & 1;
     const uint8_t num_dmrs_cdm_grps_no_data = 1;
+    const uint8_t N_PRB_DMRS = dmrs_config_type == 0
+        ? num_dmrs_cdm_grps_no_data * 6
+        : num_dmrs_cdm_grps_no_data * 4;
 
     uint8_t mcs_table = 0;
     if (transform_precoding)
@@ -743,12 +746,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
-
-    uint8_t N_PRB_DMRS;
-    if (pusch_pdu->dmrs_config_type == 0)
-      N_PRB_DMRS = pusch_pdu->num_dmrs_cdm_grps_no_data*6;
-    else
-      N_PRB_DMRS = pusch_pdu->num_dmrs_cdm_grps_no_data*4;
 
     pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
                                                    pusch_pdu->target_code_rate,
