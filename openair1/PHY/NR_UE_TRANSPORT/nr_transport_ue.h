@@ -141,6 +141,8 @@ typedef struct {
   uint8_t decode_phich;
   // Encoder BG
   uint8_t BG;
+  // LDPC lifting size
+  uint32_t Z;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
