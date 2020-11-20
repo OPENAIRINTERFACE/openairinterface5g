@@ -615,6 +615,7 @@ void nr_schedule_ulsch(module_id_t module_id,
         ? num_dmrs_cdm_grps_no_data * 6
         : num_dmrs_cdm_grps_no_data * 4;
 
+    /* Calculate TBS from MCS */
     uint8_t mcs_table = 0;
     if (transform_precoding)
       mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
@@ -671,49 +672,31 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
 
-    pusch_pdu->start_symbol_index = StartSymbolIndex;
-    pusch_pdu->nr_of_symbols = NrOfSymbols;
-
     pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
     pusch_pdu->rnti = rnti;
     pusch_pdu->handle = 0; //not yet used
 
+    /* FAPI: BWP */
     pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pusch_pdu->subcarrier_spacing = sched_ctrl->active_ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
 
+    /* FAPI: PUSCH information always included */
+    pusch_pdu->target_code_rate = R;
+    pusch_pdu->qam_mod_order = Qm;
+    pusch_pdu->mcs_index = mcs;
+    pusch_pdu->mcs_table = mcs_table;
+    pusch_pdu->transform_precoding = transform_precoding;
     if (pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
-
-    pusch_pdu->transform_precoding = transform_precoding;
-    pusch_pdu->mcs_index = mcs;
-    pusch_pdu->mcs_table = mcs_table;
-    pusch_pdu->target_code_rate = R;
-    pusch_pdu->qam_mod_order = Qm;
     pusch_pdu->nrOfLayers = 1;
 
-    //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
-    AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
-                "Only frequency resource allocation type 1 is currently supported\n");
-    pusch_pdu->resource_alloc = 1; //type 1
-    pusch_pdu->rb_start = sched_pusch->rbStart;
-    pusch_pdu->rb_size = sched_pusch->rbSize;
-    pusch_pdu->vrb_to_prb_mapping = 0;
-
-    if (pusch_Config->frequencyHopping==NULL)
-      pusch_pdu->frequency_hopping = 0;
-    else
-      pusch_pdu->frequency_hopping = 1;
-
-
-    // --------------------
-    // ------- DMRS -------
-    // --------------------
+    /* FAPI: DMRS */
+    pusch_pdu->ul_dmrs_symb_pos = ul_dmrs_symb_pos;
     pusch_pdu->dmrs_config_type = dmrs_config_type;
-    pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
     if (pusch_pdu->transform_precoding) { // transform precoding disabled
       long *scramblingid;
       if (pusch_pdu->scid == 0)
@@ -732,13 +715,34 @@ void nr_schedule_ulsch(module_id_t module_id,
       else
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
-    pusch_pdu->ul_dmrs_symb_pos = ul_dmrs_symb_pos;
+    pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
     pusch_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
     pusch_pdu->dmrs_ports = 1;
 
-    // --------------------
-    // ------- PTRS -------
-    // --------------------
+    /* FAPI: Pusch Allocation in frequency domain */
+    AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
+                "Only frequency resource allocation type 1 is currently supported\n");
+    pusch_pdu->resource_alloc = 1; //type 1
+    pusch_pdu->rb_start = sched_pusch->rbStart;
+    pusch_pdu->rb_size = sched_pusch->rbSize;
+    pusch_pdu->vrb_to_prb_mapping = 0;
+    if (pusch_Config->frequencyHopping==NULL)
+      pusch_pdu->frequency_hopping = 0;
+    else
+      pusch_pdu->frequency_hopping = 1;
+
+    /* FAPI: Resource Allocation in time domain */
+    pusch_pdu->start_symbol_index = StartSymbolIndex;
+    pusch_pdu->nr_of_symbols = NrOfSymbols;
+
+    /* PUSCH PDU */
+    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
+    pusch_pdu->pusch_data.harq_process_id = harq_id;
+    pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
+    pusch_pdu->pusch_data.tb_size = tb_size;
+    pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
+
+    /* PUSCH PTRS */
     if (NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
       // TODO to be fixed from RRC config
       uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
@@ -756,12 +760,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     else{
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
     }
-
-    pusch_pdu->pusch_data.harq_process_id = harq_id;
-    pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
-    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
-    pusch_pdu->pusch_data.tb_size = tb_size;
-    pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &RC.nrmac[module_id]->UL_dci_req[0];
     ul_dci_req->SFN = frame;
