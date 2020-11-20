@@ -80,8 +80,6 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   //max_pos_fil = max_pos;
 
-  if(subframe == 0)
-  {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
       if ( abs(diff) < SYNCH_HYST )
@@ -135,5 +133,5 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       #endif //DEBUG_PHY
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
-  }
+
 }
