@@ -606,6 +606,11 @@ void nr_schedule_ulsch(module_id_t module_id,
     const pusch_maxLength_t pusch_maxLength =
         NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
     uint16_t l_prime_mask = get_l_prime(NrOfSymbols, mapping_type, additional_pos, pusch_maxLength);
+    const uint16_t ul_dmrs_symb_pos = l_prime_mask << StartSymbolIndex;
+    uint8_t num_dmrs_symb = 0;
+    for(int i = StartSymbolIndex; i < StartSymbolIndex + NrOfSymbols; i++)
+      num_dmrs_symb += (ul_dmrs_symb_pos >> i) & 1;
+    const uint8_t num_dmrs_cdm_grps_no_data = 1;
 
     uint8_t mcs_table = 0;
     if (transform_precoding)
@@ -710,9 +715,8 @@ void nr_schedule_ulsch(module_id_t module_id,
       else
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
-    pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_pdu->start_symbol_index;
-
-    pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
+    pusch_pdu->ul_dmrs_symb_pos = ul_dmrs_symb_pos;
+    pusch_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
     pusch_pdu->dmrs_ports = 1;
 
     // --------------------
@@ -739,10 +743,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
-
-    uint8_t num_dmrs_symb = 0;
-    for(int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++)
-      num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
 
     uint8_t N_PRB_DMRS;
     if (pusch_pdu->dmrs_config_type == 0)
