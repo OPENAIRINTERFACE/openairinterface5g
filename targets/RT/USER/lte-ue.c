@@ -1062,14 +1062,11 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   //PANOS: CAREFUL HERE!
   wait_sync("UE_phy_stub_standalone_pnf_task");
 
-  int num_pairs = 0;
-  int num_lone = 0;
   int last_sfn_sf = -1;
 
   LOG_I(MAC, "Clearing Queues\n");
-  reset_queue(&dl_config_req_queue);
+  reset_queue(&dl_config_req_tx_req_queue);
   reset_queue(&ul_config_req_queue);
-  reset_queue(&tx_req_pdu_queue);
   reset_queue(&hi_dci0_req_queue);
 
   while (!oai_exit) {
@@ -1088,51 +1085,13 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
     last_sfn_sf = sfn_sf;
 
-    nfapi_tx_req_pdu_list_t *tx_req_pdu_list = get_queue(&tx_req_pdu_queue);
-    nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
-    if (tx_req_pdu_list)
-    {
-      uint64_t deadline = clock_usec() + 1000;
-      if (!dl_config_req)
-      {
-        for (;;)
-        {
-          LOG_E(MAC, "Spinning and waiting for corresponding dl_config_req\n");
-          dl_config_req = get_queue(&dl_config_req_queue);
-          if (dl_config_req)
-          {
-            break;
-          }
-          if (clock_usec() >= deadline)
-          {
-            LOG_E(MAC, "Giving up waiting for dl_config_req\n");
-            break;
-          }
-          usleep(1);
-        }
-      }
-    }
-
+    nfapi_dl_config_req_tx_req_t *dl_config_req_tx_req = get_queue(&dl_config_req_tx_req_queue);
     nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
     nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
 
     LOG_I(MAC, "received from proxy frame %d subframe %d\n",
           NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
-    if (dl_config_req != NULL) {
-      uint16_t dl_num_pdus = dl_config_req->dl_config_request_body.number_pdu;
-      LOG_A(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
-            " with number of PDUs: %u\n",
-            NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
-            dl_num_pdus);
-      if (dl_num_pdus > 0) {
-        char *dl_str = nfapi_dl_config_req_to_string(dl_config_req);
-        LOG_I(MAC, "dl_config_req: %s\n", dl_str);
-        free(dl_str);
-      }
-    }
-    if (tx_req_pdu_list != NULL) {
-      LOG_D(MAC, "tx_req pdus: %d\n", tx_req_pdu_list->num_pdus);
-    }
+
     if (ul_config_req != NULL) {
       uint8_t ul_num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
       if (ul_num_pdus > 0) {
@@ -1147,16 +1106,24 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       NFAPI_SFNSF2SFN(hi_dci0_req->sfn_sf), NFAPI_SFNSF2SF(hi_dci0_req->sfn_sf));
     }
 
-    if ((dl_config_req != NULL) != (tx_req_pdu_list != NULL)) {
-      num_lone++;
-    } else {
-      num_pairs++;
-    }
+    if (dl_config_req_tx_req != NULL) {
 
-    if (dl_config_req && tx_req_pdu_list) {
-      if ((num_pairs % 1000) == 0) {
-        LOG_I(MAC, "num_pairs:%d, num_lone:%d\n", num_pairs, num_lone);
+      nfapi_tx_req_pdu_list_t *tx_req_pdu_list = dl_config_req_tx_req->tx_req_pdu_list;
+      nfapi_dl_config_request_t *dl_config_req = dl_config_req_tx_req->dl_config_req;
+
+      uint16_t dl_num_pdus = dl_config_req->dl_config_request_body.number_pdu;
+      LOG_A(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
+            " with number of PDUs: %u\n",
+            NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
+            dl_num_pdus);
+      if (dl_num_pdus > 0) {
+        char *dl_str = nfapi_dl_config_req_to_string(dl_config_req);
+        LOG_I(MAC, "dl_config_req: %s\n", dl_str);
+        free(dl_str);
       }
+      LOG_D(MAC, "tx_req pdus: %d\n", tx_req_pdu_list->num_pdus);
+
+      // Handling dl_config_req and tx_req:
       nfapi_dl_config_request_body_t *dl_config_req_body = &dl_config_req->dl_config_request_body;
       for (int i = 0; i < dl_config_req_body->number_pdu; ++i) {
         nfapi_dl_config_request_pdu_t *pdu = &dl_config_req_body->dl_config_pdu_list[i];
@@ -1345,24 +1312,24 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     // De-allocate memory of nfapi requests copies before next subframe round
-    if (dl_config_req != NULL) {
-      if (dl_config_req->vendor_extension != NULL) {
-        free(dl_config_req->vendor_extension);
-        dl_config_req->vendor_extension = NULL;
+    if (dl_config_req_tx_req != NULL) {
+      if (dl_config_req_tx_req->dl_config_req->vendor_extension != NULL) {
+        free(dl_config_req_tx_req->dl_config_req->vendor_extension);
+        dl_config_req_tx_req->dl_config_req->vendor_extension = NULL;
       }
 
-      if (dl_config_req->dl_config_request_body.dl_config_pdu_list != NULL) {
-        free(dl_config_req->dl_config_request_body.dl_config_pdu_list);
-        dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
+      if (dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list != NULL) {
+        free(dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list);
+        dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
       }
+      nfapi_free_tx_req_pdu_list(dl_config_req_tx_req->tx_req_pdu_list);
+      dl_config_req_tx_req->tx_req_pdu_list = NULL;
 
-      free(dl_config_req);
-      dl_config_req = NULL;
-    }
+      free(dl_config_req_tx_req->dl_config_req);
+      dl_config_req_tx_req->dl_config_req = NULL;
 
-    if (tx_req_pdu_list != NULL) {
-      nfapi_free_tx_req_pdu_list(tx_req_pdu_list);
-      tx_req_pdu_list = NULL;
+      free(dl_config_req_tx_req);
+      dl_config_req_tx_req = NULL;
     }
 
     if (ul_config_req != NULL) {

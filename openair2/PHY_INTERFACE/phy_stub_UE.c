@@ -43,8 +43,7 @@ void configure_nfapi_pnf(char *vnf_ip_addr,
 
 UL_IND_t *UL_INFO = NULL;
 
-queue_t dl_config_req_queue;
-queue_t tx_req_pdu_queue;
+queue_t dl_config_req_tx_req_queue;
 queue_t ul_config_req_queue;
 queue_t hi_dci0_req_queue;
 
@@ -928,193 +927,11 @@ void hi_dci0_req_UE_MAC(int sfn,
   }
 }
 
-static bool is_my_dl_config_req(const nfapi_dl_config_request_t *req)
-{
-
-  const rnti_t my_rnti = UE_mac_inst[0].crnti;
-  int num_pdus = req->dl_config_request_body.number_pdu;
-  // look through list of pdus for rnti type 1 with my_rnti (normal dlsch case)
-  for (int i = 0; i < num_pdus; i++)
-  {
-    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
-    const int pdu_type = pdu->pdu_type;
-    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
-    {
-      const rnti_t dci_rnti = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
-      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
-      if (rnti_type == 1 && dci_rnti == my_rnti)
-      {
-        return true;
-      }
-    }
-    else if(pdu_type != NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)
-    {
-      return true; // Because these two pdu_types are coupled and we have to accept all other pdu_types
-    }
-  }
-
-  // Look for broadcasted rnti types
-  for (int i = 0; i < num_pdus; i++)
-  {
-    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
-    const int pdu_type = pdu->pdu_type;
-    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
-    {
-      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
-      if (rnti_type != 1)
-      {
-        return true;
-      }
-    }
-  }
-
-
-  return false;
-}
-
-static int get_dlsch_pdu_indicies(const nfapi_dl_config_request_t *req, int *pdu_indicies, size_t max_pdu_indicies)
-{
-
-  const rnti_t my_rnti = UE_mac_inst[0].crnti; // This is 0 representing the num_ues is 1
-  int num_pdus = req->dl_config_request_body.number_pdu;
-  size_t num_pdu_indicies = 0;
-  for (int i = 0; i < num_pdus; i++)
-  {
-    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
-    const int pdu_type = pdu->pdu_type;
-    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
-    {
-      const rnti_t dci_rnti = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
-      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
-      if (rnti_type == 1 && dci_rnti != my_rnti && i + 1 < num_pdus)
-      {
-        if (num_pdu_indicies < max_pdu_indicies)
-        {
-          pdu_indicies[num_pdu_indicies++] = i + 1; // This an index of a dlsch pdu which contains a pdu_index field
-        }
-        i++;
-      }
-    }
-  }
-
-  return num_pdu_indicies;
-}
-
-typedef struct dlsch_pdu_indicies_and_request_t
-{
-  size_t num_indicies;
-  int *indicies;
-  nfapi_dl_config_request_t *req;
-}dlsch_pdu_indicies_and_request_t;
-
-static void print_lists(const dlsch_pdu_indicies_and_request_t *dlsch_list, const nfapi_tx_req_pdu_list_t *tx_pdu_list)
-{
-  const size_t max_result = 1024;
-  uint16_t num_pdus = tx_pdu_list->num_pdus;
-  char dlsch_result[max_result];
-  char tx_pdu_result[max_result];
-
-  snprintf(dlsch_result, max_result, "dlsch_list::");
-  snprintf(tx_pdu_result, max_result, "tx_pdu_list::");
-
-  for (size_t i = 0; i < num_pdus; ++i)
-  {
-    int dlsch_len = strlen(dlsch_result);
-    int tx_pdu_len = strlen(tx_pdu_result);
-    if (tx_pdu_len >= max_result - 1 || dlsch_len >= max_result - 1)
-    {
-      break;
-    }
-    snprintf(dlsch_result + dlsch_len, max_result - dlsch_len, " %d", dlsch_list->indicies[i]);
-    snprintf(tx_pdu_result + tx_pdu_len, max_result - tx_pdu_len, " %d", tx_pdu_list->pdus[i].pdu_index);
-  }
-
-  LOG_E(MAC, "%s\n", dlsch_result);
-  LOG_E(MAC, "%s\n", tx_pdu_result);
-}
-
-static bool match_dl_config_req(void *wanted_vp, void *candidate_vp)
-{
-  dlsch_pdu_indicies_and_request_t *wanted = wanted_vp;
-  const nfapi_tx_req_pdu_list_t *candidate = candidate_vp;
-
-  int num_pdus = candidate->num_pdus;
-  if (wanted->num_indicies != num_pdus)
-  {
-    LOG_E(MAC, "tx_req_pdus not equal to dlsch_pdus:: %zu != %d\n", wanted->num_indicies, num_pdus);
-    return false;
-  }
-
-  for (int i = 0; i < num_pdus; ++i)
-  {
-    bool found = false;
-    const nfapi_tx_request_pdu_t *pdu = &candidate->pdus[i];
-    for (int j = 0; j < num_pdus; ++j)
-    {
-      size_t dlsch_index = wanted->indicies[j];
-      AssertFatal(dlsch_index < wanted->req->dl_config_request_body.number_pdu, "dlsch_index is out of range of pdu_list\n");
-      nfapi_dl_config_request_pdu_t *dlsch_pdu = &wanted->req->dl_config_request_body.dl_config_pdu_list[dlsch_index];
-
-      // This may be redundant but wont hurt.
-      AssertFatal(dlsch_pdu->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE,
-                  "dlsch_index: %zu does not map to a DLSCH_PDU in dl_config_req sfn.sf = %d.%d pdu_type = %d\n",
-                  dlsch_index, wanted->req->sfn_sf >> 4, wanted->req->sfn_sf & 15, dlsch_pdu->pdu_type);
-
-      if (pdu->pdu_index == dlsch_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index)
-      {
-        found = true;
-        break;
-      }
-    }
-    if (!found)
-    {
-      LOG_E(MAC, "Could not find tx_req_pdu index to match dlsch_index for pdu_index: %d\n",
-            pdu->pdu_index);
-      print_lists(wanted, candidate);
-      return false;
-    }
-  }
-  return true;
-}
-
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
 int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
-
-  if (!is_my_dl_config_req(req) && req->dl_config_request_body.number_pdu <= 2)
-  {
-    const size_t max_dlsch_pdu_indicies = 1024;
-    int dlsch_pdu_indicies[max_dlsch_pdu_indicies];
-    // Need to remove corresponding tx_req (comes before dl_config_req always)
-    int num_dlsch_pdu_indicies = get_dlsch_pdu_indicies(req, dlsch_pdu_indicies, max_dlsch_pdu_indicies);
-    if (num_dlsch_pdu_indicies == 0)
-    {
-      LOG_E(MAC, "COULD NOT FIND DLSCH_PDU_INDICIES for dl_config_req SFN.SF: %d.%d",
-            req->sfn_sf >> 4, req->sfn_sf & 15);
-      return 0;
-    }
-    dlsch_pdu_indicies_and_request_t wanted =
-    {
-      num_dlsch_pdu_indicies,
-      dlsch_pdu_indicies,
-      req,
-    };
-    nfapi_tx_req_pdu_list_t *matched =
-      unqueue_matching(&tx_req_pdu_queue, /*max_depth=*/ 2,
-                       match_dl_config_req, &wanted);
-    if (!matched)
-    {
-      LOG_E(MAC, "Could not unqueue_matching\n");
-      return 0;
-    }
-
-    LOG_I(MAC, "REMOVING.. dl_config_req & tx_req\n");
-    free(matched);
-
-    return 0;
-  }
 
   nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -1139,10 +956,6 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
         req->dl_config_request_body.dl_config_pdu_list[i];
   }
 
-  if (!put_queue(&dl_config_req_queue, p)) {
-    free(p);
-  }
-  LOG_I(MAC, "DL_CONFIG_REQ QUEUE: %zu", dl_config_req_queue.num_items);
   return 0;
 }
 
@@ -1246,10 +1059,6 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
     }
   }
 
-  if (!put_queue(&tx_req_pdu_queue, list)) {
-    nfapi_free_tx_req_pdu_list(list);
-  }
-
   return 0;
 }
 
@@ -1278,9 +1087,15 @@ static bool is_my_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req)
 int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t* pnf_p7,
 			nfapi_hi_dci0_request_t* req) {
-  if (!is_my_hi_dci0_req(req)) return 0;
+
+  if (!is_my_hi_dci0_req(req))
+  {
+    LOG_W(MAC, "Filtering hi_dci0_req\n");
+    return 0;
+  }
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
+
 
   p->sfn_sf = req->sfn_sf;
   p->vendor_extension = req->vendor_extension;
@@ -1439,6 +1254,9 @@ void *ue_standalone_pnf_task(void *context)
 
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
+
+  nfapi_tx_request_t tx_req;
+  bool tx_req_valid = false;
   while (true)
   {
     ssize_t len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_address, &addr_len);
@@ -1468,7 +1286,6 @@ void *ue_standalone_pnf_task(void *context)
         LOG_E(MAC, "Header unpack failed for standalone pnf\n");
         continue;
       }
-
       switch (header.message_id)
       {
       case NFAPI_DL_CONFIG_REQUEST:
@@ -1478,32 +1295,51 @@ void *ue_standalone_pnf_task(void *context)
                                     sizeof(dl_config_req), NULL) < 0)
         {
           LOG_E(MAC, "Message dl_config_req failed to unpack\n");
+          break;
         }
-        else
+
+        // In multiUE scenario possible to get a dl_config_req before the tx_req? -Melissa
+        // How should we handle this? -Melissa
+        LOG_I(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
+              dl_config_req.sfn_sf & 15);
+        if (!tx_req_valid)
         {
-          // check to see if dl_config_req is null
-          LOG_I(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
-                dl_config_req.sfn_sf & 15);
-          memcpy_dl_config_req(NULL, NULL, &dl_config_req);
+          LOG_W(MAC, "The tx_req not valid.\n");
+          break;
         }
+        if (dl_config_req.sfn_sf != tx_req.sfn_sf)
+        {
+          LOG_W(MAC, "sfnsf mismatch. dl_config_req Frame: %u Subframe: %u, tx_req Frame: %u Subframe: %u\n",
+                dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15,
+                tx_req.sfn_sf >> 4, tx_req.sfn_sf & 15);
+          tx_req_valid = false;
+          break;
+        }
+
+        enqueue_dl_config_req_tx_req(&dl_config_req, &tx_req);
+        tx_req_valid = false;
+
         break;
       }
       case NFAPI_TX_REQUEST:
       {
-        nfapi_tx_request_t tx_req;
         // lock this tx_req
         if (nfapi_p7_message_unpack((void *)buffer, len, &tx_req,
                                     sizeof(tx_req), NULL) < 0)
         {
           LOG_E(MAC, "Message tx_req failed to unpack\n");
+          break;
         }
-        else
+
+        LOG_I(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
+              tx_req.sfn_sf & 15);
+        if (tx_req_valid)
         {
-          // check to see if tx_req is null
-          LOG_I(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
-                tx_req.sfn_sf & 15);
-          memcpy_tx_req(NULL, &tx_req);
+          LOG_W(MAC, "Received consecutive tx_reqs\n");
         }
+
+        tx_req_valid = true;
+
         break;
       }
       case NFAPI_HI_DCI0_REQUEST:
@@ -1514,12 +1350,12 @@ void *ue_standalone_pnf_task(void *context)
                                     sizeof(hi_dci0_req), NULL) < 0)
         {
           LOG_E(MAC, "Message hi_dci0_req failed to unpack\n");
+          break;
         }
-        else
-        {
-          // check to see if hi_dci0_req is null
-          memcpy_hi_dci0_req(NULL, NULL, &hi_dci0_req);
-        }
+
+        // check to see if hi_dci0_req is null
+        memcpy_hi_dci0_req(NULL, NULL, &hi_dci0_req);
+
         break;
       }
       case NFAPI_UL_CONFIG_REQUEST:
@@ -1530,12 +1366,12 @@ void *ue_standalone_pnf_task(void *context)
                                     sizeof(ul_config_req), NULL) < 0)
         {
           LOG_E(MAC, "Message ul_config_req failed to unpack\n");
+          break;
         }
-        else
-        {
-          // check to see if ul_config_req is null
-          memcpy_ul_config_req(NULL, NULL, &ul_config_req);
-        }
+
+        // check to see if ul_config_req is null
+        memcpy_ul_config_req(NULL, NULL, &ul_config_req);
+
         break;
       }
       default:
@@ -1543,6 +1379,132 @@ void *ue_standalone_pnf_task(void *context)
         break;
       }
     }
+  }
+}
+
+
+void *memcpy_dl_config_req_standalone(nfapi_dl_config_request_t *dl_config_req)
+{
+  nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
+
+  p->sfn_sf = dl_config_req->sfn_sf;
+
+  p->vendor_extension = dl_config_req->vendor_extension;
+
+  p->dl_config_request_body.number_dci = dl_config_req->dl_config_request_body.number_dci;
+  p->dl_config_request_body.number_pdcch_ofdm_symbols = dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols;
+  p->dl_config_request_body.number_pdsch_rnti = dl_config_req->dl_config_request_body.number_pdsch_rnti;
+  p->dl_config_request_body.number_pdu = dl_config_req->dl_config_request_body.number_pdu;
+
+  p->dl_config_request_body.tl.tag = dl_config_req->dl_config_request_body.tl.tag;
+  p->dl_config_request_body.tl.length = dl_config_req->dl_config_request_body.tl.length;
+
+  p->dl_config_request_body.dl_config_pdu_list =
+      calloc(dl_config_req->dl_config_request_body.number_pdu,
+             sizeof(nfapi_dl_config_request_pdu_t));
+  for (int i = 0; i < p->dl_config_request_body.number_pdu; i++) {
+    p->dl_config_request_body.dl_config_pdu_list[i] =
+        dl_config_req->dl_config_request_body.dl_config_pdu_list[i];
+  }
+  return p;
+}
+
+void *memcpy_tx_req_standalone(nfapi_tx_request_t *tx_req)
+{
+  int num_pdus = tx_req->tx_request_body.number_of_pdus;
+
+  nfapi_tx_req_pdu_list_t *list = calloc(1, sizeof(nfapi_tx_req_pdu_list_t) + num_pdus * sizeof(nfapi_tx_request_pdu_t));
+  list->num_pdus = num_pdus;
+  nfapi_tx_request_pdu_t *p = list->pdus;
+
+  for (int i = 0; i < num_pdus; i++)
+  {
+    p[i].num_segments = tx_req->tx_request_body.tx_pdu_list[i].num_segments;
+    p[i].pdu_index = tx_req->tx_request_body.tx_pdu_list[i].pdu_index;
+    p[i].pdu_length = tx_req->tx_request_body.tx_pdu_list[i].pdu_length;
+    for (int j = 0; j < tx_req->tx_request_body.tx_pdu_list[i].num_segments; j++)
+    {
+      p[i].segments[j].segment_length = tx_req->tx_request_body.tx_pdu_list[i].segments[j].segment_length;
+      if (p[i].segments[j].segment_length > 0)
+      {
+        p[i].segments[j].segment_data = calloc(
+            p[i].segments[j].segment_length, sizeof(uint8_t));
+        memcpy(p[i].segments[j].segment_data,
+               tx_req->tx_request_body.tx_pdu_list[i].segments[j].segment_data,
+               p[i].segments[j].segment_length);
+      }
+    }
+  }
+  return list;
+}
+
+static bool is_my_dl_config_req(const nfapi_dl_config_request_t *req)
+{
+
+  const rnti_t my_rnti = UE_mac_inst[0].crnti;
+  int num_pdus = req->dl_config_request_body.number_pdu;
+  // look through list of pdus for rnti type 1 with my_rnti (normal dlsch case)
+  for (int i = 0; i < num_pdus; i++)
+  {
+    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
+    const int pdu_type = pdu->pdu_type;
+    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
+    {
+      const rnti_t dci_rnti = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
+      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+      if (rnti_type == 1 && dci_rnti == my_rnti)
+      {
+        return true;
+      }
+    }
+    else if(pdu_type != NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)
+    {
+      return true; // Because these two pdu_types are coupled and we have to accept all other pdu_types
+    }
+  }
+
+  // Look for broadcasted rnti types
+  for (int i = 0; i < num_pdus; i++)
+  {
+    nfapi_dl_config_request_pdu_t *pdu = &req->dl_config_request_body.dl_config_pdu_list[i];
+    const int pdu_type = pdu->pdu_type;
+    if (pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
+    {
+      const int rnti_type = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+      if (rnti_type != 1)
+      {
+        return true;
+      }
+    }
+  }
+
+
+  return false;
+}
+
+void enqueue_dl_config_req_tx_req(nfapi_dl_config_request_t *dl_config_req, nfapi_tx_request_t *tx_req)
+{
+  if (!is_my_dl_config_req(dl_config_req))
+  {
+    LOG_I(MAC, "Filtering dl_config_req and tx_req\n");
+    return;
+  }
+
+  nfapi_dl_config_request_t *dl_config_req_temp = memcpy_dl_config_req_standalone(dl_config_req);
+  nfapi_tx_req_pdu_list_t *tx_req_temp = memcpy_tx_req_standalone(tx_req);
+  LOG_E(MAC, "This is the num_pdus for tx_req: %d\n", tx_req_temp->num_pdus);
+  LOG_E(MAC, "This is the num_pdus for dl_config_req and the sfn_sf: %d, %d:%d\n", dl_config_req_temp->dl_config_request_body.number_pdu,
+        NFAPI_SFNSF2SFN(dl_config_req_temp->sfn_sf), NFAPI_SFNSF2SF(dl_config_req_temp->sfn_sf));
+
+  nfapi_dl_config_req_tx_req_t *req = malloc(sizeof(nfapi_dl_config_req_tx_req_t));
+  req->dl_config_req = dl_config_req_temp;
+  req->tx_req_pdu_list = tx_req_temp;
+
+  if (!put_queue(&dl_config_req_tx_req_queue, req))
+  {
+    free(req->dl_config_req);
+    nfapi_free_tx_req_pdu_list(req->tx_req_pdu_list);
+    free(req);
   }
 }
 
