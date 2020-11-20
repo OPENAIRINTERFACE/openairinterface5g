@@ -248,13 +248,13 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     
     /// Antenna port mapping
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
-    
+
     /// DMRS QPSK modulation
-    
-    
+
+
     l0 = get_l0(rel15->dlDmrsSymbPos);
     nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-    
+
 #ifdef DEBUG_DLSCH
     printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_Type);
     for (int i=0; i<n_dmrs>>4; i++) {
@@ -299,7 +299,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	dmrs_idx = rel15->rbStart*6;
       else
 	dmrs_idx = rel15->rbStart*4;
-      
+
       for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
 	k = start_sc;
 	for (int i=0; i<rel15->rbSize*NR_NB_SC_PER_RB; i++) {
@@ -316,7 +316,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	    k_prime&=1;
 	    n+=(k_prime)?0:1;
 	  }
-	  
+
 	  else {
 	    if( (l != dmrs_symbol) || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
 	      ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;

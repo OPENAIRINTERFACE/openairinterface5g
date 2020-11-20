@@ -3368,6 +3368,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 							 dlsch_config_pdu_1_0->number_symbols);
     dlsch_config_pdu_1_0->dmrsConfigType = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
 
+    LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", dlsch_config_pdu_1_0->dlDmrsSymbPos);
+
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     //if (dlsch_config_pdu_1_0->number_symbols == 2)
     //  dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
