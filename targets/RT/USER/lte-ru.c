@@ -1655,7 +1655,7 @@ static void *ru_thread( void *param ) {
       
     if (setup_RU_buffers(ru)!=0) {
         printf("Exiting, cannot initialize RU Buffers\n");
-	exit(-1);
+	      exit(-1);
     }
 
     AssertFatal((ret=pthread_mutex_lock(&RC.ru_mutex))==0,"mutex_lock returns %d\n",ret);
@@ -2302,23 +2302,6 @@ void init_RU_proc(RU_t *ru) {
     LOG_I(PHY,"%s() DJP - added creation of pthread_prach\n", __FUNCTION__);
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void *)ru );
     ru->state=RU_RUN;
-    if(!get_softmodem_params()->emulate_rf)
-    {
-      fill_rf_config(ru,ru->rf_config_file);
-      init_frame_parms(ru->frame_parms,1);
-      ru->frame_parms->nb_antennas_rx = ru->nb_rx;
-      phy_init_RU(ru);
-      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-      if (ret < 0) {
-         LOG_I(PHY,"Exiting, cannot load device. Make sure that your SDR board is connected!\n");
-         exit(1);
-      }
-
-      if (setup_RU_buffers(ru)!=0) {
-        LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
-        exit(1);
-      }
-    }
   }
 
   if (get_thread_worker_conf() == WORKER_ENABLE) {
@@ -2909,7 +2892,7 @@ void RCconfig_RU(void) {
 
       for (i=0; i<RC.ru[j]->num_eNB; i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];
 
-      RC.ru[j]->has_ctrl_prt                        = 1;
+      RC.ru[j]->has_ctrl_prt                        = 0;
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
         RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
@@ -2988,6 +2971,7 @@ void RCconfig_RU(void) {
             RC.ru[j]->if_south                        = LOCAL_RF;
             RC.ru[j]->function                        = NGFI_RRU_IF4p5;
             RC.ru[j]->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
+            RC.ru[j]->has_ctrl_prt                   =1;
             printf("Setting function for RU %d to NGFI_RRU_IF4p5 (udp)\n",j);
           } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
             RC.ru[j]->if_south                        = LOCAL_RF;
@@ -3033,7 +3017,6 @@ void RCconfig_RU(void) {
 	RC.ru[j]->if_south                     = REMOTE_IF5;
 	RC.ru[j]->function                     = NGFI_RAU_IF5;
 	RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
-	RC.ru[j]->has_ctrl_prt                 = 0;
       } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
 	RC.ru[j]->if_south                     = REMOTE_IF5;
 	RC.ru[j]->function                     = NGFI_RAU_IF5;
