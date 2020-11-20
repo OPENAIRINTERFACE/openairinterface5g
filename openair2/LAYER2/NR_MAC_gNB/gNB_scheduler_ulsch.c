@@ -596,6 +596,16 @@ void nr_schedule_ulsch(module_id_t module_id,
             ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup
             : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
     const uint8_t dmrs_config_type = NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1;
+    const pusch_dmrs_AdditionalPosition_t additional_pos =
+        NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL
+            ? 2
+            : (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
+                       NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3
+                   ? 3
+                   : *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition);
+    const pusch_maxLength_t pusch_maxLength =
+        NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
+    uint16_t l_prime_mask = get_l_prime(NrOfSymbols, mapping_type, additional_pos, pusch_maxLength);
 
     uint8_t mcs_table = 0;
     if (transform_precoding)
@@ -700,21 +710,6 @@ void nr_schedule_ulsch(module_id_t module_id,
       else
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
-    pusch_dmrs_AdditionalPosition_t additional_pos;
-    if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL)
-      additional_pos = 2;
-    else {
-      if (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3)
-        additional_pos = 3;
-      else
-        additional_pos = *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition;
-    }
-    pusch_maxLength_t pusch_maxLength;
-    if (NR_DMRS_UplinkConfig->maxLength == NULL)
-      pusch_maxLength = 1;
-    else
-      pusch_maxLength = 2;
-    uint16_t l_prime_mask = get_l_prime(pusch_pdu->nr_of_symbols, mapping_type, additional_pos, pusch_maxLength);
     pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_pdu->start_symbol_index;
 
     pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
