@@ -121,55 +121,31 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
          local_ip_addr,
          sizeof(*local_ip_addr));
   S1AP_INFO("[eNB %d] check the mme registration state\n",instance_p->instance);
-//  mme = NULL;
-//
-//  if ( mme == NULL ) {
-    /* Create new MME descriptor */
-    s1ap_mme_data_p = calloc(1, sizeof(*s1ap_mme_data_p));
-    DevAssert(s1ap_mme_data_p != NULL);
-    s1ap_mme_data_p->cnx_id                = s1ap_eNB_fetch_add_global_cnx_id();
-    sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
-    s1ap_mme_data_p->assoc_id          = -1;
-    s1ap_mme_data_p->broadcast_plmn_num = broadcast_plmn_num;
-    memcpy(&s1ap_mme_data_p->mme_s1_ip,
-    	   mme_ip_address,
-    	   sizeof(*mme_ip_address));
-    for (int i = 0; i < broadcast_plmn_num; ++i)
-      s1ap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
+  /* Create new MME descriptor */
+  s1ap_mme_data_p = calloc(1, sizeof(*s1ap_mme_data_p));
+  DevAssert(s1ap_mme_data_p != NULL);
+  s1ap_mme_data_p->cnx_id                = s1ap_eNB_fetch_add_global_cnx_id();
+  sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
+  s1ap_mme_data_p->assoc_id          = -1;
+  s1ap_mme_data_p->broadcast_plmn_num = broadcast_plmn_num;
+  memcpy(&s1ap_mme_data_p->mme_s1_ip,
+         mme_ip_address,
+         sizeof(*mme_ip_address));
+  for (int i = 0; i < broadcast_plmn_num; ++i)
+    s1ap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
 
-    s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
-    STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
-    /* Insert the new descriptor in list of known MME
-     * but not yet associated.
-     */
-    RB_INSERT(s1ap_mme_map, &instance_p->s1ap_mme_head, s1ap_mme_data_p);
-//    s1ap_mme_data_p->state = S1AP_ENB_STATE_WAITING;
-    s1ap_mme_data_p->state = S1AP_ENB_STATE_DISCONNECTED;
-    memcpy( &(s1ap_mme_data_p->mme_ip_address), mme_ip_address, sizeof(net_ip_address_t) );
-    s1ap_mme_data_p->overload_state = S1AP_NO_OVERLOAD;
-    s1ap_mme_data_p->sctp_req_cnt++;
-    s1ap_mme_data_p->timer_id = S1AP_TIMERID_INIT;
-//    instance_p->s1ap_mme_nb ++;
-    instance_p->s1ap_mme_pending_nb ++;
-//  } else if (mme->state == S1AP_ENB_STATE_WAITING) {
-//    instance_p->s1ap_mme_pending_nb ++;
-//    sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
-//    S1AP_INFO("[eNB %d] MME already registered, retrive the data (state %d, cnx %d, mme_nb %d, mme_pending_nb %d)\n",
-//              instance_p->instance,
-//              mme->state, mme->cnx_id,
-//              instance_p->s1ap_mme_nb, instance_p->s1ap_mme_pending_nb);
-//    /*s1ap_mme_data_p->cnx_id                = mme->cnx_id;
-//    sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
-//
-//    s1ap_mme_data_p->assoc_id          = -1;
-//    s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
-//    */
-//  } else {
-//    S1AP_WARN("[eNB %d] MME already registered but not in the waiting state, retrive the data (state %d, cnx %d, mme_nb %d, mme_pending_nb %d)\n",
-//              instance_p->instance,
-//              mme->state, mme->cnx_id,
-//              instance_p->s1ap_mme_nb, instance_p->s1ap_mme_pending_nb);
-//  }
+  s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
+  STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
+  /* Insert the new descriptor in list of known MME
+   * but not yet associated.
+   */
+  RB_INSERT(s1ap_mme_map, &instance_p->s1ap_mme_head, s1ap_mme_data_p);
+  s1ap_mme_data_p->state = S1AP_ENB_STATE_DISCONNECTED;
+  memcpy( &(s1ap_mme_data_p->mme_ip_address), mme_ip_address, sizeof(net_ip_address_t) );
+  s1ap_mme_data_p->overload_state = S1AP_NO_OVERLOAD;
+  s1ap_mme_data_p->sctp_req_cnt++;
+  s1ap_mme_data_p->timer_id = S1AP_TIMERID_INIT;
+  instance_p->s1ap_mme_pending_nb ++;
 
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
@@ -210,8 +186,8 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     new_instance->tac              = s1ap_register_eNB->tac;
 
     memcpy(&new_instance->eNB_s1_ip,
-	   &s1ap_register_eNB->enb_ip_address,
-	   sizeof(s1ap_register_eNB->enb_ip_address));
+       &s1ap_register_eNB->enb_ip_address,
+       sizeof(s1ap_register_eNB->enb_ip_address));
 
     for (int i = 0; i < s1ap_register_eNB->num_plmn; i++) {
       new_instance->mcc[i]              = s1ap_register_eNB->mcc[i];
@@ -238,8 +214,6 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
               s1ap_register_eNB->eNB_id);
   }
 
-//  DevCheck(s1ap_register_eNB->nb_mme <= S1AP_MAX_NB_MME_IP_ADDRESS,
-//           S1AP_MAX_NB_MME_IP_ADDRESS, s1ap_register_eNB->nb_mme, 0);
   if( s1ap_register_eNB->nb_mme > S1AP_MAX_NB_MME_IP_ADDRESS )
   {
     S1AP_ERROR("Invalid MME number = %d\n ", s1ap_register_eNB->nb_mme);
@@ -306,27 +280,27 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       if( ue_p->mme_ref == s1ap_mme_data_p )
       {
         if(cnt < NUMBER_OF_UE_MAX){
-        enb_s1ap_id[cnt] = ue_p->eNB_ue_s1ap_id;
-        cnt++;
-        
-        message_p = NULL;
-        message_p = itti_alloc_new_message(TASK_S1AP, S1AP_UE_CONTEXT_RELEASE_COMMAND);
-        
-        if( message_p != NULL )
-        {
-          S1AP_UE_CONTEXT_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = ue_p->eNB_ue_s1ap_id;
+          enb_s1ap_id[cnt] = ue_p->eNB_ue_s1ap_id;
+          cnt++;
           
-          if( itti_send_msg_to_task(TASK_RRC_ENB, ue_p->eNB_instance->instance, message_p) < 0 )
+          message_p = NULL;
+          message_p = itti_alloc_new_message(TASK_S1AP, S1AP_UE_CONTEXT_RELEASE_COMMAND);
+          
+          if( message_p != NULL )
           {
-            S1AP_ERROR("UE Context Release Command Transmission Failure: eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
+            S1AP_UE_CONTEXT_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = ue_p->eNB_ue_s1ap_id;
+            
+            if( itti_send_msg_to_task(TASK_RRC_ENB, ue_p->eNB_instance->instance, message_p) < 0 )
+            {
+              S1AP_ERROR("UE Context Release Command Transmission Failure: eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
+            }
           }
-        }
-        else
-        {
-          S1AP_ERROR("Invalid message_p : eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
-        }
+          else
+          {
+            S1AP_ERROR("Invalid message_p : eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
+          }
         }else{
-          S1AP_ERROR("s1ap_eNB_handle_sctp_association_resp: cnt %d > max\n", cnt);
+            S1AP_ERROR("s1ap_eNB_handle_sctp_association_resp: cnt %d > max\n", cnt);
         }
       }
     }
@@ -396,7 +370,7 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       {
         S1AP_ERROR("Retransmission count exceeded of SCTP : MME=%d\n",s1ap_mme_data_p->cnx_id);
       }
-  }
+    }
     else
     {
       S1AP_ERROR("SCTP disconnection reception : MME = %d\n",s1ap_mme_data_p->cnx_id);
@@ -413,14 +387,6 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       s1ap_mme_data_p->state = S1AP_ENB_STATE_DISCONNECTED;
     }
   }
-//  if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-//    S1AP_WARN("Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
-//              sctp_new_association_resp->sctp_state,
-//              instance,
-//              sctp_new_association_resp->ulp_cnx_id);
-//    s1ap_handle_s1_setup_message(s1ap_mme_data_p, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
-//    return;
-//  }
   else
   {
     /* Update parameters */
@@ -435,6 +401,7 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       return;
     }
   }
+}
 
 static
 void s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
