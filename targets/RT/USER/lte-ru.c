@@ -120,6 +120,8 @@ void configure_rru(int idx,
 void reset_proc(RU_t *ru);
 int connect_rau(RU_t *ru);
 
+void wait_eNBs(void);
+
 const char ru_states[6][9] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
 
 extern uint16_t sf_ahead;
@@ -651,7 +653,7 @@ void rx_rf(RU_t *ru,
     ru->ts_offset = proc->timestamp_rx;
     proc->timestamp_rx = 0;
   } else if (resynch==0 && (proc->timestamp_rx - old_ts != fp->samples_per_tti)) {
-    LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
+    LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
     ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
     proc->timestamp_rx = ts-ru->ts_offset;
   }
@@ -680,7 +682,7 @@ void rx_rf(RU_t *ru,
           (int)ru->ts_offset,
           proc->frame_rx,
           proc->tti_rx);
-    LOG_I(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+    LOG_D(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
           ru->idx,
           0,
           (unsigned long long int)proc->timestamp_rx,
@@ -2184,7 +2186,7 @@ void reset_proc(RU_t *ru) {
 
 
 void init_RU_proc(RU_t *ru) {
-  int i=0, ret;
+  int i=0;
   RU_proc_t *proc;
   pthread_attr_t *attr_FH=NULL, *attr_FH1=NULL, *attr_prach=NULL, *attr_asynch=NULL, *attr_synch=NULL, *attr_emulateRF=NULL, *attr_ctrl=NULL, *attr_prach_br=NULL;
   //pthread_attr_t *attr_fep=NULL;
@@ -2310,7 +2312,7 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void *)ru);
-
+/*
   if (ru->function == eNodeB_3GPP) {
     usleep(10000);
     LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d,send_dmrs %d) is ready in state %s\n",ru->idx,ru->is_slave,ru->generate_dmrs_sync,ru_states[ru->state]);
@@ -2319,6 +2321,7 @@ void init_RU_proc(RU_t *ru) {
     pthread_cond_signal(&RC.ru_cond);
     AssertFatal((ret=pthread_mutex_unlock(&RC.ru_mutex))==0,"mutex_unlock returns %d\n",ret);
   }
+  */
 }
 
 
