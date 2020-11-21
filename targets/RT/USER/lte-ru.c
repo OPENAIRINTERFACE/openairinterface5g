@@ -1138,9 +1138,10 @@ void wakeup_L1s(RU_t *ru) {
   L1_proc_t *proc         = &eNB->proc;
   struct timespec t;
   LOG_D(PHY, "wakeup_L1s (num %d) for RU %d (%d.%d) ru->eNB_top:%p\n", ru->num_eNB, ru->idx, ru->proc.frame_rx, ru->proc.tti_rx, ru->eNB_top);
-  // call eNB function directly
   char string[20];
-  LOG_I(PHY,string, "Incoming RU %d", ru->idx);
+  sprintf(string, "Incoming RU %d", ru->idx);
+
+  // call eNB function directly
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.tti_rx);
   AssertFatal(0==pthread_mutex_lock(&proc->mutex_RU),"");
@@ -1541,12 +1542,12 @@ static void *ru_thread_tx( void *param ) {
     } else {
       for (int i=0; i<ru->nb_tx; i++) {
         if(proc->frame_tx == 2) {
-          LOG_I(PHY,filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
+          sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
           LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
         }
 
         if(proc->frame_tx == 2 && proc->tti_tx==0) {
-          LOG_I(PHY,filename,"txdata%d_frame%d.m",i,proc->frame_tx);
+          sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
           LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
         }
       }
@@ -1728,7 +1729,6 @@ static void *ru_thread( void *param ) {
       // synchronization on input FH interface, acquire signals/data and block
       if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
-
 #ifdef PHY_TX_THREAD
 
       if(first_phy_tx == 0) {
@@ -1863,12 +1863,12 @@ static void *ru_thread( void *param ) {
           } else {
             for (int i=0; i<ru->nb_tx; i++) {
               if(proc->frame_tx == 2) {
-                LOG_I(PHY,filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
+                sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
                 LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],ru->frame_parms->symbols_per_tti*ru->frame_parms->ofdm_symbol_size, 1, 1);
               }
 
               if(proc->frame_tx == 2 && proc->tti_tx==0) {
-                LOG_I(PHY,filename,"txdata%d_frame%d.m",i,proc->frame_tx);
+                sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
                 LOG_M(filename,"txdata_frame",ru->common.txdata[i],ru->frame_parms->samples_per_tti*10, 1, 1);
               }
             }
@@ -3032,6 +3032,7 @@ else {
 	  RC.ru[j]->if_south                     = REMOTE_IF4p5;
 	  RC.ru[j]->function                     = NGFI_RAU_IF4p5;
   	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
+	  RC.ru[j]->has_ctrl_prt                 = 1;
         } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
 	  RC.ru[j]->if_south                     = REMOTE_IF4p5;
 	  RC.ru[j]->function                     = NGFI_RAU_IF4p5;
