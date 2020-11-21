@@ -1169,8 +1169,11 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   dl_config_req->header.message_id = NFAPI_DL_CONFIG_REQUEST;
+  LOG_I(PHY, "[VNF] %s() DL_CONFIG_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
+        NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_config_req->dl_config_request_body.number_pdu);
   if (dl_config_req->dl_config_request_body.number_pdu > 0)
   {
+    // TODO: Decide if we really need these logs in the future:
     for (int i = 0; i < dl_config_req->dl_config_request_body.number_pdu; i++)
         {
             uint8_t pdu_type = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].pdu_type;
@@ -1220,7 +1223,8 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   tx_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   tx_req->header.message_id = NFAPI_TX_REQUEST;
-  LOG_I(PHY, "[VNF] %s() TX_REQ sfn_sf:%d number_of_pdus:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(tx_req->sfn_sf), tx_req->tx_request_body.number_of_pdus);
+  LOG_I(PHY, "[VNF] %s() TX_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
+        NFAPI_SFNSF2SFN(tx_req->sfn_sf),NFAPI_SFNSF2SF(tx_req->sfn_sf), tx_req->tx_request_body.number_of_pdus);
   int retval = nfapi_vnf_p7_tx_req(p7_config, tx_req);
 
   if (retval!=0) {
