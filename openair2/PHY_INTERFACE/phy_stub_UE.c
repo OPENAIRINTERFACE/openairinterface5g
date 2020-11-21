@@ -1256,7 +1256,9 @@ void *ue_standalone_pnf_task(void *context)
   assert(sd > 0);
 
   nfapi_tx_request_t tx_req;
+  nfapi_dl_config_request_t dl_config_req;
   bool tx_req_valid = false;
+  bool dl_config_req_valid = false;
   while (true)
   {
     ssize_t len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_address, &addr_len);
@@ -1290,7 +1292,11 @@ void *ue_standalone_pnf_task(void *context)
       {
       case NFAPI_DL_CONFIG_REQUEST:
       {
-        nfapi_dl_config_request_t dl_config_req;
+        if (dl_config_req_valid)
+        {
+          LOG_W(MAC, "Received consecutive dl_config_reqs. Previous dl_config_req frame: %u, subframe: %u\n",
+                dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15);
+        }
         if (nfapi_p7_message_unpack((void *)buffer, len, &dl_config_req,
                                     sizeof(dl_config_req), NULL) < 0)
         {
@@ -1298,32 +1304,34 @@ void *ue_standalone_pnf_task(void *context)
           break;
         }
 
-        // In multiUE scenario possible to get a dl_config_req before the tx_req? -Melissa
-        // How should we handle this? -Melissa
         LOG_I(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
               dl_config_req.sfn_sf & 15);
-        if (!tx_req_valid)
-        {
-          LOG_W(MAC, "The tx_req not valid.\n");
-          break;
-        }
-        if (dl_config_req.sfn_sf != tx_req.sfn_sf)
-        {
-          LOG_W(MAC, "sfnsf mismatch. dl_config_req Frame: %u Subframe: %u, tx_req Frame: %u Subframe: %u\n",
-                dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15,
-                tx_req.sfn_sf >> 4, tx_req.sfn_sf & 15);
-          tx_req_valid = false;
-          break;
-        }
 
-        enqueue_dl_config_req_tx_req(&dl_config_req, &tx_req);
-        tx_req_valid = false;
+        dl_config_req_valid = true;
+        if (tx_req_valid)
+        {
+          if (dl_config_req.sfn_sf != tx_req.sfn_sf)
+          {
+              LOG_W(MAC, "sfnsf mismatch. dl_config_req Frame: %u Subframe: %u, Discarding tx_req Frame: %u Subframe: %u\n",
+                    dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15,
+                    tx_req.sfn_sf >> 4, tx_req.sfn_sf & 15);
+              tx_req_valid = false;
+              break;
+          }
+          enqueue_dl_config_req_tx_req(&dl_config_req, &tx_req);
+          dl_config_req_valid = false;
+          tx_req_valid = false;
+        }
 
         break;
       }
       case NFAPI_TX_REQUEST:
       {
-        // lock this tx_req
+        if (tx_req_valid)
+        {
+          LOG_W(MAC, "Received consecutive tx_reqs. Previous tx_req frame: %u, subframe: %u\n",
+                tx_req.sfn_sf >> 4, tx_req.sfn_sf & 15);
+        }
         if (nfapi_p7_message_unpack((void *)buffer, len, &tx_req,
                                     sizeof(tx_req), NULL) < 0)
         {
@@ -1333,12 +1341,22 @@ void *ue_standalone_pnf_task(void *context)
 
         LOG_I(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
               tx_req.sfn_sf & 15);
-        if (tx_req_valid)
-        {
-          LOG_W(MAC, "Received consecutive tx_reqs\n");
-        }
 
         tx_req_valid = true;
+        if (dl_config_req_valid)
+        {
+          if (dl_config_req.sfn_sf != tx_req.sfn_sf)
+          {
+              LOG_W(MAC, "sfnsf mismatch. Discarding dl_config_req Frame: %u Subframe: %u, tx_req Frame: %u Subframe: %u\n",
+                    dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15,
+                    tx_req.sfn_sf >> 4, tx_req.sfn_sf & 15);
+              dl_config_req_valid = false;
+              break;
+          }
+          enqueue_dl_config_req_tx_req(&dl_config_req, &tx_req);
+          dl_config_req_valid = false;
+          tx_req_valid = false;
+        }
 
         break;
       }
