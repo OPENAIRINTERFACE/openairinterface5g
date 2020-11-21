@@ -413,7 +413,7 @@ void fh_if5_north_asynch_in(RU_t *ru,
   int tti_tx,frame_tx;
   openair0_timestamp timestamp_tx;
   recv_IF5(ru, &timestamp_tx, *subframe, IF5_RRH_GW_DL);
-  //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
+  //      LOG_I(PHY,"Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   tti_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
@@ -718,7 +718,7 @@ void rx_rf(RU_t *ru,
     *subframe = proc->tti_rx;
   }
 
-  //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",ru->timestamp_rx,proc->frame_rx,frame,proc->tti_rx,subframe);
+  //LOG_I(PHY,"timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",ru->timestamp_rx,proc->frame_rx,frame,proc->tti_rx,subframe);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
 
   if (rxs != fp->samples_per_tti) {
@@ -1140,12 +1140,12 @@ void wakeup_L1s(RU_t *ru) {
   LOG_D(PHY, "wakeup_L1s (num %d) for RU %d (%d.%d) ru->eNB_top:%p\n", ru->num_eNB, ru->idx, ru->proc.frame_rx, ru->proc.tti_rx, ru->eNB_top);
   // call eNB function directly
   char string[20];
-  sprintf(string, "Incoming RU %d", ru->idx);
+  LOG_I(PHY,string, "Incoming RU %d", ru->idx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.tti_rx);
   AssertFatal(0==pthread_mutex_lock(&proc->mutex_RU),"");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOCK_MUTEX_RU+ru->idx, 1);
-  //printf("wakeup_L1s: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+  //LOG_I(PHY,"wakeup_L1s: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
   //          ru->proc.frame_rx,ru->proc.tti_rx,ru->idx,ru->wait_cnt,ru->proc.tti_rx,proc->RU_mask[ru->proc.tti_rx]);
   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.tti_rx);
@@ -1171,7 +1171,7 @@ void wakeup_L1s(RU_t *ru) {
       proc->RU_mask[ru->proc.tti_rx] |= (1<<i);
     }
 
-    //printf("RU %d, RU_mask[%d] %d, i %d, frame %d, slave %d, ru->cnt %d, i->cnt %d\n",ru->idx,ru->proc.tti_rx,proc->RU_mask[ru->proc.tti_rx],i,ru->proc.frame_rx,ru->is_slave,ru->wait_cnt,eNB->RU_list[i]->wait_cnt);
+    //LOG_I(PHY,"RU %d, RU_mask[%d] %d, i %d, frame %d, slave %d, ru->cnt %d, i->cnt %d\n",ru->idx,ru->proc.tti_rx,proc->RU_mask[ru->proc.tti_rx],i,ru->proc.frame_rx,ru->is_slave,ru->wait_cnt,eNB->RU_list[i]->wait_cnt);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_RU, proc->RU_mask[ru->proc.tti_rx]);
 
     if (ru->is_slave == 0 && ( (proc->RU_mask[ru->proc.tti_rx]&(1<<i)) == 1 ) && eNB->RU_list[i]->state == RU_RUN) { //This is master & the RRU has already been received
@@ -1303,7 +1303,7 @@ void fill_rf_config(RU_t *ru,
                     char *rf_config_file) {
   LTE_DL_FRAME_PARMS *fp   = ru->frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
-  //printf("////////////////numerology in config = %d\n",numerology);
+  //LOG_I(PHY,"////////////////numerology in config = %d\n",numerology);
   int numerology = get_softmodem_params()->numerology;
 
   if(fp->N_RB_DL == 100) {
@@ -1330,7 +1330,7 @@ void fill_rf_config(RU_t *ru,
       cfg->tx_bw = 40e6;
       cfg->rx_bw = 40e6;
     } else {
-      printf("Wrong input for numerology %d\n setting to 20MHz normal CP configuration",numerology);
+      LOG_I(PHY,"Wrong input for numerology %d\n setting to 20MHz normal CP configuration",numerology);
       cfg->sample_rate=30.72e6;
       cfg->samples_per_frame = 307200;
       cfg->tx_bw = 10e6;
@@ -1369,7 +1369,7 @@ void fill_rf_config(RU_t *ru,
     cfg->tx_gain[i] = (double)ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
     cfg->configFilename = rf_config_file;
-    printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
+    LOG_I(PHY,"channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
            i, cfg->tx_gain[i],
            cfg->rx_gain[i],
            cfg->tx_freq[i],
@@ -1390,9 +1390,9 @@ int setup_RU_buffers(RU_t *ru) {
 
   if (ru) {
     frame_parms = ru->frame_parms;
-    printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
+    LOG_I(PHY,"setup_RU_buffers: frame_parms = %p\n",frame_parms);
   } else {
-    printf("RU not initialized (NULL pointer)\n");
+    LOG_I(PHY,"RU not initialized (NULL pointer)\n");
     return(-1);
   }
 
@@ -1415,7 +1415,7 @@ int setup_RU_buffers(RU_t *ru) {
       ru->sf_extension       /= 4;
       ru->end_of_burst_delay /= 4;
     } else {
-      printf("not handled, todo\n");
+      LOG_I(PHY,"not handled, todo\n");
       exit(1);
     }
   } else {
@@ -1429,13 +1429,13 @@ int setup_RU_buffers(RU_t *ru) {
     for (i=0; i<ru->nb_rx; i++) {
       card = i/4;
       ant = i%4;
-      printf("Mapping RU id %d, rx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
+      LOG_I(PHY,"Mapping RU id %d, rx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
       free(ru->common.rxdata[i]);
       ru->common.rxdata[i] = ru->openair0_cfg.rxbase[ru->rf_map.chain+ant];
-      printf("rxdata[%d] @ %p\n",i,ru->common.rxdata[i]);
+      LOG_I(PHY,"rxdata[%d] @ %p\n",i,ru->common.rxdata[i]);
 
       for (j=0; j<16; j++) {
-        printf("rxbuffer %d: %x\n",j,ru->common.rxdata[i][j]);
+        LOG_I(PHY,"rxbuffer %d: %x\n",j,ru->common.rxdata[i][j]);
         ru->common.rxdata[i][j] = 16-j;
       }
     }
@@ -1443,13 +1443,13 @@ int setup_RU_buffers(RU_t *ru) {
     for (i=0; i<ru->nb_tx; i++) {
       card = i/4;
       ant = i%4;
-      printf("Mapping RU id %d, tx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
+      LOG_I(PHY,"Mapping RU id %d, tx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
       free(ru->common.txdata[i]);
       ru->common.txdata[i] = ru->openair0_cfg.txbase[ru->rf_map.chain+ant];
-      printf("txdata[%d] @ %p\n",i,ru->common.txdata[i]);
+      LOG_I(PHY,"txdata[%d] @ %p\n",i,ru->common.txdata[i]);
 
       for (j=0; j<16; j++) {
-        printf("txbuffer %d: %x\n",j,ru->common.txdata[i][j]);
+        LOG_I(PHY,"txbuffer %d: %x\n",j,ru->common.txdata[i][j]);
         ru->common.txdata[i][j] = 16-j;
       }
     }
@@ -1541,12 +1541,12 @@ static void *ru_thread_tx( void *param ) {
     } else {
       for (int i=0; i<ru->nb_tx; i++) {
         if(proc->frame_tx == 2) {
-          sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
+          LOG_I(PHY,filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
           LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
         }
 
         if(proc->frame_tx == 2 && proc->tti_tx==0) {
-          sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
+          LOG_I(PHY,filename,"txdata%d_frame%d.m",i,proc->frame_tx);
           LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
         }
       }
@@ -1576,7 +1576,7 @@ static void *ru_thread_tx( void *param ) {
       }
 
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
-        //printf("Not all RUs have provided their info (mask = %d), RU %d, num_RUs %d\n", eNB_proc->RU_mask_tx,ru->idx,eNB->num_RU);
+        //LOG_I(PHY,"Not all RUs have provided their info (mask = %d), RU %d, num_RUs %d\n", eNB_proc->RU_mask_tx,ru->idx,eNB->num_RU);
         AssertFatal((ret=pthread_mutex_unlock(&eNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
       } else { // all RUs TX are finished so send the ready signal to eNB processing
         eNB_proc->RU_mask_tx = 0;
@@ -1597,7 +1597,7 @@ static void *ru_thread_tx( void *param ) {
       }
     }
 
-    //printf("ru_thread_tx: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask_tx %d\n",
+    //LOG_I(PHY,"ru_thread_tx: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask_tx %d\n",
     //eNB_proc->frame_rx,eNB_proc->subframe_rx,ru->idx,ru->wait_cnt,eNB_proc->RU_mask_tx);
   }
 
@@ -1632,7 +1632,7 @@ static void *ru_thread( void *param ) {
     phy_init_RU(ru);
 
     if (setup_RU_buffers(ru)!=0) {
-      printf("Exiting, cannot initialize RU Buffers\n");
+      LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
       exit(-1);
     }
 
@@ -1656,7 +1656,7 @@ static void *ru_thread( void *param ) {
       
       
     if (setup_RU_buffers(ru)!=0) {
-        printf("Exiting, cannot initialize RU Buffers\n");
+        LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
 	      exit(-1);
     }
 
@@ -1863,12 +1863,12 @@ static void *ru_thread( void *param ) {
           } else {
             for (int i=0; i<ru->nb_tx; i++) {
               if(proc->frame_tx == 2) {
-                sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
+                LOG_I(PHY,filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
                 LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],ru->frame_parms->symbols_per_tti*ru->frame_parms->ofdm_symbol_size, 1, 1);
               }
 
               if(proc->frame_tx == 2 && proc->tti_tx==0) {
-                sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
+                LOG_I(PHY,filename,"txdata%d_frame%d.m",i,proc->frame_tx);
                 LOG_M(filename,"txdata_frame",ru->common.txdata[i],ru->frame_parms->samples_per_tti*10, 1, 1);
               }
             }
@@ -1892,7 +1892,7 @@ static void *ru_thread( void *param ) {
     } // ru->state = RU_RUN
   } // while !oai_exit
 
-  printf( "Exiting ru_thread \n");
+  LOG_I(PHY, "Exiting ru_thread \n");
 
   if (!(get_softmodem_params()->emulate_rf)) {
     if (ru->stop_rf != NULL) {
@@ -2484,8 +2484,6 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
 void set_function_spec_param(RU_t *ru) {
   int ret;
 
-  fill_rf_config(ru,ru->rf_config_file);
-  init_frame_parms(ru->frame_parms,1);
 
   switch (ru->if_south) {
     case LOCAL_RF:   // this is an RU with integrated RF (RRU, eNB)
@@ -2507,10 +2505,10 @@ void set_function_spec_param(RU_t *ru) {
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
         ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-        printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+        LOG_I(PHY,"NGFI_RRU_IF5: openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
 
         if (ret<0) {
-          printf("Exiting, cannot initialize transport protocol\n");
+          LOG_I(PHY,"Exiting, cannot initialize transport protocol\n");
           exit(-1);
         }
       } else if (ru->function == NGFI_RRU_IF4p5) {
@@ -2531,10 +2529,10 @@ void set_function_spec_param(RU_t *ru) {
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
         ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-        printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+        LOG_I(PHY,"NGFI_RRU_if4p5 : openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
 
         if (ret<0) {
-          printf("Exiting, cannot initialize transport protocol\n");
+          LOG_I(PHY,"Exiting, cannot initialize transport protocol\n");
           exit(-1);
         }
 
@@ -2554,7 +2552,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       ru->stop_rf                = stop_rf;
-      printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
+      LOG_I(PHY,"NFGI_RRU_IF4p5: configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
       /*
         if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
         fill_rf_config(ru,rf_config_file);
@@ -2564,7 +2562,7 @@ void set_function_spec_param(RU_t *ru) {
 
         ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
         if (setup_RU_buffers(ru)!=0) {
-        printf("Exiting, cannot initialize RU Buffers\n");
+        LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
         exit(-1);
         }*/
       break;
@@ -2589,10 +2587,10 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
       ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+      LOG_I(PHY,"REMOTE_IF5: openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
 
       if (ret<0) {
-        printf("Exiting, cannot initialize transport protocol\n");
+        LOG_I(PHY,"Exiting, cannot initialize transport protocol\n");
         exit(-1);
       }
 
@@ -2615,10 +2613,10 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
       ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+      LOG_I(PHY,"REMOTE IF4p5: openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
 
       if (ret<0) {
-        printf("Exiting, cannot initialize transport protocol\n");
+        LOG_I(PHY,"Exiting, cannot initialize transport protocol\n");
         exit(-1);
       }
 
@@ -2639,6 +2637,7 @@ void set_function_spec_param(RU_t *ru) {
       LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
       break;
   } // switch on interface type
+
 }
 
 //extern void RCconfig_RU(void);
@@ -2728,6 +2727,11 @@ void init_RU(char *rf_config_file, int send_dmrssync) {
 
     LOG_I(PHY, "Initializing RRU descriptor %d : (%s,%s,%d)\n", ru_id, ru_if_types[ru->if_south], NB_timing[ru->if_timing], ru->function);
     set_function_spec_param(ru);
+    if (ru->function != NGFI_RRU_IF4p5 && ru->function != NGFI_RRU_IF5) {
+       fill_rf_config(ru,ru->rf_config_file);
+       init_frame_parms(ru->frame_parms,1);
+    }
+
     LOG_I(PHY, "Starting ru_thread %d, is_slave %d, send_dmrs %d\n", ru_id, ru->is_slave, ru->generate_dmrs_sync);
     init_RU_proc(ru);
   } // for ru_id
@@ -2741,7 +2745,7 @@ void stop_ru(RU_t *ru) {
 #if defined(PRE_SCD_THREAD) || defined(PHY_TX_THREAD)
   int *status;
 #endif
-  printf("Stopping RU %p processing threads\n",(void *)ru);
+  LOG_I(PHY,"Stopping RU %p processing threads\n",(void *)ru);
 #if defined(PRE_SCD_THREAD)
 
   if(ru) {
@@ -2795,7 +2799,7 @@ void init_ru_vnf(void) {
   pthread_mutex_init(&RC.ru_mutex,NULL);
   pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
-  printf("configuring RU from file\n");
+  LOG_I(PHY,"configuring RU from file\n");
   RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
@@ -2885,7 +2889,7 @@ void RCconfig_RU(void) {
       RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));
       memset((void *)RC.ru[j],0,sizeof(RU_t));
       RC.ru[j]->idx                                 = j;
-      printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
+      LOG_I(PHY,"Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
       RC.ru[j]->if_timing                           = synch_to_ext_device;
 
       if (RC.nb_L1_inst >0)
@@ -2942,7 +2946,7 @@ void RCconfig_RU(void) {
           RC.ru[j]->if_south                        = LOCAL_RF;
           RC.ru[j]->function                        = eNodeB_3GPP;
           RC.ru[j]->state                           = RU_RUN;
-          printf("Setting function for RU %d to eNodeB_3GPP\n",j);
+          LOG_I(PHY,"Setting function for RU %d to eNodeB_3GPP\n",j);
         } else {
           RC.ru[j]->eth_params.local_if_name            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
           RC.ru[j]->eth_params.my_addr                  = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
@@ -2952,43 +2956,43 @@ void RCconfig_RU(void) {
 
           // Check if control port set
           if  (!(config_isparamset(RUParamList.paramarray[j],RU_REMOTE_PORTC_IDX)) ) {
-            printf("Removing control port for RU %d\n",j);
+            LOG_I(PHY,"Removing control port for RU %d\n",j);
             RC.ru[j]->has_ctrl_prt            = 0;
           } else {
             RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
             RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-            printf(" Control port %u \n",RC.ru[j]->eth_params.my_portc);
+            LOG_I(PHY," Control port %u \n",RC.ru[j]->eth_params.my_portc);
           }
 
           if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
             RC.ru[j]->if_south                        = LOCAL_RF;
             RC.ru[j]->function                        = NGFI_RRU_IF5;
             RC.ru[j]->eth_params.transp_preference    = ETH_UDP_MODE;
-            printf("Setting function for RU %d to NGFI_RRU_IF5 (udp)\n",j);
+            LOG_I(PHY,"Setting function for RU %d to NGFI_RRU_IF5 (udp)\n",j);
           } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
             RC.ru[j]->if_south                        = LOCAL_RF;
             RC.ru[j]->function                        = NGFI_RRU_IF5;
             RC.ru[j]->eth_params.transp_preference    = ETH_RAW_MODE;
-            printf("Setting function for RU %d to NGFI_RRU_IF5 (raw)\n",j);
+            LOG_I(PHY,"Setting function for RU %d to NGFI_RRU_IF5 (raw)\n",j);
           } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
             RC.ru[j]->if_south                        = LOCAL_RF;
             RC.ru[j]->function                        = NGFI_RRU_IF4p5;
             RC.ru[j]->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
             RC.ru[j]->has_ctrl_prt                   =1;
-            printf("Setting function for RU %d to NGFI_RRU_IF4p5 (udp)\n",j);
+            LOG_I(PHY,"Setting function for RU %d to NGFI_RRU_IF4p5 (udp)\n",j);
           } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
             RC.ru[j]->if_south                        = LOCAL_RF;
             RC.ru[j]->function                        = NGFI_RRU_IF4p5;
             RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
-            printf("Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
+            LOG_I(PHY,"Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
           }
 
-          printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
+          LOG_I(PHY,"RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
 
           if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
           else RC.ru[j]->is_slave=0;
 
-          printf("RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
+          LOG_I(PHY,"RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
 
           if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) RC.ru[j]->ota_sync_enable=1;
           else RC.ru[j]->ota_sync_enable=0;
@@ -3002,8 +3006,8 @@ void RCconfig_RU(void) {
 
         for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       } //strcmp(local_rf, "yes") == 0
-      else {
-        printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
+else {
+        LOG_I(PHY,"RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
         RC.ru[j]->eth_params.local_if_name      = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
         RC.ru[j]->eth_params.my_addr            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
         RC.ru[j]->eth_params.remote_addr        = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
@@ -3011,30 +3015,31 @@ void RCconfig_RU(void) {
         RC.ru[j]->eth_params.remote_portc       = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
         RC.ru[j]->eth_params.my_portd           = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
         RC.ru[j]->eth_params.remote_portd       = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
-      }
-      if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
-	RC.ru[j]->if_south                     = REMOTE_IF5;
-	RC.ru[j]->function                     = NGFI_RAU_IF5;
-	RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
-      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
-	RC.ru[j]->if_south                     = REMOTE_IF5;
-	RC.ru[j]->function                     = NGFI_RAU_IF5;
-	RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
-      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
-	RC.ru[j]->if_south                     = REMOTE_IF5;
-	RC.ru[j]->function                     = NGFI_RAU_IF5;
-	RC.ru[j]->eth_params.transp_preference = ETH_RAW_MODE;
-      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
-	RC.ru[j]->if_south                     = REMOTE_IF4p5;
-	RC.ru[j]->function                     = NGFI_RAU_IF4p5;
-	RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
-      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
-	RC.ru[j]->if_south                     = REMOTE_IF4p5;
-	RC.ru[j]->function                     = NGFI_RAU_IF4p5;
-	RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
+      
+        if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
+	  RC.ru[j]->if_south                     = REMOTE_IF5;
+	  RC.ru[j]->function                     = NGFI_RAU_IF5;
+	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
+	  RC.ru[j]->if_south                     = REMOTE_IF5;
+	  RC.ru[j]->function                     = NGFI_RAU_IF5;
+	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
+	  RC.ru[j]->if_south                     = REMOTE_IF5;
+	  RC.ru[j]->function                     = NGFI_RAU_IF5;
+	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_MODE;
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
+	  RC.ru[j]->if_south                     = REMOTE_IF4p5;
+	  RC.ru[j]->function                     = NGFI_RAU_IF4p5;
+  	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
+	  RC.ru[j]->if_south                     = REMOTE_IF4p5;
+	  RC.ru[j]->function                     = NGFI_RAU_IF4p5;
+	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
 	
-        if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
-        else RC.ru[j]->is_slave=0;
+          if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
+          else RC.ru[j]->is_slave=0;
+        }
       }  /* strcmp(local_rf, "yes") != 0 */
       
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
