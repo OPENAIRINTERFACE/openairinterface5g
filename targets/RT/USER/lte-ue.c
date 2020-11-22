@@ -2031,6 +2031,8 @@ void *UE_thread(void *arg)
     oai_exit=1;
   }
 
+  log_scheduler(__func__);
+
   while (!oai_exit) {
     if (IS_SOFTMODEM_BASICSIM)
       while (!(UE->proc.instance_cnt_synch < 0)) {

@@ -548,7 +548,12 @@ int main( int argc, char **argv ) {
   };
   if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
   {
-    fprintf(stderr,"error setting scheduler ... are you root?\n");
+    fprintf(stderr, "sched_setscheduler: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
     return EXIT_FAILURE;
   }
 
