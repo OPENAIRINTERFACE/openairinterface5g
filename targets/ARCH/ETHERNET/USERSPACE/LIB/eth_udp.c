@@ -202,8 +202,9 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
           goto again;
         }
       } else {
-        perror("ETHERNET IF4p5 READ");
-        printf("(%s):\n", strerror(errno));
+	return(-1);
+        //perror("ETHERNET IF4p5 READ");
+        //printf("(%s):\n", strerror(errno));
       }
     } else {
       *timestamp = test_header->sub_type;
