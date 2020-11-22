@@ -408,15 +408,12 @@ int main(int argc, char **argv){
   frame_parms->N_RB_UL          = N_RB_UL;
   frame_parms->threequarter_fs  = threequarter_fs;
   frame_parms->frame_type       = TDD;
-  frame_parms->freq_range       = nr_FR1;
+  frame_parms->freq_range       = (mu==1 ? nr_FR1 : nr_FR2);
   frame_parms->numerology_index = mu;
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  uint64_t absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
-				       frame_parms->dl_CarrierFreq,
-				       frame_parms->numerology_index,
-				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
+  uint64_t absoluteFrequencyPointA = (mu==1 ? 640000 : 2070833);
 
   uint8_t subframe = slot/frame_parms->slots_per_subframe;
   
