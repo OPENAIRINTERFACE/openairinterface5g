@@ -975,12 +975,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
   //uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
-
   frame = frame << 4;
   frame = frame | frame_number_4lsb;
 
   if(ssb_length == 64){
-    ssb_index = ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
+    ssb_index = ssb_index | (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
   }else{
     if(ssb_subcarrier_offset_msb){
       ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
