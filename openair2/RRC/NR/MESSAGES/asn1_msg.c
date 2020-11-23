@@ -326,6 +326,25 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   nr_plmn_info->cellIdentity.bits_unused= 4;
   nr_plmn_info->cellReservedForOperatorUse = 0;
   ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list, nr_plmn_info);
+
+  /*
+  sib1->si_SchedulingInfo = CALLOC(1,sizeof(*sib1->si_SchedulingInfo));
+
+  NR_SchedulingInfo_t schedulingInfo;
+  e_NR_SIB_TypeInfo__type sib_type;
+
+  memset(&schedulingInfo,0,sizeof(NR_SchedulingInfo_t));
+  memset(&sib_type,0,sizeof(e_NR_SIB_TypeInfo__type));
+
+  schedulingInfo.si_Periodicity = NR_SchedulingInfo__si_Periodicity_rf8;
+
+  sib_type = NR_SIB_TypeInfo__type_sibType3;
+  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
+  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,&schedulingInfo);
+
+  sib1->si_SchedulingInfo->si_WindowLength = NR_SI_SchedulingInfo__si_WindowLength_s20;
+  */
+
 #if 0
   sib1->uac_BarringInfo = CALLOC(1, sizeof(struct NR_SIB1__uac_BarringInfo));
   memset(sib1->uac_BarringInfo, 0, sizeof(struct NR_SIB1__uac_BarringInfo));

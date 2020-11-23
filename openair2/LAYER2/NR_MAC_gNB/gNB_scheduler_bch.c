@@ -439,10 +439,10 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
   // static values
   const int CC_id = 0;
-  int time_domain_allocation = 2; // FIXME: For OAI-UE (2), For 3rd party implementation and 3GPP compliant (4)
+  int time_domain_allocation = 4; // FIXME: For OAI-UE (2), For 3rd party implementation and 3GPP compliant (4)
   uint8_t mcsTableIdx = 0;
   uint8_t mcs = 0;
-  uint8_t numDmrsCdmGrpsNoData = 1; // FIXME: For OAI-UE (1), For 3rd party implementation and 3GPP compliant (2)
+  uint8_t numDmrsCdmGrpsNoData = 2; // FIXME: For OAI-UE (1), For 3rd party implementation and 3GPP compliant (2)
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
 
