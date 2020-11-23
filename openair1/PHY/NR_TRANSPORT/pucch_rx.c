@@ -1628,7 +1628,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       uci_pdu->harq.harq_payload[i] = decodedPayload[0] & 255;
       decodedPayload[0]>>=8;
     }
-    bit_left = pucch_pdu->bit_len_harq-(harq_bytes-1)<<3;
+    bit_left = pucch_pdu->bit_len_harq-((harq_bytes-1)<<3);
     uci_pdu->harq.harq_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
     decodedPayload[0] >>= pucch_pdu->bit_len_harq;
   }
@@ -1653,7 +1653,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & 255;
       decodedPayload[0]>>=8;
     }
-    bit_left = pucch_pdu->bit_len_csi_part1-(csi_part1_bytes-1)<<3;
+    bit_left = pucch_pdu->bit_len_csi_part1-((csi_part1_bytes-1)<<3);
     uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
     decodedPayload[0] >>= pucch_pdu->bit_len_csi_part1;
   }
