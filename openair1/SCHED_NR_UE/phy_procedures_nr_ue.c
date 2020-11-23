@@ -1736,37 +1736,34 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   slot_ssb  = is_ssb_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
-  if (slot_ssb)
-    {
-      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-      for (int i=1; i<4; i++) {
+  if (slot_ssb) {
+    LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+    for (int i=1; i<4; i++) {
 
-	nr_slot_fep(ue,
-		    (ue->symbol_offset+i)%(fp->symbols_per_slot),
-		    nr_tti_rx,
-		    0,
-		    0);
+      nr_slot_fep(ue,
+                  (ue->symbol_offset+i)%(fp->symbols_per_slot),
+                  nr_tti_rx,
+                  0,
+                  0);
 
 #if UE_TIMING_TRACE
-  	start_meas(&ue->dlsch_channel_estimation_stats);
+      start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
+      nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
 #if UE_TIMING_TRACE
-  	stop_meas(&ue->dlsch_channel_estimation_stats);
+      stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
       
-      }
+    }
       
-      //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-        nr_ue_rsrp_measurements(ue,nr_tti_rx,0);
-      //}
+    //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){
+    nr_ue_rsrp_measurements(ue,nr_tti_rx,0);
+    //}
       
-	  if ((ue->decode_MIB == 1) && slot_pbch)
-	  {
-		nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
-		
-		if (ue->no_timing_correction==0) 
-		{
+    if ((ue->decode_MIB == 1) && slot_pbch) {
+      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+
+      if (ue->no_timing_correction==0) {
         LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
@@ -1775,10 +1772,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            nr_tti_rx,
                            0,
                            16384);
-		}
-	  }
-
+      }
     }
+
+  }
 
   if ((frame_rx%64 == 0) && (nr_tti_rx==0)) {
     printf("============================================\n");
