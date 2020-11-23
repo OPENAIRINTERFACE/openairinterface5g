@@ -205,7 +205,7 @@ typedef struct {
   /// Random-access procedure flag
   uint8_t RA_active;
   /// Random-access window counter
-  int8_t RA_window_cnt;
+  int16_t RA_window_cnt;
   /// Random-access Msg3 size in bytes
   uint8_t RA_Msg3_size;
   /// Random-access prachMaskIndex
