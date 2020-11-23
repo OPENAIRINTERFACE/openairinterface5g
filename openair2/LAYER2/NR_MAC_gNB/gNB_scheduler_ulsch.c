@@ -552,6 +552,7 @@ void nr_schedule_ulsch(module_id_t module_id,
   RC.nrmac[module_id]->pre_processor_ul(
       module_id, frame, slot, num_slots_per_tdd, ulsch_in_slot_bitmap);
 
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -560,6 +561,13 @@ void nr_schedule_ulsch(module_id_t module_id,
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
+
+    NR_PUSCH_Config_t *pusch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pusch_Config->choice.setup;
+    uint8_t transform_precoding = 0;
+    if (!pusch_Config->transformPrecoder)
+      transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
+    else
+      transform_precoding = *pusch_Config->transformPrecoder;
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_ctrl->sched_pusch.slot];
@@ -593,6 +601,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
     int StartSymbolIndex, NrOfSymbols;
     SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
+
     pusch_pdu->start_symbol_index = StartSymbolIndex;
     pusch_pdu->nr_of_symbols = NrOfSymbols;
 
@@ -605,18 +614,12 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->subcarrier_spacing = sched_ctrl->active_ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
 
-    NR_PUSCH_Config_t *pusch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pusch_Config->choice.setup;
-    NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels->ServingCellConfigCommon;
-    if (!pusch_Config->transformPrecoder)
-      pusch_pdu->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
-    else
-      pusch_pdu->transform_precoding = *pusch_Config->transformPrecoder;
-
     if (pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
+    pusch_pdu->transform_precoding = transform_precoding;
     pusch_pdu->mcs_index = sched_ctrl->sched_pusch.mcs;
     const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
     if (pusch_pdu->transform_precoding)
