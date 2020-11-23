@@ -563,8 +563,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->start_symbol_index = StartSymbolIndex;
     pusch_pdu->nr_of_symbols = NrOfSymbols;
 
-    const int mapping_type = tdaList->list.array[tda]->mappingType;
-
     pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
     pusch_pdu->rnti = rnti;
     pusch_pdu->handle = 0; //not yet used
@@ -625,13 +623,11 @@ void nr_schedule_ulsch(module_id_t module_id,
     else
       pusch_pdu->frequency_hopping = 1;
 
-    //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
-    //pusch_pdu->uplink_frequency_shift_7p5khz = 0;
-
 
     // --------------------
     // ------- DMRS -------
     // --------------------
+    const int mapping_type = tdaList->list.array[tda]->mappingType;
     NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
     if (mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA)
       NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
@@ -679,7 +675,6 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
     pusch_pdu->dmrs_ports = 1;
-    // --------------------------------------------------------------------------------------------------------------------------------------------
 
     // --------------------
     // ------- PTRS -------
@@ -717,17 +712,14 @@ void nr_schedule_ulsch(module_id_t module_id,
     cur_harq->last_tx_slot = pusch_sched->slot;
 
     uint8_t num_dmrs_symb = 0;
-
-    for(int dmrs_counter = pusch_pdu->start_symbol_index; dmrs_counter < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; dmrs_counter++)
-      num_dmrs_symb += ((pusch_pdu->ul_dmrs_symb_pos >> dmrs_counter) & 1);
+    for(int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++)
+      num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
 
     uint8_t N_PRB_DMRS;
-    if (pusch_pdu->dmrs_config_type == 0) {
+    if (pusch_pdu->dmrs_config_type == 0)
       N_PRB_DMRS = pusch_pdu->num_dmrs_cdm_grps_no_data*6;
-    }
-    else {
+    else
       N_PRB_DMRS = pusch_pdu->num_dmrs_cdm_grps_no_data*4;
-    }
 
     pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
                                                    pusch_pdu->target_code_rate,
@@ -743,13 +735,6 @@ void nr_schedule_ulsch(module_id_t module_id,
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += pusch_pdu->pusch_data.tb_size;
 
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
-    //pusch_pdu->pusch_data.cb_present_and_position;
-    //pusch_pdu->pusch_uci;
-    //pusch_pdu->pusch_ptrs;
-    //pusch_pdu->dfts_ofdm;
-    //beamforming
-    //pusch_pdu->beamforming; //not used for now
-
 
     ul_dci_request_pdu = &UL_dci_req->ul_dci_pdu_list[UL_dci_req->numPdus];
     memset((void*)ul_dci_request_pdu,0,sizeof(nfapi_nr_ul_dci_request_pdus_t));
@@ -762,7 +747,7 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     nr_configure_pdcch(nr_mac,
                        pdcch_pdu_rel15,
-                       UE_info->rnti[UE_id],
+                       rnti,
                        ss,
                        coreset,
                        scc,
