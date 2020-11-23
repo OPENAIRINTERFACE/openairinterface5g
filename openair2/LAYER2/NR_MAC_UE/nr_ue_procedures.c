@@ -775,7 +775,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              module_id_t mod_id,
                              int cc_id,
                              frame_t frame,
-                             int slot){
+                             int slot,
+                             int thread_id){
 
   scheduled_response->dl_config  = dl_config;
   scheduled_response->ul_config  = ul_config;
@@ -784,7 +785,7 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
   scheduled_response->CC_id      = cc_id;
   scheduled_response->frame      = frame;
   scheduled_response->slot       = slot;
-
+  scheduled_response->thread_id  = thread_id;
 }
 
 uint32_t get_ssb_slot(uint32_t ssb_index){
@@ -1471,7 +1472,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         */
         dl_config->number_pdus = dl_config->number_pdus + 1;
 
-        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot);
+        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
           mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -1485,7 +1486,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot);
+      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -1649,7 +1650,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           }
         }
 
-        fill_scheduled_response(&scheduled_response, NULL, ul_config_req, &tx_req, mod_id, cc_id, rx_frame, rx_slot);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config_req, &tx_req, mod_id, cc_id, rx_frame, rx_slot, ul_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -1718,7 +1719,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
         ul_config->number_pdus++;
         // scheduled_response
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx, ul_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -1773,7 +1774,7 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id) {
 
   uint16_t format, format0, format1, ncs;
   int is_nr_prach_slot;
@@ -1901,7 +1902,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       } // if format1
     } // is_nr_prach_slot
 
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP);
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   } // if is_nr_UL_slot
@@ -1967,7 +1968,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
   csi_MeasConfig_t csi_MeasConfig = ue->csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig= ue->PUSCH_ServingCellConfig;
   PDSCH_ServingCellConfig_t PDSCH_ServingCellConfig= ue->PDSCH_ServingCellConfig;
-  NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
+  NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[proc->thread_id][eNB_id];
   // 1  CARRIER_IN
   // crossCarrierSchedulingConfig from higher layers, variable crossCarrierSchedulingConfig indicates if 'cross carrier scheduling' is enabled or not:
   //      if No cross carrier scheduling: number of bits for CARRIER_IND is 0
@@ -2094,7 +2095,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
       (dynamic_prb_BundlingType2==dy_2_n4)||(dynamic_prb_BundlingType2==dy_2_wideband)) prb_BundlingType_size=1;
 
   // 15 RATE_MATCHING_IND FIXME!!!
-  // according to TS 38.212: Rate matching indicator – 0, 1, or 2 bits according to higher layer parameter rateMatchPattern
+  // according to TS 38.212: Rate matching indicator  E0, 1, or 2 bits according to higher layer parameter rateMatchPattern
   uint8_t rateMatching_bits = pdsch_config.n_rateMatchPatterns;
   // 16 ZP_CSI_RS_TRIGGER FIXME!!!
   // 0, 1, or 2 bits as defined in Subclause 5.1.4.2 of [6, TS 38.214].
@@ -2237,7 +2238,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
   // 2 bits otherwise
   uint8_t ptrs_dmrs_bits=0; //FIXME!!!
   // 46 BETA_OFFSET_IND
-  // at IE PUSCH-Config, beta_offset indicator – 0 if the higher layer parameter betaOffsets = semiStatic; otherwise 2 bits
+  // at IE PUSCH-Config, beta_offset indicator  E0 if the higher layer parameter betaOffsets = semiStatic; otherwise 2 bits
   // uci-OnPUSCH
   // Selection between and configuration of dynamic and semi-static beta-offset. If the field is absent or released, the UE applies the value 'semiStatic' and the BetaOffsets
   uint8_t betaOffsets = 0;
@@ -4236,10 +4237,10 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     	
     case NR_RNTI_P:
       /*
-      // Short Messages Indicator – 2 bits
+      // Short Messages Indicator  E2 bits
       for (int i=0; i<2; i++)
       dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages_indicator>>(1-i))&1)<<(dci_size-pos++);
-      // Short Messages – 8 bits
+      // Short Messages  E8 bits
       for (int i=0; i<8; i++)
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages>>(7-i))&1)<<(dci_size-pos++);
       // Freq domain assignment 0-16 bit
@@ -4306,13 +4307,13 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       // HARQ process number  4bit
       pos+=4;
       dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-      // Downlink assignment index – 2 bits
+      // Downlink assignment index  E2 bits
       pos+=2;
       dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
-      // TPC command for scheduled PUCCH – 2 bits
+      // TPC command for scheduled PUCCH  E2 bits
       pos+=2;
       dci_pdu_rel15->tpc  = (*dci_pdu>>(dci_size-pos))&3;
-      // PDSCH-to-HARQ_feedback timing indicator – 3 bits
+      // PDSCH-to-HARQ_feedback timing indicator  E3 bits
       pos+=3;
       dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&7;
        
@@ -4330,10 +4331,9 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// Time domain assignment 4bit
 	pos+=4;
 	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-	// This is not supported yet - Skip for now
-  // Frequency hopping flag – 1 bit
-	//pos++;
-	//dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
+	// Frequency hopping flag  E1 bit
+	pos++;
+	dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
 	// MCS  5 bit
 	pos+=5;
 	dci_pdu_rel15->mcs= (*dci_pdu>>(dci_size-pos))&0x1f;
@@ -4346,10 +4346,10 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// HARQ process number  4bit
 	pos+=4;
 	dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-	// TPC command for scheduled PUSCH – 2 bits
+	// TPC command for scheduled PUSCH  E2 bits
 	pos+=2;
 	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
-	// UL/SUL indicator – 1 bit
+	// UL/SUL indicator  E1 bit
 	/* commented for now (RK): need to get this from BWP descriptor
 	   if (cfg->pucch_config.pucch_GroupHopping.value)
 	   dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)ul_sul_indicator&1)<<(dci_size-pos++);
@@ -4367,7 +4367,7 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// Time domain assignment 4bit
 	for (int i=0; i<4; i++)
 	dci_pdu->= (((uint64_t)*dci_pdu>>(dci_size-pos)time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
-	// Frequency hopping flag – 1 bit
+	// Frequency hopping flag  E1 bit
 	dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)frequency_hopping_flag&1)<<(dci_size-pos++);
 	// MCS  5 bit
 	for (int i=0; i<5; i++)
@@ -4381,11 +4381,11 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	for (int i=0; i<4; i++)
 	*dci_pdu  |= (((uint64_t)*dci_pdu>>(dci_size-pos)harq_pid>>(3-i))&1)<<(dci_size-pos++);
 	
-	// TPC command for scheduled PUSCH – 2 bits
+	// TPC command for scheduled PUSCH  E2 bits
 	for (int i=0; i<2; i++)
 	dci_pdu->= (((uint64_t)*dci_pdu>>(dci_size-pos)tpc>>(1-i))&1)<<(dci_size-pos++);
 	*/	
-	// UL/SUL indicator – 1 bit
+	// UL/SUL indicator  E1 bit
 	/*
 	  commented for now (RK): need to get this information from BWP descriptor
 	  if (cfg->pucch_config.pucch_GroupHopping.value)
