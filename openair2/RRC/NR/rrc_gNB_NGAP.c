@@ -55,6 +55,8 @@
 #include "ngap_gNB_management_procedures.h"
 #include "NR_ULInformationTransfer.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
+#include "NR_UERadioAccessCapabilityInformation.h"
+#include "NR_UE-CapabilityRAT-ContainerList.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -1107,3 +1109,51 @@ rrc_gNB_NGAP_remove_ue_ids(
     }
   }
 }
+void
+rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg
+)
+//------------------------------------------------------------------------------
+{
+    NR_UE_CapabilityRAT_ContainerList_t *ueCapabilityRATContainerList = ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
+    /* 4096 is arbitrary, should be big enough */
+    unsigned char buf[4096];
+    unsigned char *buf2;
+    NR_UERadioAccessCapabilityInformation_t rac;
+    
+    if (ueCapabilityRATContainerList->list.count == 0) {
+      LOG_W(RRC, "[gNB %d][UE %x] bad UE capabilities\n", ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    }
+    
+    asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList, NULL, ueCapabilityRATContainerList, buf, 4096);
+    
+    if (ret.encoded == -1) abort();
+    
+    memset(&rac, 0, sizeof(NR_UERadioAccessCapabilityInformation_t));
+    rac.criticalExtensions.present = NR_UERadioAccessCapabilityInformation__criticalExtensions_PR_c1;
+    rac.criticalExtensions.choice.c1 = calloc(1,sizeof(*rac.criticalExtensions.choice.c1));
+    rac.criticalExtensions.choice.c1->present = NR_UERadioAccessCapabilityInformation__criticalExtensions__c1_PR_ueRadioAccessCapabilityInformation;
+    rac.criticalExtensions.choice.c1->choice.ueRadioAccessCapabilityInformation = calloc(1,sizeof(NR_UERadioAccessCapabilityInformation_IEs_t));
+    rac.criticalExtensions.choice.c1->choice.ueRadioAccessCapabilityInformation->ue_RadioAccessCapabilityInfo.buf = buf;
+    rac.criticalExtensions.choice.c1->choice.ueRadioAccessCapabilityInformation->ue_RadioAccessCapabilityInfo.size = (ret.encoded+7)/8;
+    rac.criticalExtensions.choice.c1->choice.ueRadioAccessCapabilityInformation->nonCriticalExtension = NULL;
+    /* 8192 is arbitrary, should be big enough */
+    buf2 = malloc16(8192);
+    
+    if (buf2 == NULL) abort();
+    
+    ret = uper_encode_to_buffer(&asn_DEF_NR_UERadioAccessCapabilityInformation, NULL, &rac, buf2, 8192);
+    
+    if (ret.encoded == -1) abort();
+
+    MessageDef *msg_p;
+    msg_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_UE_CAPABILITIES_IND);
+    NGAP_UE_CAPABILITIES_IND (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
+    NGAP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.length = (ret.encoded+7)/8;
+    NGAP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.buffer = buf2;
+    itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
+    LOG_I(NR_RRC,"Send message to ngap: NGAP_UE_CAPABILITIES_IND\n");
+}
+

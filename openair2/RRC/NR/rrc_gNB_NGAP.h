@@ -135,4 +135,11 @@ rrc_gNB_NGAP_remove_ue_ids(
   struct rrc_ue_ngap_ids_s *const ue_ids_pP
 );
 
+void
+rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg
+);
+
 #endif

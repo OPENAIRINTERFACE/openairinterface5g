@@ -1279,7 +1279,11 @@ rrc_gNB_decode_dcch(
                     if(eutra_index == -1)
                     break;
                 }
-            
+                if (AMF_MODE_ENABLED == 1) {
+                    rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(ctxt_pP,
+                                              ue_context_p,
+                                              ul_dcch_msg);
+                }
                 rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
                 break;
 
