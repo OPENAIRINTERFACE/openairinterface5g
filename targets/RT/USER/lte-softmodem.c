@@ -520,7 +520,12 @@ int main ( int argc, char **argv )
   };
   if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
   {
-    fprintf(stderr,"error setting scheduler ... are you root?\n");
+    fprintf(stderr, "sched_setscheduler: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
     return EXIT_FAILURE;
   }
 
@@ -726,6 +731,7 @@ int main ( int argc, char **argv )
     pthread_mutex_unlock(&sync_mutex);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
+  log_scheduler("eNB-main");
   create_tasks_mbms(1);
 
   // wait for end of program
