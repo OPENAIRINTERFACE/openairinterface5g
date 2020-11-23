@@ -322,6 +322,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
 
+    /* dimension UL_tti_req_ahead for number of slots in frame */
+    const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
+    const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+    RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
+    AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
+                "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
+
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,

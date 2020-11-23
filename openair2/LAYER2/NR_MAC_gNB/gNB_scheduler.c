@@ -285,26 +285,34 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 */
 
 
-void nr_schedule_pusch(int Mod_idP,
-                       int UE_id,
-                       int num_slots_per_tdd,
-                       int ul_slots,
-                       frame_t frameP,
-                       sub_frame_t slotP) {
+void nr_schedule_pusch(int mod_id, frame_t frame, sub_frame_t slot) {
+  nfapi_nr_ul_tti_request_t *ul_tti_req = &RC.nrmac[mod_id]->UL_tti_req[0];
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req =
+      &RC.nrmac[mod_id]->UL_tti_req_ahead[0][slot];
 
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  int k = slotP + ul_slots - num_slots_per_tdd;
-  NR_sched_pusch *pusch = &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k];
-  if ((pusch->active == true) && (frameP == pusch->frame) && (slotP == pusch->slot)) {
-    UL_tti_req->SFN = pusch->frame;
-    UL_tti_req->Slot = pusch->slot;
-    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
-    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pusch_pdu = pusch->pusch_pdu;
-    UL_tti_req->n_pdus+=1;
-    memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
-           0, sizeof(NR_sched_pusch));
+  if (future_ul_tti_req->Slot == slot
+      && future_ul_tti_req->SFN == frame
+      && future_ul_tti_req->n_pdus > 0) {
+    LOG_D(MAC, "%4d.%2d copy %d PDUs from future_ul_tti_req\n", frame, slot, future_ul_tti_req->n_pdus);
+    /* the future_UL_tti_req_has data for the current frame/slot pair, copy
+     * everything into the "real" UL_tti_req */
+    ul_tti_req->SFN = future_ul_tti_req->SFN;
+    ul_tti_req->Slot = future_ul_tti_req->Slot;
+    ul_tti_req->n_pdus = future_ul_tti_req->n_pdus;
+    ul_tti_req->rach_present = future_ul_tti_req->rach_present;
+    ul_tti_req->n_ulsch = future_ul_tti_req->n_ulsch;
+    ul_tti_req->n_ulcch = future_ul_tti_req->n_ulcch;
+    ul_tti_req->n_group = future_ul_tti_req->n_group;
+    memcpy(ul_tti_req->pdus_list,
+           future_ul_tti_req->pdus_list,
+           ul_tti_req->n_pdus * sizeof(nfapi_nr_ul_tti_request_number_of_pdus_t));
+    memcpy(ul_tti_req->groups_list,
+           future_ul_tti_req->groups_list,
+           ul_tti_req->n_group * sizeof(nfapi_nr_ul_tti_request_number_of_groups_t));
+    future_ul_tti_req->n_pdus = 0;
+    future_ul_tti_req->n_ulsch = 0;
+    future_ul_tti_req->n_ulcch = 0;
+    future_ul_tti_req->n_group = 0;
   }
 }
 
@@ -433,9 +441,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // inside
   if (UE_info->active[UE_id] && slot < 10) {
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
-    nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
   }
 
+  nr_schedule_pusch(module_idP, frame, slot);
 
   if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
