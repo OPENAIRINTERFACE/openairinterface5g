@@ -501,6 +501,11 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
     return;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
+
+  sched_ctrl->sched_pusch->mcs = 9;
+  sched_ctrl->sched_pusch->rbStart = 0;
+  sched_ctrl->sched_pusch->rbSize = get_softmodem_params()->phy_test ?
+    50 : NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 }
 
 void nr_schedule_ulsch(module_id_t module_id,
@@ -538,11 +543,6 @@ void nr_schedule_ulsch(module_id_t module_id,
   const int sched_slot = (slot + K2) % num_slots_per_tdd;
   if (is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot)
         && (!get_softmodem_params()->phy_test || sched_slot == 8)) {
-
-    const uint8_t mcs = 9;
-    const uint16_t rbStart = 0;
-    const uint16_t rbSize = get_softmodem_params()->phy_test ?
-      50 : NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
     nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[module_id]->UL_dci_req[0];
     UL_dci_req->SFN = frame;
@@ -607,7 +607,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
-    pusch_pdu->mcs_index = mcs;
+    pusch_pdu->mcs_index = sched_ctrl->sched_pusch->mcs;
     const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
     if (pusch_pdu->transform_precoding)
       pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
@@ -640,8 +640,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
-    pusch_pdu->rb_start = rbStart;
-    pusch_pdu->rb_size = rbSize;
+    pusch_pdu->rb_start = sched_ctrl->sched_pusch->rbStart;
+    pusch_pdu->rb_size = sched_ctrl->sched_pusch->rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
 
     if (pusch_Config->frequencyHopping==NULL)
@@ -786,5 +786,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
     config_uldci(sched_ctrl->active_ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,tda,UE_info->UE_sched_ctrl[UE_id].tpc0,n_ubwp,sched_ctrl->active_bwp->bwp_Id);
     fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,sched_ctrl->active_bwp->bwp_Id);
+
+
+    sched_ctrl->sched_pusch->rbSize = 0;
   }
 }
