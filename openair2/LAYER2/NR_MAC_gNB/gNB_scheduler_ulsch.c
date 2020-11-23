@@ -586,6 +586,22 @@ void nr_schedule_ulsch(module_id_t module_id,
       transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
     else
       transform_precoding = *pusch_Config->transformPrecoder;
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    uint8_t mcs_table = 0;
+    if (transform_precoding)
+      mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
+                                      0,
+                                      dci_formats[0],
+                                      NR_RNTI_C,
+                                      target_ss,
+                                      false);
+    else
+      mcs_table = get_pusch_mcs_table(pusch_Config->mcs_TableTransformPrecoder,
+                                      1,
+                                      dci_formats[0],
+                                      NR_RNTI_C,
+                                      target_ss,
+                                      false);
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_ctrl->sched_pusch.slot];
@@ -624,22 +640,7 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     pusch_pdu->transform_precoding = transform_precoding;
     pusch_pdu->mcs_index = sched_ctrl->sched_pusch.mcs;
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    if (pusch_pdu->transform_precoding)
-      pusch_pdu->mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
-                                                 0,
-                                                 dci_formats[0],
-                                                 rnti_types[0],
-                                                 target_ss,
-                                                 false);
-    else
-      pusch_pdu->mcs_table =
-          get_pusch_mcs_table(pusch_Config->mcs_TableTransformPrecoder,
-                              1,
-                              dci_formats[0],
-                              rnti_types[0],
-                              target_ss,
-                              false);
+    pusch_pdu->mcs_table = mcs_table;
 
     pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
     pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
