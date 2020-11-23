@@ -603,6 +603,14 @@ void nr_schedule_ulsch(module_id_t module_id,
                                       NR_RNTI_C,
                                       target_ss,
                                       false);
+    const uint8_t mcs = sched_pusch->mcs;
+    uint16_t R = nr_get_code_rate_ul(mcs, mcs_table);
+    uint8_t Qm = nr_get_Qm_ul(mcs, mcs_table);
+    if (pusch_Config->tp_pi2BPSK
+        && ((mcs_table == 3 && mcs < 2) || (mcs_table == 4 && mcs < 6))) {
+      R >>= 1;
+      Qm <<= 1;
+    }
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
@@ -640,18 +648,10 @@ void nr_schedule_ulsch(module_id_t module_id,
       pusch_pdu->data_scrambling_id = *scc->physCellId;
 
     pusch_pdu->transform_precoding = transform_precoding;
-    pusch_pdu->mcs_index = sched_pusch->mcs;
+    pusch_pdu->mcs_index = mcs;
     pusch_pdu->mcs_table = mcs_table;
-
-    pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
-    pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
-    if (pusch_Config->tp_pi2BPSK) {
-      if (((pusch_pdu->mcs_table == 3) && (pusch_pdu->mcs_index < 2))
-          || ((pusch_pdu->mcs_table == 4) && (pusch_pdu->mcs_index < 6))) {
-        pusch_pdu->target_code_rate = pusch_pdu->target_code_rate>>1;
-        pusch_pdu->qam_mod_order = pusch_pdu->qam_mod_order<<1;
-      }
-    }
+    pusch_pdu->target_code_rate = R;
+    pusch_pdu->qam_mod_order = Qm;
     pusch_pdu->nrOfLayers = 1;
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
