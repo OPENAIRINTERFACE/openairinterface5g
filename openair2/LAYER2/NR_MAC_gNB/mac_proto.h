@@ -297,6 +297,13 @@ void find_aggregation_candidates(uint8_t *aggregation_level,
 
 long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
+void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
+                          const NR_BWP_Uplink_t *ubwp,
+                          long dci_format,
+                          int tda,
+                          uint8_t num_dmrs_cdm_grps_no_data,
+                          NR_sched_pusch_save_t *ps);
+
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);

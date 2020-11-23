@@ -213,6 +213,75 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
 }
 
+void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
+                          const NR_BWP_Uplink_t *ubwp,
+                          long dci_format,
+                          int tda,
+                          uint8_t num_dmrs_cdm_grps_no_data,
+                          NR_sched_pusch_save_t *ps)
+{
+  ps->dci_format = dci_format;
+  ps->time_domain_allocation = tda;
+  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
+
+  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
+      ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength,
+          &ps->startSymbolIndex,
+          &ps->nrOfSymbols);
+
+  ps->pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
+  if (!ps->pusch_Config->transformPrecoder)
+    ps->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
+  else
+    ps->transform_precoding = *ps->pusch_Config->transformPrecoder;
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  if (ps->transform_precoding)
+    ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config->mcs_Table,
+                                    0,
+                                    ps->dci_format,
+                                    NR_RNTI_C,
+                                    target_ss,
+                                    false);
+  else
+    ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config->mcs_TableTransformPrecoder,
+                                    1,
+                                    ps->dci_format,
+                                    NR_RNTI_C,
+                                    target_ss,
+                                    false);
+
+  /* DMRS calculations */
+  ps->mapping_type = tdaList->list.array[tda]->mappingType;
+  ps->NR_DMRS_UplinkConfig =
+      ps->mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA
+          ? ps->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup
+          : ps->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+  ps->dmrs_config_type = ps->NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1;
+  const pusch_dmrs_AdditionalPosition_t additional_pos =
+      ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL
+          ? 2
+          : (*ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
+                     NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3
+                 ? 3
+                 : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition);
+  const pusch_maxLength_t pusch_maxLength =
+      ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
+  const uint16_t l_prime_mask = get_l_prime(ps->nrOfSymbols,
+                                            ps->mapping_type,
+                                            additional_pos,
+                                            pusch_maxLength);
+  ps->ul_dmrs_symb_pos = l_prime_mask << ps->startSymbolIndex;
+  uint8_t num_dmrs_symb = 0;
+  for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
+    num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;
+  ps->num_dmrs_symb = num_dmrs_symb;
+  ps->N_PRB_DMRS = ps->dmrs_config_type == 0
+      ? num_dmrs_cdm_grps_no_data * 6
+      : num_dmrs_cdm_grps_no_data * 4;
+}
+
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 				  nr_scs_e scs_common,
 				  nr_scs_e pdcch_scs,

@@ -284,6 +284,30 @@ typedef struct NR_sched_pucch {
   uint8_t resource_indicator;
 } NR_sched_pucch;
 
+/* this struct is a helper: as long as the TDA and DCI format remain the same
+ * over the same uBWP and search space, there is no need to recalculate all
+ * S/L, MCS table, or DMRS-related parameters over and over again. Hence, we
+ * store them in this struct for easy reference. */
+typedef struct NR_sched_pusch_save {
+  int dci_format;
+  int time_domain_allocation;
+  uint8_t num_dmrs_cdm_grps_no_data;
+
+  int startSymbolIndex;
+  int nrOfSymbols;
+
+  NR_PUSCH_Config_t *pusch_Config;
+  uint8_t transform_precoding;
+  uint8_t mcs_table;
+
+  long mapping_type;
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
+  uint16_t dmrs_config_type;
+  uint16_t ul_dmrs_symb_pos;
+  uint8_t num_dmrs_symb;
+  uint8_t N_PRB_DMRS;
+} NR_sched_pusch_save_t;
+
 typedef struct NR_sched_pusch {
   int frame;
   int slot;

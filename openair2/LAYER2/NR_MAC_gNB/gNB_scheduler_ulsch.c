@@ -573,77 +573,30 @@ void nr_schedule_ulsch(module_id_t module_id,
     int dci_formats[2] = { f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0 , 0 };
     int rnti_types[2] = { NR_RNTI_C, 0 };
 
-    //Resource Allocation in time domain
     const int tda = sched_pusch->time_domain_allocation;
-    const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
-      sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-    const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
-    int StartSymbolIndex, NrOfSymbols;
-    SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
-
-    NR_PUSCH_Config_t *pusch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pusch_Config->choice.setup;
-    uint8_t transform_precoding = 0;
-    if (!pusch_Config->transformPrecoder)
-      transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
-    else
-      transform_precoding = *pusch_Config->transformPrecoder;
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-
-    /* DMRS calculations */
-    const int mapping_type = tdaList->list.array[tda]->mappingType;
-    const NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig =
-        mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA
-            ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup
-            : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-    const uint8_t dmrs_config_type = NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1;
-    const pusch_dmrs_AdditionalPosition_t additional_pos =
-        NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL
-            ? 2
-            : (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
-                       NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3
-                   ? 3
-                   : *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition);
-    const pusch_maxLength_t pusch_maxLength =
-        NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
-    uint16_t l_prime_mask = get_l_prime(NrOfSymbols, mapping_type, additional_pos, pusch_maxLength);
-    const uint16_t ul_dmrs_symb_pos = l_prime_mask << StartSymbolIndex;
-    uint8_t num_dmrs_symb = 0;
-    for(int i = StartSymbolIndex; i < StartSymbolIndex + NrOfSymbols; i++)
-      num_dmrs_symb += (ul_dmrs_symb_pos >> i) & 1;
     const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    const uint8_t N_PRB_DMRS = dmrs_config_type == 0
-        ? num_dmrs_cdm_grps_no_data * 6
-        : num_dmrs_cdm_grps_no_data * 4;
+    NR_sched_pusch_save_t ps;
+    nr_save_pusch_fields(scc,
+                         sched_ctrl->active_ubwp,
+                         dci_formats[0],
+                         tda,
+                         num_dmrs_cdm_grps_no_data,
+                         &ps);
 
     /* Calculate TBS from MCS */
-    uint8_t mcs_table = 0;
-    if (transform_precoding)
-      mcs_table = get_pusch_mcs_table(pusch_Config->mcs_Table,
-                                      0,
-                                      dci_formats[0],
-                                      NR_RNTI_C,
-                                      target_ss,
-                                      false);
-    else
-      mcs_table = get_pusch_mcs_table(pusch_Config->mcs_TableTransformPrecoder,
-                                      1,
-                                      dci_formats[0],
-                                      NR_RNTI_C,
-                                      target_ss,
-                                      false);
     const uint8_t mcs = sched_pusch->mcs;
-    uint16_t R = nr_get_code_rate_ul(mcs, mcs_table);
-    uint8_t Qm = nr_get_Qm_ul(mcs, mcs_table);
-    if (pusch_Config->tp_pi2BPSK
-        && ((mcs_table == 3 && mcs < 2) || (mcs_table == 4 && mcs < 6))) {
+    uint16_t R = nr_get_code_rate_ul(mcs, ps.mcs_table);
+    uint8_t Qm = nr_get_Qm_ul(mcs, ps.mcs_table);
+    if (ps.pusch_Config->tp_pi2BPSK
+        && ((ps.mcs_table == 3 && mcs < 2) || (ps.mcs_table == 4 && mcs < 6))) {
       R >>= 1;
       Qm <<= 1;
     }
     const uint32_t tb_size = nr_compute_tbs(Qm,
                                             R,
                                             sched_pusch->rbSize,
-                                            NrOfSymbols,
-                                            N_PRB_DMRS * num_dmrs_symb,
+                                            ps.nrOfSymbols,
+                                            ps.N_PRB_DMRS * ps.num_dmrs_symb,
                                             0,  // nb_rb_oh
                                             0,
                                             1 /* NrOfLayers */) >> 3;
@@ -686,23 +639,23 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->target_code_rate = R;
     pusch_pdu->qam_mod_order = Qm;
     pusch_pdu->mcs_index = mcs;
-    pusch_pdu->mcs_table = mcs_table;
-    pusch_pdu->transform_precoding = transform_precoding;
-    if (pusch_Config->dataScramblingIdentityPUSCH)
-      pusch_pdu->data_scrambling_id = *pusch_Config->dataScramblingIdentityPUSCH;
+    pusch_pdu->mcs_table = ps.mcs_table;
+    pusch_pdu->transform_precoding = ps.transform_precoding;
+    if (ps.pusch_Config->dataScramblingIdentityPUSCH)
+      pusch_pdu->data_scrambling_id = *ps.pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
     pusch_pdu->nrOfLayers = 1;
 
     /* FAPI: DMRS */
-    pusch_pdu->ul_dmrs_symb_pos = ul_dmrs_symb_pos;
-    pusch_pdu->dmrs_config_type = dmrs_config_type;
+    pusch_pdu->ul_dmrs_symb_pos = ps.ul_dmrs_symb_pos;
+    pusch_pdu->dmrs_config_type = ps.dmrs_config_type;
     if (pusch_pdu->transform_precoding) { // transform precoding disabled
       long *scramblingid;
       if (pusch_pdu->scid == 0)
-        scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
+        scramblingid = ps.NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
       else
-        scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
+        scramblingid = ps.NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
       if (scramblingid == NULL)
         pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
       else
@@ -710,30 +663,30 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     else {
       pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
-      if (NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
-        pusch_pdu->pusch_identity = *NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
+      if (ps.NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+        pusch_pdu->pusch_identity = *ps.NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
       else
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
-    pusch_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
+    pusch_pdu->num_dmrs_cdm_grps_no_data = ps.num_dmrs_cdm_grps_no_data;
     pusch_pdu->dmrs_ports = 1;
 
     /* FAPI: Pusch Allocation in frequency domain */
-    AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
+    AssertFatal(ps.pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
     pusch_pdu->rb_start = sched_pusch->rbStart;
     pusch_pdu->rb_size = sched_pusch->rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
-    if (pusch_Config->frequencyHopping==NULL)
+    if (ps.pusch_Config->frequencyHopping==NULL)
       pusch_pdu->frequency_hopping = 0;
     else
       pusch_pdu->frequency_hopping = 1;
 
     /* FAPI: Resource Allocation in time domain */
-    pusch_pdu->start_symbol_index = StartSymbolIndex;
-    pusch_pdu->nr_of_symbols = NrOfSymbols;
+    pusch_pdu->start_symbol_index = ps.startSymbolIndex;
+    pusch_pdu->nr_of_symbols = ps.nrOfSymbols;
 
     /* PUSCH PDU */
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
@@ -743,7 +696,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     /* PUSCH PTRS */
-    if (NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
+    if (ps.NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
       // TODO to be fixed from RRC config
       uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
       uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
