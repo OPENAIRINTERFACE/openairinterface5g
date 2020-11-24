@@ -2895,6 +2895,13 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
     dlsch_config_pdu->number_rbs = NRRIV2BW(riv,n_RB_DLBWP);
     dlsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_DLBWP);
 
+    // Sanity check in case a false or erroneous DCI is received
+    if ((dlsch_config_pdu->number_rbs < 1 ) || (dlsch_config_pdu->number_rbs > n_RB_DLBWP - dlsch_config_pdu->start_rb)) {
+      // DCI is invalid!
+      LOG_W(MAC, "Frequency domain assignment values are invalid! #RBs: %d, Start RB: %d, n_RB_DLBWP: %d \n", dlsch_config_pdu->number_rbs, dlsch_config_pdu->start_rb, n_RB_DLBWP);
+      return -1;
+    }
+
   }
   if(pusch_config_pdu != NULL){
     /*
@@ -2909,6 +2916,14 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
 
     pusch_config_pdu->rb_size  = NRRIV2BW(riv,n_RB_ULBWP);
     pusch_config_pdu->rb_start = NRRIV2PRBOFFSET(riv,n_RB_ULBWP);
+
+    // Sanity check in case a false or erroneous DCI is received
+    if (pusch_config_pdu->rb_size + pusch_config_pdu->rb_start > n_RB_ULBWP) {
+      // DCI is invalid!
+      LOG_W(MAC, "Frequency domain assignment values are invalid! #RBs: %d, Start RB: %d, n_RB_DLBWP: %d \n",pusch_config_pdu->rb_size, pusch_config_pdu->rb_start, n_RB_ULBWP);
+      return -1;
+    }
+
   }
   return 0;
 }
@@ -3194,7 +3209,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-    nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val);
+    if (nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val) < 0)
+      return -1;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_0,NULL,dci->time_domain_assignment.val) < 0)
       return -1;
@@ -3205,6 +3221,27 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     /* MCS */
     pusch_config_pdu_0_0->mcs_index = dci->mcs;
+
+    /* MCS TABLE */
+    if (mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
+      pusch_config_pdu_0_0->transform_precoding = 1;
+    else
+      pusch_config_pdu_0_0->transform_precoding = 0;
+      
+    if (pusch_config_pdu_0_0->transform_precoding == transform_precoder_disabled) 
+      pusch_config_pdu_0_0->mcs_table = get_pusch_mcs_table(pusch_config->mcs_Table, 0,
+                                                 dci_format, NR_RNTI_TC, NR_SearchSpace__searchSpaceType_PR_common, false);
+    else
+      pusch_config_pdu_0_0->mcs_table = get_pusch_mcs_table(pusch_config->mcs_TableTransformPrecoder, 1,
+                                                 dci_format, NR_RNTI_TC, NR_SearchSpace__searchSpaceType_PR_common, false);
+    
+    pusch_config_pdu_0_0->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu_0_0->mcs_index, pusch_config_pdu_0_0->mcs_table);
+    pusch_config_pdu_0_0->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu_0_0->mcs_index, pusch_config_pdu_0_0->mcs_table);
+    if (pusch_config_pdu_0_0->target_code_rate == 0 || pusch_config_pdu_0_0->qam_mod_order == 0) {
+      LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected UL DCI. Ignoring DCI! \n");
+      return -1;
+    }
+
     /* NDI */
     pusch_config_pdu_0_0->pusch_data.new_data_indicator = dci->ndi;
     /* RV */
@@ -3293,7 +3330,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* BANDWIDTH_PART_IND */
     //pusch_config_pdu_0_1->bandwidth_part_ind = dci->bwp_indicator.val;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-    nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val);
+    if (nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val) < 0)
+      return -1;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_1,NULL,dci->time_domain_assignment.val) < 0)
       return -1;
@@ -3651,7 +3689,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
+    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->frequency_domain_assignment.val) < 0)
+      return -1;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0)
       return -1;
@@ -3669,6 +3708,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* MCS */
     dlsch_config_pdu_1_0->mcs = dci->mcs;
+    // Basic sanity check for MCS value to check for a false or erroneous DCI
+    if (dlsch_config_pdu_1_0->mcs > 28) {
+      LOG_W(MAC, "MCS value % d out of bounds! Possibly due to false DCI. Ignoring DCI!!\n", dlsch_config_pdu_1_0->mcs);
+      return -1;
+    }
     /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
     dlsch_config_pdu_1_0->ndi = dci->ndi;
     /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -3790,7 +3834,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* BANDWIDTH_PART_IND */
     //    dlsch_config_pdu_1_1->bandwidth_part_ind = dci->bandwidth_part_ind;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
+    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val) < 0)
+      return -1;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val) < 0)
       return -1;
@@ -3813,12 +3858,22 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_1->zp_csi_rs_trigger = dci->zp_csi_rs_trigger.val;
     /* MCS (for transport block 1)*/
     dlsch_config_pdu_1_1->mcs = dci->mcs;
+    // Basic sanity check for MCS value to check for a false or erroneous DCI
+    if (dlsch_config_pdu_1_1->mcs > 28) {
+      LOG_W(MAC, "MCS value % d out of bounds! Possibly due to false DCI. Ignoring DCI!!\n", dlsch_config_pdu_1_1->mcs);
+      return -1;
+    }
     /* NDI (for transport block 1)*/
     dlsch_config_pdu_1_1->ndi = dci->ndi;
     /* RV (for transport block 1)*/
     dlsch_config_pdu_1_1->rv = dci->rv;
     /* MCS (for transport block 2)*/
     dlsch_config_pdu_1_1->tb2_mcs = dci->mcs2.val;
+    // Basic sanity check for MCS value to check for a false or erroneous DCI
+    if (dlsch_config_pdu_1_1->tb2_mcs > 28) {
+      LOG_W(MAC, "MCS value % d out of bounds! Possibly due to false DCI. Ignoring DCI!!\n", dlsch_config_pdu_1_1->tb2_mcs);
+      return -1;
+    }
     /* NDI (for transport block 2)*/
     dlsch_config_pdu_1_1->tb2_ndi = dci->ndi2.val;
     /* RV (for transport block 2)*/
