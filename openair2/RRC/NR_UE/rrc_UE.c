@@ -1632,7 +1632,7 @@ nr_rrc_ue_process_securityModeCommand(
     securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm;
   NR_UE_rrc_inst->integrityProtAlgorithm =
     *securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm;
-memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   //memset((void *)&SecurityModeCommand,0,sizeof(SecurityModeCommand_t));
   ul_dcch_msg.message.present           = NR_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1         = calloc(1, sizeof(*ul_dcch_msg.message.choice.c1));
@@ -1696,7 +1696,7 @@ memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.present = NR_SecurityModeComplete__criticalExtensions_PR_securityModeComplete;
     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_IEs_t));
-	ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
     LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (gNB %d), rrc_TransactionIdentifier: %ld\n",
           ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index, securityModeCommand->rrc_TransactionIdentifier);
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,

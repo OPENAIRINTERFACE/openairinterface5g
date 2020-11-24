@@ -221,7 +221,7 @@ int ngap_gNB_handle_nas_first_req(
 
     ie->value.choice.UserLocationInformation.present = NGAP_UserLocationInformation_PR_userLocationInformationNR;
 
-    ie->value.choice.UserLocationInformation.choice.userLocationInformationNR = 
+    ie->value.choice.UserLocationInformation.choice.userLocationInformationNR =
         CALLOC(1, sizeof(*ie->value.choice.UserLocationInformation.choice.userLocationInformationNR));
     userinfo_nr_p = ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
 

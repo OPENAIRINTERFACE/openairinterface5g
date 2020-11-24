@@ -1572,7 +1572,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
     rrc_gNB_mui,
     size);
 #ifdef ITTI_SIM
-			  MessageDef *message_p;
+        MessageDef *message_p;
         uint8_t *message_buffer;
         message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
         memcpy (message_buffer, buffer, size);
