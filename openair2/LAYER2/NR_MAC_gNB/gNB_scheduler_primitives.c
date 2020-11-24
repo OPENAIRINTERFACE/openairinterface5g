@@ -1865,6 +1865,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
     UE_info->UE_sched_ctrl[UE_id].ta_apply = false;
     UE_info->UE_sched_ctrl[UE_id].ul_rssi = 0;
+    /* set illegal time domain allocation to force recomputation of all fields */
+    UE_info->UE_sched_ctrl[UE_id].pusch_save.time_domain_allocation = -1;
     UE_info->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch **)malloc(num_slots_ul*sizeof(NR_sched_pucch *));
     for (int s=0; s<num_slots_ul;s++)
       UE_info->UE_sched_ctrl[UE_id].sched_pucch[s] = (NR_sched_pucch *)malloc(2*sizeof(NR_sched_pucch));

@@ -506,7 +506,6 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize])
     rbSize++;
 
-  sched_ctrl->sched_pusch.time_domain_allocation = tda;
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
 
@@ -533,6 +532,24 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
     return;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
+
+  sched_ctrl->sched_pusch.time_domain_allocation = tda;
+  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+  const uint8_t num_dmrs_cdm_grps_no_data = 1;
+  /* we want to avoid a lengthy deduction of DMRS and other parameters in
+   * every TTI if we can save it, so check whether dci_format, TDA, or
+   * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+  NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
+  if (ps->time_domain_allocation != tda
+      || ps->dci_format != dci_format
+      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+    nr_save_pusch_fields(scc,
+                         sched_ctrl->active_ubwp,
+                         dci_format,
+                         tda,
+                         num_dmrs_cdm_grps_no_data,
+                         ps);
 
   sched_ctrl->sched_pusch.mcs = 9;
   sched_ctrl->sched_pusch.rbStart = rbStart;
@@ -569,34 +586,27 @@ void nr_schedule_ulsch(module_id_t module_id,
     cur_harq->state = ACTIVE_SCHED;
     cur_harq->last_tx_slot = sched_pusch->slot;
 
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    int dci_formats[2] = { f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0 , 0 };
     int rnti_types[2] = { NR_RNTI_C, 0 };
 
-    const int tda = sched_pusch->time_domain_allocation;
-    const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    NR_sched_pusch_save_t ps;
-    nr_save_pusch_fields(scc,
-                         sched_ctrl->active_ubwp,
-                         dci_formats[0],
-                         tda,
-                         num_dmrs_cdm_grps_no_data,
-                         &ps);
+    /* pre-computed PUSCH values that only change if time domain allocation,
+     * DCI format, or DMRS parameters change. Updated in the preprocessor
+     * through nr_save_pusch_fields() */
+    NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
 
     /* Calculate TBS from MCS */
     const uint8_t mcs = sched_pusch->mcs;
-    uint16_t R = nr_get_code_rate_ul(mcs, ps.mcs_table);
-    uint8_t Qm = nr_get_Qm_ul(mcs, ps.mcs_table);
-    if (ps.pusch_Config->tp_pi2BPSK
-        && ((ps.mcs_table == 3 && mcs < 2) || (ps.mcs_table == 4 && mcs < 6))) {
+    uint16_t R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+    uint8_t Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+    if (ps->pusch_Config->tp_pi2BPSK
+        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
       R >>= 1;
       Qm <<= 1;
     }
     const uint32_t tb_size = nr_compute_tbs(Qm,
                                             R,
                                             sched_pusch->rbSize,
-                                            ps.nrOfSymbols,
-                                            ps.N_PRB_DMRS * ps.num_dmrs_symb,
+                                            ps->nrOfSymbols,
+                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
                                             0,  // nb_rb_oh
                                             0,
                                             1 /* NrOfLayers */) >> 3;
@@ -639,23 +649,23 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->target_code_rate = R;
     pusch_pdu->qam_mod_order = Qm;
     pusch_pdu->mcs_index = mcs;
-    pusch_pdu->mcs_table = ps.mcs_table;
-    pusch_pdu->transform_precoding = ps.transform_precoding;
-    if (ps.pusch_Config->dataScramblingIdentityPUSCH)
-      pusch_pdu->data_scrambling_id = *ps.pusch_Config->dataScramblingIdentityPUSCH;
+    pusch_pdu->mcs_table = ps->mcs_table;
+    pusch_pdu->transform_precoding = ps->transform_precoding;
+    if (ps->pusch_Config->dataScramblingIdentityPUSCH)
+      pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
     pusch_pdu->nrOfLayers = 1;
 
     /* FAPI: DMRS */
-    pusch_pdu->ul_dmrs_symb_pos = ps.ul_dmrs_symb_pos;
-    pusch_pdu->dmrs_config_type = ps.dmrs_config_type;
+    pusch_pdu->ul_dmrs_symb_pos = ps->ul_dmrs_symb_pos;
+    pusch_pdu->dmrs_config_type = ps->dmrs_config_type;
     if (pusch_pdu->transform_precoding) { // transform precoding disabled
       long *scramblingid;
       if (pusch_pdu->scid == 0)
-        scramblingid = ps.NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
+        scramblingid = ps->NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
       else
-        scramblingid = ps.NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
+        scramblingid = ps->NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
       if (scramblingid == NULL)
         pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
       else
@@ -663,30 +673,30 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     else {
       pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
-      if (ps.NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
-        pusch_pdu->pusch_identity = *ps.NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
+      if (ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+        pusch_pdu->pusch_identity = *ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
       else
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
-    pusch_pdu->num_dmrs_cdm_grps_no_data = ps.num_dmrs_cdm_grps_no_data;
+    pusch_pdu->num_dmrs_cdm_grps_no_data = ps->num_dmrs_cdm_grps_no_data;
     pusch_pdu->dmrs_ports = 1;
 
     /* FAPI: Pusch Allocation in frequency domain */
-    AssertFatal(ps.pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
+    AssertFatal(ps->pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
     pusch_pdu->rb_start = sched_pusch->rbStart;
     pusch_pdu->rb_size = sched_pusch->rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
-    if (ps.pusch_Config->frequencyHopping==NULL)
+    if (ps->pusch_Config->frequencyHopping==NULL)
       pusch_pdu->frequency_hopping = 0;
     else
       pusch_pdu->frequency_hopping = 1;
 
     /* FAPI: Resource Allocation in time domain */
-    pusch_pdu->start_symbol_index = ps.startSymbolIndex;
-    pusch_pdu->nr_of_symbols = ps.nrOfSymbols;
+    pusch_pdu->start_symbol_index = ps->startSymbolIndex;
+    pusch_pdu->nr_of_symbols = ps->nrOfSymbols;
 
     /* PUSCH PDU */
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
@@ -696,7 +706,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     /* PUSCH PTRS */
-    if (ps.NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
+    if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
       // TODO to be fixed from RRC config
       uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
       uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
@@ -740,12 +750,16 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15));
     NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
     const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+    // NOTE: below functions assume that dci_formats is an array corresponding
+    // to all UL DCIs in the PDCCH, but for us it is a simple int. So before
+    // having multiple UEs, the below need to be changed (IMO the functions
+    // should fill for one DCI only and not handle all of them).
     config_uldci(sched_ctrl->active_ubwp,
                  pusch_pdu,
                  pdcch_pdu_rel15,
                  &dci_pdu_rel15[0],
-                 dci_formats,
-                 tda,
+                 &ps->dci_format,
+                 ps->time_domain_allocation,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
                  n_ubwp,
                  sched_ctrl->active_bwp->bwp_Id);
@@ -753,7 +767,7 @@ void nr_schedule_ulsch(module_id_t module_id,
                        secondaryCellGroup,
                        pdcch_pdu_rel15,
                        dci_pdu_rel15,
-                       dci_formats,
+                       &ps->dci_format,
                        rnti_types,
                        pusch_pdu->bwp_size,
                        sched_ctrl->active_bwp->bwp_Id);

@@ -407,7 +407,6 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
     }
   }
 
-  sched_ctrl->sched_pusch.time_domain_allocation = tda;
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
 
@@ -434,6 +433,24 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
     return;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
+
+  sched_ctrl->sched_pusch.time_domain_allocation = tda;
+  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+  const uint8_t num_dmrs_cdm_grps_no_data = 1;
+  /* we want to avoid a lengthy deduction of DMRS and other parameters in
+   * every TTI if we can save it, so check whether dci_format, TDA, or
+   * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+  NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
+  if (ps->time_domain_allocation != tda
+      || ps->dci_format != dci_format
+      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+    nr_save_pusch_fields(scc,
+                         sched_ctrl->active_ubwp,
+                         dci_format,
+                         tda,
+                         num_dmrs_cdm_grps_no_data,
+                         ps);
 
   sched_ctrl->sched_pusch.mcs = 9;
   sched_ctrl->sched_pusch.rbStart = rbStart;

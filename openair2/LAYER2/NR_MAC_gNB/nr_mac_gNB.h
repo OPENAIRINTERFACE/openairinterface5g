@@ -386,6 +386,7 @@ typedef struct {
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
   int pucch_occ_idx;
+  NR_sched_pusch_save_t pusch_save;
   NR_sched_pusch_t sched_pusch;
 
   /// CCE index and aggregation, should be coherent with cce_list
