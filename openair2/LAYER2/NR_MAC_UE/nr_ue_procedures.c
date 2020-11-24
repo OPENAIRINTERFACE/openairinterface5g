@@ -1392,7 +1392,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1;
   const int num_slots_per_tdd = nr_slots_per_frame[mu] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
   const int num_slots_ul = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
-  int index = slot + num_slots_ul - num_slots_per_tdd;
+  int index = (slot + num_slots_ul - num_slots_per_tdd) % num_slots_per_tdd;
   LOG_D(MAC, "nr_ue_procedures: get_ul_config_request() slots per tdd %d, num_slots_ul %d, index %d\n", 
                 num_slots_per_tdd,
                 num_slots_ul,
