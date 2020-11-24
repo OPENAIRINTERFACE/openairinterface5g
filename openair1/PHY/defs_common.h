@@ -891,6 +891,7 @@ typedef enum {
 typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
   WORKER_CONF_t    worker_conf;
+  uint8_t numULProcThreads;
 } THREAD_STRUCT;
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;

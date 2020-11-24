@@ -870,12 +870,13 @@ void init_gNB_proc(int inst) {
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  int threadCnt = min(numCPU, get_uldeocde_thread_count());
   char ul_pool[80];
-  sprintf(ul_pool,"%d",1);
+  sprintf(ul_pool,"-1");
   int s_offset = 0;
-  for (int icpu=2; icpu<numCPU; icpu++) {
-    sprintf(ul_pool+1+s_offset,",%d",icpu);
-    s_offset += 2;
+  for (int icpu=2; icpu<threadCnt; icpu++) {
+    sprintf(ul_pool+2+s_offset,",-1");
+    s_offset += 3;
   }
   initTpool(ul_pool, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
