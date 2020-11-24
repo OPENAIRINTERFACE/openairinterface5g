@@ -340,6 +340,8 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                           setup_e_rabs;
   /* Total number of pdu session already setup in the list */
   uint8_t                           setup_pdu_sessions;
+  /* Number of e_rab to be setup in the list */
+  uint8_t                            nb_of_e_rabs;
   /* Number of pdu session to be setup in the list */
   uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
@@ -347,6 +349,8 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                            nb_of_failed_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
+  /* list of pdu session to be setup by RRC layers */
+  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   pdu_session_param_t                pdusession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
