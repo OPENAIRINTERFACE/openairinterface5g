@@ -632,9 +632,11 @@ function main() {
   cd  $DIR/$BUILD_DIR/build
   if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
   if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
-  CMAKE_CMD="$CMAKE_CMD -DNOAVX512=\"${NOAVX512[*]}\""
+  # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
+  # e.g., cmake_targets/ran_build/build, hence the ../../..
+  CMAKE_CMD="$CMAKE_CMD -DNOAVX512=\"${NOAVX512[*]}\" ../../.."
   echo_info "running $CMAKE_CMD"
-  eval $CMAKE_CMD ../..
+  eval $CMAKE_CMD
   
   for f in $execlist ; do
       echo_info "Compiling $f..."
