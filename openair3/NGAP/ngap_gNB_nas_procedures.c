@@ -344,11 +344,11 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
   DevAssert(pdu != NULL);
 
   /* UE-related procedure -> stream != 0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream == 0\n",
-               assoc_id);
-    return -1;
-  }
+  // if (stream == 0) {
+  //     NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream == 0\n",
+  //                assoc_id);
+  //     return -1;
+  // }
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR(
@@ -581,6 +581,7 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
   /* Prepare the NGAP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage = (NGAP_InitiatingMessage_t *)calloc(1,sizeof(NGAP_InitiatingMessage_t));
   pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_NASNonDeliveryIndication;
   pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
   pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_NASNonDeliveryIndication;

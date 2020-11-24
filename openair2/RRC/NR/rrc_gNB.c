@@ -1097,12 +1097,40 @@ rrc_gNB_decode_dcch(
 
         ue_context_p->ue_context.ue_release_timer = 0;
         break;
-      case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
+
+        case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+            LOG_I(NR_RRC,"Recived RRC GNB UL Information Transfer \n");
+            if(!ue_context_p) {
+                LOG_I(NR_RRC, "Processing ulInformationTransfer UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+                break;
+            }
+
+            LOG_D(NR_RRC,"[MSG] RRC UL Information Transfer \n");
+            LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                        "[MSG] RRC UL Information Transfer \n");
+            MSC_LOG_RX_MESSAGE(
+              MSC_RRC_GNB,
+              MSC_RRC_UE,
+              Rx_sdu,
+              sdu_sizeP,
+              MSC_AS_TIME_FMT" ulInformationTransfer UE %x size %u",
+              MSC_AS_TIME_ARGS(ctxt_pP),
+              ue_context_p->ue_context.rnti,
+              sdu_sizeP);
+
+            if (AMF_MODE_ENABLED == 1) {
+                rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP,
+                                          ue_context_p,
+                                          ul_dcch_msg);
+            }
+            break;
+
+        case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
         // to avoid segmentation fault
-        if(!ue_context_p) {
-          LOG_I(NR_RRC, "Processing securityModeComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
-          break;
-        }
+           if(!ue_context_p) {
+              LOG_I(NR_RRC, "Processing securityModeComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+              break;
+           }
 
         LOG_I(NR_RRC,
               PROTOCOL_NR_RRC_CTXT_UE_FMT" received securityModeComplete on UL-DCCH %d from UE\n",
@@ -1122,6 +1150,31 @@ rrc_gNB_decode_dcch(
         rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
         //rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
         break;
+        case NR_UL_DCCH_MessageType__c1_PR_securityModeFailure:
+            LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                       "[MSG] NR RRC Security Mode Failure\n");
+            MSC_LOG_RX_MESSAGE(
+                MSC_RRC_GNB,
+                MSC_RRC_UE,
+                Rx_sdu,
+                sdu_sizeP,
+                MSC_AS_TIME_FMT" securityModeFailure UE %x size %u",
+                MSC_AS_TIME_ARGS(ctxt_pP),
+                ue_context_p->ue_context.rnti,
+                sdu_sizeP);
+            LOG_W(NR_RRC,
+                  PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
+                  "(securityModeFailure) ---> RRC_gNB\n",
+                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+                  DCCH,
+                  sdu_sizeP);
+            
+            if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+              xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+            }
+            
+            rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
+            break;
 
       case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
         if(!ue_context_p) {
@@ -1227,10 +1280,14 @@ rrc_gNB_decode_dcch(
 
           if(eutra_index == -1)
           break;
-        }
-
-        rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
-        break;
+      }
+      if (AMF_MODE_ENABLED == 1) {
+          rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(ctxt_pP,
+                                    ue_context_p,
+                                    ul_dcch_msg);
+      }
+      rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+      break;
 
       default:
         break;
