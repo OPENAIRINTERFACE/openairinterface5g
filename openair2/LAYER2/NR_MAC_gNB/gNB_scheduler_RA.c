@@ -43,6 +43,7 @@
 
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
+extern uint16_t sl_ahead;
 
 uint8_t DELTA[4]= {2,3,4,6};
 
@@ -134,10 +135,12 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
   return index;
 }
+
+
 //Compute Total active SSBs and RO available
 void find_SSB_and_RO_available(module_id_t module_idP) {
 
-	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &gNB->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
@@ -145,7 +148,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t mu,N_dur=0,N_t_slot=0,start_symbol=0,N_RA_slot = 0;
   uint16_t format,N_RA_sfn = 0,unused_RA_occasion,repetition = 0;
-	uint8_t num_active_ssb = 0;
+  uint8_t num_active_ssb = 0;
   uint8_t max_association_period = 1;
 
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
@@ -367,7 +370,14 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
   *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
- 
+
+  // we can't schedule msg2 before sl_ahead since prach
+  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
+  if ((eff_slot-rach_slot)<=sl_ahead) {
+    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  }
+
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
       slot_window = 1;
@@ -994,7 +1004,7 @@ void nr_fill_rar(uint8_t Mod_idP,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
-  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index);
+  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u\n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index);
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;
