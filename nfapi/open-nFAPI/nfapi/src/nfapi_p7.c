@@ -899,27 +899,27 @@ static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 
 	if (!(push16(pNfapiMsg->SFN , ppWritePackedMsg, end) &&
 		push16(pNfapiMsg->Slot , ppWritePackedMsg, end) &&
-		push8(pNfapiMsg->nGroup , ppWritePackedMsg, end) &&
-		push8(pNfapiMsg->nPDUs , ppWritePackedMsg, end) &&
-		pusharray8(pNfapiMsg->nUe ,256,pNfapiMsg->nGroup, ppWritePackedMsg, end)
+		push8(pNfapiMsg->dl_tti_request_body.nGroup , ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->dl_tti_request_body.nPDUs , ppWritePackedMsg, end) &&
+		pusharray8(pNfapiMsg->dl_tti_request_body.nUe ,256,pNfapiMsg->dl_tti_request_body.nGroup, ppWritePackedMsg, end)
 		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
 		))
 			return 0;
 
 	int arr[12];
-	for(int i=0;i<pNfapiMsg->nGroup;i++)
+	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nGroup;i++)
 	{
-		for(int j=0;j<pNfapiMsg->nUe[i];j++)
+		for(int j=0;j<pNfapiMsg->dl_tti_request_body.nUe[i];j++)
 		{
-			arr[j] = pNfapiMsg->PduIdx[i][j];
+			arr[j] = pNfapiMsg->dl_tti_request_body.PduIdx[i][j];
 		}
-		if(!(pusharray8(arr,12,pNfapiMsg->nUe[i],ppWritePackedMsg, end)))
+		if(!(pusharray8(arr,12,pNfapiMsg->dl_tti_request_body.nUe[i],ppWritePackedMsg, end)))
 		return 0;
 	}
 
-	for(int i=0;i<pNfapiMsg->nPDUs;i++)	
+	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nPDUs;i++)	
 	{
-		if(!pack_dl_tti_request_body_value(&pNfapiMsg->dl_tti_pdu_list[i],ppWritePackedMsg,end))
+		if(!pack_dl_tti_request_body_value(&pNfapiMsg->dl_tti_request_body.dl_tti_pdu_list[i],ppWritePackedMsg,end))
 		return 0;
 	}
 
@@ -4555,9 +4555,9 @@ static uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 
 	if (!(pull16(ppReadPackedMsg,&pNfapiMsg->SFN, end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
-		pull8(ppReadPackedMsg, &pNfapiMsg->nGroup, end) &&
-		pull8(ppReadPackedMsg, &pNfapiMsg->nPDUs, end) &&
-		pullarray8(ppReadPackedMsg,&pNfapiMsg->nUe ,256,pNfapiMsg->nGroup, end)
+		pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.nGroup, end) &&
+		pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.nPDUs, end) &&
+		pullarray8(ppReadPackedMsg,&pNfapiMsg->dl_tti_request_body.nUe ,256,pNfapiMsg->dl_tti_request_body.nGroup, end)
 		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
 		))
 			return 0;
@@ -4566,19 +4566,19 @@ static uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 	// }
 
 	int arr[12];
-	for(int i=0;i<pNfapiMsg->nGroup;i++)
+	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nGroup;i++)
 	{
-		for(int j=0;j<pNfapiMsg->nUe[i];j++)
+		for(int j=0;j<pNfapiMsg->dl_tti_request_body.nUe[i];j++)
 		{
-			arr[j] = pNfapiMsg->PduIdx[i][j];
+			arr[j] = pNfapiMsg->dl_tti_request_body.PduIdx[i][j];
 		}
-		if(!(pullarray8(ppReadPackedMsg,arr,12,pNfapiMsg->nUe[i], end)))
+		if(!(pullarray8(ppReadPackedMsg,arr,12,pNfapiMsg->dl_tti_request_body.nUe[i], end)))
 		return 0;
 	}
 
-	for(int i=0;i<pNfapiMsg->nPDUs;i++)	
+	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nPDUs;i++)	
 	{
-		if(!unpack_dl_tti_request_body_value(ppReadPackedMsg, end, &pNfapiMsg->dl_tti_pdu_list[i]))
+		if(!unpack_dl_tti_request_body_value(ppReadPackedMsg, end, &pNfapiMsg->dl_tti_request_body.dl_tti_pdu_list[i]))
 		return 0;
 	}
 

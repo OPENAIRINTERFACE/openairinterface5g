@@ -339,11 +339,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                        &harq_process->K,
                        pz,
                        &harq_process->F,
-<<<<<<< HEAD
-                       BG);
-=======
                        harq_process->BG);
->>>>>>> fork_develop_new
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_OUT);
 
     F = harq_process->F;
@@ -406,13 +402,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,harq_process->BG,&impp);
     }
 
-<<<<<<< HEAD
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
-    
-    nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
-    
-=======
->>>>>>> fork_develop_new
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
     //stop_meas(te_stats);

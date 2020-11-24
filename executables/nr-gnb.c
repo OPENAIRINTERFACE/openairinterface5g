@@ -144,6 +144,8 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
 struct timespec current;
 clock_gettime(CLOCK_MONOTONIC, &current);
 //LOG_I(PHY,"%sCurrent time %d.%d,frame_rx %d,slot_rx %d,frame_tx %d,slot_tx %d\n", __FUNCTION__, current.tv_sec,current.tv_nsec,frame_rx,slot_rx,frame_tx,slot_tx);
+  // if(nfapi_mode!=0)
+  // sf_ahead = (uint16_t) ceil((float)6/(0x01<<gNB->frame_parms.numerology_index)); 
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -261,13 +263,6 @@ clock_gettime(CLOCK_MONOTONIC, &current);
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
 
     // Do PRACH RU processing
-<<<<<<< HEAD
-    int prach_id=find_nr_prach(gNB,frame_rx,slot_rx,0,SEARCH_EXIST);
-    if (prach_id>=0) {
-      L1_nr_prach_procedures(gNB,frame_rx,slot_rx,&gNB->prach_vars.list[prach_id].pdu);
-      gNB->prach_vars.list[prach_id].frame=-1;
-    }
-=======
     L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
 
     //apply the rx signal rotation here
@@ -278,7 +273,6 @@ clock_gettime(CLOCK_MONOTONIC, &current);
 			 gNB->frame_parms.Ncp==EXTENDED?12:14,
 			 gNB->frame_parms.ofdm_symbol_size);
     
->>>>>>> fork_develop_new
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 

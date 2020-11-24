@@ -1703,9 +1703,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
                            runmode_t mode)
-{ struct timespec curr_time;
-  clock_gettime(CLOCK_MONOTONIC,&curr_time);
-  //printf("Current time: %d.%d",curr_time.tv_sec,curr_time.tv_nsec);
+{
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
@@ -1964,31 +1962,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_ra[gNB_id]->active = 0;
 
-    // #if UE_TIMING_TRACE
-    //   start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
-    // #endif
-
-    nr_ue_dlsch_procedures(ue,
-                           proc,
-                           eNB_id,
-                           RA_PDSCH,
-                           ue->dlsch_ra[eNB_id],
-                           NULL,
-                           &ue->dlsch_ra_errors[eNB_id],
-                           mode);
-
-     // #if UE_TIMING_TRACE
-     //   stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
-     #if DISABLE_LOG_X
-      printf("[SFN %d] Slot1: Pdsch Proc %5.2f\n", nr_tti_rx, ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
-      printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n", nr_tti_rx, ue->dlsch_procedures_stat[ue->current_thread_id[ nr_tti_rx]].p_time/(cpuf*1000.0));
-     #else
-      LOG_D(PHY, "[SFN %d] Slot1: Pdsch Proc %5.2f\n", nr_tti_rx, ue->pdsch_procedures_stat[ue->current_thread_id[ nr_tti_rx]].p_time/(cpuf*1000.0));
-      LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n", nr_tti_rx, ue->dlsch_procedures_stat[ue->current_thread_id[ nr_tti_rx]].p_time/(cpuf*1000.0));
-     #endif
-     // #endif
-
-     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
     
   // do procedures for C-RNTI

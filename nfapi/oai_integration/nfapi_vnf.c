@@ -474,7 +474,7 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti,
   // we want to generate subframe (n+N), so TS_tx = TX_rx+N*samples_per_tti,
   // and proc->subframe_tx = proc->subframe_rx+sf_ahead
-  L1_proc->timestamp_tx = proc->timestamp_rx + (slot_ahead *fp->samples_per_tti);
+  L1_proc->timestamp_tx = proc->timestamp_rx + (slot_ahead *fp->samples_per_subframe);
   L1_proc->frame_rx     = proc->frame_rx;
   L1_proc->slot_rx      = proc->slot_rx;
   L1_proc->frame_tx     = (L1_proc->slot_rx > (19-slot_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
@@ -1610,8 +1610,8 @@ int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);
 
-  dl_config_req->nPDUs                        = 0;
-  dl_config_req->nGroup                       = 0;
+  dl_config_req->dl_tti_request_body.nPDUs                        = 0;
+  dl_config_req->dl_tti_request_body.nGroup                       = 0;
 
 
   if (retval!=0) {

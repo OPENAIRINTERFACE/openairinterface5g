@@ -144,35 +144,6 @@ double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0},{20,0,0,0}};
 
 // UE and OAI config variables
 
-<<<<<<< HEAD
-int rx_input_level_dBm;
-
-//static int online_log_messages=0;
-
-
-int otg_enabled;
-//int number_of_cards = 1;
-
-static NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
-int16_t node_synch_ref[MAX_NUM_CCs];
-
-uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 20;
-uint32_t timing_advance = 0;
-uint64_t num_missed_slots=0; // counter for the number of missed slots
-
-
-int transmission_mode=1;
-int numerology = 0;
-int usrp_tx_thread = 0;
-
-/* flag set by eNB conf file to specify if the radio head is local or remote (default option is local) */
-//uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
-/* struct for ethernet specific parameters given in eNB conf file */
-//eth_params_t *eth_params;
-
-double cpuf;
-=======
 openair0_config_t openair0_cfg[MAX_CARDS];
 int16_t           node_synch_ref[MAX_NUM_CCs];
 int               otg_enabled;
@@ -187,7 +158,6 @@ int            numerology = 0;
 int        usrp_tx_thread = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
->>>>>>> fork_develop_new
 
 char uecap_xer[1024],uecap_xer_in=0;
 
@@ -239,40 +209,6 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-<<<<<<< HEAD
-
-void reset_stats(long arg) {
-  //int i,j,k;
-  /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
-
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-      for (k=0; k<8; k++) { //harq_processes
-          for (j=0; j<phy_vars_eNB->dlsch[i][0]->Mlimit; j++) {
-              phy_vars_eNB->UE_stats[i].dlsch_NAK[k][j]=0;
-              phy_vars_eNB->UE_stats[i].dlsch_ACK[k][j]=0;
-              phy_vars_eNB->UE_stats[i].dlsch_trials[k][j]=0;
-          }
-
-          phy_vars_eNB->UE_stats[i].dlsch_l2_errors[k]=0;
-          phy_vars_eNB->UE_stats[i].ulsch_errors[k]=0;
-          phy_vars_eNB->UE_stats[i].ulsch_consecutive_errors=0;
-
-          for (j=0; j<phy_vars_eNB->ulsch[i]->Mlimit; j++) {
-              phy_vars_eNB->UE_stats[i].ulsch_decoding_attempts[k][j]=0;
-              phy_vars_eNB->UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
-              phy_vars_eNB->UE_stats[i].ulsch_round_errors[k][j]=0;
-              phy_vars_eNB->UE_stats[i].ulsch_round_fer[k][j]=0;
-          }
-      }
-
-      phy_vars_eNB->UE_stats[i].dlsch_sliding_cnt=0;
-      phy_vars_eNB->UE_stats[i].dlsch_NAK_round0=0;
-      phy_vars_eNB->UE_stats[i].dlsch_mcs_offset=0;
-  }*/
-}
-
-=======
->>>>>>> fork_develop_new
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -614,74 +550,6 @@ int main( int argc, char **argv ) {
       mac->if_module->phy_config_request(&mac->phy_config);
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
-<<<<<<< HEAD
-    nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
-
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0) {
-      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
-    }
-   
-    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
-    init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
-
-    UE[CC_id]->mac_enabled = 1;
-    UE[CC_id]->if_inst = nr_ue_if_module_init(0);
-    UE[CC_id]->UE_scan = UE_scan;
-    UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
-    UE[CC_id]->UE_fo_compensation = UE_fo_compensation;
-    UE[CC_id]->mode    = mode;
-    UE[CC_id]->no_timing_correction = UE_no_timing_correction;
-    printf("UE[%d]->mode = %d\n",CC_id,mode);
-
-    UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
-    UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-
-    if (UE[CC_id]->frame_parms.frame_type == FDD) {
-      UE[CC_id]->N_TA_offset = 0;
-    } else {
-      int N_RB = UE[CC_id]->frame_parms.N_RB_DL;
-      int N_TA_offset = UE[CC_id]->frame_parms.ul_CarrierFreq < 6e9 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
-      double factor=1;
-      switch (UE[CC_id]->frame_parms.numerology_index) {
-        case 0: //15 kHz scs
-          AssertFatal(N_TA_offset == 400, "scs_common 15kHz only for FR1\n");
-          if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
-          else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
-          else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
-          else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
-          else AssertFatal(1==0,"Too many PRBS for mu=0\n");
-          break;
-        case 1: //30 kHz sc
-          AssertFatal(N_TA_offset == 400, "scs_common 30kHz only for FR1\n");
-          if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
-          else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
-          break;
-        case 2: //60 kHz scs
-          AssertFatal(1==0,"scs_common should not be 60 kHz\n");
-          break;
-        case 3: //120 kHz scs
-          AssertFatal(N_TA_offset == 431, "scs_common 120kHz only for FR2\n");
-          break;
-        case 4: //240 kHz scs
-          AssertFatal(1==0,"scs_common should not be 60 kHz\n");
-          if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
-          else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
-          else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
-          break;
-
-        if (N_RB == 100)
-          UE[CC_id]->N_TA_offset = 624;
-        else if (N_RB == 50)
-          UE[CC_id]->N_TA_offset = 624/2;
-        else if (N_RB == 25)
-          UE[CC_id]->N_TA_offset = 624/4;
-      }
-      if (UE[CC_id]->frame_parms.threequarter_fs == 1) factor = factor*.75;
-      UE[CC_id]->N_TA_offset = (int)(N_TA_offset * factor);
-      LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
-=======
 
     nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
     init_symbol_rotation(&UE[CC_id]->frame_parms, UE[CC_id]->frame_parms.dl_CarrierFreq);
@@ -693,7 +561,6 @@ int main( int argc, char **argv ) {
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
       if (frame_parms[CC_id]->frame_type == TDD)
         frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
->>>>>>> fork_develop_new
     }
     #endif
   }
@@ -708,10 +575,6 @@ int main( int argc, char **argv ) {
   if(IS_SOFTMODEM_DOFORMS) { 
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
-<<<<<<< HEAD
-  number_of_cards = 1;
-=======
->>>>>>> fork_develop_new
 
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id]->rf_map.card=0;

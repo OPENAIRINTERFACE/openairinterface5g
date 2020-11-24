@@ -1062,7 +1062,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
             memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
           }
         }
-	*/
+	
 
         /*
               for (i=0; i<MAX_MOBILES_PER_ENB; i++) {

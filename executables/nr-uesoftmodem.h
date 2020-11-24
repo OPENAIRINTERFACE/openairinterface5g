@@ -61,17 +61,8 @@
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
   {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \
   {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, iptr:&threequarter_fs,                 defintval:0,           TYPE_INT,    0}, \
-<<<<<<< HEAD
-  {"m" ,                    CONFIG_HLP_DLMCS,       0,              uptr:&target_dl_mcs,                   defintval:0,           TYPE_UINT,   0}, \
-  {"t" ,                    CONFIG_HLP_ULMCS,       0,              uptr:&target_ul_mcs,                   defintval:0,           TYPE_UINT,   0}, \
   {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
   {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"s" ,                    CONFIG_HLP_SNR,         0,              dblptr:&snr_dB,                        defdblval:25,          TYPE_DOUBLE, 0}, \
-  {"nbiot-disable",         CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL, iptr:&nonbiotflag,                     defintval:0,           TYPE_INT,    0}, \
-=======
-  {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
->>>>>>> fork_develop_new
   {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}, \
   {"rrc_config_path",       CONFIG_HLP_RRC_CFG_PATH,0,              strptr:(char **)&rrc_config_path,      defstrval:"./",        TYPE_STRING, 0} \
 }

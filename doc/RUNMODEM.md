@@ -57,8 +57,6 @@ oai supports [number of deployment](FEATURE_SET.md) model, the following are tes
 2. if4p5 mode, where frequency domain samples are carried over ethernet, from the RRU which implement part of L1(FFT,IFFT,part of PRACH),  to a RAU
 
 # 5G NR
-<<<<<<< HEAD
-=======
 
 As of February 2020, all 5G NR development is part of the develop branch (the branch develop-nr is no longer maintained). This also means that all new development will be merged into there once it passes all the CI. 
 
@@ -165,7 +163,6 @@ UE on machine 2:
 `sudo ./nr-uesoftmodem -C 2169080000 --CO -400000000`
 
 
->>>>>>> fork_develop_new
 
 As of February 2020, all 5G NR development is part of the develop branch (the branch develop-nr is no longer maintained). This also means that all new development will be merged into there once it passes all the CI. 
 

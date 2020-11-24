@@ -107,14 +107,6 @@ int nr_phy_init_RU(RU_t *ru) {
     /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
     //    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
     //		"nb_antennas_rx too large");
-<<<<<<< HEAD
-    ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
-
-    for (i=0; i<ru->nb_rx; i++) {
-      // largest size for PRACH FFT is 4x98304 (16*24576)
-      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( 4*98304*2*sizeof(int16_t) );
-      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
-=======
     for (j=0;j<NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX;j++) {
       ru->prach_rxsigF[j] = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
       
@@ -123,7 +115,6 @@ int nr_phy_init_RU(RU_t *ru) {
 	ru->prach_rxsigF[j][i] = (int16_t*)malloc16_clear( 4*98304*2*sizeof(int16_t) );
 	LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[j][i]);
       }
->>>>>>> fork_develop_new
     }
     
     AssertFatal(RC.nb_nr_L1_inst <= NUMBER_OF_eNB_MAX,"gNB instances %d > %d\n",

@@ -140,11 +140,6 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 {
 
   int nb_connected_gNB = 1, gNB_id;
-<<<<<<< HEAD
-
-  memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
-=======
->>>>>>> fork_develop_new
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
@@ -167,12 +162,9 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
   // intialize transport
   init_nr_ue_transport(ue, abstraction_flag);
-<<<<<<< HEAD
-=======
 
   // init N_TA offset
   init_N_TA_offset(ue);
->>>>>>> fork_develop_new
 }
 
 /*!
@@ -835,7 +827,7 @@ void *UE_thread(void *arg) {
 }
 
 void init_NR_UE(int nb_inst, char* rrc_config_path) {
-  int inst;
+    int inst;
   NR_UE_MAC_INST_t *mac_inst;
   NR_UE_RRC_INST_t* rrc_inst;
   

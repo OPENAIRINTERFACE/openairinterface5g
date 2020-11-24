@@ -67,11 +67,7 @@ int nr_find_pucch(uint16_t rnti,
   AssertFatal(gNB!=NULL,"gNB is null\n");
   int index = -1;
 
-<<<<<<< HEAD
-  for (int i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
-=======
   for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
->>>>>>> fork_develop_new
     AssertFatal(gNB->pucch[i]!=NULL,"gNB->pucch[%d] is null\n",i);
     if ((gNB->pucch[i]->active >0) &&
         (gNB->pucch[i]->pucch_pdu.rnti==rnti) &&
@@ -100,10 +96,6 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
   pucch->slot = slot;
   pucch->active = 1;
   memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
-<<<<<<< HEAD
-
-=======
->>>>>>> fork_develop_new
 }
 
 
@@ -387,11 +379,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
 
   // estimate CQI for MAC (from antenna port 0 only)
-<<<<<<< HEAD
-  int SNRtimes10 = dB_fixed_times10(signal_energy(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)) - (10*gNB->measurements.n0_power_tot_dB);
-=======
   int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)) - (10*gNB->measurements.n0_power_tot_dB);
->>>>>>> fork_develop_new
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
@@ -405,15 +393,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
-<<<<<<< HEAD
-  uci_pdu->ul_cqi = cqi; // currently not valid
-  uci_pdu->timing_advance = 0xffff; // currently not valid
-  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
-=======
   uci_pdu->ul_cqi = cqi;
   uci_pdu->timing_advance = 0xffff; // currently not valid
   uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
->>>>>>> fork_develop_new
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -430,13 +412,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-<<<<<<< HEAD
-    LOG_I(PHY, "HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
-          uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
-=======
     LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
           slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
->>>>>>> fork_develop_new
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
@@ -450,13 +427,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-<<<<<<< HEAD
-    LOG_I(PHY, "HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
-          uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
-=======
     LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
           slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
->>>>>>> fork_develop_new
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
@@ -1116,11 +1088,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fork_develop_new
 
   AssertFatal(pucch_pdu->nr_of_symbols==1 || pucch_pdu->nr_of_symbols==2,
 	      "Illegal number of symbols  for PUCCH 2 %d\n",pucch_pdu->nr_of_symbols);
@@ -1149,11 +1116,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int16_t rd_re_ext[Prx2][4*pucch_pdu->nr_of_symbols*pucch_pdu->prb_size] __attribute__((aligned(32)));
   int16_t rd_im_ext[Prx2][4*pucch_pdu->nr_of_symbols*pucch_pdu->prb_size] __attribute__((aligned(32)));
   int16_t *r_re_ext_p,*r_im_ext_p,*rd_re_ext_p,*rd_im_ext_p;
-<<<<<<< HEAD
-=======
 
   int nb_re_pucch = 12*pucch_pdu->prb_size;
->>>>>>> fork_develop_new
 
   int16_t rp[Prx2][nb_re_pucch*2],*tmp_rp;
   __m64 dmrs_re,dmrs_im;
@@ -1191,63 +1155,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	rd_re_ext_p=&rd_re_ext[aa][4*prb];
 	rd_im_ext_p=&rd_im_ext[aa][4*prb];
 
-<<<<<<< HEAD
-	r_re_ext_p[0]=rp[aa][0];
-	r_im_ext_p[0]=rp[aa][1];
-	rd_re_ext_p[0]=rp[aa][2];
-	rd_im_ext_p[0]=rp[aa][3];
-	r_re_ext_p[1]=rp[aa][4];
-	r_im_ext_p[1]=rp[aa][5];
-
-	r_re_ext_p[2]=rp[aa][6];
-	r_im_ext_p[2]=rp[aa][7];
-	rd_re_ext_p[1]=rp[aa][8];
-	rd_im_ext_p[1]=rp[aa][9];
-	r_re_ext_p[3]=rp[aa][10];
-	r_im_ext_p[3]=rp[aa][11];
-
-	r_re_ext_p[4]=rp[aa][12];
-	r_im_ext_p[4]=rp[aa][13];
-	rd_re_ext_p[2]=rp[aa][14];
-	rd_im_ext_p[2]=rp[aa][15];
-	r_re_ext_p[5]=rp[aa][16];
-	r_im_ext_p[5]=rp[aa][17];
-
-	r_re_ext_p[6]=rp[aa][18];
-	r_im_ext_p[6]=rp[aa][19];
-	rd_re_ext_p[3]=rp[aa][20];
-	rd_im_ext_p[3]=rp[aa][21];
-	r_re_ext_p[7]=rp[aa][22];
-	r_im_ext_p[7]=rp[aa][23];
-
-	r_re_ext_p[8]=rp[aa][24];
-	r_im_ext_p[8]=rp[aa][25];
-	rd_re_ext_p[4]=rp[aa][26];
-	rd_im_ext_p[4]=rp[aa][27];
-	r_re_ext_p[9]=rp[aa][28];
-	r_im_ext_p[9]=rp[aa][29];
-
-	r_re_ext_p[10]=rp[aa][30];
-	r_im_ext_p[10]=rp[aa][31];
-	rd_re_ext_p[5]=rp[aa][32];
-	rd_im_ext_p[5]=rp[aa][33];
-	r_re_ext_p[11]=rp[aa][34];
-	r_im_ext_p[11]=rp[aa][35];
-
-	r_re_ext_p[12]=rp[aa][36];
-	r_im_ext_p[12]=rp[aa][37];
-	rd_re_ext_p[6]=rp[aa][38];
-	rd_im_ext_p[6]=rp[aa][39];
-	r_re_ext_p[13]=rp[aa][40];
-	r_im_ext_p[13]=rp[aa][41];
-
-	r_re_ext_p[14]=rp[aa][42];
-	r_im_ext_p[14]=rp[aa][43];
-	rd_re_ext_p[7]=rp[aa][44];
-	rd_im_ext_p[7]=rp[aa][45];
-	r_re_ext_p[15]=rp[aa][46];
-	r_im_ext_p[15]=rp[aa][47];
-=======
         for (int idx=0; idx<8; idx++) {
           r_re_ext_p[idx<<1]=rp[aa][prb*24+6*idx];
           r_im_ext_p[idx<<1]=rp[aa][prb*24+1+6*idx];
@@ -1256,16 +1163,11 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
           r_re_ext_p[1+(idx<<1)]=rp[aa][prb*24+4+6*idx];
           r_im_ext_p[1+(idx<<1)]=rp[aa][prb*24+5+6*idx];
         }
->>>>>>> fork_develop_new
 		  
 #ifdef DEBUG_NR_PUCCH_RX
 	for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext_p[i],rd_im_ext_p[i]);
 	for (int i=0;i<16;i++) printf("Ant %d PRB %d data[%d] -> (%d,%d)\n",aa,prb+(i>>3),i,r_re_ext_p[i],r_im_ext_p[i]);
 #endif
-<<<<<<< HEAD
-	rp[aa]+=48;
-=======
->>>>>>> fork_develop_new
       } // aa
     } // prb
 
@@ -1277,15 +1179,11 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     printf("slot %d, start_symbol_index %d, dmrs_scrambling_id %d\n",
 	   slot,pucch_pdu->start_symbol_index,pucch_pdu->dmrs_scrambling_id);
 #endif
-<<<<<<< HEAD
-    s = lte_gold_generic(&x1, &x2, 1);
-=======
     int reset = 1;
     for (int i=0; i<=(pucch_pdu->prb_start>>2); i++) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
->>>>>>> fork_develop_new
 
     for (int group=0;group<ngroup;group++) {
       // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
@@ -1547,11 +1445,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	
 	for (int aa=0;aa<Prx;aa++) {
 	  LOG_D(PHY,"pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
-<<<<<<< HEAD
-		corr32_re[group][aa],corr32_im[0][aa],
-=======
 		corr32_re[group][aa],corr32_im[group][aa],
->>>>>>> fork_develop_new
 		((int16_t*)(&prod_re[aa]))[0],
 		((int16_t*)(&prod_im[aa]))[0],
 		corr32_re[group][aa]+((int16_t*)(&prod_re[aa]))[0],
@@ -1629,26 +1523,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  corr_re = ( corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
 	  corr_im = ( corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
 	  corr_tmp += corr_re*corr_re + corr_im*corr_im;
-<<<<<<< HEAD
-	  /*	  
-	  LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
-		half_prb,cw,cw&15,cw>>4,aa,
-		((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
-		((int16_t*)&pucch2_polar_4bit[cw&15])[1],((int16_t*)&pucch2_polar_4bit[cw>>4])[1],
-		((int16_t*)&pucch2_polar_4bit[cw&15])[2],((int16_t*)&pucch2_polar_4bit[cw>>4])[2],
-		((int16_t*)&pucch2_polar_4bit[cw&15])[3],((int16_t*)&pucch2_polar_4bit[cw>>4])[3],
-		((int16_t*)&rp_re[aa][half_prb])[0],((int16_t*)&rp_im[aa][half_prb])[0],
-		((int16_t*)&rp_re[aa][half_prb])[1],((int16_t*)&rp_im[aa][half_prb])[1],
-		((int16_t*)&rp_re[aa][half_prb])[2],((int16_t*)&rp_im[aa][half_prb])[2],
-		((int16_t*)&rp_re[aa][half_prb])[3],((int16_t*)&rp_im[aa][half_prb])[3],
-		corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2),corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2),
-		((int16_t*)(&prod_re[aa]))[0],
-		((int16_t*)(&prod_im[aa]))[0],
-		corr_re,
-		corr_im,
-		corr_tmp);
-	  */	  
-=======
           /*
           LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
                 half_prb,cw,cw&15,cw>>4,aa,
@@ -1667,7 +1541,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                 corr_im,
                 corr_tmp);
           */
->>>>>>> fork_develop_new
 	}
 	corr16 = _mm_set1_epi16((int16_t)(corr_tmp>>8));
 	/*	
@@ -1721,17 +1594,11 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     } // half_prb
     // run polar decoder on llrs
     decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, currentPtr);
-<<<<<<< HEAD
-    LOG_D(PHY,"UCI decoderState %d, payload[0] %llux\n",decoderState,(unsigned long long)decodedPayload[0]);
-=======
     LOG_D(PHY,"UCI decoderState %d, payload[0] %llu\n",decoderState,(unsigned long long)decodedPayload[0]);
->>>>>>> fork_develop_new
     if (decoderState>0) decoderState=1;
     corr_dB = dB_fixed64(corr);
     LOG_D(PHY,"metric %d dB\n",corr_dB);
   }
-<<<<<<< HEAD
-=======
 
   re_offset = (12*pucch_pdu->prb_start) + (12*pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
   // estimate CQI for MAC (from antenna port 0 only)
@@ -1741,32 +1608,20 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   else if (SNRtimes10 >  635) cqi=255;
   else cqi=(640+SNRtimes10)/5;
 
->>>>>>> fork_develop_new
   uci_pdu->harq.harq_bit_len = pucch_pdu->bit_len_harq;
   uci_pdu->pduBitmap=0;
   uci_pdu->rnti=pucch_pdu->rnti;
   uci_pdu->handle=pucch_pdu->handle;
   uci_pdu->pucch_format=0;
-<<<<<<< HEAD
-  uci_pdu->ul_cqi=corr_dB;
-  // need to fill these field!
-  uci_pdu->timing_advance=31;
-  uci_pdu->rssi=0;
-=======
   uci_pdu->ul_cqi=cqi;
   uci_pdu->timing_advance=0xffff; // currently not valid
   uci_pdu->rssi=1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset],12*pucch_pdu->prb_size)));
->>>>>>> fork_develop_new
   if (pucch_pdu->bit_len_harq>0) {
     int harq_bytes=pucch_pdu->bit_len_harq>>3;
     if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
     uci_pdu->pduBitmap|=1;
     uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
-<<<<<<< HEAD
-    uci_pdu->harq.harq_crc = decoderState > 0 ? 1 : 0;
-=======
     uci_pdu->harq.harq_crc = decoderState;
->>>>>>> fork_develop_new
     int i=0;
     for (;i<harq_bytes-1;i++) {
       uci_pdu->harq.harq_payload[i] = decodedPayload[0] & 255;
@@ -1789,26 +1644,18 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     int csi_part1_bytes=pucch_pdu->bit_len_csi_part1>>3;
     if ((pucch_pdu->bit_len_csi_part1&7) > 0) csi_part1_bytes++;
     uci_pdu->csi_part1.csi_part1_payload = (uint8_t*)malloc(csi_part1_bytes);
-<<<<<<< HEAD
-    uci_pdu->csi_part1.csi_part1_crc = decoderState > 0 ? 1 : 0;
-=======
     uci_pdu->csi_part1.csi_part1_crc = decoderState;
->>>>>>> fork_develop_new
     int i=0;
     for (;i<csi_part1_bytes-1;i++) {
       uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & 255;
       decodedPayload[0]>>=8;
     }
     uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<(pucch_pdu->bit_len_csi_part1&7))-1);
-<<<<<<< HEAD
-    decodedPayload[0] >>= pucch_pdu->bit_len_csi_part1;      
-=======
     decodedPayload[0] >>= pucch_pdu->bit_len_csi_part1;
   }
   
   if (pucch_pdu->bit_len_csi_part2>0) {
     uci_pdu->pduBitmap|=8;
->>>>>>> fork_develop_new
   }
   
   if (pucch_pdu->bit_len_csi_part2>0) {

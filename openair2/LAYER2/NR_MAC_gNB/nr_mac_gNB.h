@@ -428,8 +428,6 @@ typedef struct {
 
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
-  rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
-  NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
   int Y[MAX_MOBILES_PER_GNB][3][160];
@@ -437,6 +435,7 @@ typedef struct {
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
+
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,

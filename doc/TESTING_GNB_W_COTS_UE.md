@@ -1,23 +1,8 @@
-<<<<<<< HEAD
-STATUS 2020/07/30 : under continuous improvement ; updated the configuration files links with CI approved reference files
-=======
 STATUS 2020/10/15 : added External Resources section and links  
->>>>>>> fork_develop_new
 
 
 ## Table of Contents ##
 
-<<<<<<< HEAD
-1.   [Configuration Overview](#configuration-overview)
-2.   [SW Repository / Branch](#repository)
-3.   [Architecture Setup](#architecture-setup)
-4.   [Build / Install](#build-and-install)
-5.   [Run / Test](#run-and-test)
-6.   [Test case](#test-case)
-7.   [Log file monitoring](#log-file-monitoring)
-6.   [Required tools for debug](#required-tools-for-debug)
-7.   [Status of interoperability](#status-of-interoperability) 
-=======
 1.   [External Resources](#external-resources) 
 2.   [Configuration Overview](#configuration-overview)
 3.   [SW Repository / Branch](#repository)
@@ -41,7 +26,6 @@ At time of writing, the openairinterface5G Commit Tag is 2020.w39
 Faraday Cages can be found here :  
 http://www.saelig.com/MFR00066/ste2300.htm
 
->>>>>>> fork_develop_new
 
 ## Configuration Overview
 
@@ -100,11 +84,7 @@ cd cmake_targets/
 - **EPC**
 
 for reference:
-<<<<<<< HEAD
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
-=======
 https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
->>>>>>> fork_develop_new
 
 
 
@@ -238,11 +218,7 @@ The test takes typically a few seconds, max 10-15 seconds. If it takes more than
 - **EPC** (on EPC host):
 
 for reference:
-<<<<<<< HEAD
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
-=======
 https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
->>>>>>> fork_develop_new
 
 
 
@@ -258,27 +234,16 @@ Execute:
 - **gNB** (on the gNB host)
 
 
-<<<<<<< HEAD
-=======
 **ATTENTION** : for the gNB execution,    
 The **-E** option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
 The **-E** option is **NOT supported** when using a a N300 USRP  
 
->>>>>>> fork_develop_new
 Execute: 
 ```
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** -E | tee **YOUR_LOG_FILE**
 
 ```
 
-<<<<<<< HEAD
-**ATTENTION** : for the gNB execution,    
-The -E option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
-The -E opton is not needed when using a a N300 USRP  
-
-
-=======
->>>>>>> fork_develop_new
 
 ## Test Case
 
@@ -425,18 +390,6 @@ The following parts have been validated with FR1 COTS UE:
     PDCCH DCI format 1_1 and correponding PDSCH are decoded correctlyby the phone  
     ACK/NACK (PUCCH format 0) are successfully received at gNB  
 
-<<<<<<< HEAD
-- On going:  
-    validation of HARQ procedures  
-    Integration with higher layers to replace dummy data with real traffic  
-    
-- Known limitations as of May 2020:  
-    only dummy DL traffic  
-    no UL traffic  
-    no end-to-end traffic possible  
-
-
-=======
 - **End-to end UL / DL traffic with HARQ procedures validated (ping, iperf)** 
     
 - Known limitations as of September 2020:  
@@ -458,4 +411,3 @@ python3 obj_build_from_yaml.py py_params_template.yaml fr1.sh
 At the date of writing, the test comprises the deployment of the components (epc, eNB, gNB, cots ue) and the execution of 2 pings procedures (20 pings in 20sec, then 5 pings in 1sec)  
 
 This automation is run for every integration branch to be merged into develop.
->>>>>>> fork_develop_new

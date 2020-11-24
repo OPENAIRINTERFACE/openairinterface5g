@@ -95,12 +95,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  dlBWP_carrier_bandwidth,
 	  NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275));
   
-    dl_tti_pdcch_pdu = &nr_mac->DL_req[CC_id].dl_tti_pdu_list[nr_mac->DL_req[CC_id].nPDUs];
+    dl_tti_pdcch_pdu = &nr_mac->DL_req[CC_id].dl_tti_request_body.dl_tti_pdu_list[nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs];
     memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
     dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     
-    dl_tti_pdsch_pdu = &nr_mac->DL_req[CC_id].dl_tti_pdu_list[nr_mac->DL_req[CC_id].nPDUs+1];
+    dl_tti_pdsch_pdu = &nr_mac->DL_req[CC_id].dl_tti_request_body.dl_tti_pdu_list[nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+1];
     memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
     dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
@@ -235,7 +235,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  pdsch_pdu_rel15->mcsIndex[0]);
     */
     
-    nr_mac->DL_req[CC_id].nPDUs+=2;
+    nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+=2;
     
     TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     TX_req->PDU_length = 6;
@@ -255,7 +255,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              sub_frame_t slot,
                              int num_slots_per_tdd)
 {
-  if (slot != 1)
+  if (slot != 2)
     return; /* only schedule in slot 1 for now */
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;

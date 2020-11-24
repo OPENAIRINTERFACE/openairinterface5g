@@ -157,9 +157,9 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
                                  uint8_t is_dmrs_symbol,
-				 uint8_t is_ptrs_symbol,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms);
+
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
@@ -286,34 +286,6 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
                    int SFN,
                    int Slot,
                    nfapi_nr_prach_pdu_t *prach_pdu);
-<<<<<<< HEAD
-
-void rx_nr_prach(PHY_VARS_gNB *gNB,
-                 nfapi_nr_prach_pdu_t *prach_pdu,
-                 int frame,
-                 int subframe,
-                 uint16_t *max_preamble,
-                 uint16_t *max_preamble_energy,
-                 uint16_t *max_preamble_delay);
-
-void rx_nr_prach_ru(RU_t *ru,
-                    int prach_fmt,
-                    int numRA,
-                    int prachStartSymbol,
-                    int frame,
-                    int subframe);
-
-void nr_fill_prach_ru(RU_t *ru,
-                      int SFN,
-                      int Slot,
-                      nfapi_nr_prach_pdu_t *prach_pdu);
-
-int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type);
-int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
-
-NR_gNB_PUCCH_t *new_gNB_pucch(void);
-
-=======
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
                  nfapi_nr_prach_pdu_t *prach_pdu,
@@ -342,7 +314,6 @@ int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void);
 
->>>>>>> fork_develop_new
 void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
@@ -358,8 +329,6 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 
-<<<<<<< HEAD
-=======
 int nr_generate_csi_rs(uint32_t **gold_csi_rs,
                        int32_t **txdataF,
                        int16_t amp,
@@ -367,7 +336,6 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
->>>>>>> fork_develop_new
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
@@ -394,13 +362,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
-<<<<<<< HEAD
-=======
 void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
->>>>>>> fork_develop_new
 
 #endif /*__NR_TRANSPORT__H__*/

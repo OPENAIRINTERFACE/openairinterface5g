@@ -67,7 +67,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
                           unsigned char drx_cmd,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding) {
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+    gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
   unsigned char *dlsch_buffer_ptr = sdus_payload;
   uint8_t last_size = 0;
@@ -75,12 +75,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
-  uint16_t UE_id = 0; //TODO need to get as a function parameter or need to invoke api to UE_id using module Id and RNTI
-  gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
-  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
-  NR_UE_sched_ctrl_t *ue_sched_ctl = NULL;
-  //NR_CellGroupConfig_t *config = UE_list->secondaryCellGroup[UE_id];
-  ue_sched_ctl = &(UE_list->UE_sched_ctrl[UE_id]);
 
   // 1) Compute MAC CE and related subheaders
 
@@ -332,8 +326,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr += sdu_lengths[i];
     mac_pdu_ptr += sdu_lengths[i];
-
-    mac_stats->lc_bytes_tx[sdu_lcids[i]] += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
@@ -788,7 +780,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
         LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
         // fill dlsch_buffer with random data
         for (int i = 0; i < TBS; i++)
-          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        
         sdu_lcids[0] = 0x3f; // DRB
         sdu_lengths[0] = TBS - ta_len - 3;
         header_length_total += 2 + (sdu_lengths[0] >= 128);

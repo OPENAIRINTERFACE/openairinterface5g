@@ -27,8 +27,6 @@
 
 void store_ul(benetel_t *bs, ul_packet_t *ul)
 {
-<<<<<<< HEAD
-=======
 #if 0
 struct timespec t;
 static struct timespec old;
@@ -37,20 +35,12 @@ printf("store_ul %d.%ld (%ld)\n", (int)(t.tv_sec % 60), t.tv_nsec, t.tv_nsec - o
 old = t;
 #endif
 
->>>>>>> fork_develop_new
   /* only antenna 0 for the moment */
   if (ul->antenna != 0)
     return;
 
   if (ul->slot != bs->next_slot ||
       ul->symbol != bs->next_symbol) {
-<<<<<<< HEAD
-    printf("%s: fatal, expected frame.sl.symbol %d.%d.%d, got %d.%d.%d\n",
-           __FUNCTION__,
-           bs->expected_benetel_frame, bs->next_slot, bs->next_symbol,
-           ul->frame, ul->slot, ul->symbol);
-    exit(1);
-=======
     printf("%s: error, expected frame.sl.symbol %d.%d.%d, got %d.%d.%d\n",
            __FUNCTION__,
            bs->expected_benetel_frame, bs->next_slot, bs->next_symbol,
@@ -81,7 +71,6 @@ old = t;
         bs->expected_benetel_frame &= 255;
       }
     }
->>>>>>> fork_develop_new
   }
 
   lock_ul_buffer(bs->buffers, bs->next_slot);

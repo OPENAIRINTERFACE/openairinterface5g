@@ -77,8 +77,6 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
                     //(ue->frame_parms.pdsch_config_common.referenceSignalPower*10))/10));
 }
 
-<<<<<<< HEAD
-=======
 uint32_t get_nr_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
 {
 
@@ -108,7 +106,6 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
 }
 
 
->>>>>>> fork_develop_new
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                          unsigned int subframe_offset,
                          unsigned char N0_symbol,

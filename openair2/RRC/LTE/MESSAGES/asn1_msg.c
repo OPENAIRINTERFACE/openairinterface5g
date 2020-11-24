@@ -3243,10 +3243,6 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   /* TODO: no hardcoded values here */
 
-<<<<<<< HEAD
-  OCTET_STRING_t req_freq;
-  unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
-=======
   nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
 
   nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
@@ -3277,7 +3273,6 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 
 
->>>>>>> fork_develop_new
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x08, 0x18 };  // bands 7 & nr260
 
   //unsigned char req_freq_buf[13] = { 0x00, 0xc0, 0x18, 0x01, 0x01, 0x30, 0x4b, 0x04, 0x0e, 0x08, 0x24, 0x04, 0xd0 };
@@ -3286,11 +3281,7 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //  };
 
   req_freq.buf = req_freq_buf;
-<<<<<<< HEAD
-  req_freq.size = 5;
-=======
   req_freq.size = (enc_rval.encoded+7)/8;
->>>>>>> fork_develop_new
 //  req_freq.size = 21;
 
   r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
@@ -3393,9 +3384,6 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
   OCTET_STRING_t req_freq;
-<<<<<<< HEAD
-  unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
-=======
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
   unsigned char req_freq_buf[100];
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
@@ -3404,7 +3392,6 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
       req_freq_buf,
       1024);
 
->>>>>>> fork_develop_new
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x08, 0x18 };  // bands 7 & nr260
 
   //unsigned char req_freq_buf[13] = { 0x00, 0xc0, 0x18, 0x01, 0x01, 0x30, 0x4b, 0x04, 0x0e, 0x08, 0x24, 0x04, 0xd0 };
@@ -3413,11 +3400,7 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //  };
 
   req_freq.buf = req_freq_buf;
-<<<<<<< HEAD
-  req_freq.size = 5;
-=======
   req_freq.size = (enc_rval.encoded+7)/8;
->>>>>>> fork_develop_new
 //  req_freq.size = 21;
 
   r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;

@@ -1609,10 +1609,13 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 		in_window = 1;
 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
 	}
+  
 	else
-	{
+	{ 	
+		
 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
-	}
+		
+	}//Need to add more cases
 	
 
 	return in_window;
@@ -1677,9 +1680,6 @@ uint8_t is_p7_request_in_window(uint16_t sfnsf, const char* name, pnf_p7_t* phy)
 void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 {
 	//NFAPI_TRACE(NFAPI_TRACE_INFO, "DL_CONFIG.req Received\n");
-struct timespec curr;
-	clock_gettime(CLOCK_MONOTONIC,&curr);
-	printf("\npnf_handle_dl_tti_request %d.%d\n",curr.tv_sec,curr.tv_nsec);
 	nfapi_nr_dl_tti_request_t* req  = allocate_nfapi_dl_tti_request(pnf_p7);
 
 	if(req == NULL)

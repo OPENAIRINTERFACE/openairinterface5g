@@ -2846,3 +2846,46 @@ int binomial(int n, int k) {
   return c;
 }
 
+void get_band(uint64_t downlink_frequency,
+              uint16_t *current_band,
+              int32_t *current_offset,
+              lte_frame_type_t *current_type)
+{
+    int ind;
+    uint64_t center_frequency_khz;
+    uint64_t center_freq_diff_khz;
+    uint64_t dl_freq_khz = downlink_frequency/1000;
+
+    center_freq_diff_khz = 999999999999999999; // 2^64
+    *current_band = 0;
+
+    for ( ind=0;
+          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
+          ind++) {
+
+      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+
+      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
+
+        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
+        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+          *current_band = nr_bandtable[ind].band;
+	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
+          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+
+	  if (*current_offset == 0)
+	    *current_type = TDD;
+	  else
+	    *current_type = FDD;
+        }
+      }
+    }
+
+    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
+         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
+
+    AssertFatal(*current_band != 0,
+	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
+}
+
+

@@ -69,11 +69,7 @@ typedef enum {
   NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION= 0X86,
   NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION= 0X87,
   NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION= 0X88,
-<<<<<<< HEAD
   NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89,
-=======
-  NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89
->>>>>>> fork_develop_new
   //RESERVED 0X8a ~ 0xff
   NFAPI_NR_PHY_MSG_TYPE_PNF_PARAM_REQUEST = 0x0100,
 	NFAPI_NR_PHY_MSG_TYPE_PNF_PARAM_RESPONSE = 0x0101,
@@ -1040,7 +1036,7 @@ typedef struct {
 } nfapi_nr_dl_tti_request_pdu_t;
 
 #define NFAPI_NR_MAX_DL_TTI_PDUS 32 
-/*
+
 typedef struct {
   /// Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
   uint8_t nPDUs;
@@ -1053,7 +1049,7 @@ typedef struct {
   /// This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
   uint8_t PduIdx[256][12];
 } nfapi_nr_dl_tti_request_body_t;
-*/
+
 
 typedef struct {
 	nfapi_p7_message_header_t header;
@@ -1077,17 +1073,7 @@ typedef struct {
   uint16_t SFN;
   /// Slot number (0-19)
   uint16_t Slot;
-  /// Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
-  uint8_t nPDUs;
-  /// Number of UEs in the Group included in this message. Value 0 -> 255
-  uint8_t nGroup;
-  /// List containing PDUs
-  nfapi_nr_dl_tti_request_pdu_t dl_tti_pdu_list[NFAPI_NR_MAX_DL_TTI_PDUS];
-  //nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list;
-  /// Number of UE in this group. For SU-MIMO, one group includes one UE only. For MU-MIMO, one group includes up to 12 UEs. Value 1 -> 12
-  uint8_t nUe[256];
-  /// This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
-  uint8_t PduIdx[256][12];
+  nfapi_nr_dl_tti_request_body_t dl_tti_request_body;
   nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_dl_tti_request_t;
 

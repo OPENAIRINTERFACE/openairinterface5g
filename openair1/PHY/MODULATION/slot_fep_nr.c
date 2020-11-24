@@ -417,7 +417,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
                    int sample_offset,
                    int no_prefix)
 {
-  int32_t slot_offset, rxdata_offset;
+   int32_t slot_offset, rxdata_offset;
 
   unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
@@ -479,8 +479,6 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
     memcpy1((void *)&tmp_dft_in[sample_offset-rxdata_offset],
            (void *) &rxdata[0],
            (frame_parms->ofdm_symbol_size-sample_offset+rxdata_offset)*sizeof(int));
-<<<<<<< HEAD
-=======
 
     dft(dftsize,(int16_t *)&tmp_dft_in,
         (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
@@ -497,27 +495,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 
   // clear DC carrier from OFDM symbols
   rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
->>>>>>> fork_develop_new
 
-    dft(dftsize,(int16_t *)&tmp_dft_in,
-        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
-  }
-  else
-    dft(dftsize,(int16_t *)&rxdata[rxdata_offset-sample_offset],
-        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
-
-  // clear DC carrier from OFDM symbols
-  rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
-
-  int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-  uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
-  ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
-  LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",Ns,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
-  rotate_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
-		    (int16_t*)&rot2,
-		    (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
-		    frame_parms->ofdm_symbol_size,
-		    15);
   return(0);
 }
 

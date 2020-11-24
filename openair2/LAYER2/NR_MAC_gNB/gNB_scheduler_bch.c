@@ -62,7 +62,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
   NR_COMMON_channels_t *cc;
   
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
-  
+  nfapi_nr_dl_tti_request_body_t *dl_req;
   nfapi_nr_dl_tti_request_pdu_t  *dl_config_pdu;
 
   int mib_sdu_length;

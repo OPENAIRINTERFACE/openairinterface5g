@@ -1189,7 +1189,6 @@ int setup_RU_buffers(RU_t *ru) {
   int mu = config->ssb_config.scs_common.value;
   int N_RB = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
 
-<<<<<<< HEAD
 
   if (config->cell_config.frame_duplex_type.value == TDD) {
     int N_TA_offset =  config->carrier_config.uplink_frequency.value < 6000000 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
@@ -1234,52 +1233,6 @@ int setup_RU_buffers(RU_t *ru) {
   }
   else ru->N_TA_offset = 0;
 
-=======
-
-  if (config->cell_config.frame_duplex_type.value == TDD) {
-    int N_TA_offset =  config->carrier_config.uplink_frequency.value < 6000000 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
-
-    double factor=1;
-
-    switch (mu) {
-    case 0: //15 kHz scs
-      AssertFatal(N_TA_offset == 400,"scs_common 15kHz only for FR1\n");
-      if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
-      else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
-      else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
-      else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
-      else AssertFatal(1==0,"Too many PRBS for mu=0\n");
-      break;
-    case 1: //30 kHz sc
-      AssertFatal(N_TA_offset == 400,"scs_common 30kHz only for FR1\n");
-      if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
-      else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
-      break;
-    case 2: //60 kHz scs
-      AssertFatal(1==0,"scs_common should not be 60 kHz\n");
-      break;
-    case 3: //120 kHz scs
-      AssertFatal(N_TA_offset == 431,"scs_common 120kHz only for FR2\n");
-      break;
-    case 4: //240 kHz scs
-      AssertFatal(1==0,"scs_common should not be 60 kHz\n");
-      if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
-      else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
-      else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
-      break;
-
-      if      (N_RB == 100) ru->N_TA_offset = 624;
-      else if (N_RB == 50)  ru->N_TA_offset = 624/2;
-      else if (N_RB == 25)  ru->N_TA_offset = 624/4;
-    }
-    if (frame_parms->threequarter_fs == 1) factor = factor*.75;
-    ru->N_TA_offset = (int)(N_TA_offset * factor);
-    LOG_I(PHY,"RU %d Setting N_TA_offset to %d samples (factor %f, UL Freq %d, N_RB %d)\n",ru->idx,ru->N_TA_offset,factor,
-	  config->carrier_config.uplink_frequency.value, N_RB);
-  }
-  else ru->N_TA_offset = 0;
-
->>>>>>> fork_develop_new
   
   if (ru->openair0_cfg.mmapped_dma == 1) {
     // replace RX signal buffers with mmaped HW versions
@@ -1670,15 +1623,6 @@ void *ru_thread( void *param ) {
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
       // Do PRACH RU processing
-<<<<<<< HEAD
-      int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
-      if (prach_id>=0) {
-	rx_nr_prach_ru(ru,
-		       ru->prach_list[prach_id].fmt,
-		       ru->prach_list[prach_id].numRA,
-		       ru->prach_list[prach_id].prachStartSymbol,
-		       proc->frame_rx,proc->tti_rx);
-=======
 
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       uint8_t prachStartSymbol,N_dur;
@@ -1709,7 +1653,6 @@ void *ru_thread( void *param ) {
 			 prach_oc,
 			 proc->frame_rx,proc->tti_rx);
 	}
->>>>>>> fork_develop_new
 	free_nr_ru_prach_entry(ru,prach_id);
       }
       }

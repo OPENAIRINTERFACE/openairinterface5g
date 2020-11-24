@@ -1333,7 +1333,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   if (proc==NULL)
      proc = &gNB->proc.L1_proc;
-  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_pdu_list;
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_request_body.dl_tti_pdu_list;
 
   // TODO: NR_gNB_PDCCH not defined yet (check later)
 #if 0
@@ -1342,25 +1342,25 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   pdcch_vars->num_dci = 0;
 #endif
 
-  if (req->nPDUs)
+  if (req->dl_tti_request_body.nPDUs)
     NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
                 __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
                 req->SFN,
                 req->Slot,
-                req->nGroup,
-                req->nPDUs,
-                req->nUe,
-                req->PduIdx);
+                req->dl_tti_request_body.nGroup,
+                req->dl_tti_request_body.nPDUs,
+                req->dl_tti_request_body.nUe,
+                req->dl_tti_request_body.PduIdx);
 
-  for (int i=0; i<req->nPDUs; i++) {
+  for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
     // TODO: enable after adding gNB PDCCH:
     // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
 
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu=&dl_tti_pdu_list[i];
       memcpy(dl_tti_pdu,&dl_tti_pdu_list[i],sizeof(nfapi_nr_dl_tti_request_pdu_t));
-      //sfn=sfn+2;
-      handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu->pdcch_pdu);
+      int SFN=sfn+2;
+      handle_nfapi_nr_pdcch_pdu(gNB, SFN, slot, &dl_tti_pdu->pdcch_pdu);
       //dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {

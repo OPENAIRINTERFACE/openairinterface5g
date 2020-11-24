@@ -172,7 +172,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB->pbch_configured=0;
 
   for (int i=0;i<number_dl_pdu;i++) {
-    volatile nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_pdu_list[i];
+    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
@@ -241,12 +241,12 @@ if(nfapi_mode != 2)
  
  
   if (nfapi_mode != 0) 
-  { if(Sched_INFO->DL_req->nPDUs > 0)
-   {
+  { if(Sched_INFO->DL_req->dl_tti_request_body.nPDUs>0)
+  {
     Sched_INFO->DL_req->SFN = frame;
     Sched_INFO->DL_req->Slot = slot;
     oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req);
-   }
+  }
     if (Sched_INFO->TX_req->Number_of_PDUs > 0)
     {
        oai_nfapi_tx_data_req(Sched_INFO->TX_req);

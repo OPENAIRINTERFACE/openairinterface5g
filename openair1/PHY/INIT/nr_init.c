@@ -463,27 +463,19 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 
   uint64_t dl_bw_khz = (12*gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + gNB_config->carrier_config.dl_frequency.value)*1000 ;
-<<<<<<< HEAD
-
-  int32_t dlul_offset = 0;
-  lte_frame_type_t frame_type = 0; // FDD
-=======
->>>>>>> fork_develop_new
   
   uint64_t ul_bw_khz = (12*gNB_config->carrier_config.ul_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
   fp->ul_CarrierFreq = ((ul_bw_khz>>1) + gNB_config->carrier_config.uplink_frequency.value)*1000 ;
 
-<<<<<<< HEAD
-  //printf("\n%d\t%d\t%d\n", fp->ul_CarrierFreq, fp->dl_CarrierFreq, dlul_offset );
-  AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+dlul_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
-=======
-  fp->nr_band = *RC.nrmac[Mod_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  //fp->nr_band = *RC.nrmac[Mod_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  lte_frame_type_t frame_type = 0; // FDD
+  
+  get_band(fp->dl_CarrierFreq,&fp->nr_band,&dlul_offset,&frame_type); //RC.nrmac[Mod_id] cannot be accessed in NFAPI
 
   get_delta_duplex(fp->nr_band, gNB_config->ssb_config.scs_common.value, &dlul_offset);
   dlul_offset *= 1000;
 
   AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + dlul_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + dlul_offset);
->>>>>>> fork_develop_new
   
   LOG_I(PHY, "DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, dlul_offset);
 
@@ -505,25 +497,19 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   fd_occasion = 0;
   nfapi_nr_prach_config_t *prach_config = &gNB_config->prach_config;
   short_sequence = prach_config->prach_sequence_length.value;
-<<<<<<< HEAD
-=======
 //  for(fd_occasion = 0; fd_occasion <= prach_config->num_prach_fd_occasions.value ; fd_occasion) { // TODO Need to handle for msg1-fdm > 1
->>>>>>> fork_develop_new
   num_sequences = prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value;
   rootSequenceIndex = prach_config->num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index.value;
 
   compute_nr_prach_seq(short_sequence, num_sequences, rootSequenceIndex, RC.gNB[Mod_id]->X_u);
-<<<<<<< HEAD
-
-=======
 //  }
->>>>>>> fork_develop_new
   RC.gNB[Mod_id]->configured     = 1;
 
   init_symbol_rotation(fp,fp->dl_CarrierFreq);
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
+
 
 void init_nr_transport(PHY_VARS_gNB *gNB) {
   int i;

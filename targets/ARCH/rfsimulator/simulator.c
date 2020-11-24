@@ -655,13 +655,8 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         for ( int i=0; i < t->tx_num_channels; i++)
           samplesVoid[i]=(void *)&v;
 
-<<<<<<< HEAD
-	LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
-	      t->lastWroteTS, t->nextTimestamp);
-=======
         LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
               t->lastWroteTS, t->nextTimestamp);
->>>>>>> fork_develop_new
         rfsimulator_write_internal(t, t->nextTimestamp,
                                    samplesVoid, 1,
                                    t->tx_num_channels, 1, true);

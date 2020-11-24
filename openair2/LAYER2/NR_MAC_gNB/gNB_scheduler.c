@@ -104,8 +104,8 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;
-    DL_req[CC_idP].nPDUs             = 0;
-    DL_req[CC_idP].nGroup            = 0;
+    DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
+    DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
     //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
 
     UL_dci_req[CC_idP].SFN                         = frameP;
@@ -468,6 +468,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
+  //const uint64_t dlsch_in_slot_bitmap = (1 << 2);
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0

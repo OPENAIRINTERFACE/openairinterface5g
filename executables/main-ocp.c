@@ -82,9 +82,6 @@ int split73;
 int usrp_tx_thread = 0;
 char * split73_config;
 int split73;
-<<<<<<< HEAD
-int usrp_tx_thread = 0;
-=======
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
 void flexran_agent_slice_update(mid_t module_idP) {
@@ -94,7 +91,6 @@ int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p){
 }
 void proto_agent_stop(mod_id_t mod_id){
 }
->>>>>>> fork_develop_new
 
 static void *ru_thread( void *param );
 void kill_RU_proc(RU_t *ru) {
@@ -1098,15 +1094,11 @@ int restart_L1L2(module_id_t enb_id) {
   pthread_mutex_lock(&sync_mutex);
   sync_var = -1;
   pthread_mutex_unlock(&sync_mutex);
-<<<<<<< HEAD
-  RC.ru_mask |= (1 << ru->idx);
-=======
 
   /* copy the changed frame parameters to the RU */
   /* TODO this should be done for all RUs associated to this eNB */
   memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
 
->>>>>>> fork_develop_new
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
   init_UE_info(&RC.mac[enb_id]->UE_info);
