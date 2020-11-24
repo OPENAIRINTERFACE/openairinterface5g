@@ -182,13 +182,6 @@ typedef enum nr_e_rab_satus_e {
   NR_E_RAB_STATUS_FAILED,
 } nr_e_rab_status_t;
 
-typedef enum nr_pdu_session_status_e {
-  NR_PDU_SESSION_STATUS_NEW,
-  NR_PDU_SESSION_STATUS_DONE,           // from the gNB perspective
-  NR_PDU_SESSION_STATUS_ESTABLISHED,    // get the reconfigurationcomplete form UE
-  NR_PDU_SESSION_STATUS_FAILED,
-} nr_pdu_session_status_t;
-
 typedef struct nr_e_rab_param_s {
   e_rab_t param;
   uint8_t status;
@@ -265,8 +258,10 @@ typedef struct nr_rrc_guami_s {
 } nr_rrc_guami_t;
 
 typedef enum pdu_session_satus_e {
-  PDU_SESSION_STATUS_NEW
-  //TODO
+  PDU_SESSION_STATUS_NEW,
+  PDU_SESSION_STATUS_DONE,
+  PDU_SESSION_STATUS_ESTABLISHED,
+  PDU_SESSION_STATUS_FAILED,
 } pdu_session_status_t;
 
 typedef struct pdu_session_param_s {
