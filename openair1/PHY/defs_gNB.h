@@ -112,6 +112,8 @@ typedef struct {
   uint32_t F;
   /// Encoder BG
   uint8_t BG;
+  /// LDPC lifting size
+  uint32_t Z;
 } NR_DL_gNB_HARQ_t;
 
 typedef struct {
