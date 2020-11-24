@@ -147,13 +147,14 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
   int i;
+  lte_frame_type_t frame_type;
 
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_idP;
   
   // carrier config
 
-  LOG_I(MAC,"UE Config Common\n");  
+  LOG_I(MAC, "Entering UE Config Common\n");
 
   cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                                       scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
@@ -200,15 +201,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     }
   }
 
-  lte_frame_type_t frame_type;
-  uint16_t band;
-  int32_t offset;
-
-  get_band((cfg->carrier_config.dl_frequency)*1000,
-           &band,
-           &offset,
-           &frame_type);
-
+  get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
 
   // cell config
 
@@ -243,8 +236,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       cfg->ssb_table.ssb_mask_list[0].ssb_mask = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       for (i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
       }
       break;
     default:
@@ -259,8 +252,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
     cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   }
-  LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period);
   if(cfg->cell_config.frame_duplex_type == TDD){
+    LOG_I(MAC,"Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period);
     int return_tdd = set_tdd_config_nr_ue(cfg,
 		     scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                      scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
@@ -432,6 +425,9 @@ int nr_rrc_mac_config_req_ue(
 	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
 	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
+
+      // Setup the SSB to Rach Occasions mapping according to the config
+      build_ssb_to_ro_map(mac->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
 
       /*      
       if(mac_cell_group_configP != NULL){

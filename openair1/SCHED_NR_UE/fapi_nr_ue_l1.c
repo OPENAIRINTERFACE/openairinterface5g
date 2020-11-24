@@ -52,7 +52,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     int slot = scheduled_response->slot;
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
-    thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
+    thread_id = scheduled_response->thread_id;
     NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
@@ -93,7 +93,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
           if (dlsch0_harq){
 
-	    dlsch0_harq->status   = ACTIVE;
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
             dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
             dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
@@ -154,8 +153,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
             ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 
-            if (scheduled_response->tx_request){ // TBR todo here it should loop through the number of tx pdus
-              fapi_nr_tx_request_body_t *tx_req_body = scheduled_response->tx_request->tx_request_body;
+            if (scheduled_response->tx_request){ 
+              fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
 
               memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
 

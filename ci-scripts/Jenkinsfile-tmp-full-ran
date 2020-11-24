@@ -266,6 +266,42 @@ pipeline {
         }
         stage('Log Collection') {
             parallel {
+                stage('Log Collection (eNB - Build)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (eNB - Build)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectBuild --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (eNB - Build)\u001B[0m'
+                            sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (OAI UE - Build)') {
+                    steps {
+                        echo '\u2705 \u001B[32mLog Collection (OAI UE - Build)\u001B[0m'
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=LogCollectBuild --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (UE - Build)\u001B[0m'
+                            sh "sshpass -p \'${UE_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${UE_Username}@${params.UE_IPAddress}:${UE_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
                 stage('Log Collection (eNB - Run)') {
                     steps {
                         withCredentials([

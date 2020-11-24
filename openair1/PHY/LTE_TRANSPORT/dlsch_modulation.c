@@ -2242,16 +2242,12 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   MIMO_mode_t mimo_mode = -1;
   uint8_t mprime=0,Ns;
   int8_t  lprime=-1;
-  int aa=0;
 
 
 #ifdef DEBUG_DLSCH_MODULATION
   uint8_t Nl0;  //= dlsch0_harq->Nl;
   uint8_t Nl1;
 #endif
-  int ru_id;
-  RU_t *ru;
-  int eNB_id;
 
 
   if ((dlsch0 != NULL) && (dlsch1 != NULL)){
@@ -2432,11 +2428,13 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       }
 
       // mapping ue specific beamforming weights from UE specified DLSCH structure to RU beam weights for the eNB
-      for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+      /*
+      for (int ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+        RU_t *ru;
 	ru = RC.ru[ru_id];
-	for (eNB_id=0;eNB_id<ru->num_eNB;eNB_id++){
+	for (int eNB_id=0;eNB_id<ru->num_eNB;eNB_id++){
 	  if (phy_vars_eNB == ru->eNB_list[eNB_id]) {
-	    for (aa=0;aa<ru->nb_tx;aa++){
+	    for (int aa=0;aa<ru->nb_tx;aa++){
               LOG_I(PHY,"ru_id:%d eNB_id:%d aa:%d memcpy(ru->beam_weights, dlsch0->ue_spec_bf_weights[ru_id][0],)\n", ru_id, eNB_id, aa);
 	      memcpy(ru->beam_weights[eNB_id][5][aa],
 		     dlsch0->ue_spec_bf_weights[ru_id][0],
@@ -2445,6 +2443,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 	  }
 	}
       }
+      */
 
     }
 

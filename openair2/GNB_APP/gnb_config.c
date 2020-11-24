@@ -676,13 +676,16 @@ int RCconfig_nr_gtpu(void ) {
   char*             gnb_interface_name_for_NGU    = NULL;
   char*             gnb_ipv4_address_for_NGU      = NULL;
   uint32_t          gnb_port_for_NGU              = 0;
+  char*             gnb_interface_name_for_S1U    = NULL;
+  char*             gnb_ipv4_address_for_S1U      = NULL;
+  uint32_t          gnb_port_for_S1U              = 0;
   char             *address                       = NULL;
   char             *cidr                          = NULL;
   char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
-    
+  uint8_t           gnb_mode                      = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
-  
+  paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
   paramdef_t GTPUParams[] = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
@@ -692,25 +695,40 @@ int RCconfig_nr_gtpu(void ) {
   AssertFatal (num_gnbs >0,
            "Failed to parse config file no active gNodeBs in %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
 
-
   sprintf(gtpupath,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  config_get( GTPUParams,sizeof(GTPUParams)/sizeof(paramdef_t),gtpupath);    
+  config_get(GTPUParams,sizeof(GTPUParams)/sizeof(paramdef_t),gtpupath);
 
+  config_get(NETParams,sizeof(NETParams)/sizeof(paramdef_t),gtpupath); 
 
-
+  if (NETParams[0].strptr != NULL) { // SA
+    LOG_I(GTPU, "SA mode \n");
     cidr = gnb_ipv4_address_for_NGU;
+    gnb_mode = 0;
+  } else {// NSA
+    LOG_I(GTPU, "NSA mode \n");
+    cidr = gnb_ipv4_address_for_S1U;
+    gnb_mode = 1;
+  }
+
     address = strtok(cidr, "/");
-    
+
     if (address) {
       MessageDef *message;
       AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, GTPV1U_ENB_S1_REQ))!=NULL,"");
-     // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB NG_U !\n" );
+     // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
      // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
 
 
-     IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB NG_U !\n" );
-     LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
-     GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_NGU;
+      if (gnb_mode == 1) { // NSA
+        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
+        GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
+      } else {// TODO SA
+        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
+        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
+        GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_NGU;
+      }
+
      itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
     } else
     LOG_E(GTPU,"invalid address for NGU\n");
@@ -843,7 +861,7 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
               char snssaistr[MAX_OPTNAME_SIZE*2 + 8];
               sprintf(snssaistr, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, k, GNB_CONFIG_STRING_PLMN_LIST, l);
               config_getlist(&SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams)/sizeof(paramdef_t), snssaistr);
-              
+
               NGAP_REGISTER_GNB_REQ (msg_p).mcc[l]              = *PLMNParamList.paramarray[l][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
               NGAP_REGISTER_GNB_REQ (msg_p).mnc[l]              = *PLMNParamList.paramarray[l][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
               NGAP_REGISTER_GNB_REQ (msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][GNB_MNC_DIGIT_LENGTH].u8ptr;
@@ -854,7 +872,6 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
                           NGAP_REGISTER_GNB_REQ (msg_p).mnc_digit_length[l]);
               
               NGAP_REGISTER_GNB_REQ (msg_p).num_nssai[l] = SNSSAIParamList.numelt;
-
               for (int s = 0; s < SNSSAIParamList.numelt; ++s) {
               
                 NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sST = *SNSSAIParamList.paramarray[s][GNB_SLICE_SERIVE_TYPE_IDX].uptr;
@@ -865,7 +882,7 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
                   NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD[1] = (*SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr & 0x00FF00) >> 8;
                   NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD[2] = (*SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr & 0x0000FF);
                 }
-              }            
+              }
             }
             sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
             config_getlist( &NGParamList,NGParams,sizeof(NGParams)/sizeof(paramdef_t),aprefix); 

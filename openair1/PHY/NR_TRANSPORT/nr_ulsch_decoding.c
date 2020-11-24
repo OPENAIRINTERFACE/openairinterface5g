@@ -478,7 +478,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
-  
+
+  if (!harq_process) {
+    LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
+    return 1;
+  }
+
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams    = &decParams;
 
@@ -487,11 +492,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     
   phy_vars_gNB->nbDecode = 0;
   harq_process->processedSegments = 0;
-
-  if (!harq_process) {
-    LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
-    return 1; 
-  }
 
   double   Coderate = 0.0;
   

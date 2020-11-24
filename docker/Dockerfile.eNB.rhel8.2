@@ -49,6 +49,7 @@ RUN yum update -y && \
         nettle \
         atlas \
         net-tools \
+        iputils \
         iproute \
         libyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
@@ -120,3 +121,4 @@ WORKDIR /opt/oai-enb
 
 #CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]

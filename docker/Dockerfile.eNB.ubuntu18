@@ -57,6 +57,7 @@ RUN apt-get update && \
         libconfig9 \
         openssl \
         net-tools \
+        iputils-ping \
         iproute2 \
         libyaml-0-2 && \
     # Install UHD driver from ettus ppa 
@@ -120,3 +121,4 @@ WORKDIR /opt/oai-enb
 
 #CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
 #ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]

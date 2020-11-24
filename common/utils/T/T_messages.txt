@@ -85,6 +85,10 @@ ID = ENB_PHY_MIB
     DESC = MIB data
     GROUP = ALL:PHY:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,frame : int,subframe : buffer,data
+ID = GNB_PHY_MIB
+    DESC = NR MIB data
+    GROUP = ALL:PHY:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,frame : int,slot : buffer,data
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -131,6 +135,18 @@ ID = ENB_MAC_UE_DL_RAR_PDU_WITH_DATA
     DESC = MAC downlink PDU for an UE
     GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
+ID = GNB_MAC_DL_PDU_WITH_DATA
+    DESC = NR MAC downlink PDU for an UE
+    GROUP = ALL:MAC:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
+ID = GNB_MAC_UL_PDU_WITH_DATA
+    DESC = NR MAC uplink PDU for an UE
+    GROUP = ALL:MAC:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
+ID = GNB_MAC_DL_RAR_PDU_WITH_DATA
+    DESC = NR MAC downlink PDU for RAR
+    GROUP = ALL:MAC:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
 
 #RLC logs
 ID = ENB_RLC_DL

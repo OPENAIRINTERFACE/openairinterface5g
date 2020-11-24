@@ -43,6 +43,7 @@
 \param symbol symbol within frame
 */
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
+                                UE_nr_rxtx_proc_t *proc,
                                 uint8_t eNB_offset,
                                 unsigned char Ns,
                                 unsigned char symbol,
@@ -50,6 +51,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short nb_rb_coreset);
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
+                             UE_nr_rxtx_proc_t *proc,
                              uint8_t eNB_offset,
                              unsigned char Ns,
                              unsigned char symbol,
@@ -57,6 +59,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              NR_UE_SSB *current_ssb);
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
+                               UE_nr_rxtx_proc_t *proc,
                                uint8_t eNB_offset,
                                unsigned char Ns,
                                unsigned char symbol,
@@ -65,6 +68,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                uint8_t n_hf);
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
+                                UE_nr_rxtx_proc_t *proc,
                                 uint8_t eNB_offset,
                                 unsigned char Ns,
                                 unsigned short p,
@@ -81,11 +85,17 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         short coef);
                       
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
+                        UE_nr_rxtx_proc_t *proc,
                         unsigned int subframe_offset,
                         unsigned char N0_symbol,
                         unsigned char abstraction_flag,
                         unsigned char rank_adaptation,
                         uint8_t subframe);
+
+void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
+                             UE_nr_rxtx_proc_t *proc,
+                             uint8_t slot,
+                             uint8_t abstraction_flag);
 
 void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
                         uint32_t rx_power_fil_dB,
@@ -93,5 +103,7 @@ void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
 
 int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
 
+
+float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
 
 #endif

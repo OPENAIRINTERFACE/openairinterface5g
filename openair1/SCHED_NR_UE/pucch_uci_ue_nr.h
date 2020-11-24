@@ -60,6 +60,111 @@
 
 /************** VARIABLES *****************************************/
 
+float RSRP_meas_mapping_nr[98] 
+#ifdef INIT_VARIABLES_PUCCH_UE_NR_H 
+= {
+  -140,
+    -139,
+    -138,
+    -137,
+    -136,
+    -135,
+    -134,
+    -133,
+    -132,
+    -131,
+    -130,
+    -129,
+    -128,
+    -127,
+    -126,
+    -125,
+    -124,
+    -123,
+    -122,
+    -121,
+    -120,
+    -119,
+    -118,
+    -117,
+    -116,
+    -115,
+    -114,
+    -113,
+    -112,
+    -111,
+    -110,
+    -109,
+    -108,
+    -107,
+    -106,
+    -105,
+    -104,
+    -103,
+    -102,
+    -101,
+    -100,
+    -99,
+    -98,
+    -97,
+    -96,
+    -95,
+    -94,
+    -93,
+    -92,
+    -91,
+    -90,
+    -89,
+    -88,
+    -87,
+    -86,
+    -85,
+    -84,
+    -83,
+    -82,
+    -81,
+    -80,
+    -79,
+    -78,
+    -77,
+    -76,
+    -75,
+    -74,
+    -73,
+    -72,
+    -71,
+    -70,
+    -69,
+    -68,
+    -67,
+    -66,
+    -65,
+    -64,
+    -63,
+    -62,
+    -61,
+    -60,
+    -59,
+    -58,
+    -57,
+    -56,
+    -55,
+    -54,
+    -53,
+    -52,
+    -51,
+    -50,
+    -49,
+    -48,
+    -47,
+    -46,
+    -45,
+    -44,
+    -43
+  }
+  #endif
+  ;
+  
 /* TS 36.213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
 const initial_pucch_resource_t initial_pucch_resource[NB_INITIAL_PUCCH_RESOURCE]
 #ifdef INIT_VARIABLES_PUCCH_UE_NR_H
@@ -226,12 +331,14 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
     @param csi_payload is updated with CSI
     @returns number of bits of CSI */
 
-int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
+int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
 
 /** \brief This dummy function sets current CSI for simulation
     @param csi_status
     @param csi_payload is updated with CSI
     @returns none */
+    
+uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac);
 
 void set_csi_nr(int csi_status, uint32_t csi_payload);
 

@@ -27,8 +27,6 @@
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
 
-
-
 int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 {
 
@@ -85,6 +83,7 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 
 void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
 {
+
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
@@ -233,6 +232,20 @@ uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
   return samp_count;
 }
 
+
+uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp)
+{
+   uint32_t slot_idx = 0;
+   int samples_till_the_slot = 0;
+   timestamp_rx = timestamp_rx%fp->samples_per_frame;
+
+    while (timestamp_rx > samples_till_the_slot) {
+        samples_till_the_slot += fp->get_samples_per_slot(slot_idx,fp);
+        slot_idx++;
+     }
+   return slot_idx; 
+}
+
 uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead)
 {
   uint32_t samp_count = 0;
@@ -251,13 +264,15 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
                         NR_DL_FRAME_PARMS *fp)
 {
 
+  AssertFatal (cfg != NULL, "%s %s:%i Null pointer to cfg %p!\n", __FUNCTION__, __FILE__, __LINE__, cfg);
+
   fp->frame_type = cfg->cell_config.frame_duplex_type.value;
   fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
   fp->N_RB_DL = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
   fp->N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
   int Ncp = NFAPI_CP_NORMAL;
-  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : 0;
+  int mu = cfg->ssb_config.scs_common.value;
 
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
@@ -275,9 +290,9 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
-  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antenna_ports_gNB = cfg->carrier_config.num_tx_ant.value;// It corresponds to pdsch_AntennaPorts
+  fp->nb_antennas_rx = cfg->carrier_config.num_rx_ant.value;      // It denotes the number of rx antennas at gNB
+  fp->nb_antennas_tx = 1;                                         // It corresponds to the number of UE Tx antennas
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
@@ -289,6 +304,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
                              (fp->nb_prefix_samples + fp->ofdm_symbol_size) * (fp->symbols_per_slot * fp->slots_per_subframe - 2); 
   fp->get_samples_per_slot = &get_samples_per_slot;
   fp->get_samples_slot_timestamp = &get_samples_slot_timestamp;
+  fp->get_slot_from_timestamp = &get_slot_from_timestamp;
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
@@ -305,7 +321,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   }
 
   fp->N_ssb = 0;
-  int num_tx_ant = (cfg == NULL) ? fp->Lmax : cfg->carrier_config.num_tx_ant.value;
+  int num_tx_ant = cfg->carrier_config.num_tx_ant.value;
 
   for (int p=0; p<num_tx_ant; p++)
     fp->N_ssb += ((fp->L_ssb >> (63-p)) & 0x01);
@@ -315,9 +331,22 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
-			   fapi_nr_config_request_t* config, 
-			   int Ncp) 
+                           fapi_nr_config_request_t* config,
+                           uint16_t nr_band)
 {
+
+  uint8_t nb_ant_ports_gNB  = 1;
+  uint8_t tdd_cfg           = 3;
+  uint8_t Nid_cell          = 0;
+  int     Ncp               = NORMAL;
+
+  // default values until overwritten by RRCConnectionReconfiguration
+  fp->nb_antenna_ports_gNB = nb_ant_ports_gNB;
+  fp->tdd_config           = tdd_cfg;
+  fp->Nid_cell             = Nid_cell;
+  fp->nr_band              = nr_band;
+
+  LOG_I(PHY, "Initializing frame parms: set nb_antenna_ports_gNB %d, tdd_config, %d, Nid_cell %d\n", fp->nb_antenna_ports_gNB, fp->tdd_config, fp->Nid_cell);
 
   uint64_t dl_bw_khz = (12*config->carrier_config.dl_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + config->carrier_config.dl_frequency)*1000 ;
@@ -330,11 +359,15 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->N_RB_DL = config->carrier_config.dl_grid_size[fp->numerology_index];
 
   int32_t uplink_frequency_offset = 0;
+  get_delta_duplex(fp->nr_band, fp->numerology_index, &uplink_frequency_offset);
+  get_frame_type(fp->nr_band, fp->numerology_index, &fp->frame_type);
+  uplink_frequency_offset *= 1000;
 
-  get_band(fp->dl_CarrierFreq, &fp->nr_band, &uplink_frequency_offset, &fp->frame_type);
+  LOG_I(PHY, "Initializing frame parms: DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, uplink_frequency_offset);
 
   AssertFatal(fp->frame_type==config->cell_config.frame_duplex_type, "Invalid duplex type in config request file for band %d\n", fp->nr_band);
-  AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+uplink_frequency_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
+
+  AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + uplink_frequency_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + uplink_frequency_offset);
 
 #if DISABLE_LOG_X
   printf("Initializing UE frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
@@ -350,11 +383,6 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   set_scs_parameters(fp,fp->numerology_index,config->carrier_config.dl_bandwidth);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
-
-  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
-
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
@@ -385,7 +413,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
     fp->Lmax = 64;
   }
 
-  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
+  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[0].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
   
   fp->N_ssb = 0;
   for (int p=0; p<fp->Lmax; p++)

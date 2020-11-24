@@ -37,6 +37,8 @@
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 #ifndef NO_RAT_NR
 
@@ -54,12 +56,50 @@
 
 uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+
+long
+binary_search_float_nr(
+  float elements[],
+  long numElem,
+  float value
+)
+//-----------------------------------------------------------------------------
+{
+  long first, last, middle;
+  first = 0;
+  last = numElem-1;
+  middle = (first+last)/2;
+
+  if(value < elements[0]) {
+    return first;
+  }
+
+  if(value >= elements[last]) {
+    return last;
+  }
+
+  while (last - first > 1) {
+    if (elements[middle] > value) {
+      last = middle;
+    } else {
+      first = middle;
+    }
+
+    middle = (first+last)/2;
+  }
+
+  if (first < 0 || first >= numElem) {
+    LOG_E(RRC,"\n Error in binary search float!");
+  }
+
+  return first;
+}
 /*
 void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
@@ -70,7 +110,7 @@ void nr_generate_pucch1(int32_t **txdataF,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB,
@@ -83,7 +123,7 @@ void nr_generate_pucch2(int32_t **txdataF,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint8_t nrofPRB,
@@ -96,7 +136,7 @@ void nr_generate_pucch3_4(int32_t **txdataF,
                          PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                          uint64_t payload,
                          int16_t amp,
-                         int nr_tti_tx,
+                         int nr_slot_tx,
                          uint8_t nrofSymbols,
                          uint8_t startingSymbolIndex,
                          uint8_t nrofPRB,
@@ -170,7 +210,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   uint64_t  pucch_payload = 0;
   uint32_t  csi_payload = 0;
   int       frame_tx = proc->frame_tx;
-  int       nr_tti_tx = proc->nr_tti_tx;
+  int       nr_slot_tx = proc->nr_slot_tx;
   int       Mod_id = ue->Mod_id;
   int       CC_id = ue->CC_id;
 
@@ -198,18 +238,18 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   /* update current context */
 
-  int subframe_number = (proc->nr_tti_rx)/(ue->frame_parms.slots_per_subframe);//ttis_per_subframe);
+  int subframe_number = proc->nr_slot_rx / ue->frame_parms.slots_per_subframe;
   nb_pucch_format_4_in_subframes[subframe_number] = 0; /* reset pucch format 4 counter at current rx position */
 
-  int dl_harq_pid = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid;
+  int dl_harq_pid = ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid;
 
-  if (dl_harq_pid < ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch) {
+  if (dl_harq_pid < ue->dlsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pdsch) {
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
-    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
+    pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
 
   /* Part - I
-   * Collect feedback that should be transmitted at this nr_tti_tx :
+   * Collect feedback that should be transmitted at this nr_slot_tx :
    * - ACK/NACK, SR, CSI (CQI, RI, ...)
    */
 
@@ -221,11 +261,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
       sr_payload = nr_ue_get_SR(Mod_id,
-  			CC_id,
-  			frame_tx,
-  			gNB_id,
-  			0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
-  			nr_tti_tx); // nr_tti_rx used for meas gap
+                                CC_id,
+                                frame_tx,
+                                gNB_id,
+                                0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
+                                nr_slot_tx); // nr_slot_rx used for meas gap
     }
     else {
       sr_payload = 1;
@@ -241,7 +281,17 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
-  csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
+  
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  
+  uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+
+  //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+	  if (report_slot_csi == proc->nr_slot_tx)
+		csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
+	  else
+	    csi_status = 0;
+  //}
 
   O_CSI = cqi_status + ri_status + csi_status;
 
@@ -251,8 +301,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   if(O_ACK == 0) {
     N_UCI = O_SR + O_CSI;
     if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
-      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
-      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       return (FALSE);
     }
     else {
@@ -304,7 +354,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_length = 0;
   int occ_Index = 0;
 
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
 
   if (select_pucch_resource(ue, mac, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
@@ -339,7 +389,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       if ((ue->UE_mode[gNB_id] != PUSCH) && (O_ACK > 1)) {
         O_ACK = 1;
         pucch_ack_payload &= 0x1; /* take only first ack */
-        LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+        LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       }
       NR_TST_PHY_PRINTF("PUCCH common configuration with index %d \n", initial_pucch_id);
     }
@@ -392,12 +442,12 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
   }
   else {
-    LOG_W(PHY,"PUCCH No PUCCH resource found at AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+    LOG_W(PHY,"PUCCH No PUCCH resource found at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
     return (FALSE);
   }
 
   int max_code_rate = 0;
-  int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
+  //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
 
@@ -426,21 +476,21 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format3_nr:
     {
       nb_of_prbs = pucch_resource->format.choice.format3->nrofPRBs;
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->pi2BPSK[0] == 1) {
-        Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
-      }
+      //if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->pi2BPSK[0] == 1) {
+      //  Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
+      //}
       N_sc_ctrl_RB = N_SC_RB;
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       break;
     }
     case pucch_format4_nr:
     {
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4->choice.setup->pi2BPSK[0] == 1) {
-        Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
-      }
+      //if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4->choice.setup->pi2BPSK[0] == 1) {
+      //  Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
+      //}
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       nb_of_prbs = 1;
-      subframe_number = nr_tti_tx/(ue->frame_parms.slots_per_subframe);//ttis_per_subframe);
+      subframe_number = nr_slot_tx / ue->frame_parms.slots_per_subframe;
       nb_pucch_format_4_in_subframes[subframe_number]++; /* increment number of transmit pucch 4 in current subframe */
       NR_TST_PHY_PRINTF("PUCCH Number of pucch format 4 in subframe %d is %d \n", subframe_number, nb_pucch_format_4_in_subframes[subframe_number]);
       N_sc_ctrl_RB = N_SC_RB/(nb_pucch_format_4_in_subframes[subframe_number]);
@@ -464,26 +514,27 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
     /* TS 38.212 6.3.1.2  Code block segmentation and CRC attachment */
     /* crc attachment can be done depending of payload size */
-    if (N_UCI < 11) {
-      O_CRC = 0;  /* no additional crc bits */
-    }
-    else if ((N_UCI >= 12) && (N_UCI <= 19)) {
-      O_CRC = 6;  /* number of additional crc bits */
-    }
-    else if (N_UCI >= 20) {
-      O_CRC = 11; /* number of additional crc bits */
-    }
+//    if (N_UCI < 11) {
+//      O_CRC = 0;  /* no additional crc bits */
+//    }
+//    else if ((N_UCI >= 12) && (N_UCI <= 19)) {
+//      O_CRC = 6;  /* number of additional crc bits */
+//    }
+//   else if (N_UCI >= 20) {
+//      O_CRC = 11; /* number of additional crc bits */
+//    }
 
     N_UCI = N_UCI + O_CRC;
 
     /* for format 2 and 3, number of prb should be adjusted to minimum value which cope to information size */
-    if (nb_of_prbs > 1 ) {
+    /*if (nb_of_prbs > 1 ) {
       int nb_prb_min = 0;
       int payload_in_bits;
       do {
         nb_prb_min++;
-        payload_in_bits = (nb_prb_min * N_sc_ctrl_RB * nb_symbols * Q_m * max_code_rate)/100; /* code rate has been multiplied by 100 */
-        NR_TST_PHY_PRINTF("PUCCH Adjust number of prb : (N_UCI : %d ) (payload_in_bits : %d) (N_sc_ctrl_RB : %d) (nb_symbols : %d) (Q_m : %d) (max_code_rate*100 : %d) \n",
+        payload_in_bits = (nb_prb_min * N_sc_ctrl_RB * nb_symbols * Q_m * max_code_rate)/100; */ /* code rate has been multiplied by 100 */
+        
+        /*NR_TST_PHY_PRINTF("PUCCH Adjust number of prb : (N_UCI : %d ) (payload_in_bits : %d) (N_sc_ctrl_RB : %d) (nb_symbols : %d) (Q_m : %d) (max_code_rate*100 : %d) \n",
                                                N_UCI,        payload_in_bits,       N_sc_ctrl_RB,       nb_symbols,       Q_m,       max_code_rate);
       } while (N_UCI > payload_in_bits);
 
@@ -494,7 +545,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       else {
         nb_of_prbs = nb_prb_min;
       }
-    }
+    }*/
 
     /* TS 38.213 9.2.4 for a positive SR transmission, payload b(0) = 0 */
     if ((O_SR == 1) && (format ==  pucch_format1_nr)) {
@@ -544,7 +595,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   pucch_payload = pucch_payload | (csi_payload << (O_ACK + O_SR)) |  (sr_payload << O_ACK) | pucch_ack_payload;
 
   NR_TST_PHY_PRINTF("PUCCH ( AbsSubframe : %d.%d ) ( total payload size %d data 0x%02x ) ( ack length %d data 0x%02x ) ( sr length %d value %d ) ( csi length %d data : 0x%02x ) \n",
-                         frame_tx%1024, nr_tti_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
+                         frame_tx%1024, nr_slot_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
 
   NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols total: %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
                              format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
@@ -561,8 +612,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                   O_CRC, n_HARQ_ACK);
 
   /* set tx power */
-  ue->tx_power_dBm[nr_tti_tx] = pucch_tx_power;
-  ue->tx_total_RE[nr_tti_tx] = nb_of_prbs*N_SC_RB;
+  ue->tx_power_dBm[nr_slot_tx] = pucch_tx_power;
+  ue->tx_total_RE[nr_slot_tx] = nb_of_prbs*N_SC_RB;
 
   int tx_amp;
 
@@ -584,7 +635,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,
                          mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0],
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          (uint8_t)m_CS,
                          nb_symbols_total,
@@ -599,7 +650,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          nb_symbols_total,
                          starting_symbol_index,
@@ -620,7 +671,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
@@ -632,14 +683,14 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format4_nr:
     {
       nr_generate_pucch3_4(ue,
-                           0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
                            &ue->pucch_config_dedicated[gNB_id],
                            pucch_payload,
                            tx_amp,
-                           nr_tti_tx,
+                           nr_slot_tx,
                            nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
@@ -692,7 +743,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int number_harq_feedback = 0;
   uint32_t dai_current = 0;
   uint32_t dai_max = 0;
-  int number_pid_dl = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch;
+  int number_pid_dl = ue->dlsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pdsch;
   bool two_transport_blocks = FALSE;
   int number_of_code_word = 1;
   int U_DAI_c = 0;
@@ -725,7 +776,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
         harq_status = &ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]->harq_ack;
 
         /* check if current tx slot should transmit downlink acknowlegment */
-        if (harq_status->slot_for_feedback_ack == proc->nr_tti_tx) {
+        if (harq_status->slot_for_feedback_ack == proc->nr_slot_tx) {
 
           if (harq_status->ack == DL_ACKNACK_NO_SET) {
             LOG_E(PHY,"PUCCH Downlink acknowledgment has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
@@ -986,7 +1037,10 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
               current_resource_id = r_PUCCH;
             }
             else {
-              current_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
+		if (pucch_resource_set_id !=0 )
+			current_resource_id = 3; //TBC mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
+		else
+			current_resource_id = 1;
             }
           }
 
@@ -1050,7 +1104,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 {
   int pucch_resource_set_id = 0;
-  long *pucch_max_pl_bits = NULL;
+  //long *pucch_max_pl_bits = NULL;
 
   /* from TS 38.331 field maxPayloadMinus1
     -- Maximum number of payload bits minus 1 that the UE may transmit using this PUCCH resource set. In a PUCCH occurrence, the UE
@@ -1062,9 +1116,15 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
   /* look for the first resource set which supports uci_size number of bits for payload */
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
-      pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadSize;
-      if (uci_size <= (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
-        NR_TST_PHY_PRINTF("PUCCH found resource set %d \n",  pucch_resource_set_id);
+      //pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1;
+      if (uci_size <= 2) { //TBC rrc (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
+        //NR_TST_PHY_PRINTF("PUCCH found resource set %d max bits %d\n",  pucch_resource_set_id, pucch_max_pl_bits);
+        pucch_resource_set_id = 0;
+        return (pucch_resource_set_id);
+        break;
+      }
+      else {
+        pucch_resource_set_id = 1;
         return (pucch_resource_set_id);
         break;
       }
@@ -1096,7 +1156,7 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
 {
   pucch_format_nr_t selected_pucch_format;
   pucch_format_nr_t selected_pucch_format_second;
-  NR_SetupRelease_PUCCH_FormatConfig_t *identified_format = NULL;
+  /*NR_SetupRelease_PUCCH_FormatConfig_t *identified_format = NULL;
 
   switch (format_pucch) {
     case pucch_format1_nr:
@@ -1121,12 +1181,12 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
 
     default:
     break;
-  }
+  }*/
 
-  if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
+ /* if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
     LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (FALSE);
-  }
+  }*/
 
   if (nb_symbols_for_tx <= 2) {
     if (uci_size <= 2) {
@@ -1217,8 +1277,8 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
     return (1); /* period is slot */
   }
 
-  int16_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * ue->frame_parms.slots_per_subframe;//ttis_per_subframe;
-  if (((proc->frame_tx * N_slot_frame) + proc->nr_tti_tx - SR_offset)%SR_periodicity == 0) {
+  int16_t N_slot_frame = ue->frame_parms.slots_per_frame;
+  if (((proc->frame_tx * N_slot_frame) + proc->nr_slot_tx - SR_offset)%SR_periodicity == 0) {
     return (1);
   }
   else {
@@ -1247,19 +1307,68 @@ uint32_t dummy_csi_payload = 0;
 
 /* FFS TODO_NR code that should be developed */
 
-int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
+uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac) {
+
+  uint16_t csi_bitlen =0;
+  uint16_t rsrp_bitlen = 0;
+  uint16_t diff_rsrp_bitlen = 0;
+  uint16_t nb_ssbri_cri = 0; 
+  uint16_t cri_ssbri_bitlen = 0;
+  
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList__nzp_CSI_RS_SSB * nzp_CSI_RS_SSB = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[0]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB;
+
+  uint16_t nb_csi_ssb_report = nzp_CSI_RS_SSB->csi_SSB_ResourceSetList!=NULL ? nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.count:0;
+  
+  if (0 != nb_csi_ssb_report){
+	  uint8_t nb_ssb_resources =0;
+	  
+  if (NULL != csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
+      nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+  else
+      nb_ssbri_cri = 1;
+  
+  nb_ssb_resources = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[0]->csi_SSB_ResourceList.list.count;
+  
+  if (nb_ssb_resources){
+	cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
+	rsrp_bitlen = 7;
+	diff_rsrp_bitlen = 4;
+	}
+  else{
+	cri_ssbri_bitlen =0;
+	rsrp_bitlen = 0;
+	diff_rsrp_bitlen = 0;
+	}
+  
+  csi_bitlen = ((cri_ssbri_bitlen * nb_ssbri_cri) + rsrp_bitlen +(diff_rsrp_bitlen *(nb_ssbri_cri -1 ))) *nb_csi_ssb_report;
+               
+  //printf("get csi bitlen %d nb_ssbri_cri %d nb_csi_report %d nb_resources %d\n", csi_bitlen,nb_ssbri_cri ,nb_csi_ssb_report, nb_ssb_resources);
+  }
+  return csi_bitlen;
+}
+
+int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
 {
   VOID_PARAMETER ue;
   VOID_PARAMETER gNB_id;
+  float rsrp_db[7];
+  int nElem = 98;
+  int rsrp_offset = 17;
+  int csi_status = 0;
+  
+  csi_status = get_nr_csi_bitlen(mac);
+  rsrp_db[0] = get_nr_RSRP(0,0,0);
 
-  if (dummy_csi_status == 0) {
+
+  if (csi_status == 0) {
     *csi_payload = 0;
   }
   else {
-    *csi_payload = dummy_csi_payload;
+    *csi_payload = binary_search_float_nr(RSRP_meas_mapping_nr,nElem, rsrp_db[0]) + rsrp_offset;
   }
 
-  return (dummy_csi_status);
+  return (csi_status);
 }
 
 /* FFS TODO_NR code that should be removed */
@@ -1326,6 +1435,9 @@ int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_
 
     case pucch_format1_nr:
       return pucch_resource->format.choice.format1->initialCyclicShift;
+      
+    case pucch_format2_nr:
+      return 0;
 
     default:
       return -1;
