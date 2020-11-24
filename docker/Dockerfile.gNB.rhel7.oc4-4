@@ -1,0 +1,89 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for RHEL7 in the OpenShift context (v4.4)
+#
+#---------------------------------------------------------------------
+
+FROM image-registry.openshift-image-registry.svc:5000/oai/oai-ran:latest AS gnb-build 
+
+
+WORKDIR /oai-gnb
+COPY . .
+
+#run build_oai to build the target image
+RUN /bin/sh oaienv && \ 
+    cd cmake_targets && \
+    mkdir -p log && \
+    ./build_oai --gNB
+
+
+#start from scratch for target executable
+FROM registry.access.redhat.com/ubi7/ubi:latest as oai-gnb
+
+# Entitlements and RHSM configurations are Open-Shift Secret and ConfigMaps
+# It is pre-requisite
+RUN rm -Rf /etc/rhsm/ca /etc/pki/entitlement
+# Copy the entitlements
+COPY ./etc-pki-entitlement /etc/pki/entitlement
+# Copy the subscription manager configurations
+COPY ./rhsm-conf /etc/rhsm
+COPY ./rhsm-ca /etc/rhsm/ca
+
+
+#install developers pkg/repo
+RUN rm /etc/rhsm-host && \
+    # Initialize /etc/yum.repos.d/redhat.repo
+    # See https://access.redhat.com/solutions/1443553
+    yum repolist --disablerepo=* && \
+    yum-config-manager --enable rhel-7-server-optional-rpms rhel-server-rhscl-7-rpms && \
+    yum update -y && \
+    yum install -y  \
+        libXpm \
+        libX11 \
+        atlas \
+        blas \
+        lapack \
+        lksctp-tools \
+        protobuf-c \
+        nettle \
+        libyaml && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
+
+WORKDIR /opt/oai-gnb/bin
+COPY --from=gnb-build /oai-gnb/targets/bin/nr-softmodem.Rel15 .
+WORKDIR /lib64
+COPY --from=gnb-build /lib64/libforms.so.2 .
+
+RUN ldd /opt/oai-gnb/bin/nr-softmodem.Rel15
+
+#EXPOSE 2152/udp  # S1U, GTP/UDP
+#EXPOSE 22100/tcp # ?
+#EXPOSE 36412/udp # S1C, SCTP/UDP
+#EXPOSE 36422/udp # X2C, SCTP/UDP
+#EXPOSE 50000/udp # IF5 / ORI (control)
+#EXPOSE 50001/udp # IF5 / ECPRI (data)
+
+#CMD ["/opt/oai-gnb/bin/nr-softmodem", "-O", "/opt/oai-gnb/etc/gnb.conf"]
+#ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
+

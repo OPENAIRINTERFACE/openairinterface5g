@@ -52,6 +52,7 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+UE_nr_rxtx_proc_t proc;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
@@ -559,7 +560,7 @@ int main(int argc, char **argv)
 
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_IN);
 
-			ret = nr_dlsch_decoding(UE, channel_output_fixed, &UE->frame_parms,
+			ret = nr_dlsch_decoding(UE, &proc, 0, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
 					slot,harq_pid, is_crnti, llr8_flag);
 

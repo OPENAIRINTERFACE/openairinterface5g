@@ -25,6 +25,8 @@
 	<htmlTabName>Test-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>2</repeatCount>
+	<TestUnstable>True</TestUnstable>
+	<TestMinId>040612</TestMinId>
 	<TestCaseRequestedList>
  030201
  040101

@@ -321,6 +321,7 @@ typedef enum {
 #define NFAPI_NR_CONFIG_PRACH_SUB_C_SPACING_TAG 0x1012
 #define NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG 0x1013
 #define NFAPI_NR_CONFIG_NUM_PRACH_FD_OCCASIONS_TAG 0x1014
+#define NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG 0x1029
 #define NFAPI_NR_CONFIG_PRACH_ROOT_SEQUENCE_INDEX_TAG 0x1015
 #define NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG 0x1016
 #define NFAPI_NR_CONFIG_K1_TAG 0x1017
@@ -385,7 +386,6 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t  num_prach_fd_occasions;
   nfapi_uint16_tlv_t prach_root_sequence_index;//Starting logical root sequence index, 𝑖, equivalent to higher layer parameter prach-RootSequenceIndex [38.211, sec 6.3.3.1] Value: 0 -> 837
   nfapi_uint8_tlv_t  num_root_sequences;//Number of root sequences for a particular FD occasion that are required to generate the necessary number of preambles
   nfapi_uint16_tlv_t k1;//Frequency offset (from UL bandwidth part) for each FD. [38.211, sec 6.3.3.2] Value: from 0 to 272
@@ -401,7 +401,9 @@ typedef struct
   nfapi_uint8_tlv_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
   nfapi_uint8_tlv_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
   nfapi_uint8_tlv_t num_prach_fd_occasions;//Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+  nfapi_uint8_tlv_t prach_ConfigurationIndex;//PRACH configuration index. Value:0->255
   nfapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
+
   nfapi_uint8_tlv_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
   nfapi_uint8_tlv_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
 
@@ -1258,7 +1260,7 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t  pdu_idx;//This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 65535
+  uint8_t  pdu_idx;//This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
 
 } nfapi_nr_ul_tti_request_number_of_ue_t;
 
@@ -1539,7 +1541,7 @@ typedef struct
 }nfapi_nr_uci_pucch_pdu_format_2_3_4_t;
 
 typedef enum {
-  NFAPI_NR_UCI_PDCCH_PDU_TYPE  = 0,
+  NFAPI_NR_UCI_PUSCH_PDU_TYPE  = 0,
   NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE  = 1,
   NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE = 2,
 } nfapi_nr_uci_pdu_type_e;

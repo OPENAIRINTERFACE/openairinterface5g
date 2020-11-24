@@ -64,10 +64,10 @@ int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, 
   return 0;
 }
 //  L2 Abstraction Layer
-int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_indication_pdu_t *dci){
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci){
 
   //printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
-  return nr_ue_process_dci_indication_pdu(module_id, cc_id, gNB_index, dci);
+  return nr_ue_process_dci_indication_pdu(module_id, cc_id, gNB_index, frame, slot, dci);
 
 }
 //  L2 Abstraction Layer
@@ -110,7 +110,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   ret = nr_ue_scheduler(NULL, ul_info);
 
   if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
-    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
+    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -135,8 +135,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
-
+  
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
@@ -150,13 +149,15 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
+                                dl_info->frame,
+                                dl_info->slot,
                                 dl_info->dci_ind->dci_list+i);
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
           AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-          fill_scheduled_response(&scheduled_response, dl_config, ul_config, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot);
+          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
       }

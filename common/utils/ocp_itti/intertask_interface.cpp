@@ -194,7 +194,8 @@ task_list_t tasks[TASK_MAX];
           t->next_timer=UINT64_MAX;
 
           // Proceed expired timer
-          for ( auto it=t->timer_map.begin() ; it != t->timer_map.end() ; ++it ) {
+          for ( auto it=t->timer_map.begin() , next_it = it; it != t->timer_map.end() ; it = next_it ) {
+            ++next_it;
             if ( it->second.timeout < current_time ) {
               MessageDef *message = itti_alloc_new_message(TASK_TIMER, TIMER_HAS_EXPIRED);
               message->ittiMsg.timer_has_expired.timer_id=it->first;

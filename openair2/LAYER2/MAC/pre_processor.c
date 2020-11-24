@@ -69,6 +69,70 @@ int get_rbg_size_last(module_id_t Mod_id, int CC_id) {
     return RBGsize;
 }
 
+bool try_allocate_harq_retransmission(module_id_t Mod_id,
+                                      int CC_id,
+                                      int frame,
+                                      int subframe,
+                                      int UE_id,
+                                      int start_rbg,
+                                      int *n_rbg_sched,
+                                      uint8_t *rbgalloc_mask) {
+  const int N_RBG = to_rbg(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  const int RBGsize = get_min_rb_unit(Mod_id, CC_id);
+  const int RBGlastsize = get_rbg_size_last(Mod_id, CC_id);
+  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
+  // check whether there are HARQ retransmissions
+  const COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
+  const uint8_t harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config, frame, subframe);
+  UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  // retransmission: allocate
+  const int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+  if (nb_rb == 0) {
+    return false;
+  }
+  int nb_rbg = (nb_rb + (nb_rb % RBGsize)) / RBGsize;
+  // needs more RBGs than we can allocate
+  if (nb_rbg > *n_rbg_sched) {
+    LOG_D(MAC,
+          "retransmission of UE %d needs more RBGs (%d) than we have (%d)\n",
+          UE_id, nb_rbg, *n_rbg_sched);
+    return false;
+  }
+  // ensure that the number of RBs can be contained by the RBGs (!), i.e.
+  // if we allocate the last RBG this one should have the full RBGsize
+  if ((nb_rb % RBGsize) == 0 && nb_rbg == *n_rbg_sched
+      && rbgalloc_mask[N_RBG - 1] && RBGlastsize != RBGsize) {
+    LOG_D(MAC,
+          "retransmission of UE %d needs %d RBs, but the last RBG %d is too small (%d, normal %d)\n",
+          UE_id, nb_rb, N_RBG - 1, RBGlastsize, RBGsize);
+    return false;
+  }
+  const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
+  const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
+  if (idx < 0) { // cannot allocate CCE
+    LOG_D(MAC, "cannot allocate UE %d: no CCE can be allocated\n", UE_id);
+    return false;
+  }
+  ue_ctrl->pre_dci_dl_pdu_idx = idx;
+  // retransmissions: directly allocate
+  *n_rbg_sched -= nb_rbg;
+  ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
+  for (; nb_rbg > 0; start_rbg++) {
+    if (!rbgalloc_mask[start_rbg])
+      continue;
+    ue_ctrl->rballoc_sub_UE[CC_id][start_rbg] = 1;
+    rbgalloc_mask[start_rbg] = 0;
+    nb_rbg--;
+  }
+  LOG_D(MAC,
+        "%4d.%d n_rbg_sched %d after retransmission reservation for UE %d "
+        "retx nb_rb %d pre_nb_available_rbs %d\n",
+        frame, subframe, *n_rbg_sched, UE_id,
+        UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid],
+        ue_ctrl->pre_nb_available_rbs[CC_id]);
+  return true;
+}
+
 void *rr_dl_setup(void) {
   void *data = malloc(sizeof(int));
   *(int *) data = 0;
@@ -115,64 +179,25 @@ int rr_dl_run(module_id_t Mod_id,
     const uint8_t harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config, frame, subframe);
     UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const uint8_t round = ue_ctrl->round[CC_id][harq_pid];
-    if (round != 8) { // retransmission: allocate
-      const int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-      if (nb_rb == 0)
-        goto skip_ue;
-      int nb_rbg = (nb_rb + (nb_rb % RBGsize)) / RBGsize;
-      // needs more RBGs than we can allocate
-      if (nb_rbg > n_rbg_sched) {
-        LOG_D(MAC,
-              "retransmission of UE %d needs more RBGs (%d) than we have (%d)\n",
-              UE_id, nb_rbg, n_rbg_sched);
-        goto skip_ue;
+    if (round != 8) {
+      bool r = try_allocate_harq_retransmission(Mod_id, CC_id, frame, subframe,
+                                                UE_id, rbg, &n_rbg_sched,
+                                                rbgalloc_mask);
+      if (r) {
+        /* if there are no more RBG to give, return */
+        if (n_rbg_sched <= 0)
+          return 0;
+        max_num_ue--;
+        if (max_num_ue == 0)
+          return n_rbg_sched;
+        for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
       }
-      // ensure that the number of RBs can be contained by the RBGs (!), i.e.
-      // if we allocate the last RBG this one should have the full RBGsize
-      if ((nb_rb % RBGsize) == 0 && nb_rbg == n_rbg_sched
-          && rbgalloc_mask[N_RBG - 1] && RBGlastsize != RBGsize) {
-        LOG_D(MAC,
-              "retransmission of UE %d needs %d RBs, but the last RBG %d is too small (%d, normal %d)\n",
-              UE_id, nb_rb, N_RBG - 1, RBGlastsize, RBGsize);
-        goto skip_ue;
-      }
-      const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
-      const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
-      if (idx < 0)
-        goto skip_ue; // cannot allocate CCE
-      ue_ctrl->pre_dci_dl_pdu_idx = idx;
-      // retransmissions: directly allocate
-      n_rbg_sched -= nb_rbg;
-      ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
-      for (; nb_rbg > 0; rbg++) {
-        if (!rbgalloc_mask[rbg])
-          continue;
-        ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
-        rbgalloc_mask[rbg] = 0;
-        nb_rbg--;
-      }
-      LOG_D(MAC,
-            "%4d.%d n_rbg_sched %d after retransmission reservation for UE %d "
-            "round %d retx nb_rb %d pre_nb_available_rbs %d\n",
-            frame, subframe, n_rbg_sched, UE_id, round,
-            UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid],
-            ue_ctrl->pre_nb_available_rbs[CC_id]);
-      /* if there are no more RBG to give, return */
-      if (n_rbg_sched <= 0)
-        return 0;
-      max_num_ue--;
-      /* if there are no UEs that can be allocated anymore, return */
-      if (max_num_ue == 0)
-        return n_rbg_sched;
-      for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
     } else {
       if (UE_info->UE_template[CC_id][UE_id].dl_buffer_total > 0) {
         *cur_UE = UE_id;
         cur_UE = &UE_sched.next[UE_id];
       }
     }
-
-skip_ue:
     UE_id = next_ue_list_looped(UE_list, UE_id);
   } while (UE_id != *start_ue);
   *cur_UE = -1; // mark end
@@ -187,11 +212,12 @@ skip_ue:
   cur_UE = &UE_sched.head;
   while (*cur_UE >= 0 && max_num_ue > 0) {
     const int UE_id = *cur_UE;
-    cur_UE = &UE_sched.next[UE_id]; // go to next
     const uint8_t cqi = UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
     const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
     if (idx < 0) {
       LOG_D(MAC, "cannot allocate CCE for UE %d, skipping\n", UE_id);
+      // SKIP this UE in the list by marking the next as the current
+      *cur_UE = UE_sched.next[UE_id];
       continue;
     }
     UE_info->UE_sched_ctrl[UE_id].pre_dci_dl_pdu_idx = idx;
@@ -200,6 +226,7 @@ skip_ue:
     const uint32_t B = UE_info->UE_template[CC_id][UE_id].dl_buffer_total;
     rb_required[UE_id] = find_nb_rb_DL(mcs, B, n_rbg_sched * RBGsize, RBGsize);
     max_num_ue--;
+    cur_UE = &UE_sched.next[UE_id]; // go to next
   }
   *cur_UE = -1; // not all UEs might be allocated, mark end
 
@@ -284,56 +311,19 @@ int pf_wbcqi_dl_run(module_id_t Mod_id,
     const uint8_t harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config, frame, subframe);
     UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const uint8_t round = ue_ctrl->round[CC_id][harq_pid];
-    if (round != 8) { // retransmission: allocate
-      const int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-      if (nb_rb == 0)
-        continue;
-      int nb_rbg = (nb_rb + (nb_rb % RBGsize)) / RBGsize;
-      // needs more RBGs than we can allocate
-      if (nb_rbg > n_rbg_sched) {
-        LOG_D(MAC,
-              "retransmission of UE %d needs more RBGs (%d) than we have (%d)\n",
-              UE_id, nb_rbg, n_rbg_sched);
-        continue;
+    if (round != 8) {
+      bool r = try_allocate_harq_retransmission(Mod_id, CC_id, frame, subframe,
+                                                UE_id, rbg, &n_rbg_sched,
+                                                rbgalloc_mask);
+      if (r) {
+        /* if there are no more RBG to give, return */
+        if (n_rbg_sched <= 0)
+          return 0;
+        max_num_ue--;
+        if (max_num_ue == 0)
+          return n_rbg_sched;
+        for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
       }
-      // ensure that the number of RBs can be contained by the RBGs (!), i.e.
-      // if we allocate the last RBG this one should have the full RBGsize
-      if ((nb_rb % RBGsize) == 0 && nb_rbg == n_rbg_sched
-          && rbgalloc_mask[N_RBG - 1] && RBGlastsize != RBGsize) {
-        LOG_D(MAC,
-              "retransmission of UE %d needs %d RBs, but the last RBG %d is too small (%d, normal %d)\n",
-              UE_id, nb_rb, N_RBG - 1, RBGlastsize, RBGsize);
-        continue;
-      }
-      const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
-      const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
-      if (idx < 0)
-        continue; // cannot allocate CCE
-      ue_ctrl->pre_dci_dl_pdu_idx = idx;
-      // retransmissions: directly allocate
-      n_rbg_sched -= nb_rbg;
-      ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
-      for (; nb_rbg > 0; rbg++) {
-        if (!rbgalloc_mask[rbg])
-          continue;
-        ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
-        rbgalloc_mask[rbg] = 0;
-        nb_rbg--;
-      }
-      LOG_D(MAC,
-            "%4d.%d n_rbg_sched %d after retransmission reservation for UE %d "
-            "round %d retx nb_rb %d pre_nb_available_rbs %d\n",
-            frame, subframe, n_rbg_sched, UE_id, round,
-            UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid],
-            ue_ctrl->pre_nb_available_rbs[CC_id]);
-      /* if there are no more RBG to give, return */
-      if (n_rbg_sched <= 0)
-        return 0;
-      max_num_ue--;
-      /* if there are no UEs that can be allocated anymore, return */
-      if (max_num_ue == 0)
-        return n_rbg_sched;
-      for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
     } else {
       if (UE_info->UE_template[CC_id][UE_id].dl_buffer_total == 0)
         continue;
@@ -436,56 +426,19 @@ int mt_wbcqi_dl_run(module_id_t Mod_id,
     const uint8_t harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config, frame, subframe);
     UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const uint8_t round = ue_ctrl->round[CC_id][harq_pid];
-    if (round != 8) { // retransmission: allocate
-      const int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-      if (nb_rb == 0)
-        continue;
-      int nb_rbg = (nb_rb + (nb_rb % RBGsize)) / RBGsize;
-      // needs more RBGs than we can allocate
-      if (nb_rbg > n_rbg_sched) {
-        LOG_D(MAC,
-              "retransmission of UE %d needs more RBGs (%d) than we have (%d)\n",
-              UE_id, nb_rbg, n_rbg_sched);
-        continue;
+    if (round != 8) {
+      bool r = try_allocate_harq_retransmission(Mod_id, CC_id, frame, subframe,
+                                                UE_id, rbg, &n_rbg_sched,
+                                                rbgalloc_mask);
+      if (r) {
+        /* if there are no more RBG to give, return */
+        if (n_rbg_sched <= 0)
+          return 0;
+        max_num_ue--;
+        if (max_num_ue == 0)
+          return n_rbg_sched;
+        for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
       }
-      // ensure that the number of RBs can be contained by the RBGs (!), i.e.
-      // if we allocate the last RBG this one should have the full RBGsize
-      if ((nb_rb % RBGsize) == 0 && nb_rbg == n_rbg_sched
-          && rbgalloc_mask[N_RBG - 1] && RBGlastsize != RBGsize) {
-        LOG_D(MAC,
-              "retransmission of UE %d needs %d RBs, but the last RBG %d is too small (%d, normal %d)\n",
-              UE_id, nb_rb, N_RBG - 1, RBGlastsize, RBGsize);
-        continue;
-      }
-      const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
-      const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
-      if (idx < 0)
-        continue; // cannot allocate CCE
-      ue_ctrl->pre_dci_dl_pdu_idx = idx;
-      // retransmissions: directly allocate
-      n_rbg_sched -= nb_rbg;
-      ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
-      for (; nb_rbg > 0; rbg++) {
-        if (!rbgalloc_mask[rbg])
-          continue;
-        ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
-        rbgalloc_mask[rbg] = 0;
-        nb_rbg--;
-      }
-      LOG_D(MAC,
-            "%4d.%d n_rbg_sched %d after retransmission reservation for UE %d "
-            "round %d retx nb_rb %d pre_nb_available_rbs %d\n",
-            frame, subframe, n_rbg_sched, UE_id, round,
-            UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid],
-            ue_ctrl->pre_nb_available_rbs[CC_id]);
-      /* if there are no more RBG to give, return */
-      if (n_rbg_sched <= 0)
-        return 0;
-      max_num_ue--;
-      /* if there are no UEs that can be allocated anymore, return */
-      if (max_num_ue == 0)
-        return n_rbg_sched;
-      for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
     } else {
       if (UE_info->UE_template[CC_id][UE_id].dl_buffer_total == 0)
         continue;
@@ -942,7 +895,10 @@ int rr_ul_run(module_id_t Mod_id,
         &tx_power);
 
     UE_template->pre_assigned_mcs_ul = mcs;
-    rb_idx_required[UE_id] = rb_table_index;
+    /* rb_idx_given >= 22: apparently the PHY cannot support more than 48
+     * RBs in the uplink. Hence, we limit every UE to 48 RBs, which is at
+     * index 22 */
+    rb_idx_required[UE_id] = min(22, rb_table_index);
     //UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
     /* only print log when PHR changed */
     static int phr = 0;

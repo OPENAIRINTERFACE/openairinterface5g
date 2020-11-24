@@ -19,6 +19,9 @@
  *      contact@openairinterface.org
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include "nr_pdcp_ue_manager.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
@@ -42,6 +45,7 @@ static uint64_t pdcp_optmask;
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
 /****************************************************************************/
+
 
 #include <pthread.h>
 
@@ -92,6 +96,7 @@ static void *rlc_data_req_thread(void *_)
 {
   int i;
 
+  pthread_setname_np(pthread_self(), "RLC queue");
   while (1) {
     if (pthread_mutex_lock(&q.m) != 0) abort();
     while (q.length == 0)
@@ -203,6 +208,7 @@ static void *enb_tun_read_thread(void *_)
   protocol_ctxt_t ctxt;
 
   int rb_id = 1;
+  pthread_setname_np( pthread_self(),"enb_tun_read");
 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
@@ -247,7 +253,7 @@ static void *ue_tun_read_thread(void *_)
   protocol_ctxt_t ctxt;
 
   int rb_id = 1;
-
+  pthread_setname_np( pthread_self(),"ue_tun_read"); 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
     if (len == -1) {
@@ -368,7 +374,7 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("ue",num_if);
       //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
@@ -863,10 +869,45 @@ boolean_t pdcp_remove_UE(
   return 1;
 }
 
-void pdcp_config_set_security(const protocol_ctxt_t* const  ctxt_pP, pdcp_t *pdcp_pP, rb_id_t rb_id,
-                              uint16_t lc_idP, uint8_t security_modeP, uint8_t *kRRCenc_pP, uint8_t *kRRCint_pP, uint8_t *kUPenc_pP)
+void pdcp_config_set_security(
+        const protocol_ctxt_t* const  ctxt_pP,
+        pdcp_t *const pdcp_pP,
+        const rb_id_t rb_id,
+        const uint16_t lc_idP,
+        const uint8_t security_modeP,
+        uint8_t *const kRRCenc_pP,
+        uint8_t *const kRRCint_pP,
+        uint8_t *const kUPenc_pP)
 {
-  TODO;
+  DevAssert(pdcp_pP != NULL);
+
+  if ((security_modeP >= 0) && (security_modeP <= 0x77)) {
+    pdcp_pP->cipheringAlgorithm     = security_modeP & 0x0f;
+    pdcp_pP->integrityProtAlgorithm = (security_modeP>>4) & 0xf;
+    LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_SET_SECURITY_MODE: cipheringAlgorithm %d integrityProtAlgorithm %d\n",
+          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
+          pdcp_pP->cipheringAlgorithm,
+          pdcp_pP->integrityProtAlgorithm);
+    pdcp_pP->kRRCenc = kRRCenc_pP;
+    pdcp_pP->kRRCint = kRRCint_pP;
+    pdcp_pP->kUPenc  = kUPenc_pP;
+    /* Activate security */
+    pdcp_pP->security_activated = 1;
+    MSC_LOG_EVENT(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      "0 Set security ciph %X integ %x UE %"PRIx16" ",
+      pdcp_pP->cipheringAlgorithm,
+      pdcp_pP->integrityProtAlgorithm,
+      ctxt_pP->rnti);
+  } else {
+    MSC_LOG_EVENT(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      "0 Set security failed UE %"PRIx16" ",
+      ctxt_pP->rnti);
+    LOG_E(PDCP,PROTOCOL_PDCP_CTXT_FMT"  bad security mode %d",
+          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
+          security_modeP);
+  }
 }
 
 static boolean_t pdcp_data_req_drb(

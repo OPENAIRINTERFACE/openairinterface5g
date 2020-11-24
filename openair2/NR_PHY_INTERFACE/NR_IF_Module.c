@@ -56,25 +56,64 @@ extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
+
   if (UL_info->rach_ind.number_of_pdus>0) {
-    AssertFatal(UL_info->rach_ind.number_of_pdus==1,"More than 1 RACH pdu not supported\n");
-    UL_info->rach_ind.number_of_pdus=0;
-    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
-
-    if (UL_info->rach_ind.pdu_list[0].num_preamble>0)
-    AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
-		"More than 1 preamble not supported\n");
+    LOG_I(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
+    int npdus = UL_info->rach_ind.number_of_pdus;
+    for(int i = 0; i < npdus; i++) {
+      UL_info->rach_ind.number_of_pdus--;
+      if (UL_info->rach_ind.pdu_list[i].num_preamble>0)
+      AssertFatal(UL_info->rach_ind.pdu_list[i].num_preamble==1,
+                  "More than 1 preamble not supported\n");
     
-    nr_initiate_ra_proc(UL_info->module_id,
-                        UL_info->CC_id,
-                        UL_info->rach_ind.sfn,
-                        UL_info->rach_ind.slot,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
-                        UL_info->rach_ind.pdu_list[0].freq_index,
-                        UL_info->rach_ind.pdu_list[0].symbol_index,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);
-
+      nr_initiate_ra_proc(UL_info->module_id,
+                          UL_info->CC_id,
+                          UL_info->rach_ind.sfn,
+                          UL_info->rach_ind.slot,
+                          UL_info->rach_ind.pdu_list[i].preamble_list[0].preamble_index,
+                          UL_info->rach_ind.pdu_list[i].freq_index,
+                          UL_info->rach_ind.pdu_list[i].symbol_index,
+                          UL_info->rach_ind.pdu_list[i].preamble_list[0].timing_advance);
+    }
   }
+}
+
+
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10) {
+
+  int num_ucis = UL_info->uci_ind.num_ucis;
+  nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
+
+  for (int i = 0; i < num_ucis; i++) {
+    switch (uci_list[i].pdu_type) {
+      case NFAPI_NR_UCI_PUSCH_PDU_TYPE: break;
+
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+
+        if( (uci_pdu->pduBitmap>>1) & 0x01)
+          nr_rx_acknack(NULL,uci_pdu,NULL,UL_info,sched_ctrl,stats);
+
+        break;
+      }
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
+
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+
+        if( (uci_pdu->pduBitmap>>1) & 0x01)
+          nr_rx_acknack(NULL,NULL,uci_pdu,UL_info,sched_ctrl,stats);
+
+        break;
+      }
+    }
+  }
+
+  UL_info->uci_ind.num_ucis = 0;
 }
 
 

@@ -23,6 +23,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/LOG/log.h"
 #include "PHY/sse_intrin.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define k1 1000
 #define k1 ((long long int) 1000)
@@ -76,12 +77,42 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
                     //(ue->frame_parms.pdsch_config_common.referenceSignalPower*10))/10));
 }
 
+uint32_t get_nr_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
+{
+
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+
+  if (ue)
+    return ue->rx_total_gain_dB;
+
+  return 0xFFFFFFFF;
+}
+
+
+float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
+{
+
+  AssertFatal(PHY_vars_UE_g!=NULL,"PHY_vars_UE_g is null\n");
+  AssertFatal(PHY_vars_UE_g[Mod_id]!=NULL,"PHY_vars_UE_g[%d] is null\n",Mod_id);
+  AssertFatal(PHY_vars_UE_g[Mod_id][CC_id]!=NULL,"PHY_vars_UE_g[%d][%d] is null\n",Mod_id,CC_id);
+
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+
+  if (ue)
+    return (10*log10(ue->measurements.rsrp[gNB_index])-
+	    get_nr_rx_total_gain_dB(Mod_id,0) -
+	    10*log10(20*12));
+  return -140.0;
+}
+
+
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
-                         unsigned int subframe_offset,
-                         unsigned char N0_symbol,
-                         unsigned char abstraction_flag,
-                         unsigned char rank_adaptation,
-                         uint8_t subframe)
+                        UE_nr_rxtx_proc_t *proc,
+                        unsigned int subframe_offset,
+                        unsigned char N0_symbol,
+                        unsigned char abstraction_flag,
+                        unsigned char rank_adaptation,
+                        uint8_t subframe)
 {
   int aarx,aatx,eNB_id=0; //,gain_offset=0;
   //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -101,7 +132,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
   
   /*int16_t *dl_ch;
-  dl_ch = (int16_t *)&ue->pdsch_vars[ue->current_thread_id[subframe]][0]->dl_ch_estimates[eNB_id][ch_offset];*/
+  dl_ch = (int16_t *)&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[eNB_id][ch_offset];*/
 
   ch_offset = ue->frame_parms.ofdm_symbol_size*2;
 
@@ -112,7 +143,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
         ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
-          (signal_energy_nodc(&ue->pdsch_vars[ue->current_thread_id[subframe]][0]->dl_ch_estimates[eNB_id][ch_offset],
+          (signal_energy_nodc(&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[eNB_id][ch_offset],
                               (50*12)));
         //- ue->measurements.n0_power[aarx];
 
@@ -191,4 +222,75 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   _mm_empty();
   _m_empty();
 #endif
+}
+
+void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
+    UE_nr_rxtx_proc_t *proc,
+    uint8_t slot,
+    uint8_t abstraction_flag)
+{
+	int aarx,rb, symbol_offset;
+	int16_t *rxF;
+
+	uint16_t Nid_cell = ue->frame_parms.Nid_cell;
+	uint8_t eNB_offset=0,l,nushift;
+	uint16_t off,nb_rb;
+//	NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+	int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+
+	nushift =  ue->frame_parms.Nid_cell%4;
+	ue->frame_parms.nushift = nushift;
+	unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
+	if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
+	
+	symbol_offset = ue->frame_parms.ofdm_symbol_size*(ue->symbol_offset+1);
+
+    ue->measurements.rsrp[eNB_offset] = 0;
+
+    //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+		nb_rb = 20;
+	//} else{
+	//	LOG_E(PHY,"report quantity not supported \n");
+	//}
+
+    if (abstraction_flag == 0) {
+
+      for (l=0; l<1; l++) {
+
+        LOG_D(PHY,"[UE %d]  slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, l %d)\n",ue->Mod_id,slot,Nid_cell,nushift,
+              eNB_offset,l);
+
+        for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+          rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+ssb_offset+nushift)];
+          off  = 0; 
+
+          if (l==0) {
+            for (rb=0; rb<nb_rb; rb++) {
+
+              ue->measurements.rsrp[eNB_offset] += (((int32_t)(rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1]));
+                      //printf("rb %d, off %d : %d\n",rb,off,((((int32_t)rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1])));
+
+              off = (off+4) % ue->frame_parms.ofdm_symbol_size;
+            }
+          }
+        }
+      }
+
+	  ue->measurements.rsrp[eNB_offset]/=nb_rb;
+
+	} else { 
+
+      ue->measurements.rsrp[eNB_offset] = -93 ;
+    }
+
+
+      if (eNB_offset == 0)
+
+      LOG_I(PHY,"[UE %d] slot %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
+            ue->Mod_id,
+            slot,eNB_offset,
+            (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
+            10*log10(ue->measurements.rsrp[eNB_offset])-ue->rx_total_gain_dB,
+            ue->measurements.rsrp[eNB_offset]);
+
 }

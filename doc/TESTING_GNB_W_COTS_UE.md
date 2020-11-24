@@ -1,18 +1,31 @@
-STATUS 2020/09/10 : updated the status of interop (end to end UL/DL traffic)  
+STATUS 2020/10/15 : added External Resources section and links  
 
 
 ## Table of Contents ##
 
-1.   [Configuration Overview](#configuration-overview)
-2.   [SW Repository / Branch](#repository)
-3.   [Architecture Setup](#architecture-setup)
-4.   [Build / Install](#build-and-install)
-5.   [Run / Test](#run-and-test)
-6.   [Test case](#test-case)
-7.   [Log file monitoring](#log-file-monitoring)
-6.   [Required tools for debug](#required-tools-for-debug)
-7.   [Status of interoperability](#status-of-interoperability) 
-8.   [CI integration](#ci-integration)  
+1.   [External Resources](#external-resources) 
+2.   [Configuration Overview](#configuration-overview)
+3.   [SW Repository / Branch](#repository)
+4.   [Architecture Setup](#architecture-setup)
+5.   [Build / Install](#build-and-install)
+6.   [Run / Test](#run-and-test)
+7.   [Test case](#test-case)
+8.   [Log file monitoring](#log-file-monitoring)
+9.   [Required tools for debug](#required-tools-for-debug)
+10.   [Status of interoperability](#status-of-interoperability) 
+11.   [CI integration](#ci-integration)  
+
+
+## External Resources
+
+Additional Resources to this page can be found here (special mention to Walter Maguire <wmaguire@live.com>) :  
+https://docs.google.com/document/d/1pL8Szm0ocGxdl5ESVp12Ff71a4PbhCb9SpvbLZzwYbo/edit?usp=sharing  
+At time of writing, the openairinterface5G Commit Tag is 2020.w39
+
+
+Faraday Cages can be found here :  
+http://www.saelig.com/MFR00066/ste2300.htm
+
 
 ## Configuration Overview
 

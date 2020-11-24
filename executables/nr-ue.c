@@ -135,17 +135,15 @@ typedef enum {
 
 
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
-                     NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
 {
 
   int nb_connected_gNB = 1, gNB_id;
 
-  memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
-
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
+  ue->if_inst     = nr_ue_if_module_init(0);
 
   // Setting UE mode to NOT_SYNCHED by default
   for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
@@ -158,6 +156,9 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
   // intialize transport
   init_nr_ue_transport(ue, abstraction_flag);
+
+  // init N_TA offset
+  init_N_TA_offset(ue);
 }
 
 /*!
@@ -175,24 +176,30 @@ static void UE_synch(void *arg) {
   int i, hw_slot_offset;
   PHY_VARS_NR_UE *UE = syncD->UE;
   sync_mode_t sync_mode = pbch;
-  int CC_id = UE->CC_id;
-  int freq_offset=0;
+  //int CC_id = UE->CC_id;
+  static int freq_offset=0;
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
-    LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu64", UL %"PRIu64" (oai_exit %d, rx_num_channels %d)\n",
-           UE->frame_parms.dl_CarrierFreq, UE->frame_parms.ul_CarrierFreq,
-           oai_exit, openair0_cfg[0].rx_num_channels);
+
+    #ifdef FR2_TEST
+    // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0){
+       UE->frame_parms.dl_CarrierFreq = downlink_frequency[0][0];
+       UE->frame_parms.ul_CarrierFreq = downlink_frequency[0][0];
+    }
+    #endif
 
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-      openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = UE->frame_parms.dl_CarrierFreq;
-      openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = UE->frame_parms.ul_CarrierFreq;
-      openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
 
-      if (UE->frame_parms.frame_type == FDD) 
-        openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_FDD;
-      else 
-        openair0_cfg[UE->rf_map.card].duplex_mode = duplex_mode_TDD;
+      LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f (RF card %d, oai_exit %d, channel %d, rx_num_channels %d)\n",
+        openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i],
+        openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i],
+        UE->rf_map.card,
+        oai_exit,
+        i,
+        openair0_cfg[0].rx_num_channels);
+
     }
 
     sync_mode = pbch;
@@ -247,31 +254,25 @@ static void UE_synch(void *arg) {
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
+      uint64_t dl_carrier, ul_carrier;
+      double rx_gain_off = 0;
+      nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
+
       if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
-        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %lu, UL %lu), UE_scan_carrier %d\n",
-              hw_slot_offset,
-              freq_offset,
-              UE->rx_total_gain_dB,
-              UE->frame_parms.dl_CarrierFreq+freq_offset,
-              UE->frame_parms.ul_CarrierFreq+freq_offset,
-              UE->UE_scan_carrier );
 
         // rerun with new cell parameters and frequency-offset
-        for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-          openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+        // todo: the freq_offset computed on DL shall be scaled before being applied to UL
+        nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
 
-          if (freq_offset >= 0)
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(freq_offset);
-          else
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(freq_offset);
-
-          openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+(UE->frame_parms.ul_CarrierFreq-UE->frame_parms.dl_CarrierFreq);
-          UE->frame_parms.dl_CarrierFreq = openair0_cfg[CC_id].rx_freq[i];
-        }
+        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %f (DL %f Hz, UL %f Hz)\n",
+              hw_slot_offset,
+              freq_offset,
+              openair0_cfg[UE->rf_map.card].rx_gain[0],
+              openair0_cfg[UE->rf_map.card].rx_freq[0],
+              openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
         // reconfigure for potentially different bandwidth
         switch(UE->frame_parms.N_RB_DL) {
@@ -315,7 +316,6 @@ static void UE_synch(void *arg) {
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
           //UE->rfdevice.trx_stop_func(&UE->rfdevice);
           // sleep(1);
-          //nr_init_frame_parms_ue(&UE->frame_parms);
           /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
             LOG_E(HW,"Could not start the device\n");
             oai_exit=1;
@@ -328,31 +328,21 @@ static void UE_synch(void *arg) {
           UE->is_synchronized = 1;
         }
       } else {
-        // initial sync failed
-        // calculate new offset and try again
+
         if (UE->UE_scan_carrier == 1) {
+
           if (freq_offset >= 0)
             freq_offset += 100;
 
           freq_offset *= -1;
-          LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %lu, UL %lu)\n",
-                freq_offset,
-                UE->rx_total_gain_dB,
-                UE->frame_parms.dl_CarrierFreq+freq_offset,
-                UE->frame_parms.ul_CarrierFreq+freq_offset );
 
-          for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
-            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = UE->frame_parms.dl_CarrierFreq+freq_offset;
-            openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] = UE->frame_parms.ul_CarrierFreq+freq_offset;
-            openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+          nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
 
-            if (UE->UE_scan_carrier==1)
-              openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
-          }
+          LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
           if (UE->mode != loop_through_memory)
             UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
-        }// initial_sync=0
+        }
 
         break;
 
@@ -365,7 +355,7 @@ static void UE_synch(void *arg) {
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
-  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_tti_tx);
+  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
@@ -380,16 +370,16 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       ul_indication.gNB_index = gNB_id;
       ul_indication.cc_id     = UE->CC_id;
       ul_indication.frame_rx  = proc->frame_rx;
-      ul_indication.slot_rx   = proc->nr_tti_rx;
+      ul_indication.slot_rx   = proc->nr_slot_rx;
       ul_indication.frame_tx  = proc->frame_tx;
-      ul_indication.slot_tx   = proc->nr_tti_tx;
+      ul_indication.slot_tx   = proc->nr_slot_tx;
+      ul_indication.thread_id = proc->thread_id;
 
       UE->if_inst->ul_indication(&ul_indication);
     }
 
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_rx];
-      phy_procedures_nrUE_TX(UE,proc,0,thread_id);
+      phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
 }
@@ -397,7 +387,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
-  int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_tti_rx);
+  int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_slot_rx);
   uint8_t gNB_id = 0;
 
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
@@ -410,7 +400,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       dl_indication.gNB_index = gNB_id;
       dl_indication.cc_id     = UE->CC_id;
       dl_indication.frame     = proc->frame_rx;
-      dl_indication.slot      = proc->nr_tti_rx;
+      dl_indication.slot      = proc->nr_slot_rx;
+      dl_indication.thread_id = proc->thread_id;
 
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
@@ -421,16 +412,16 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 #else
     uint64_t a=rdtsc();
     phy_procedures_nrUE_RX( UE, proc, 0, UE->mode);
-    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
+    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_slot_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
 
-    if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
+    if(IS_SOFTMODEM_NOS1){ //&& proc->nr_slot_rx==1
       //Hardcoded rnti value
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
 				     0x1234, proc->frame_rx,
-				     proc->nr_tti_rx, 0);
+				     proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
     }
   }
@@ -445,7 +436,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       UE->ul_indication.gNB_index = 0;
       UE->ul_indication.cc_id = 0;
       UE->ul_indication.frame = proc->frame_rx;
-      UE->ul_indication.slot = proc->nr_tti_rx;
+      UE->ul_indication.slot = proc->nr_slot_rx;
+      UE->ul_indication.thread_id = proc->thread_id;
       UE->if_inst->ul_indication(&UE->ul_indication);
     }
   }
@@ -480,7 +472,7 @@ void UE_processing(void *arg) {
   if (UE->mac_enabled == 1) {
     uint8_t gNB_id = 0;
     NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
-    int slot_tx = proc->nr_tti_tx;
+    int slot_tx = proc->nr_slot_tx;
     int frame_tx = proc->frame_tx;
 
     if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
@@ -698,14 +690,12 @@ void *UE_thread(void *arg) {
     processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
-    curMsg->UE->current_thread_id[slot_nr] = thread_idx;
-    curMsg->proc.CC_id = UE->CC_id;
-    curMsg->proc.nr_tti_rx= slot_nr;
-    curMsg->proc.subframe_rx=slot_nr/(nb_slot_frame/10);
-    curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
-    curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
-    curMsg->proc.frame_rx = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg->proc.thread_id   = thread_idx;
+    curMsg->proc.CC_id       = UE->CC_id;
+    curMsg->proc.nr_slot_rx  = slot_nr;
+    curMsg->proc.nr_slot_tx  = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
+    curMsg->proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx    = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 
