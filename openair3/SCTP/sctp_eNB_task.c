@@ -270,7 +270,7 @@ sctp_handle_new_association_req_multi(
                            sctp_new_association_req_p->remote_address.ipv6_address);
                 //close(sd);
                 //return;
-                exit(1);
+                exit_fun("sctp_handle_new_association_req_multi fatal: inet_pton error");
             }
 
             SCTP_DEBUG("Converted ipv6 address %*s to network type\n",
@@ -290,7 +290,7 @@ sctp_handle_new_association_req_multi(
                            sctp_new_association_req_p->remote_address.ipv4_address);
                 //close(sd);
                 //return;
-                exit(1);
+                exit_fun("sctp_handle_new_association_req_multi fatal: inet_pton error");
             }
 
             SCTP_DEBUG("Converted ipv4 address %*s to network type\n",
@@ -329,7 +329,7 @@ sctp_handle_new_association_req_multi(
     if (ns == -1) {
       perror("sctp_peeloff");
       printf("sctp_peeloff: sd=%d assoc_id=%d\n", sd, assoc_id);
-      exit(1);
+      exit_fun("sctp_handle_new_association_req_multi fatal: sctp_peeloff error");
     }
 
     sctp_cnx = calloc(1, sizeof(*sctp_cnx));
@@ -971,7 +971,7 @@ sctp_eNB_read_from_socket(
 
     if (!(flags & MSG_EOR)) {
       SCTP_ERROR("fatal: partial SCTP messages are not handled\n");
-      exit(1);
+      exit_fun("fatal: partial SCTP messages are not handled" );
     }
 
     if (flags & MSG_NOTIFICATION) {

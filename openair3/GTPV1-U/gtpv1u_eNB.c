@@ -1211,7 +1211,7 @@ int gtpv1u_eNB_init(void) {
   //gtpv1u_data_g.udp_data;
   RC.gtpv1u_data_g->seq_num         = 0;
   RC.gtpv1u_data_g->restart_counter = 0;
-
+  RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up = 0;
   /* Initializing GTPv1-U stack */
   if ((rc = nwGtpv1uInitialize(&RC.gtpv1u_data_g->gtpv1u_stack, GTPU_STACK_ENB)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "Failed to setup nwGtpv1u stack %x\n", rc);
