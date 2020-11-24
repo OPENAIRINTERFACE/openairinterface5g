@@ -103,8 +103,8 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
                                    const uint8_t                Transaction_id);
 
-uint8_t do_NR_RRCConnectionRelease(uint8_t *buffer,
-                                   uint8_t Transaction_id);
+uint8_t do_NR_RRCRelease(uint8_t *buffer,
+                         uint8_t Transaction_id);
 uint16_t do_RRCReconfiguration(
                     const protocol_ctxt_t        *const ctxt_pP,
                     rrc_gNB_ue_context_t         *const ue_context_pP,
@@ -126,3 +126,16 @@ uint8_t do_NR_RRCReconfigurationComplete(
                         uint8_t *buffer,
                         const uint8_t Transaction_id
                       );
+
+uint8_t 
+do_NR_DLInformationTransfer(
+    uint8_t Mod_id,
+    uint8_t **buffer,
+    uint8_t transaction_id,
+    uint32_t pdu_length,
+    uint8_t *pdu_buffer
+);
+
+uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, 
+                        uint32_t pdu_length,
+                        uint8_t *pdu_buffer);

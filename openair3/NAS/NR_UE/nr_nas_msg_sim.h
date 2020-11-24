@@ -33,16 +33,18 @@
 #define __NR_NAS_MSG_SIM_H__
 
 #include "RegistrationRequest.h"
+#include "FGSIdentityResponse.h"
+#include "FGSAuthenticationResponse.h"
+#include "FGSNASSecurityModeComplete.h"
 #include "RegistrationComplete.h"
 #include "as_message.h"
-
+#include "FGSUplinkNasTransport.h"
 
 #define PLAIN_5GS_MSG                                      0b0000
 #define INTEGRITY_PROTECTED                                0b0001
 #define INTEGRITY_PROTECTED_AND_CIPHERED                   0b0010
-
-#define INITIAL_REGISTRATION                               0b001
-
+#define INTEGRITY_PROTECTED_WITH_NEW_SECU_CTX              0b0011          // only for SECURITY MODE COMMAND
+#define INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX 0b0100         // only for SECURITY MODE COMPLETE
 
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
 #define REGISTRATION_ACCEPT                                0b01000010 /* 66 = 0x42 */
@@ -56,25 +58,28 @@
 #define FIVEGMM_SERVICE_REQUEST                            0b01001100 /* 76 = 0x4c */
 #define FIVEGMM_SERVICE_REJECT                             0b01001101 /* 77 = 0x4d */
 #define FIVEGMM_SERVICE_ACCEPT                             0b01001110 /* 78 = 0x4e */
-
 #define CONFIGURATION_UPDATE_COMMAND                       0b01010100 /* 84 = 0x54 */
 #define CONFIGURATION_UPDATE_COMPLETE                      0b01010101 /* 85 = 0x55 */
-#define AUTHENTICATION_REQUEST                             0b01010110 /* 86 = 0x56 */
-#define AUTHENTICATION_RESPONSE                            0b01010111 /* 87 = 0x57 */
+#define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
+#define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */
 #define AUTHENTICATION_REJECT                              0b01011000 /* 88 = 0x58 */
 #define AUTHENTICATION_FAILURE                             0b01011001 /* 89 = 0x59 */
 #define AUTHENTICATION_RESULT                              0b01011010 /* 90 = 0x5a */
-#define FIVEGMM_IDENTITY_REQUEST                           0b01011011 /* 91 = 0x5b */
-#define FIVEGMM_IDENTITY_RESPONSE                          0b01011100 /* 92 = 0x5c */
-#define FIVEGMM_SECURITY_MODE_COMMAND                      0b01011101 /* 93 = 0x5d */
-#define FIVEGMM_SECURITY_MODE_COMPLETE                     0b01011110 /* 94 = 0x5e */
+#define FGS_IDENTITY_REQUEST                               0b01011011 /* 91 = 0x5b */
+#define FGS_IDENTITY_RESPONSE                              0b01011100 /* 92 = 0x5c */
+#define FGS_SECURITY_MODE_COMMAND                          0b01011101 /* 93 = 0x5d */
+#define FGS_SECURITY_MODE_COMPLETE                         0b01011110 /* 94 = 0x5e */
 #define FIVEGMM_SECURITY_MODE_REJECT 	                     0b01011111 /* 95 = 0x5f */
 #define FIVEGMM_STATUS                                     0b01100100 /* 100 = 0x64 */
 #define NOTIFICATION                                       0b01100101 /* 101 = 0x65 */
 #define NOTIFICATION_RESPONSE                              0b01100110 /* 102 = 0x66 */
-#define UL_NAS_TRANSPORT                                   0b01100111 /* 103 = 0x67 */
+#define FGS_UPLINK_NAS_TRANSPORT                           0b01100111 /* 103= 0x67 */
 #define DL_NAS_TRANSPORT                                   0b01101000 /* 104 = 0x68 */
 
+// message type for 5GS session management
+#define FGS_PDU_SESSION_ESTABLISHMENT_REQ                  0b11000001 /* 193= 0xc1 */
+
+#define INITIAL_REGISTRATION                               0b001
 
 
 typedef enum fgs_protocol_discriminator_e {
@@ -103,7 +108,11 @@ typedef struct {
 typedef union {
   mm_msg_header_t                        header;
   registration_request_msg               registration_request;
+  fgs_identiy_response_msg               fgs_identity_response;
+  fgs_authentication_response_msg        fgs_auth_response;
+  fgs_security_mode_complete_msg         fgs_security_mode_complete;
   registration_complete_msg              registration_complete;
+  fgs_uplink_nas_transport_msg           uplink_nas_transport;
 } MM_msg;
 
 
@@ -125,5 +134,13 @@ typedef union {
 } fgs_nas_message_t;
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg);
-void generateRegistrationComplete(as_nas_info_t *ulNasMsg, SORTransparentContainer *sortransparentcontainer);
+void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype);
+void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf);
+void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);
+void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer *sortransparentcontainer);
+void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg);
+
 #endif /* __NR_NAS_MSG_SIM_H__*/
+
+
+

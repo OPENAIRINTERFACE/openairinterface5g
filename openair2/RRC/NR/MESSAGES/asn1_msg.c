@@ -68,6 +68,7 @@
 #include "NR_SDAP-Config.h"
 #include "NR_RRCReconfigurationComplete.h"
 #include "NR_RRCReconfigurationComplete-IEs.h"
+#include "NR_DLInformationTransfer.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -918,8 +919,8 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 }
 
 
-uint8_t do_NR_RRCConnectionRelease(uint8_t                            *buffer,
-                                  uint8_t                             Transaction_id) {
+uint8_t do_NR_RRCRelease(uint8_t                            *buffer,
+                         uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   NR_DL_DCCH_Message_t dl_dcch_msg;
   NR_RRCRelease_t *rrcConnectionRelease;
@@ -927,12 +928,19 @@ uint8_t do_NR_RRCConnectionRelease(uint8_t                            *buffer,
   dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1=CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
   dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_rrcRelease;
-  dl_dcch_msg.message.choice.c1->choice.rrcRelease = CALLOC(1, sizeof(struct NR_RRCRelease));
+  dl_dcch_msg.message.choice.c1->choice.rrcRelease = CALLOC(1, sizeof(NR_RRCRelease_t));
   rrcConnectionRelease = dl_dcch_msg.message.choice.c1->choice.rrcRelease;
   // RRCConnectionRelease
   rrcConnectionRelease->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionRelease->criticalExtensions.present = NR_RRCRelease__criticalExtensions_PR_rrcRelease;
-  rrcConnectionRelease->criticalExtensions.choice.rrcRelease = NULL;
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease = CALLOC(1, sizeof(NR_RRCRelease_IEs_t));
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq =
+      CALLOC(1, sizeof(struct NR_RRCRelease_IEs__deprioritisationReq));
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationType =
+      NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_nr;
+  rrcConnectionRelease->criticalExtensions.choice.rrcRelease->deprioritisationReq->deprioritisationTimer =
+      NR_RRCRelease_IEs__deprioritisationReq__deprioritisationTimer_min10;
+
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                    NULL,
                                    (void *)&dl_dcch_msg,
@@ -1260,3 +1268,64 @@ int do_DLInformationTransfer_NR (void * p) {
 	return 0;
 }
 
+//------------------------------------------------------------------------------
+uint8_t 
+do_NR_DLInformationTransfer(
+    uint8_t Mod_id,
+    uint8_t **buffer,
+    uint8_t transaction_id,
+    uint32_t pdu_length,
+    uint8_t *pdu_buffer
+)
+//------------------------------------------------------------------------------
+{
+    ssize_t encoded;
+    NR_DL_DCCH_Message_t   dl_dcch_msg;
+    memset(&dl_dcch_msg, 0, sizeof(NR_DL_DCCH_Message_t));
+    dl_dcch_msg.message.present            = NR_DL_DCCH_MessageType_PR_c1;
+    dl_dcch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_DL_DCCH_MessageType__c1));
+    dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
+
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer = CALLOC(1, sizeof(NR_DLInformationTransfer_t));
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->rrc_TransactionIdentifier = transaction_id;
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->criticalExtensions.present =
+        NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer;
+
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
+        criticalExtensions.choice.dlInformationTransfer = CALLOC(1, sizeof(NR_DLInformationTransfer_IEs_t));
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
+        criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
+        criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->buf = pdu_buffer;
+    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
+        criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->size = pdu_length;
+
+    encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
+    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
+                "DLInformationTransfer", encoded);
+    LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    return encoded;
+}
+
+uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer) {
+    ssize_t encoded;
+    NR_UL_DCCH_Message_t ul_dcch_msg;
+    memset(&ul_dcch_msg, 0, sizeof(NR_UL_DCCH_Message_t));
+    ul_dcch_msg.message.present           = NR_UL_DCCH_MessageType_PR_c1;
+    ul_dcch_msg.message.choice.c1          = CALLOC(1,sizeof(struct NR_UL_DCCH_MessageType__c1));
+    ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer;
+    ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer = CALLOC(1,sizeof(struct NR_ULInformationTransfer));
+    ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer->criticalExtensions.present = NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer;
+    ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer = CALLOC(1,sizeof(struct NR_ULInformationTransfer_IEs));
+    struct NR_ULInformationTransfer_IEs *ulInformationTransfer = ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer;
+    ulInformationTransfer->dedicatedNAS_Message = CALLOC(1,sizeof(NR_DedicatedNAS_Message_t));
+    ulInformationTransfer->dedicatedNAS_Message->buf = pdu_buffer;
+    ulInformationTransfer->dedicatedNAS_Message->size = pdu_length;
+    ulInformationTransfer->lateNonCriticalExtension = NULL;
+    encoded = uper_encode_to_new_buffer (&asn_DEF_NR_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, (void **) buffer);
+    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
+                "ULInformationTransfer",encoded);
+    LOG_D(NR_RRC,"ULInformationTransfer Encoded %zd bytes\n",encoded);
+
+    return encoded;
+}

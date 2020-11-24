@@ -110,7 +110,11 @@ rrc_gNB_generate_UECapabilityEnquiry(
   rrc_gNB_ue_context_t  *const ue_context_pP
 );
 
-void nr_rrc_rx_tx(void);
+void
+rrc_gNB_generate_RRCRelease(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t  *const ue_context_pP
+);
 
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */

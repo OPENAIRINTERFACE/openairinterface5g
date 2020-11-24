@@ -295,6 +295,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   RB_INIT(&rrc->rrc_ue_head);
   rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->initial_id2_ngap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->ngap_id2_ngap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
@@ -1340,6 +1342,14 @@ void *rrc_gnb_task(void *args_p) {
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
         break;
 
+      case NGAP_DOWNLINK_NAS:
+        rrc_gNB_process_NGAP_DOWNLINK_NAS(msg_p, msg_name_p, instance, &rrc_gNB_mui);
+        break;
+
+      case NGAP_PDUSESSION_SETUP_REQ:
+        rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(msg_p, msg_name_p, instance);
+        break;
+
       /*
       #if defined(ENABLE_USE_MME)
 
@@ -1426,6 +1436,14 @@ void *rrc_gnb_task(void *args_p) {
       /* Messages from GTP */
       case GTPV1U_ENB_DELETE_TUNNEL_RESP:
         /* nothing to do? */
+        break;
+
+      case NGAP_UE_CONTEXT_RELEASE_REQ:
+        rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ(msg_p, msg_name_p, instance);
+        break;
+
+      case NGAP_UE_CONTEXT_RELEASE_COMMAND:
+        rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
         break;
 
       default:
@@ -1566,9 +1584,9 @@ rrc_gNB_generate_UECapabilityEnquiry(
 * If received, UE should switch to RRC_IDLE mode.
 */
 void
-rrc_gNB_generate_RRCConnectionRelease(
+rrc_gNB_generate_RRCRelease(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_gNB_ue_context_t *const ue_context_pP
+  rrc_gNB_ue_context_t  *const ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
@@ -1577,16 +1595,16 @@ rrc_gNB_generate_RRCConnectionRelease(
 
   memset(buffer, 0, RRC_BUF_SIZE);
 
-  size = do_NR_RRCConnectionRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  size = do_NR_RRCRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   LOG_I(NR_RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCRelease (bytes %d)\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
   LOG_D(NR_RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease MUI %d) --->[PDCP][RB %u]\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcRelease MUI %d) --->[PDCP][RB %u]\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size,
         rrc_gNB_mui,
         DCCH);
@@ -1595,14 +1613,25 @@ rrc_gNB_generate_RRCConnectionRelease(
     MSC_RRC_UE,
     buffer,
     size,
-    MSC_AS_TIME_FMT" LTE_RRCConnectionRelease UE %x MUI %d size %u",
+    MSC_AS_TIME_FMT" NR_RRCRelease UE %x MUI %d size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP->ue_context.rnti,
     rrc_gNB_mui,
     size);
 
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
+    memcpy (message_buffer, buffer, size);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, GNB_RRC_DCCH_DATA_IND);
+    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+    GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+    GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
   if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+    MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, F1AP_UE_CONTEXT_RELEASE_CMD);
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
@@ -1618,6 +1647,7 @@ rrc_gNB_generate_RRCConnectionRelease(
                  buffer,
                  PDCP_TRANSMISSION_MODE_CONTROL);
   }
+#endif
 }
 void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe)
 {

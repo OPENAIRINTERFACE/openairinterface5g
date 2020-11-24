@@ -37,6 +37,7 @@
 
 #include "NR_RRCSetupComplete-IEs.h"
 #include "NR_RegisteredAMF.h"
+#include "NR_UL-DCCH-Message.h"
 
 typedef struct rrc_ue_ngap_ids_s {
   /* Tree related data */
@@ -75,6 +76,70 @@ rrc_gNB_process_security(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_gNB_ue_context_t *const ue_context_pP,
   ngap_security_capabilities_t *security_capabilities_pP
+);
+
+int
+rrc_gNB_process_NGAP_DOWNLINK_NAS(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t  instance,
+  mui_t      *rrc_gNB_mui
+);
+
+void
+rrc_gNB_send_NGAP_UPLINK_NAS(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg
+);
+
+void
+rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  uint8_t                   xid
+);
+
+int
+rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
+    MessageDef *msg_p,
+    const char *msg_name,
+    instance_t instance
+);
+
+void
+rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
+  const module_id_t gnb_mod_idP,
+  const rrc_gNB_ue_context_t *const ue_context_pP,
+  const ngap_Cause_t causeP,
+  const long cause_valueP
+);
+
+int 
+rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ (
+  MessageDef *msg_p, 
+  const char *msg_name, 
+  instance_t instance
+);
+
+int
+rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t instance
+);
+
+void
+rrc_gNB_NGAP_remove_ue_ids(
+  gNB_RRC_INST *const rrc_instance_pP,
+  struct rrc_ue_ngap_ids_s *const ue_ids_pP
+);
+
+void
+rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg
 );
 
 #endif
