@@ -452,9 +452,29 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
                          num_dmrs_cdm_grps_no_data,
                          ps);
 
-  sched_ctrl->sched_pusch.mcs = 9;
-  sched_ctrl->sched_pusch.rbStart = rbStart;
-  sched_ctrl->sched_pusch.rbSize = rbSize;
+  const int mcs = 9;
+  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+  sched_pusch->mcs = mcs;
+  sched_pusch->rbStart = rbStart;
+  sched_pusch->rbSize = rbSize;
+
+  /* Calculate TBS from MCS */
+  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+  if (ps->pusch_Config->tp_pi2BPSK
+      && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+    sched_pusch->R >>= 1;
+    sched_pusch->Qm <<= 1;
+  }
+  sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
+                                        sched_pusch->R,
+                                        sched_pusch->rbSize,
+                                        ps->nrOfSymbols,
+                                        ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                        0, // nb_rb_oh
+                                        0,
+                                        1 /* NrOfLayers */)
+                         >> 3;
 
   /* mark the corresponding RBs as used */
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)

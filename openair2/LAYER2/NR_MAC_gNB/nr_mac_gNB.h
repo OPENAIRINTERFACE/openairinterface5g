@@ -321,6 +321,11 @@ typedef struct NR_sched_pusch {
 
   /// MCS
   uint8_t mcs;
+
+  /// TBS-related info
+  uint16_t R;
+  uint8_t Qm;
+  uint32_t tb_size;
 } NR_sched_pusch_t;
 
 typedef struct NR_UE_harq {

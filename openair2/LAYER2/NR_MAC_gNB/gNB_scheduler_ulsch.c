@@ -551,9 +551,29 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
                          num_dmrs_cdm_grps_no_data,
                          ps);
 
-  sched_ctrl->sched_pusch.mcs = 9;
-  sched_ctrl->sched_pusch.rbStart = rbStart;
-  sched_ctrl->sched_pusch.rbSize = rbSize;
+  const int mcs = 9;
+  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+  sched_pusch->mcs = mcs;
+  sched_pusch->rbStart = rbStart;
+  sched_pusch->rbSize = rbSize;
+
+  /* Calculate TBS from MCS */
+  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+  if (ps->pusch_Config->tp_pi2BPSK
+      && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+    sched_pusch->R >>= 1;
+    sched_pusch->Qm <<= 1;
+  }
+  sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
+                                        sched_pusch->R,
+                                        sched_pusch->rbSize,
+                                        ps->nrOfSymbols,
+                                        ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                        0, // nb_rb_oh
+                                        0,
+                                        1 /* NrOfLayers */)
+                         >> 3;
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
@@ -574,6 +594,8 @@ void nr_schedule_ulsch(module_id_t module_id,
   const NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
+     * every TTI are pre-populated by the preprocessor and used below */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     if (sched_pusch->rbSize <= 0)
       continue;
@@ -593,28 +615,10 @@ void nr_schedule_ulsch(module_id_t module_id,
      * through nr_save_pusch_fields() */
     NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
 
-    /* Calculate TBS from MCS */
-    const uint8_t mcs = sched_pusch->mcs;
-    uint16_t R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-    uint8_t Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-    if (ps->pusch_Config->tp_pi2BPSK
-        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
-      R >>= 1;
-      Qm <<= 1;
-    }
-    const uint32_t tb_size = nr_compute_tbs(Qm,
-                                            R,
-                                            sched_pusch->rbSize,
-                                            ps->nrOfSymbols,
-                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
-                                            0,  // nb_rb_oh
-                                            0,
-                                            1 /* NrOfLayers */) >> 3;
-
     /* Statistics */
     UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
     if (cur_harq->round == 0)
-      UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += tb_size;
+      UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
 
 
     /* PUSCH in a later slot, but corresponding DCI now! */
@@ -646,9 +650,9 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->cyclic_prefix = 0;
 
     /* FAPI: PUSCH information always included */
-    pusch_pdu->target_code_rate = R;
-    pusch_pdu->qam_mod_order = Qm;
-    pusch_pdu->mcs_index = mcs;
+    pusch_pdu->target_code_rate = sched_pusch->R;
+    pusch_pdu->qam_mod_order = sched_pusch->Qm;
+    pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
     pusch_pdu->transform_precoding = ps->transform_precoding;
     if (ps->pusch_Config->dataScramblingIdentityPUSCH)
@@ -702,7 +706,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
-    pusch_pdu->pusch_data.tb_size = tb_size;
+    pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     /* PUSCH PTRS */
