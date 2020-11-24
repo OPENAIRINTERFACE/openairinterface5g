@@ -81,6 +81,23 @@ do {                            \
         ((buf)[1]);             \
 } while(0)
 
+/* Convert an integer on 24 bits to the given bUFFER */
+#define INT24_TO_BUFFER(x, buf) \
+do {                            \
+    (buf)[0] = (x) >> 16;       \
+    (buf)[1] = (x) >> 8;        \
+    (buf)[2] = (x);             \
+} while(0)
+
+/* Convert an array of char containing vALUE to x */
+#define BUFFER_TO_INT24(buf, x) \
+do {                            \
+    x = ((buf)[0] << 16)  |     \
+        ((buf)[1] << 8  )   |   \
+        ((buf)[2]);             \
+} while(0)
+
+
 /* Convert an integer on 32 bits to the given bUFFER */
 #define INT32_TO_BUFFER(x, buf) \
 do {                            \
@@ -126,6 +143,21 @@ do {                                \
     (aSN)->bits_unused = 0;         \
 } while(0)
 
+
+#define INT24_TO_OCTET_STRING(x, aSN)           \
+do {                                            \
+    (aSN)->buf = calloc(3, sizeof(uint8_t));    \
+    INT24_TO_BUFFER(x, ((aSN)->buf));           \
+    (aSN)->size = 3;                            \
+} while(0)
+
+#define INT24_TO_BIT_STRING(x, aSN) \
+do {                                \
+    INT24_TO_OCTET_STRING(x, aSN);  \
+    (aSN)->bits_unused = 0;         \
+} while(0)
+
+
 #define INT8_TO_OCTET_STRING(x, aSN)            \
 do {                                            \
     (aSN)->buf = calloc(1, sizeof(uint8_t));    \
@@ -136,6 +168,25 @@ do {                                            \
 #define MME_CODE_TO_OCTET_STRING INT8_TO_OCTET_STRING
 #define M_TMSI_TO_OCTET_STRING   INT32_TO_OCTET_STRING
 #define MME_GID_TO_OCTET_STRING  INT16_TO_OCTET_STRING
+
+#define AMF_REGION_TO_BIT_STRING(x, aSN)      \
+  do {                                        \
+    INT8_TO_OCTET_STRING(x, aSN);             \
+    (aSN)->bits_unused = 0;                   \
+} while(0)
+
+#define AMF_SETID_TO_BIT_STRING(x, aSN)       \
+  do {                                        \
+    INT16_TO_OCTET_STRING(x, aSN);            \
+    (aSN)->bits_unused = 6;                   \
+} while(0)
+
+#define AMF_POINTER_TO_BIT_STRING(x, aSN)     \
+  do {                                        \
+    INT8_TO_OCTET_STRING(x, aSN);             \
+    (aSN)->bits_unused = 2;                   \
+} while(0)
+
 
 #define ENCRALG_TO_BIT_STRING(encralg, bitstring)    \
     do {                        \
@@ -195,6 +246,12 @@ do {                                    \
 do {                                    \
     DevCheck((aSN)->size == 2 || (aSN)->size == 3, (aSN)->size, 0, 0);           \
     BUFFER_TO_INT16((aSN)->buf, x);    \
+} while(0)
+
+#define OCTET_STRING_TO_INT24(aSN, x)   \
+do {                                    \
+    DevCheck((aSN)->size == 2 || (aSN)->size == 3, (aSN)->size, 0, 0);           \
+    BUFFER_TO_INT24((aSN)->buf, x);    \
 } while(0)
 
 #define OCTET_STRING_TO_INT32(aSN, x)   \
@@ -445,6 +502,19 @@ do {                                                    \
     (bITsTRING)->size = 3;                              \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)
+
+
+#define MACRO_GNB_ID_TO_BIT_STRING(mACRO, bITsTRING)    \
+do {                                                    \
+    (bITsTRING)->buf = calloc(4, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = ((mACRO) >> 20);              \
+    (bITsTRING)->buf[1] = (mACRO) >> 12;                \
+    (bITsTRING)->buf[2] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[3] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->size = 4;                              \
+    (bITsTRING)->bits_unused = 4;                       \
+} while(0)
+
 /* TS 36.413 v10.9.0 section 9.2.1.38:
  * E-UTRAN CGI/Cell Identity
  * The leftmost bits of the Cell
@@ -461,6 +531,19 @@ do {                                                    \
     (bITsTRING)->size = 4;                              \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)
+
+#define MACRO_GNB_ID_TO_CELL_IDENTITY(mACRO, cELL_iD, bITsTRING) \
+do {                                                    \
+    (bITsTRING)->buf = calloc(5, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = ((mACRO) >> 20);              \
+    (bITsTRING)->buf[1] = (mACRO) >> 12;                 \
+    (bITsTRING)->buf[2] = (mACRO) >> 4;        \
+    (bITsTRING)->buf[3] = (((mACRO) & 0x0f) << 4) | ((cELL_iD) >> 4);        \
+    (bITsTRING)->buf[4] = ((cELL_iD) & 0x0f) << 4;        \
+    (bITsTRING)->size = 5;                              \
+    (bITsTRING)->bits_unused = 4;                       \
+} while(0)
+
 
 /* Used to format an uint32_t containing an ipv4 address */
 #define IPV4_ADDR    "%u.%u.%u.%u"

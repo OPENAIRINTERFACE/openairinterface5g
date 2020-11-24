@@ -59,12 +59,12 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char*);
    \param size    length of buffer*/
 //TODO check to use which one
 //int8_t nr_rrc_ue_decode_rrcReconfiguration(const uint8_t *buffer, const uint32_t size);
-int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const uint8_t *buffer, const uint32_t size);
+int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id, const uint8_t *buffer, const uint32_t size);
    
 
 /**\brief Process NR RRC connection reconfiguration via SRB3
    \param rrcReconfiguration  decoded rrc connection reconfiguration*/
-int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfiguration);
+int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCReconfiguration_t *rrcReconfiguration);
 
 /**\prief Process measurement config from NR RRC connection reconfiguration message
    \param meas_config   measurement configuration*/
@@ -73,7 +73,7 @@ int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config);
 /**\prief Process secondary cell group config from NR RRC connection reconfiguration message or EN-DC primitives
    \param cell_group_config   secondary cell group configuration*/
 //TODO check EN-DC function call flow.
-int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config);
+int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupConfig_t *cell_group_config);
 
 /**\prief Process radio bearer config from NR RRC connection reconfiguration message
    \param radio_bearer_config    radio bearer configuration*/
@@ -113,6 +113,16 @@ int8_t mac_rrc_nr_data_req_ue(const module_id_t Mod_idP,
                               const frame_t     frameP,
                               const rb_id_t     Srb_id,
                               uint8_t *const    buffer_pP);
+
+
+/**\brief RRC UE task.
+   \param void *args_p Pointer on arguments to start the task. */
+void *rrc_nrue_task(void *args_p);
+
+/**\brief RRC UE generate RRCSetupRequest message.
+   \param ctxt_pP    protocol context 
+   \param gNB_index  gNB index  */
+void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index );
 
 /** @}*/
 #endif

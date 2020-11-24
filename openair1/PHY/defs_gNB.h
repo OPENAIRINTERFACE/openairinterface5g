@@ -110,6 +110,8 @@ typedef struct {
   uint32_t K;
   /// Number of "Filler" bits
   uint32_t F;
+  /// Encoder BG
+  uint8_t BG;
 } NR_DL_gNB_HARQ_t;
 
 typedef struct {

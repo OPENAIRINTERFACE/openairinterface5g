@@ -73,12 +73,12 @@
     @param nr_dci_info_extracted extracted information from dci
     @param dlsch downlink context
     @param ulsch uplink context
-    @param nr_tti_rx rx slot
+    @param nr_slot_rx rx slot
     @param tx_offset slot offset for tx
     @returns none */
 
 void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted,
-		                   NR_UE_DLSCH_t **dlsch, NR_UE_ULSCH_t *ulsch, uint8_t nr_tti_rx, uint8_t tx_offset);
+		                   NR_UE_DLSCH_t **dlsch, NR_UE_ULSCH_t *ulsch, uint8_t nr_slot_rx, uint8_t tx_offset);
 
 /** \brief This function configures uplink HARQ context
     @param PHY_VARS_NR_UE ue context

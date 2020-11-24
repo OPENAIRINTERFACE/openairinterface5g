@@ -680,6 +680,7 @@ int main(int argc, char **argv)
 	if (ret<0) n_errors++;
       }
       else {
+	UE_nr_rxtx_proc_t proc={0};
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
@@ -688,16 +689,16 @@ int main(int argc, char **argv)
 
         int ssb_slot = (ssb_index>>1)+(n_hf*frame_parms->slots_per_frame);
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
-	  nr_slot_fep(UE,
-	  	      i%frame_parms->symbols_per_slot,
-		      ssb_slot,
-		      0,
-		      0);
+          nr_slot_fep(UE,
+                      &proc,
+                      i%frame_parms->symbols_per_slot,
+                      ssb_slot,
+                      0,
+                      0);
 
-          nr_pbch_channel_estimation(UE,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+          nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 
         }
-	UE_nr_rxtx_proc_t proc={0};
 
         ret = nr_rx_pbch(UE,
 	                 &proc,

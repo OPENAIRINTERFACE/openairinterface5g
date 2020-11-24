@@ -69,4 +69,3 @@ void InitSinLUT( void ) {
     LUTSin[i] = sin((double)(M_PI*i)/(2*ResolSinCos)) * (1<<14); //Format: Q14
   }
 }
-

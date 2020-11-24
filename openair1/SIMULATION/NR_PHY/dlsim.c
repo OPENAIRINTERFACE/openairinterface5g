@@ -463,13 +463,14 @@ int main(int argc, char **argv)
     case 'w':
       output_fd = fopen("txdata.dat", "w+");
       break;
-      
-     case 'T':
-       enable_ptrs=1;
-       for(i=0; i < atoi(optarg); i++) {
-         ptrs_arg[i] = atoi(argv[optind++]);
-       }
-       break;
+
+    case 'T':
+      enable_ptrs=1;
+      for(i=0; i < atoi(optarg); i++) {
+        ptrs_arg[i] = atoi(argv[optind++]);
+      }
+      break;
+
     case 'U':
       modify_dmrs = 1;
       for(i=0; i < atoi(optarg); i++) {
@@ -727,7 +728,6 @@ int main(int argc, char **argv)
   else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
                       
   UE->perfect_ce = 0;
-  for (i=0;i<10;i++) UE->current_thread_id[i] = 0;
 
   if (init_nr_ue_signal(UE, 1, 0) != 0)
   {
@@ -792,7 +792,7 @@ int main(int argc, char **argv)
   scheduled_response.CC_id     = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
-  
+  scheduled_response.thread_id = UE_proc.thread_id;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
@@ -831,14 +831,14 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
 
       UE->rx_offset=0;
-      UE_proc.frame_rx = frame;
-      UE_proc.nr_tti_rx= slot;
-      UE_proc.subframe_rx = slot;
+      UE_proc.thread_id  = 0;
+      UE_proc.frame_rx   = frame;
+      UE_proc.nr_slot_rx = slot;
       
       dcireq.frame     = frame;
       dcireq.slot      = slot;
 
-      NR_UE_DLSCH_t *dlsch0 = UE->dlsch[UE->current_thread_id[UE_proc.nr_tti_rx]][0][0];
+      NR_UE_DLSCH_t *dlsch0 = UE->dlsch[UE_proc.thread_id][0][0];
 
       int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
@@ -923,38 +923,11 @@ int main(int argc, char **argv)
                          12,
                          frame_parms->nb_prefix_samples,
                          CYCLIC_PREFIX);
-          } else {/*
+          } else {
             nr_normal_prefix_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
                                  &txdata[aa][tx_offset],
                                  14,
                                  frame_parms);
-		  */
-	    PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
-			 (int*)&txdata[aa][tx_offset],
-			 frame_parms->ofdm_symbol_size,
-			 1,
-			 frame_parms->nb_prefix_samples0,
-			 CYCLIC_PREFIX);
-	    	    
-	    apply_nr_rotation(frame_parms,
-			      (int16_t*)&txdata[aa][tx_offset],
-			      slot,
-			      0,
-			      1,
-			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
-	    PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset+frame_parms->ofdm_symbol_size],
-			 (int*)&txdata[aa][tx_offset+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
-			 frame_parms->ofdm_symbol_size,
-			 13,
-			 frame_parms->nb_prefix_samples,
-			 CYCLIC_PREFIX);
-	    apply_nr_rotation(frame_parms,
-			      (int16_t*)&txdata[aa][tx_offset+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
-			      slot,
-			      1,
-			      13,
-			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
-	    
           }
         }
        
@@ -1017,21 +990,21 @@ int main(int argc, char **argv)
       //----------------------------------------------------------
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
-      
-      if (UE->dlsch[UE->current_thread_id[slot]][0][0]->last_iteration_cnt >= 
-        UE->dlsch[UE->current_thread_id[slot]][0][0]->max_ldpc_iterations+1)
+
+      if (UE->dlsch[UE_proc.thread_id][0][0]->last_iteration_cnt >=
+        UE->dlsch[UE_proc.thread_id][0][0]->max_ldpc_iterations+1)
         n_errors++;
-        
-      NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
+
+      NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE_proc.thread_id];
       int16_t *UE_llr = pdsch_vars[0]->llr[0];
-      
+
       TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
       uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
       uint16_t nb_rb       = rel15->rbSize;
       uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4;
       uint8_t  mod_order   = rel15->qamModOrder[0];
       uint8_t  nb_symb_sch = rel15->NrOfSymbols;
-      
+
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
       if(pdu_bit_map & 0x1) {
         available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
@@ -1125,9 +1098,9 @@ int main(int argc, char **argv)
       printStatIndent(&UE->dlsch_unscrambling_stats,"DLSCH unscrambling time");
       printStatIndent(&UE->dlsch_rate_unmatching_stats,"DLSCH Rate Unmatching");
       printf("|__ DLSCH Turbo Decoding(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
-	     UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus ?
-	     UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus :
-	     UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus,
+	     UE->dlsch[UE_proc.thread_id][0][0]->harq_processes[0]->Cminus ?
+	     UE->dlsch[UE_proc.thread_id][0][0]->harq_processes[0]->Kminus :
+	     UE->dlsch[UE_proc.thread_id][0][0]->harq_processes[0]->Kplus,
 	     UE->dlsch_tc_intl1_stats.trials/(double)UE->dlsch_tc_init_stats.trials,
 	     (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials*timeBase,
 	     (int)((double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials),
@@ -1149,7 +1122,7 @@ int main(int argc, char **argv)
 	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
       LOG_M("chestF0.m","chF0",UE->pdsch_vars[0][0]->dl_ch_estimates_ext,N_RB_DL*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
-      LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]][0]->llr[0],available_bits,1,0);
+      LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE_proc.thread_id][0]->llr[0],available_bits,1,0);
       break;
     }
 
