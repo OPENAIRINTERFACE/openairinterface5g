@@ -783,7 +783,7 @@ typedef struct {
 } fapi_nr_pusch_power_control_t;
 
 typedef enum {tx_config_codebook = 1, tx_config_nonCodebook = 2} tx_config_t;
-typedef enum {transform_precoder_disabled = 0, transform_precoder_enabled = 1} transform_precoder_t;
+typedef enum {transform_precoder_enabled = 0, transform_precoder_disabled = 1} transform_precoder_t;
 typedef enum {
   codebook_subset_fullyAndPartialAndNonCoherent = 1,
   codebook_subset_partialAndNonCoherent = 2,
