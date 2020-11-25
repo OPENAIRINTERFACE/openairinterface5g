@@ -266,15 +266,27 @@ void nr_csi_meas_reporting(int Mod_idP,
 }
 
 
-void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
+void handle_nr_uci_pucch_0_1(module_id_t mod_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
+    return;
+  }
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  // tpc (power control)
+  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                uci_01->ul_cqi,
+                                30);
 
   // TODO
   int max_harq_rounds = 4; // TODO define macro
-
-  if (uci_01 != NULL) {
+  if (((uci_01->pduBitmap >> 1) & 0x01)) {
     // handle harq
     int harq_idx_s = 0;
 
@@ -283,7 +295,7 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       // search for the right harq process
       for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
         // if the gNB received ack with a good confidence
-        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+        if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
               (uci_01->harq->harq_confidence_level == 0)) {
@@ -299,13 +311,13 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
             sched_ctrl->harq_processes[harq_idx].round = 0;
-            stats->dlsch_errors++;
+            UE_info->mac_stats[UE_id].dlsch_errors++;
           }
           break;
         }
         // if feedback slot processing is aborted
         else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
-                 && (UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
+                 && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
                  && sched_ctrl->harq_processes[harq_idx].is_waiting) {
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;
@@ -318,9 +330,29 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       }
     }
   }
+}
 
+void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
+                               frame_t frame,
+                               sub_frame_t slot,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
+    return;
+  }
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  if (uci_234 != NULL) {
+  // tpc (power control)
+  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                uci_234->ul_cqi,
+                                30);
+
+  // TODO
+  int max_harq_rounds = 4; // TODO define macro
+  if ((uci_234->pduBitmap >> 1) & 0x01) {
     int harq_idx_s = 0;
     int acknack;
 
@@ -329,7 +361,7 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       acknack = ((uci_234->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
       for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
         // if the gNB received ack with a good confidence or if the max harq rounds was reached
-        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+        if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
           // TODO add some confidence level for when there is no CRC
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_234->harq.harq_crc != 1) && acknack) {
@@ -345,13 +377,13 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
             sched_ctrl->harq_processes[harq_idx].round = 0;
-            stats->dlsch_errors++;
+            UE_info->mac_stats[UE_id].dlsch_errors++;
           }
           break;
         }
         // if feedback slot processing is aborted
         else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
-                 && (UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
+                 && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
                  && sched_ctrl->harq_processes[harq_idx].is_waiting) {
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;

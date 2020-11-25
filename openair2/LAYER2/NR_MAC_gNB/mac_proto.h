@@ -157,10 +157,15 @@ void nr_fill_nfapi_dl_pdu(int Mod_id,
                           int ndi,
                           int round);
 
-void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
+void handle_nr_uci_pucch_0_1(module_id_t mod_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01);
+void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
+                               frame_t frame,
+                               sub_frame_t slot,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
+
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -409,5 +414,4 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
-void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
