@@ -617,9 +617,33 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* Statistics */
     UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
-    if (cur_harq->round == 0)
+    if (cur_harq->round == 0) {
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
+    } else {
+      LOG_W(MAC,
+            "%d.%2d UL retransmission RNTI %04x sched %d.%2d round %d\n",
+            frame,
+            slot,
+            rnti,
+            sched_pusch->frame,
+            sched_pusch->slot,
+            cur_harq->round);
+    }
 
+    LOG_D(MAC,
+          "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
+          frame,
+          slot,
+          rnti,
+          sched_pusch->frame,
+          sched_pusch->slot,
+          sched_pusch->rbStart,
+          sched_pusch->rbSize,
+          sched_pusch->mcs,
+          sched_pusch->tb_size,
+          harq_id,
+          cur_harq->round,
+          cur_harq->ndi);
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
