@@ -100,6 +100,8 @@ extern int transmission_mode;
 
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
+
+extern uint32_t num_threads_pusch;
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -870,11 +872,11 @@ void init_gNB_proc(int inst) {
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-  int threadCnt = min(numCPU, get_uldeocde_thread_count());
+  int threadCnt = min(numCPU, num_threads_pusch);
   char ul_pool[80];
   sprintf(ul_pool,"-1");
   int s_offset = 0;
-  for (int icpu=2; icpu<threadCnt; icpu++) {
+  for (int icpu=1; icpu<threadCnt; icpu++) {
     sprintf(ul_pool+2+s_offset,",-1");
     s_offset += 3;
   }

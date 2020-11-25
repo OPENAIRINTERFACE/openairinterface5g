@@ -39,8 +39,4 @@ static inline WORKER_CONF_t get_thread_worker_conf(void) {
   return thread_struct.worker_conf;
 }
 
-static inline uint8_t get_uldeocde_thread_count(void) {
-  return thread_struct.numULProcThreads;
-}
-
 #endif
