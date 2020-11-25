@@ -810,7 +810,11 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
           AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
       }
       if (pucchresset->pucch_ResourceSetId == 1 && O_uci>2) {
+#if (NR_RRC_VERSION >= MAKE_VERSION(16, 0, 0))
+        N3 = pucchresset->maxPayloadSize!= NULL ?  *pucchresset->maxPayloadSize : 1706;
+#else
         N3 = pucchresset->maxPayloadMinus1!= NULL ?  *pucchresset->maxPayloadMinus1 : 1706;
+#endif
         if (N2<O_uci && N3>O_uci) {
           if (pucch_resource < n_list)
             resource_id = pucchresset->resourceList.list.array[pucch_resource];
@@ -1721,7 +1725,7 @@ inline void add_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
 /*
  * Remove a UE from NR_UE_list listP
  */
-inline int remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
+static inline void remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
   int *cur = &listP->head;
   while (*cur != -1 && *cur != UE_id)
     cur = &listP->next[*cur];
@@ -1729,7 +1733,7 @@ inline int remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
   int *next = &listP->next[*cur];
   *cur = listP->next[*cur];
   *next = -1;
-  return 1;
+  return; 
 }
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)

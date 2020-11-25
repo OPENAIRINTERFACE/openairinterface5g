@@ -52,7 +52,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     int slot = scheduled_response->slot;
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
-    thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
+    thread_id = scheduled_response->thread_id;
     NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];

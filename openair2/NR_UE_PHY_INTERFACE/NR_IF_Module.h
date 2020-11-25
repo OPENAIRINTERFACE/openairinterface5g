@@ -66,8 +66,8 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
-    /// proc is needed to signal back decoded frame number to PHY. However, this is not really FAPI procedure and should be done differently
-    UE_nr_rxtx_proc_t * proc;
+    /// index of the current UE RX/TX thread
+    int thread_id;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
@@ -95,6 +95,9 @@ typedef struct {
     frame_t frame_tx;
     /// slot tx
     uint32_t slot_tx;
+    /// index of the current UE RX/TX thread
+    int thread_id;
+
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
 } nr_uplink_indication_t;
@@ -111,6 +114,8 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
+    /// index of the current UE RX/TX thread
+    int thread_id;
 
     /// NR UE FAPI-like P7 message, direction: L2 to L1
     /// downlink transmission configuration request structure

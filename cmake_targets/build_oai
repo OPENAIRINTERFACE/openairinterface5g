@@ -66,6 +66,7 @@ UE_TIMING_TRACE="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
+ITTI_SIM="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 trap handle_ctrl_c INT
 
@@ -159,6 +160,8 @@ Options
    Build for I/Q record-playback modes
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
+--ittiSIM
+  Makes the itti simulator
 -h | --help
    Print this help
 
@@ -413,6 +416,11 @@ function main() {
         CMAKE_CMD="$CMAKE_CMD -GNinja"
 	MAKE_CMD=ninja
 	shift;;
+      --ittiSIM)
+            ittiSIM=1
+            ITTI_SIM="True"
+            echo_info "Will compile itti simulator"
+            shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -571,7 +579,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" ] ; then
 
     # softmodem compilation
 
@@ -595,6 +603,7 @@ function main() {
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
+    echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
@@ -614,6 +623,10 @@ function main() {
     fi
     if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
+    fi
+
+    if [ "$ittiSIM" = "1" ] ; then
+      execlist="$execlist nr-ittisim"
     fi
 
     for f in $execlist ; do
