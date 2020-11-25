@@ -274,8 +274,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   asn_enc_rval_t enc_rval;
 
   // TODO : Add support for more than one PLMN
-  //int num_plmn = configuration->num_plmn;
-  int num_plmn = 1;
+  int num_plmn = 1; // int num_plmn = configuration->num_plmn;
   struct NR_PLMN_Identity nr_plmn[num_plmn];
   NR_MCC_MNC_Digit_t nr_mcc_digit[num_plmn][3];
   NR_MCC_MNC_Digit_t nr_mnc_digit[num_plmn][3];
@@ -283,7 +282,6 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   memset(nr_mcc_digit,0,sizeof(nr_mcc_digit));
   memset(nr_mnc_digit,0,sizeof(nr_mnc_digit));
 
-  //  struct NR_UAC_BarringInfoSet nr_uac_BarringInfoSet;
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   carrier->siblock1 = sib1_message;
   sib1_message->message.present = NR_BCCH_DL_SCH_MessageType_PR_c1;
@@ -292,9 +290,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   sib1_message->message.choice.c1->choice.systemInformationBlockType1 = CALLOC(1,sizeof(struct NR_SIB1));
 
   struct NR_SIB1 *sib1 = sib1_message->message.choice.c1->choice.systemInformationBlockType1;
+
+  // cellSelectionInfo
   sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
   sib1->cellSelectionInfo->q_RxLevMin = -50;
 
+  // cellAccessRelatedInfo
   struct NR_PLMN_IdentityInfo *nr_plmn_info=CALLOC(1,sizeof(struct NR_PLMN_IdentityInfo));
   asn_set_empty(&nr_plmn_info->plmn_IdentityList.list);
   for (int i = 0; i < num_plmn; ++i) {
@@ -317,49 +318,109 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     ASN_SEQUENCE_ADD(&nr_plmn_info->plmn_IdentityList.list, &nr_plmn[i]);
   }//end plmn loop
 
-  nr_plmn_info->cellIdentity.buf = CALLOC(1,8);
-  nr_plmn_info->cellIdentity.buf[0]= (configuration->cell_identity >> 20) & 0xff;
-  nr_plmn_info->cellIdentity.buf[1]= (configuration->cell_identity >> 12) & 0xff;
-  nr_plmn_info->cellIdentity.buf[2]= (configuration->cell_identity >> 4) & 0xff;
-  nr_plmn_info->cellIdentity.buf[3]= (configuration->cell_identity << 4) & 0xff;
-  nr_plmn_info->cellIdentity.size= 4;
+  nr_plmn_info->cellIdentity.buf = CALLOC(1,5);
+  nr_plmn_info->cellIdentity.buf[0]= (configuration->cell_identity >> 28) & 0xff;
+  nr_plmn_info->cellIdentity.buf[1]= (configuration->cell_identity >> 20) & 0xff;
+  nr_plmn_info->cellIdentity.buf[2]= (configuration->cell_identity >> 12) & 0xff;
+  nr_plmn_info->cellIdentity.buf[3]= (configuration->cell_identity >> 4) & 0xff;
+  nr_plmn_info->cellIdentity.buf[4]= (configuration->cell_identity << 4) & 0xff;
+  nr_plmn_info->cellIdentity.size= 5;
   nr_plmn_info->cellIdentity.bits_unused= 4;
-  nr_plmn_info->cellReservedForOperatorUse = 0;
+  nr_plmn_info->cellReservedForOperatorUse = NR_PLMN_IdentityInfo__cellReservedForOperatorUse_reserved;
+
+  nr_plmn_info->trackingAreaCode = CALLOC(1,sizeof(NR_TrackingAreaCode_t));
+  nr_plmn_info->trackingAreaCode->buf = CALLOC(1,3);
+  nr_plmn_info->trackingAreaCode->buf[0] = ( ((uint32_t)configuration->tac) >> 16) & 0xff;
+  nr_plmn_info->trackingAreaCode->buf[1] = ( ((uint32_t)configuration->tac) >> 8) & 0xff;
+  nr_plmn_info->trackingAreaCode->buf[2] = ( ((uint32_t)configuration->tac) >> 0) & 0xff;
+  nr_plmn_info->trackingAreaCode->size = 3;
+  nr_plmn_info->trackingAreaCode->bits_unused = 0;
+
   ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list, nr_plmn_info);
 
-  /*
-  sib1->si_SchedulingInfo = CALLOC(1,sizeof(*sib1->si_SchedulingInfo));
+  // connEstFailureControl
+  // TODO: add connEstFailureControl
 
-  NR_SchedulingInfo_t schedulingInfo;
-  e_NR_SIB_TypeInfo__type sib_type;
-
-  memset(&schedulingInfo,0,sizeof(NR_SchedulingInfo_t));
-  memset(&sib_type,0,sizeof(e_NR_SIB_TypeInfo__type));
-
-  schedulingInfo.si_Periodicity = NR_SchedulingInfo__si_Periodicity_rf8;
-
-  sib_type = NR_SIB_TypeInfo__type_sibType3;
-  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,&schedulingInfo);
-
+  //si-SchedulingInfo
+  sib1->si_SchedulingInfo = CALLOC(1,sizeof(struct NR_SI_SchedulingInfo));
+  asn_set_empty(&sib1->si_SchedulingInfo->schedulingInfoList.list);
   sib1->si_SchedulingInfo->si_WindowLength = NR_SI_SchedulingInfo__si_WindowLength_s20;
-  */
+  struct NR_SchedulingInfo *schedulingInfo = CALLOC(1,sizeof(struct NR_SchedulingInfo));
+  schedulingInfo->si_BroadcastStatus = NR_SchedulingInfo__si_BroadcastStatus_broadcasting;
+  schedulingInfo->si_Periodicity = NR_SchedulingInfo__si_Periodicity_rf8;
+  asn_set_empty(&schedulingInfo->sib_MappingInfo.list);
+  e_NR_SIB_TypeInfo__type *sib_type = CALLOC(1,sizeof(e_NR_SIB_TypeInfo__type));
+  *sib_type = NR_SIB_TypeInfo__type_sibType3;
+  ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type);
+  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);
 
-#if 0
+  // servingCellConfigCommon
+  sib1->servingCellConfigCommon = CALLOC(1,sizeof(struct NR_ServingCellConfigCommonSIB));
+
+  asn_set_empty(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list);
+  asn_set_empty(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list);
+  sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters.cyclicPrefix = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix;
+  for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count; i++) {
+    struct NR_NR_MultiBandInfo *nrMultiBandInfo = CALLOC(1,sizeof(struct NR_NR_MultiBandInfo));
+    nrMultiBandInfo->freqBandIndicatorNR = configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[i];
+    ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list,nrMultiBandInfo);
+  }
+  for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
+    ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);
+  }
+  sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = 0;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.bcch_Config.modificationPeriodCoeff = NR_BCCH_Config__modificationPeriodCoeff_n2;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.defaultPagingCycle = 0;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.nAndPagingFrameOffset.present = NR_PCCH_Config__nAndPagingFrameOffset_PR_oneT;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.ns = NR_PCCH_Config__ns_four;
+
+  sib1->servingCellConfigCommon->uplinkConfigCommon = CALLOC(1,sizeof(struct NR_UplinkConfigCommonSIB));
+  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
+  asn_set_empty(&sib1->servingCellConfigCommon->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list);
+  for(int i = 0; i< configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.count; i++) {
+    ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list,configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[i]);
+  }
+
+  sib1->servingCellConfigCommon->n_TimingAdvanceOffset = configuration->scc->n_TimingAdvanceOffset;
+  sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup = configuration->scc->ssb_PositionsInBurst->choice.shortBitmap;
+  sib1->servingCellConfigCommon->ssb_PeriodicityServingCell = *configuration->scc->ssb_periodicityServingCell;
+  sib1->servingCellConfigCommon->ss_PBCH_BlockPower = configuration->scc->ss_PBCH_BlockPower;
+
+  // ims-EmergencySupport
+  // TODO: add ims-EmergencySupport
+
+  // eCallOverIMS-Support
+  // TODO: add eCallOverIMS-Support
+
+  // ue-TimersAndConstants
+  // TODO: add ue-TimersAndConstants
+
+  // uac-BarringInfo
   sib1->uac_BarringInfo = CALLOC(1, sizeof(struct NR_SIB1__uac_BarringInfo));
-  memset(sib1->uac_BarringInfo, 0, sizeof(struct NR_SIB1__uac_BarringInfo));
-  nr_uac_BarringInfoSet.uac_BarringFactor = NR_UAC_BarringInfoSet__uac_BarringFactor_p95;
-  nr_uac_BarringInfoSet.uac_BarringTime = NR_UAC_BarringInfoSet__uac_BarringTime_s4;
-  nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.buf = MALLOC(1);
-  memset(nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.buf,0,1);
-  nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.size = 1;
-  nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.bits_unused = 1;
-  ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, &nr_uac_BarringInfoSet);
-#endif
+  NR_UAC_BarringInfoSet_t *nr_uac_BarringInfoSet = CALLOC(1, sizeof(NR_UAC_BarringInfoSet_t));
+  asn_set_empty(&sib1->uac_BarringInfo->uac_BarringInfoSetList);
+  nr_uac_BarringInfoSet->uac_BarringFactor = NR_UAC_BarringInfoSet__uac_BarringFactor_p95;
+  nr_uac_BarringInfoSet->uac_BarringTime = NR_UAC_BarringInfoSet__uac_BarringTime_s4;
+  nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.buf = CALLOC(1, 1);
+  nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.size = 1;
+  nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.bits_unused = 1;
+  ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, nr_uac_BarringInfoSet);
+
+  // useFullResumeID
+  // TODO: add useFullResumeID
+
+  // lateNonCriticalExtension
+  // TODO: add lateNonCriticalExtension
+
+  // nonCriticalExtension
+  // TODO: add nonCriticalExtension
 
   xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1_message->message.choice.c1->choice.systemInformationBlockType1);
 
-  //encode SIB1 to data
   if(carrier->SIB1 == NULL) carrier->SIB1=(uint8_t *) malloc16(MAX_NR_SIB_LENGTH/8);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
                                    NULL,
