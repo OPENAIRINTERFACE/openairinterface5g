@@ -744,6 +744,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                                       nr_slot_rx,
                                       aatx /*p*/,
                                       m,
+                                      BWPStart,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb);
           LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_slot_rx,m);
@@ -1936,9 +1937,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     ue->dlsch_SI[gNB_id]->active = 0;
 
     // FIXME: It was assumed that SIB1 has only one segment
-    int harq_pid = PHY_vars_UE_g[0][0]->dlsch_SI[0]->current_harq_pid;
+    int harq_pid = PHY_vars_UE_g[ue->Mod_id][ue->CC_id]->dlsch_SI[0]->current_harq_pid;
     if(ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->harq_ack.ack == 1) {
-      nr_rrc_ue_decode_NR_SIB1_Message(&ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
+      nr_rrc_ue_decode_NR_SIB1_Message(ue->Mod_id, gNB_id, &ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
                                        ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
     } else {
       LOG_D(PHY,"SIB1 CRC NOT OK");

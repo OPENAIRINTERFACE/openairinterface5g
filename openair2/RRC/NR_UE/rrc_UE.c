@@ -1478,7 +1478,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 }
 
 /*brief decode SIB1 message*/
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(uint8_t *const bufferP, const uint8_t buffer_len){
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
 
   NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
 
@@ -1501,11 +1501,13 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(uint8_t *const bufferP, const uint8_t bu
   }
   else {
 
-    if(NR_UE_rrc_inst->sib1 != NULL){
-      SEQUENCE_free(&asn_DEF_NR_BCCH_BCH_Message, (void *)NR_UE_rrc_inst->sib1, 1 );
+    NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+
+    if(sib1 != NULL){
+      SEQUENCE_free(&asn_DEF_NR_BCCH_BCH_Message, (void *)sib1, 1 );
     }
-    NR_UE_rrc_inst->sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-    xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)NR_UE_rrc_inst->sib1);
+    sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+    xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
 
   }
 

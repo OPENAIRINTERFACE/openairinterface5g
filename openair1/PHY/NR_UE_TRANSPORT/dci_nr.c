@@ -908,7 +908,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     }
   }
 
-  LOG_I(PHY,"nr_dci_decoding_procedure: frame = %i, slot = %i\n", frame, slot);
+  LOG_I(PHY,"nr_dci_decoding_procedure: frame = %i, slot = %i\n", proc->frame_rx, proc->nr_slot_rx);
 
   return(dci_ind->number_of_dcis);
 }

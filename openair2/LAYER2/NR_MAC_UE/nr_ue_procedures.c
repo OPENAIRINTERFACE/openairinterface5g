@@ -4013,6 +4013,8 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         LOG_D(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
         LOG_D(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
 
+        getchar();
+
       break;
 	
     case NR_RNTI_TC:

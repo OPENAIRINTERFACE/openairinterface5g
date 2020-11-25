@@ -609,6 +609,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
         ret = 1 + dlsch->max_ldpc_iterations;
       }
 
+      getchar();
+
       nb_total_decod++;
       if (no_iteration_ldpc > dlsch->max_ldpc_iterations){
         nb_error_decod++;

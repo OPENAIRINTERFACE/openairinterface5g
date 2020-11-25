@@ -124,8 +124,6 @@ typedef struct NR_UE_RRC_INST_s {
     NR_UE_RRC_INFO                 Info[NB_SIG_CNX_UE];
 
     NR_MIB_t *mib;
-    NR_SIB1_t	*sib1; // QQQQQ
-
 
     /* KeNB as computed from parameters within USIM card */
     uint8_t kgnb[32];
