@@ -53,28 +53,10 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 
 
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
+                              NR_DL_FRAME_PARMS *frame_parms,
                               nfapi_nr_pusch_pdu_t *rel15_ul,
                               uint8_t ulsch_id,
                               uint8_t nr_tti_rx,
-                              uint8_t dmrs_symbol_flag,
                               unsigned char symbol,
                               uint32_t nb_re_pusch);
-
-void nr_pusch_phase_estimation(NR_DL_FRAME_PARMS *frame_parms,
-                               nfapi_nr_pusch_pdu_t *rel15_ul,
-                               int16_t *ptrs_ch_p,
-                               unsigned char Ns,
-                               unsigned char symbol,
-                               int16_t *rxF_comp,
-                               uint32_t ***ptrs_gold_seq,
-                               int16_t *error_est,
-                               uint16_t  *ptrs_sc);
-
-void nr_pusch_phase_interpolation(int16_t *error_est,
-                                  uint8_t start_symbol,
-                                  uint8_t end_symbol);
-
-int nr_ptrs_find_next_estimate(int16_t *error_est,
-                               uint8_t counter,
-                               uint8_t end_symbol);
 #endif

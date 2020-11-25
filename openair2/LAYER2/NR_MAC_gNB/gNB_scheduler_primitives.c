@@ -453,6 +453,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   const int bwp_id = sched_ctrl->active_bwp->bwp_Id;
   const int nrOfLayers = 1;
   const int mcs = sched_ctrl->mcs;
+  bool valid_ptrs_setup = false;
 
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
@@ -520,6 +521,19 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
       fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                      scc->dmrs_TypeA_Position,
                      pdsch_pdu_rel15->NrOfSymbols);
+
+  /* Check and validate PTRS values */
+  if(bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
+    valid_ptrs_setup = set_dl_ptrs_values(bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
+                                          pdsch_pdu_rel15->rbSize, pdsch_pdu_rel15->mcsIndex[0],
+                                          pdsch_pdu_rel15->mcsTable[0],
+                                          &pdsch_pdu_rel15->PTRSFreqDensity,&pdsch_pdu_rel15->PTRSTimeDensity,
+                                          &pdsch_pdu_rel15->PTRSPortIndex,&pdsch_pdu_rel15->nEpreRatioOfPDSCHToPTRS,
+                                          &pdsch_pdu_rel15->PTRSReOffset, pdsch_pdu_rel15->NrOfSymbols);
+    if(valid_ptrs_setup==true) {
+      pdsch_pdu_rel15->pduBitmap |=0x1;
+    }
+  }
 
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
   memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
