@@ -41,38 +41,32 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
   int case_E[8] = {8, 12, 16, 20, 32, 36, 40, 44};
 
   switch(mu) {
-
-	case NR_MU_0: // case A
-	    n = i_ssb >> 1;
-	    symbol = case_AC[i_ssb % 2] + 14*n;
-	break;
-
-	case NR_MU_1: 
-	    if (type == 1){ // case B
-		n = i_ssb >> 2;
-	    	symbol = case_BD[i_ssb % 4] + 28*n;
-	    }
-	    if (type == 2){ // case C
-		n = i_ssb >> 1;
-		symbol = case_AC[i_ssb % 2] + 14*n;
-	    }
-	 break;
-
-	 case NR_MU_3: // case D
-	    n_temp = i_ssb >> 2; 
-	    n = n_temp + (n_temp >> 2);
-	    symbol = case_BD[i_ssb % 4] + 28*n;
-	 break;
-
-	 case NR_MU_4:  // case E
-	    n_temp = i_ssb >> 3; 
-	    n = n_temp + (n_temp >> 2);
-	    symbol = case_E[i_ssb % 8] + 56*n;
-	 break;
-
-
-	 default:
-	      AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+    case NR_MU_0: // case A
+      n = i_ssb >> 1;
+      symbol = case_AC[i_ssb % 2] + 14*n;
+      break;
+    case NR_MU_1:
+      if (type == 1){ // case B
+        n = i_ssb >> 2;
+        symbol = case_BD[i_ssb % 4] + 28*n;
+       }
+       if (type == 2){ // case C
+         n = i_ssb >> 1;
+         symbol = case_AC[i_ssb % 2] + 14*n;
+       }
+       break;
+     case NR_MU_3: // case D
+       n_temp = i_ssb >> 2;
+       n = n_temp + (n_temp >> 2);
+       symbol = case_BD[i_ssb % 4] + 28*n;
+       break;
+     case NR_MU_4:  // case E
+       n_temp = i_ssb >> 3;
+       n = n_temp + (n_temp >> 2);
+       symbol = case_E[i_ssb % 8] + 56*n;
+       break;
+     default:
+       AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
   }
 
   if (half_frame_index)

@@ -970,34 +970,30 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint16_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)
     frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  //uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
+  uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
   uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
-  //uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
   frame = frame << 4;
   frame = frame | frame_number_4lsb;
-
   if(ssb_length == 64){
-    ssb_index = ssb_index | (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
+    for (int i=0; i<3; i++)
+      ssb_index += (((extra_bits>>(7-i))&0x01)<<(3+i));
   }else{
     if(ssb_subcarrier_offset_msb){
       ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
     }
   }
 
-#ifdef DEBUG_MIB
-  LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
-  LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
-  LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
-  LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
-  LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
-  LOG_I(MAC,"pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
-  LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
-  LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-  LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
-#endif
+  LOG_D(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
+  LOG_D(MAC,"system frame number(with LSB): %d\n", (int)frame);
+  LOG_D(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
+  LOG_D(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
+  LOG_D(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
+  LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
+  LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
+  LOG_D(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+  LOG_D(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
 
   subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
   //const uint32_t scs_index = 0;
@@ -1020,8 +1016,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   int32_t num_rbs = -1;
   int32_t num_symbols = -1;
   int32_t rb_offset = -1;
-  //LOG_I(MAC,"<<<<<<<<<configSIB1 %d index_4msb %d index_4lsb %d scs_ssb %d scs_pdcch %d switch %d ",
-  //mac->mib->pdcch_ConfigSIB1,index_4msb,index_4lsb,scs_ssb,scs_pdcch, (scs_ssb << 5)|scs_pdcch);
+  LOG_D(MAC,"<<<<<<<<<configSIB1: controlResourceSetZero %d searchSpaceZero %d scs_ssb %d scs_pdcch %d switch %d ",
+        index_4msb,index_4lsb,scs_ssb,scs_pdcch, (scs_ssb << 5)|scs_pdcch);
 
   //  type0-pdcch coreset
   switch( (scs_ssb << 5)|scs_pdcch ){

@@ -62,7 +62,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
   unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
 
  // if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
-          rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
+ rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
 
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
@@ -539,6 +539,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   M =  NR_POLAR_PBCH_E;
   nushift = (Lmax==4)? i_ssb&3 : i_ssb&7;
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
+
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
   const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
