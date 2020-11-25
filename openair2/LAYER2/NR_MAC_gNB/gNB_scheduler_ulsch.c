@@ -84,6 +84,8 @@ void nr_process_mac_pdu(
 
         LOG_D(MAC, "LCID received at gNB side: %d \n", rx_lcid);
 
+        unsigned char *ce_ptr;
+
         switch(rx_lcid){
             //  MAC CE
 
@@ -102,6 +104,8 @@ void nr_process_mac_pdu(
         	//fixed length
         	mac_ce_len =1;
         	/* Extract short BSR value */
+               ce_ptr = &pdu_ptr[mac_subheader_len];
+               NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
         	break;
 
         case UL_SCH_LCID_S_TRUNCATED_BSR:
@@ -109,6 +113,8 @@ void nr_process_mac_pdu(
         	//fixed length
         	mac_ce_len =1;
         	/* Extract short truncated BSR value */
+               ce_ptr = &pdu_ptr[mac_subheader_len];
+               NR_BSR_SHORT_TRUNCATED *bsr_st = (NR_BSR_SHORT_TRUNCATED *) ce_ptr;
         	break;
 
         case UL_SCH_LCID_L_BSR:
@@ -121,6 +127,8 @@ void nr_process_mac_pdu(
         		mac_subheader_len = 3;
         	}
         	/* Extract long BSR value */
+               ce_ptr = &pdu_ptr[mac_subheader_len];
+               NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
         	break;
 
         case UL_SCH_LCID_L_TRUNCATED_BSR:
@@ -133,6 +141,8 @@ void nr_process_mac_pdu(
         		mac_subheader_len = 3;
         	}
         	/* Extract long truncated BSR value */
+               ce_ptr = &pdu_ptr[mac_subheader_len];
+               NR_BSR_LONG_TRUNCATED *bsr_lt = (NR_BSR_LONG_TRUNCATED *) ce_ptr;
         	break;
 
 
