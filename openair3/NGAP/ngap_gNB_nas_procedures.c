@@ -858,6 +858,7 @@ int ngap_gNB_initial_ctxt_resp(
         initial_ctxt_resp_p->gNB_ue_ngap_id,
         ue_context_p->amf_ue_ngap_id);
     /* UE associated signalling -> use the allocated stream */
+    LOG_I(NR_RRC,"Send message to sctp: NGAP_InitialContextSetupResponse\n");
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
