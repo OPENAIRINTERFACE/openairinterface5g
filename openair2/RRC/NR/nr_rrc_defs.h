@@ -261,7 +261,10 @@ typedef enum pdu_session_satus_e {
   PDU_SESSION_STATUS_NEW,
   PDU_SESSION_STATUS_DONE,
   PDU_SESSION_STATUS_ESTABLISHED,
+  PDU_SESSION_STATUS_REESTABLISHED, // after HO
+  PDU_SESSION_STATUS_TOMODIFY,      // ENDC NSA
   PDU_SESSION_STATUS_FAILED,
+  PDU_SESSION_STATUS_TORELEASE  // to release DRB between eNB and UE
 } pdu_session_status_t;
 
 typedef struct pdu_session_param_s {
@@ -355,6 +358,8 @@ typedef struct gNB_RRC_UE_s {
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
+  uint8_t                            nb_release_of_pdusessions;
+  pdusession_failed_t                pdusessions_release_failed[NGAP_MAX_PDUSESSION];
   // LG: For GTPV1 TUNNELS
   uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
@@ -373,6 +378,7 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+  uint8_t                            pdu_session_release_command_flag;
   //------------------------------------------------------------------------------//
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;

@@ -552,6 +552,83 @@ gtpv1u_create_ngu_tunnel(
 }
 
 //-----------------------------------------------------------------------------
+int gtpv1u_delete_ngu_tunnel(
+  const instance_t                             instanceP,
+  const gtpv1u_gnb_delete_tunnel_req_t *const req_pP) {
+  NwGtpv1uUlpApiT          stack_req;
+  NwGtpv1uRcT              rc                   = NW_GTPV1U_FAILURE;
+  MessageDef              *message_p = NULL;
+  nr_gtpv1u_ue_data_t     *gtpv1u_ue_data_p     = NULL;
+  hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
+  teid_t                   teid_gNB             = 0;
+  int                      pdusession_index     = 0;
+  message_p = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_GNB_DELETE_TUNNEL_RESP);
+  GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).rnti     = req_pP->rnti;
+  GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).status       = 0;
+  hash_rc = hashtable_get(RC.nr_gtpv1u_data_g->ue_mapping, req_pP->rnti, (void **)&gtpv1u_ue_data_p);
+
+  if (hash_rc == HASH_TABLE_OK) {
+    for (pdusession_index = 0; pdusession_index < req_pP->num_pdusession; pdusession_index++) {
+      teid_gNB = gtpv1u_ue_data_p->bearers[req_pP->pdusession_id[pdusession_index] - GTPV1U_BEARER_OFFSET].teid_gNB;
+      LOG_D(GTPU, "Rx GTPV1U_ENB_DELETE_TUNNEL user rnti %x eNB S1U teid %u eps bearer id %u\n",
+            req_pP->rnti, teid_gNB, req_pP->pdusession_id[pdusession_index]);
+      {
+        memset(&stack_req, 0, sizeof(NwGtpv1uUlpApiT));
+        stack_req.apiType = NW_GTPV1U_ULP_API_DESTROY_TUNNEL_ENDPOINT;
+        LOG_D(GTPU, "gtpv1u_delete_ngu_tunnel pdusession %u  %u\n",
+              req_pP->pdusession_id[pdusession_index],
+              teid_gNB);
+        stack_req.apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle =
+            gtpv1u_ue_data_p->bearers[req_pP->pdusession_id[pdusession_index] - GTPV1U_BEARER_OFFSET].teid_gNB_stack_session;
+        rc = nwGtpv1uProcessUlpReq(RC.nr_gtpv1u_data_g->gtpv1u_stack, &stack_req);
+        LOG_D(GTPU, ".\n");
+      }
+
+      if (rc != NW_GTPV1U_OK) {
+        GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).status       |= 0xFF;
+        LOG_E(GTPU, "NW_GTPV1U_ULP_API_DESTROY_TUNNEL_ENDPOINT failed");
+      }
+
+      //-----------------------
+      // PDCP->GTPV1U mapping
+      //-----------------------
+      gtpv1u_ue_data_p->bearers[req_pP->pdusession_id[pdusession_index] - GTPV1U_BEARER_OFFSET].state       = BEARER_DOWN;
+      gtpv1u_ue_data_p->bearers[req_pP->pdusession_id[pdusession_index] - GTPV1U_BEARER_OFFSET].teid_gNB    = 0;
+      gtpv1u_ue_data_p->bearers[req_pP->pdusession_id[pdusession_index] - GTPV1U_BEARER_OFFSET].teid_upf    = 0;
+      gtpv1u_ue_data_p->bearers[req_pP->pdusession_id[pdusession_index] - GTPV1U_BEARER_OFFSET].upf_ip_addr = 0;
+      gtpv1u_ue_data_p->num_bearers -= 1;
+
+      if (gtpv1u_ue_data_p->num_bearers == 0) {
+        hash_rc = hashtable_remove(RC.nr_gtpv1u_data_g->ue_mapping, req_pP->rnti);
+        LOG_D(GTPU, "Removed user rnti %x,no more bearers configured\n", req_pP->rnti);
+      }
+
+      //-----------------------
+      // GTPV1U->PDCP mapping
+      //-----------------------
+      hash_rc = hashtable_remove(RC.nr_gtpv1u_data_g->teid_mapping, teid_gNB);
+
+      if (hash_rc != HASH_TABLE_OK) {
+        LOG_D(GTPU, "Removed user rnti %x , gNB NGU teid %u not found\n", req_pP->rnti, teid_gNB);
+      }
+    }
+  }// else silently do nothing
+
+  LOG_D(GTPU, "Tx GTPV1U_GNB_DELETE_TUNNEL_RESP user rnti %x gNB NGU teid %u status %u\n",
+        GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).rnti,
+        GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).gnb_NGu_teid,
+        GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).status);
+  MSC_LOG_TX_MESSAGE(
+    MSC_GTPU_GNB,
+    MSC_RRC_GNB,
+    NULL,0,
+    "0 GTPV1U_GNB_DELETE_TUNNEL_RESP rnti %x teid %x",
+    GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).rnti,
+    teid_gNB);
+  return itti_send_msg_to_task(TASK_RRC_GNB, instanceP, message_p);
+}
+
+//-----------------------------------------------------------------------------
 static int gtpv1u_gNB_send_init_udp(const Gtpv1uNGReq *req) {
   // Create and alloc new message
   MessageDef *message_p;
@@ -601,6 +678,10 @@ void *gtpv1u_gNB_process_itti_msg(void *notUsed) {
   switch (ITTI_MSG_ID(received_message_p)) {
     case GTPV1U_GNB_NG_REQ:
       gtpv1u_ng_req(instance, &received_message_p->ittiMsg.gtpv1uNGReq);
+      break;
+
+    case GTPV1U_GNB_DELETE_TUNNEL_REQ:
+      gtpv1u_delete_ngu_tunnel(instance, &received_message_p->ittiMsg.NRGtpv1uDeleteTunnelReq);
       break;
 
     case TERMINATE_MESSAGE: {

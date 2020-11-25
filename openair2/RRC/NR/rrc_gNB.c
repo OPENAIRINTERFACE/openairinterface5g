@@ -118,6 +118,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
 static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
 
 mui_t                               rrc_gNB_mui = 0;
+uint8_t first_rrcreconfiguration = 0;
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
@@ -546,6 +547,100 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 }
 
 //-----------------------------------------------------------------------------
+void
+rrc_gNB_generate_dedicatedRRCReconfiguration_release(
+    const protocol_ctxt_t   *const ctxt_pP,
+    rrc_gNB_ue_context_t    *const ue_context_pP,
+    uint8_t                  xid,
+    uint32_t                 nas_length,
+    uint8_t                 *nas_buffer)
+//-----------------------------------------------------------------------------
+{
+  uint8_t                             buffer[RRC_BUF_SIZE];
+  int                                 i;
+  uint16_t                            size  = 0;
+  NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = NULL;
+  NR_DRB_Identity_t                  *DRB_release;
+  DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
+
+  if (DRB_Release_configList2) {
+    free(DRB_Release_configList2);
+  }
+
+  DRB_Release_configList2 = CALLOC(1, sizeof(*DRB_Release_configList2));
+
+  for(i = 0; i < NB_RB_MAX; i++) {
+    if((ue_context_pP->ue_context.pdusession[i].status == PDU_SESSION_STATUS_TORELEASE) && ue_context_pP->ue_context.pdusession[i].xid == xid) {
+      DRB_release = CALLOC(1, sizeof(NR_DRB_Identity_t));
+      *DRB_release = i+1;
+      ASN_SEQUENCE_ADD(&DRB_Release_configList2->list, DRB_release);
+    }
+  }
+
+  /* If list is empty free the list and reset the address */
+  if (nas_length > 0) {
+    memcpy(ue_context_pP->ue_context.nas_pdu.buffer, nas_buffer, nas_length);
+    ue_context_pP->ue_context.nas_pdu.length = nas_length;
+    LOG_I(NR_RRC,"add NAS info with size %d\n", nas_length);
+  } else {
+    LOG_W(NR_RRC,"dedlicated NAS list is empty\n");
+  }
+
+  memset(buffer, 0, RRC_BUF_SIZE);
+  size = do_RRCReconfiguration(ctxt_pP,
+                               ue_context_pP,
+                               buffer,
+                               xid,
+                               NULL);
+  ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
+              "[MSG] RRC Reconfiguration\n");
+
+  /* Free all NAS PDUs */
+  if (nas_length > 0) {
+    /* Free the NAS PDU buffer and invalidate it */
+    free(nas_buffer);
+  }
+
+  LOG_I(NR_RRC,
+        "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE RNTI %x)\n",
+        ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+  LOG_D(NR_RRC,
+        "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+        ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_gNB_mui, ctxt_pP->module_id, DCCH);
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_GNB,
+    MSC_RRC_UE,
+    buffer,
+    size,
+    MSC_AS_TIME_FMT" dedicated NR_RRCReconfiguration UE %x MUI %d size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    rrc_gNB_mui,
+    size);
+#ifdef ITTI_SIM
+      MessageDef *message_p;
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
+      memcpy (message_buffer, buffer, size);
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, GNB_RRC_DCCH_DATA_IND);
+      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+      GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
+  nr_rrc_data_req(
+    ctxt_pP,
+    DCCH,
+    rrc_gNB_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
+}
+
+//-----------------------------------------------------------------------------
 /*
 * Process the RRC Reconfiguration Complete from the UE
 */
@@ -921,7 +1016,8 @@ rrc_gNB_decode_dcch(
     asn_dec_rval_t                      dec_rval;
     NR_UL_DCCH_Message_t                *ul_dcch_msg  = NULL;
     struct rrc_gNB_ue_context_s         *ue_context_p = NULL;
-    // NR_RRCSetupComplete_t               *rrcSetupComplete = NULL;
+    MessageDef                         *msg_delete_tunnels_p = NULL;
+    uint8_t                             xid;
 
     int i;
 
@@ -974,7 +1070,7 @@ rrc_gNB_decode_dcch(
                 break;
 
             case NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete:
-		LOG_I(NR_RRC, "Receive RRC Reconfiguration Complete message UE %x\n", ctxt_pP->rnti);
+                LOG_I(NR_RRC, "Receive RRC Reconfiguration Complete message UE %x\n", ctxt_pP->rnti);
                 if(!ue_context_p) {
                     LOG_I(NR_RRC, "Processing NR_RRCReconfigurationComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
                     break;
@@ -1007,7 +1103,39 @@ rrc_gNB_decode_dcch(
                             ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
                 }
 
-                rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
+                if (AMF_MODE_ENABLED) {
+                  if(ue_context_p->ue_context.pdu_session_release_command_flag == 1) {
+                    xid = ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier;
+                    ue_context_p->ue_context.pdu_session_release_command_flag = 0;
+                    //gtp tunnel delete
+                    msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, GTPV1U_GNB_DELETE_TUNNEL_REQ);
+                    memset(&GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+                    GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+
+                    for(i = 0; i < NB_RB_MAX; i++) {
+                      if(xid == ue_context_p->ue_context.pdusession[i].xid) {
+                        GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).pdusession_id[GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_pdusession++] =
+                          ue_context_p->ue_context.gnb_gtp_psi[i];
+                        ue_context_p->ue_context.gnb_gtp_teid[i] = 0;
+                        memset(&ue_context_p->ue_context.gnb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.gnb_gtp_addrs[i]));
+                        ue_context_p->ue_context.gnb_gtp_psi[i]  = 0;
+                      }
+                    }
+
+                    itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
+                    //NGAP_PDUSESSION_RELEASE_RESPONSE
+                    rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
+                  } else {
+                    rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP,
+                                                      ue_context_p,
+                                                      ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
+                  }
+                }
+
+                if (first_rrcreconfiguration == 0){
+                  first_rrcreconfiguration = 1;
+                  rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
+                }
 
                 break;
 
@@ -1284,6 +1412,7 @@ rrc_gNB_decode_dcch(
                                               ue_context_p,
                                               ul_dcch_msg);
                 }
+                sleep(1);
                 rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
                 break;
 
@@ -1375,6 +1504,13 @@ void *rrc_gnb_task(void *args_p) {
 
       case NGAP_PDUSESSION_SETUP_REQ:
         rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(msg_p, msg_name_p, instance);
+        break;
+
+      case NGAP_PDUSESSION_RELEASE_COMMAND:
+        rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(msg_p, msg_name_p, instance);
+        break;
+
+      case GTPV1U_GNB_DELETE_TUNNEL_RESP:
         break;
 
       /*

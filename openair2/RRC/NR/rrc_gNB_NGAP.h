@@ -142,4 +142,11 @@ rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
   NR_UL_DCCH_Message_t     *const ul_dcch_msg
 );
 
+int
+rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t instance
+);
+
 #endif

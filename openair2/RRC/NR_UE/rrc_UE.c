@@ -118,6 +118,7 @@ uint8_t do_NR_RRCReconfigurationComplete(
                       );
 
 mui_t nr_rrc_mui=0;
+uint8_t first_rrcreconfigurationcomplete = 0;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -2328,36 +2329,39 @@ nr_rrc_ue_decode_dcch(
                 nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
                                             gNB_indexP,
                                             dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+                if (first_rrcreconfigurationcomplete == 0) {
+                    first_rrcreconfigurationcomplete = 1;
 #ifdef ITTI_SIM
-                //wait send RRCReconfigurationComplete and InitialContextSetupResponse
-                sleep(1);
-                as_nas_info_t initialNasMsg;
-                memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-                generateRegistrationComplete(&initialNasMsg, NULL);
-                if(initialNasMsg.length > 0){
-                    MessageDef *message_p;
-                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
-                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
-                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
-                }
-                //wait send RegistrationComplete
-                usleep(100*150);
-                as_nas_info_t pduEstablishMsg;
-                memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-                generatePduSessionEstablishRequest(&pduEstablishMsg);
-                if(initialNasMsg.length > 0){
-                    MessageDef *message_p;
-                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
-                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
-                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
-                }
+                    //wait send RRCReconfigurationComplete and InitialContextSetupResponse
+                    sleep(1);
+                    as_nas_info_t initialNasMsg;
+                    memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+                    generateRegistrationComplete(&initialNasMsg, NULL);
+                    if(initialNasMsg.length > 0){
+                        MessageDef *message_p;
+                        message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
+                        NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
+                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
+                        itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+                        LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+                    }
+                    //wait send RegistrationComplete
+                    usleep(100*150);
+                    as_nas_info_t pduEstablishMsg;
+                    memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
+                    generatePduSessionEstablishRequest(&pduEstablishMsg);
+                    if(initialNasMsg.length > 0){
+                        MessageDef *message_p;
+                        message_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_UPLINK_DATA_REQ);
+                        NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
+                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
+                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
+                        itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+                        LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+                    }
 #endif
+                }
             }
                 break;
 
