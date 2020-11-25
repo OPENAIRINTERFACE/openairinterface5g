@@ -261,37 +261,58 @@ void nr_process_mac_pdu(
     }
 }
 
-void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu) {
+void handle_nr_ul_harq(module_id_t mod_id,
+                       frame_t frame,
+                       sub_frame_t slot,
+                       const nfapi_nr_crc_t *crc_pdu)
+{
+  int UE_id = find_nr_UE_id(mod_id, crc_pdu->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUSCH\n", __func__, crc_pdu->rnti);
+    return;
+  }
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   int max_harq_rounds = 4; // TODO define macro
-  uint8_t hrq_id = crc_pdu.harq_id;
+  uint8_t hrq_id = crc_pdu->harq_id;
   NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
   if (cur_harq->state==ACTIVE_SCHED) {
-    if (!crc_pdu.tb_crc_status) {
+    if (!crc_pdu->tb_crc_status) {
       cur_harq->ndi ^= 1;
       cur_harq->round = 0;
       cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
-#ifdef UL_HARQ_PRINT
-      printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
-#endif
+      LOG_D(MAC,
+            "Ulharq id %d crc passed for RNTI %04x\n",
+            hrq_id,
+            crc_pdu->rnti);
     } else {
       cur_harq->round++;
       cur_harq->state = ACTIVE_NOT_SCHED;
-#ifdef UL_HARQ_PRINT
-      printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
-#endif
+      LOG_D(MAC,
+            "Ulharq id %d crc failed for RNTI %04x\n",
+            hrq_id,
+            crc_pdu->rnti);
     }
 
     if (!(cur_harq->round<max_harq_rounds)) {
       cur_harq->ndi ^= 1;
       cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
       cur_harq->round = 0;
-      LOG_D(MAC,"[HARQ HANDLER] RNTI %x: Ulharq id %d crc failed in all round, freeing it for scheduler\n",crc_pdu.rnti,hrq_id);
-      stats->ulsch_errors++;
+      LOG_D(MAC,
+            "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
+            crc_pdu->rnti,
+            hrq_id);
+      UE_info->mac_stats[UE_id].ulsch_errors++;
     }
     return;
   } else
-    LOG_W(MAC,"Incorrect ULSCH HARQ process %d or invalid state %d (ignore this warning for RA)\n",hrq_id,cur_harq->state);
+    LOG_W(MAC,
+          "Incorrect ULSCH HARQ PID %d or invalid state %d for RNTI %04x "
+          "(ignore this warning for RA)\n",
+          hrq_id,
+          cur_harq->state,
+          crc_pdu->rnti);
 }
 
 /*

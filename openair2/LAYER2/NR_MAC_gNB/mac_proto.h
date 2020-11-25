@@ -403,7 +403,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
-void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu);
+void handle_nr_ul_harq(module_id_t mod_id,
+                       frame_t frame,
+                       sub_frame_t slot,
+                       const nfapi_nr_crc_t *crc_pdu);
 
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,
