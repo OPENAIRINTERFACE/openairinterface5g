@@ -599,7 +599,7 @@ void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
-  openair0_timestamp timestamp;
+  openair0_timestamp timestamp, writeTimestamp;
   void *rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
   int start_rx_stream = 0;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
@@ -730,11 +730,6 @@ void *UE_thread(void *arg) {
                      UE->rx_offset_diff;
     }
 
-    if (UE->timing_advance != timing_advance) {
-      writeBlockSize -= UE->timing_advance - timing_advance;
-      timing_advance = UE->timing_advance;
-    }
-
     AssertFatal(readBlockSize ==
                 UE->rfdevice.trx_read_func(&UE->rfdevice,
                                            &timestamp,
@@ -782,12 +777,19 @@ void *UE_thread(void *arg) {
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
+    // use previous timing_advance value to compute writeTimestamp
+    writeTimestamp = timestamp + UE->frame_parms.get_samples_slot_timestamp(slot_nr, &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) -
+                     firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - timing_advance;
+
+    // but use current UE->timing_advance value to compute writeBlockSize
+    if (UE->timing_advance != timing_advance) {
+      writeBlockSize -= UE->timing_advance - timing_advance;
+      timing_advance = UE->timing_advance;
+    }
+
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
-                     timestamp+
-                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) - firstSymSamp -
-                     openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - UE->timing_advance,
+                     writeTimestamp,
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
