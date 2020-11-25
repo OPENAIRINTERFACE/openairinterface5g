@@ -32,9 +32,7 @@
 
 #include "assertions.h"
 
-#include "LAYER2/MAC/mac.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "NR_MAC_gNB/mac_proto.h"
 
 #include "common/utils/LOG/log.h"
@@ -50,10 +48,6 @@
 
 #include "openair1/PHY/defs_gNB.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
-
-//Agent-related headers
-#include "flexran_agent_extern.h"
-#include "flexran_agent_mac.h"
 
 #include "intertask_interface.h"
 

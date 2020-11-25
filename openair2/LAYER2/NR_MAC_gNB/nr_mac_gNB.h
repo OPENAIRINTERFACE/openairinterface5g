@@ -62,8 +62,6 @@
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
 /* MAC */
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_TAG.h"
