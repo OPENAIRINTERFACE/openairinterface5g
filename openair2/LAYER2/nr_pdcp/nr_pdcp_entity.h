@@ -58,7 +58,10 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
     void *deliver_sdu_data,
     void (*deliver_pdu)(void *deliver_pdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size, int sdu_id),
-    void *deliver_pdu_data);
+    void *deliver_pdu_data,
+    int sn_size,
+    int t_reordering,
+    int discard_timer);
 
 void nr_DRB_preconfiguration(void);
 

@@ -19,23 +19,50 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_ENTITY_DRB_AM_H_
-#define _NR_PDCP_ENTITY_DRB_AM_H_
+#include "pdcp.h"
 
-#include "nr_pdcp_entity.h"
+int decode_t_reordering(int v)
+{
+  static int tab[36] = {
+    0, 1, 2, 4, 5, 8, 10, 15, 20, 30, 40, 50, 60, 80, 100, 120, 140, 160, 180,
+    200, 220, 240, 260, 280, 300, 500, 750, 1000, 1250, 1500, 1750, 2000,
+    2250, 2500, 2750, 3000
+  };
 
-typedef struct {
-  nr_pdcp_entity_t common;
-  int rb_id;
-  int sn_size;               /* unit: bits */
-  int t_reordering;          /* unit: ms */
-  int discard_timer;         /* unit: ms, -1 means infinity */
-} nr_pdcp_entity_drb_am_t;
+  if (v < 0 || v > 35) {
+    LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
 
-void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *entity, char *buffer, int size);
-void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *entity, char *buffer, int size,
-                                    int sdu_id);
-void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *entity, char *key);
-void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *entity);
+  return tab[v];
+}
 
-#endif /* _NR_PDCP_ENTITY_DRB_AM_H_ */
+int decode_sn_size_ul(long s)
+{
+  if (s == 0) return 12;
+  if (s == 1) return 18;
+  LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+  exit(1);
+}
+
+int decode_sn_size_dl(long s)
+{
+  if (s == 0) return 12;
+  if (s == 1) return 18;
+  LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+  exit(1);
+}
+
+int decode_discard_timer(long v)
+{
+  static int tab[16] = {
+    10, 20, 30, 40, 50, 60, 75, 100, 150, 200, 250, 300, 500, 750, 1500, -1,
+  };
+
+  if (v < 0 || v > 15) {
+    LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  return tab[v];
+}
