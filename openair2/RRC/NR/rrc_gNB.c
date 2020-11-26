@@ -484,66 +484,161 @@ rrc_gNB_process_RRCSetupComplete(
 //-----------------------------------------------------------------------------
 void 
 rrc_gNB_generate_defaultRRCReconfiguration(
-    const protocol_ctxt_t     *const ctxt_pP,
-    rrc_gNB_ue_context_t      *ue_context_pP
+  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_gNB_ue_context_t      *ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
-    // gNB_RRC_UE_t           *ue_p = &ue_context_pP->ue_context;
-    uint8_t                buffer[RRC_BUF_SIZE];
-    uint16_t               size;
-    gNB_RRC_INST           *gnb_rrc_inst = RC.nrrrc[ctxt_pP->module_id];
+  uint8_t                       buffer[RRC_BUF_SIZE];
+  uint16_t                      size;
+  NR_SRB_ToAddModList_t        *SRB_configList2 = NULL;
+  NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
+  NR_DRB_ToAddModList_t        *DRB_configList  = NULL;
+  NR_DRB_ToAddModList_t        *DRB_configList2 = NULL;
+  NR_SRB_ToAddMod_t            *SRB2_config     = NULL;
+  NR_DRB_ToAddMod_t            *DRB_config      = NULL;
+  NR_SDAP_Config_t             *sdap_config     = NULL;
+  struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
+                               *dedicatedNAS_MessageList = NULL;
+  NR_DedicatedNAS_Message_t    *dedicatedNAS_Message = NULL;
 
-    size = do_RRCReconfiguration(ctxt_pP, ue_context_pP, buffer,
-                                 rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                                 gnb_rrc_inst);
-    LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
+  uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
-    free(ue_context_pP->ue_context.nas_pdu.buffer);
+  /******************** Radio Bearer Config ********************/
+  /* Configure SRB2 */
+  SRB_configList2 = ue_context_pP->ue_context.SRB_configList2[xid];
+  if (SRB_configList2) {
+    free(SRB_configList2);
+  }
+  SRB_configList2 = CALLOC(1, sizeof(*SRB_configList2));
+  memset(SRB_configList2, 0, sizeof(*SRB_configList2));
+  SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+  SRB2_config->srb_Identity = 2;
+  ASN_SEQUENCE_ADD(&SRB_configList2->list, SRB2_config);
+  ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
 
-    LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %x)\n",
-            ctxt_pP->module_id,
-            ctxt_pP->frame,
-            size,
-            ue_context_pP->ue_context.rnti);
-    LOG_D(NR_RRC, "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
-            ctxt_pP->frame,
-            ctxt_pP->module_id,
-            size,
-            ue_context_pP->ue_context.rnti,
-            rrc_gNB_mui,
-            ctxt_pP->module_id,
-            DCCH);
-    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                        MSC_RRC_UE,
-                        buffer,
-                        size,
-                        MSC_AS_TIME_FMT" NR_RRCReconfiguration UE %x MUI %d size %u",
-                        MSC_AS_TIME_ARGS(ctxt_pP),
-                        ue_context_pP->ue_context.rnti,
-                        rrc_gNB_mui,
-                        size);
+  /* Configure DRB */
+  DRB_configList = ue_context_pP->ue_context.DRB_configList;
+  if (DRB_configList) {
+      free(DRB_configList);
+  }
+  DRB_configList = CALLOC(1, sizeof(*DRB_configList));
+  memset(DRB_configList, 0, sizeof(*DRB_configList));
+
+  DRB_configList2 = ue_context_pP->ue_context.DRB_configList2[xid];
+  if (DRB_configList2) {
+      free(DRB_configList2);
+  }
+  DRB_configList2 = CALLOC(1, sizeof(*DRB_configList2));
+  memset(DRB_configList2, 0, sizeof(*DRB_configList2));
+
+  DRB_config = CALLOC(1, sizeof(*DRB_config));
+  DRB_config->drb_Identity = 1;
+  DRB_config->cnAssociation = CALLOC(1, sizeof(*DRB_config->cnAssociation));
+  DRB_config->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
+  // TODO sdap_Config
+  sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
+  memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
+  DRB_config->cnAssociation->choice.sdap_Config = sdap_config;
+  // TODO pdcp_Config
+  DRB_config->reestablishPDCP = NULL;
+  DRB_config->recoverPDCP = NULL;
+  DRB_config->pdcp_Config = calloc(1, sizeof(*DRB_config->pdcp_Config));
+  DRB_config->pdcp_Config->drb = calloc(1,sizeof(*DRB_config->pdcp_Config->drb));
+  DRB_config->pdcp_Config->drb->discardTimer = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->discardTimer));
+  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_ms30;
+  DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL));
+  *DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+  DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL));
+  *DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+  DRB_config->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+  DRB_config->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+
+  DRB_config->pdcp_Config->drb->integrityProtection = NULL;
+  DRB_config->pdcp_Config->drb->statusReportRequired = NULL;
+  DRB_config->pdcp_Config->drb->outOfOrderDelivery = NULL;
+  DRB_config->pdcp_Config->moreThanOneRLC = NULL;
+
+  DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
+  *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+  DRB_config->pdcp_Config->ext1 = NULL;
+
+  ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+  ASN_SEQUENCE_ADD(&DRB_configList2->list, DRB_config);
+
+  if (ue_context_pP->ue_context.nas_pdu_flag == 1) {
+    dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
+    memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
+    OCTET_STRING_fromBuf(dedicatedNAS_Message,
+                          (char *)ue_context_pP->ue_context.nas_pdu.buffer,
+                          ue_context_pP->ue_context.nas_pdu.length);
+    ASN_SEQUENCE_ADD(&dedicatedNAS_MessageList->list, dedicatedNAS_Message);
+  }
+
+  /* If list is empty free the list and reset the address */
+  if (dedicatedNAS_MessageList->list.count == 0) {
+    free(dedicatedNAS_MessageList);
+    dedicatedNAS_MessageList = NULL;
+  }
+
+  memset(buffer, 0, RRC_BUF_SIZE);
+  size = do_RRCReconfiguration(ctxt_pP, buffer,
+                                xid,
+                                SRB_configList,
+                                DRB_configList,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                dedicatedNAS_MessageList,
+                                NULL);
+
+  free(ue_context_pP->ue_context.nas_pdu.buffer);
+
+  LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
+  LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %x)\n",
+          ctxt_pP->module_id,
+          ctxt_pP->frame,
+          size,
+          ue_context_pP->ue_context.rnti);
+  LOG_D(NR_RRC, "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+          ctxt_pP->frame,
+          ctxt_pP->module_id,
+          size,
+          ue_context_pP->ue_context.rnti,
+          rrc_gNB_mui,
+          ctxt_pP->module_id,
+          DCCH);
+  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+                      MSC_RRC_UE,
+                      buffer,
+                      size,
+                      MSC_AS_TIME_FMT" NR_RRCReconfiguration UE %x MUI %d size %u",
+                      MSC_AS_TIME_ARGS(ctxt_pP),
+                      ue_context_pP->ue_context.rnti,
+                      rrc_gNB_mui,
+                      size);
 #ifdef ITTI_SIM
-      MessageDef *message_p;
-      uint8_t *message_buffer;
-      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
-      memcpy (message_buffer, buffer, size);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, GNB_RRC_DCCH_DATA_IND);
-      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-      GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
-      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
+    memcpy (message_buffer, buffer, size);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, GNB_RRC_DCCH_DATA_IND);
+    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+    GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+    GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-    nr_rrc_data_req(ctxt_pP,
-                DCCH,
-                rrc_gNB_mui++,
-                SDU_CONFIRM_NO,
-                size,
-                buffer,
-                PDCP_TRANSMISSION_MODE_CONTROL);
+  nr_rrc_data_req(ctxt_pP,
+              DCCH,
+              rrc_gNB_mui++,
+              SDU_CONFIRM_NO,
+              size,
+              buffer,
+              PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
-    // rrc_pdcp_config_asn1_req
-    // rrc_rlc_config_asn1_req
+  // rrc_pdcp_config_asn1_req
+  // rrc_rlc_config_asn1_req
 }
 
 //-----------------------------------------------------------------------------
@@ -561,14 +656,16 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
   uint16_t                            size  = 0;
   NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = NULL;
   NR_DRB_Identity_t                  *DRB_release;
-  DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
+  struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
+                                     *dedicatedNAS_MessageList = NULL;
+  NR_DedicatedNAS_Message_t          *dedicatedNAS_Message     = NULL;
 
+  DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   if (DRB_Release_configList2) {
     free(DRB_Release_configList2);
   }
 
   DRB_Release_configList2 = CALLOC(1, sizeof(*DRB_Release_configList2));
-
   for(i = 0; i < NB_RB_MAX; i++) {
     if((ue_context_pP->ue_context.pdusession[i].status == PDU_SESSION_STATUS_TORELEASE) && ue_context_pP->ue_context.pdusession[i].xid == xid) {
       DRB_release = CALLOC(1, sizeof(NR_DRB_Identity_t));
@@ -579,19 +676,29 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 
   /* If list is empty free the list and reset the address */
   if (nas_length > 0) {
-    memcpy(ue_context_pP->ue_context.nas_pdu.buffer, nas_buffer, nas_length);
-    ue_context_pP->ue_context.nas_pdu.length = nas_length;
+    dedicatedNAS_MessageList = CALLOC(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
+    dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
+    memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
+    OCTET_STRING_fromBuf(dedicatedNAS_Message,
+                         (char *)nas_buffer,
+                         nas_length);
+    ASN_SEQUENCE_ADD(&dedicatedNAS_MessageList->list, dedicatedNAS_Message);
     LOG_I(NR_RRC,"add NAS info with size %d\n", nas_length);
   } else {
     LOG_W(NR_RRC,"dedlicated NAS list is empty\n");
   }
 
   memset(buffer, 0, RRC_BUF_SIZE);
-  size = do_RRCReconfiguration(ctxt_pP,
-                               ue_context_pP,
-                               buffer,
-                               xid,
+  size = do_RRCReconfiguration(ctxt_pP, buffer, xid,
+                               NULL,
+                               NULL,
+                               DRB_Release_configList2,
+                               NULL,
+                               NULL,
+                               NULL,
+                               dedicatedNAS_MessageList,
                                NULL);
+
   ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Reconfiguration\n");
@@ -1412,7 +1519,6 @@ rrc_gNB_decode_dcch(
                                               ue_context_p,
                                               ul_dcch_msg);
                 }
-                sleep(1);
                 rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
                 break;
 
