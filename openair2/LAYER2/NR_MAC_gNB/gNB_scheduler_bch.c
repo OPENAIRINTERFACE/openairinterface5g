@@ -215,9 +215,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
 }
 
 
-
 void schedule_nr_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
-//----------------------------------------
+//----------------------------------------  
 }
 
 void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id) {
@@ -236,7 +235,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *servingcellconfigcommon = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
-  uint8_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
+  uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
@@ -444,7 +443,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
   int time_domain_allocation = 2; // FIXME: For OAI-UE (2), For 3rd party implementation and 3GPP compliant (4)
   uint8_t mcsTableIdx = 0;
   uint8_t mcs = 8;
-  uint8_t numDmrsCdmGrpsNoData = 1; // FIXME: For OAI-UE (1), For 3rd party implementation and 3GPP compliant (2)
+  uint8_t numDmrsCdmGrpsNoData = 2;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
 

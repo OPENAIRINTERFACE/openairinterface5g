@@ -246,7 +246,7 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
     case NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration:
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig != NULL){
         if(NR_UE_rrc_inst[module_id].radio_bearer_config == NULL){
-          NR_UE_rrc_inst[module_id].radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;
+          NR_UE_rrc_inst[module_id].radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;                
         }else{
           nr_rrc_ue_process_RadioBearerConfig(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig);
         }
@@ -257,7 +257,7 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
                     &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
                     (void **)&cellGroupConfig,
                     (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
-                    rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0);
+                    rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0); 
 
         xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
 
@@ -287,13 +287,13 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
         // unuse now
       }
       break;
-
+    
     case NR_RRCReconfiguration__criticalExtensions_PR_NOTHING:
     case NR_RRCReconfiguration__criticalExtensions_PR_criticalExtensionsFuture:
     default:
       break;
   }
-  //nr_rrc_mac_config_req_ue();
+  //nr_rrc_mac_config_req_ue(); 
 
   return 0;
 }
@@ -341,7 +341,7 @@ int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupCon
         }
       }
     }
-  }
+  } 
 
   return 0;
 }
@@ -357,8 +357,8 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
                                 &asn_DEF_NR_RRCReconfiguration,
                                 (void **)&RRCReconfiguration,
                                 (uint8_t *)message,
-                                msg_len);
-
+                                msg_len); 
+        
         if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
           LOG_E(RRC,"NR_RRCReconfiguration decode error\n");
           // free the memory
@@ -368,7 +368,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
         nr_rrc_ue_process_rrcReconfiguration(module_id,RRCReconfiguration);
         }
       break;
-
+    
     case nr_RadioBearerConfigX_r15:
       {
         NR_RadioBearerConfig_t *RadioBearerConfig=NULL;
@@ -376,8 +376,8 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
                                 &asn_DEF_NR_RadioBearerConfig,
                                 (void **)&RadioBearerConfig,
                                 (uint8_t *)message,
-                                msg_len);
-
+                                msg_len); 
+        
         if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
           LOG_E(RRC,"NR_RadioBearerConfig decode error\n");
           // free the memory
@@ -387,7 +387,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
         nr_rrc_ue_process_RadioBearerConfig(RadioBearerConfig);
       }
       break;
-
+    
     default:
       AssertFatal(1==0,"Unknown message %d\n",nsa_message_type);
       break;
@@ -488,7 +488,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
                   strerror(errno));
       msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
-      process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
+      process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 
     }
   }else{
     NR_UE_rrc_inst = NULL;
@@ -635,22 +635,22 @@ void nr_dump_sib2( NR_SIB2_t *sib2 ){
            *sib2->cellReselectionServingFreqInfo.s_NonIntraSearchP );
   else
     LOG_I( RRC, "cellReselectionServingFreqInfo->s_NonIntraSearchP : not defined\n" );
-
+ 
   if( sib2->cellReselectionServingFreqInfo.s_NonIntraSearchQ)
     LOG_I( RRC, "cellReselectionServingFreqInfo.s_NonIntraSearchQ : %ld\n",
            *sib2->cellReselectionServingFreqInfo.s_NonIntraSearchQ );
   else
     LOG_I( RRC, "cellReselectionServingFreqInfo->s_NonIntraSearchQ : not defined\n" );
-
+  
   LOG_I( RRC, "cellReselectionServingFreqInfo.threshServingLowP : %ld\n",
          sib2->cellReselectionServingFreqInfo.threshServingLowP );
-
+  
   if( sib2->cellReselectionServingFreqInfo.threshServingLowQ)
     LOG_I( RRC, "cellReselectionServingFreqInfo.threshServingLowQ : %ld\n",
            *sib2->cellReselectionServingFreqInfo.threshServingLowQ );
   else
     LOG_I( RRC, "cellReselectionServingFreqInfo->threshServingLowQ : not defined\n" );
-
+  
   LOG_I( RRC, "cellReselectionServingFreqInfo.cellReselectionPriority : %ld\n",
          sib2->cellReselectionServingFreqInfo.cellReselectionPriority );
   if( sib2->cellReselectionServingFreqInfo.cellReselectionSubPriority)
@@ -662,28 +662,28 @@ void nr_dump_sib2( NR_SIB2_t *sib2 ){
 //intraFreqCellReselectionInfo
   LOG_I( RRC, "intraFreqCellReselectionInfo.q_RxLevMin : %ld\n",
          sib2->intraFreqCellReselectionInfo.q_RxLevMin );
-
+  
   if( sib2->intraFreqCellReselectionInfo.q_RxLevMinSUL)
     LOG_I( RRC, "intraFreqCellReselectionInfo.q_RxLevMinSUL : %ld\n",
            *sib2->intraFreqCellReselectionInfo.q_RxLevMinSUL );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->q_RxLevMinSUL : not defined\n" );
-
+  
   if( sib2->intraFreqCellReselectionInfo.q_QualMin)
     LOG_I( RRC, "intraFreqCellReselectionInfo.q_QualMin : %ld\n",
            *sib2->intraFreqCellReselectionInfo.q_QualMin );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->q_QualMin : not defined\n" );
-
+  
   LOG_I( RRC, "intraFreqCellReselectionInfo.s_IntraSearchP : %ld\n",
          sib2->intraFreqCellReselectionInfo.s_IntraSearchP );
-
+  
   if( sib2->intraFreqCellReselectionInfo.s_IntraSearchQ)
     LOG_I( RRC, "intraFreqCellReselectionInfo.s_IntraSearchQ : %ld\n",
            *sib2->intraFreqCellReselectionInfo.s_IntraSearchQ );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->s_IntraSearchQ : not defined\n" );
-
+  
   LOG_I( RRC, "intraFreqCellReselectionInfo.t_ReselectionNR : %ld\n",
          sib2->intraFreqCellReselectionInfo.t_ReselectionNR );
 
@@ -692,25 +692,25 @@ void nr_dump_sib2( NR_SIB2_t *sib2 ){
            sib2->intraFreqCellReselectionInfo.frequencyBandList );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->frequencyBandList : not defined\n" );
-
+ 
   if( sib2->intraFreqCellReselectionInfo.frequencyBandListSUL)
     LOG_I( RRC, "intraFreqCellReselectionInfo.frequencyBandListSUL : %p\n",
            sib2->intraFreqCellReselectionInfo.frequencyBandListSUL );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->frequencyBandListSUL : not defined\n" );
-
+  
   if( sib2->intraFreqCellReselectionInfo.p_Max)
     LOG_I( RRC, "intraFreqCellReselectionInfo.p_Max : %ld\n",
            *sib2->intraFreqCellReselectionInfo.p_Max );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->p_Max : not defined\n" );
-
+ 
   if( sib2->intraFreqCellReselectionInfo.smtc)
     LOG_I( RRC, "intraFreqCellReselectionInfo.smtc : %p\n",
            sib2->intraFreqCellReselectionInfo.smtc );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->smtc : not defined\n" );
-
+ 
   if( sib2->intraFreqCellReselectionInfo.ss_RSSI_Measurement)
     LOG_I( RRC, "intraFreqCellReselectionInfo.ss_RSSI_Measurement : %p\n",
            sib2->intraFreqCellReselectionInfo.ss_RSSI_Measurement );
@@ -722,7 +722,7 @@ void nr_dump_sib2( NR_SIB2_t *sib2 ){
            sib2->intraFreqCellReselectionInfo.ssb_ToMeasure );
   else
     LOG_I( RRC, "intraFreqCellReselectionInfo->ssb_ToMeasure : not defined\n" );
-
+  
   LOG_I( RRC, "intraFreqCellReselectionInfo.deriveSSB_IndexFromCell : %d\n",
          sib2->intraFreqCellReselectionInfo.deriveSSB_IndexFromCell );
 
@@ -732,7 +732,7 @@ void nr_dump_sib3( NR_SIB3_t *sib3 ) {
 //intraFreqNeighCellList
   if( sib3->intraFreqNeighCellList){
     LOG_I( RRC, "intraFreqNeighCellList : %p\n",
-           sib3->intraFreqNeighCellList );
+           sib3->intraFreqNeighCellList );    
     const int n = sib3->intraFreqNeighCellList->list.count;
     for (int i = 0; i < n; ++i){
       LOG_I( RRC, "intraFreqNeighCellList->physCellId : %ld\n",
@@ -745,13 +745,13 @@ void nr_dump_sib3( NR_SIB3_t *sib3 ) {
                *sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCell );
       else
         LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCell : not defined\n" );
-
+      
       if( sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCellSUL)
         LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCellSUL : %ld\n",
                *sib3->intraFreqNeighCellList->list.array[i]->q_RxLevMinOffsetCellSUL );
       else
         LOG_I( RRC, "intraFreqNeighCellList->q_RxLevMinOffsetCellSUL : not defined\n" );
-
+      
       if( sib3->intraFreqNeighCellList->list.array[i]->q_QualMinOffsetCell)
         LOG_I( RRC, "intraFreqNeighCellList->q_QualMinOffsetCell : %ld\n",
                *sib3->intraFreqNeighCellList->list.array[i]->q_QualMinOffsetCell );
@@ -765,7 +765,7 @@ void nr_dump_sib3( NR_SIB3_t *sib3 ) {
 //intraFreqBlackCellList
   if( sib3->intraFreqBlackCellList){
     LOG_I( RRC, "intraFreqBlackCellList : %p\n",
-           sib3->intraFreqBlackCellList );
+           sib3->intraFreqBlackCellList );    
     const int n = sib3->intraFreqBlackCellList->list.count;
     for (int i = 0; i < n; ++i){
       LOG_I( RRC, "intraFreqBlackCellList->start : %ld\n",
@@ -983,7 +983,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
           memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib12[gNB_index], typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t) );
           LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB14 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
         }
-
+      
       break;
 
       default:
@@ -991,10 +991,10 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
     }
     if (new_sib == 1) {
       NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt++;
-
+  
       if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
         nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
-
+  
       LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt,
@@ -1346,7 +1346,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   const uint8_t gNB_index,
   const uint8_t Transaction_id,
   uint8_t sel_plmn_id){
-
+  
   uint8_t buffer[100];
   uint8_t size;
   const char *nas_msg;
@@ -1405,17 +1405,17 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                          (void **)&dl_ccch_msg,
                          (uint8_t *)Srb_info->Rx_buffer.Payload,
                          100,0,0);
-
+  
   // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
   // }
-
+  
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
     LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
     return -1;
   }
-
+  
   if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
     if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_SI_RECEIVED) {
       switch (dl_ccch_msg->message.choice.c1->present) {
@@ -1425,7 +1425,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                 ctxt_pP->frame);
           rval = 0;
           break;
-
+  
         case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
           LOG_I(NR_RRC,
                 "[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",
@@ -1433,7 +1433,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                 ctxt_pP->frame);
           rval = 0;
           break;
-
+  
         case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
           LOG_I(NR_RRC,
                 "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n",
@@ -1443,7 +1443,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
           // Get configuration
           // Release T300 timer
           NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
-
+          
           nr_rrc_ue_process_masterCellGroup(
             ctxt_pP,
             gNB_index,
@@ -1462,7 +1462,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
             NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
           rval = 0;
           break;
-
+  
         default:
           LOG_E(NR_RRC, "[UE%d] Frame %d : Unknown message\n",
                 ctxt_pP->module_id,
@@ -1472,7 +1472,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
       }
     }
   }
-
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
   return rval;
 }
@@ -1522,13 +1522,13 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
   const uint8_t    *bufferP,
   const uint32_t    buffer_len ){
   //  uper_decode by nr R15 rrc_connection_reconfiguration
-
+  
   int32_t i;
   NR_DL_DCCH_Message_t *nr_dl_dcch_msg = NULL;
   MessageDef *msg_p;
 
   asn_dec_rval_t dec_rval = uper_decode(  NULL,
-                                          &asn_DEF_NR_DL_DCCH_Message,
+                                          &asn_DEF_NR_DL_DCCH_Message,    
                                           (void**)&nr_dl_dcch_msg,
                                           (uint8_t *)bufferP,
                                           buffer_len, 0, 0);
@@ -1543,7 +1543,7 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
   }
 
   if(nr_dl_dcch_msg != NULL){
-    switch(nr_dl_dcch_msg->message.present){
+    switch(nr_dl_dcch_msg->message.present){            
       case NR_DL_DCCH_MessageType_PR_c1:
         switch(nr_dl_dcch_msg->message.choice.c1->present){
           case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
@@ -1563,7 +1563,7 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
               }
             itti_send_msg_to_task(TASK_RRC_NRUE,module_id,msg_p);
             break;
-
+          
           case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
           case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
           case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
@@ -1588,7 +1588,7 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
         //  not supported or unused
         break;
     }
-
+    
     //  release memory allocation
     SEQUENCE_free( &asn_DEF_NR_DL_DCCH_Message, (void *)nr_dl_dcch_msg, 1 );
   }else{
@@ -2546,7 +2546,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
 
   NR_UE_rrc_inst[ctxt_pP->module_id].UECap = UECap;
   NR_UE_rrc_inst[ctxt_pP->module_id].UECapability = UECap->sdu;
-  NR_UE_rrc_inst[ctxt_pP->module_id].UECapability_size = UECap->sdu_size;
+  NR_UE_rrc_inst[ctxt_pP->module_id].UECapability_size = UECap->sdu_size; 
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
                        (const char *)NR_UE_rrc_inst[ctxt_pP->module_id].UECapability,
                        NR_UE_rrc_inst[ctxt_pP->module_id].UECapability_size);

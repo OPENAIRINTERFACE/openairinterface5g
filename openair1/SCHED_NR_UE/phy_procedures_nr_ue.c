@@ -1808,8 +1808,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 0,
                 0);
 
-    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
-
     dci_cnt = 0;
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
 
@@ -1817,15 +1815,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
           fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
 
-    rel15 = &pdcch_vars->pdcch_config[n_ss];
-
     if (coreset_nb_rb > 0)
       nr_pdcch_channel_estimation(ue,
                                   proc,
                                   0,
                                   nr_slot_rx,
                                   l,
-                                  (pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb) * 12,
+                                  fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                   coreset_nb_rb);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);

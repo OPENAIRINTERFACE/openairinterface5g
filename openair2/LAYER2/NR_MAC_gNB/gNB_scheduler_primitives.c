@@ -63,7 +63,6 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
-
 #include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
@@ -188,7 +187,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   } else {
     cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
   }
-
 
   int n_rb=0;
   for (int i=0;i<6;i++)

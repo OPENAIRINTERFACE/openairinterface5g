@@ -789,7 +789,6 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
   scheduled_response->thread_id  = thread_id;
 }
 
-
 uint8_t table_9_2_2_1[16][8]={
   {0,12,2, 0, 0,3,0,0},
   {0,12,2, 0, 0,4,8,0},
@@ -958,10 +957,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  // fill in the elements in config request inside P5 message
-  mac->phy_config.Mod_id = module_id;
-  mac->phy_config.CC_id = cc_id;
-
   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
@@ -970,7 +965,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint16_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)
     frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
+  //uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
   uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
@@ -997,7 +992,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_I(MAC,"pdcch config sib1.searchSpaceZero: %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
   LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-  LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+  //LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
   LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
 
@@ -1010,7 +1005,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
   mac->dl_config_request.sfn = mac->type0_PDCCH_CSS_config.frame;
   mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
-  channel_bandwidth_t min_channel_bw = bw_10MHz;  //  default for testing
 
   return 0;
 }
@@ -1179,9 +1173,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
       */
     }
-
-    fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15 = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-
   } else if (ul_info) {
 
     // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
@@ -3372,14 +3363,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", dlsch_config_pdu_1_0->dlDmrsSymbPos);
 
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
-    //if (dlsch_config_pdu_1_0->number_symbols == 2)
-    //  dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
-    //else
-    //  dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 2;
-
-    /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
-           using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */
-    dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
+    if (dlsch_config_pdu_1_0->number_symbols == 2)
+      dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
+    else
+      dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 2;
 
     /* VRB_TO_PRB_MAPPING */
     dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
@@ -4013,8 +4000,6 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         LOG_D(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
         LOG_D(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
 
-        getchar();
-
       break;
 	
     case NR_RNTI_TC:
@@ -4325,8 +4310,8 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
       }
     break;
-  }
-
+       }
+    
     return dci_format;
 }
 

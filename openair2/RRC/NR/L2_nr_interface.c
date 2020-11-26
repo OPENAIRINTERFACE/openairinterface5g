@@ -50,7 +50,7 @@ int generate_pdcch_ConfigSIB1(NR_PDCCH_ConfigSIB1_t *pdcch_ConfigSIB1,
                               long subCarrierSpacingCommon,
                               channel_bandwidth_t min_channel_bw) {
 
-  nr_ssb_and_cset_mux_pattern_type_t mux_pattern;
+  nr_ssb_and_cset_mux_pattern_type_t mux_pattern = 0;
 
   switch (ssbSubcarrierSpacing) {
 
