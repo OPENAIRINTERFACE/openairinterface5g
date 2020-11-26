@@ -25,6 +25,7 @@
 #include "nr_ul_estimation.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
@@ -533,384 +534,107 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
  *  3) Compensated DMRS based estimated signal with PTRS estimation for slot
  *********************************************************************/
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
+                              NR_DL_FRAME_PARMS *frame_parms,
                               nfapi_nr_pusch_pdu_t *rel15_ul,
                               uint8_t ulsch_id,
                               uint8_t nr_tti_rx,
-                              uint8_t dmrs_symbol_flag,
                               unsigned char symbol,
                               uint32_t nb_re_pusch)
 {
-  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  int16_t *phase_per_symbol;
-
-  uint8_t         L_ptrs          = 0;
-  uint8_t         right_side_ref  = 0;
-  uint8_t         left_side_ref   = 0;
-  uint8_t         nb_dmrs_in_slot = 0;
-
   //#define DEBUG_UL_PTRS 1
-  /* First symbol calculate PTRS symbol index for slot & set the variables */
-  if(symbol == rel15_ul->start_symbol_index)
-  {
-    gNB->pusch_vars[ulsch_id]->ptrs_symbols = 0;
-    L_ptrs = 1<<(rel15_ul->pusch_ptrs.ptrs_time_density);
-    set_ptrs_symb_idx(&gNB->pusch_vars[ulsch_id]->ptrs_symbols,
-                      rel15_ul->nr_of_symbols,
-                      rel15_ul->start_symbol_index,
-                      L_ptrs,
-                      rel15_ul->ul_dmrs_symb_pos);
-  }/* First symbol check */
+  int16_t *phase_per_symbol = NULL;
+  int32_t *ptrs_re_symbol   = NULL;
+  int8_t   ret = 0;
 
+  uint8_t  symbInSlot       = rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols;
+  uint8_t *startSymbIndex   = &rel15_ul->start_symbol_index;
+  uint8_t *nbSymb           = &rel15_ul->nr_of_symbols;
+  uint8_t  *L_ptrs          = &rel15_ul->pusch_ptrs.ptrs_time_density;
+  uint8_t  *K_ptrs          = &rel15_ul->pusch_ptrs.ptrs_freq_density;
+  uint16_t *dmrsSymbPos     = &rel15_ul->ul_dmrs_symb_pos;
+  uint16_t *ptrsSymbPos     = &gNB->pusch_vars[ulsch_id]->ptrs_symbols;
+  uint8_t  *ptrsSymbIdx     = &gNB->pusch_vars[ulsch_id]->ptrs_symbol_index;
+  uint8_t  *dmrsConfigType  = &rel15_ul->dmrs_config_type;
+  uint16_t *nb_rb           = &rel15_ul->rb_size;
+  uint8_t  *ptrsReOffset    = &rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset;
   /* loop over antennas */
-  for (int aarx=0; aarx< frame_parms->nb_antennas_rx; aarx++)
-  {
+  for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     phase_per_symbol = (int16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
-    /* set the previous estimations to zero at first symbol */
-    if(symbol == rel15_ul->start_symbol_index)
-    {
-      memset(phase_per_symbol,0,sizeof(int32_t)*frame_parms->symbols_per_slot);
+    ptrs_re_symbol = &gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
+    *ptrs_re_symbol = 0;
+    phase_per_symbol[(2*symbol)+1] = 0; // Imag
+    /* set DMRS estimates to 0 angle with magnitude 1 */
+    if(is_dmrs_symbol(symbol,*dmrsSymbPos)) {
+      /* set DMRS real estimation to 32767 */
+      phase_per_symbol[2*symbol]=(int16_t)((1<<15)-1); // 32767
+#ifdef DEBUG_UL_PTRS
+      printf("[PHY][PTRS]: DMRS Symbol %d -> %4d + j*%4d\n", symbol, phase_per_symbol[2*symbol],phase_per_symbol[(2*symbol)+1]);
+#endif
+    }
+    else {// real ptrs value is set to 0
+      phase_per_symbol[2*symbol] = 0; // Real
+    }
+
+    if(symbol == *startSymbIndex) {
+      *ptrsSymbPos = 0;
+      set_ptrs_symb_idx(ptrsSymbPos,
+                        *nbSymb,
+                        *startSymbIndex,
+                        1<< *L_ptrs,
+                        *dmrsSymbPos);
     }
     /* if not PTRS symbol set current ptrs symbol index to zero*/
-    gNB->pusch_vars[ulsch_id]->ptrs_symbol_index = 0;
-    gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol = 0;
+    *ptrsSymbIdx = 0;
     /* Check if current symbol contains PTRS */
-    if(is_ptrs_symbol(symbol, gNB->pusch_vars[ulsch_id]->ptrs_symbols))
-    {
-      gNB->pusch_vars[ulsch_id]->ptrs_symbol_index = symbol;
+    if(is_ptrs_symbol(symbol, *ptrsSymbPos)) {
+      *ptrsSymbIdx = symbol;
       /*------------------------------------------------------------------------------------------------------- */
-      /* 1) Estimate phase noise per PTRS symbol                                                                */
+      /* 1) Estimate common phase error per PTRS symbol                                                                */
       /*------------------------------------------------------------------------------------------------------- */
-      nr_pusch_phase_estimation(frame_parms,
-                                rel15_ul,
-                                (int16_t *)&gNB->pusch_vars[ulsch_id]->ul_ch_ptrs_estimates_ext[aarx][symbol*nb_re_pusch],
-                                nr_tti_rx,
-                                symbol,
-                                (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(symbol * nb_re_pusch)],
-                                gNB->nr_gold_pusch_dmrs[rel15_ul->scid],
-                                &phase_per_symbol[2* symbol],
-                                &gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol);
-    }
-    /* DMRS Symbol channel estimates extraction */
-    else if(dmrs_symbol_flag)
-    {
-      phase_per_symbol[2* symbol]= (int16_t)((1<<15)-1); // 32767
-      phase_per_symbol[2* symbol +1]= 0;// no angle
+      nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
+                             rel15_ul->rnti,
+                             (int16_t *)&gNB->pusch_vars[ulsch_id]->ul_ch_ptrs_estimates_ext[aarx][symbol*nb_re_pusch],
+                             nr_tti_rx,
+                             symbol,frame_parms->ofdm_symbol_size,
+                             (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(symbol * nb_re_pusch)],
+                             gNB->nr_gold_pusch_dmrs[rel15_ul->scid][nr_tti_rx][symbol],
+                             &phase_per_symbol[2* symbol],
+                             ptrs_re_symbol);
     }
     /* For last OFDM symbol at each antenna perform interpolation and compensation for the slot*/
-    if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1))
-    {
-      nb_dmrs_in_slot = get_dmrs_symbols_in_slot(rel15_ul->ul_dmrs_symb_pos,(rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols));
-      for(uint8_t dmrs_sym = 0; dmrs_sym < nb_dmrs_in_slot;  dmrs_sym ++)
-      {
-        if(dmrs_sym == 0)
-        {
-          /* get first DMRS position */
-          left_side_ref = get_next_dmrs_symbol_in_slot(rel15_ul->ul_dmrs_symb_pos, rel15_ul->start_symbol_index, (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols));
-          /* get first DMRS position is not at start symbol position then we need to extrapolate left side  */
-          if(left_side_ref > rel15_ul->start_symbol_index)
-          {
-            left_side_ref = rel15_ul->start_symbol_index;
-          }
+    if(symbol == (symbInSlot -1)) {
+      /*------------------------------------------------------------------------------------------------------- */
+      /* 2) Interpolate PTRS estimated value in TD */
+      /*------------------------------------------------------------------------------------------------------- */
+      /* If L-PTRS is > 0 then we need interpolation */
+      if(*L_ptrs > 0) {
+        ret = nr_ptrs_process_slot(*dmrsSymbPos, *ptrsSymbPos, phase_per_symbol, *startSymbIndex, *nbSymb);
+        if(ret != 0) {
+          LOG_W(PHY,"[PTRS] Compensation is skipped due to error in PTRS slot processing !!\n");
         }
-        /* get the next symbol from left_side_ref value */
-        right_side_ref = get_next_dmrs_symbol_in_slot(rel15_ul->ul_dmrs_symb_pos, left_side_ref+1, (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols));
-        /* if no symbol found then interpolate till end of slot*/
-        if(right_side_ref == 0)
-        {
-          right_side_ref = (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);
-        }
-        /*------------------------------------------------------------------------------------------------------- */
-        /* 2) Interpolate PTRS estimated value in TD */
-        /*------------------------------------------------------------------------------------------------------- */
-        nr_pusch_phase_interpolation(phase_per_symbol,left_side_ref,right_side_ref);
-        /* set left to last dmrs */
-        left_side_ref = right_side_ref;
-      } /*loop over dmrs positions */
-
+      }
 #ifdef DEBUG_UL_PTRS
-      LOG_M("ptrsEst.m","est",gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
-      LOG_M("rxdataF_bf_ptrs_comp.m","bf_ptrs_cmp",
+      LOG_M("ptrsEstUl.m","est",gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
+      LOG_M("rxdataF_bf_ptrs_comp_ul.m","bf_ptrs_cmp",
             &gNB->pusch_vars[0]->rxdataF_comp[aarx][rel15_ul->start_symbol_index * NR_NB_SC_PER_RB * rel15_ul->rb_size],
             rel15_ul->nr_of_symbols * NR_NB_SC_PER_RB * rel15_ul->rb_size,1,1);
 #endif
-
       /*------------------------------------------------------------------------------------------------------- */
       /* 3) Compensated DMRS based estimated signal with PTRS estimation                                        */
       /*--------------------------------------------------------------------------------------------------------*/
-      for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++)
-      {
+      for(uint8_t i = *startSymbIndex; i< symbInSlot ;i++) {
+        /* DMRS Symbol has 0 phase so no need to rotate the respective symbol */
+        /* Skip rotation if the slot processing is wrong */
+        if((!is_dmrs_symbol(i,*dmrsSymbPos)) && (ret == 0)) {
 #ifdef DEBUG_UL_PTRS
-        printf("PTRS: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[2* i],phase_per_symbol[(2* i) +1]);
+          printf("[PHY][UL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[2* i],phase_per_symbol[(2* i) +1]);
 #endif
-        rotate_cpx_vector((int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                          &phase_per_symbol[2* i],
-                          (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                          (rel15_ul->rb_size * NR_NB_SC_PER_RB),
-                          15);
+          rotate_cpx_vector((int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                            &phase_per_symbol[2* i],
+                            (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                            ((*nb_rb) * NR_NB_SC_PER_RB), 15);
+        }// if not DMRS Symbol
       }// symbol loop
-    }//interpolation and compensation
-  }// Antenna loop
-}
-
-/*******************************************************************
- *
- * NAME :         nr_pusch_phase_estimation
- *
- * PARAMETERS :   frame_parms  : UL frame parameters
- *                rel15_ul     : UL PDU Structure
- *                Ns           :
- *                Symbol       : OFDM symbol index
- *                rxF          : Channel compensated signal
- *                ptrs_gold_seq: Gold sequence for PTRS regeneration
- *                error_est    : Estimated error output vector [Re Im]
- * RETURN :       nothing
- *
- * DESCRIPTION :
- *  perform phase estimation from regenerated PTRS SC and channel compensated
- *  signal
- *********************************************************************/
-void nr_pusch_phase_estimation(NR_DL_FRAME_PARMS *frame_parms,
-                               nfapi_nr_pusch_pdu_t *rel15_ul,
-                               int16_t *ptrs_ch_p,
-                               unsigned char Ns,
-                               unsigned char symbol,
-                               int16_t *rxF_comp,
-                               uint32_t ***ptrs_gold_seq,
-                               int16_t *error_est,
-                               uint16_t *ptrs_sc)
-{
-  uint8_t               is_ptrs_re       = 0;
-  uint16_t              re_cnt           = 0;
-  uint16_t              cnt              = 0;
-  unsigned short        nb_re_pusch      = NR_NB_SC_PER_RB * rel15_ul->rb_size;
-  uint8_t               K_ptrs           = rel15_ul->pusch_ptrs.ptrs_freq_density;
-  uint16_t              sc_per_symbol    = (rel15_ul->rb_size + K_ptrs - 1)/K_ptrs;
-  int16_t              *ptrs_p           = (int16_t *)malloc(sizeof(int32_t)*(sc_per_symbol));
-  int16_t              *dmrs_comp_p      = (int16_t *)malloc(sizeof(int32_t)*(sc_per_symbol));
-  double                abs              = 0.0;
-  double                real             = 0.0;
-  double                imag             = 0.0;
-#ifdef DEBUG_UL_PTRS
-  double                alpha            = 0;
-#endif
-  /* generate PTRS RE for the symbol */
-  nr_gen_ref_conj_symbols(ptrs_gold_seq[Ns][symbol],sc_per_symbol*2,ptrs_p, NR_MOD_TABLE_QPSK_OFFSET,2);// 2 for QPSK
-
-  /* loop over all sub carriers to get compensated RE on ptrs symbols*/
-  for (int re = 0; re < nb_re_pusch; re++)
-  {
-    is_ptrs_re = is_ptrs_subcarrier(re,
-                                    rel15_ul->rnti,
-                                    0,
-                                    rel15_ul->dmrs_config_type,
-                                    K_ptrs,
-                                    rel15_ul->rb_size,
-                                    rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
-                                    0,// start_re is 0 here
-                                    frame_parms->ofdm_symbol_size);
-    if(is_ptrs_re)
-    {
-      dmrs_comp_p[re_cnt*2]     = rxF_comp[re *2];
-      dmrs_comp_p[(re_cnt*2)+1] = rxF_comp[(re *2)+1];
-      re_cnt++;
-    }
-    else
-    {
-      /* Skip PTRS symbols and keep data in a continuous vector */
-      rxF_comp[cnt *2]= rxF_comp[re *2];
-      rxF_comp[(cnt *2)+1]= rxF_comp[(re *2)+1];
-      cnt++;
-    }
-  }/* RE loop */
-  /* update the total ptrs RE in a symbol */
-  *ptrs_sc = re_cnt;
-
-  /*Multiple compensated data with conj of PTRS */
-  mult_cpx_vector(dmrs_comp_p, ptrs_p, ptrs_ch_p,(1 + sc_per_symbol/4)*4,15); // 2^15 shifted
-
-  /* loop over all ptrs sub carriers in a symbol */
-  /* sum the error vector */
-  for(int i = 0;i < sc_per_symbol; i++)
-  {
-    real+= ptrs_ch_p[(2*i)];
-    imag+= ptrs_ch_p[(2*i)+1];
-  }
-#ifdef DEBUG_UL_PTRS
-    alpha = atan(imag/real);
-    printf("PTRS: Symbol  %d atan(Im,real):= %f \n",symbol, alpha );
-#endif
-  /* mean */
-  real /= sc_per_symbol;
-  imag /= sc_per_symbol;
-  /* absolute calculation */
-  abs = sqrt(((real * real) + (imag *  imag)));
-  /* normalized error estimation */
-  error_est[0]= (real / abs)*(1<<15);
-  /* compensation in given by conjugate of estimated phase (e^-j*2*pi*fd*t)*/
-  error_est[1]= (-1)*(imag / abs)*(1<<15);
-#ifdef DEBUG_UL_PTRS
-    printf("PTRS: Estimated Symbol  %d -> %d + j* %d \n",symbol, error_est[0], error_est[1] );
-#endif
-  /* free vectors */
-  free(ptrs_p);
-  free(dmrs_comp_p);
-}
-
-
-/*******************************************************************
- *
- * NAME :         nr_pusch_phase_interpolation
- *
- * PARAMETERS :   *error_est    : Data Pointer [Re Im Re Im ...]
- *                 start_symbol : Start Symbol
- *                 end_symbol   : End Symbol
- * RETURN :       nothing
- *
- * DESCRIPTION :
- * Perform Interpolation, extrapolation based upon the estimation
- * location between the data Pointer Array.
- *
- *********************************************************************/
-void nr_pusch_phase_interpolation(int16_t *error_est,
-                                  uint8_t start_symbol,
-                                  uint8_t end_symbol
-                                  )
-{
-
-  int next = 0, prev = 0, candidates= 0, distance=0, leftEdge= 0, rightEdge = 0, getDiff =0 ;
-  double weight = 0.0;
-  double scale  = 0.125 ; // to avoid saturation due to fixed point multiplication
-#ifdef DEBUG_UL_PTRS
-  printf("PTRS: INT: Left limit %d, Right limit %d, Loop over %d Symbols \n",
-         start_symbol,end_symbol-1, (end_symbol -start_symbol)-1);
-#endif
-  for(int i =start_symbol; i< end_symbol;i++)
-  {
-    /* Only update when an estimation is found */
-    if( error_est[i*2] != 0 )
-    {
-      /* if found a symbol then set next symbol also */
-      next = nr_ptrs_find_next_estimate(error_est, i, end_symbol);
-      /* left extrapolation, if first estimate value is zero */
-      if( error_est[i*2] == 0 )
-      {
-        leftEdge = 1;
-      }
-      /* right extrapolation, if next is 0 before end symbol */
-      if((next == 0) && (end_symbol > i))
-      {
-        rightEdge = 1;
-        /* special case as no right extrapolation possible with DMRS on left */
-        /* In this case take mean of most recent 2 estimated points */
-        if(prev ==0)
-        {
-          prev = start_symbol -1;
-          next = start_symbol -2;
-          getDiff =1;
-        }else
-        {
-          /* for right edge  previous is second last from right side */
-          next = prev;
-          /* Set the current as recent estimation reference */
-          prev = i;
-        }
-      }
-      /* update  current symbol as prev  for next symbol */
-      if (rightEdge==0)
-        /* Set the current as recent estimation reference */
-        prev = i;
-    }
-    /*extrapolation left side*/
-    if(leftEdge)
-    {
-      distance = next - prev;
-      weight = 1.0/distance;
-      candidates = i;
-      for(int j = 1; j <= candidates; j++)
-      {
-        error_est[(i-j)*2]    = 8 *(((double)(error_est[prev*2]) * scale * (distance + j) * weight) -
-                                    ((double)(error_est[next*2]) * scale * j * weight));
-        error_est[((i-j)*2)+1]= 8 *(((double)(error_est[(prev*2)+1]) * scale* (distance + j) * weight) -
-                                    ((double)(error_est[((next*2)+1)]) * scale * j * weight));
-#ifdef DEBUG_UL_PTRS
-        printf("PTRS: INT: Left Edge i= %d weight= %f %d + j*%d, Prev %d Next %d \n",
-               (i-j),weight, error_est[(i-j)*2],error_est[((i-j)*2)+1], prev,next);
-#endif
-      }
-      leftEdge = 0;
-    }
-    /* extrapolation at right side */
-    else if (rightEdge )
-    {
-      if(getDiff)
-      {
-        error_est[(i+1)*2]    = ((1<<15) +(error_est[prev*2]) - error_est[next*2]);
-        error_est[((i+1)*2)+1]= error_est[(prev*2)+1] - error_est[(next*2)+1];
-#ifdef DEBUG_UL_PTRS
-        printf("PTRS: INT: Right Edge Special Case i= %d weight= %f %d + j*%d, Prev %d Next %d \n",
-               (i+1),weight, error_est[(i+1)*2],error_est[((i+1)*2)+1], prev,next);
-#endif
-        i++;
-      }
-      else
-      {
-        distance = prev - next;
-        candidates = (end_symbol -1) - i;
-        weight = 1.0/distance;
-        for(int j = 1; j <= candidates; j++)
-        {
-          error_est[(i+j)*2]    =  8 *(((double)(error_est[prev*2]) * scale * (distance + j) * weight) -
-                                       ((double)(error_est[next*2]) * scale * j * weight));
-          error_est[((i+j)*2)+1]=  8 *(((double)(error_est[(prev*2)+1]) * scale * (distance + j) * weight) -
-                                       ((double)(error_est[((next*2)+1)]) * scale *j * weight));
-#ifdef DEBUG_UL_PTRS
-          printf("PTRS: INT: Right Edge i= %d weight= %f %d + j*%d, Prev %d Next %d \n",
-                 (i+j),weight, error_est[(i+j)*2],error_est[((i+j)*2)+1], prev,next);
-#endif
-        }
-        if(candidates > 1)
-        {
-          i+=candidates;
-        }
-      }
-    }
-    /* Interpolation between 2 estimated points */
-    else if(next != 0 && ( error_est[2*i] == 0 ))
-    {
-      distance = next - prev;
-      weight = 1.0/distance;
-      candidates = next - i ;
-      for(int j = 0; j < candidates; j++)
-      {
-
-        error_est[(i+j)*2]    = 8 *(((double)(error_est[prev*2]) * scale * (distance - (j+1)) * weight) +
-                                    ((double)(error_est[next*2]) * scale * (j+1) * weight));
-        error_est[((i+j)*2)+1]= 8 *(((double)(error_est[(prev*2)+1]) * scale *(distance - (j+1)) * weight) +
-                                    ((double)(error_est[((next*2)+1)]) * scale *(j+1) * weight));
-#ifdef DEBUG_UL_PTRS
-        printf("PTRS: INT: Interpolation i= %d weight= %f %d + j*%d, Prev %d Next %d\n",
-               (i+j),weight, error_est[(i+j)*2],error_est[((i+j)*2)+1],prev,next);
-#endif
-      }
-      if(candidates > 1)
-      {
-        i+=candidates-1;
-      }
-    }// interpolation
-  }// symbol loop
-}
-
-/* Find the next non zero Real value in a complex vector */
-int nr_ptrs_find_next_estimate(int16_t *error_est,
-                               uint8_t counter,
-                               uint8_t end_symbol)
-{
-  for (int i = counter +1 ; i< end_symbol; i++)
-  {
-    if( error_est[2*i] != 0)
-    {
-      return i;
-    }
-  }
-  return 0;
+    }// last symbol check
+  }//Antenna loop
 }
