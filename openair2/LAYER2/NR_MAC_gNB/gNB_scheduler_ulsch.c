@@ -99,7 +99,9 @@ void nr_process_mac_pdu(
         case UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION:
                 // 38.321 Ch6.1.3.7
                 break;
+
         case UL_SCH_LCID_S_BSR:
+        case UL_SCH_LCID_S_TRUNCATED_BSR:
         	//38.321 section 6.1.3.1
         	//fixed length
         	mac_ce_len =1;
@@ -108,16 +110,8 @@ void nr_process_mac_pdu(
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
         	break;
 
-        case UL_SCH_LCID_S_TRUNCATED_BSR:
-        	//38.321 section 6.1.3.1
-        	//fixed length
-        	mac_ce_len =1;
-        	/* Extract short truncated BSR value */
-               ce_ptr = &pdu_ptr[mac_subheader_len];
-               NR_BSR_SHORT_TRUNCATED *bsr_st = (NR_BSR_SHORT_TRUNCATED *) ce_ptr;
-        	break;
-
         case UL_SCH_LCID_L_BSR:
+        case UL_SCH_LCID_L_TRUNCATED_BSR:
         	//38.321 section 6.1.3.1
         	//variable length
         	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
@@ -130,21 +124,6 @@ void nr_process_mac_pdu(
                ce_ptr = &pdu_ptr[mac_subheader_len];
                NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
         	break;
-
-        case UL_SCH_LCID_L_TRUNCATED_BSR:
-        	//38.321 section 6.1.3.1
-        	//variable length
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
-        	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
-        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
-        		mac_subheader_len = 3;
-        	}
-        	/* Extract long truncated BSR value */
-               ce_ptr = &pdu_ptr[mac_subheader_len];
-               NR_BSR_LONG_TRUNCATED *bsr_lt = (NR_BSR_LONG_TRUNCATED *) ce_ptr;
-        	break;
-
 
         case UL_SCH_LCID_C_RNTI:
         	//38.321 section 6.1.3.2
