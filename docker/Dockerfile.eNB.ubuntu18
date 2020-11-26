@@ -113,9 +113,10 @@ COPY --from=enb-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-enb
 
-EXPOSE 2152/udp  # S1U, GTP/UDP
-EXPOSE 36412/udp # S1C, SCTP/UDP
-EXPOSE 36422/udp # X2C, SCTP/UDP
+# 2152 --> S1U, GTP/UDP
+# 36412 --> S1C, SCTP/UDP
+# 36422 --> X2C, SCTP/UDP
+EXPOSE 2152/udp 36412/udp 36422/udp
 #EXPOSE 22100/tcp # ?
 #EXPOSE 50000/udp # IF5 / ORI (control)
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
