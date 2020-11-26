@@ -399,7 +399,7 @@ typedef struct NbIoTRrcConfigurationReq_s {
 
 // gNB: GNB_APP -> RRC messages
 typedef struct NRRrcConfigurationReq_s {
-  long                    cell_identity;
+  uint64_t                cell_identity;
   uint32_t                tac;
   uint16_t                mcc[PLMN_LIST_MAX_SIZE];
   uint16_t                mnc[PLMN_LIST_MAX_SIZE];

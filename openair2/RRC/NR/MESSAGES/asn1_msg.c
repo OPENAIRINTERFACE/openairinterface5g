@@ -368,7 +368,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   // TODO: add connEstFailureControl
 
   //si-SchedulingInfo
-  sib1->si_SchedulingInfo = CALLOC(1,sizeof(struct NR_SI_SchedulingInfo));
+  /*sib1->si_SchedulingInfo = CALLOC(1,sizeof(struct NR_SI_SchedulingInfo));
   asn_set_empty(&sib1->si_SchedulingInfo->schedulingInfoList.list);
   sib1->si_SchedulingInfo->si_WindowLength = NR_SI_SchedulingInfo__si_WindowLength_s20;
   struct NR_SchedulingInfo *schedulingInfo = CALLOC(1,sizeof(struct NR_SchedulingInfo));
@@ -378,7 +378,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   e_NR_SIB_TypeInfo__type *sib_type = CALLOC(1,sizeof(e_NR_SIB_TypeInfo__type));
   *sib_type = NR_SIB_TypeInfo__type_sibType3;
   ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type);
-  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);
+  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);*/
 
   // servingCellConfigCommon
   sib1->servingCellConfigCommon = CALLOC(1,sizeof(struct NR_ServingCellConfigCommonSIB));
@@ -393,27 +393,34 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     nrMultiBandInfo->freqBandIndicatorNR = configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[i];
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list,nrMultiBandInfo);
   }
+  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);
   }
   sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon;
   sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon;
-  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = 0;
   sib1->servingCellConfigCommon->downlinkConfigCommon.bcch_Config.modificationPeriodCoeff = NR_BCCH_Config__modificationPeriodCoeff_n2;
   sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.defaultPagingCycle = 0;
   sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.nAndPagingFrameOffset.present = NR_PCCH_Config__nAndPagingFrameOffset_PR_oneT;
   sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.ns = NR_PCCH_Config__ns_four;
 
   sib1->servingCellConfigCommon->uplinkConfigCommon = CALLOC(1,sizeof(struct NR_UplinkConfigCommonSIB));
-  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
   asn_set_empty(&sib1->servingCellConfigCommon->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list);
   for(int i = 0; i< configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.count; i++) {
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list,configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[i]);
   }
+  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters = configuration->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
+  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon;
+  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon;
 
   sib1->servingCellConfigCommon->n_TimingAdvanceOffset = configuration->scc->n_TimingAdvanceOffset;
   sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup = configuration->scc->ssb_PositionsInBurst->choice.shortBitmap;
   sib1->servingCellConfigCommon->ssb_PeriodicityServingCell = *configuration->scc->ssb_periodicityServingCell;
+  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
+  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing = configuration->scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->pattern1 = configuration->scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->pattern2 = configuration->scc->tdd_UL_DL_ConfigurationCommon->pattern2;
   sib1->servingCellConfigCommon->ss_PBCH_BlockPower = configuration->scc->ss_PBCH_BlockPower;
 
   // ims-EmergencySupport
@@ -426,7 +433,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   // TODO: add ue-TimersAndConstants
 
   // uac-BarringInfo
-  sib1->uac_BarringInfo = CALLOC(1, sizeof(struct NR_SIB1__uac_BarringInfo));
+  /*sib1->uac_BarringInfo = CALLOC(1, sizeof(struct NR_SIB1__uac_BarringInfo));
   NR_UAC_BarringInfoSet_t *nr_uac_BarringInfoSet = CALLOC(1, sizeof(NR_UAC_BarringInfoSet_t));
   asn_set_empty(&sib1->uac_BarringInfo->uac_BarringInfoSetList);
   nr_uac_BarringInfoSet->uac_BarringFactor = NR_UAC_BarringInfoSet__uac_BarringFactor_p95;
@@ -434,7 +441,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.buf = CALLOC(1, 1);
   nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.size = 1;
   nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.bits_unused = 1;
-  ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, nr_uac_BarringInfoSet);
+  ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, nr_uac_BarringInfoSet);*/
 
   // useFullResumeID
   // TODO: add useFullResumeID
