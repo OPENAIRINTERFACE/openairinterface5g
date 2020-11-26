@@ -79,7 +79,7 @@ class RANManagement():
 		self.Initialize_eNB_args = ''
 		self.air_interface = ['', '', ''] #changed from 'lte' to '' may lead to side effects in main
 		self.eNB_instance = 0
-		self.eNB_serverId = ''
+		self.eNB_serverId = ['', '', '']
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
 		self.eNBmbmsEnables = [False, False, False]
@@ -102,17 +102,17 @@ class RANManagement():
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		if self.eNB_serverId == '0':
+		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
 			lPassWord = self.eNBPassword
 			lSourcePath = self.eNBSourceCodePath
-		elif self.eNB_serverId == '1':
+		elif self.eNB_serverId[self.eNB_instance] == '1':
 			lIpAddr = self.eNB1IPAddress
 			lUserName = self.eNB1UserName
 			lPassWord = self.eNB1Password
 			lSourcePath = self.eNB1SourceCodePath
-		elif self.eNB_serverId == '2':
+		elif self.eNB_serverId[self.eNB_instance] == '2':
 			lIpAddr = self.eNB2IPAddress
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
@@ -120,6 +120,7 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
+		logging.debug('Building on server: ' + lIpAddr)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		
@@ -218,17 +219,17 @@ class RANManagement():
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
 
 	def WaitBuildeNBisFinished(self):
-		if self.eNB_serverId == '0':
+		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
 			lPassWord = self.eNBPassword
 			lSourcePath = self.eNBSourceCodePath
-		elif self.eNB_serverId == '1':
+		elif self.eNB_serverId[self.eNB_instance] == '1':
 			lIpAddr = self.eNB1IPAddress
 			lUserName = self.eNB1UserName
 			lPassWord = self.eNB1Password
 			lSourcePath = self.eNB1SourceCodePath
-		elif self.eNB_serverId == '2':
+		elif self.eNB_serverId[self.eNB_instance] == '2':
 			lIpAddr = self.eNB2IPAddress
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
@@ -236,6 +237,7 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
+		logging.debug('Waiting for end of build on server: ' + lIpAddr)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		count = 40
@@ -284,7 +286,7 @@ class RANManagement():
 		mySSH.command('mkdir -p build_log_' + testcaseId, '\$', 5)
 		mySSH.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
 		mySSH.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
-		if self.eNB_serverId != '0':
+		if self.eNB_serverId[self.eNB_instance] != '0':
 			mySSH.command('cd cmake_targets', '\$', 5)
 			mySSH.command('if [ -e tmp_build' + testcaseId + '.zip ]; then rm -f tmp_build' + testcaseId + '.zip; fi', '\$', 5)
 			mySSH.command('zip -r -qq tmp_build' + testcaseId + '.zip build_log_' + testcaseId, '\$', 5)
@@ -317,17 +319,17 @@ class RANManagement():
 			sys.exit(1)
 
 	def InitializeeNB(self):
-		if self.eNB_serverId == '0':
+		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
 			lPassWord = self.eNBPassword
 			lSourcePath = self.eNBSourceCodePath
-		elif self.eNB_serverId == '1':
+		elif self.eNB_serverId[self.eNB_instance] == '1':
 			lIpAddr = self.eNB1IPAddress
 			lUserName = self.eNB1UserName
 			lPassWord = self.eNB1Password
 			lSourcePath = self.eNB1SourceCodePath
-		elif self.eNB_serverId == '2':
+		elif self.eNB_serverId[self.eNB_instance] == '2':
 			lIpAddr = self.eNB2IPAddress
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
@@ -335,6 +337,7 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
+		logging.debug('Starting eNB/gNB on server: ' + lIpAddr)
 
 		if self.htmlObj is not None:
 			self.testCase_id = self.htmlObj.testCase_id
@@ -507,7 +510,7 @@ class RANManagement():
 				else:
 					logging.error('\u001B[1m oaitun_enm1 interface is either NOT mounted or NOT configured\u001B[0m')
 		if enbDidSync:
-			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId)
+			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId[self.eNB_instance])
 
 		mySSH.close()
 		if self.htmlObj is not None:
@@ -547,17 +550,17 @@ class RANManagement():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def TerminateeNB(self):
-		if self.eNB_serverId == '0':
+		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
 			lPassWord = self.eNBPassword
 			lSourcePath = self.eNBSourceCodePath
-		elif self.eNB_serverId == '1':
+		elif self.eNB_serverId[self.eNB_instance] == '1':
 			lIpAddr = self.eNB1IPAddress
 			lUserName = self.eNB1UserName
 			lPassWord = self.eNB1Password
 			lSourcePath = self.eNB1SourceCodePath
-		elif self.eNB_serverId == '2':
+		elif self.eNB_serverId[self.eNB_instance] == '2':
 			lIpAddr = self.eNB2IPAddress
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
@@ -565,6 +568,7 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
+		logging.debug('Stopping eNB/gNB on server: ' + lIpAddr)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
@@ -632,7 +636,7 @@ class RANManagement():
 						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
-				if self.eNB_serverId != '0':
+				if self.eNB_serverId[self.eNB_instance] != '0':
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)

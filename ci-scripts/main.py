@@ -113,9 +113,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 		xmlBgBuildField = test.findtext('backgroundBuild')
 		if (xmlBgBuildField is None):
 			RAN.backgroundBuild=False
@@ -132,9 +134,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
 	elif action == 'Initialize_eNB':
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
@@ -143,9 +147,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
@@ -162,10 +168,12 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
-			
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
+
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
@@ -383,8 +391,8 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	RAN.eNB_serverId='0'
 	RAN.eNB_instance=0
+	RAN.eNB_serverId[0]='0'
 	RAN.eNBSourceCodePath='/tmp/'
 	RAN.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):

@@ -2909,7 +2909,7 @@ class OaiCiTest():
 			self.ShowTestID()
 			#terminate all RAN nodes eNB/gNB/OCP
 			for instance in range(0, len(RAN.air_interface)):
-				if RAN.air_interface[instance]!=''
+				if RAN.air_interface[instance]!='':
 					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
 					RAN.eNB_instance=instance
 					RAN.TerminateeNB()
