@@ -138,13 +138,14 @@ uint16_t get_bw_scaling(uint16_t bwp_ul_NB_RB){
   uint16_t bw_scaling;
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (bwp_ul_NB_RB) {
+    case 24:  bw_scaling =  4; break;
     case 32:  bw_scaling =  4; break;
     case 66:  bw_scaling =  8; break;
     case 106: bw_scaling = 16; break;
     case 217: bw_scaling = 32; break;
     case 245: bw_scaling = 32; break;
     case 273: bw_scaling = 32; break;
-    default: abort();
+    default: AssertFatal(1==0,"N_RB_UL %d not supported\n",bwp_ul_NB_RB);
   }
   return bw_scaling;
 }
@@ -1243,13 +1244,14 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
         switch (ue->frame_parms.N_RB_DL) {
+          case 24:  bw_scaling =  4; break;
           case 32:  bw_scaling =  4; break;
           case 66:  bw_scaling =  8; break;
           case 106: bw_scaling = 16; break;
           case 217: bw_scaling = 32; break;
           case 245: bw_scaling = 32; break;
           case 273: bw_scaling = 32; break;
-          default: abort();
+          default: AssertFatal(1==0,"N_RB_DL %d not supported\n",ue->frame_parms.N_RB_DL);
         }
 
         /* Time Alignment procedure
