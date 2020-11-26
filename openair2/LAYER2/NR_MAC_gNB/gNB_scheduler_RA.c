@@ -335,6 +335,20 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
           AssertFatal(1==0,"Invalid PRACH format");
         }
       }		
+      const int start_rb = cfg->prach_config.num_prach_fd_occasions_list[fdm_index].k1.value;
+      const int pusch_mu = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+      const int num_rb = get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing.value, pusch_mu);
+      uint16_t *vrb_map_UL =
+          &RC.nrmac[module_idP]->common_channels[0].vrb_map_UL[slotP * 275];
+      const uint16_t symb_mask = ((1 << N_dur) - 1) << start_symbol;
+      for (int i = start_rb; i < start_rb + num_rb; ++i) {
+        AssertFatal((vrb_map_UL[i] & symb_mask) == 0,
+                    "cannot reserve resources for PRACH: at RB %d, vrb_map_UL %x for symbols %x!\n",
+                    i,
+                    vrb_map_UL[i],
+                    symb_mask);
+        vrb_map_UL[i] |= symb_mask;
+      }
      }
     }
    }
