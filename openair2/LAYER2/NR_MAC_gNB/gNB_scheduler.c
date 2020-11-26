@@ -419,7 +419,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
-  RC.nrmac[module_idP]->current_slot=slot;
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
   }

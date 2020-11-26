@@ -317,7 +317,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->coreset = get_coreset(
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][RC.nrmac[module_id]->current_slot];
+  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                   sched_ctrl->active_bwp,
