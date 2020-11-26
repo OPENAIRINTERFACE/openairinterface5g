@@ -236,14 +236,6 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
     exit(1);
   }
 
-  /* TODO: handle time a bit more properly */
-  if (rlc_current_time_last_frame != frameP ||
-      rlc_current_time_last_subframe != subframeP) {
-    rlc_current_time++;
-    rlc_current_time_last_frame = frameP;
-    rlc_current_time_last_subframe = subframeP;
-  }
-
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
 
