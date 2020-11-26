@@ -19,6 +19,8 @@
   - Reboot_UE
   - Initialize_FlexranCtrl
   - Terminate_FlexranCtrl
+  - Deploy_EPC
+  - Undeploy_EPC
   - Initialize_HSS
   - Terminate_HSS
   - Initialize_MME

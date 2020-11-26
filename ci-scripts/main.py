@@ -296,6 +296,11 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.mmeConfFile = string_field
 
+	elif action == 'Deploy_EPC':
+		string_field = test.findtext('parameters')
+		if (string_field is not None):
+			EPC.yamlPath = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -503,7 +508,7 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-	logging.debug('\u001B[1m  Starting Scenario \u001B[0m')
+	logging.debug('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
@@ -693,6 +698,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					EPC.InitializeSPGW()
 				elif action == 'Terminate_SPGW':
 					EPC.TerminateSPGW()
+				elif action == 'Deploy_EPC':
+					EPC.DeployEpc()
+				elif action == 'Undeploy_EPC':
+					EPC.UndeployEpc()
 				elif action == 'Initialize_FlexranCtrl':
 					CiTestObj.InitializeFlexranCtrl(HTML,RAN,EPC)
 				elif action == 'Terminate_FlexranCtrl':
@@ -715,14 +724,14 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						HTML.testStabilityPointReached = True
 		CiTestObj.FailReportCnt += 1
 	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
-		logging.debug('Testsuite failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.debug('Scenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(False)
 		if CiTestObj.testUnstable and (CiTestObj.testStabilityPointReached or CiTestObj.testMinStableId == '999999'):
 			logging.debug('Scenario has reached minimal stability point -- Not a Failure')
 		else:
 			sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.info('Scenario passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(True)
 elif re.match('^LoadParams$', mode, re.IGNORECASE):
 	pass

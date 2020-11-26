@@ -66,6 +66,7 @@ class EPCManagement():
 		self.MmeIPAddress = ''
 		self.containerPrefix = 'prod'
 		self.mmeConfFile = 'mme.conf'
+		self.yamlPath = ''
 
 
 #-----------------------------------------------------------
@@ -404,15 +405,145 @@ class EPCManagement():
 		if self.htmlObj is not None:
 			self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
+	def DeployEpc(self):
+		logging.debug('Trying to deploy')
+		if not re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+				self.htmlObj.CreateHtmlTabFooter(False)
+			sys.exit('Deploy not possible with this EPC type: ' + self.Type)
+
+		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
+			HELP.GenericHelp(CONST.Version)
+			HELP.EPCSrvHelp(self.IPAddress, self.UserName, self.Password, self.SourceCodePath, self.Type)
+			sys.exit('Insufficient EPC Parameters')
+		mySSH = SSH.SSHConnection() 
+		mySSH.open(self.IPAddress, self.UserName, self.Password)
+		mySSH.command('docker-compose --version', '\$', 5)
+		result = re.search('docker-compose version 1', mySSH.getBefore())
+		if result is None:
+			mySSH.close()
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+				self.htmlObj.CreateHtmlTabFooter(False)
+			sys.exit('docker-compose not installed on ' + self.IPAddress)
+
+		mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
+		mySSH.command('if [ -d ' + self.SourceCodePath + '/logs ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/logs ; fi', '\$', 5)
+		mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts ' + self.SourceCodePath + '/logs', '\$', 5)
+
+		# deploying and configuring the cassandra database
+		# container names and services are currently hard-coded.
+		# they could be recovered by:
+		# - docker-compose config --services
+		# - docker-compose config | grep container_name
+		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
+		mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/docker-compose.yml', self.SourceCodePath + '/scripts')
+		mySSH.command('wget --quiet https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/src/hss_rel14/db/oai_db.cql', '\$', 5)
+		mySSH.command('docker-compose down', '\$', 60)
+		mySSH.command('docker-compose up -d db_init', '\$', 60)
+
+		# databases take time...
+		time.sleep(10)
+		cnt = 0
+		db_init_status = False
+		while (cnt < 10):
+			mySSH.command('docker logs prod-db-init', '\$', 5)
+			result = re.search('OK', mySSH.getBefore())
+			if result is not None:
+				cnt = 10
+				db_init_status = True
+			else:
+				time.sleep(5)
+				cnt += 1
+		mySSH.command('docker rm -f prod-db-init', '\$', 5)
+		if not db_init_status:
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+				self.htmlObj.CreateHtmlTabFooter(False)
+			sys.exit('Cassandra DB deployment/configuration went wrong!')
+
+		# deploying EPC cNFs
+		mySSH.command('docker-compose up -d oai_spgwu', '\$', 60)
+
+		cnt = 0
+		while (cnt < 3):
+			mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny', '\$', 10)
+			unhealthyNb = mySSH.getBefore().count('unhealthy')
+			healthyNb = mySSH.getBefore().count('healthy') - unhealthyNb
+			startingNb = mySSH.getBefore().count('starting')
+			if healthyNb == 5:
+				cnt = 10
+			else:
+				time.sleep(10)
+		logging.debug(' -- ' + str(healthyNb) + ' healthy container(s)')
+		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
+		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
+		if healthyNb == 5:
+			mySSH.command('docker exec -d prod-oai-hss /bin/bash -c "nohup tshark -i eth0 -i eth1 -w /tmp/hss_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			mySSH.command('docker exec -d prod-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			mySSH.command('docker exec -d prod-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			mySSH.close()
+			logging.debug('Deployment OK')
+			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+		else:
+			mySSH.close()
+			logging.debug('Deployment went wrong')
+			self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+
+	def UndeployEpc(self):
+		logging.debug('Trying to undeploy')
+		# No check down, we suppose everything done before.
+
+		mySSH = SSH.SSHConnection() 
+		mySSH.open(self.IPAddress, self.UserName, self.Password)
+		# Recovering logs and pcap files
+		mySSH.command('cd ' + self.SourceCodePath + '/logs', '\$', 5)
+		mySSH.command('docker exec -it prod-oai-hss /bin/bash -c "killall --signal SIGINT oai_hss tshark"', '\$', 5)
+		mySSH.command('docker exec -it prod-oai-mme /bin/bash -c "killall --signal SIGINT tshark"', '\$', 5)
+		mySSH.command('docker exec -it prod-oai-spgwc /bin/bash -c "killall --signal SIGINT oai_spgwc tshark"', '\$', 5)
+		mySSH.command('docker exec -it prod-oai-spgwu-tiny /bin/bash -c "killall --signal SIGINT tshark"', '\$', 5)
+		mySSH.command('docker logs prod-oai-hss > hss_' + self.testCase_id + '.log', '\$', 5)
+		mySSH.command('docker logs prod-oai-mme > mme_' + self.testCase_id + '.log', '\$', 5)
+		mySSH.command('docker logs prod-oai-spgwc > spgwc_' + self.testCase_id + '.log', '\$', 5)
+		mySSH.command('docker logs prod-oai-spgwu > spgwu_' + self.testCase_id + '.log', '\$', 5)
+		mySSH.command('docker cp prod-oai-hss:/tmp/hss_check_run.pcap hss_' + self.testCase_id + '.pcap', '\$', 60)
+		mySSH.command('docker cp prod-oai-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
+		mySSH.command('docker cp prod-oai-spgwc:/tmp/spgwc_check_run.pcap spgwc_' + self.testCase_id + '.pcap', '\$', 60)
+		mySSH.command('docker cp prod-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap spgwu_' + self.testCase_id + '.pcap', '\$', 60)
+		# Remove all
+		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
+		mySSH.command('docker-compose down', '\$', 60)
+		mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny', '\$', 10)
+		noMoreContainerNb = mySSH.getBefore().count('No such object')
+		mySSH.command('docker inspect --format=\'{{.Name}}\' prod-oai-public-net prod-oai-private-net', '\$', 10)
+		noMoreNetworkNb = mySSH.getBefore().count('No such object')
+		mySSH.close()
+		if noMoreContainerNb == 5 and noMoreNetworkNb == 2:
+			logging.debug('Undeployment OK')
+			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+		else:
+			logging.debug('Undeployment went wrong')
+			self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+
 	def LogCollectHSS(self):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.command('rm -f hss.log.zip', '\$', 5)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/openair-hss/hss_check_run.log .', '\$', 60)
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/tmp/hss_check_run.pcap .', '\$', 60)
-			mySSH.command('zip hss.log.zip hss_check_run.*', '\$', 60)
+			mySSH.command('docker inspect prod-oai-hss', '\$', 10)
+			result = re.search('No such object', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('cd ../logs', '\$', 5)
+				mySSH.command('rm -f hss.log.zip', '\$', 5)
+				mySSH.command('zip hss.log.zip hss_*.*', '\$', 60)
+				mySSH.command('mv hss.log.zip ../scripts', '\$', 60)
+			else:
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/openair-hss/hss_check_run.log .', '\$', 60)
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/tmp/hss_check_run.pcap .', '\$', 60)
+				mySSH.command('zip hss.log.zip hss_check_run.*', '\$', 60)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip hss.log.zip hss*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm hss*.log', '\$', 5)
@@ -432,9 +563,17 @@ class EPCManagement():
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.command('rm -f mme.log.zip', '\$', 5)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/openair-mme/mme_check_run.log .', '\$', 60)
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/tmp/mme_check_run.pcap .', '\$', 60)
-			mySSH.command('zip mme.log.zip mme_check_run.*', '\$', 60)
+			mySSH.command('docker inspect prod-oai-mme', '\$', 10)
+			result = re.search('No such object', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('cd ../logs', '\$', 5)
+				mySSH.command('rm -f mme.log.zip', '\$', 5)
+				mySSH.command('zip mme.log.zip mme_*.*', '\$', 60)
+				mySSH.command('mv mme.log.zip ../scripts', '\$', 60)
+			else:
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/openair-mme/mme_check_run.log .', '\$', 60)
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/tmp/mme_check_run.pcap .', '\$', 60)
+				mySSH.command('zip mme.log.zip mme_check_run.*', '\$', 60)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip mme.log.zip mme*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm mme*.log', '\$', 5)
@@ -451,11 +590,19 @@ class EPCManagement():
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.command('rm -f spgw.log.zip', '\$', 5)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/openair-spgwc/spgwc_check_run.log .', '\$', 60)
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/openair-spgwu-tiny/spgwu_check_run.log .', '\$', 60)
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/tmp/spgwc_check_run.pcap .', '\$', 60)
-			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap .', '\$', 60)
-			mySSH.command('zip spgw.log.zip spgw*_check_run.*', '\$', 60)
+			mySSH.command('docker inspect prod-oai-mme', '\$', 10)
+			result = re.search('No such object', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('cd ../logs', '\$', 5)
+				mySSH.command('rm -f spgw.log.zip', '\$', 5)
+				mySSH.command('zip spgw.log.zip spgw*.*', '\$', 60)
+				mySSH.command('mv spgw.log.zip ../scripts', '\$', 60)
+			else:
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/openair-spgwc/spgwc_check_run.log .', '\$', 60)
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/openair-spgwu-tiny/spgwu_check_run.log .', '\$', 60)
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/tmp/spgwc_check_run.pcap .', '\$', 60)
+				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap .', '\$', 60)
+				mySSH.command('zip spgw.log.zip spgw*_check_run.*', '\$', 60)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip spgw.log.zip spgw*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm spgw*.log', '\$', 5)
