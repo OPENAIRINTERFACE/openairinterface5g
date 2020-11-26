@@ -1270,7 +1270,6 @@ rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(
   //clear release pdusessions
   ue_context_pP->ue_context.nb_release_of_pdusessions = 0;
   memset(&ue_context_pP->ue_context.pdusessions_release_failed[0], 0, sizeof(pdusession_failed_t)*NGAP_MAX_PDUSESSION);
-  return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -1291,7 +1290,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
   uint8_t xid;
   int i, pdusession;
   uint8_t b_existed,is_existed;
-  uint8_t pdusession_release_drb;
+  uint8_t pdusession_release_drb = 0;
 
   memcpy(&pdusession_release_params[0], &(NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).pdusession_release_params[0]),
     sizeof(pdusession_release_t)*NGAP_MAX_PDUSESSION);
@@ -1307,7 +1306,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
     xid = rrc_gNB_get_next_transaction_identifier(ctxt.module_id);
     LOG_I(NR_RRC,"PDU Session Release Command: AMF_UE_NGAP_ID %lu  GNB_UE_NGAP_ID %d release_pdusessions %d \n",
-          NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).amf_ue_ngap_id, gNB_ue_ngap_id, nb_pdusessions_torelease);
+          NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).amf_ue_ngap_id&0x000000FFFFFFFFFF, gNB_ue_ngap_id, nb_pdusessions_torelease);
 
     for (pdusession = 0; pdusession < nb_pdusessions_torelease; pdusession++) {
       b_existed = 0;
@@ -1385,7 +1384,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     }
   } else {
     LOG_E(NR_RRC, "PDU Session Release Command: AMF_UE_NGAP_ID %lu  GNB_UE_NGAP_ID %d  Error ue_context_p NULL \n",
-          NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).amf_ue_ngap_id, NGAP_PDUSESSION_RELEASE_COMMAND(msg_p).gNB_ue_ngap_id);
+          NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).amf_ue_ngap_id&0x000000FFFFFFFFFF, NGAP_PDUSESSION_RELEASE_COMMAND(msg_p).gNB_ue_ngap_id);
     return -1;
   }
 

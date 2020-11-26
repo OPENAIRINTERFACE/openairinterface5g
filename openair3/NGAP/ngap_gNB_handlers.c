@@ -1850,7 +1850,18 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
       item_p = (NGAP_PDUSessionResourceToReleaseItemRelCmd_t *)ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.array[i];
     
       NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].pdusession_id = item_p->pDUSessionID;
-      NGAP_DEBUG("[SCTP] Received pdu session release command for pDUSessionID id %ld\n", item_p->pDUSessionID);
+      if(item_p->pDUSessionResourceReleaseCommandTransfer.size > 0) {
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_length = item_p->pDUSessionResourceReleaseCommandTransfer.size;
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer = malloc(sizeof(uint8_t) * item_p->pDUSessionResourceReleaseCommandTransfer.size);
+        memcpy(NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer,
+               item_p->pDUSessionResourceReleaseCommandTransfer.buf,
+               item_p->pDUSessionResourceReleaseCommandTransfer.size);
+      }else {
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_length = 0;
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer = NULL;
+        NGAP_ERROR("[NGAP] Received pdu session release command for pDUSessionResourceReleaseCommandTransfer is NULL!\n");
+      }
+      NGAP_DEBUG("[NGAP] Received pdu session release command for pDUSessionID id %ld\n", item_p->pDUSessionID);
     }
   } else {
     return -1;

@@ -1425,6 +1425,17 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
             item = (NGAP_PDUSessionResourceReleasedItemRelRes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleasedItemRelRes_t));
         
             item->pDUSessionID = pdusession_release_resp_p->pdusession_release[i].pdusession_id;
+            if(pdusession_release_resp_p->pdusession_release[i].transfer_length > 0){
+                item->pDUSessionResourceReleaseResponseTransfer.size = pdusession_release_resp_p->pdusession_release[i].transfer_length;
+                item->pDUSessionResourceReleaseResponseTransfer.buf = malloc(sizeof(uint8_t) * pdusession_release_resp_p->pdusession_release[i].transfer_length);
+                memcpy(item->pDUSessionResourceReleaseResponseTransfer.buf,
+                       pdusession_release_resp_p->pdusession_release[i].transfer_buffer,
+                       pdusession_release_resp_p->pdusession_release[i].transfer_length);
+            }else {
+                item->pDUSessionResourceReleaseResponseTransfer.size = 0;
+                item->pDUSessionResourceReleaseResponseTransfer.buf = NULL;
+                NGAP_DEBUG("pdusession_release_resp: transfer_buffer is NULL!\n");
+            }
             NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
             ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceReleasedListRelRes.list, item);
         }

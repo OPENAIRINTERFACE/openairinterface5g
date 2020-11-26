@@ -741,6 +741,10 @@ typedef struct ngap_ue_release_command_s {
 typedef struct pdusession_release_s {
   /* Unique pdusession_id for the UE. */
   uint8_t                     pdusession_id;
+  /* Octet string data */
+  uint8_t  *transfer_buffer;
+  /* Length of the octet string */
+  uint32_t  transfer_length;
 } pdusession_release_t;
 
 typedef struct ngap_ue_release_req_s {

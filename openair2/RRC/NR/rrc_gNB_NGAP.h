@@ -149,4 +149,11 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
   instance_t instance
 );
 
+void
+rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  uint8_t                   xid
+);
+
 #endif
