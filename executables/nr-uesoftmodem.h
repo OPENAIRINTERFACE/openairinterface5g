@@ -52,24 +52,40 @@
     {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,              strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0}      \
   }
 
+  
+#define  CONFIG_HLP_DLSCH_PARA             "enable dlsch processing parallelization"
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to gNB and UE                                                            */
 /*   optname                helpstr                 paramflags      XXXptr                                 defXXXval              type         numelt */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_UE {  \
-  {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,              defintval:1,           TYPE_INT,    0}, \
-  {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
-  {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \
-  {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, iptr:&threequarter_fs,                 defintval:0,           TYPE_INT,    0}, \
-  {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}, \
-  {"rrc_config_path",       CONFIG_HLP_RRC_CFG_PATH,0,              strptr:(char **)&rrc_config_path,      defstrval:"./",        TYPE_STRING, 0} \
+  {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,                 defintval:1,           TYPE_INT,    0}, \
+  {"dlsch-parallel",        CONFIG_HLP_DLSCH_PARA,  PARAMFLAG_BOOL, iptr:(int32_t *)&nr_dlsch_parallel,       defintval:0,           TYPE_INT,    0}, \
+  {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,           TYPE_INT,    0}, \
+  {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                     defintval:0,           TYPE_UINT,   0}, \
+  {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, i8ptr:&(openair0_cfg[0].threequarter_fs),  defintval:0,          TYPE_INT8,    0}, \
+  {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                            defintval:0,           TYPE_INT,    0}, \
+  {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                            defintval:0,           TYPE_INT,    0}, \
+  {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,           TYPE_INT,    0}, \
+  {"rrc_config_path",       CONFIG_HLP_RRC_CFG_PATH,0,              strptr:(char **)&rrc_config_path,         defstrval:"./",        TYPE_STRING, 0} \
 }
 
-extern int T_port;
-extern int T_nowait;
-extern int T_dont_fork;
+
+
+#define NRUE_DLSCH_PARALLEL_BIT            (1<<0)
+
+#define IS_DLSCH_PARALLEL            ( get_nrUE_optmask() & NRUE_DLSCH_PARALLEL_BIT)
+
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+} nrUE_params_t;
+extern uint64_t get_nrUE_optmask(void);
+extern uint64_t set_nrUE_optmask(uint64_t bitmask);
+extern nrUE_params_t *get_nrUE_params(void);
+
+#ifdef NRUE_MAIN
+nrUE_params_t nrUE_params;
+#endif
 
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);

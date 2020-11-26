@@ -81,6 +81,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
+#define NRUE_MAIN
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -106,7 +107,6 @@ volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-// Command line options
 
 extern int16_t  nr_dlsch_demod_shift;
 static int      tx_max_power[MAX_NUM_CCs] = {0};
@@ -208,57 +208,23 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
 
-  do {
-    // Wait for a message
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case TERMINATE_MESSAGE:
-        oai_exit=1;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  } while(!oai_exit);
-
-  return NULL;
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
 }
 
 static void get_options(void) {
 
   char *loopfile=NULL;
-
+  int32_t nr_dlsch_parallel=0;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
   paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
   paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
-
+  for (int card=1; card<MAX_CARDS; card++)
+    openair0_cfg[card].threequarter_fs = openair0_cfg[0].threequarter_fs ;
   if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
 
   if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
@@ -476,6 +442,19 @@ void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
 }
 
+/* initialie thread pools used for NRUE processing paralleliation */ 
+void init_tpools(void) {
+  tpool_t pool;
+  Tpool = &pool;
+  char params[]="-1,-1";
+  initTpool(params, Tpool, false);
+  if( IS_DLSCH_PARALLEL) {
+    tpool_t pool_dl;
+    Tpool_dl = &pool_dl;
+    char params_dl[]="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1";
+    initTpool(params_dl, Tpool_dl, false);
+  }
+}
 
 int main( int argc, char **argv ) {
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
@@ -492,23 +471,16 @@ int main( int argc, char **argv ) {
   // initialize logging
   logInit();
   // get options and fill parameters from configuration file
-  get_options(); //Command-line options
+
+  get_options (); //Command-line options specific for NRUE
+
   get_common_options(SOFTMODEM_5GUE_BIT );
 #if T_TRACER
   T_Config_Init();
 #endif
   //randominit (0);
   set_taus_seed (0);
-  tpool_t pool;
-  Tpool = &pool;
-  char params[]="-1,-1";
-  initTpool(params, Tpool, false);
-#ifdef UE_DLSCH_PARALLELISATION
-  tpool_t pool_dl;
-  Tpool_dl = &pool_dl;
-  char params_dl[]="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1";
-  initTpool(params_dl, Tpool_dl, false);
-#endif
+  init_tpools();
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
@@ -537,6 +509,7 @@ int main( int argc, char **argv ) {
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+
 
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];

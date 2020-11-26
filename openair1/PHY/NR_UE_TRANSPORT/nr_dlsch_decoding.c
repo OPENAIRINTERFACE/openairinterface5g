@@ -752,7 +752,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   return(ret);
 }
 
-#ifdef UE_DLSCH_PARALLELISATION
+
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                                     UE_nr_rxtx_proc_t *proc,
                                     int eNB_id,
@@ -797,15 +797,12 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint8_t Nl=4;
   int16_t z [68*384];
   int8_t l [68*384];
-  //__m128i l;
-  //int16_t inv_d [68*384];
-  //int16_t *p_invd =&inv_d;
-  uint8_t kb, kc;
+  uint8_t kc;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
-  uint8_t dmrs_type = harq_process->dmrsConfigType;
+  uint8_t dmrs_Type = harq_process->dmrsConfigType;
   //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
   //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
 
@@ -815,7 +812,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   else
     nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
 
-  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
+  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
 
   uint32_t i,j;
 //  int nbDlProcessing =0;
@@ -1344,15 +1341,14 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   return(ret);
 }
-#endif
 
-#ifdef UE_DLSCH_PARALLELISATION
+
+
 void nr_dlsch_decoding_process(void *arg)
 {
 	nr_rxtx_thread_data_t *rxtxD= (nr_rxtx_thread_data_t *)arg;
     UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
     PHY_VARS_NR_UE    *phy_vars_ue   = rxtxD->UE;
-    NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
     int llr8_flag1;
     int32_t no_iteration_ldpc,length_dec;
     t_nrLDPC_dec_params decParams;
@@ -1366,7 +1362,7 @@ void nr_dlsch_decoding_process(void *arg)
     //__m128i l;
     //int16_t inv_d [68*384];
     //int16_t *p_invd =&inv_d;
-    uint8_t kb, kc;
+    uint8_t  kc;
     uint8_t Ilbrm = 1;
     uint32_t Tbslbrm = 950984;
     uint16_t nb_rb = 30; //to update
@@ -1376,8 +1372,6 @@ void nr_dlsch_decoding_process(void *arg)
     uint16_t length_dmrs = 1;
 
     uint32_t i,j;
-    uint32_t k;
-
     __m128i *pv = (__m128i*)&z;
     __m128i *pl = (__m128i*)&l;
 
@@ -1394,7 +1388,7 @@ void nr_dlsch_decoding_process(void *arg)
 #endif
   uint32_t A,E;
   uint32_t G;
-  uint32_t ret,offset;
+  uint32_t ret;
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
   uint8_t crc_type;
   uint8_t C,Cprime;
@@ -1765,7 +1759,6 @@ void nr_dlsch_decoding_process(void *arg)
 
 void *dlsch_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
-  PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
   notifiedFIFO_elt_t *res_dl;
@@ -1781,7 +1774,6 @@ void *dlsch_thread(void *arg) {
 
     while (nbDlProcessing >= RX_NB_TH_DL) {
       if ( (res=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
-        nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
         //nbDlProcessing--;
         pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res);
       }
@@ -1802,4 +1794,4 @@ void *dlsch_thread(void *arg) {
   return NULL;
 }
 
-#endif
+

@@ -19,7 +19,6 @@
  *      contact@openairinterface.org
  */
 
-#include "executables/nr-softmodem-common.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"

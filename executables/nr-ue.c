@@ -860,11 +860,11 @@ void init_NR_UE_threads(int nb_inst) {
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
 
-#ifdef UE_DLSCH_PARALLELISATION
-    pthread_t dlsch0_threads;
-    threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
-#endif
-
+     if( IS_DLSCH_PARALLEL)
+     {
+       pthread_t dlsch0_threads;
+       threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
+     }
   }
 }
 
