@@ -164,8 +164,6 @@ nr_schedule_ue_spec() is called
 
 Calls nr_fill_nfapi_dl_pdu() to actually populate what should be done by the lower layers to make the Tx subframe
 
-
-
 # RRC
 RRC is a regular thread with itti loop on queue: TASK_RRC_GNB
 it receives it's configuration in message NRRRC_CONFIGURATION_REQ, then real time mesages for all events: S1/NGAP events, X2AP messages and RRC_SUBFRAME_PROCESS  
@@ -176,14 +174,56 @@ how does it communicate to  scheduler ?
 
 
 # RLC
-RLC code is new implementation, not using OAI mechanisms: it is implmented directly on pthreads, ignoring OAI common functions.  
-It runs a thread waiting incoming data, but it is mainly running inside calling thread.  
-It is a library, running in thread RRC (except on itti message:  F1AP_UL_RRC_MESSAGE for F1).  
+RLC code is new implementation, not using OAI mechanisms: it is implemented directly on pthreads, ignoring OAI common functions.  
+It is a library, running in thread RRC but also in PHY layer threads and some bits in pdcp running thread or F1 interface threads.
 
-# NGAP
-NGAP would be a itti thread as is S1AP (+twin thread SCTP that is almost void processing)?  
-About all messages are exchanged with RRC thread  
+RLC data is isolated and encapsulated.
+It is stored under a global var: nr_rlc_ue_manager
+The init function rlc_module_init() populates this global variable.
+A small effort could lead us to return the pointer to the caller of rlc_module_init() (internal type: nr_rlc_ue_manager_internal_t)  
+but it returns void.  
+It could return the initialized pointer (as FILE* fopen() for example), then the RLC layer could have multiple instances in one process.
+Even, a future evolution could remove this global rlc layer: rlc can be only a library that we create a instance for each UE because it doesn't shareany data between UEs.
 
+For DL (respectively from UL in UE), the scheduler need to know the quantity of data waitin to be sent: it calls mac_rlc_status_ind()
+That "peek" the size of the waiting data for a UE.
+The scheduler then push orders to lower layers. The transport layer will actually pull data from RLC with: mac_rlc_data_req()  
+the low layer push data into rlc by: mac_rlc_data_ind()  
+Still on DL (gNB side), PDCP push incoming data into RLC by calling: rlc_data_req()
+
+For UL, the low layer push data into rlc by: mac_rlc_data_ind()  
+Then, rlc push it to pdcp by calling pdcp_data_ind() from a complex rlc internal call back (deliver_sdu())  
+
+When adding a UE, external code have to call nr_rrc_rlc_config_asn1_req(), to remove it: rrc_rlc_remove_ue()  
+Inside UE, channels called drd or srb can be created: ??? and deleted: rrc_rlc_config_req()
+
+nr_rlc_tick() must be called periodically to manage the internal timers 
+
+successful_delivery() and max_retx_reached(): in ??? trigger, the RLC sends a itti message to RRC: RLC_SDU_INDICATION (neutralized by #if 0 right now)
+
+#PDCP
+
+The PDCP implementation is also protected through a general mutex.  
+The design is very similar to rlc layer. The pdcp data is isolated and encapsulated.
+
+pdcp_layer_init(): same as rlc init  
+we have to call a second init function: pdcp_module_init() 
+
+At Tx side (DL in gNB), pdcp_data_req() is the entry function that the upper layer calls.  
+The upper layer can be GTP or a PDCP internal thread enb_tun_read_thread() that read directly from Linux socket in case we skip 3GPP core implementation.
+PDCP internals for  pdcp_data_req() is thread safe: inside pdcp_data_req_drb(), the pdcp manager protects with the mutex the access to the SDU receiving function of PDCP (recv_sdu() callback, corresponding to nr_pdcp_entity_drb_am_recv_sdu() for DRBs). When it needs, the pdcp layer push this data to rlc by calling : rlc_data_req()  
+
+Also, incoming downlink sdu can comme from internal RRC: in this case, pdcp_run() reads a itti queue, for message RRC_DCCH_DATA_REQ, to0 only call 'pdcp_data_req()'
+
+At Rx side, pdcp_data_ind() is the entry point that receives the data from RLC.
+- Inside pdcp_data_ind(), the pdcp manager mutex protects the access to the PDU receiving function of PDCP (recv_pdu() callback corresponding to nr_pdcp_entity_drb_am_recv_pdu() for DRBs)
+- Then deliver_sdu_drb() function sends the received data to GTP thread through an ITTI message (GTPV1U_ENB_TUNNEL_DATA_REQ).
+
+pdcp_config_set_security(): not yet developped
+
+nr_DRB_preconfiguration(): the mac layer calls this for ???
+
+nr_rrc_pdcp_config_asn1_req() adds a UE in pdcp, pdcp_remove_UE() removes it
 
 # GTP
 Gtp + UDP are two twin threads performing the data plane interface to the core network
@@ -199,6 +239,10 @@ gtp thread calls directly pdcp_data_req(), so it runs inside it's context intern
 
 ## inside other threads
 gtpv1u_create_s1u_tunnel(), delete tunnel, ... functions are called inside the other threads, without mutex.
+
+# NGAP
+NGAP would be a itti thread as is S1AP (+twin thread SCTP that is almost void processing)?  
+About all messages are exchanged with RRC thread  
 
 
 <div class="panel panel-info">

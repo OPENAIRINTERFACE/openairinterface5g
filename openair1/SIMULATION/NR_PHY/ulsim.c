@@ -56,7 +56,7 @@
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/threadPool/thread-pool.h"
-
+#include "PHY/NR_REFSIG/ptrs_nr.h"
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
@@ -163,8 +163,7 @@ int main(int argc, char **argv)
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
-  double tx_gain=1.0;
-  double N0=30;
+
   NB_UE_INST = 1;
 
   //unsigned char frame_type = 0;
@@ -179,7 +178,6 @@ int main(int argc, char **argv)
   int gNB_id = 0;
   int ap;
   int tx_offset;
-  double txlev_float;
   int32_t txlev;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
@@ -199,6 +197,9 @@ int main(int argc, char **argv)
   int ptrs_arg[2] = {-1,-1};// Invalid values
   /* DMRS TYPE = dmrs_arg[0], Add Pos = dmrs_arg[1] */
   int dmrs_arg[2] = {-1,-1};// Invalid values
+  uint16_t ptrsSymPos = 0;
+  uint16_t ptrsSymbPerSlot = 0;
+  uint16_t ptrsRePerSymb = 0;
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
@@ -216,6 +217,9 @@ int main(int argc, char **argv)
 
   //logInit();
   randominit(0);
+
+  /* initialize the sin-cos table */
+   InitSinLUT();
 
   while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:")) != -1) {
     printf("handling optarg %c\n",c);
@@ -833,7 +837,8 @@ int main(int argc, char **argv)
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
 
-      UE_proc.nr_tti_tx = slot;
+      UE_proc.thread_id = 0;
+      UE_proc.nr_slot_tx = slot;
       UE_proc.frame_tx = frame;
 
       UL_tti_req->SFN = frame;
@@ -904,6 +909,7 @@ int main(int argc, char **argv)
       scheduled_response.CC_id = 0;
       scheduled_response.frame = frame;
       scheduled_response.slot = slot;
+      scheduled_response.thread_id = UE_proc.thread_id;
       scheduled_response.dl_config = NULL;
       scheduled_response.ul_config = &ul_config;
       scheduled_response.tx_request = &tx_req;
@@ -948,8 +954,6 @@ int main(int argc, char **argv)
       nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
 
       for (int i=0;i<(TBS/8);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
-      double scale = 1;
-
       if (input_fd == NULL) {
 
 	  // set FAPI parameters for UE, put them in the scheduled response and call
@@ -959,7 +963,7 @@ int main(int argc, char **argv)
 	  /////////////////////////phy_procedures_nr_ue_TX///////////////////////
 	  ///////////
 	  
-	  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+	  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
 	  
 	  
 	  if (n_trials==1) {
@@ -972,20 +976,16 @@ int main(int argc, char **argv)
 	  
 	  txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 				frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
-	  
-	  txlev_float = (double)txlev/scale; // output of signal_energy is fixed point representation
-	  
-	  
       }	
       else n_trials = 1;
 
       if (input_fd == NULL ) {
 
-	sigma_dB = N0;
+	sigma_dB = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
 	sigma    = pow(10,sigma_dB/10);
 
-	tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/txlev_float);
-	if(n_trials==1) printf("txlev_float %f, sigma_dB %f, tx_gain %f tx_offset %d, slot_offset %d\n",10*log10(txlev_float),sigma_dB,tx_gain,tx_offset,slot_offset);
+
+	if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)frame_parms->ofdm_symbol_size/(12*nb_rb));
 
 	for (i=0; i<slot_length; i++) {
 	  for (int aa=0; aa<1; aa++) {
@@ -1004,8 +1004,8 @@ int main(int argc, char **argv)
 	}
 	for (i=0; i<slot_length; i++) {
 	  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((tx_gain*r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((tx_gain*r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
@@ -1016,6 +1016,17 @@ int main(int argc, char **argv)
 
       }
 
+
+      if(pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+        set_ptrs_symb_idx(&ptrsSymPos,
+                          pusch_pdu->nr_of_symbols,
+                          pusch_pdu->start_symbol_index,
+                          1<<ptrs_time_density,
+                          pusch_pdu->ul_dmrs_symb_pos);
+        ptrsSymbPerSlot = get_ptrs_symbols_in_slot(ptrsSymPos, pusch_pdu->start_symbol_index, pusch_pdu->nr_of_symbols);
+        ptrsRePerSymb = ((pusch_pdu->rb_size + ptrs_freq_density - 1)/ptrs_freq_density);
+        printf("[ULSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
+      }
 	////////////////////////////////////////////////////////////
 	
 	//----------------------------------------------------------
@@ -1080,7 +1091,7 @@ int main(int argc, char **argv)
             }
             /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
             available_bits -= 2 * ptrs_symbols * ((nb_rb + ptrs_freq_density - 1) /ptrs_freq_density);
-            printf("After PTRS subtraction available_bits are : %u \n", available_bits);
+            printf("[ULSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5d \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * 2) );
         }
 
 	for (i = 0; i < available_bits; i++) {

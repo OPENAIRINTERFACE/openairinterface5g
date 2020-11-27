@@ -97,7 +97,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
     G_b_f_c = 0;
   }
   else {
-    G_b_f_c = ue->dlsch[ue->current_thread_id[proc->subframe_rx]][gNB_id][0]->g_pucch;
+    G_b_f_c = ue->dlsch[proc->thread_id][gNB_id][0]->g_pucch;
     LOG_W(PHY,"PUCCH Transmit power control command not yet implemented for NR : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
     return (PUCCH_POWER_DEFAULT);
   }
@@ -169,7 +169,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
   //int K_PUCCH = 0;
   if (O_ACK != 0) {
     /* it assumes that PDCCH is in the first symbol of receive slot FFS TDDO NR */
-    //int slots_gap = (proc->nr_tti_tx > proc->nr_tti_rx ? (proc->nr_tti_tx - proc->nr_tti_rx - 1) : ((proc->nr_tti_tx + ue->frame_parms.slots_per_subframe) - proc->nr_tti_rx - 1));
+    //int slots_gap = (proc->nr_slot_tx > proc->nr_slot_rx ? (proc->nr_slot_tx - proc->nr_slot_rx - 1) : ((proc->nr_slot_tx + ue->frame_parms.slots_per_subframe) - proc->nr_slot_rx - 1));
     //K_PUCCH = (slots_gap * (ue->frame_parms.symbols_per_tti)) - 1;
   }
   else {

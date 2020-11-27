@@ -159,13 +159,15 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
     const int abs_slot = (slots_per_frame * frameP) + slotP;
     const int slot_per_period = (slots_per_frame>>1)<<(*cc->ServingCellConfigCommon->ssb_periodicityServingCell);
     int eff_120_slot;
+    const BIT_STRING_t *shortBitmap = &cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.shortBitmap;
     const BIT_STRING_t *mediumBitmap = &cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap;
+    const BIT_STRING_t *longBitmap = &cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.longBitmap;
     uint8_t buf = 0;
     switch (cc->ServingCellConfigCommon->ssb_PositionsInBurst->present) {
       case 1:
         // presence of ssbs possible in the first 2 slots of ssb period
         if ((abs_slot % slot_per_period) < 2 &&
-            (((mediumBitmap->buf[0]) >> (6 - (slotP << 1))) & 3) != 0)
+            (((shortBitmap->buf[0]) >> (6 - (slotP << 1))) & 3) != 0)
           fill_ssb_vrb_map(cc, (ssb_offset0 / (ratio * 12) - 10), CC_id);
         break;
       case 2:
@@ -180,16 +182,16 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                     "240kHZ subcarrier spacing currently not supported for SSBs\n");
         if ((abs_slot % slot_per_period) < 8) {
           eff_120_slot = slotP;
-          buf = mediumBitmap->buf[0];
+          buf = longBitmap->buf[0];
         } else if ((abs_slot % slot_per_period) < 17) {
           eff_120_slot = slotP - 9;
-          buf = mediumBitmap->buf[1];
+          buf = longBitmap->buf[1];
         } else if ((abs_slot % slot_per_period) < 26) {
           eff_120_slot = slotP - 18;
-          buf = mediumBitmap->buf[2];
+          buf = longBitmap->buf[2];
         } else if ((abs_slot % slot_per_period) < 35) {
           eff_120_slot = slotP - 27;
-          buf = mediumBitmap->buf[3];
+          buf = longBitmap->buf[3];
         }
         if (((buf >> (6 - (eff_120_slot << 1))) & 3) != 0)
           fill_ssb_vrb_map(cc, ssb_offset0 / (ratio * 12) - 10, CC_id);

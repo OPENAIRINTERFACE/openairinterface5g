@@ -93,6 +93,23 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m);
 
+void
+rrc_gNB_generate_SecurityModeCommand(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t          *const ue_context_pP
+);
+
+uint8_t
+rrc_gNB_get_next_transaction_identifier(
+    module_id_t gnb_mod_idP
+);
+
+void
+rrc_gNB_generate_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t  *const ue_context_pP
+);
+
 void nr_rrc_rx_tx(void);
 
 /**\brief RRC eNB task.
@@ -101,3 +118,26 @@ void *rrc_gnb_task(void *args_p);
 
 /* Trigger RRC periodic processing. To be called once per ms. */
 void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
+
+/**\ Function to set or overwrite PTRS DL RRC parameters.
+   \ *bwp Pointer to dedicated RC config structure
+   \ *ptrsNrb Pointer to K_ptrs N_RB related parameters
+   \ *ptrsMcs Pointer to L_ptrs MCS related parameters
+   \ *epre_Ratio Pointer to ep_ratio
+   \ *reOffset Pointer to RE Offset Value */
+void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset);
+
+uint8_t
+nr_rrc_data_req(
+  const protocol_ctxt_t   *const ctxt_pP,
+  const rb_id_t                  rb_idP,
+  const mui_t                    muiP,
+  const confirm_t                confirmP,
+  const sdu_size_t               sdu_size,
+  uint8_t                 *const buffer_pP,
+  const pdcp_transmission_mode_t modeP
+);
+
+int
+nr_rrc_mac_remove_ue(module_id_t mod_idP,
+                  rnti_t rntiP);
