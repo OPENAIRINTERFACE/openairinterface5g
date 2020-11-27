@@ -47,6 +47,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
   uint32_t rb;
   int32_t *ul_ch;
   int32_t n0_power_tot;
+  int64_t n0_power_tot2;
   int len;
   int offset;
   // noise measurements
@@ -75,12 +76,15 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 
   }
 
+  n0_power_tot2=0;
+  int nb_rb=0;
   for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
 
-    n0_power_tot=0;
+    n0_power_tot=0; 
     int offset0= (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
 
     if ((rb_mask[rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
+      nb_rb++;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
         measurements->n0_subband_power[aarx][rb] = 0;
         for (int s=0;s<14-(frame_parms->Ncp<<1);s++) {
@@ -105,11 +109,14 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
         n0_power_tot += measurements->n0_subband_power[aarx][rb];
 
       }
-      measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot);
+      n0_power_tot/=frame_parms->nb_antennas_rx;
+      n0_power_tot2 += n0_power_tot;
+      measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot/frame_parms->nb_antennas_rx);
       measurements->n0_subband_power_tot_dBm[rb] = measurements->n0_subband_power_tot_dB[rb] - eNB->rx_total_gain_dB - dB_fixed(frame_parms->N_RB_UL);
       
     }
   }
+  if (nb_rb>0) measurements->n0_subband_power_avg_dB = dB_fixed(n0_power_tot2/nb_rb);
 }
 
 void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,

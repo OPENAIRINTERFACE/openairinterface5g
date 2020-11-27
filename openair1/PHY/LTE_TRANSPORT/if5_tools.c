@@ -1317,7 +1317,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
   int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
 
-  uint16_t packet_id=0, i=0, element_id=0;
+  uint16_t packet_id=0, i=0;
 #ifdef DEBUG_UL_MOBIPASS
   //int8_t dummy_buffer_rx[fp->samples_per_tti*2];
   uint8_t rxe;
@@ -1326,9 +1326,6 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 
   int32_t spp_eth  = (int32_t) ru->ifdevice.openair0_cfg->samples_per_packet;
   int32_t spsf     = (int32_t) ru->ifdevice.openair0_cfg->samples_per_frame/10;
-  void    *alaw_buffer = ru->ifbuffer.rx; 
-  uint16_t *data_block = NULL;
-  uint16_t *j      = NULL;
 
   openair0_timestamp timestamp[ru->nb_rx*spsf / spp_eth];
   long timein[ru->nb_rx*spsf/spp_eth];
@@ -1441,7 +1438,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         rxp[i] = &ru->common.rxdata[i][subframe*fp->samples_per_tti];
       int aid;
       int firstTS=1;
-      openair0_timestamp oldTS;
+      openair0_timestamp oldTS=0;
 
       for (packet_id=0; packet_id < ru->nb_rx*spsf / spp_eth; packet_id++) {
         //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
@@ -1460,8 +1457,8 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         if (aid==0) {
            if (firstTS==1) firstTS=0;
            else if (oldTS + 256 != timestamp[packet_id]) {
-              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timein %lu, timeout %lu\n",oldTS,timestamp[packet_id],timestamp[packet_id]-oldTS,timein[packet_id],timeout[packet_id]); 
-              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu, timein %lu, timeout %lu\n",i,timestamp[i],timein[i],timeout[i]);
+              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timein %lu, timeout %lu\n",(long long unsigned int)oldTS,(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[packet_id]-oldTS,timein[packet_id],timeout[packet_id]); 
+              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu, timein %lu, timeout %lu\n",i,(long long unsigned int)timestamp[i],timein[i],timeout[i]);
               AssertFatal(1==0,"fronthaul problem\n");
            }
 
