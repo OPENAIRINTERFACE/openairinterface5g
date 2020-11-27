@@ -270,7 +270,6 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int sendto_flag =0;
-  char temp0[APP_HEADER_SIZE_BYTES];
 
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
@@ -316,7 +315,6 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
        buff2 points to the position in tx buffer where the packet header will be placed */
     void *buff2 = ((void*)buff_tx2)- APP_HEADER_SIZE_BYTES; 
     
-    /* we don't want to ovewrite with the header info the previous tx buffer data so we store it*/
    
  
     bytes_sent = 0;
@@ -388,9 +386,6 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
       }
     //}
                   
-      /* tx buffer values restored */  
-  memcpy((void *)buff2,(void *)temp0,APP_HEADER_SIZE_BYTES);
- 
   return (bytes_sent-APP_HEADER_SIZE_BYTES)>>2;
 }
       
@@ -407,6 +402,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   int again_cnt=0;
   static int packet_cnt=0;
   int payload_size = UDP_PACKET_SIZE_BYTES(nsamps);
+
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
     int nsamps2 = (payload_size>>5)+1;
@@ -422,14 +418,16 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   int16x8_t temp_rx[nsamps2];
   char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
 #else
-#error Unsupported CPU architecture, USRP device cannot be built
+#error Unsupported CPU architecture device cannot be built
+  int nsamps2 = (payload_size>>2)+1;
+  int32_t temp_rx[payload_size>>2];
+  char* *temp_rx0 = ((char *)&temp_rx[1]) - APP_HEADER_SIZE_BYTES;  
 #endif
   
   eth->rx_nsamps=nsamps;
 
   bytes_received=0;
   block_cnt=0;
-  int receive_bytes;
   AssertFatal(eth->compression == NO_COMPRESS, "IF5 compression not supported for now\n");
   
   while(bytes_received < payload_size) {
