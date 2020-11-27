@@ -421,16 +421,16 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
     LOG_D(PHY, "PRACH [UE %d] Ncp %d, dftlen %d \n", Mod_id, Ncp, dftlen);
   #endif
 
-    //actually what we should be checking here is how often the current prach crosses a 0.5ms boundary. I am not quite sure for which paramter set this would be the case, so I will ignore it for now and just check if the prach starts on a 0.5ms boundary
-    uint8_t  use_extended_prach_prefix = 0;
-    if(fp->numerology_index == 0) {
-      if (prachStartSymbol == 0 || prachStartSymbol == 7)
-	use_extended_prach_prefix = 1;
-    }
-    else {
-      if (slot%(fp->slots_per_subframe/2)==0 && prachStartSymbol == 0)
-	use_extended_prach_prefix = 1;
-    }
+  //actually what we should be checking here is how often the current prach crosses a 0.5ms boundary. I am not quite sure for which paramter set this would be the case, so I will ignore it for now and just check if the prach starts on a 0.5ms boundary
+  uint8_t  use_extended_prach_prefix = 0;
+  if(fp->numerology_index == 0) {
+    if (prachStartSymbol == 0 || prachStartSymbol == 7)
+	  use_extended_prach_prefix = 1;
+  }
+  else {
+    if (slot%(fp->slots_per_subframe/2)==0 && prachStartSymbol == 0)
+	  use_extended_prach_prefix = 1;
+  }
     
   if (fp->N_RB_UL <= 34) { //32 PRB case 61.44Msps
     if (fp->threequarter_fs == 0) {

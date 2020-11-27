@@ -84,6 +84,7 @@
 
 int test_synchro_pss_sss_nr(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, NR_DL_FRAME_PARMS *frame_parms_gNB, test_t *test)
 {
+  UE_nr_rxtx_proc_t proc = {0};
   VOID_PARAMETER test;
   int synchro_position;
   int offset;
@@ -133,7 +134,7 @@ int test_synchro_pss_sss_nr(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, NR
 
 #endif
 
-  rx_sss_nr(PHY_vars_UE, &metric_fdd_ncp, &phase_fdd_ncp);
+  rx_sss_nr(PHY_vars_UE, &proc, &metric_fdd_ncp, &phase_fdd_ncp);
 
 #if TEST_SYNCHRO_TIMING_PSS
 

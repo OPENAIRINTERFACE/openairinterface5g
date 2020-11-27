@@ -227,8 +227,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
   uint32_t A, F;
-  static uint32_t Z = 0;
-  uint32_t *pz = &Z; 
+  uint32_t *pz; 
   uint8_t mod_order; 
   uint16_t Kr,r;
   uint32_t r_offset;
@@ -249,7 +248,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   harq_process = ulsch->harq_processes[harq_pid];
   nb_rb = harq_process->pusch_pdu.rb_size;
   A = harq_process->pusch_pdu.pusch_data.tb_size*8;
-  pz = &Z;
+  pz = &harq_process->Z;
   mod_order = nr_get_Qm_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
   R = nr_get_code_rate_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
   Kr=0;
@@ -387,12 +386,13 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       printf("%d \n",  harq_process->d[0][cnt]);
       }
       printf("\n");*/
-    encoder_implemparams_t impp;
-    impp.n_segments = harq_process->C;
-    impp.tinput     = NULL;
-    impp.tprep      = NULL;
-    impp.tparity    = NULL;
-    impp.toutput    = NULL;
+    encoder_implemparams_t impp = {
+      .n_segments=harq_process->C,
+      .macro_num=0,
+      .tinput  = NULL,
+      .tprep   = NULL,
+      .tparity = NULL,
+      .toutput = NULL};
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
 
