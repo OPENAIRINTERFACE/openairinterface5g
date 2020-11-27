@@ -23,7 +23,7 @@ The ITTI simulator is available directly from the standard build.
 ```bash
 $ source oaienv
 $ cd cmake_targets
-$ sudo ./build_oai -x -w None -c ?ittiSIM
+$ sudo ./build_oai -x -w None -c -ittiSIM
 ```
 
 # 2. Running the ITTI simulator.
