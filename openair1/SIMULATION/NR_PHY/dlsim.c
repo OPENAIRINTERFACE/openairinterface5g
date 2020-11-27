@@ -153,7 +153,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
-int g_mcsIndex = -1, g_rbStart = -1, g_rbSize = -1;
+int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot,
@@ -181,10 +181,11 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_ctrl->rbSize = g_rbSize;
   sched_ctrl->mcs = g_mcsIndex;
   sched_ctrl->time_domain_allocation = 2;
-  sched_ctrl->mcsTableIdx = 0;
+  sched_ctrl->mcsTableIdx = g_mcsTableIdx;
   AssertFatal(sched_ctrl->rbStart >= 0, "invalid rbStart %d\n", sched_ctrl->rbStart);
   AssertFatal(sched_ctrl->rbSize > 0, "invalid rbSize %d\n", sched_ctrl->rbSize);
   AssertFatal(sched_ctrl->mcs >= 0, "invalid sched_ctrl->mcs %d\n", sched_ctrl->mcs);
+  AssertFatal(sched_ctrl->mcsTableIdx >= 0 && sched_ctrl->mcsTableIdx <= 2, "invalid sched_ctrl->mcsTableIdx %d\n", sched_ctrl->mcsTableIdx);
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
 }
 
@@ -280,7 +281,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:U:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:U:q")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -452,6 +453,11 @@ int main(int argc, char **argv)
       g_mcsIndex = atoi(optarg);
       break;
 
+    case 'q':
+      g_mcsTableIdx = 1;
+      get_softmodem_params()->use_256qam_table = 1;
+      break;
+
     case 'm':
       mu = atoi(optarg);
       break;
@@ -507,6 +513,7 @@ int main(int argc, char **argv)
       printf("-c Start symbol for PDSCH (fixed for now)\n");
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
+      printf("-q Use 2nd MCS table (256 QAM table) for PDSCH\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2}, e.g. -U 2 0 2 \n");
