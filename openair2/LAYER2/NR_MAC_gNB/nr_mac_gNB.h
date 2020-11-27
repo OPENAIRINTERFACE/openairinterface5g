@@ -425,6 +425,8 @@ typedef struct {
   uint16_t rbSize;
   uint16_t rbStart;
 
+  /// uplink bytes that are currently scheduled
+  int sched_ul_bytes;
   /// estimation of the UL buffer size
   int estimated_ul_buffer;
 
@@ -483,6 +485,7 @@ typedef struct {
   int ulsch_errors;
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
+  int ulsch_current_bytes;
 } NR_mac_stats_t;
 
 

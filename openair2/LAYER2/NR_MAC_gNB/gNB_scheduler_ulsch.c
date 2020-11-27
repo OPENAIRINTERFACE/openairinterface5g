@@ -427,10 +427,21 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
     if (sduP != NULL){
       LOG_D(MAC, "Received PDU at MAC gNB \n");
+
+      UE_scheduling_control->sched_ul_bytes -= UE_info->mac_stats[UE_id].ulsch_current_bytes;
+      if (UE_scheduling_control->sched_ul_bytes < 0)
+        UE_scheduling_control->sched_ul_bytes = 0;
+
       nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
     }
     else {
-
+      NR_UE_ul_harq_t *cur_harq = &UE_scheduling_control->ul_harq_processes[harq_pid];
+      /* reduce sched_ul_bytes when cur_harq->round == 3 */
+      if (cur_harq->round == 3){
+        UE_scheduling_control->sched_ul_bytes -= UE_info->mac_stats[UE_id].ulsch_current_bytes;
+        if (UE_scheduling_control->sched_ul_bytes < 0)
+          UE_scheduling_control->sched_ul_bytes = 0;
+      }
     }
   } else {
     if (!sduP) // check that CRC passed
@@ -692,6 +703,8 @@ void nr_schedule_ulsch(module_id_t module_id,
             cur_harq->round,
             cur_harq->ndi);
     }
+    UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
+    sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
 
     LOG_D(MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
