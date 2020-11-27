@@ -734,8 +734,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
-    // do channel estimation for first DMRS only
-    for (m = s0; m < 3; m++) {
+    for (m = s0; m < (s0 +s1); m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
         for (uint8_t aatx=0; aatx<1; aatx++) {//for MIMO Config: it shall loop over no_layers
           nr_pdsch_channel_estimation(ue,
@@ -754,12 +753,13 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
           char filename[100];
           for (uint8_t aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
             sprintf(filename,"PDSCH_CHANNEL_frame%d_slot%d_sym%d_port%d_rx%d.m", nr_frame_rx, nr_slot_rx, m, aatx,aarx);
-            int **dl_ch_estimates = ue->pdsch_vars[ue->current_thread_id[nr_slot_rx]][0]->dl_ch_estimates;
+            int **dl_ch_estimates = ue->pdsch_vars[proc->thread_id][eNB_id]->dl_ch_estimates;
             LOG_M(filename,"channel_F",&dl_ch_estimates[aatx*ue->frame_parms.nb_antennas_rx+aarx][ue->frame_parms.ofdm_symbol_size*m],ue->frame_parms.ofdm_symbol_size, 1, 1);
           }
 #endif
         }
-        break;
+        if ( ue->high_speed_flag == 0 ) //for slow speed case only estimate the channel once per slot
+          break;
       }
     }
     for (m = s0; m < (s1 + s0); m++) {
@@ -932,7 +932,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
   uint8_t dmrs_type, nb_re_dmrs;
-  uint16_t length_dmrs = 1; 
+  uint16_t dmrs_len = get_num_dmrs(dlsch0->harq_processes[dlsch0->current_harq_pid]->dlDmrsSymbPos);
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
@@ -1018,7 +1018,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
                                                    nb_symb_sch,
                                                    nb_re_dmrs,
-                                                   length_dmrs,
+                                                   dmrs_len,
                                                    dlsch0->harq_processes[harq_pid]->Qm,
                                                    dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
@@ -1101,11 +1101,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       if(is_cw1_active)
       {
           // start ldpc decode for CW 1
-          dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
-							 nb_symb_sch,
-							 nb_re_dmrs,
-							 length_dmrs,
-							 dlsch1->harq_processes[harq_pid]->Qm,
+        dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
+                                                       nb_symb_sch,
+                                                       nb_re_dmrs,
+                                                       dmrs_len,
+                                                       dlsch1->harq_processes[harq_pid]->Qm,
 							 dlsch1->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
           start_meas(&ue->dlsch_unscrambling_stats);
@@ -1864,7 +1864,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
       AssertFatal(symb_dmrs>=0,"no dmrs in 0..3\n");
       LOG_D(PHY,"Initializing dmrs for symb %d DMRS mask %x\n",symb_dmrs,dlsch0_harq->dlDmrsSymbPos);
-      nr_gold_pdsch(ue,symb_dmrs,0, 1);
+      nr_gold_pdsch(ue,0);
     
       for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
         nr_slot_fep(ue,
@@ -2041,7 +2041,7 @@ start_meas(&ue->generic_stat);
 
   if(nr_slot_rx==5 &&  ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid]->nb_rb > 20){
        //write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-       //write_output("llr.m","llr",  &ue->pdsch_vars[gNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
+       //write_output("llr.m","llr",  &ue->pdsch_vars[proc->thread_id][gNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
 
        write_output("rxdataF0_current.m"    , "rxdataF0", &ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
        //write_output("rxdataF0_previous.m"    , "rxdataF0_prev_sss", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
@@ -2049,10 +2049,10 @@ start_meas(&ue->generic_stat);
        //write_output("rxdataF0_previous.m"    , "rxdataF0_prev", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
 
        write_output("dl_ch_estimates.m", "dl_ch_estimates_sfn5", &ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].dl_ch_estimates[0][0][0],14*fp->ofdm_symbol_size,1,1);
-       write_output("dl_ch_estimates_ext.m", "dl_ch_estimatesExt_sfn5", &ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates_ext[0][0],14*fp->N_RB_DL*12,1,1);
-       write_output("rxdataF_comp00.m","rxdataF_comp00",         &ue->pdsch_vars[proc->thread_id][0]->rxdataF_comp0[0][0],14*fp->N_RB_DL*12,1,1);
-       //write_output("magDLFirst.m", "magDLFirst", &phy_vars_ue->pdsch_vars[proc->thread_id][0]->dl_ch_mag0[0][0],14*fp->N_RB_DL*12,1,1);
-       //write_output("magDLSecond.m", "magDLSecond", &phy_vars_ue->pdsch_vars[proc->thread_id][0]->dl_ch_magb0[0][0],14*fp->N_RB_DL*12,1,1);
+       write_output("dl_ch_estimates_ext.m", "dl_ch_estimatesExt_sfn5", &ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates_ext[0][0],14*fp->N_RB_DL*12,1,1);
+       write_output("rxdataF_comp00.m","rxdataF_comp00",         &ue->pdsch_vars[proc->thread_id][gNB_id]->rxdataF_comp0[0][0],14*fp->N_RB_DL*12,1,1);
+       //write_output("magDLFirst.m", "magDLFirst", &phy_vars_ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_mag0[0][0],14*fp->N_RB_DL*12,1,1);
+       //write_output("magDLSecond.m", "magDLSecond", &phy_vars_ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_magb0[0][0],14*fp->N_RB_DL*12,1,1);
 
        AssertFatal (0,"");
   }

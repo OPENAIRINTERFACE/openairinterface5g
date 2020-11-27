@@ -466,6 +466,10 @@ double N_RB2channel_bandwidth(uint16_t N_RB);
   \param ts Sampling time 
   \param *Re *Im Real and Imag part of the signal
 */
+//look-up table for the sine (cosine) function
+#define ResolSinCos 100
+uint16_t LUTSin[ResolSinCos+1];
+void InitSinLUT( void );
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 
 #include "targets/RT/USER/rfsim.h"

@@ -252,4 +252,10 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
                                           uint32_t ssb_offset_point_a);
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
+
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
+                        uint8_t *nERatio,uint8_t *reOffset,
+                        uint8_t NrOfSymbols);
 #endif
