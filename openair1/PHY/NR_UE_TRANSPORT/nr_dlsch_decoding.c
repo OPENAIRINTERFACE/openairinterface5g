@@ -802,20 +802,17 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
-  uint8_t dmrs_Type = harq_process->dmrsConfigType;
-  //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
-  //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
+  uint8_t dmrs_type = harq_process->dmrsConfigType;
 
   uint8_t nb_re_dmrs;
-  if (dmrs_Type == NFAPI_NR_DMRS_TYPE1)
+  if (dmrs_type == NFAPI_NR_DMRS_TYPE1)
     nb_re_dmrs = 6*harq_process->n_dmrs_cdm_groups;
   else
     nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
 
-  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
-
+  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
+  
   uint32_t i,j;
-//  int nbDlProcessing =0;
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
@@ -1187,11 +1184,11 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       }
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        printf("Segment %u CRC OK\n",r);
+        LOG_D(PHY,"Segment %u CRC OK\n",r);
         ret = 2;
       }
       else {
-        printf("CRC NOK\n");
+        LOG_D(PHY,"CRC NOK\n");
         ret = 1+dlsch->max_ldpc_iterations;
       }
 
@@ -1501,7 +1498,7 @@ void nr_dlsch_decoding_process(void *arg)
 
    // }
     
-    //printf("round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
+    LOG_D(PHY,"round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
 
 
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
@@ -1545,9 +1542,7 @@ void nr_dlsch_decoding_process(void *arg)
     r_offset = Nl*Qm*(G/(Nl*Qm*Cprime));
   else
     r_offset = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
-
-    //  printf("thread0 r_offset %d\n",r_offset);
-           
+          
   //for (r=(harq_process->C/2); r<harq_process->C; r++) {
      //    r=1; //(harq_process->C/2);
 
@@ -1657,18 +1652,18 @@ void nr_dlsch_decoding_process(void *arg)
 
     if (err_flag == 0) {
 /*
-        LOG_D(PHY, "turbo algo Kr=%d cb_cnt=%d C=%d nbRB=%d crc_type %d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
+        LOG_D(PHY, "LDPC algo Kr=%d cb_cnt=%d C=%d nbRB=%d crc_type %d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
                             Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
                             harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_ldpc_iterations);
 */
       if (llr8_flag1) {
-        AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+        AssertFatal (Kr >= 256, "LDPC algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
             Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
       }
 #if UE_TIMING_TRACE
         start_meas(dlsch_turbo_decoding_stats);
 #endif
-//      LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
+//      LOG_D(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
 /*
         for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
               inv_d[cnt] = (1)*harq_process->d[r][cnt];
