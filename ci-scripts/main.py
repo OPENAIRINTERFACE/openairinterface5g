@@ -98,8 +98,9 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB':
+	if action == 'Build_eNB' or action == 'Build_Image':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		RAN.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
 		if (forced_workspace_cleanup is None):
 			RAN.Build_eNB_forced_workspace_cleanup=False
@@ -127,8 +128,9 @@ def GetParametersFromXML(action):
 			else:
 				RAN.backgroundBuild=False
 
-	elif action == 'WaitEndBuild_eNB':
+	elif action == 'WaitEndBuild_eNB' or action == 'WaitEndBuild_Image':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		RAN.imageKind=test.findtext('kind')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
@@ -640,8 +642,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
+				elif action == 'Build_Image':
+					RAN.BuildImage()
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished()
+				elif action == 'WaitEndBuild_Image':
+					RAN.WaitBuildImageisFinished()
 				elif action == 'Initialize_eNB':
 					check_eNB = False
 					check_OAI_UE = False
