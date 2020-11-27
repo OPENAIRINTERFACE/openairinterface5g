@@ -610,7 +610,7 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
               ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
 #ifdef NR_CSIRS_DEBUG
-            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k-start_sc,mprime,p+3000,
+            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p+3000,
                    ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)],
                    ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)]);
 #endif
