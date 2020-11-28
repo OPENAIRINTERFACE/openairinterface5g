@@ -422,7 +422,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   len = (pilots==1)? ((config_type==pdsch_dmrs_type1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
-  
+
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 #if DISABLE_LOG_X
@@ -1591,12 +1591,15 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   short rb;
   unsigned char aatx,aarx;
   __m128i *dl_ch128, avg128D;
-
+Mi
   //nb_rb*nre = y * 2^x
   int16_t x = factor2(len);
   //x = (x>4) ? 4 : x;
   int16_t y = (len)>>x;
   //printf("len = %d = %d * 2^(%d)\n",len,y,x);
+
+  // FIXME: y cannot be zero
+  if(y == 0) y = 1;
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

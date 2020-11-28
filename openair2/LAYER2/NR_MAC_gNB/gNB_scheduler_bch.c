@@ -298,6 +298,8 @@ void schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
 
+  LOG_I(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
+
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->rbSize; rb++) {
     vrb_map[rb + rbStart] = 1;
@@ -440,7 +442,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
   // static values
   const int CC_id = 0;
-  int time_domain_allocation = 2; // FIXME: For OAI-UE (2), For 3rd party implementation and 3GPP compliant (4)
+  int time_domain_allocation = 0; // FIXME: For OAI-UE (0-3), For 3rd party implementation and 3GPP compliant (4)
   uint8_t mcsTableIdx = 0;
   uint8_t mcs = 8;
   uint8_t numDmrsCdmGrpsNoData = 2;
@@ -473,11 +475,6 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                                         gNB_mac->sched_ctrlCommon->rbSize, nrOfSymbols, N_PRB_DMRS,0 ,0 ,1 ) >> 3;
-
-
-    printf("===================================================\n");
-    printf("gNB_mac->sched_ctrlCommon->rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
-    printf("===================================================\n");
 
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
     nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, TBS, startSymbolIndex, nrOfSymbols);
