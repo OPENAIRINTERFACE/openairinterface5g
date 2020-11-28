@@ -470,14 +470,17 @@ class RANManagement():
 		# Recover build logs, for the moment only possible when build is successful
 		mySSH.command('docker create --name test ran-build:' + imageTag, '\$', 5)
 		mySSH.command('mkdir -p cmake_targets/log/ran-build', '\$', 5)
-		mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. /tmp/CI-eNB/cmake_targets/log/ran-build', '\$', 5)
+		mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-build', '\$', 5)
 		mySSH.command('docker rm -f test', '\$', 5)
 		for image,shaone in danglingShaOnes:
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('docker create --name test ' + shaone, '\$', 5)
-			mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. /tmp/CI-eNB/cmake_targets/log/' + image, '\$', 5)
+			mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('docker rm -f test', '\$', 5)
 		mySSH.command('docker image prune --force', '\$', 5)
+		mySSH.command('cd cmake_targets', '\$', 5)
+		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
+		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		mySSH.close()
 
 		logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')

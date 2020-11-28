@@ -3,7 +3,6 @@
   - Build_eNB
   - Build_Image
   - WaitEndBuild_eNB
-  - WaitEndBuild_Image
   - Initialize_eNB
   - Terminate_eNB
   - Initialize_UE

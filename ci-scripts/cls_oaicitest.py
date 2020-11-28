@@ -3085,7 +3085,7 @@ class OaiCiTest():
 		SSH.command('cd ' + SourceCodePath, '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('rm -f build.log.zip', '\$', 5)
-		SSH.command('zip build.log.zip build_log_*/*', '\$', 60)
+		SSH.command('zip -r build.log.zip build_log_*/*', '\$', 60)
 		SSH.close()
 
 	def LogCollectPing(self,EPC):

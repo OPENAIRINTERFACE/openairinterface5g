@@ -128,7 +128,7 @@ def GetParametersFromXML(action):
 			else:
 				RAN.backgroundBuild=False
 
-	elif action == 'WaitEndBuild_eNB' or action == 'WaitEndBuild_Image':
+	elif action == 'WaitEndBuild_eNB':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		RAN.imageKind=test.findtext('kind')
 		eNB_instance=test.findtext('eNB_instance')
@@ -646,8 +646,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					RAN.BuildImage()
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished()
-				elif action == 'WaitEndBuild_Image':
-					RAN.WaitBuildImageisFinished()
 				elif action == 'Initialize_eNB':
 					check_eNB = False
 					check_OAI_UE = False
