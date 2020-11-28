@@ -53,7 +53,6 @@
 
 #include "executables/softmodem-common.h"
 
-const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 void clear_mac_stats(gNB_MAC_INST *gNB) {
@@ -391,7 +390,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   }
 
-  int num_slots_per_tdd = (slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
+  int num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
 
   const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
@@ -428,7 +427,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   // This schedules MIB
-  schedule_nr_mib(module_idP, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
+  schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0)
@@ -439,7 +438,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedule CSI measurement reporting
   if (UE_info->active[UE_id])
-    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, slots_per_frame[*scc->ssbSubcarrierSpacing]);
+    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected

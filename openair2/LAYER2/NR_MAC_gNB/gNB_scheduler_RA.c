@@ -42,7 +42,6 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 extern RAN_CONTEXT_t RC;
-extern const uint8_t nr_slots_per_frame[5];
 
 uint8_t DELTA[4]= {2,3,4,6};
 

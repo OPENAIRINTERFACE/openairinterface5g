@@ -63,7 +63,6 @@
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-extern const uint8_t nr_slots_per_frame[5];
 
 //extern uint8_t  nfapi_mode;
 
