@@ -331,6 +331,40 @@ uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
   }
 }
 
+void nr_store_dlsch_buffer(module_id_t module_id,
+                           frame_t frame,
+                           sub_frame_t slot) {
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    sched_ctrl->num_total_bytes = 0;
+    const int lcid = DL_SCH_LCID_DTCH;
+    const uint16_t rnti = UE_info->rnti[UE_id];
+    sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+                                                      rnti,
+                                                      module_id,
+                                                      frame,
+                                                      slot,
+                                                      ENB_FLAG_YES,
+                                                      MBMS_FLAG_NO,
+                                                      lcid,
+                                                      0,
+                                                      0);
+    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+    LOG_D(MAC,
+          "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+          __func__,
+          frame,
+          slot,
+          lcid,
+          sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+          sched_ctrl->ta_apply);
+  }
+}
+
 void pf_dl(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -572,31 +606,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   }
 
   /* Retrieve amount of data to send for this UE */
-  sched_ctrl->num_total_bytes = 0;
-  const int lcid = DL_SCH_LCID_DTCH;
-  const rnti_t rnti = UE_info->rnti[UE_id];
-  sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                                    rnti,
-                                                    module_id,
-                                                    frame,
-                                                    slot,
-                                                    ENB_FLAG_YES,
-                                                    MBMS_FLAG_NO,
-                                                    lcid,
-                                                    0,
-                                                    0);
-  sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-  if (sched_ctrl->num_total_bytes == 0
-      && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-    return;
-
-  LOG_D(MAC, "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
-        __FUNCTION__,
-        frame,
-        slot,
-        lcid,
-        sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-        sched_ctrl->ta_apply);
+  nr_store_dlsch_buffer(module_id, frame, slot);
 
   /* proportional fair scheduling algorithm */
   pf_dl(module_id,
