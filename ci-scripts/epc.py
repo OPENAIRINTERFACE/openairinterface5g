@@ -465,25 +465,42 @@ class EPCManagement():
 
 		# deploying EPC cNFs
 		mySSH.command('docker-compose up -d oai_spgwu', '\$', 60)
+		listOfContainers = 'prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny'
+		expectedHealthyContainers = 5
 
+		# Checking for additional services
+		mySSH.command('docker-compose config', '\$', 5)
+		configResponse = mySSH.getBefore()
+		if configResponse.count('flexran_rtc') == 1:
+			mySSH.command('docker-compose up -d flexran_rtc', '\$', 60)
+			listOfContainers += ' prod-flexran-rtc'
+			expectedHealthyContainers += 1
+		if configResponse.count('trf_gen') == 1:
+			mySSH.command('docker-compose up -d trf_gen', '\$', 60)
+			listOfContainers += ' prod-trf-gen'
+			expectedHealthyContainers += 1
+
+		# Checking if all are healthy
 		cnt = 0
 		while (cnt < 3):
-			mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny', '\$', 10)
+			mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + listOfContainers, '\$', 10)
 			unhealthyNb = mySSH.getBefore().count('unhealthy')
 			healthyNb = mySSH.getBefore().count('healthy') - unhealthyNb
 			startingNb = mySSH.getBefore().count('starting')
-			if healthyNb == 5:
+			if healthyNb == expectedHealthyContainers:
 				cnt = 10
 			else:
 				time.sleep(10)
+				cnt += 1
 		logging.debug(' -- ' + str(healthyNb) + ' healthy container(s)')
 		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
-		if healthyNb == 5:
-			mySSH.command('docker exec -d prod-oai-hss /bin/bash -c "nohup tshark -i eth0 -i eth1 -w /tmp/hss_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
-			mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
-			mySSH.command('docker exec -d prod-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
-			mySSH.command('docker exec -d prod-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+		if healthyNb == expectedHealthyContainers:
+			mySSH.command('docker exec -d prod-oai-hss /bin/bash -c "nohup tshark -i any -f \'port 9042 or port 3868\' -w /tmp/hss_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i any -f \'port 3868 or port 2123 or port 36421\' -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			mySSH.command('docker exec -d prod-oai-spgwc /bin/bash -c "nohup tshark -i any -f \'port 2123 or port 8805\' -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			# on SPGW-U, not capturing on SGI to avoid huge file
+			mySSH.command('docker exec -d prod-oai-spgwu-tiny /bin/bash -c "nohup tshark -i any -f \'port 8805\'  -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
 			mySSH.close()
 			logging.debug('Deployment OK')
 			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
@@ -507,7 +524,7 @@ class EPCManagement():
 		mySSH.command('docker logs prod-oai-hss > hss_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('docker logs prod-oai-mme > mme_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('docker logs prod-oai-spgwc > spgwc_' + self.testCase_id + '.log', '\$', 5)
-		mySSH.command('docker logs prod-oai-spgwu > spgwu_' + self.testCase_id + '.log', '\$', 5)
+		mySSH.command('docker logs prod-oai-spgwu-tiny > spgwu_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('docker cp prod-oai-hss:/tmp/hss_check_run.pcap hss_' + self.testCase_id + '.pcap', '\$', 60)
 		mySSH.command('docker cp prod-oai-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
 		mySSH.command('docker cp prod-oai-spgwc:/tmp/spgwc_check_run.pcap spgwc_' + self.testCase_id + '.pcap', '\$', 60)

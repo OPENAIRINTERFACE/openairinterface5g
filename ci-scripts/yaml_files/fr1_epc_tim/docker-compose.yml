@@ -163,6 +163,33 @@ services:
             timeout: 5s
             retries: 5
 
+    flexran_rtc:
+        image: flexran-rtc:production
+        privileged: true
+        container_name: prod-flexran-rtc
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.10
+        healthcheck:
+            test: /bin/bash -c "pgrep rt_controller"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    trf_gen:
+        image: trf-gen:production
+        privileged: true
+        container_name: prod-trf-gen
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.11
+        entrypoint: /bin/bash -c "ip route add 12.1.1.0/24 via 192.168.61.5 dev eth0; sleep infinity"
+        healthcheck:
+            test: /bin/bash -c "ping -c 2 192.168.61.5"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
 networks:
     private_net:
         name: prod-oai-private-net
