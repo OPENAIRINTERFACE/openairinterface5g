@@ -1591,7 +1591,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   short rb;
   unsigned char aatx,aarx;
   __m128i *dl_ch128, avg128D;
-Mi
+
   //nb_rb*nre = y * 2^x
   int16_t x = factor2(len);
   //x = (x>4) ? 4 : x;
