@@ -177,7 +177,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   }
 
   AssertFatal(ru!=NULL,"ru is null\n");
-  int8_t dBEn0;
+  int8_t dBEn0=0;
   for (aa=0; aa<nb_rx; aa++) {
     if (ru->if_south == LOCAL_RF || ru->function == NGFI_RAU_IF5) { // set the time-domain signal if we have to use it in this node
       // DJP - indexing below in subframe zero takes us off the beginning of the array???
