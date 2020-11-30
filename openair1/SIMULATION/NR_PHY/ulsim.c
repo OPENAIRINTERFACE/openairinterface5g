@@ -71,6 +71,7 @@ rlc_info_t Rlc_info_um,Rlc_info_am_config;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+uint32_t num_threads_pusch;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int sf_ahead=4 ;
