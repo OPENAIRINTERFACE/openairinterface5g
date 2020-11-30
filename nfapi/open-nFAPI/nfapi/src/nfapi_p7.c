@@ -274,7 +274,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 		push8(value->StartSymbolIndex, ppWritePackedMsg, end) &&
 		push8(value->DurationSymbols, ppWritePackedMsg, end) &&
-		pusharray16(value->FreqDomainResource, 6, 1, ppWritePackedMsg, end) &&
+		pusharray8(value->FreqDomainResource, 6, 6, ppWritePackedMsg, end) &&
 		push8(value->CceRegMappingType, ppWritePackedMsg, end) &&
 
 		push8(value->RegBundleSize, ppWritePackedMsg, end) &&
@@ -294,7 +294,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 		pusharray8(value->dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
 		pusharray16(value->dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, ppWritePackedMsg, end) &&
-		pusharray8(value->dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->numDlDci, ppWritePackedMsg, end)		
+		pusharray8(value->dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->dci_pdu.PayloadSizeBits[0], ppWritePackedMsg, end)		
 	);
 
 }
@@ -337,7 +337,6 @@ static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 		push16(value->dmrsPorts, ppWritePackedMsg, end) &&
 
 		push8(value->resourceAlloc, ppWritePackedMsg, end) &&
-		pusharray8(value->rbBitmap, 36, 1, ppWritePackedMsg, end) &&
 		push16(value->rbStart, ppWritePackedMsg, end) &&
 		push16(value->rbSize, ppWritePackedMsg, end) &&
 
@@ -703,8 +702,8 @@ static uint8_t pack_dl_tti_request_body_value(void* tlv, uint8_t **ppWritePacked
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)tlv;
 
-	if(!(push8(value->PDUSize, ppWritePackedMsg, end) &&
-	 	 push8(value->PDUType, ppWritePackedMsg, end) ))
+	if(!(push16(value->PDUSize, ppWritePackedMsg, end) &&
+	 	 push16(value->PDUType, ppWritePackedMsg, end) ))
 		  return 0;
 
 
@@ -913,7 +912,7 @@ static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 		{
 			arr[j] = pNfapiMsg->dl_tti_request_body.PduIdx[i][j];
 		}
-		if(!(pusharray8(arr,12,pNfapiMsg->dl_tti_request_body.nUe[i],ppWritePackedMsg, end)))
+		if(!(pusharrays32(arr,12,pNfapiMsg->dl_tti_request_body.nUe[i],ppWritePackedMsg, end)))
 		return 0;
 	}
 
@@ -1133,10 +1132,9 @@ static uint8_t pack_ul_tti_request_pusch_pdu(nfapi_nr_pusch_pdu_t* pusch_pdu, ui
 		{
 			return(
 				push8(pusch_pdu->pusch_ptrs.num_ptrs_ports, ppWritePackedMsg, end) &&
-				pusharray32(pusch_pdu->pusch_ptrs.ptrs_ports_list, 
-					pusch_pdu->pusch_ptrs.num_ptrs_ports, 
-					pusch_pdu->pusch_ptrs.num_ptrs_ports,
-					ppWritePackedMsg, end) &&
+				push8(pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_dmrs_port, ppWritePackedMsg, end) &&
+				push16(pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_port_index, ppWritePackedMsg, end) &&
+				push8(pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset, ppWritePackedMsg, end) &&
 				push8(pusch_pdu->pusch_ptrs.ptrs_time_density, ppWritePackedMsg, end) &&
 				push8(pusch_pdu->pusch_ptrs.ptrs_freq_density, ppWritePackedMsg, end) &&
 				push8(pusch_pdu->pusch_ptrs.ul_ptrs_power, ppWritePackedMsg, end)
@@ -1554,8 +1552,8 @@ static uint8_t pack_ul_tti_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 {
 	nfapi_nr_ul_tti_request_number_of_pdus_t* value = (nfapi_nr_ul_tti_request_number_of_pdus_t*)tlv;
 
-	if(!(push8(value->pdu_size, ppWritePackedMsg, end) &&
-	 	 push8(value->pdu_type, ppWritePackedMsg, end) ))
+	if(!(push16(value->pdu_size, ppWritePackedMsg, end) &&
+	 	 push16(value->pdu_type, ppWritePackedMsg, end) ))
 		  return 0;
 
 
@@ -1602,9 +1600,14 @@ static uint8_t pack_ul_tti_groups_list_value(void* tlv, uint8_t **ppWritePackedM
 {
 	nfapi_nr_ul_tti_request_number_of_groups_t* value = (nfapi_nr_ul_tti_request_number_of_groups_t*)tlv;
 
-	return(
-		push8(value->n_ue, ppWritePackedMsg, end) &&
-	 	pusharray8(value->ue_list, NFAPI_MAX_NUM_UL_UE_PER_GROUP, value->n_ue ,ppWritePackedMsg, end) );
+	if(!push8(value->n_ue, ppWritePackedMsg, end))
+		return 0;
+	for(int i=0; i<value->n_ue;i++)
+	{
+		if(!push8(value->ue_list[i].pdu_idx, ppWritePackedMsg, end))
+		return 0;
+	}
+	return 1;
 }
 
 static uint8_t pack_ul_config_request_body_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
@@ -2035,7 +2038,7 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 {
 	nfapi_nr_ul_dci_request_pdus_t* value = (nfapi_nr_ul_dci_request_pdus_t*)tlv;
 	
-	return (push32(value->PDUType, ppWritePackedMsg, end) &&
+	return (push16(value->PDUType, ppWritePackedMsg, end) &&
 	   	    push16(value->PDUSize, ppWritePackedMsg, end) &&
 			push16(value->pdcch_pdu.pdcch_pdu_rel15.BWPSize, ppWritePackedMsg, end) &&
 			push16(value->pdcch_pdu.pdcch_pdu_rel15.BWPStart, ppWritePackedMsg, end) &&
@@ -2044,7 +2047,7 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.StartSymbolIndex, ppWritePackedMsg, end) &&
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.DurationSymbols, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.FreqDomainResource, 6, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.FreqDomainResource, 6, 6, ppWritePackedMsg, end) &&
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.CceRegMappingType, ppWritePackedMsg, end) &&
 
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.RegBundleSize, ppWritePackedMsg, end) &&
@@ -2054,17 +2057,17 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, ppWritePackedMsg, end) &&
 			push16(value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.RNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingId, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.RNTI, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingId, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
 
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.CceIndex, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.AggregationLevel, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.CceIndex, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.AggregationLevel, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
 
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
-			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, ppWritePackedMsg, end)
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits[0], ppWritePackedMsg, end)
 	);
 		  
 	
@@ -2078,7 +2081,7 @@ static uint8_t pack_ul_dci_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 	
 	if (!(push16(pNfapiMsg->SFN, ppWritePackedMsg, end) &&
 		     push16(pNfapiMsg->Slot, ppWritePackedMsg, end) &&
-			 push16(pNfapiMsg->numPdus, ppWritePackedMsg, end)
+			 push8(pNfapiMsg->numPdus, ppWritePackedMsg, end)
         ))
 		return 0;
 
@@ -3727,7 +3730,7 @@ static uint8_t unpack_dl_tti_csi_rs_pdu_rel15_value(void* tlv, uint8_t **ppReadP
 		pull16(ppReadPackedMsg, &value->freq_domain, end) &&
 		pull8(ppReadPackedMsg, &value->symb_l0, end) &&
 
-		push8(ppReadPackedMsg, &value->symb_l1, end) &&
+		pull8(ppReadPackedMsg, &value->symb_l1, end) &&
 		pull8(ppReadPackedMsg, &value->cdm_type, end) &&
 
 		pull8(ppReadPackedMsg, &value->freq_density, end) &&
@@ -3753,7 +3756,7 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 		pull8(ppReadPackedMsg, &value->StartSymbolIndex, end) &&
 		pull8(ppReadPackedMsg, &value->DurationSymbols, end) &&
-		pullarray16(ppReadPackedMsg, &value->FreqDomainResource, 6, 1, end) &&
+		pullarray8(ppReadPackedMsg, value->FreqDomainResource, 6, 6, end) &&
 		pull8(ppReadPackedMsg, &value->CceRegMappingType, end) &&
 
 		pull8(ppReadPackedMsg, &value->RegBundleSize, end) &&
@@ -3763,17 +3766,17 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 		pull8(ppReadPackedMsg, &value->precoderGranularity, end) &&
 		pull16(ppReadPackedMsg, &value->numDlDci, end) &&
-		pullarray16(ppReadPackedMsg, &value->dci_pdu.RNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray16(ppReadPackedMsg, &value->dci_pdu.ScramblingId, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, value->dci_pdu.RNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, value->dci_pdu.ScramblingId, MAX_DCI_CORESET, value->numDlDci, end) &&
 
-		pullarray16(ppReadPackedMsg, &value->dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray8(ppReadPackedMsg, &value->dci_pdu.CceIndex, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray8(ppReadPackedMsg, &value->dci_pdu.AggregationLevel, MAX_DCI_CORESET,value->numDlDci, end) && 
-		pullarray8(ppReadPackedMsg, &value->dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, value->dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray8(ppReadPackedMsg, value->dci_pdu.CceIndex, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray8(ppReadPackedMsg, value->dci_pdu.AggregationLevel, MAX_DCI_CORESET,value->numDlDci, end) && 
+		pullarray8(ppReadPackedMsg, value->dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, value->numDlDci, end) &&
 
-		pullarray8(ppReadPackedMsg, &value->dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray16(ppReadPackedMsg, &value->dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, end) &&
-		pullarray8(ppReadPackedMsg, &value->dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->numDlDci, end)		
+		pullarray8(ppReadPackedMsg, value->dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray16(ppReadPackedMsg, value->dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->numDlDci, end) &&
+		pullarray8(ppReadPackedMsg, value->dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN,value->dci_pdu.PayloadSizeBits[0], end)		
 	);
 
 }
@@ -3795,13 +3798,13 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 		pull8(ppReadPackedMsg, &value->CyclicPrefix, end) &&
 		pull8(ppReadPackedMsg, &value->NrOfCodewords, end) &&
 		
-		pullarray16(ppReadPackedMsg, &value->targetCodeRate, 2, 1, end) &&
-		pullarray8(ppReadPackedMsg, &value->qamModOrder, 2, 1, end) &&
-		pullarray8(ppReadPackedMsg, &value->mcsIndex, 2, 1, end) &&
-        pullarray8(ppReadPackedMsg, &value->mcsTable, 2, 1, end) &&
+		pullarray16(ppReadPackedMsg, value->targetCodeRate, 2, 1, end) &&
+		pullarray8(ppReadPackedMsg, value->qamModOrder, 2, 1, end) &&
+		pullarray8(ppReadPackedMsg, value->mcsIndex, 2, 1, end) &&
+        pullarray8(ppReadPackedMsg, value->mcsTable, 2, 1, end) &&
 		
-		pullarray8(ppReadPackedMsg, &value->rvIndex, 2, 1, end) &&
-	    pullarray32(ppReadPackedMsg, &value->TBSize, 2, 1, end) &&
+		pullarray8(ppReadPackedMsg, value->rvIndex, 2, 1, end) &&
+	    pullarray32(ppReadPackedMsg, value->TBSize, 2, 1, end) &&
 	    pull16(ppReadPackedMsg, &value->dataScramblingId, end) &&
 		pull8(ppReadPackedMsg, &value->nrOfLayers, end) &&
 		
@@ -3816,7 +3819,6 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 		pull16(ppReadPackedMsg, &value->dmrsPorts, end) &&
 
 		pull8(ppReadPackedMsg, &value->resourceAlloc, end) &&
-		pullarray8(ppReadPackedMsg, &value->rbBitmap, 36, 1, end) &&
 		pull16(ppReadPackedMsg, &value->rbStart, end) &&
 		pull16(ppReadPackedMsg, &value->rbSize, end) &&
 
@@ -4300,8 +4302,8 @@ static uint8_t unpack_dl_tti_request_body_value(uint8_t **ppReadPackedMsg, uint8
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)msg;
 
-	if(!(pull8(ppReadPackedMsg, &value->PDUSize, end) &&
-	 	 pull8(ppReadPackedMsg, &value->PDUType, end) ))
+	if(!(pull16(ppReadPackedMsg, &value->PDUSize, end) &&
+	 	 pull16(ppReadPackedMsg, &value->PDUType, end) ))
 		  return 0;
 
 
@@ -4557,14 +4559,11 @@ static uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
 		pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.nGroup, end) &&
 		pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.nPDUs, end) &&
-		pullarray8(ppReadPackedMsg,&pNfapiMsg->dl_tti_request_body.nUe ,256,pNfapiMsg->dl_tti_request_body.nGroup, end)
+		pullarray8(ppReadPackedMsg,pNfapiMsg->dl_tti_request_body.nUe ,256,pNfapiMsg->dl_tti_request_body.nGroup, end)
 		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
 		))
 			return 0;
-	// if(pNfapiMsg->Slot % 2 != 0){
-	// printf("\nEntering unpack_dl_tti_request Odd sfn=%d,slot=%d\n",pNfapiMsg->SFN,pNfapiMsg->Slot);
-	// }
-
+	
 	int arr[12];
 	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nGroup;i++)
 	{
@@ -4572,7 +4571,7 @@ static uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		{
 			arr[j] = pNfapiMsg->dl_tti_request_body.PduIdx[i][j];
 		}
-		if(!(pullarray8(ppReadPackedMsg,arr,12,pNfapiMsg->dl_tti_request_body.nUe[i], end)))
+		if(!(pullarrays32(ppReadPackedMsg,arr,12,pNfapiMsg->dl_tti_request_body.nUe[i], end)))
 		return 0;
 	}
 
@@ -4692,7 +4691,7 @@ static uint8_t unpack_ul_tti_request_pusch_pdu(void *tlv, uint8_t **ppReadPacked
 				pull8(ppReadPackedMsg, &pusch_pdu->pusch_data.harq_process_id, end) &&
 				pull32(ppReadPackedMsg, &pusch_pdu->pusch_data.tb_size, end) &&
 				pull16(ppReadPackedMsg, &pusch_pdu->pusch_data.num_cb, end) &&
-				pullarray8(ppReadPackedMsg, &pusch_pdu->pusch_data.cb_present_and_position,1,1,end)
+				pullarray8(ppReadPackedMsg, pusch_pdu->pusch_data.cb_present_and_position,1,1,end)
 			);
 		}
 		break;
@@ -4715,10 +4714,9 @@ static uint8_t unpack_ul_tti_request_pusch_pdu(void *tlv, uint8_t **ppReadPacked
 		{
 			return(
 				pull8(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.num_ptrs_ports, end) &&
-				pullarray32(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ptrs_ports_list, 
-					pusch_pdu->pusch_ptrs.num_ptrs_ports, 
-					pusch_pdu->pusch_ptrs.num_ptrs_ports,
-					 end) &&
+				pull8(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_dmrs_port, end) &&
++               pull16(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_port_index, end) &&
++               pull8(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset, end) &&
 				pull8(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ptrs_time_density, end) &&
 				pull8(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ptrs_freq_density, end) &&
 				pull8(ppReadPackedMsg, &pusch_pdu->pusch_ptrs.ul_ptrs_power, end)
@@ -4784,8 +4782,8 @@ static uint8_t unpack_ul_tti_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 {
 	nfapi_nr_ul_tti_request_number_of_pdus_t* pNfapiMsg = (nfapi_nr_ul_tti_request_number_of_pdus_t*)msg;
 
-	if(!(pull8(ppReadPackedMsg, &pNfapiMsg->pdu_size, end) &&
-	 	 pull8(ppReadPackedMsg, &pNfapiMsg->pdu_type, end) ))
+	if(!(pull16(ppReadPackedMsg, &pNfapiMsg->pdu_size, end) &&
+	 	 pull16(ppReadPackedMsg, &pNfapiMsg->pdu_type, end) ))
 		  return 0;
 
 
@@ -4838,8 +4836,14 @@ static uint8_t unpack_ul_tti_groups_list_value(uint8_t **ppReadPackedMsg, uint8_
 {
 	nfapi_nr_ul_tti_request_number_of_groups_t* pNfapiMsg = (nfapi_nr_ul_tti_request_number_of_groups_t*)msg;
 
-	return(pull8(ppReadPackedMsg, &pNfapiMsg->n_ue, end) &&
-	 	 pullarray8(ppReadPackedMsg, &pNfapiMsg->ue_list, NFAPI_MAX_NUM_UL_UE_PER_GROUP, pNfapiMsg->n_ue , end) );
+	    if(!pull8(ppReadPackedMsg, &pNfapiMsg->n_ue, end))
+      return 0;
+       for (int i = 0; i < pNfapiMsg->n_ue; i++)
+       {
+               if(!pull8(ppReadPackedMsg, &pNfapiMsg->ue_list[i].pdu_idx ,end) )
+               return 0;
+       }
+       return 1; 
 }
 
 
@@ -5816,7 +5820,7 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 {
 	nfapi_nr_ul_dci_request_pdus_t* value = (nfapi_nr_ul_dci_request_pdus_t*)msg;
 	
-	return (pull32(ppReadPackedMsg, &value->PDUType, end) &&
+	return (pull16(ppReadPackedMsg, &value->PDUType, end) &&
 	   	    pull16(ppReadPackedMsg, &value->PDUSize, end) &&
 			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.BWPSize, end) &&
 			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.BWPStart, end) &&
@@ -5825,7 +5829,7 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.StartSymbolIndex, end) &&
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.DurationSymbols, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.FreqDomainResource, 6, 1, end) &&
+			pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.FreqDomainResource, 6, 6, end) &&
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CceRegMappingType, end) &&
 
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.RegBundleSize, end) &&
@@ -5835,17 +5839,17 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, end) &&
 			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.RNTI, MAX_DCI_CORESET, 1, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingId, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.RNTI, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray16(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingId, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
 
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.CceIndex, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.AggregationLevel, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.ScramblingRNTI, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.CceIndex, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.AggregationLevel, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.beta_PDCCH_1_0, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
 
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, 1, end) &&
-			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, 1, end) &&
-			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, end)
+			pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.powerControlOffsetSS, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray16(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits, MAX_DCI_CORESET, value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu.PayloadSizeBits[0], end)
 	);
 		  
 }
@@ -5856,7 +5860,7 @@ nfapi_nr_ul_dci_request_t *pNfapiMsg = (nfapi_nr_ul_dci_request_t*)msg;
 	
 	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) &&
 		     pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
-			 pull16(ppReadPackedMsg, &pNfapiMsg->numPdus, end)
+			 pull8(ppReadPackedMsg, &pNfapiMsg->numPdus, end)
         ))
 		return 0;
 	for(int i=0; i< pNfapiMsg->numPdus; i++)
@@ -5904,7 +5908,7 @@ static uint8_t unpack_tx_data_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t 
 		switch(pNfapiMsg->TLVs[i].tag){
 			case 0:
 			{
-				if(!pullarray32(ppReadPackedMsg, &pNfapiMsg->TLVs[i].value.direct, 16384, pNfapiMsg->TLVs[i].length, end))
+				if(!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.direct, 16384, pNfapiMsg->TLVs[i].length, end))
 					return 0;
 				break;
 
@@ -5912,7 +5916,7 @@ static uint8_t unpack_tx_data_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t 
 
 			case 1:
 			{
-				if(!pullarray32(ppReadPackedMsg, &pNfapiMsg->TLVs[i].value.ptr, pNfapiMsg->TLVs[i].length , pNfapiMsg->TLVs[i].length, end))
+				if(!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.ptr, pNfapiMsg->TLVs[i].length , pNfapiMsg->TLVs[i].length, end))
 					return 0;
 				break;
 

@@ -430,49 +430,6 @@ void pnf_handle_pnf_stop_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 	}
 }
 
-void pnf_nr_handle_pnf_stop_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
-{
-	// ensure it's valid
-	if (pRecvMsg == NULL || pnf == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
-	}
-	else
-	{
-		nfapi_nr_pnf_stop_request_t req;
-		
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "PNF_STOP.request Received\n");
-	
-		// unpack the message
-		if (nfapi_nr_p5_message_unpack(pRecvMsg, recvMsgLen, &req, sizeof(req), &pnf->_public.codec_config) >= 0)
-		{
-			if(pnf->_public.state == NFAPI_PNF_RUNNING)
-			{
-				if(pnf->_public.pnf_stop_req)
-				{
-					(pnf->_public.pnf_stop_req)(&(pnf->_public), &req);
-				}
-			}
-			else
-			{
-				nfapi_pnf_stop_response_t resp;
-				memset(&resp, 0, sizeof(resp));
-				resp.header.message_id = NFAPI_PNF_STOP_RESPONSE;
-				resp.error_code = NFAPI_MSG_INVALID_STATE;
-				nfapi_pnf_pnf_stop_resp(&(pnf->_public), &resp);
-			}
-		}
-		else
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Unpack message failed, ignoring\n", __FUNCTION__);
-		}
-	
-
-		if(req.vendor_extension)
-			pnf->_public.codec_config.deallocate(req.vendor_extension);
-	}
-}
-
 void pnf_handle_param_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 {
 	// ensure it's valid
@@ -1611,8 +1568,8 @@ void pnf_nr_handle_p5_message(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 			pnf_nr_handle_pnf_start_request(pnf, pRecvMsg, recvMsgLen);
 			break;
 
-		case NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_REQUEST:
-			pnf_nr_handle_pnf_stop_request(pnf, pRecvMsg, recvMsgLen);
+		case NFAPI_PNF_STOP_REQUEST:
+			pnf_handle_pnf_stop_request(pnf, pRecvMsg, recvMsgLen);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_PARAM_REQUEST:

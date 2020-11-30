@@ -253,7 +253,7 @@ typedef struct nfapi_vnf_config
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
-	int (*param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_response_scf_t* resp);
+	int (*param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_response_t* resp);
 	int (*nr_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_response_scf_t* resp);
 	
 	/*! A callback for the CONFIG.response
@@ -477,7 +477,7 @@ void nfapi_vnf_config_destory(nfapi_vnf_config_t* config);
  * 
  * This function will not return untill nfapi_vnf_stop is called
  */
-//int nfapi_nr_vnf_start(nfapi_vnf_config_t* config);
+int nfapi_nr_vnf_start(nfapi_vnf_config_t* config);
 
 int nfapi_vnf_start(nfapi_vnf_config_t* config);
 

@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <errno.h>
 
 #include "vnf.h"
@@ -417,7 +418,7 @@ void vnf_nr_handle_param_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_conf
 		if (nfapi_nr_p5_message_unpack(pRecvMsg, recvMsgLen, &msg, sizeof(msg), &config->codec_config) >= 0)
 		{
 			
-			if (msg.error_code == NFAPI_MSG_OK)
+			if (msg.error_code == NFAPI_NR_PARAM_MSG_OK)
 			{
 				nfapi_vnf_phy_info_t* phy_info = nfapi_vnf_phy_info_list_find(config, msg.header.phy_id);
 		
@@ -485,7 +486,7 @@ void vnf_nr_handle_config_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_con
 		{
 			// check the error code:
 
-			if (msg.error_code == NFAPI_MSG_OK){
+			if (msg.error_code == NFAPI_NR_CONFIG_MSG_OK){
 				if(config->nr_config_resp)
 				{
 					(config->nr_config_resp)(config, p5_idx, &msg);
@@ -588,7 +589,7 @@ void vnf_nr_handle_start_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_conf
 		// unpack the message
 		if (nfapi_nr_p5_message_unpack(pRecvMsg, recvMsgLen, &msg, sizeof(msg), &config->codec_config) >= 0)
 		{	// check the error code
-			if (msg.error_code == NFAPI_MSG_OK){
+			if (msg.error_code == NFAPI_NR_START_MSG_OK){
 				if(config->nr_start_resp)
 				{
 					(config->nr_start_resp)(config, p5_idx, &msg);

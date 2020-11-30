@@ -234,11 +234,15 @@ if(nfapi_mode != 2)
     }
   }
 
-// if(nfapi_mode != 0 && number_ul_tti_pdu>0)
-// {
-//   oai_nfapi_ul_tti_req(UL_tti_req);
-// } Test only DL 
+if(nfapi_mode != 0 && number_ul_tti_pdu>0)
+{
+  oai_nfapi_ul_tti_req(UL_tti_req);
+}
  
+ if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
+  {
+    oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
+  }//Only DL
  
   if (nfapi_mode != 0) 
   { if(Sched_INFO->DL_req->dl_tti_request_body.nPDUs>0)
@@ -254,8 +258,4 @@ if(nfapi_mode != 2)
    
   }
    
-//   if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
-//   {
-//     oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
-//   }//Only DL
  }

@@ -26,6 +26,22 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {}
 void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
 			       int frame, int slot,
 			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu){}
+void nr_fill_ulsch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pusch_pdu_t *ulsch_pdu){}
+void nr_fill_pucch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pucch_pdu_t *pucch_pdu){}
+void nr_fill_prach(PHY_VARS_gNB *gNB,
+                   int SFN,
+                   int Slot,
+                   nfapi_nr_prach_pdu_t *prach_pdu){}
+void nr_fill_prach_ru(RU_t *ru,
+                      int SFN,
+                      int Slot,
+                      nfapi_nr_prach_pdu_t *prach_pdu){}
                    
 void  nr_phy_config_request(NR_PHY_Config_t *gNB){}
 

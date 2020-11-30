@@ -242,9 +242,6 @@ void oai_create_gnb(void) {
   PHY_VARS_gNB *gNB = RC.gNB[0];
   RC.nb_nr_CC = (int *)malloc(sizeof(int)); // TODO: find a better function to place this in
   
-  printf("[VNF] RC.gNB[0][0]. Mod_id:%d CC_id:%d nb_CC[0]:%d abstraction_flag:%d single_thread_flag:%d if_inst:%p\n", gNB->Mod_id, gNB->CC_id, RC.nb_nr_CC, gNB->abstraction_flag,
-  gNB->single_thread_flag, gNB->if_inst);
-
   gNB->Mod_id  = bodge_counter;
   gNB->CC_id   = bodge_counter;
   gNB->abstraction_flag   = 0;
