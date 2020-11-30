@@ -117,7 +117,7 @@
 #define L1_PRACH_DTX_EMTC3_THRESHOLD_IDX                   21
 #define L1_PUCCH1_DTX_EMTC3_THRESHOLD_IDX                  22
 #define L1_PUCCH1AB_DTX_EMTC3_THRESHOLD_IDX                23
-#define L1_PUSCH_SIGNAL_THRESHOLD_IDX                      28
+#define L1_PUSCH_SIGNAL_THRESHOLD_IDX                      24
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #endif

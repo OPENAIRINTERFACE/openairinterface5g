@@ -871,7 +871,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                   rx_lengths[i],
                   DCH_PAYLOAD_SIZE_MAX,
                   sdu_lenP);
-            UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+            UE_info->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
             break;
           }
           LOG_D(MAC, "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
@@ -892,7 +892,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                     frameP,
                     rx_lengths[i],
                     sdu_lenP,rx_lcids[i]);
-                UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+                UE_info->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
                 break;
               }
             }else{
@@ -937,21 +937,7 @@ rx_sdu(const module_id_t enb_mod_idP,
               UE_scheduling_control->uplane_inactivity_timer = 0;
               /* Reset RRC inactivity timer after uplane activity */
                 ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
-              } else {
-                LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
-                      enb_mod_idP,
-                      CC_idP,
-                      current_rnti);
-              }
-            } else {  /* rx_length[i] Max size */
-              UE_info->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
-              LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
-                    enb_mod_idP,
-                    CC_idP,
-                    frameP,
-                    rx_lcids[i],
-                    UE_id);
-            }
+              
           } else {  // end if (UE_id != -1)
             LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
                   enb_mod_idP,

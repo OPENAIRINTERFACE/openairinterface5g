@@ -469,6 +469,7 @@ typedef struct {
 #define BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
 
 
+
 /*! \brief Downlink SCH PDU Structure */
 typedef struct {
   uint8_t payload[8][SCH_PAYLOAD_SIZE_MAX];
@@ -1056,6 +1057,7 @@ typedef struct {
   /// DRX UL retransmission timer, one per UL HARQ process
   /* Not implemented yet */
   /* End of C-DRX related timers */
+  uint32_t rlc_out_of_resources_cnt;
 } UE_sched_ctrl_t;
 
 /*! \brief eNB template for the Random access information */
