@@ -87,6 +87,8 @@ class RANManagement():
 		self.eNBstatuses = [-1, -1, -1]
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
+		self.flexranCtrlDeployed = False
+		self.flexranCtrlIpAddress = ''
 		self.testCase_id = ''
 		self.epcPcapFile = ''
 		self.htmlObj = None
@@ -581,8 +583,9 @@ class RANManagement():
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU2_IP_ADDR/' + self.eNB2IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_FR1_CTL_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
-		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+		if (self.flexranCtrlInstalled and self.flexranCtrlStarted) or self.flexranCtrlDeployed:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
+			mySSH.command('sed -i -e \'s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		else:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False

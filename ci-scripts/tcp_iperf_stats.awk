@@ -21,7 +21,11 @@
 BEGIN{max=0;min=10000}
 {
     if ($0 ~/Mbits/) {
-        split($0,a,"MBytes")
+        if ($0 ~/KBytes/) {
+            split($0,a,"KBytes")
+        } else {
+            split($0,a,"MBytes")
+        }
         split(a[2],b)
         if (b[1]>max) {
             max=b[1]

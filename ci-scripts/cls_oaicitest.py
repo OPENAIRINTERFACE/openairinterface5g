@@ -225,7 +225,16 @@ class OaiCiTest():
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
 			RAN.flexranCtrlInstalled=True
+			RAN.flexranCtrlIpAddress=EPC.IPAddress
 			logging.debug('Flexran Controller is installed')
+		else:
+			# Maybe flexran-rtc is deployed into a container
+			SSH.command('docker inspect --format="FLEX_RTC_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-flexran-rtc', '\$', 5)
+			result = re.search('FLEX_RTC_IP_ADDR = (?P<flex_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				RAN.flexranCtrlDeployed=True
+				RAN.flexranCtrlIpAddress=result.group('flex_ip_addr')
+				logging.debug('Flexran Controller is deployed: ' + RAN.flexranCtrlIpAddress)
 		SSH.close()
 
 	def InitializeFlexranCtrl(self, HTML,RAN,EPC):
@@ -1267,12 +1276,12 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
+		if (RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted) or RAN.flexranCtrlDeployed:
 			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('cd /opt/flexran_rtc', '\$', 5)
-			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
-			SSH.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
+			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
+			SSH.command('curl http://' + RAN.flexranCtrlIpAddress + ':9999/stats | jq \'.\' > check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
+			SSH.command('cat check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
 			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', SSH.getBefore())
 			passStatus = True
 			if result is not None:

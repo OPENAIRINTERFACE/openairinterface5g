@@ -221,7 +221,7 @@ class EPCManagement():
 			mySSH = SSH.SSHConnection() 
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
 			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-hss /bin/bash -c "ps aux | grep oai_hss"', '\$', 5)
+				mySSH.command('docker top ' + self.containerPrefix + '-oai-hss', '\$', 5)
 			else:
 				mySSH.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
 			if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
@@ -246,7 +246,7 @@ class EPCManagement():
 			mySSH = SSH.SSHConnection() 
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
 			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-mme /bin/bash -c "ps aux | grep oai_mme"', '\$', 5)
+				mySSH.command('docker top ' + self.containerPrefix + '-oai-mme', '\$', 5)
 			else:
 				mySSH.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
 			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
@@ -273,11 +273,11 @@ class EPCManagement():
 			mySSH = SSH.SSHConnection() 
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
 			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "ps aux | grep oai_spgwc"', '\$', 5)
-				result = re.search('oai_spgwc -o -c ', mySSH.getBefore())
+				mySSH.command('docker top ' + self.containerPrefix + '-oai-spgwc', '\$', 5)
+				result = re.search('oai_spgwc -', mySSH.getBefore())
 				if result is not None:
-					mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "ps aux | grep oai_spgwu"', '\$', 5)
-					result = re.search('oai_spgwu -o -c ', mySSH.getBefore())
+					mySSH.command('docker top ' + self.containerPrefix + '-oai-spgwu-tiny', '\$', 5)
+					result = re.search('oai_spgwu -', mySSH.getBefore())
 			elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 				mySSH.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
 				result = re.search('spgwu -c ', mySSH.getBefore())
@@ -439,7 +439,7 @@ class EPCManagement():
 		# - docker-compose config | grep container_name
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/docker-compose.yml', self.SourceCodePath + '/scripts')
-		mySSH.command('wget --quiet https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/src/hss_rel14/db/oai_db.cql', '\$', 5)
+		mySSH.command('wget --quiet --tries=3 --retry-connrefused https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/src/hss_rel14/db/oai_db.cql', '\$', 30)
 		mySSH.command('docker-compose down', '\$', 60)
 		mySSH.command('docker-compose up -d db_init', '\$', 60)
 
@@ -531,13 +531,25 @@ class EPCManagement():
 		mySSH.command('docker cp prod-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap spgwu_' + self.testCase_id + '.pcap', '\$', 60)
 		# Remove all
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
+		listOfContainers = 'prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny'
+		nbContainers = 5
+		# Checking for additional services
+		mySSH.command('docker-compose config', '\$', 5)
+		configResponse = mySSH.getBefore()
+		if configResponse.count('flexran_rtc') == 1:
+			listOfContainers += ' prod-flexran-rtc'
+			nbContainers += 1
+		if configResponse.count('trf_gen') == 1:
+			listOfContainers += ' prod-trf-gen'
+			nbContainers += 1
+
 		mySSH.command('docker-compose down', '\$', 60)
-		mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny', '\$', 10)
+		mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + listOfContainers, '\$', 10)
 		noMoreContainerNb = mySSH.getBefore().count('No such object')
 		mySSH.command('docker inspect --format=\'{{.Name}}\' prod-oai-public-net prod-oai-private-net', '\$', 10)
 		noMoreNetworkNb = mySSH.getBefore().count('No such object')
 		mySSH.close()
-		if noMoreContainerNb == 5 and noMoreNetworkNb == 2:
+		if noMoreContainerNb == nbContainers and noMoreNetworkNb == 2:
 			logging.debug('Undeployment OK')
 			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 		else:
