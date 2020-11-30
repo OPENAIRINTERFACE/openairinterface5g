@@ -40,7 +40,7 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
-  char buf[size+2];
+  char buf[size+3];
 
   sn = entity->common.next_nr_pdcp_tx_sn;
 
