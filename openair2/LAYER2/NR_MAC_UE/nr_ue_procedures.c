@@ -994,7 +994,10 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
   LOG_D(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_D(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+
+  //storing ssb index in the mac structure
+  mac->mib_ssb = ssb_index;
 
   subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
   //const uint32_t scs_index = 0;
@@ -1793,9 +1796,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   if (is_nr_UL_slot(scc, slotP)) {
 
-    // WIP Need to get the proper selected ssb_idx
-    //     Initial beam selection functionality is not available yet
-    uint8_t selected_gnb_ssb_idx = 0;
+    uint8_t selected_gnb_ssb_idx = mac->mib_ssb;
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index
     is_nr_prach_slot = get_nr_prach_info_from_ssb_index(selected_gnb_ssb_idx,
