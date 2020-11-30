@@ -539,16 +539,6 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   if (!is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot))
     return;
 
-  /* get first, largest unallocated region */
-  uint16_t *vrb_map_UL =
-      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
-  uint16_t rbStart = 0;
-  while (vrb_map_UL[rbStart]) rbStart++;
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  uint16_t rbSize = 1;
-  while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize])
-    rbSize++;
-
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
@@ -599,8 +589,6 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   const int mcs = 9;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
   sched_pusch->mcs = mcs;
-  sched_pusch->rbStart = rbStart;
-  sched_pusch->rbSize = rbSize;
 
   /* Calculate TBS from MCS */
   sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
@@ -610,15 +598,35 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
     sched_pusch->R >>= 1;
     sched_pusch->Qm <<= 1;
   }
-  sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
-                                        sched_pusch->R,
-                                        sched_pusch->rbSize,
-                                        ps->nrOfSymbols,
-                                        ps->N_PRB_DMRS * ps->num_dmrs_symb,
-                                        0, // nb_rb_oh
-                                        0,
-                                        1 /* NrOfLayers */)
-                         >> 3;
+
+  /* get first, largest unallocated region */
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  while (rbStart < bwpSize && vrb_map_UL[rbStart]) rbStart++;
+  uint16_t rbSize = 4;
+
+  sched_pusch->rbStart = rbStart;
+  const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
+
+  do {
+    rbSize++;
+    sched_pusch->rbSize = rbSize;
+    sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
+                                          sched_pusch->R,
+                                          sched_pusch->rbSize,
+                                          ps->nrOfSymbols,
+                                          ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                          0, // nb_rb_oh
+                                          0,
+                                          1 /* NrOfLayers */)
+                           >> 3;
+  } while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize] &&
+           sched_pusch->tb_size < B);
+  LOG_D(MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+        rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
