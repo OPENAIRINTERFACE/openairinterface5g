@@ -118,29 +118,29 @@ typedef enum subcarrier_spacing_e {
 } subcarrier_spacing_t;
 
 typedef enum channel_bandwidth_e {
-    bw_5MHz   = 0x1,
-    bw_10MHz  = 0x2,
-    bw_20MHz  = 0x4,
-    bw_40MHz  = 0x8,
-    bw_80MHz  = 0x16,
-    bw_100MHz = 0x32
+  bw_5MHz   = 0x1,
+  bw_10MHz  = 0x2,
+  bw_20MHz  = 0x4,
+  bw_40MHz  = 0x8,
+  bw_80MHz  = 0x16,
+  bw_100MHz = 0x32
 } channel_bandwidth_t;
 
 typedef enum frequency_range_e {
-    FR1 = 0,
-    FR2
+  FR1 = 0,
+  FR2
 } frequency_range_t;
 
 typedef enum nr_ssb_and_cset_mux_pattern_type_e {
-    NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
-    NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
-    NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
 } nr_ssb_and_cset_mux_pattern_type_t;
 
 typedef enum {
-    SFN_C_MOD_2_EQ_0,
-    SFN_C_MOD_2_EQ_1,
-    SFN_C_IMPOSSIBLE
+  SFN_C_MOD_2_EQ_0,
+  SFN_C_MOD_2_EQ_1,
+  SFN_C_IMPOSSIBLE
 } SFN_C_TYPE;
 
 typedef struct Type0_PDCCH_CSS_config_s {

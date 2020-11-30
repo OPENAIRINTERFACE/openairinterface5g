@@ -2748,9 +2748,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       dlsch_config_pdu->start_symbol=S;
       dlsch_config_pdu->number_symbols=L;
 
-      LOG_I(MAC,"SLIV = %i\n", startSymbolAndLength);
-      LOG_I(MAC,"start_symbol = %i\n", dlsch_config_pdu->start_symbol);
-      LOG_I(MAC,"number_symbols = %i\n", dlsch_config_pdu->number_symbols);
+      LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
+      LOG_D(MAC,"start_symbol = %i\n", dlsch_config_pdu->start_symbol);
+      LOG_D(MAC,"number_symbols = %i\n", dlsch_config_pdu->number_symbols);
 
     }
     else {// Default configuration from tables
@@ -3398,15 +3398,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 							 mac->scc->dmrs_TypeA_Position,
 							 dlsch_config_pdu_1_0->number_symbols);
     dlsch_config_pdu_1_0->dmrsConfigType = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
-
-    LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", dlsch_config_pdu_1_0->dlDmrsSymbPos);
-
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     if (dlsch_config_pdu_1_0->number_symbols == 2)
       dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
     else
       dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 2;
-
     /* VRB_TO_PRB_MAPPING */
     dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* MCS */
@@ -3808,7 +3804,6 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
     case NR_RNTI_RA:
     case NR_RNTI_TC:
     case NR_RNTI_P:
-    //case NR_RNTI_SI:
       if (mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) {
         uint8_t bwp_id = 1;
         uint8_t coreset_id = 0; // assuming controlResourceSetId is 0 for controlResourceSetZero

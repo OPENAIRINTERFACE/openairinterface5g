@@ -162,14 +162,13 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     case NR_RNTI_SP_CSI:
     break;
     case NR_RNTI_SI:
-
       // we use DL BWP dedicated
       sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
 
       // for SPS=14 8 MSBs in positions 13 down to 6
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
 
-      rel15->rnti = 0xFFFF; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
+      rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
       rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
       rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
@@ -177,9 +176,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       for (int i = 0; i < rel15->num_dci_options; i++) {
         rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, 0);
       }
-
     break;
-
     case NR_RNTI_SFI:
     break;
     case NR_RNTI_INT:
@@ -245,7 +242,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
         }
         *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = 0;
         LOG_D(MAC, "[DCI_CONFIG] Configure SearchSpace#0 of the initial BWP\n");
-        LOG_W(MAC, "[DCI_CONFIG] This should not be available yet...");
       }
       if (ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0){
         // check available SS IDs

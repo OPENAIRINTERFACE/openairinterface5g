@@ -283,9 +283,9 @@ void schedule_control_sib1(module_id_t module_id,
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  LOG_I(MAC,"SLIV = %i\n", startSymbolAndLength);
-  LOG_I(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
-  LOG_I(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
+  LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
+  LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
+  LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
 
   int rbSize = 0;
   uint32_t TBS = 0;
@@ -298,7 +298,7 @@ void schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
 
-  LOG_I(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
+  LOG_D(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
 
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->rbSize; rb++) {
@@ -457,8 +457,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     uint8_t sib1_payload[100];
     uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, 1, sib1_payload);
     LOG_D(MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
-    LOG_I(MAC,"SIB1: \n");
-    for (int i=0;i<sib1_sdu_length;i++) LOG_I(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
+    LOG_D(MAC,"SIB1: \n");
+    for (int i=0;i<sib1_sdu_length;i++) LOG_D(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
 
     // Configure sched_ctrlCommon for SIB1
     schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, numDmrsCdmGrpsNoData, sib1_sdu_length);

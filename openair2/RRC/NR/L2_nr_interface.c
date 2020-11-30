@@ -241,10 +241,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     if ((Srb_id & RAB_OFFSET) == MIBCH) {
 
         // Currently we are getting the pdcch_ConfigSIB1 from the configuration file.
-        // 3GPP is not clear about the static/semi-static/dynamic behaviour of the pdcch_ConfigSIB1 value
-        // on the gNB side.
         // Uncomment this function for a dynamic pdcch_ConfigSIB1.
-        // TODO: Update this static value
         //channel_bandwidth_t min_channel_bw = bw_10MHz; // Must be obtained based on TS 38.101-1 Table 5.3.5-1
         //generate_pdcch_ConfigSIB1(carrier->pdcch_ConfigSIB1,
         //                          *carrier->servingcellconfigcommon->ssbSubcarrierSpacing,

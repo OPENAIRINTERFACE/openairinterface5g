@@ -120,7 +120,7 @@ extern "C"
     {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)}, \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
     {"do-ra",                CONFIG_HLP_DORA,         PARAMFLAG_BOOL, iptr:&DO_RA,                        defintval:0,           TYPE_INT,    0},                     \
-    {"sa",                   CONFIG_HLP_SA,         PARAMFLAG_BOOL, iptr:&SA,                             defintval:0,           TYPE_INT,    0},                     \
+    {"sa",                   CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&SA,                             defintval:0,           TYPE_INT,    0},                     \
     {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
     {"clock-source",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
     {"time-source",                CONFIG_HLP_TME,          0,              uptr:&TIMING_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \

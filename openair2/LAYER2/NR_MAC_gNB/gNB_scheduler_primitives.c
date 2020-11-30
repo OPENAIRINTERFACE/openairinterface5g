@@ -1198,7 +1198,6 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
 	break;
 	
       case NR_RNTI_SI:
-
          pos=1;
 
         // Freq domain assignment 0-16 bit

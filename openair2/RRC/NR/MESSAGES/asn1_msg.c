@@ -39,7 +39,6 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
-#include <PHY/defs_nr_common.h>
 
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
@@ -69,6 +68,7 @@
 #include "NR_SDAP-Config.h"
 #include "NR_RRCReconfigurationComplete.h"
 #include "NR_RRCReconfigurationComplete-IEs.h"
+#include "PHY/defs_nr_common.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"

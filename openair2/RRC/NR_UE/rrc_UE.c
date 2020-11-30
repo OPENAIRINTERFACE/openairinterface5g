@@ -1489,26 +1489,17 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
                                                   buffer_len);
 
   if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-
-    printf("NR_BCCH_DL_SCH decode error\n");
-    for (int i=0; i<buffer_len; i++){
-      printf("%02x ",bufferP[i]);
-    }
-    printf("\n");
+    LOG_D(RRC,"NR_BCCH_DL_SCH decode error\n");
     SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
     return -1;
-
   }
   else {
-
     NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
-
     if(sib1 != NULL){
       SEQUENCE_free(&asn_DEF_NR_BCCH_BCH_Message, (void *)sib1, 1 );
     }
     sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
     xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
-
   }
 
   return 0;

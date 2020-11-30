@@ -290,7 +290,6 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     
     // Non interleaved VRB to PRB mapping
     uint16_t start_sc = frame_parms->first_carrier_offset + (rel15->rbStart+rel15->BWPStart)*NR_NB_SC_PER_RB;
-
     if (start_sc >= frame_parms->ofdm_symbol_size)
       start_sc -= frame_parms->ofdm_symbol_size;
     

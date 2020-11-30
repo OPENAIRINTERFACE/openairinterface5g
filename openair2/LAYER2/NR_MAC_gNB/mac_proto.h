@@ -89,6 +89,7 @@ void schedule_control_sib1(module_id_t module_id,
                            int num_total_bytes);
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+
 /* \brief default preprocessor */
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,

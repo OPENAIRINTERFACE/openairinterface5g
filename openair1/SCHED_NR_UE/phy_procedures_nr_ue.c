@@ -32,7 +32,7 @@
 
 #define _GNU_SOURCE
 
-#include <nr/nr_common.h>
+#include "nr/nr_common.h"
 #include "assertions.h"
 #include "defs.h"
 #include "PHY/defs_nr_UE.h"
@@ -812,7 +812,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     dlsch0->current_harq_pid) < 0)
                       return -1;
         }
-	else AssertFatal(1==0,"not RA_PDSCH, SI_PDSCH or PDSCH\n");
+	else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
       }
       if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]);
 #if UE_TIMING_TRACE
@@ -1828,13 +1828,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
 #endif
-    
-    //printf("phy procedure pdcch start measurement l =%d\n",l);
-    //nr_ue_measurement_procedures(l,ue,proc,gNB_id,(nr_slot_rx),mode);
-      
 
-    dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
-
+      dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
     }
   }
 

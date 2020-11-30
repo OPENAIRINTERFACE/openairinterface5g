@@ -884,7 +884,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
         n_rnti = rel15->rnti;
 
         if (crc == n_rnti) {
-          LOG_D(PHY,"Decoded crc %x matches rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format_options[k]);
+          LOG_I(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
+                proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);
           dci_ind->SFN = proc->frame_rx;
           dci_ind->slot = proc->nr_slot_rx;
           dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
@@ -893,20 +894,13 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
           dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
           memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
           dci_ind->number_of_dcis++;
-
-          LOG_I(PHY, "\n>> Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n\n",
-                 n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);
-
           break;    // If DCI is found, no need to check for remaining DCI lengths
         } else {
-          LOG_I(PHY,"Decoded crc %x does not match rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format_options[k]);
+          LOG_D(PHY,"(%i.%i) Decoded crc %x does not match rnti %x for DCI format %d\n", proc->frame_rx, proc->nr_slot_rx, crc, n_rnti, rel15->dci_format_options[k]);
         }
       }
     }
   }
-
-  LOG_I(PHY,"nr_dci_decoding_procedure: frame = %i, slot = %i\n", proc->frame_rx, proc->nr_slot_rx);
-
   return(dci_ind->number_of_dcis);
 }
 
