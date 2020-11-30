@@ -230,7 +230,6 @@ void schedule_control_sib1(module_id_t module_id,
                            int time_domain_allocation,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
-                           uint8_t numDmrsCdmGrpsNoData,
                            int num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
@@ -252,7 +251,6 @@ void schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->time_domain_allocation = time_domain_allocation;
   gNB_mac->sched_ctrlCommon->mcsTableIdx = mcsTableIdx;
   gNB_mac->sched_ctrlCommon->mcs = mcs;
-  gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = numDmrsCdmGrpsNoData;
   gNB_mac->sched_ctrlCommon->num_total_bytes = num_total_bytes;
 
   uint8_t nr_of_candidates;
@@ -274,18 +272,20 @@ void schedule_control_sib1(module_id_t module_id,
   const uint16_t bwpSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
   int rbStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
 
-  // Calculate number of PRB_DMRS
-  uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
-
   // Calculate number of symbols
   struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
-  LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
-  LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
+  if (nrOfSymbols == 2) {
+    gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 1;
+  } else {
+    gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 2;
+  }
+
+  // Calculate number of PRB_DMRS
+  uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
 
   int rbSize = 0;
   uint32_t TBS = 0;
@@ -298,6 +298,9 @@ void schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
 
+  LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
+  LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
+  LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
   LOG_D(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
 
   // Mark the corresponding RBs as used
@@ -372,7 +375,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
-  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols);
+  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->StartSymbolIndex+pdsch_pdu_rel15->NrOfSymbols);
 
   LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
@@ -440,12 +443,11 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
   LOG_D(MAC,"Schedule_nr_sib1: frameP = %i, slotP = %i\n", frameP, slotP);
 
-  // static values
+  // TODO: Get these values from RRC
   const int CC_id = 0;
-  int time_domain_allocation = 0; // FIXME: For OAI-UE (0-3), For 3rd party implementation and 3GPP compliant (4)
+  int time_domain_allocation = 4; // For OAI-UE (0-4), For 3rd party implementation and 3GPP compliant (4)
   uint8_t mcsTableIdx = 0;
-  uint8_t mcs = 8;
-  uint8_t numDmrsCdmGrpsNoData = 2;
+  uint8_t mcs = 6;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
 
@@ -454,14 +456,14 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     LOG_D(MAC,"> SIB1 transmission\n");
 
     // Get SIB1
-    uint8_t sib1_payload[100];
+    uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];
     uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, 1, sib1_payload);
     LOG_D(MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
     LOG_D(MAC,"SIB1: \n");
     for (int i=0;i<sib1_sdu_length;i++) LOG_D(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
 
     // Configure sched_ctrlCommon for SIB1
-    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, numDmrsCdmGrpsNoData, sib1_sdu_length);
+    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, sib1_sdu_length);
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;

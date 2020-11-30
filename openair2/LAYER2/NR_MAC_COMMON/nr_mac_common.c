@@ -3101,9 +3101,6 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
         type0_PDCCH_CSS_config->num_symbols = table_38213_13_4_c3[index_4msb];
         type0_PDCCH_CSS_config->rb_offset   = table_38213_13_4_c4[index_4msb];
 
-        LOG_I(MAC,"<<<<<<<<<index_4msb %d num_rbs %d num_symb %d rb_offset %d\n",
-              index_4msb,type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
-
       }else if(min_channel_bw & bw_40MHz){
         AssertFatal(index_4msb < 10, "38.213 Table 13-6 4 MSB out of range\n");
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3175,6 +3172,9 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     default:
       break;
   }
+
+  LOG_D(MAC,"Coreset0: index_4msb=%d, num_rbs=%d, num_symb=%d, rb_offset=%d\n",
+        index_4msb,type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
 
   AssertFatal(type0_PDCCH_CSS_config->num_rbs != -1, "Type0 PDCCH coreset num_rbs undefined");
   AssertFatal(type0_PDCCH_CSS_config->num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");

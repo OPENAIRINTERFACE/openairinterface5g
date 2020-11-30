@@ -454,12 +454,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
 
   xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1_message->message.choice.c1->choice.systemInformationBlockType1);
 
-  if(carrier->SIB1 == NULL) carrier->SIB1=(uint8_t *) malloc16(MAX_NR_SIB_LENGTH/8);
+  if(carrier->SIB1 == NULL) carrier->SIB1=(uint8_t *) malloc16(NR_MAX_SIB_LENGTH/8);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
                                    NULL,
                                    (void *)sib1_message,
                                    carrier->SIB1,
-                                   MAX_NR_SIB_LENGTH/8);
+                                   NR_MAX_SIB_LENGTH/8);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 

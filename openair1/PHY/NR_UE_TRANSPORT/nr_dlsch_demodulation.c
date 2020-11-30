@@ -1598,8 +1598,10 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   int16_t y = (len)>>x;
   //printf("len = %d = %d * 2^(%d)\n",len,y,x);
 
-  // FIXME: y cannot be zero
-  if(y == 0) y = 1;
+  if(y == 0) {
+    LOG_W(PHY,"Cannot divide by zero: in function %s of file %s \n", __func__, __FILE__);
+    return;
+  }
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
