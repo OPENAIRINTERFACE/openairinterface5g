@@ -2521,7 +2521,7 @@ int decode_BCCH_DLSCH_Message(
             memcpy( (void *)sib1,
                     (void *)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
                     sizeof(LTE_SystemInformationBlockType1_t) );
-            LOG_D( RRC, "[UE %"PRIu8"] Decoding First SIB1\n", ctxt_pP->module_id );
+            LOG_D( RRC, "[UE %"PRIu8"] Decoding First SIB1\n", ctxt_pP->module_id);
             decode_SIB1( ctxt_pP, eNB_index, rsrq, rsrp );
           }
         }
