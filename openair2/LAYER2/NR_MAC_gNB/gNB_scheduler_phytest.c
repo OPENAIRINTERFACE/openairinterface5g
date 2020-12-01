@@ -258,8 +258,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              sub_frame_t slot,
                              int num_slots_per_tdd)
 {
-  if (slot != 1)
-    return; /* only schedule in slot 1 for now */
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
   const int CC_id = 0;
