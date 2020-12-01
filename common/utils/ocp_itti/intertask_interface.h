@@ -350,6 +350,7 @@ typedef enum {
   FOREACH_TASK(TASK_ENUM)
 } task_id_t;
 
+extern uint16_t ue_idx_standalone;
 
 typedef task_id_t thread_id_t;
 
