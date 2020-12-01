@@ -810,7 +810,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   else
     nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
 
-  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
+  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
   
   uint32_t i,j;
 
@@ -1397,7 +1397,6 @@ void nr_dlsch_decoding_process(void *arg)
   int harq_pid              = proc->harq_pid;
   llr8_flag1                = proc->llr8_flag;
   int frame                 = proc->frame_rx;
-  int slot                  = proc->nr_slot_rx;
   r               	    = proc->num_seg;
 
   NR_UE_DLSCH_t *dlsch      = phy_vars_ue->dlsch[proc->thread_id][eNB_id][0];

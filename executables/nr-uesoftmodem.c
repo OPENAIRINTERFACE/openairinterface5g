@@ -98,9 +98,7 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 tpool_t *Tpool;
-#ifdef UE_DLSCH_PARALLELISATION
-  tpool_t *Tpool_dl;
-#endif
+tpool_t *Tpool_dl;
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
@@ -208,6 +206,14 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
+uint64_t get_nrUE_optmask(void) {
+  return nrUE_params.optmask;
+}
+
+uint64_t set_nrUE_optmask(uint64_t bitmask) {
+  nrUE_params.optmask = nrUE_params.optmask | bitmask;
+  return nrUE_params.optmask;
+}
 
 nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
@@ -243,6 +249,8 @@ static void get_options(void) {
   if ((cmdline_uemodeparams[CMDLINE_DUMPMEMORY_IDX].paramflags & PARAMFLAG_PARAMSET) != 0)
     mode = rx_dump_frame;
 
+  if (nr_dlsch_parallel) 
+  	set_nrUE_optmask(NRUE_DLSCH_PARALLEL_BIT);
   if (vcdflag > 0)
     ouput_vcd = 1;
 
@@ -475,6 +483,7 @@ int main( int argc, char **argv ) {
   get_options (); //Command-line options specific for NRUE
 
   get_common_options(SOFTMODEM_5GUE_BIT );
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();
 #endif
@@ -553,8 +562,9 @@ int main( int argc, char **argv ) {
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
     PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
   }
-
+  
   init_NR_UE_threads(1);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program
