@@ -311,7 +311,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_UE_info_t *UE_info = &gNB->UE_info;
-  NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
