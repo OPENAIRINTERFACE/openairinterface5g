@@ -2017,6 +2017,7 @@ void *ru_thread_synch(void *arg) {
 
 #if defined(PRE_SCD_THREAD)
 void *pre_scd_thread( void *param ) {
+  void rlc_tick(int, int);
   static int              eNB_pre_scd_status;
   protocol_ctxt_t         ctxt;
   int                     frame;
@@ -2051,6 +2052,7 @@ void *pre_scd_thread( void *param ) {
     AssertFatal((ret=pthread_mutex_unlock(&ru->proc.mutex_pre_scd))==0,"mutex_unlock returns %d\n",ret);
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, Mod_id, ENB_FLAG_YES,
                                    NOT_A_RNTI, frame, subframe,Mod_id);
+    rlc_tick(frame, subframe);
     pdcp_run(&ctxt);
 
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
