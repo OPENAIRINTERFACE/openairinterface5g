@@ -275,10 +275,6 @@ NR_SearchSpace_t *get_searchspace(
     NR_BWP_Downlink_t *bwp,
     NR_SearchSpace__searchSpaceType_PR target_ss);
 
-void find_aggregation_candidates(uint8_t *aggregation_level,
-                                 uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss);
-
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);

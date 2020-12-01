@@ -1857,32 +1857,6 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 }
 
 
-void find_aggregation_candidates(uint8_t *aggregation_level,
-                                 uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss) {
-
-  if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
-    *aggregation_level = 1;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
-  }
-  if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
-    *aggregation_level = 2;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
-  }
-  if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
-    *aggregation_level = 4;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
-  }
-  if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
-    *aggregation_level = 8;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
-  }
-  if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
-    *aggregation_level = 16;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
-  }
-}
-
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
