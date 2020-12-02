@@ -347,6 +347,31 @@ void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
   lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
 }
 
+void fill_subframe_mask(PHY_VARS_eNB *eNB) {
+
+  AssertFatal(eNB->subframe_mask!=NULL,"Subframe mask is null\n");
+  int32_t **dummy_tx=eNB->common_vars.txdataF;
+  eNB->common_vars.txdataF = eNB->subframe_mask;
+  
+  for (int sf=0;sf<10;sf++) {
+    if (subframe_select(&eNB->frame_parms,sf)==SF_DL) {
+      LTE_DL_eNB_HARQ_t *dlsch_harq=eNB->dlsch[0][0]->harq_processes[0];
+      L1_rxtx_proc_t proc;
+      proc.frame_tx=0;
+      proc.subframe_tx=sf;
+      eNB->dlsch[0][0]->harq_ids[0][sf]=0;
+      eNB->dlsch[0][0]->rnti=0x1234;
+      dlsch_harq->nb_rb=12;
+      dlsch_harq->rb_alloc[0]=0xfff;
+      dlsch_harq->Qm=2;
+      dlsch_harq->Nl=1;
+      dlsch_harq->pdsch_start=1;
+      dlsch_harq->mimo_mode=(eNB->frame_parms.nb_antenna_ports_eNB>1) ? ALAMOUTI : SISO;
+      pdsch_procedures(eNB,&proc,0,eNB->dlsch[0][0]);
+    }
+  }
+  eNB->common_vars.txdataF = dummy_tx;
+}
 
 int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                      unsigned char is_secondary_eNB,
@@ -400,6 +425,9 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   if (NFAPI_MODE!=NFAPI_MODE_VNF) {
     common_vars->rxdata  = (int32_t **)NULL;
     common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t *));
+    if (eNB->use_DTX==0) {
+      eNB->subframe_mask = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t *));
+    }
     common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t *));
     LOG_I(PHY,"[INIT] NB_ANTENNA_PORTS_ENB:%d fp->nb_antenna_ports_eNB:%d\n", NB_ANTENNA_PORTS_ENB, fp->nb_antenna_ports_eNB);
 
@@ -409,6 +437,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         LOG_I(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
               i,common_vars->txdataF[i],
               fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
+	if (i<fp->nb_antenna_ports_eNB) eNB->subframe_mask[i] = malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
       }
     }
 

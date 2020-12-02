@@ -521,7 +521,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   // clear the transmit data array for the current subframe
   for (aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
-    memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * (fp->symbols_per_tti)], 0, fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
+    if (eNB->use_DTX==0) 
+      memcpy(&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * (fp->symbols_per_tti)],
+	     &eNB->subframe_mask[aa][subframe*fp->ofdm_symbol_size*fp->symbols_per_tti],
+	     fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
+    else memset(&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * (fp->symbols_per_tti)], 0, fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
   }
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {

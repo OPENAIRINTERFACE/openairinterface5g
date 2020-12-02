@@ -517,6 +517,9 @@ typedef struct PHY_VARS_eNB_s {
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
 
+  /// indicator that eNB signal generation uses DTX (i.e. signal is cleared in each subframe
+  int use_DTX;
+  int32_t **subframe_mask;
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];
 
