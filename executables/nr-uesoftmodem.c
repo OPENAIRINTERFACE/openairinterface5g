@@ -459,7 +459,7 @@ void init_tpools(void) {
   if( IS_DLSCH_PARALLEL) {
     tpool_t pool_dl;
     Tpool_dl = &pool_dl;
-    char params_dl[]="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1";
+    char params_dl[]="-1,-1,-1,-1";
     initTpool(params_dl, Tpool_dl, false);
   }
 }
