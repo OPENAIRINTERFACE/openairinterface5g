@@ -245,6 +245,7 @@ void nr_process_mac_pdu(
                 }
 
 
+
             break;
 
         default:
@@ -351,7 +352,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
     for (int i = 0; i < sdu_lenP ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
@@ -359,7 +359,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 	  printf("%02x ",(unsigned char)sduP[i]);
     }
     printf("\n");
-
 #endif
 
     if (sduP != NULL){
@@ -420,3 +419,4 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 
 }
+

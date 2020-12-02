@@ -100,7 +100,6 @@ void nr_get_prach_resources(module_id_t mod_id,
   //////////* UE Random Access Resource Selection *//////////
   ///////////////////////////////////////////////////////////
 
-
   // todo: 
   // - switch initialisation cases
   // -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)

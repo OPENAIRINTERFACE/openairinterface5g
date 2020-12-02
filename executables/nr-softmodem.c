@@ -820,6 +820,7 @@ void init_pdcp(void) {
 int main( int argc, char **argv )
 {
   int ru_id, CC_id = 0;
+
   start_background_system();
 
   ///static configuration for NR at the moment
@@ -892,7 +893,7 @@ if(!IS_SOFTMODEM_NOS1)
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
   } else {
     printf("No ITTI, Initializing L1\n");
-    RCconfig_L1();
+    RCconfig_NR_L1();
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */

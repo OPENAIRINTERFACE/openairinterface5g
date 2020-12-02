@@ -236,6 +236,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       }
       ul_config->number_pdus = 0;
     }
+
   }
   return 0;
 }

@@ -435,6 +435,7 @@ typedef struct {
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
+
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,

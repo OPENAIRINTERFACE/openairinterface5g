@@ -389,6 +389,13 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 */
 }
+
+//Adding nr_schedule_handler
+void install_nr_schedule_handlers(NR_IF_Module_t *if_inst)
+{
+  if_inst->NR_PHY_config_req = nr_phy_config_request;
+  if_inst->NR_Schedule_response = nr_schedule_response;
+}
 /*
 void install_schedule_handlers(IF_Module_t *if_inst)
 {
@@ -467,7 +474,10 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   uint64_t ul_bw_khz = (12*gNB_config->carrier_config.ul_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
   fp->ul_CarrierFreq = ((ul_bw_khz>>1) + gNB_config->carrier_config.uplink_frequency.value)*1000 ;
 
-  fp->nr_band = *RC.nrmac[Mod_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  //fp->nr_band = *RC.nrmac[Mod_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  lte_frame_type_t frame_type = 0; // FDD
+  
+  get_band(fp->dl_CarrierFreq,&fp->nr_band,&dlul_offset,&frame_type); //RC.nrmac[Mod_id] cannot be accessed in NFAPI
 
   get_delta_duplex(fp->nr_band, gNB_config->ssb_config.scs_common.value, &dlul_offset);
   dlul_offset *= 1000;
@@ -506,6 +516,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
+
 
 void init_nr_transport(PHY_VARS_gNB *gNB) {
   int i;

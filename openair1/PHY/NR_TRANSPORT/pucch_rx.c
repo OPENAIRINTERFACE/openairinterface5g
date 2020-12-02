@@ -1657,5 +1657,10 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_csi_part2>0) {
     uci_pdu->pduBitmap|=8;
   }
+  
+  if (pucch_pdu->bit_len_csi_part2>0) {
+    uci_pdu->pduBitmap|=8;
+  }
+
 }
     

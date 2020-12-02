@@ -138,6 +138,9 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int frame,int slot,
                            int do_meas) {
+  // struct timespec time;
+  //  clock_gettime(CLOCK_MONOTONIC, &time);
+  // LOG_I(PHY,"\nphy_procedures_gNB_TX frame tx %d slot tx %d time %d.%d\n",frame,slot,time.tv_sec,time.tv_nsec);
   int aa;
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;

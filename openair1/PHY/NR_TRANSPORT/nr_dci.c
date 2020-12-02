@@ -93,11 +93,12 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   } else
     cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
 
-  for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
-    /*The coreset is initialised
-     * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
-     * or the rb_offset for other coresets
-     * in time: by its first slot and its first symbol*/
+  volatile int temp = pdcch_pdu_rel15->numDlDci;
+  for (volatile int d=0;d < temp;d++) {
+    //The coreset is initialised
+     //in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
+     //or the rb_offset for other coresets
+     //in time: by its first slot and its first symbol
 
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
@@ -179,7 +180,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     uint8_t reg_idx0 = pdcch_pdu_rel15->dci_pdu.CceIndex[d]*NR_NB_REG_PER_CCE;
     uint8_t nb_regs = pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]*NR_NB_REG_PER_CCE;
 
-    /*Mapping the encoded DCI along with the DMRS */
+    //Mapping the encoded DCI along with the DMRS 
     for (int reg_idx=reg_idx0; reg_idx<(nb_regs+reg_idx0); reg_idx++) {
       k = cset_start_sc + (12*reg_idx/cset_nsymb);
       
@@ -248,4 +249,7 @@ void nr_generate_dci_top(PHY_VARS_gNB *gNB,
   else
     nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
+
+
+
 

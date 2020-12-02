@@ -1,7 +1,5 @@
-# vim swp
 *.swp
 
-# log and exec file
 cmake_targets/log/
 cmake_targets/*/build/
 cmake_targets/ran_build/
@@ -12,9 +10,3 @@ targets/bin/
 
 # vscode
 .vscode
-
-# Tags for vim/global
-GPATH
-GRTAGS
-GTAGS
-tags

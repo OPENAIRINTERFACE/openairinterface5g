@@ -155,6 +155,7 @@ init_SI(
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
   if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE) {
+
     LOG_I(RRC, "Configuring MIB FeMBMS (N_RB_DL %d)\n",
           (int)configuration->N_RB_DL[CC_id]);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
@@ -1061,6 +1062,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
             memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
           }
         }
+	
 
         /*
               for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
@@ -7913,6 +7915,7 @@ rrc_eNB_decode_dcch(
             }
 
             ue_context_p->ue_context.reestablishment_xid = -1;
+
           } else {
             dedicated_DRB = 1;
             ue_context_p->ue_context.Status = RRC_RECONFIGURED;
