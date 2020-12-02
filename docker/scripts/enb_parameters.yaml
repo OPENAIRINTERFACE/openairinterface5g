@@ -103,25 +103,25 @@
     outputfilename: "rru.fdd.conf"
     config:
     - key: local_if_name
-      env: "@@"
+      env: "@RRU_IF4P5_IF_NAME@"
     - key: remote_address
-      env: "@@"
+      env: "@RCC_REMOTE_IP_ADDRESS@"
     - key: local_address
-      env: "@@"
+      env: "@RRU_LOCAL_IP_ADDRESS@"
     - key: bands
-      env: "@@"
+      env: "@UTRA_BAND_ID@"
       
   - filePrefix: rru.tdd
     outputfilename: "rru.tdd.conf"
     config:
     - key: local_if_name
-      env: "@@"
+      env: "@RRU_IF4P5_IF_NAME@"
     - key: remote_address
-      env: "@@"
+      env: "@RCC_REMOTE_IP_ADDRESS@"
     - key: local_address
-      env: "@@"
+      env: "@RRU_LOCAL_IP_ADDRESS@"
     - key: bands
-      env: "@@"
+      env: "@UTRA_BAND_ID@"
       
   - filePrefix: enb.band7.tm1.25PRB.usrpb210
     outputfilename: "enb.fdd.conf"
@@ -150,15 +150,21 @@
     - key: ipv4
       env: "@MME_S1C_IP_ADDRESS@"
     - key: ENB_INTERFACE_NAME_FOR_S1_MME
-      env: "@S1C_IF_NAME@"
+      env: "@ENB_S1C_IF_NAME@"
     - key: ENB_IPV4_ADDRESS_FOR_S1_MME
-      env: "@F1_CU_IP_ADDRESS@"
+      env: "@ENB_S1C_IP_ADDRESS@"
     - key: ENB_INTERFACE_NAME_FOR_S1U
-      env: "@S1U_IF_NAME@"
+      env: "@ENB_S1U_IF_NAME@"
     - key: ENB_IPV4_ADDRESS_FOR_S1U
-      env: "@F1_CU_IP_ADDRESS@"
+      env: "@ENB_S1U_IP_ADDRESS@"
     - key: ENB_IPV4_ADDRESS_FOR_X2C
-      env: "@F1_CU_IP_ADDRESS@"
+      env: "@ENB_X2_IP_ADDRESS@"
+    - key: FLEXRAN_ENABLED
+      env: "@FLEXRAN_ENABLED@"
+    - key: FLEXRAN_INTERFACE_NAME
+      env: "@FLEXRAN_INTERFACE_NAME@"
+    - key: FLEXRAN_IPV4_ADDRESS
+      env: "@FLEXRAN_IPV4_ADDRESS@"
       
   - filePrefix: enb.band40.tm1.25PRB.FairScheduler.usrpb210
     outputfilename: "enb.tdd.conf"
