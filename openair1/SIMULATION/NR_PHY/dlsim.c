@@ -146,6 +146,10 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);

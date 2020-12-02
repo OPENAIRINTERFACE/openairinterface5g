@@ -3208,14 +3208,13 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
 
   // type0-pdcch search space
-  float big_o;
-  float big_m;
-  uint32_t temp;
-  type0_PDCCH_CSS_config->sfn_c=SFN_C_IMPOSSIBLE;   //  only valid for mux=1
-  type0_PDCCH_CSS_config->n_c=UINT_MAX;
-  type0_PDCCH_CSS_config->number_of_search_space_per_slot=UINT_MAX;
-  type0_PDCCH_CSS_config->first_symbol_index=UINT_MAX;
-  type0_PDCCH_CSS_config->search_space_duration=0;  //  element of search space
+  float big_o = 0.0f;
+  float big_m = 0.0f;
+  type0_PDCCH_CSS_config->sfn_c = SFN_C_IMPOSSIBLE;   //  only valid for mux=1
+  type0_PDCCH_CSS_config->n_c = UINT_MAX;
+  type0_PDCCH_CSS_config->number_of_search_space_per_slot = UINT_MAX;
+  type0_PDCCH_CSS_config->first_symbol_index = UINT_MAX;
+  type0_PDCCH_CSS_config->search_space_duration = 0;  //  element of search space
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -3224,7 +3223,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
-    temp = (uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    uint32_t temp = (uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
     type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
     if((temp/num_slot_per_frame) & 0x1){
       type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
