@@ -959,10 +959,6 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		// apply the shift to the incoming sfn_sf
 		if(pnf_p7->slot_shift != 0) // see in vnf_build_send_dl_node_sync
 		{
-			// int32_t sfn_slot_dec = NFAPI_SFNSLOT2DEC(sfn,slot);
-			uint32_t slot_dec = NFAPI_SFNSLOT2DEC(sfn,slot);
-
-			// int32_t shifted_sfn_slot = sfn_slot_dec += pnf_p7->sfn_slot_shift;
 			uint16_t shifted_slot = slot + pnf_p7->slot_shift; 
 
 			// adjust for wrap-around
@@ -1041,10 +1037,8 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		{
 			if(pnf_p7->_public.dl_tti_req_fn)
 			{
-				struct timespec curr;
-	clock_gettime(CLOCK_MONOTONIC,&curr);
-	printf("\npnf slot ind time %d.%d\n",curr.tv_sec,curr.tv_nsec);
-	printf("\nIn pnf_phy_dl_tti_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d slot buffer sfn %d %d \n",tx_slot_buffer->dl_tti_req->SFN,tx_slot_buffer->dl_tti_req->Slot,pnf_p7->sfn,pnf_p7->slot);
+	
+	//printf("\nIn pnf_phy_dl_tti_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d slot buffer sfn %d %d \n",tx_slot_buffer->dl_tti_req->SFN,tx_slot_buffer->dl_tti_req->Slot,pnf_p7->sfn,pnf_p7->slot);
 
 				(pnf_p7->_public.dl_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->dl_tti_req);
 			}
@@ -1115,12 +1109,6 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			deallocate_nfapi_ul_dci_request(tx_slot_buffer->ul_dci_req, pnf_p7);
 			tx_slot_buffer->ul_dci_req = 0;
 		}
-    #if 0
-		if(tx_slot_buffer->ue_release_req != 0){
-			deallocate_nfapi_ue_release_request(tx_slot_buffer->ue_release_req, pnf_p7);
-			tx_slot_buffer->ue_release_req = 0;
-		}
-	#endif	
 		else
 		{
 				// If we ever need to "send" a dummy ul_config this won't work!!!
@@ -1151,25 +1139,6 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 					(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_tti_req);
 				}
 			}
-        #if 0
-			if(slot_buffer->lbt_dl_config_req != 0)
-			{
-				if(pnf_p7->_public.lbt_dl_config_req)
-					(pnf_p7->_public.lbt_dl_config_req)(&(pnf_p7->_public), slot_buffer->lbt_dl_config_req);
-
-				//deallocate_nfapi_lbt_dl_config_request(subframe_buffer->lbt_dl_config_req, pnf_p7);
-			}
-			else
-			{
-				// send dummy
-				if(pnf_p7->_public.lbt_dl_config_req && pnf_p7->_public.dummy_subframe.lbt_dl_config_req)
-				{
-					pnf_p7->_public.dummy_subframe.lbt_dl_config_req->sfn_sf = sfn;
-					(pnf_p7->_public.lbt_dl_config_req)(&(pnf_p7->_public), pnf_p7->_public.dummy_subframe.lbt_dl_config_req);
-				} //Change later
-
-			}
-		#endif
 			//if(subframe_buffer->dl_config_req != 0)
 			//deallocate_nfapi_dl_config_request(subframe_buffer->dl_config_req, pnf_p7);
 			//if(subframe_buffer->tx_req != 0)

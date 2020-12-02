@@ -169,7 +169,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   printf("%s", tst_separator);
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
 
   printf("\n  => Test : No harq feedback on going\n");
 
@@ -180,7 +180,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
   }
 
   /* set a tx slot with no ack */
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
   harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
 
@@ -267,7 +267,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
   common_pucch_configuration(ue, gNB_id, TST_PUCCH_COMMON_CONFIG_INDEX_OK);
 
   /* set a tx slot with no ack */
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
   harq_status->ack = DL_ACK;
 
@@ -290,9 +290,9 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
 
   /* set a second ack on a different downlink harq process */
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_SECOND;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_SECOND;
 
-  harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_SECOND].harq_ack;
+  harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_SECOND].harq_ack;
 
   harq_status->n_CCE = 2;
   harq_status->N_CCE = 4;
@@ -316,7 +316,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
     v_return = -1;
   }
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack.ack = DL_NACK;
+  ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack.ack = DL_NACK;
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: two negative downlink ACKnowledgments \n");
 
@@ -563,9 +563,9 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 
   printf("%s", tst_separator);
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
 
-  harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
+  harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
   harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
@@ -582,9 +582,9 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
   for (int i = 0; i < TST_NB_STEP_SINGLE_TRANSPORT_BLOCK; i++) {
 
     /* set a tx slot with no ack */
-    ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = dl_harq_pid[i];
+    ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = dl_harq_pid[i];
 
-    NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
+    NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
     harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
     harq_status->send_harq_status = 1;
@@ -616,9 +616,9 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
   for (i = 1; i < TST_NB_STEP_SINGLE_TRANSPORT_BLOCK; i = i+2) {
 
     /* set a tx slot with no ack */
-    ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = dl_harq_pid[i];
+    ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = dl_harq_pid[i];
 
-    NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
+    NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
     harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
     harq_status->send_harq_status = 1;
@@ -677,12 +677,12 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
     for (int code_word = 0; code_word < 2; code_word++) {
 
-      ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->Number_MCS_HARQ_DL_DCI = 2;
+      ue->dlsch[proc->thread_id][gNB_id][code_word]->Number_MCS_HARQ_DL_DCI = 2;
 
       /* set a tx slot with no ack */
-      ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->current_harq_pid = dl_harq_pid[i];
+      ue->dlsch[proc->thread_id][gNB_id][code_word]->current_harq_pid = dl_harq_pid[i];
 
-      NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
+      NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
 
       harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
       harq_status->send_harq_status = 1;
@@ -697,7 +697,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
         reset_harq = TRUE;
       }
 
-      harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
+      harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
       harq_status->pucch_resource_indicator = pucch_resource_indicator[i][j];
 
@@ -720,12 +720,12 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
     for (int code_word = 0; code_word < 2; code_word++) {
 
-      ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->Number_MCS_HARQ_DL_DCI = 2;
+      ue->dlsch[proc->thread_id][gNB_id][code_word]->Number_MCS_HARQ_DL_DCI = 2;
 
       /* set a tx slot with no ack */
-      ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->current_harq_pid = dl_harq_pid[i];
+      ue->dlsch[proc->thread_id][gNB_id][code_word]->current_harq_pid = dl_harq_pid[i];
 
-      NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
+      NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
 
       harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
       harq_status->send_harq_status = 1;
@@ -734,7 +734,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       for (int j = 0 ; j < 2; j++) {
 
-        harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
+        harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
         harq_status->pucch_resource_indicator = pucch_resource_indicator[i][j];
       }
@@ -754,12 +754,12 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
     for (int code_word = 0; code_word < 2; code_word++) {
 
-      ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->Number_MCS_HARQ_DL_DCI = 2;
+      ue->dlsch[proc->thread_id][gNB_id][code_word]->Number_MCS_HARQ_DL_DCI = 2;
 
       /* set a tx slot with no ack */
-      ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->current_harq_pid = dl_harq_pid[i];
+      ue->dlsch[proc->thread_id][gNB_id][code_word]->current_harq_pid = dl_harq_pid[i];
 
-      NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
+      NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][code_word]->harq_processes[dl_harq_pid[i]].harq_ack;
 
       harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
       harq_status->send_harq_status = 1;
@@ -768,7 +768,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       for (int j = 0 ; j < 2; j++) {
 
-        harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
+        harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
 
         harq_status->pucch_resource_indicator = pucch_resource_indicator[i][j];
       }
@@ -935,7 +935,7 @@ int test_sr_alone_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *p
   }
 
   /* restore single transport block */
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->Number_MCS_HARQ_DL_DCI = 1;
+  ue->dlsch[proc->thread_id][gNB_id][0]->Number_MCS_HARQ_DL_DCI = 1;
 
   return (v_return);
 }
@@ -976,9 +976,9 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   NR_UE_HARQ_STATUS_t *harq_status;
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
 
-  harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
+  harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
   harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
@@ -1015,9 +1015,9 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   /* set a second harq ack context */
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_SECOND;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_SECOND;
 
-  harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_SECOND].harq_ack;
+  harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_SECOND].harq_ack;
 
   harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
@@ -1073,7 +1073,7 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   printf("%s", tst_separator);
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = NR_MAX_DLSCH_HARQ_PROCESSES;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = NR_MAX_DLSCH_HARQ_PROCESSES;
 
   set_csi_nr( 4, 0x0E );
 
@@ -1090,9 +1090,9 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   NR_UE_HARQ_STATUS_t *harq_status;
 
-  ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
+  ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid = TST_DL_HARQ_PID_FIRST;
 
-  harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
+  harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[TST_DL_HARQ_PID_FIRST].harq_ack;
 
   harq_status->slot_for_feedback_ack  = proc->nr_slot_tx;
   harq_status->send_harq_status = 1;
@@ -1170,11 +1170,9 @@ int test_pucch(PHY_VARS_NR_UE *ue)
 
   proc->frame_rx   = 0;
   proc->nr_slot_rx = 0;
-  proc->nr_tti_rx  = 0;
 
   proc->frame_tx   = proc->frame_rx + (proc->nr_slot_rx + NR_UE_CAPABILITY_SLOT_RX_TO_TX) / ue->frame_parms.slots_per_frame;
   proc->nr_slot_tx = (proc->nr_slot_rx + NR_UE_CAPABILITY_SLOT_RX_TO_TX) % ue->frame_parms.slots_per_frame;
-  proc->nr_tti_tx  = proc->nr_slot_tx % ue->frame_parms.slots_per_subframe;
 
   init_pucch_power_configuration( ue, gNB_id);
 

@@ -183,6 +183,9 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       int *period, int *offset);
+
 void nr_csi_meas_reporting(int Mod_idP,
                            int UE_id,
                            frame_t frameP,

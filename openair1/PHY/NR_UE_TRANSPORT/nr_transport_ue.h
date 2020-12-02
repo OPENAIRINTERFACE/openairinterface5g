@@ -141,6 +141,8 @@ typedef struct {
   uint8_t decode_phich;
   // Encoder BG
   uint8_t BG;
+  // LDPC lifting size
+  uint32_t Z;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
@@ -316,6 +318,19 @@ typedef struct {
   uint8_t codeword;
   /// HARQ-ACKs
   NR_UE_HARQ_STATUS_t harq_ack;
+  /// PTRS Frequency Density
+  uint8_t PTRSFreqDensity;
+  /// PTRS Time Density
+  uint8_t PTRSTimeDensity;
+  uint8_t PTRSPortIndex ;
+  uint8_t nEpreRatioOfPDSCHToPTRS;
+  uint8_t PTRSReOffset;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
+  // PTRS symbol index, to be updated every PTRS symbol within a slot.
+  uint8_t ptrs_symbol_index;
+  /// PDU BITMAP 
+  uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;
 
 typedef struct {

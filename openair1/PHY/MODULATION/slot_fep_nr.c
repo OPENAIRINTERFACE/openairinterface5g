@@ -37,6 +37,7 @@
 #endif*/
 
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
+                UE_nr_rxtx_proc_t *proc,
                 unsigned char symbol,
                 unsigned char Ns,
                 int sample_offset,
@@ -125,7 +126,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   }
 
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
+    memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
     rx_offset = sample_offset + slot_offset - SOFFSET;
     // Align with 256 bit
@@ -157,14 +158,14 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
                (void *) &common_vars->rxdata[aa][rx_offset % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft(dftsize,(int16_t *)tmp_dft_in,
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 #if UE_TIMING_TRACE
           start_meas(&ue->rx_dft_stats);
 #endif
 
         dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
 #endif
@@ -185,11 +186,11 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
                (void *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft(dftsize,(int16_t *)tmp_dft_in,
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 
         dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE
       stop_meas(&ue->rx_dft_stats);
@@ -206,9 +207,9 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
     int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
     ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
-    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      (int16_t*)&rot2,
-		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
     
@@ -222,6 +223,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 }
 
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
+                          UE_nr_rxtx_proc_t *proc,
                           unsigned char symbol,
                           unsigned char Ns,
                           int sample_offset,
@@ -310,7 +312,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
   }
 
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
+    memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
     rx_offset = sample_offset + slot_offset - SOFFSET;
     // Align with 256 bit
@@ -342,7 +344,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                (void *) &common_vars->rxdata[aa][rx_offset],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft(dftsize,(int16_t *)tmp_dft_in,
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 #if UE_TIMING_TRACE
           start_meas(&ue->rx_dft_stats);
@@ -350,7 +352,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 
 
         dft(dftsize,(int16_t *) &common_vars->rxdata[aa][rx_offset],
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
 #endif
@@ -371,10 +373,10 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                (void *) &common_vars->rxdata[aa][rx_offset],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft(dftsize,(int16_t *)tmp_dft_in,
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
         dft(dftsize,(int16_t *) &common_vars->rxdata[aa][rx_offset],
-            (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+            (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE
       stop_meas(&ue->rx_dft_stats);
@@ -393,9 +395,9 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 	   symbol+symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
 #endif
 
-    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      (int16_t*)&rot2,
-		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
     

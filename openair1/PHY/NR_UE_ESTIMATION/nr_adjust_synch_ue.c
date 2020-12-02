@@ -103,7 +103,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
           if (ue->mac_enabled==1) {
               LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
               //mac_resynch();
-              //dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
+              //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
               ue->UE_mode[0] = PRACH;
               ue->prach_resources[gNB_id]->sync_frame = frame;
               ue->prach_resources[gNB_id]->init_msg1 = 0;
@@ -122,9 +122,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
 
       #ifdef DEBUG_PHY
-      LOG_D(PHY,"AbsSubframe %d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
+      LOG_D(PHY,"AbsSubframe %d: diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
               subframe,
-              ue->current_thread_id[subframe],
               diff,
               ue->rx_offset,
               clear,

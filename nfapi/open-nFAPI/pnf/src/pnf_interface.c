@@ -327,7 +327,7 @@ int nfapi_nr_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_respons
 
 	if(phy)
 	{
-		if(resp->error_code == NFAPI_MSG_OK)
+		if(resp->error_code == NFAPI_NR_CONFIG_MSG_OK)
 		{
 			phy->state = NFAPI_PNF_PHY_CONFIGURED;
 		}
@@ -382,7 +382,7 @@ int nfapi_nr_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_
 	nfapi_pnf_phy_config_t* phy = nfapi_pnf_phy_config_find(config, resp->header.phy_id);
 	if(phy)
 	{
-		if(resp->error_code == NFAPI_MSG_OK)
+		if(resp->error_code == NFAPI_NR_START_MSG_OK)
 		{
 			phy->state = NFAPI_PNF_PHY_RUNNING;
 		}
