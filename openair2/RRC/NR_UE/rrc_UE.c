@@ -458,7 +458,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }
 
-    if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
+    if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->sa == 1) {
       // read in files for RRCReconfiguration and RBconfig
       FILE *fd;
       char filename[1024];

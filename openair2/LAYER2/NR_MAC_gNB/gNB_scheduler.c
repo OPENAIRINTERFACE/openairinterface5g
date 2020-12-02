@@ -437,10 +437,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   schedule_nr_mib(module_idP, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedules SIB1
-  if ( (get_softmodem_params()->phy_test == 0) & (get_softmodem_params()->sa == 1) )
+  if ( get_softmodem_params()->sa == 1 )
     schedule_nr_sib1(module_idP, frame, slot);
-  else if ( (get_softmodem_params()->phy_test == 1) & (get_softmodem_params()->sa == 1) )
-    LOG_W(MAC,"Remove --phy-test to transmit SIB1 in standalone mode\n");
+
 
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0)
