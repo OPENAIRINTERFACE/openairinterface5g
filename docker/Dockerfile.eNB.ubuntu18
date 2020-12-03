@@ -38,7 +38,7 @@ RUN /bin/sh oaienv && \
 
 RUN apt-get install -y python3-pip && \
     pip3 install --ignore-installed pyyaml && \
-    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/parameters.yaml
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
 
 # debug
 #RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15

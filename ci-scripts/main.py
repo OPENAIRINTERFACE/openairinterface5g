@@ -41,6 +41,7 @@ import constants as CONST
 import cls_oaicitest		#main class for OAI CI test framework
 import cls_physim           #class PhySim for physical simulators build and test
 import cls_cots_ue			#class CotsUe for Airplane mode control
+import cls_containerize     #class Containerize for all container-based operations on RAN/UE objects
 
 
 import sshconnection 
@@ -100,25 +101,32 @@ def AssignParams(params_dict):
 def GetParametersFromXML(action):
 	if action == 'Build_eNB' or action == 'Build_Image':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
-		RAN.imageKind=test.findtext('kind')
+		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
 		if (forced_workspace_cleanup is None):
 			RAN.Build_eNB_forced_workspace_cleanup=False
+			CONTAINERS.forcedWorkspaceCleanup=False
 		else:
 			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
 				RAN.Build_eNB_forced_workspace_cleanup=True
+				CONTAINERS.forcedWorkspaceCleanup=True
 			else:
-				RAN.Build_eNB_forced_workspace_cleanup=False
+				RAN.Build_eNB_forced_workspace_cleanup=True
+				CONTAINERS.forcedWorkspaceCleanup=False
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
+			CONTAINERS.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
+			CONTAINERS.eNB_instance=int(eNB_instance)
 		eNB_serverId=test.findtext('eNB_serverId')
 		if (eNB_serverId is None):
 			RAN.eNB_serverId[RAN.eNB_instance]='0'
+			CONTAINERS.eNB_serverId[RAN.eNB_instance]='0'
 		else:
 			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
+			CONTAINERS.eNB_serverId[CONTAINERS.eNB_instance]=eNB_serverId
 		xmlBgBuildField = test.findtext('backgroundBuild')
 		if (xmlBgBuildField is None):
 			RAN.backgroundBuild=False
@@ -130,7 +138,6 @@ def GetParametersFromXML(action):
 
 	elif action == 'WaitEndBuild_eNB':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
-		RAN.imageKind=test.findtext('kind')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
@@ -354,10 +361,13 @@ SSH = sshconnection.SSHConnection()
 EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
+CONTAINERS = cls_containerize.Containerize()
 
 EPC.htmlObj=HTML
 RAN.htmlObj=HTML
 RAN.epcObj=EPC
+CONTAINERS.htmlObj=HTML
+CONTAINERS.epcObj=EPC
 
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
@@ -369,7 +379,7 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 #-----------------------------------------------------------
 
 import args_parse
-py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,HELP)
+py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP)
 
 
 
@@ -643,7 +653,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
 				elif action == 'Build_Image':
-					RAN.BuildImage()
+					CONTAINERS.BuildImage()
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished()
 				elif action == 'Initialize_eNB':
