@@ -860,7 +860,6 @@ int main(int argc, char **argv)
 
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
-        UE_info->UE_sched_ctrl[0].current_harq_pid = harq_pid;
         gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
