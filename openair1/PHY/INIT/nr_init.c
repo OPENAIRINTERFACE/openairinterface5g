@@ -43,6 +43,8 @@
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "nfapi_nr_interface.h"
 
+#include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+
 /*
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
 extern openair0_config_t openair0_cfg[MAX_CARDS];
@@ -193,6 +195,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       AssertFatal(csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
     }
   }
+
+  /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
+  generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
+  
 
   nr_init_csi_rs(gNB, 0); // TODO scramblingID currently hardcoded to 0, to be taken from higher layer parameter scramblingID when implemented
 
@@ -388,6 +394,11 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 /*
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 */
+
+
+  free_gnb_lowpapr_sequences();
+
+
 }
 /*
 void install_schedule_handlers(IF_Module_t *if_inst)
