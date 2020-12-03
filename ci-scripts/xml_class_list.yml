@@ -1,7 +1,6 @@
   - Build_PhySim
   - Run_PhySim
   - Build_eNB
-  - Build_Image
   - WaitEndBuild_eNB
   - Initialize_eNB
   - Terminate_eNB
@@ -35,3 +34,6 @@
   - Ping_CatM_module
   - IdleSleep
   - Perform_X2_Handover
+  - Build_Image
+  - Deploy_Object
+  - Undeploy_Object

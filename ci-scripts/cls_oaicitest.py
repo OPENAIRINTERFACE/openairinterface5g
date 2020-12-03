@@ -216,7 +216,7 @@ class OaiCiTest():
 			HTML.CreateHtmlTabFooter(False)
 			self.ConditionalExit()
 
-	def CheckFlexranCtrlInstallation(self,RAN,EPC):
+	def CheckFlexranCtrlInstallation(self,RAN,EPC,CONTAINERS):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			return
 		SSH = sshconnection.SSHConnection()
@@ -234,6 +234,8 @@ class OaiCiTest():
 			if result is not None:
 				RAN.flexranCtrlDeployed=True
 				RAN.flexranCtrlIpAddress=result.group('flex_ip_addr')
+				CONTAINERS.flexranCtrlDeployed=True
+				CONTAINERS.flexranCtrlIpAddress=result.group('flex_ip_addr')
 				logging.debug('Flexran Controller is deployed: ' + RAN.flexranCtrlIpAddress)
 		SSH.close()
 

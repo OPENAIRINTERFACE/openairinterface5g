@@ -310,6 +310,22 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.yamlPath = string_field
 
+	elif action == 'Deploy_Object' or action == 'Undeploy_Object':
+		eNB_instance=test.findtext('eNB_instance')
+		if (eNB_instance is None):
+			CONTAINERS.eNB_instance=0
+		else:
+			CONTAINERS.eNB_instance=int(eNB_instance)
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			CONTAINERS.eNB_serverId[CONTAINERS.eNB_instance]='0'
+		else:
+			CONTAINERS.eNB_serverId[CONTAINERS.eNB_instance]=eNB_serverId
+		string_field = test.findtext('yaml_path')
+		if (string_field is not None):
+			CONTAINERS.yamlPath[CONTAINERS.eNB_instance] = string_field
+
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -368,6 +384,7 @@ RAN.htmlObj=HTML
 RAN.epcObj=EPC
 CONTAINERS.htmlObj=HTML
 CONTAINERS.epcObj=EPC
+CONTAINERS.ranObj=RAN
 
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
@@ -591,7 +608,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
 	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
-		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC)
+		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC,CONTAINERS)
 		EPC.SetMmeIPAddress()
 
 	#get the list of tests to be done
@@ -652,8 +669,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
-				elif action == 'Build_Image':
-					CONTAINERS.BuildImage()
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished()
 				elif action == 'Initialize_eNB':
@@ -729,6 +744,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if ldpc.exitStatus==1:sys.exit()
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
+				elif action == 'Build_Image':
+					CONTAINERS.BuildImage()
+				elif action == 'Deploy_Object':
+					CONTAINERS.DeployObject()
+				elif action == 'Undeploy_Object':
+					CONTAINERS.UndeployObject()
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if not RAN.prematureExit:

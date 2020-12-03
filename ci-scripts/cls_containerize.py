@@ -75,9 +75,16 @@ class Containerize():
 		self.imageKind = ''
 		self.eNB_instance = 0
 		self.eNB_serverId = ['', '', '']
+		self.yamlPath = ['', '', '']
+		self.eNB_logFile = ['', '', '']
+
 		self.testCase_id = ''
+
+		self.flexranCtrlDeployed = False
+		self.flexranCtrlIpAddress = ''
 		self.htmlObj = None
 		self.epcObj = None
+		self.ranObj = None
 
 #-----------------------------------------------------------
 # Container management functions
@@ -102,7 +109,6 @@ class Containerize():
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
-		logging.debug('lIpAddr = ' + lIpAddr + ' lUserName = ' + lUserName + ' lPassWord = ' + lPassWord + ' lSourcePath = ' + lSourcePath)
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -257,4 +263,167 @@ class Containerize():
 		logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')
 		if self.htmlObj is not None:
 			self.htmlObj.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)		
+
+	def DeployObject(self):
+		if self.eNB_serverId[self.eNB_instance] == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+		# Putting the CPUs in a good state, we do that only on a few servers
+		mySSH.command('hostname', '\$', 5)
+		result = re.search('obelix|asterix',  mySSH.getBefore())
+		if result is not None:
+			mySSH.command('if command -v cpupower &> /dev/null; then echo ' + lPassWord + ' | sudo -S cpupower idle-set -D 0; fi', '\$', 5)
+			time.sleep(5)
+		
+		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
+		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
+		imageTag = 'develop'
+		if (self.ranAllowMerge):
+			imageTag = 'ci-temp'
+		mySSH.command('sed -i -e "s/image: oai-enb:latest/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		if self.epcObj is not None:
+			localMmeIpAddr = self.epcObj.MmeIPAddress
+			mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
+		if self.flexranCtrlDeployed:
+			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED:.*/FLEXRAN_ENABLED: "yes"/\' ci-docker-compose.yml', '\$', 2)
+			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/" ci-docker-compose.yml', '\$', 2)
+		else:
+			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*$/FLEXRAN_ENABLED: \"no\"/" ci-docker-compose.yml', '\$', 2)
+			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/127.0.0.1/" ci-docker-compose.yml', '\$', 2)
+		# Currently support only one
+		mySSH.command('docker-compose --file ci-docker-compose.yml config --services | sed -e "s@^@service=@"', '\$', 2)
+		result = re.search('service=(?P<svc_name>[a-zA-Z0-9\_]+)', mySSH.getBefore())
+		if result is not None:
+			svcName = result.group('svc_name')
+			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 2)
+
+		# Checking Status
+		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
+		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+		unhealthyNb = 0
+		healthyNb = 0
+		startingNb = 0
+		containerName = ''
+		if result is not None:
+			containerName = result.group('container_name')
+			time.sleep(5)
+			cnt = 0
+			while (cnt < 3):
+				mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + containerName, '\$', 5)
+				unhealthyNb = mySSH.getBefore().count('unhealthy')
+				healthyNb = mySSH.getBefore().count('healthy') - unhealthyNb
+				startingNb = mySSH.getBefore().count('starting')
+				if healthyNb == 1:
+					cnt = 10
+				else:
+					time.sleep(10)
+					cnt += 1
+		logging.debug(' -- ' + str(healthyNb) + ' healthy container(s)')
+		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
+		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
+
+		status = False
+		if healthyNb == 1:
+			cnt = 0
+			while (cnt < 20):
+				mySSH.command('docker logs ' + containerName + ' | egrep --text --color=never -i "wait|sync|Starting"', '\$', 30) 
+				result = re.search('got sync|Starting F1AP at CU', mySSH.getBefore())
+				if result is None:
+					time.sleep(6)
+					cnt += 1
+				else:
+					cnt = 100
+					status = True
+					logging.info('\u001B[1m Deploying OAI object Pass\u001B[0m')
+					time.sleep(10)
+		mySSH.close()
+
+		if self.htmlObj is not None:
+			self.testCase_id = self.htmlObj.testCase_id
+		else:
+			self.testCase_id = '000000'
+		self.eNB_logFile[self.eNB_instance] = 'enb_' + self.testCase_id + '.log'
+
+		if self.htmlObj is not None:
+			if status:
+				self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)		
+			else:
+				self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)		
+
+	def UndeployObject(self):
+		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
+		if self.eNB_serverId[self.eNB_instance] == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
+		# Currently support only one
+		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
+		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+		if result is not None:
+			containerName = result.group('container_name')
+			mySSH.command('docker kill --signal INT ' + containerName, '\$', 30)
+			time.sleep(5)
+			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
+			mySSH.command('docker rm -f ' + containerName, '\$', 30)
+
+		# Putting the CPUs back in a idle state, we do that only on a few servers
+		mySSH.command('hostname', '\$', 5)
+		result = re.search('obelix|asterix',  mySSH.getBefore())
+		if result is not None:
+			mySSH.command('if command -v cpupower &> /dev/null; then echo ' + lPassWord + ' | sudo -S cpupower idle-set -E; fi', '\$', 5)
+		mySSH.close()
+
+		# Analyzing log file!
+		if self.ranObj is not None:
+			copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '.')
+			nodeB_prefix = 'e'
+			if (copyin_res == -1):
+				if self.htmlObj is not None:
+					self.htmlObj.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
+					self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+			else:
+				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + self.eNB_logFile[self.eNB_instance])
+				logStatus = self.ranObj.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance])
+				if (logStatus < 0):
+					if self.htmlObj is not None:
+						self.htmlObj.CreateHtmlTestRow(self.ranObj.runtime_stats, 'KO', logStatus)
+				else:
+					if self.htmlObj is not None:
+						self.htmlObj.CreateHtmlTestRow(self.ranObj.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 
