@@ -361,13 +361,15 @@ void fill_subframe_mask(PHY_VARS_eNB *eNB) {
       proc.subframe_tx=sf;
       eNB->dlsch[0][0]->harq_ids[0][sf]=0;
       eNB->dlsch[0][0]->rnti=0x1234;
-      dlsch_harq->nb_rb=12;
-      dlsch_harq->rb_alloc[0]=0xfff;
+      dlsch_harq->nb_rb=48;
+      dlsch_harq->rb_alloc[0]=0xffffffffffff;
       dlsch_harq->Qm=2;
       dlsch_harq->Nl=1;
       dlsch_harq->pdsch_start=1;
       dlsch_harq->mimo_mode=(eNB->frame_parms.nb_antenna_ports_eNB>1) ? ALAMOUTI : SISO;
-      pdsch_procedures(eNB,&proc,0,eNB->dlsch[0][0]);
+      dlsch_harq->dl_power_off = 1;
+      computeRhoB_eNB(4,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,eNB->dlsch[0][0],dlsch_harq->dl_power_off);
+      pdsch_procedures(eNB,&proc,0,eNB->dlsch[0][0],NULL);
     }
   }
   eNB->common_vars.txdataF = dummy_tx;
@@ -422,6 +424,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   eNB->first_run_I0_measurements =
     1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
+  eNB->use_DTX=0;
   if (NFAPI_MODE!=NFAPI_MODE_VNF) {
     common_vars->rxdata  = (int32_t **)NULL;
     common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t *));

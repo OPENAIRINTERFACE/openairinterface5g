@@ -480,6 +480,8 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
                    subframe<<1);
   stop_meas(&eNB->dlsch_scrambling_stats);
   start_meas(&eNB->dlsch_modulation_stats);
+  if (frame==0) LOG_I(PHY,"Generating pdsch for %d.%d starting in symbol %d, Qm %d, nb_rb %d, rbmask %x\n",
+	              frame,subframe,dlsch_harq->pdsch_start,dlsch_harq->Qm,dlsch_harq->nb_rb,dlsch_harq->rb_alloc[0]);
   dlsch_modulation(eNB,
                    eNB->common_vars.txdataF,
                    AMP,
