@@ -621,13 +621,15 @@ void nr_schedule_ulsch(module_id_t module_id,
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
     } else {
       LOG_W(MAC,
-            "%d.%2d UL retransmission RNTI %04x sched %d.%2d round %d\n",
+            "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
             rnti,
             sched_pusch->frame,
             sched_pusch->slot,
-            cur_harq->round);
+            harq_id,
+            cur_harq->round,
+            cur_harq->ndi);
     }
 
     LOG_D(MAC,
