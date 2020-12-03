@@ -43,6 +43,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 //#include "../../SIMU/USER/init_lte.h"
 
 #include "LAYER2/MAC/mac_vars.h"
@@ -97,8 +98,8 @@ pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
-tpool_t *Tpool;
-tpool_t *Tpool_dl;
+
+
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
@@ -218,11 +219,16 @@ uint64_t set_nrUE_optmask(uint64_t bitmask) {
 nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
-
+/* initialie thread pools used for NRUE processing paralleliation */ 
+void init_tpools(uint8_t nun_dlsch_threads) {
+  
+  initTpool("-1,-1", &(nrUE_params.Tpool), false);
+  init_dlsch_tpool(nrUE_params.nr_dlsch_parallel);
+}
 static void get_options(void) {
 
   char *loopfile=NULL;
-  int32_t nr_dlsch_parallel=0;
+
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
   paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
@@ -249,8 +255,6 @@ static void get_options(void) {
   if ((cmdline_uemodeparams[CMDLINE_DUMPMEMORY_IDX].paramflags & PARAMFLAG_PARAMSET) != 0)
     mode = rx_dump_frame;
 
-  if (nr_dlsch_parallel) 
-  	set_nrUE_optmask(NRUE_DLSCH_PARALLEL_BIT);
   if (vcdflag > 0)
     ouput_vcd = 1;
 
@@ -261,6 +265,7 @@ static void get_options(void) {
     printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
+    init_tpools(nrUE_params.nr_dlsch_parallel);
 }
 
 // set PHY vars from command line
@@ -450,19 +455,6 @@ void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
 }
 
-/* initialie thread pools used for NRUE processing paralleliation */ 
-void init_tpools(void) {
-  tpool_t pool;
-  Tpool = &pool;
-  char params[]="-1,-1";
-  initTpool(params, Tpool, false);
-  if( IS_DLSCH_PARALLEL) {
-    tpool_t pool_dl;
-    Tpool_dl = &pool_dl;
-    char params_dl[]="-1,-1,-1,-1";
-    initTpool(params_dl, Tpool_dl, false);
-  }
-}
 
 int main( int argc, char **argv ) {
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
@@ -489,7 +481,7 @@ int main( int argc, char **argv ) {
 #endif
   //randominit (0);
   set_taus_seed (0);
-  init_tpools();
+
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 

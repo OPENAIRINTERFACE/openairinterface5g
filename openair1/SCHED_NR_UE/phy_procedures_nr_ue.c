@@ -918,7 +918,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        NR_UE_DLSCH_t *dlsch0,
        NR_UE_DLSCH_t *dlsch1,
        int *dlsch_errors,
-       runmode_t mode) {
+       runmode_t mode,
+       uint8_t dlsch_parallel) {
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -1049,7 +1050,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #endif
 
-  if( IS_DLSCH_PARALLEL)
+  if( dlsch_parallel)
     {
     ret = nr_dlsch_decoding_mthread(ue,
 			   proc,
@@ -1135,7 +1136,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #endif
 
-  if( IS_DLSCH_PARALLEL)
+  if(dlsch_parallel)
     {
     ret1 = nr_dlsch_decoding_mthread(ue,
                                      proc,
@@ -1711,8 +1712,10 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           runmode_t mode)
-{
+                           runmode_t mode,
+                           uint8_t dlsch_parallel
+                           )
+{                                         
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   int slot_pbch;
@@ -1920,7 +1923,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            ue->dlsch_SI[gNB_id],
                            NULL,
                            &ue->dlsch_SI_errors[gNB_id],
-                           mode);
+                           mode,
+                           dlsch_parallel);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
@@ -1945,7 +1949,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            ue->dlsch_p[gNB_id],
                            NULL,
                            &ue->dlsch_p_errors[gNB_id],
-                           mode);
+                           mode,
+                           dlsch_parallel);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_p[gNB_id]->active = 0;
@@ -1970,7 +1975,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            ue->dlsch_ra[gNB_id],
                            NULL,
                            &ue->dlsch_ra_errors[gNB_id],
-                           mode);
+                           mode,
+                           dlsch_parallel);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_ra[gNB_id]->active = 0;
@@ -1996,7 +2002,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   ue->dlsch[proc->thread_id][gNB_id][1],
 			   &ue->dlsch_errors[gNB_id],
-			   mode);
+			   mode,
+			   dlsch_parallel);
 
 
 #if UE_TIMING_TRACE

@@ -53,17 +53,17 @@
   }
 
   
-#define  CONFIG_HLP_DLSCH_PARA             "enable dlsch processing parallelization"
+#define  CONFIG_HLP_DLSCH_PARA             "number of threads for dlsch processing 0 for no parallelization"
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to gNB and UE                                                            */
 /*   optname                helpstr                 paramflags      XXXptr                                 defXXXval              type         numelt */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_UE {  \
   {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,                 defintval:1,           TYPE_INT,    0}, \
-  {"dlsch-parallel",        CONFIG_HLP_DLSCH_PARA,  PARAMFLAG_BOOL, iptr:(int32_t *)&nr_dlsch_parallel,       defintval:0,           TYPE_INT,    0}, \
+  {"dlsch-parallel",        CONFIG_HLP_DLSCH_PARA,  0,              iptr:(int32_t *)&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,           TYPE_INT,    0}, \
   {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                     defintval:0,           TYPE_UINT,   0}, \
-  {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, i8ptr:&(openair0_cfg[0].threequarter_fs),  defintval:0,          TYPE_INT8,    0}, \
+  {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, i8ptr:&(openair0_cfg[0].threequarter_fs), defintval:0,          TYPE_INT8,    0}, \
   {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                            defintval:0,           TYPE_INT,    0}, \
   {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                            defintval:0,           TYPE_INT,    0}, \
   {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,           TYPE_INT,    0}, \
@@ -72,12 +72,11 @@
 
 
 
-#define NRUE_DLSCH_PARALLEL_BIT            (1<<0)
-
-#define IS_DLSCH_PARALLEL            ( get_nrUE_optmask() & NRUE_DLSCH_PARALLEL_BIT)
 
 typedef struct {
   uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
 } nrUE_params_t;
 extern uint64_t get_nrUE_optmask(void);
 extern uint64_t set_nrUE_optmask(uint64_t bitmask);
@@ -96,6 +95,5 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue, uint8_t UE_id, uint8_t abstraction_flag);
-extern tpool_t *Tpool;
-extern tpool_t *Tpool_dl;
+
 #endif

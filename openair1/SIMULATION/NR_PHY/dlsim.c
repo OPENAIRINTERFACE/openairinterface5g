@@ -269,7 +269,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t rbSize = 106;
   uint8_t  mcsIndex = 9;
-
+  uint8_t  dlsch_threads = 0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:U:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -447,7 +447,9 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
-
+    case 'd':
+      dlsch_threads = atoi(optarg);
+      break;    
     case 'e':
       g_mcsIndex = atoi(optarg);
       break;
@@ -512,6 +514,7 @@ int main(int argc, char **argv)
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2}, e.g. -U 2 0 2 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
+      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
       exit (-1);
       break;
     }
@@ -527,6 +530,7 @@ int main(int argc, char **argv)
   
   if (snr1set==0)
     snr1 = snr0+10;
+  init_dlsch_tpool(dlsch_threads);
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -981,7 +985,8 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               normal_txrx);
+                               normal_txrx,
+                               dlsch_threads);
         
         //printf("dlsim round %d ends\n",round);
         round++;
