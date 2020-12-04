@@ -130,8 +130,6 @@
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
-
-
 	<testCase id="070000">
 		<class>Terminate_eNB</class>
 		<desc>Terminate eNB</desc>

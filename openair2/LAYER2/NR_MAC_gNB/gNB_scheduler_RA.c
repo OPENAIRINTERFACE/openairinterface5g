@@ -421,7 +421,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
   NR_SearchSpace_t *ss;
-  int UE_id = 0;
 
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
