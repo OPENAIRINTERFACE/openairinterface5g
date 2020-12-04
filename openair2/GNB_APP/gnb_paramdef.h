@@ -50,7 +50,6 @@
 
 extern int asn_debug;
 extern int asn1_xer_print;
-extern uint32_t num_threads_pusch;
 
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long
@@ -91,9 +90,13 @@ typedef enum {
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define GNBSPARAMS_DESC {                                                                                             \
 {GNB_CONFIG_STRING_ASN1_VERBOSITY,             NULL,     0,        uptr:NULL,   defstrval:GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
-{GNB_CONFIG_STRING_ACTIVE_GNBS,                NULL,     0,        uptr:NULL,   defstrval:NULL, 				   TYPE_STRINGLIST,  0},    \
+{GNB_CONFIG_STRING_ACTIVE_GNBS,                NULL,     0,        uptr:NULL,   defstrval:NULL, 				   TYPE_STRINGLIST,  0}    \
+}
+
+#define NUM_THREADS_DESC { \
 {GNB_CONFIG_PUSCH_THREADS,                     NULL,     0,        uptr:&num_threads_pusch,   defuintval:1, 				   TYPE_UINT,  0}    \
 }
+
 #define GNB_ASN1_VERBOSITY_IDX                     0
 #define GNB_ACTIVE_GNBS_IDX                        1
 
