@@ -311,7 +311,6 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 {
   //  int i;
   //int pbch_tx_ant=0;
-  //uint8_t pbch_phase;
   int ret = 0;
   //static uint8_t first_run = 1;
   //uint8_t pbch_trials = 0;
@@ -323,7 +322,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,gNB_id);
+  LOG_D(PHY,"[UE  %d] Frame %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,ue->frame_parms.Nid_cell,gNB_id);
 
   ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[gNB_id],
@@ -2166,7 +2165,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  if (!prach_resources->init_msg1 && (frame_tx == (ue->prach_resources[gNB_id]->sync_frame + 150) % MAX_FRAME_NUMBER)){
+  if (!prach_resources->init_msg1 && ((MAX_FRAME_NUMBER+frame_tx-ue->prach_resources[gNB_id]->sync_frame)% MAX_FRAME_NUMBER)>150){
     ue->prach_cnt = 0;
     prach_resources->init_msg1 = 1;
   }

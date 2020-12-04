@@ -33,12 +33,12 @@
 // last channel estimate of the receiver
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
-                      PHY_VARS_NR_UE *ue,
-                      module_id_t gNB_id,
-                      uint8_t frame,
-                      uint8_t subframe,
-                      unsigned char clear,
-                      short coef)
+                        PHY_VARS_NR_UE *ue,
+                        module_id_t gNB_id,
+                        uint8_t frame,
+                        uint8_t subframe,
+                        unsigned char clear,
+                        short coef)
 {
 
   static int max_pos_fil = 0;
