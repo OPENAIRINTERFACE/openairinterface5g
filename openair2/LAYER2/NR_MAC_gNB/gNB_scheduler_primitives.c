@@ -507,7 +507,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
                           rnti_t rnti,
                           NR_CellGroupConfig_t *secondaryCellGroup,
                           NR_UE_sched_ctrl_t *sched_ctrl,
-                          NR_sched_pucch *pucch_sched,
+                          NR_sched_pucch_t *pucch_sched,
                           nfapi_nr_dmrs_type_e dmrsConfigType,
                           uint16_t R,
                           uint8_t Qm,
@@ -1894,15 +1894,15 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->UE_sched_ctrl[UE_id].ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
     UE_info->UE_sched_ctrl[UE_id].pusch_save.time_domain_allocation = -1;
-    UE_info->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch **)malloc(num_slots_ul*sizeof(NR_sched_pucch *));
+    UE_info->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch_t **)malloc(num_slots_ul*sizeof(NR_sched_pucch_t *));
     for (int s=0; s<num_slots_ul;s++)
-      UE_info->UE_sched_ctrl[UE_id].sched_pucch[s] = (NR_sched_pucch *)malloc(2*sizeof(NR_sched_pucch));
+      UE_info->UE_sched_ctrl[UE_id].sched_pucch[s] = (NR_sched_pucch_t *)malloc(2*sizeof(NR_sched_pucch_t));
 
     for (int k=0; k<num_slots_ul; k++) {
       for (int l=0; l<2; l++)
         memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
                0,
-               sizeof(NR_sched_pucch));
+               sizeof(NR_sched_pucch_t));
     }
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,

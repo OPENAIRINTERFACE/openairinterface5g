@@ -595,7 +595,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int current_harq_pid = slot % num_slots_per_tdd;
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-    NR_sched_pucch *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx][sched_ctrl->pucch_occ_idx];
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx][sched_ctrl->pucch_occ_idx];
     harq->feedback_slot = pucch->ul_slot;
     harq->is_waiting = 1;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;

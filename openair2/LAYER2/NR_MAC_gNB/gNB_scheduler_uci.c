@@ -44,7 +44,7 @@ void nr_schedule_pucch(int Mod_idP,
 
   for (int k=0; k<nr_ulmix_slots; k++) {
     for (int l=0; l<2; l++) {
-      NR_sched_pucch *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
+      NR_sched_pucch_t *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
       const uint16_t O_ack = curr_pucch->dai_c;
       const uint16_t O_csi = curr_pucch->csi_bits;
       const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
@@ -91,7 +91,7 @@ void nr_schedule_pucch(int Mod_idP,
 
       memset(&UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
              0,
-             sizeof(NR_sched_pucch));
+             sizeof(NR_sched_pucch_t));
     }
   }
 }
@@ -198,7 +198,7 @@ void nr_csi_meas_reporting(int Mod_idP,
                            int n_slots_frame) {
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_sched_pucch *curr_pucch;
+  NR_sched_pucch_t *curr_pucch;
   NR_PUCCH_ResourceSet_t *pucchresset;
   NR_CSI_ReportConfig_t *csirep;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
@@ -418,7 +418,7 @@ void nr_acknack_scheduling(int Mod_idP,
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_sched_pucch *curr_pucch;
+  NR_sched_pucch_t *curr_pucch;
   int max_acknacks,pucch_res,first_ul_slot_tdd,k,i,l;
   uint8_t pdsch_to_harq_feedback[8];
   int found = 0;

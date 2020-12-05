@@ -282,7 +282,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-} NR_sched_pucch;
+} NR_sched_pucch_t;
 
 /* this struct is a helper: as long as the TDA and DCI format remain the same
  * over the same uBWP and search space, there is no need to recalculate all
@@ -387,7 +387,7 @@ typedef struct {
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
 
-  NR_sched_pucch **sched_pucch;
+  NR_sched_pucch_t **sched_pucch;
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
   int pucch_occ_idx;
