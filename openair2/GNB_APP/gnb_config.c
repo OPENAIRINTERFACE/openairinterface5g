@@ -784,6 +784,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         printf("pucch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pucch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
+        NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;
 
 	  
       }//
