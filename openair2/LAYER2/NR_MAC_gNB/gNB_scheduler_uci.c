@@ -68,7 +68,7 @@ void nr_schedule_pucch(int Mod_idP,
       memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
       future_ul_tti_req->n_pdus += 1;
 
-      LOG_D(MAC,
+      LOG_I(MAC,
             "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d, k %d l %d\n",
             frameP,
             slotP,
