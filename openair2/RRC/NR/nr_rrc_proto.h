@@ -72,6 +72,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+             NR_ServingCellConfig_t *servingcellconfigdedicated,
 				     NR_CellGroupConfig_t *secondaryCellGroup,
 				     int scg_id,
 				     int servCellIndex,
@@ -79,6 +80,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 				     int initial_csi_index);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+         NR_ServingCellConfig_t *servingcellconfigdedicated,
 			   NR_RRCReconfiguration_IEs_t *reconfig,
 			   NR_CellGroupConfig_t *secondaryCellGroup,
 			   int n_physical_antenna_ports,

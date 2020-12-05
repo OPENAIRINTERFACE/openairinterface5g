@@ -167,6 +167,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     fill_default_rbconfig(ue_context_p->ue_context.rb_config);
   }
   fill_default_reconfig(carrier->servingcellconfigcommon,
+                        ue_context_p->ue_context.spCellConfig->spCellConfigDedicated,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,

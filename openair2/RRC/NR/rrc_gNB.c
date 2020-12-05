@@ -270,6 +270,8 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
       parse_CG_ConfigInfo(rrc,CG_ConfigInfo,NULL);
     } else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+      ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = configuration->scd;
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
       rrc_add_nsa_user(rrc,ue_context_p,NULL);
     }
