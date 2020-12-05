@@ -290,10 +290,17 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   }
 }
 
+/* Function to allocate dedicated serving cell config strutures */
 void prepare_scd(NR_ServingCellConfig_t *scd) {
+  // Allocate downlink structures
+
   scd->downlinkBWP_ToAddModList = CALLOC(1,sizeof(scd->downlinkBWP_ToAddModList));
+
+  // Downlink bandwidth part
   NR_BWP_Downlink_t *bwp=calloc(1,sizeof(*bwp));
   bwp->bwp_Id=1;
+
+  // Allocate downlink dedicated bandwidth part and PDSCH structures
   bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
   bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
   bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
@@ -301,6 +308,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
 
+  // Allocate DL DMRS and PTRS configuration
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
   NR_DMRS_DownlinkConfig_t *NR_DMRS_DownlinkCfg = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
   NR_DMRS_DownlinkCfg->phaseTrackingRS=CALLOC(1,sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS));
@@ -326,19 +334,18 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
   ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
 
+  // Allocate uplink structures
+
   scd->uplinkConfig = CALLOC(1, sizeof(NR_UplinkConfig_t));
   scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1,sizeof(scd->uplinkConfig->uplinkBWP_ToAddModList));
 
   NR_PUSCH_Config_t *pusch_Config = CALLOC(1,sizeof(*pusch_Config));
-  //pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA = NULL;
+
+  // Allocate UL DMRS and PTRS structures
   pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB = CALLOC(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB));
   pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->present = NR_SetupRelease_DMRS_UplinkConfig_PR_setup;
   pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup = CALLOC(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup));
   NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-  //NR_DMRS_UplinkConfig->dmrs_Type = NULL;
-  //NR_DMRS_UplinkConfig->dmrs_AdditionalPosition = calloc(1,sizeof(*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition));
-  //*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition = NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos0;
-  ////NR_DMRS_UplinkConfig->phaseTrackingRS=NULL;
   NR_DMRS_UplinkConfig->phaseTrackingRS = CALLOC(1,sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS));
   NR_DMRS_UplinkConfig->phaseTrackingRS->present = NR_SetupRelease_PTRS_UplinkConfig_PR_setup;
   NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup = CALLOC(1,sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup));
@@ -360,6 +367,8 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   }
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
   *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
+
+  // UL bandwidth part
   NR_BWP_Uplink_t *ubwp = CALLOC(1,sizeof(*ubwp));
   ubwp->bwp_Id=1;
   ubwp->bwp_Dedicated = CALLOC(1,sizeof(*ubwp->bwp_Dedicated));
@@ -371,6 +380,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   ASN_SEQUENCE_ADD(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
 }
 
+/* This function checks dedicated serving cell configuration and performs fixes as needed */ 
 void fix_scd(NR_ServingCellConfig_t *scd) {
   // Check for DL PTRS parameters validity
   if (*scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->resourceElementOffset > 2) {
@@ -630,6 +640,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
 
+  // Serving Cell Config Dedicated
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   memset((void*)scd,0,sizeof(NR_ServingCellConfig_t));
   prepare_scd(scd);
