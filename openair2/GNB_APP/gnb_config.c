@@ -290,6 +290,87 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   }
 }
 
+void prepare_scd(NR_ServingCellConfig_t *scd) {
+  scd->downlinkBWP_ToAddModList = CALLOC(1,sizeof(scd->downlinkBWP_ToAddModList));
+  NR_BWP_Downlink_t *bwp=calloc(1,sizeof(*bwp));
+  bwp->bwp_Id=1;
+  bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
+  bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
+  bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
+  NR_DMRS_DownlinkConfig_t *NR_DMRS_DownlinkCfg = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+  NR_DMRS_DownlinkCfg->phaseTrackingRS=CALLOC(1,sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS));
+  NR_DMRS_DownlinkCfg->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
+  NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup = CALLOC(1,sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup));
+  NR_PTRS_DownlinkConfig_t *NR_PTRS_DownlinkCfg = NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup;
+  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->frequencyDensity));
+  int *dl_rbs[2];
+  for (int i=0;i<2;i++) {
+    dl_rbs[i] = CALLOC(1,sizeof(*dl_rbs[i]));
+    *dl_rbs[i] = 0;
+    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, dl_rbs[i]);
+  }
+  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->timeDensity));
+  int *dl_mcs[3];
+  for (int i=0;i<3;i++) {
+    dl_mcs[i] = CALLOC(1,sizeof(*dl_mcs[i]));
+    *dl_mcs[i] = 0;
+    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, dl_mcs[i]);
+  }
+  NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->epre_Ratio));
+  NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->resourceElementOffset));
+  *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
+  ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
+
+  scd->uplinkConfig = CALLOC(1, sizeof(NR_UplinkConfig_t));
+  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1,sizeof(scd->uplinkConfig->uplinkBWP_ToAddModList));
+
+  NR_PUSCH_Config_t *pusch_Config = CALLOC(1,sizeof(*pusch_Config));
+  //pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA = NULL;
+  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB = CALLOC(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB));
+  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->present = NR_SetupRelease_DMRS_UplinkConfig_PR_setup;
+  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup = CALLOC(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup));
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+  //NR_DMRS_UplinkConfig->dmrs_Type = NULL;
+  //NR_DMRS_UplinkConfig->dmrs_AdditionalPosition = calloc(1,sizeof(*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition));
+  //*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition = NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos0;
+  ////NR_DMRS_UplinkConfig->phaseTrackingRS=NULL;
+  NR_DMRS_UplinkConfig->phaseTrackingRS = CALLOC(1,sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS));
+  NR_DMRS_UplinkConfig->phaseTrackingRS->present = NR_SetupRelease_PTRS_UplinkConfig_PR_setup;
+  NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup = CALLOC(1,sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup));
+  NR_PTRS_UplinkConfig_t *NR_PTRS_UplinkConfig = NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup;
+  NR_PTRS_UplinkConfig->transformPrecoderDisabled = CALLOC(1,sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled));
+  NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1,sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
+  int *n_rbs[2];
+  for (int i=0;i<2;i++) {
+    n_rbs[i] = CALLOC(1,sizeof(*n_rbs[i]));
+    *n_rbs[i] = 0;
+    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, n_rbs[i]);
+  }
+  NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1,sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
+  int *ptrs_mcs[3];
+  for (int i = 0; i < 3; i++) {
+    ptrs_mcs[i] = CALLOC(1,sizeof(*ptrs_mcs[i]));
+    *ptrs_mcs[i] = 0;
+    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, ptrs_mcs[i]);
+  }
+  NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
+  *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
+  NR_BWP_Uplink_t *ubwp = CALLOC(1,sizeof(*ubwp));
+  ubwp->bwp_Id=1;
+  ubwp->bwp_Dedicated = CALLOC(1,sizeof(*ubwp->bwp_Dedicated));
+
+  ubwp->bwp_Dedicated->pusch_Config = CALLOC(1,sizeof(*ubwp->bwp_Dedicated->pusch_Config));
+  ubwp->bwp_Dedicated->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
+  ubwp->bwp_Dedicated->pusch_Config->choice.setup = pusch_Config;
+
+  ASN_SEQUENCE_ADD(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
+}
+
 void RCconfig_nr_flexran()
 {
   uint16_t  i;
@@ -527,6 +608,12 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
+
+  NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
+  memset((void*)scd,0,sizeof(NR_ServingCellConfig_t));
+  prepare_scd(scd);
+  paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
+  paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
    ////////// Physical parameters
 
 
@@ -589,6 +676,22 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	    (int)scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower);
       fix_scc(scc,ssb_bitmap);
     }
+
+    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
+
+    config_getlist(&SCDsParamList, NULL, 0, aprefix);
+    if (SCDsParamList.numelt > 0) {    
+      sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, 0);
+      config_get( SCDsParams,sizeof(SCDsParams)/sizeof(paramdef_t),aprefix);  
+      LOG_I(RRC,"Read in ServingCellConfigDedicated UL (FreqDensity_0 %d, FreqDensity_1 %d, TimeDensity_0 %d, TimeDensity_1 %d, TimeDensity_2 %d, RE offset %d \n",
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[0],
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[1],
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[0],
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[1],
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[2],
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->resourceElementOffset);
+    }
+
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
