@@ -608,11 +608,19 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
     sched_pusch->Qm <<= 1;
   }
 
-  /* get first, largest unallocated region */
+  /* Change vrb_map_UL to rballoc_mask */
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  uint8_t rballoc_mask[bwpSize];
+  int n_rb_sched = 0;
+  for (int i = 0; i < bwpSize; i++) {
+    // calculate mask: init with "NOT" vrb_map_UL:
+    // if any RB in vrb_map_UL is blocked (1), the current RB will be 0
+    rballoc_mask[i] = !vrb_map_UL[i];
+    n_rb_sched += rballoc_mask[i];
+  }
 
   while (rbStart < bwpSize && vrb_map_UL[rbStart]) rbStart++;
   uint16_t rbSize = 4;
@@ -632,14 +640,14 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                           0,
                                           1 /* NrOfLayers */)
                            >> 3;
-  } while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize] &&
+  } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart+rbSize] &&
            sched_pusch->tb_size < B);
   LOG_D(MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
         rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-    vrb_map_UL[rb + sched_ctrl->sched_pusch.rbStart] = 1;
+    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
   return true;
 }
 
