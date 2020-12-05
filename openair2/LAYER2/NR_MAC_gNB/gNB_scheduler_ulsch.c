@@ -504,6 +504,143 @@ long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
     return 3;
 }
 
+void pf_ul(module_id_t module_id,
+           frame_t frame,
+           sub_frame_t slot,
+           int num_slots_per_tdd,
+           NR_list_t *UE_list,
+           int n_rb_sched,
+           uint8_t *rballoc_mask,
+           int max_num_ue) {
+
+  const int UE_id = 0;
+  const int CC_id = 0;
+  const int tda = 1;
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  const int min_rb = 5;
+
+  /* Loop UE_list to calculate throughput and coeff */
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+    /* Calculate throughput */
+
+    /* RETRANSMISSION: Check retransmission */
+
+    /* RETRANSMISSION: Find free CCE */
+
+    /* RETRANSMISSION: Allocate retransmission*/
+
+    /* Check BSR */
+
+    /* Calculate coefficient*/
+
+  }
+
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+
+  /* Loop UE_sched to find max coeff and allocate transmission */
+  //while (UE_sched.head > 0 && max_num_ue> 0 && n_rb_sched > 0)
+  if (n_rb_sched > 0){ //temp
+    /* Find max coeff */
+
+    /* Find free CCE */
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+    uint8_t nr_of_candidates;
+    find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                &nr_of_candidates,
+                                sched_ctrl->search_space);
+    sched_ctrl->coreset = get_coreset(
+            sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+    const int cid = sched_ctrl->coreset->controlResourceSetId;
+    const uint16_t Y = UE_info->Y[UE_id][cid][slot];
+    const int m = UE_info->num_pdcch_cand[UE_id][cid];
+    sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                             sched_ctrl->active_bwp,
+                                             sched_ctrl->coreset,
+                                             sched_ctrl->aggregation_level,
+                                             Y,
+                                             m,
+                                             nr_of_candidates);
+    if (sched_ctrl->cce_index < 0) {
+      LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
+      return;
+    }
+    UE_info->num_pdcch_cand[UE_id][cid]++;
+
+    /* Save PUSCH field */
+    sched_ctrl->sched_pusch.time_domain_allocation = tda;
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    const uint8_t num_dmrs_cdm_grps_no_data = 1;
+    /* we want to avoid a lengthy deduction of DMRS and other parameters in
+     * every TTI if we can save it, so check whether dci_format, TDA, or
+     * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+    NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
+    if (ps->time_domain_allocation != tda
+        || ps->dci_format != dci_format
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+      nr_save_pusch_fields(scc,
+                           sched_ctrl->active_ubwp,
+                           dci_format,
+                           tda,
+                           num_dmrs_cdm_grps_no_data,
+                           ps);
+
+    const int mcs = 9;
+    NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+    sched_pusch->mcs = mcs;
+
+    /* Calculate TBS from MCS */
+    sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+    sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+    if (ps->pusch_Config->tp_pi2BPSK
+        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+      sched_pusch->R >>= 1;
+      sched_pusch->Qm <<= 1;
+    }
+
+
+    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+    sched_pusch->rbStart = rbStart;
+    if (rbStart + min_rb >= bwpSize) {
+      LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+            UE_id, UE_info->rnti[UE_id]);
+      return;
+    }
+
+    /* Calculate the current scheduling bytes */
+    const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
+    uint16_t rbSize = min_rb - 1;
+    do {
+      rbSize++;
+      sched_pusch->rbSize = rbSize;
+      sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
+                                            sched_pusch->R,
+                                            sched_pusch->rbSize,
+                                            ps->nrOfSymbols,
+                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                            0, // nb_rb_oh
+                                            0,
+                                            1 /* NrOfLayers */)
+                             >> 3;
+    } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart+rbSize] &&
+             sched_pusch->tb_size < B);
+    LOG_D(MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+          rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
+
+    /* Mark the corresponding RBs as used */
+    for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
+      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+  }
+}
+
 bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
@@ -533,6 +670,7 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
+
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
   const int sched_slot = (slot + K2) % num_slots_per_tdd;
@@ -553,65 +691,9 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
     sched_ctrl->sched_pusch.frame = sched_frame;
   }
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
-  uint8_t nr_of_candidates;
-  find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                              &nr_of_candidates,
-                              sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
-      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-  const int m = UE_info->num_pdcch_cand[UE_id][cid];
-  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                           sched_ctrl->active_bwp,
-                                           sched_ctrl->coreset,
-                                           sched_ctrl->aggregation_level,
-                                           Y,
-                                           m,
-                                           nr_of_candidates);
-  if (sched_ctrl->cce_index < 0) {
-    LOG_D(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    return false;
-  }
-  UE_info->num_pdcch_cand[UE_id][cid]++;
-
-  sched_ctrl->sched_pusch.time_domain_allocation = tda;
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-  const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  /* we want to avoid a lengthy deduction of DMRS and other parameters in
-   * every TTI if we can save it, so check whether dci_format, TDA, or
-   * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-  NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
-  if (ps->time_domain_allocation != tda
-      || ps->dci_format != dci_format
-      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_save_pusch_fields(scc,
-                         sched_ctrl->active_ubwp,
-                         dci_format,
-                         tda,
-                         num_dmrs_cdm_grps_no_data,
-                         ps);
-
-  const int mcs = 9;
-  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-  sched_pusch->mcs = mcs;
-
-  /* Calculate TBS from MCS */
-  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-  if (ps->pusch_Config->tp_pi2BPSK
-      && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
-    sched_pusch->R >>= 1;
-    sched_pusch->Qm <<= 1;
-  }
-
   /* Change vrb_map_UL to rballoc_mask */
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint8_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
@@ -622,32 +704,15 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
     n_rb_sched += rballoc_mask[i];
   }
 
-  while (rbStart < bwpSize && vrb_map_UL[rbStart]) rbStart++;
-  uint16_t rbSize = 4;
-
-  sched_pusch->rbStart = rbStart;
-  const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
-
-  do {
-    rbSize++;
-    sched_pusch->rbSize = rbSize;
-    sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
-                                          sched_pusch->R,
-                                          sched_pusch->rbSize,
-                                          ps->nrOfSymbols,
-                                          ps->N_PRB_DMRS * ps->num_dmrs_symb,
-                                          0, // nb_rb_oh
-                                          0,
-                                          1 /* NrOfLayers */)
-                           >> 3;
-  } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart+rbSize] &&
-           sched_pusch->tb_size < B);
-  LOG_D(MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
-        rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
-
-  /* mark the corresponding RBs as used */
-  for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+  /* proportional fair scheduling algorithm */
+  pf_ul(module_id,
+        frame,
+        slot,
+        num_slots_per_tdd,
+        &UE_info->list,
+        n_rb_sched,
+        rballoc_mask,
+        2);
   return true;
 }
 
