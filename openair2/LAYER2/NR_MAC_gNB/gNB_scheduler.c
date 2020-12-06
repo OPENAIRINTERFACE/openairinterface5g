@@ -411,8 +411,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // TODO
 
   // Schedule CSI measurement reporting: check in slot 0 for the whole frame
-  if (slot == 0 && UE_info->active[UE_id])
-    nr_csi_meas_reporting(module_idP, UE_id, frame, slot);
+  if (slot == 0)
+    nr_csi_meas_reporting(module_idP, frame, slot);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected

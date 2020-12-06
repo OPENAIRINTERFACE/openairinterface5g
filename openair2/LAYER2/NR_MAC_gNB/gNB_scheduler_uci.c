@@ -179,76 +179,103 @@ uint16_t nr_get_csi_bitlen(const nr_csi_report_t *csi_report)
 
 
 void nr_csi_meas_reporting(int Mod_idP,
-                           int UE_id,
                            frame_t frame,
                            sub_frame_t slot)
 {
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  const NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const NR_CSI_MeasConfig_t *csi_measconfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-  AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
-              "NO CSI report configuration available");
-  NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-
   NR_ServingCellConfigCommon_t *scc =
       RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
-  for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
-    const NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_UE_list_t *UE_list = &UE_info->list;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    const NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    const NR_CSI_MeasConfig_t *csi_measconfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+    AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
+                "NO CSI report configuration available");
+    NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
 
-    AssertFatal(csirep->reportConfigType.choice.periodic,
-                "Only periodic CSI reporting is implemented currently\n");
-    int period, offset;
-    csi_period_offset(csirep, &period, &offset);
-    const int sched_slot = (period + offset) % n_slots_frame;
-    // prepare to schedule csi measurement reception according to 5.2.1.4 in 38.214
-    // preparation is done in first slot of tdd period
-    if (frame % (period / n_slots_frame) != offset / n_slots_frame)
-      continue;
-    LOG_D(MAC, "CSI in frame %d slot %d\n", frame, sched_slot);
+    for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
+      const NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
 
-    // we are scheduling pucch for csi in the first pucch occasion (this comes before ack/nack)
-    // FIXME: for the moment, we statically put it into the second sched_pucch!
-    NR_sched_pucch_t *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[2];
-
-    const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
-    const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
-    const int n = pucchresset->resourceList.list.count;
-    int res_index = 0;
-    for (; res_index < n; res_index++)
-      if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
-        break;
-    AssertFatal(res_index < n,
-                "CSI resource not found among PUCCH resources\n");
-    curr_pucch->resource_indicator = res_index;
-
-    // going through the list of PUCCH resources to find the one indexed by resource_id
-    const int m = pucch_Config->resourceToAddModList->list.count;
-    for (int j = 0; j < m; j++) {
-      NR_PUCCH_Resource_t *pucchres = pucch_Config->resourceToAddModList->list.array[j];
-      if (pucchres->pucch_ResourceId != *pucchresset->resourceList.list.array[res_index])
+      AssertFatal(csirep->reportConfigType.choice.periodic,
+                  "Only periodic CSI reporting is implemented currently\n");
+      int period, offset;
+      csi_period_offset(csirep, &period, &offset);
+      const int sched_slot = (period + offset) % n_slots_frame;
+      // prepare to schedule csi measurement reception according to 5.2.1.4 in 38.214
+      // preparation is done in first slot of tdd period
+      if (frame % (period / n_slots_frame) != offset / n_slots_frame)
         continue;
-      switch(pucchres->format.present){
-        case NR_PUCCH_Resource__format_PR_format2:
-          curr_pucch->simultaneous_harqcsi = pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI;
+      LOG_D(MAC, "CSI in frame %d slot %d\n", frame, sched_slot);
+
+      const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+      const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
+      const int n = pucchresset->resourceList.list.count;
+      int res_index = 0;
+      for (; res_index < n; res_index++)
+        if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
           break;
-        case NR_PUCCH_Resource__format_PR_format3:
-          curr_pucch->simultaneous_harqcsi = pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI;
-          break;
-        case NR_PUCCH_Resource__format_PR_format4:
-          curr_pucch->simultaneous_harqcsi = pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI;
-          break;
-      default:
-        AssertFatal(0, "Invalid PUCCH format type\n");
+      AssertFatal(res_index < n,
+                  "CSI resource not found among PUCCH resources\n");
+
+      // find free PUCCH that is in order with possibly existing PUCCH
+      // schedulings (other CSI, SR)
+      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[2];
+      AssertFatal(curr_pucch->csi_bits == 0
+                  && !curr_pucch->sr_flag
+                  && curr_pucch->dai_c == 0,
+                  "PUCCH not free at index 2 for UE %04x\n",
+                  UE_info->rnti[UE_id]);
+      curr_pucch->frame = frame;
+      curr_pucch->ul_slot = sched_slot;
+      curr_pucch->resource_indicator = res_index;
+      curr_pucch->csi_bits +=
+          nr_get_csi_bitlen(&UE_info->csi_report_template[UE_id][csi_report_id]);
+
+      // going through the list of PUCCH resources to find the one indexed by resource_id
+      uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+      const int m = pucch_Config->resourceToAddModList->list.count;
+      for (int j = 0; j < m; j++) {
+        NR_PUCCH_Resource_t *pucchres = pucch_Config->resourceToAddModList->list.array[j];
+        if (pucchres->pucch_ResourceId != *pucchresset->resourceList.list.array[res_index])
+          continue;
+        int start = pucchres->startingPRB;
+        int len = 1;
+        uint64_t mask = 0;
+        switch(pucchres->format.present){
+          case NR_PUCCH_Resource__format_PR_format2:
+            len = pucchres->format.choice.format2->nrofPRBs;
+            mask = ((1 << pucchres->format.choice.format2->nrofSymbols) - 1) << pucchres->format.choice.format2->startingSymbolIndex;
+            curr_pucch->simultaneous_harqcsi = pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI;
+            break;
+          case NR_PUCCH_Resource__format_PR_format3:
+            len = pucchres->format.choice.format3->nrofPRBs;
+            mask = ((1 << pucchres->format.choice.format3->nrofSymbols) - 1) << pucchres->format.choice.format3->startingSymbolIndex;
+            curr_pucch->simultaneous_harqcsi = pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI;
+            break;
+          case NR_PUCCH_Resource__format_PR_format4:
+            mask = ((1 << pucchres->format.choice.format4->nrofSymbols) - 1) << pucchres->format.choice.format4->startingSymbolIndex;
+            curr_pucch->simultaneous_harqcsi = pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI;
+            break;
+        default:
+          AssertFatal(0, "Invalid PUCCH format type\n");
+        }
+        // verify resources are free
+        for (int i = start; i < start + len; ++i) {
+          AssertFatal((vrb_map_UL[i] & mask) == 0,
+                      "cannot allocate CSI PUCCH for UE %04x: PRB %d used in symbs %lx\n",
+                      UE_info->rnti[UE_id],
+                      i,
+                      mask);
+          vrb_map_UL[i] |= mask;
+        }
+        AssertFatal(!curr_pucch->simultaneous_harqcsi,
+                    "UE %04x has simultaneous HARQ/CSI configured, but we don't support that\n",
+                    UE_info->rnti[UE_id]);
       }
     }
-
-    curr_pucch->csi_bits +=
-        nr_get_csi_bitlen(&UE_info->csi_report_template[UE_id][csi_report_id]);
-    curr_pucch->frame = frame;
-    curr_pucch->ul_slot = sched_slot;
   }
 }
 

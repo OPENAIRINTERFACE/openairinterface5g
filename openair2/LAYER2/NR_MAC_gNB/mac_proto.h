@@ -217,7 +217,6 @@ void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
                        int *period, int *offset);
 
 void nr_csi_meas_reporting(int Mod_idP,
-                           int UE_id,
                            frame_t frameP,
                            sub_frame_t slotP);
 
