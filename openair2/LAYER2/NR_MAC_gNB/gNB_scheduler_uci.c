@@ -169,20 +169,12 @@ void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t 
 }
 
 
-uint16_t nr_get_csi_bitlen(int Mod_idP,
-                           int UE_id,
-                           uint8_t csi_report_id) {
-
-  uint16_t csi_bitlen =0;
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  CRI_SSBRI_RSRP_bitlen_t * CSI_report_bitlen = NULL;
-
-  CSI_report_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0]);
-  csi_bitlen = ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
-               CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
-               (CSI_report_bitlen->nb_ssbri_cri -1 )) *UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report);
-
-  return csi_bitlen;
+uint16_t nr_get_csi_bitlen(const nr_csi_report_t *csi_report)
+{
+  const CRI_SSBRI_RSRP_bitlen_t *bitlen = &csi_report->CSI_report_bitlen[0];
+  return bitlen->cri_ssbri_bitlen * bitlen->nb_ssbri_cri
+         + bitlen->rsrp_bitlen
+         + bitlen->diff_rsrp_bitlen * (bitlen->nb_ssbri_cri - 1) * csi_report->nb_of_csi_ssb_report;
 }
 
 
@@ -264,7 +256,9 @@ void nr_csi_meas_reporting(int Mod_idP,
           }
         }
       }
-      curr_pucch->csi_bits += nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id); // TODO function to compute CSI meas report bit size
+
+      curr_pucch->csi_bits +=
+          nr_get_csi_bitlen(&UE_info->csi_report_template[UE_id][csi_report_id]);
       curr_pucch->frame = frame;
       curr_pucch->ul_slot = sched_slot;
     }
