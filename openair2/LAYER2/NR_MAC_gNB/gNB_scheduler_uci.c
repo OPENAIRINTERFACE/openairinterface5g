@@ -42,57 +42,54 @@ void nr_schedule_pucch(int Mod_idP,
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
-  for (int k=0; k<nr_ulmix_slots; k++) {
-    for (int l=0; l<2; l++) {
-      NR_sched_pucch_t *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
-      const uint16_t O_ack = curr_pucch->dai_c;
-      const uint16_t O_csi = curr_pucch->csi_bits;
-      const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
-      if (O_ack + O_csi + O_sr == 0
-          || frameP != curr_pucch->frame
-          || slotP != curr_pucch->ul_slot)
-        continue;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  const int n = sizeof(sched_ctrl->sched_pucch) / sizeof(*sched_ctrl->sched_pucch);
+  for (int i = 0; i < n; i++) {
+    NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[i];
+    const uint16_t O_ack = curr_pucch->dai_c;
+    const uint16_t O_csi = curr_pucch->csi_bits;
+    const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
+    if (O_ack + O_csi + O_sr == 0
+        || frameP != curr_pucch->frame
+        || slotP != curr_pucch->ul_slot)
+      continue;
 
-      nfapi_nr_ul_tti_request_t *future_ul_tti_req =
-          &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][curr_pucch->ul_slot];
-      AssertFatal(future_ul_tti_req->SFN == curr_pucch->frame
-                  && future_ul_tti_req->Slot == curr_pucch->ul_slot,
-                  "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
-                  future_ul_tti_req->SFN,
-                  future_ul_tti_req->Slot,
-                  curr_pucch->frame,
-                  curr_pucch->ul_slot);
-      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-      nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
-      memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
-      future_ul_tti_req->n_pdus += 1;
+    nfapi_nr_ul_tti_request_t *future_ul_tti_req =
+        &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][curr_pucch->ul_slot];
+    AssertFatal(future_ul_tti_req->SFN == curr_pucch->frame
+                && future_ul_tti_req->Slot == curr_pucch->ul_slot,
+                "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
+                future_ul_tti_req->SFN,
+                future_ul_tti_req->Slot,
+                curr_pucch->frame,
+                curr_pucch->ul_slot);
+    future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+    future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+    nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
+    memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
+    future_ul_tti_req->n_pdus += 1;
 
-      LOG_I(MAC,
-            "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d, k %d l %d\n",
-            frameP,
-            slotP,
-            curr_pucch->frame,
-            curr_pucch->ul_slot,
-            O_sr,
-            O_ack,
-            O_csi,
-            k, l);
+    LOG_I(MAC,
+          "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d\n",
+          frameP,
+          slotP,
+          curr_pucch->frame,
+          curr_pucch->ul_slot,
+          O_sr,
+          O_ack,
+          O_csi);
 
-      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
-      nr_configure_pucch(pucch_pdu,
-                         scc,
-                         UE_info->UE_sched_ctrl[UE_id].active_ubwp,
-                         UE_info->rnti[UE_id],
-                         curr_pucch->resource_indicator,
-                         O_csi,
-                         O_ack,
-                         O_sr);
+    NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+    nr_configure_pucch(pucch_pdu,
+                       scc,
+                       UE_info->UE_sched_ctrl[UE_id].active_ubwp,
+                       UE_info->rnti[UE_id],
+                       curr_pucch->resource_indicator,
+                       O_csi,
+                       O_ack,
+                       O_sr);
 
-      memset(&UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
-             0,
-             sizeof(NR_sched_pucch_t));
-    }
+    memset(curr_pucch, 0, sizeof(*curr_pucch));
   }
 }
 
@@ -221,7 +218,8 @@ void nr_csi_meas_reporting(int Mod_idP,
     if ( (frame%(period/n_slots_frame)==(offset/n_slots_frame)) && (slot==((sched_slot/slots_per_tdd)*slots_per_tdd))) {
 
       // we are scheduling pucch for csi in the first pucch occasion (this comes before ack/nack)
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[(sched_slot%slots_per_tdd)-slots_per_tdd+ul_slots][0];
+      // FIXME: for the moment, we statically put it into the second sched_pucch!
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[1];
 
       NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
 
@@ -408,76 +406,82 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
 
 // function to update pucch scheduling parameters in UE list when a USS DL is scheduled
-void nr_acknack_scheduling(int Mod_idP,
+bool nr_acknack_scheduling(int mod_id,
                            int UE_id,
-                           frame_t frameP,
-                           sub_frame_t slotP,
-                           int slots_per_tdd,
-                           int *pucch_id,
-                           int *pucch_occ) {
+                           frame_t frame,
+                           sub_frame_t slot)
+{
+  /* FIXME: for the moment, we consider that
+   * * only pucch_sched[0] holds HARQ
+   * * a UE is not scheduled in more than two slots, and their ACKs come in the same slot!
+   * * we do not multiplex with CSI
+   * * we do not mux two UEs in the same PUCCH slot (on the two symbols)
+   * * we only use the first TDD period (5/10ms) */
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[0];
+  AssertFatal(curr_pucch->csi_bits == 0,
+              "%s(): csi_bits %d in sched_pucch[0]\n",
+              __func__,
+              curr_pucch->csi_bits);
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_sched_pucch_t *curr_pucch;
-  int max_acknacks,pucch_res,first_ul_slot_tdd,k,i,l;
-  uint8_t pdsch_to_harq_feedback[8];
-  int found = 0;
-  int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
-    nr_ulmix_slots++;
+  const int max_acknacks = 2;
+  AssertFatal(curr_pucch->dai_c <= max_acknacks,
+              "%s() called but already %d dai_c in sched_pucch[0]\n",
+              __func__,
+              curr_pucch->dai_c);
 
-  bool csi_pres=false;
-  for (k=0; k<nr_ulmix_slots; k++) {
-    if(UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits>0)
-      csi_pres=true;
-  }
-
-  // As a preference always schedule ack nacks in PUCCH0 (max 2 per slots)
-  // Unless there is CSI meas reporting scheduled in the period to avoid conflicts in the same slot
-  if (csi_pres)
-    max_acknacks=10;
-  else
-    max_acknacks=2;
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  //const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols != 0);
+  const int first_ul_slot_tdd = tdd_pattern->nrofDownlinkSlots;
+  const int CC_id = 0;
 
   // this is hardcoded for now as ue specific
   NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  get_pdsch_to_harq_feedback(Mod_idP,UE_id,ss_type,pdsch_to_harq_feedback);
+  uint8_t pdsch_to_harq_feedback[8];
+  get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
-  // for each possible ul or mixed slot
-  for (k=0; k<nr_ulmix_slots; k++) {
-    for (l=0; l<1; l++) { // scheduling 2 PUCCH in a single slot does not work with the phone, currently
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
-      //if it is possible to schedule acknack in current pucch (no exclusive csi pucch)
-      if ((curr_pucch->csi_bits == 0) || (curr_pucch->simultaneous_harqcsi==true)) {
-        // if there is free room in current pucch structure
-        if (curr_pucch->dai_c<max_acknacks) {
-          pucch_res = get_pucch_resource(UE_info,UE_id,k,l);
-          if (pucch_res>-1){
-            curr_pucch->resource_indicator = pucch_res;
-            curr_pucch->frame = frameP;
-            // first pucch occasion in first UL or MIXED slot
-            first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-            i = 0;
-            while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
-              if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
-                found = 1;
-              if (found == 0) i++;
-            }
-            if (found == 1) {
-              // computing slot in which pucch is scheduled
-              curr_pucch->dai_c++;
-              curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
-              curr_pucch->timing_indicator = i; // index in the list of timing indicators
-              *pucch_id = k;
-              *pucch_occ = l;
-              return;
-            }
-          }
-        }
-      }
-    }
+  NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+  DevAssert(pucch_Config->resourceToAddModList->list.count > 0);
+
+  curr_pucch->frame = frame;
+  curr_pucch->dai_c++;
+
+  if (curr_pucch->dai_c == 1) {
+    /* FIXME for first allocation: find free resource, here assume first PUCCH
+     * resource and first_ul_slot_tdd */
+    const int pucch_res = 0;
+    curr_pucch->resource_indicator = pucch_res;
+    curr_pucch->ul_slot = first_ul_slot_tdd;
+
+    /* verify that at that slot and symbol, resources are free.
+     * Note: this does not handle potential mux of PUCCH in the same symbol! */
+    const NR_PUCCH_Resource_t *resource =
+        pucch_Config->resourceToAddModList->list.array[pucch_res];
+    DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
+    uint16_t *vrb_map_UL =
+        &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[first_ul_slot_tdd * 275];
+    const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
+    AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
+                "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
+                symb, resource->startingPRB, first_ul_slot_tdd);
+    vrb_map_UL[resource->startingPRB] |= symb;
   }
-  AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
+
+  /* Find the right timing_indicator value. FIXME: if previously ul_slot is not
+   * possible (anymore), we need to allocate previous HARQ feedback (since we
+   * cannot "reach" it anymore) and search a new one! */
+  int i = 0;
+  while (i < 8) {
+    if (pdsch_to_harq_feedback[i] == curr_pucch->ul_slot - slot)
+      break;
+    ++i;
+  }
+  AssertFatal(i < 8,
+              "could not find pdsch_to_harq_feedback: slot %d, ack slot %d\n",
+              slot, first_ul_slot_tdd);
+  curr_pucch->timing_indicator = i; // index in the list of timing indicators
+  return true;
 }
 
 
@@ -531,24 +535,6 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
       AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
     }
 }
-
-
-int get_pucch_resource(NR_UE_info_t *UE_info,int UE_id,int k,int l) {
-
-  // to be updated later, for now simple implementation
-  // use the second allocation just in case there is csi in the first
-  // in that case use second resource (for a different symbol) see 9.2 in 38.213
-  if (l==1) {
-    if (UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits==0)
-      return -1;
-    else
-      return 1;
-  }
-  else
-    return 0;
-
-}
-
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,

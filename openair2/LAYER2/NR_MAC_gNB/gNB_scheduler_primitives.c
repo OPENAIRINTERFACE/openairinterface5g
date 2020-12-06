@@ -1894,16 +1894,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->UE_sched_ctrl[UE_id].ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
     UE_info->UE_sched_ctrl[UE_id].pusch_save.time_domain_allocation = -1;
-    UE_info->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch_t **)malloc(num_slots_ul*sizeof(NR_sched_pucch_t *));
-    for (int s=0; s<num_slots_ul;s++)
-      UE_info->UE_sched_ctrl[UE_id].sched_pucch[s] = (NR_sched_pucch_t *)malloc(2*sizeof(NR_sched_pucch_t));
-
-    for (int k=0; k<num_slots_ul; k++) {
-      for (int l=0; l<2; l++)
-        memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
-               0,
-               sizeof(NR_sched_pucch_t));
-    }
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
@@ -1943,7 +1933,6 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     UE_info->active[UE_id] = FALSE;
     UE_info->rnti[UE_id] = 0;
     remove_nr_ue_list(&UE_info->list, UE_id);
-    free(UE_info->UE_sched_ctrl[UE_id].sched_pucch);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));

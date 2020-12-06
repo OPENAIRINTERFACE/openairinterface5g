@@ -328,14 +328,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  nr_acknack_scheduling(module_id,
-                        UE_id,
-                        frame,
-                        slot,
-                        num_slots_per_tdd,
-                        &sched_ctrl->pucch_sched_idx,
-                        &sched_ctrl->pucch_occ_idx);
-  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  AssertFatal(alloc,
+              "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
+              rnti, frame, slot);
 
   sched_ctrl->rbStart = rbStart;
   sched_ctrl->rbSize = rbSize;

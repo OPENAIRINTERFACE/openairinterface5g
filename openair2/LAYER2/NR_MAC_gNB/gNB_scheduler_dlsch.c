@@ -442,15 +442,10 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
   /* Find PUCCH occasion */
-  nr_acknack_scheduling(module_id,
-                        UE_id,
-                        frame,
-                        slot,
-                        num_slots_per_tdd,
-                        &sched_ctrl->pucch_sched_idx,
-                        &sched_ctrl->pucch_occ_idx);
-
-  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  AssertFatal(alloc,
+              "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
+              rnti, frame, slot);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   // for now HARQ PID is fixed and should be the same as in post-processor
@@ -595,7 +590,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int current_harq_pid = slot % num_slots_per_tdd;
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx][sched_ctrl->pucch_occ_idx];
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
     harq->feedback_slot = pucch->ul_slot;
     harq->is_waiting = 1;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
