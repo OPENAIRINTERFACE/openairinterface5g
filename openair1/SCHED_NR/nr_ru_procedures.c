@@ -323,7 +323,7 @@ static void *nr_feptx_thread(void *param) {
                         slot,
                         l+i,
                         aa,
-                        nb_antenna_ports);
+                        ru->nb_log_antennas);
         }
       }
       stop_meas(&ru->precoding_stats);

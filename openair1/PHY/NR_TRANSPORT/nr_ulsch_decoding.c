@@ -50,7 +50,7 @@
 //#define gNB_DEBUG_TRACE
 
 #define OAI_UL_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX = 68*384
-//#define PRINT_CRC_CHECK
+#define PRINT_CRC_CHECK
 
 //extern double cpuf;
 
