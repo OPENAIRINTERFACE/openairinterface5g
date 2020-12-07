@@ -1936,15 +1936,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
 
-    // FIXME: It was assumed that SIB1 has only one segment
-    int harq_pid = PHY_vars_UE_g[ue->Mod_id][ue->CC_id]->dlsch_SI[0]->current_harq_pid;
-    if(ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->harq_ack.ack == 1) {
-      nr_rrc_ue_decode_NR_SIB1_Message(ue->Mod_id, gNB_id, &ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->c[0][0],
-                                       ue->dlsch_SI[gNB_id]->harq_processes[harq_pid]->TBS);
-    } else {
-      LOG_D(PHY,"SIB1 CRC NOT OK");
-    }
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
