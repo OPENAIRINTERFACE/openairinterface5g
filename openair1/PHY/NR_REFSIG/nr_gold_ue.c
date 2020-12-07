@@ -70,40 +70,39 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
   unsigned int n,x1,x2,x2tmp0;
   unsigned int nid;
 
-    if (n_idDMRS)
-      nid = n_idDMRS;
-    else
-      nid = ue->frame_parms.Nid_cell;
+  if (n_idDMRS)
+    nid = n_idDMRS;
+  else
+    nid = ue->frame_parms.Nid_cell;
 
-    for (ns=0; ns<20; ns++) {
+  for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
-      for (l=0; l<length_dmrs; l++) {
+    for (l=0; l<length_dmrs; l++) {
 
-    	x2tmp0 = ((14*ns+l+1)*((nid<<1)+1))<<17;
-        x2 = (x2tmp0+(nid<<1))%(1<<31);  //cinit
+      x2tmp0 = ((14*ns+l+1)*((nid<<1)+1))<<17;
+      x2 = (x2tmp0+(nid<<1))%(1<<31);  //cinit
 
-        x1 = 1+ (1<<31);
-        x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
+      x1 = 1+ (1<<31);
+      x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
-        // skip first 50 double words (1600 bits)
-        for (n=1; n<50; n++) {
-          x1 = (x1>>1) ^ (x1>>4);
-          x1 = x1 ^ (x1<<31) ^ (x1<<28);
-          x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
-          x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-            //printf("x1 : %x, x2 : %x\n",x1,x2);
-        }
-
-        for (n=0; n<52; n++) {
-          x1 = (x1>>1) ^ (x1>>4);
-          x1 = x1 ^ (x1<<31) ^ (x1<<28);
-          x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
-          x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-          ue->nr_gold_pdcch[0][ns][l][n] = x1^x2;
-	  // if (ns==1 && l==0) printf("n=%d : c %x\n",n,x1^x2);
-        }
+      // skip first 50 double words (1600 bits)
+      for (n=1; n<50; n++) {
+        x1 = (x1>>1) ^ (x1>>4);
+        x1 = x1 ^ (x1<<31) ^ (x1<<28);
+        x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
+        x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+        //printf("x1 : %x, x2 : %x\n",x1,x2);
+      }
+      for (n=0; n<52; n++) {
+        x1 = (x1>>1) ^ (x1>>4);
+        x1 = x1 ^ (x1<<31) ^ (x1<<28);
+        x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
+        x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+        ue->nr_gold_pdcch[0][ns][l][n] = x1^x2;
+        // if (ns==1 && l==0) printf("n=%d : c %x\n",n,x1^x2);
       }
     }
+  }
 }
 
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
@@ -125,7 +124,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
       
       //printf("gold pdsch nid %d lbar %d\n",nid,lbar);
 
-    for (ns=0; ns<20; ns++) {
+    for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
       for (l=0; l<14; l++) {
 
@@ -155,7 +154,6 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
           // if ((ns==2)&&(l==0))
           //printf("n=%d : c %x\n",n,x1^x2);
         }
-
       }
     }
   }
