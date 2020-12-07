@@ -731,6 +731,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     uint16_t pdsch_nb_rb    = dlsch0->harq_processes[harq_pid]->nb_rb;
     uint16_t s0             = dlsch0->harq_processes[harq_pid]->start_symbol;
     uint16_t s1             = dlsch0->harq_processes[harq_pid]->nb_symbols;
+    NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
+    uint16_t nb_rb = dlsch0_harq->nb_rb/ue->frame_parms.nb_antennas_rx;
 
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
@@ -762,13 +764,20 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
           break;
       }
     }
+
+    uint16_t first_symbol_with_data = s0;
+    uint8_t pilots = ((1<<s0)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
+    uint32_t len = (pilots==1)? ((ue->dmrs_DownlinkConfig.pdsch_dmrs_type==pdsch_dmrs_type1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
+    if(len == 0) {
+      first_symbol_with_data = first_symbol_with_data + 1; // TODO: Replace "1" by dmrs duration
+    }
+
     for (m = s0; m < (s1 + s0); m++) {
  
       dual_stream_UE = 0;
       eNB_id_i = eNB_id+1;
       i_mod = 0;
-
-      if ((m==s0) && (m<3))
+      if (( m==first_symbol_with_data ) && (m<4))
 	first_symbol_flag = 1;
       else
 	first_symbol_flag = 0;
