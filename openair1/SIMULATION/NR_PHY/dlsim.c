@@ -520,7 +520,7 @@ int main(int argc, char **argv)
       break;
     }
   }
-  
+
   logInit();
   set_glog(loglvl);
   T_stdout = 1;
@@ -749,16 +749,16 @@ int main(int argc, char **argv)
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
-  
+
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
-  
+
 
   UE_mac->if_module = nr_ue_if_module_init(0);
-  
+
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
@@ -816,7 +816,7 @@ int main(int argc, char **argv)
     reset_meas(&gNB->tinput);
     reset_meas(&gNB->tprep);
     reset_meas(&gNB->tparity);
-    reset_meas(&gNB->toutput);  
+    reset_meas(&gNB->toutput);
 
     clear_pdsch_stats(gNB);
 
@@ -916,7 +916,7 @@ int main(int argc, char **argv)
         }
         int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
         if (n_trials==1) printf("tx_offset %d, txdataF_offset %d \n", tx_offset,txdataF_offset);
-        
+
         //TODO: loop over slots
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     
@@ -978,7 +978,7 @@ int main(int argc, char **argv)
             }
           }
         }
-        
+
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
         
@@ -990,7 +990,7 @@ int main(int argc, char **argv)
         //printf("dlsim round %d ends\n",round);
         round++;
       } // round
-      
+
       //----------------------------------------------------------
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
@@ -1029,7 +1029,7 @@ int main(int argc, char **argv)
 	
       }
       for (i = 0; i < TBS; i++) {
-	
+
 	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
 	test_input_bit[i]       = (gNB_dlsch->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 	
