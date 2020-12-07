@@ -310,14 +310,21 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
                      x2ap_register_eNB->t_dc_overall);
 
     for (int i = 0; i< x2ap_register_eNB->num_cc; i++) {
-      new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
-      new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
+      if(new_instance->cell_type == CELL_MACRO_GNB){
+        new_instance->nr_band[i]              = x2ap_register_eNB->nr_band[i];
+        new_instance->tdd_nRARFCN[i]             = x2ap_register_eNB->nrARFCN[i];
+      }
+      else{
+        new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
+        new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
+        new_instance->fdd_earfcn_DL[i]           = x2ap_register_eNB->fdd_earfcn_DL[i];
+        new_instance->fdd_earfcn_UL[i]           = x2ap_register_eNB->fdd_earfcn_UL[i];
+      }
+
       new_instance->uplink_frequency_offset[i] = x2ap_register_eNB->uplink_frequency_offset[i];
       new_instance->Nid_cell[i]                = x2ap_register_eNB->Nid_cell[i];
       new_instance->N_RB_DL[i]                 = x2ap_register_eNB->N_RB_DL[i];
       new_instance->frame_type[i]              = x2ap_register_eNB->frame_type[i];
-      new_instance->fdd_earfcn_DL[i]           = x2ap_register_eNB->fdd_earfcn_DL[i];
-      new_instance->fdd_earfcn_UL[i]           = x2ap_register_eNB->fdd_earfcn_UL[i];
     }
 
     DevCheck(x2ap_register_eNB->nb_x2 <= X2AP_MAX_NB_ENB_IP_ADDRESS,

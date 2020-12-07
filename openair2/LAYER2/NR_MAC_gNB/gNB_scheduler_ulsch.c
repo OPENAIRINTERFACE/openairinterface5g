@@ -291,7 +291,7 @@ void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_sta
     }
     return;
   } else
-    LOG_E(MAC,"Incorrect ULSCH HARQ process %d or invalid state %d\n",hrq_id,cur_harq->state);
+    LOG_W(MAC,"Incorrect ULSCH HARQ process %d or invalid state %d (ignore this warning for RA)\n",hrq_id,cur_harq->state);
 }
 
 /*
