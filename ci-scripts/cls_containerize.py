@@ -42,10 +42,8 @@ from multiprocessing import Process, Lock, SimpleQueue
 # OAI Testing modules
 #-----------------------------------------------------------
 import sshconnection as SSH
-import epc 
 import helpreadme as HELP
 import constants as CONST
-import html
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -82,15 +80,12 @@ class Containerize():
 
 		self.flexranCtrlDeployed = False
 		self.flexranCtrlIpAddress = ''
-		self.htmlObj = None
-		self.epcObj = None
-		self.ranObj = None
 
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
 
-	def BuildImage(self):
+	def BuildImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -137,10 +132,7 @@ class Containerize():
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
-		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.testCase_id
-		else:
-			self.testCase_id = '000000'
+		self.testCase_id = HTML.testCase_id
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
@@ -239,9 +231,8 @@ class Containerize():
 		if not status:
 			mySSH.close()
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
-				self.htmlObj.CreateHtmlTabFooter(False)
+			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
 		# Recover build logs, for the moment only possible when build is successful
@@ -261,10 +252,9 @@ class Containerize():
 		mySSH.close()
 
 		logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)		
+		HTML.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)
 
-	def DeployObject(self):
+	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -299,9 +289,8 @@ class Containerize():
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
 		mySSH.command('sed -i -e "s/image: oai-enb:latest/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
-		if self.epcObj is not None:
-			localMmeIpAddr = self.epcObj.MmeIPAddress
-			mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
+		localMmeIpAddr = EPC.MmeIPAddress
+		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
 		if self.flexranCtrlDeployed:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED:.*/FLEXRAN_ENABLED: "yes"/\' ci-docker-compose.yml', '\$', 2)
 			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/" ci-docker-compose.yml', '\$', 2)
@@ -356,19 +345,15 @@ class Containerize():
 					time.sleep(10)
 		mySSH.close()
 
-		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.testCase_id
-		else:
-			self.testCase_id = '000000'
+		self.testCase_id = HTML.testCase_id
 		self.eNB_logFile[self.eNB_instance] = 'enb_' + self.testCase_id + '.log'
 
-		if self.htmlObj is not None:
-			if status:
-				self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)		
-			else:
-				self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)		
+		if status:
+			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		else:
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
 
-	def UndeployObject(self):
+	def UndeployObject(self, HTML, RAN):
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
@@ -410,20 +395,16 @@ class Containerize():
 		mySSH.close()
 
 		# Analyzing log file!
-		if self.ranObj is not None:
-			copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '.')
-			nodeB_prefix = 'e'
-			if (copyin_res == -1):
-				if self.htmlObj is not None:
-					self.htmlObj.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
-					self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+		copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '.')
+		nodeB_prefix = 'e'
+		if (copyin_res == -1):
+			HTML.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+		else:
+			logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + self.eNB_logFile[self.eNB_instance])
+			logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML)
+			if (logStatus < 0):
+				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 			else:
-				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + self.eNB_logFile[self.eNB_instance])
-				logStatus = self.ranObj.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance])
-				if (logStatus < 0):
-					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow(self.ranObj.runtime_stats, 'KO', logStatus)
-				else:
-					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow(self.ranObj.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 

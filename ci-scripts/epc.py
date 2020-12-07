@@ -46,7 +46,6 @@ from multiprocessing import Process, Lock, SimpleQueue
 import sshconnection as SSH 
 import helpreadme as HELP
 import constants as CONST
-import html
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -61,7 +60,6 @@ class EPCManagement():
 		self.SourceCodePath = ''
 		self.Type = ''
 		self.PcapFileName = ''
-		self.htmlObj = None
 		self.testCase_id = ''
 		self.MmeIPAddress = ''
 		self.containerPrefix = 'prod'
@@ -73,7 +71,7 @@ class EPCManagement():
 # EPC management functions
 #-----------------------------------------------------------
 
-	def InitializeHSS(self):
+	def InitializeHSS(self, HTML):
 		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
 			HELP.GenericHelp(CONST.Version)
 			HELP.EPCSrvHelp(self.IPAddress, self.UserName, self.Password, self.SourceCodePath, self.Type)
@@ -115,10 +113,9 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 
-	def InitializeMME(self):
+	def InitializeMME(self, HTML):
 		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
 			HELP.GenericHelp(CONST.Version)
 			HELP.EPCSrvHelp(self.IPAddress, self.UserName, self.Password, self.SourceCodePath, self.Type)
@@ -154,8 +151,7 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 
 	def SetMmeIPAddress(self):
 		# Not an error if we don't need an EPC
@@ -176,7 +172,7 @@ class EPCManagement():
 		else:
 			self.MmeIPAddress = self.IPAddress
 
-	def InitializeSPGW(self):
+	def InitializeSPGW(self, HTML):
 		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
 			HELP.GenericHelp(CONST.Version)
 			HELP.EPCSrvHelp(self.IPAddress, self.UserName, self.Password, self.SourceCodePath, self.Type)
@@ -213,8 +209,7 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 
 	def CheckHSSProcess(self, status_queue):
 		try:
@@ -298,7 +293,7 @@ class EPCManagement():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def TerminateHSS(self):
+	def TerminateHSS(self, HTML):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
@@ -331,10 +326,9 @@ class EPCManagement():
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def TerminateMME(self):
+	def TerminateMME(self, HTML):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
@@ -358,10 +352,9 @@ class EPCManagement():
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def TerminateSPGW(self):
+	def TerminateSPGW(self, HTML):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
@@ -402,15 +395,13 @@ class EPCManagement():
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def DeployEpc(self):
+	def DeployEpc(self, HTML):
 		logging.debug('Trying to deploy')
 		if not re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
-				self.htmlObj.CreateHtmlTabFooter(False)
+			HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+			HTML.CreateHtmlTabFooter(False)
 			sys.exit('Deploy not possible with this EPC type: ' + self.Type)
 
 		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
@@ -423,9 +414,8 @@ class EPCManagement():
 		result = re.search('docker-compose version 1', mySSH.getBefore())
 		if result is None:
 			mySSH.close()
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
-				self.htmlObj.CreateHtmlTabFooter(False)
+			HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+			HTML.CreateHtmlTabFooter(False)
 			sys.exit('docker-compose not installed on ' + self.IPAddress)
 
 		mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
@@ -458,9 +448,8 @@ class EPCManagement():
 				cnt += 1
 		mySSH.command('docker rm -f prod-db-init', '\$', 5)
 		if not db_init_status:
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
-				self.htmlObj.CreateHtmlTabFooter(False)
+			HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+			HTML.CreateHtmlTabFooter(False)
 			sys.exit('Cassandra DB deployment/configuration went wrong!')
 
 		# deploying EPC cNFs
@@ -503,13 +492,13 @@ class EPCManagement():
 			mySSH.command('docker exec -d prod-oai-spgwu-tiny /bin/bash -c "nohup tshark -i any -f \'port 8805\'  -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
 			mySSH.close()
 			logging.debug('Deployment OK')
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 		else:
 			mySSH.close()
 			logging.debug('Deployment went wrong')
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+			HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
 
-	def UndeployEpc(self):
+	def UndeployEpc(self, HTML):
 		logging.debug('Trying to undeploy')
 		# No check down, we suppose everything done before.
 
@@ -551,10 +540,10 @@ class EPCManagement():
 		mySSH.close()
 		if noMoreContainerNb == nbContainers and noMoreNetworkNb == 2:
 			logging.debug('Undeployment OK')
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 		else:
 			logging.debug('Undeployment went wrong')
-			self.htmlObj.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+			HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
 
 	def LogCollectHSS(self):
 		mySSH = SSH.SSHConnection() 

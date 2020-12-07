@@ -558,7 +558,7 @@ class OaiCiTest():
 				HTML.htmlUEFailureMsg='nr-uesoftmodem did NOT synced'
 				HTML.CreateHtmlTestRow(self.air_interface + ' ' +  self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def checkDevTTYisUnlocked(self):
 		SSH = sshconnection.SSHConnection()
@@ -636,7 +636,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
-	def AttachCatM(self,HTML,RAN,COTS_UE):
+	def AttachCatM(self,HTML,RAN,COTS_UE,EPC):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -709,9 +709,9 @@ class OaiCiTest():
 			html_cell = '<pre style="background-color:white">CAT-M module Attachment Failed</pre>'
 			html_queue.put(html_cell)
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
-	def PingCatM(self,HTML,RAN,EPC,COTS_UE):
+	def PingCatM(self,HTML,RAN,EPC,COTS_UE,EPC):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -720,7 +720,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		try:
 			statusQueue = SimpleQueue()
@@ -741,7 +741,7 @@ class OaiCiTest():
 					moduleIPAddr = result.group('ipaddr')
 				else:
 					HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 					return
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			device_id = 'catm'
@@ -805,7 +805,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', 1, statusQueue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', 1, statusQueue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -906,7 +906,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		multi_jobs = []
 		status_queue = SimpleQueue()
@@ -925,7 +925,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		else:
 			attach_status = True
@@ -954,7 +954,7 @@ class OaiCiTest():
 					time.sleep(5)
 			else:
 				HTML.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def DetachUE_common(self, device_id, idx,COTS_UE):
 		try:
@@ -987,7 +987,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		multi_jobs = []
 		cnt = 0
@@ -1302,7 +1302,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		else:
 			check_status = True
 			html_queue = SimpleQueue()
@@ -1318,7 +1318,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def GetAllUEIPAddresses(self):
 		SSH = sshconnection.SSHConnection()
@@ -1496,7 +1496,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
@@ -1598,12 +1598,12 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		multi_jobs = []
 		i = 0
@@ -1621,7 +1621,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		else:
 			ping_status = True
 			html_queue = SimpleQueue()
@@ -1638,7 +1638,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
@@ -2279,7 +2279,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
@@ -2377,7 +2377,7 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 		else:
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def Iperf(self,HTML,RAN,EPC,COTS_UE):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
@@ -2395,13 +2395,13 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			logging.debug('going here')
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 
 		self.dummyIperfVersion = '2.0.10'
@@ -2432,7 +2432,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		else:
 			iperf_status = True
 			iperf_noperf = False
@@ -2454,7 +2454,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def CheckProcessExist(self, check_eNB, check_OAI_UE,RAN,EPC):
 		multi_jobs = []
@@ -2915,11 +2915,11 @@ class OaiCiTest():
 					# Not an error then
 					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				else:
 					if (logStatus == CONST.OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Completed</b>\n' + HTML.htmlUEFailureMsg
@@ -2928,7 +2928,7 @@ class OaiCiTest():
 		else:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE):
+	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC):
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id=self.testCase_id
@@ -2954,7 +2954,7 @@ class OaiCiTest():
 				if RAN.air_interface[instance]!='':
 					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
 					RAN.eNB_instance=instance
-					RAN.TerminateeNB()
+					RAN.TerminateeNB(HTML,EPC)
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.testCase_id=self.testCase_id

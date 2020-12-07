@@ -379,14 +379,6 @@ RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
 
-EPC.htmlObj=HTML
-RAN.htmlObj=HTML
-RAN.epcObj=EPC
-CONTAINERS.htmlObj=HTML
-CONTAINERS.epcObj=EPC
-CONTAINERS.ranObj=RAN
-
-
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
 
 
@@ -668,17 +660,16 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 							RAN.prematureExit = True
 							break
 				if action == 'Build_eNB':
-					RAN.BuildeNB()
+					RAN.BuildeNB(HTML)
 				elif action == 'WaitEndBuild_eNB':
-					RAN.WaitBuildeNBisFinished()
+					RAN.WaitBuildeNBisFinished(HTML)
 				elif action == 'Initialize_eNB':
 					check_eNB = False
 					check_OAI_UE = False
 					RAN.pStatus=CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-
-					RAN.InitializeeNB()
+					RAN.InitializeeNB(HTML, EPC)
 				elif action == 'Terminate_eNB':
-					RAN.TerminateeNB()
+					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
 					CiTestObj.InitializeUE(HTML,COTS_UE)
 				elif action == 'Terminate_UE':
@@ -698,17 +689,17 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Initialize_OAI_UE':
 					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC)
 				elif action == 'Ping':
 					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Iperf':
@@ -716,21 +707,21 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':
-					EPC.InitializeHSS()
+					EPC.InitializeHSS(HTML)
 				elif action == 'Terminate_HSS':
-					EPC.TerminateHSS()
+					EPC.TerminateHSS(HTML)
 				elif action == 'Initialize_MME':
-					EPC.InitializeMME()
+					EPC.InitializeMME(HTML)
 				elif action == 'Terminate_MME':
-					EPC.TerminateMME()
+					EPC.TerminateMME(HTML)
 				elif action == 'Initialize_SPGW':
-					EPC.InitializeSPGW()
+					EPC.InitializeSPGW(HTML)
 				elif action == 'Terminate_SPGW':
-					EPC.TerminateSPGW()
+					EPC.TerminateSPGW(HTML)
 				elif action == 'Deploy_EPC':
-					EPC.DeployEpc()
+					EPC.DeployEpc(HTML)
 				elif action == 'Undeploy_EPC':
-					EPC.UndeployEpc()
+					EPC.UndeployEpc(HTML)
 				elif action == 'Initialize_FlexranCtrl':
 					CiTestObj.InitializeFlexranCtrl(HTML,RAN,EPC)
 				elif action == 'Terminate_FlexranCtrl':
@@ -745,11 +736,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':
-					CONTAINERS.BuildImage()
+					CONTAINERS.BuildImage(HTML)
 				elif action == 'Deploy_Object':
-					CONTAINERS.DeployObject()
+					CONTAINERS.DeployObject(HTML, EPC)
 				elif action == 'Undeploy_Object':
-					CONTAINERS.UndeployObject()
+					CONTAINERS.UndeployObject(HTML, RAN)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if not RAN.prematureExit:

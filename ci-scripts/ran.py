@@ -42,10 +42,8 @@ from multiprocessing import Process, Lock, SimpleQueue
 # OAI Testing modules
 #-----------------------------------------------------------
 import sshconnection as SSH
-import epc 
 import helpreadme as HELP
 import constants as CONST
-import html
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -91,8 +89,6 @@ class RANManagement():
 		self.flexranCtrlIpAddress = ''
 		self.testCase_id = ''
 		self.epcPcapFile = ''
-		self.htmlObj = None
-		self.epcObj = None
 		self.runtime_stats= ''
 
 
@@ -101,7 +97,7 @@ class RANManagement():
 # RAN management functions
 #-----------------------------------------------------------
 
-	def BuildeNB(self):
+	def BuildeNB(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -141,10 +137,7 @@ class RANManagement():
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
-		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.testCase_id
-		else:
-			self.testCase_id = '000000'
+		self.testCase_id = HTML.testCase_id
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
@@ -185,8 +178,7 @@ class RANManagement():
 						mismatch = True
 				if not mismatch:
 					mySSH.close()
-					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+					HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 					return
 
 		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
@@ -213,15 +205,14 @@ class RANManagement():
 			mySSH.command('echo ' + lPassWord + ' | sudo -S ls', '\$', 5)
 			mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-build.sh' + ' > ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ' + ' 2>&1 &', lUserName, 5)
 			mySSH.close()
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
 			return
 		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
 		mySSH.close()
-		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id, HTML)
 
-	def WaitBuildeNBisFinished(self):
+	def WaitBuildeNBisFinished(self, HTML):
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -254,11 +245,10 @@ class RANManagement():
 				count -= 1
 				time.sleep(30)
 		mySSH.close()
-		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)])
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)], HTML)
 
-	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
-		if self.htmlObj is not None:
-			self.htmlObj.testCase_id=testcaseId
+	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId, HTML):
+		HTML.testCase_id=testcaseId
 
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
@@ -312,184 +302,14 @@ class RANManagement():
 		#generate logging info depending on buildStatus and air interface
 		if buildStatus:
 			logging.info('\u001B[1m Building OAI ' + self.air_interface[self.eNB_instance] + ' Pass\u001B[0m')
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)		
+			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 		else:
 			logging.error('\u001B[1m Building OAI ' + self.air_interface[self.eNB_instance] + ' Failed\u001B[0m')
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
-				self.htmlObj.CreateHtmlTabFooter(False)
+			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
-	def BuildImage(self):
-		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		if self.eNB_serverId[self.eNB_instance] == '0':
-			lIpAddr = self.eNBIPAddress
-			lUserName = self.eNBUserName
-			lPassWord = self.eNBPassword
-			lSourcePath = self.eNBSourceCodePath
-		elif self.eNB_serverId[self.eNB_instance] == '1':
-			lIpAddr = self.eNB1IPAddress
-			lUserName = self.eNB1UserName
-			lPassWord = self.eNB1Password
-			lSourcePath = self.eNB1SourceCodePath
-		elif self.eNB_serverId[self.eNB_instance] == '2':
-			lIpAddr = self.eNB2IPAddress
-			lUserName = self.eNB2UserName
-			lPassWord = self.eNB2Password
-			lSourcePath = self.eNB2SourceCodePath
-		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		logging.debug('Building on server: ' + lIpAddr)
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
-
-		imageNames = []
-		result = re.search('eNB', self.imageKind)
-		if result is not None:
-			imageNames.append(('oai-enb', 'eNB'))
-		else:
-			result = re.search('gNB', self.imageKind)
-			if result is not None:
-				imageNames.append(('oai-gnb', 'gNB'))
-			else:
-				result = re.search('all', self.imageKind)
-				if result is not None:
-					imageNames.append(('oai-enb', 'eNB'))
-					imageNames.append(('oai-gnb', 'gNB'))
-		if len(imageNames) == 0:
-			imageNames.append(('oai-enb', 'eNB'))
-		# Workaround for some servers, we need to erase completely the workspace
-		if self.Build_eNB_forced_workspace_cleanup:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
-		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.testCase_id
-		else:
-			self.testCase_id = '000000'
-		# on RedHat/CentOS .git extension is mandatory
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-		if result is not None:
-			full_ran_repo_name = self.ranRepository
-		else:
-			full_ran_repo_name = self.ranRepository + '.git'
-		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
-
-		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
-		# if the branch is not develop, then it is a merge request and we need to do 
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		imageTag = 'develop'
-		if (self.ranAllowMerge):
-			imageTag = 'ci-temp'
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
-		# Let's remove any previous run artifacts if still there
-		mySSH.command('docker image prune --force', '\$', 5)
-		mySSH.command('docker image rm ran-build:' + imageTag, '\$', 5)
-		for image,pattern in imageNames:
-			mySSH.command('docker image rm ' + image + ':' + imageTag, '\$', 5)
-		# Build the shared image
-		mySSH.command('docker build --target ran-build --tag ran-build:' + imageTag + ' --file docker/Dockerfile.ran.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 800)
-		# Build the target image(s)
-		previousImage='ran-build:' + imageTag
-		danglingShaOnes=[]
-		for image,pattern in imageNames:
-			mySSH.command('docker build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + '.ubuntu18 . > cmake_targets/log/' + image + '.log 2>&1', '\$', 600)
-			# Retrieving the dangling image(s) for the log collection
-			mySSH.command('docker images --filter "dangling=true" --filter "since=' + previousImage + '" -q | sed -e "s#^#sha=#"', '\$', 5)
-			result = re.search('sha=(?P<imageShaOne>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
-			if result is not None:
-				danglingShaOnes.append((image, result.group('imageShaOne')))
-			previousImage=image + ':' + imageTag
-
-		imageTag = 'ci-temp'
-		# First verify if images were properly created.
-		status = True
-		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' ran-build:' + imageTag, '\$', 5)
-		if mySSH.getBefore().count('No such object') != 0:
-			logging.error('Could not build properly ran-build')
-			status = False
-		else:
-			result = re.search('Size = (?P<size>[0-9\-]+) bytes', mySSH.getBefore())
-			if result is not None:
-				imageSize = float(result.group('size'))
-				imageSize = imageSize / 1000
-				if imageSize < 1000:
-					logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-				else:
-					imageSize = imageSize / 1000
-					if imageSize < 1000:
-						logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-					else:
-						imageSize = imageSize / 1000
-						logging.debug('\u001B[1m   ran-build size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-			else:
-				logging.debug('ran-build size is unknown')
-		for image,pattern in imageNames:
-			mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
-			if mySSH.getBefore().count('No such object') != 0:
-				logging.error('Could not build properly ' + image)
-				status = False
-			else:
-				result = re.search('Size = (?P<size>[0-9\-]+) bytes', mySSH.getBefore())
-				if result is not None:
-					imageSize = float(result.group('size'))
-					imageSize = imageSize / 1000
-					if imageSize < 1000:
-						logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-					else:
-						imageSize = imageSize / 1000
-						if imageSize < 1000:
-							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-						else:
-							imageSize = imageSize / 1000
-							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-				else:
-					logging.debug('ran-build size is unknown')
-		if not status:
-			mySSH.close()
-			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
-				self.htmlObj.CreateHtmlTabFooter(False)
-			sys.exit(1)
-
-		# Recover build logs, for the moment only possible when build is successful
-		mySSH.command('docker create --name test ran-build:' + imageTag, '\$', 5)
-		mySSH.command('mkdir -p cmake_targets/log/ran-build', '\$', 5)
-		mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-build', '\$', 5)
-		mySSH.command('docker rm -f test', '\$', 5)
-		for image,shaone in danglingShaOnes:
-			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
-			mySSH.command('docker create --name test ' + shaone, '\$', 5)
-			mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/' + image, '\$', 5)
-			mySSH.command('docker rm -f test', '\$', 5)
-		mySSH.command('docker image prune --force', '\$', 5)
-		mySSH.command('cd cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		mySSH.close()
-
-		logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)		
-		
-	def InitializeeNB(self):
+	def InitializeeNB(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -510,23 +330,19 @@ class RANManagement():
 			sys.exit('Insufficient Parameter')
 		logging.debug('Starting eNB/gNB on server: ' + lIpAddr)
 
-		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.testCase_id
-		else:
-			self.testCase_id = '000000'
+		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
 		
 		if (self.pStatus < 0):
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
-				self.htmlObj.CreateHtmlTabFooter(False)
+			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
+			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.IPAddress
-			localEpcUserName = self.epcObj.UserName
-			localEpcPassword = self.epcObj.Password
+		if (result is not None):
+			localEpcIpAddr = EPC.IPAddress
+			localEpcUserName = EPC.UserName
+			localEpcPassword = EPC.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
@@ -574,9 +390,8 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		if self.epcObj is not None:
-			localMmeIpAddr = self.epcObj.MmeIPAddress
-			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
+		localMmeIpAddr = EPC.MmeIPAddress
+		mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_GNB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -627,14 +442,13 @@ class RANManagement():
 				mySSH.close()
 				doLoop = False
 				logging.error('\u001B[1;37;41m eNB/gNB/ocp-eNB logging system did not show got sync! \u001B[0m')
-				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
+				HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
-				if (result is not None) and (self.epcObj is not None):
-					localEpcIpAddr = self.epcObj.IPAddress
-					localEpcUserName = self.epcObj.UserName
-					localEpcPassword = self.epcObj.Password
+				if (result is not None):
+					localEpcIpAddr = EPC.IPAddress
+					localEpcUserName = EPC.UserName
+					localEpcPassword = EPC.Password
 					mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 					mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -685,8 +499,7 @@ class RANManagement():
 			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId[self.eNB_instance])
 
 		mySSH.close()
-		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB/gNB/ocp-eNB Completed\u001B[0m')
 
 	def CheckeNBProcess(self, status_queue):
@@ -721,7 +534,7 @@ class RANManagement():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def TerminateeNB(self):
+	def TerminateeNB(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -762,10 +575,10 @@ class RANManagement():
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.IPAddress
-			localEpcUserName = self.epcObj.UserName
-			localEpcPassword = self.epcObj.Password
+		if (result is not None):
+			localEpcIpAddr = EPC.IPAddress
+			localEpcUserName = EPC.UserName
+			localEpcPassword = EPC.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -789,9 +602,8 @@ class RANManagement():
 			mySSH.close()
 			mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
-			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
-			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file, HTML)
+			HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
 			analyzeFile = False
@@ -803,27 +615,23 @@ class RANManagement():
 				copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
-					if self.htmlObj is not None:
-						self.htmlObj.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
-						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					HTML.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
+					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId[self.eNB_instance] != '0':
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
-				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
+				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML)
 				if (logStatus < 0):
-					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					HTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.preamtureExit = True
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
-					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+					HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
-				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+				HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
@@ -837,7 +645,7 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
 		mySSH.close()
 
-	def AnalyzeLogFile_eNB(self, eNBlogFile):
+	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
 		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
 		enb_log_file = open('./' + eNBlogFile, 'r')
@@ -1206,8 +1014,7 @@ class RANManagement():
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
 			htmleNBFailureMsg += rlcMsg + '\n'
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
-		if self.htmlObj is not None:
-			self.htmlObj.htmleNBFailureMsg=htmleNBFailureMsg
+		HTML.htmleNBFailureMsg=htmleNBFailureMsg
 		# Runtime statistics for console output and HTML
 		if runTime != '':
 			logging.debug(runTime)
