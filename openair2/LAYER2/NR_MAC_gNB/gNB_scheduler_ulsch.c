@@ -695,14 +695,25 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  uint8_t rballoc_mask[bwpSize];
-  int n_rb_sched = 0;
+  int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
-    // calculate mask: init with "NOT" vrb_map_UL:
-    // if any RB in vrb_map_UL is blocked (1), the current RB will be 0
-    rballoc_mask[i] = !vrb_map_UL[i];
-    n_rb_sched += rballoc_mask[i];
+    while (vrb_map_UL[i] == 1)
+      i++;
+    st = i;
+    while (vrb_map_UL[i] == 0)
+      i++;
+    if (i - st > len) {
+      len = i - st;
+      e = i - 1;
+    }
   }
+  st = e - len + 1;
+
+  uint8_t rballoc_mask[bwpSize];
+
+  /* Calculate mask: if any RB in vrb_map_UL is blocked (1), the current RB will be 0 */
+  for (int i = 0; i < bwpSize; i++)
+    rballoc_mask[i] = i >= st && i <= e;
 
   /* proportional fair scheduling algorithm */
   pf_ul(module_id,
@@ -710,7 +721,7 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
         slot,
         num_slots_per_tdd,
         &UE_info->list,
-        n_rb_sched,
+        len,
         rballoc_mask,
         2);
   return true;
