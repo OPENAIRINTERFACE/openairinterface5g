@@ -711,7 +711,7 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
-	def PingCatM(self,HTML,RAN,EPC,COTS_UE,EPC):
+	def PingCatM(self,HTML,RAN,EPC,COTS_UE):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -1238,6 +1238,8 @@ class OaiCiTest():
 				if lDataConnectionState == 3:
 					dataConnectionState = 'Data State:    SUSPENDED'
 			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', SSH.getBefore())
+			time.sleep(1)
+			SSH.close()
 			dataConnectionReason = 'Data Reason:   UNKNOWN'
 			if result is not None:
 				dataConnectionReason = 'Data Reason:   ' + result.group('dataConnectionReason')
@@ -1251,7 +1253,6 @@ class OaiCiTest():
 			qMsg = serviceState + '\n' + dataConnectionState + '\n' + dataConnectionReason
 			statusQueue.put(qMsg)
 			lock.release()
-			SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
