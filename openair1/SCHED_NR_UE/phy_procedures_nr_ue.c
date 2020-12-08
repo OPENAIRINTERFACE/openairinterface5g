@@ -134,10 +134,10 @@ UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_id){
   return(PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[gNB_id]);
 }
 
-uint16_t get_bw_scaling(uint16_t bwp_ul_NB_RB){
+// scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
+uint16_t get_bw_scaling(uint16_t nb_rb){
   uint16_t bw_scaling;
-  // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-  switch (bwp_ul_NB_RB) {
+  switch (nb_rb) {
     case 32:  bw_scaling =  4; break;
     case 66:  bw_scaling =  8; break;
     case 106: bw_scaling = 16; break;
@@ -925,7 +925,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
   uint16_t nb_prefix_samples = ue->frame_parms.nb_prefix_samples;
   uint32_t t_subframe = 1; // subframe duration of 1 msec
-  uint16_t bw_scaling, start_symbol;
+  uint16_t start_symbol;
   float tc_factor;
 
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
@@ -1236,16 +1236,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
       if (ue->mac_enabled == 1) {
 
-        // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-        switch (ue->frame_parms.N_RB_DL) {
-          case 32:  bw_scaling =  4; break;
-          case 66:  bw_scaling =  8; break;
-          case 106: bw_scaling = 16; break;
-          case 217: bw_scaling = 32; break;
-          case 245: bw_scaling = 32; break;
-          case 273: bw_scaling = 32; break;
-          default: abort();
-        }
+        uint16_t bw_scaling = get_bw_scaling(ue->frame_parms.N_RB_DL);
 
         /* Time Alignment procedure
         // - UE processing capability 1
