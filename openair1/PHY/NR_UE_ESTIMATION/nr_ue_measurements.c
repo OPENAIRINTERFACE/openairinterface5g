@@ -304,6 +304,12 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   }
 
   ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/aarx);
+
+  #ifdef DEBUG_MEAS_RRC
+  int nf_usrp = ue->measurements.n0_power_tot_dB + 30 - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - 90 - (-174 + dB_fixed(30000/*scs*/) + dB_fixed(ue->frame_parms.ofdm_symbol_size));
+  LOG_D(PHY, "In %s slot %d NF USRP %d dBm\n", __FUNCTION__, nf_usrp);
+  #endif
+
   LOG_I(PHY, "In %s slot %d Noise Level %d ue->measurements.n0_power_tot_dB %d \n", __FUNCTION__, slot, ue->measurements.n0_power_tot, ue->measurements.n0_power_tot_dB);
 
 }
