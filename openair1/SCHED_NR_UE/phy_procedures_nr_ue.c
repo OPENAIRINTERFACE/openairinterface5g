@@ -149,6 +149,32 @@ uint16_t get_bw_scaling(uint16_t nb_rb){
   return bw_scaling;
 }
 
+/* UL time alignment
+// If the current tx frame and slot match the TA configuration in ul_time_alignment
+// then timing advance is processed and set to be applied in the next UL transmission */
+void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
+
+  if (ue->mac_enabled == 1) {
+
+    uint8_t gNB_id = 0;
+    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[gNB_id];
+
+    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
+
+      uint8_t numerology = ue->frame_parms.numerology_index;
+      uint16_t bwp_ul_NB_RB = ue->frame_parms.N_RB_UL;
+
+      LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d\n", __FUNCTION__, frame_tx, slot_tx);
+
+      nr_process_timing_advance(ue->Mod_id, ue->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
+
+      ul_time_alignment->ta_frame = -1;
+      ul_time_alignment->ta_slot = -1;
+
+    }
+  }
+}
+
 void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB){
 
   // 3GPP TS 38.213 p4.2
