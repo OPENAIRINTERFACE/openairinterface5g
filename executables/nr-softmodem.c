@@ -90,7 +90,7 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
+extern uint8_t nfapi_mode; // Default to monolithic mode,set in config_load_configmodule.c
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;

@@ -60,7 +60,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -81,7 +81,7 @@ double cpuf;
 
 int sf_ahead=4 ;
 int sl_ahead=0;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 // dummy functions

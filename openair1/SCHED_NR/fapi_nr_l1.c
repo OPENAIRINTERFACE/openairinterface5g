@@ -35,10 +35,10 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req);
-int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
-int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req);
-int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req);
+extern int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req);
+extern int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
+extern int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req);
+extern int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req);
 
 
 extern uint8_t nfapi_mode;
@@ -234,22 +234,22 @@ if(nfapi_mode != 2)
     }
   }
 
-if(nfapi_mode != 0 && number_ul_tti_pdu>0)
-{
-  oai_nfapi_ul_tti_req(UL_tti_req);
-}
+// if(nfapi_mode != 0 && number_ul_tti_pdu>0)
+// {
+//   oai_nfapi_ul_tti_req(UL_tti_req);
+// }
  
- if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
-  {
-    oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
-  }//Only DL
+//  if (nfapi_mode != 0 && Sched_INFO->UL_dci_req->numPdus!=0)
+//   {
+//     oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
+//   }//Only DL
  
   if (nfapi_mode != 0) 
   { if(Sched_INFO->DL_req->dl_tti_request_body.nPDUs>0)
   {
     Sched_INFO->DL_req->SFN = frame;
     Sched_INFO->DL_req->Slot = slot;
-    oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req);
+    oai_nfapi_dl_tti_req(Sched_INFO->DL_req);
   }
     if (Sched_INFO->TX_req->Number_of_PDUs > 0)
     {

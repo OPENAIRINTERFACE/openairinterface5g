@@ -1038,7 +1038,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			if(pnf_p7->_public.dl_tti_req_fn)
 			{
 	
-	//printf("\nIn pnf_phy_dl_tti_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d slot buffer sfn %d %d \n",tx_slot_buffer->dl_tti_req->SFN,tx_slot_buffer->dl_tti_req->Slot,pnf_p7->sfn,pnf_p7->slot);
+	printf("\nIn pnf_phy_dl_tti_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d \n",tx_slot_buffer->dl_tti_req->SFN,tx_slot_buffer->dl_tti_req->Slot,pnf_p7->sfn,pnf_p7->slot);
 
 				(pnf_p7->_public.dl_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->dl_tti_req);
 			}
@@ -1060,8 +1060,9 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		if(tx_slot_buffer->ul_dci_req!= 0)
 		{
 			if(pnf_p7->_public.ul_dci_req_fn)
-				(pnf_p7->_public.ul_dci_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->ul_dci_req);
-
+			{   printf("\nIn pnf_phy_Ul_DCI_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d\n",tx_slot_buffer->ul_dci_req->SFN,tx_slot_buffer->ul_dci_req->Slot,pnf_p7->sfn,pnf_p7->slot);
+ 				(pnf_p7->_public.ul_dci_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->ul_dci_req);
+			}
 			//deallocate_nfapi_hi_dci0_request(subframe_buffer->hi_dci0_req, pnf_p7);
 		}
 		else
@@ -1125,8 +1126,12 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			if(slot_buffer->ul_tti_req != 0)
 			{
 				if(pnf_p7->_public.ul_tti_req_fn)
+				{ struct timespec curr;
+				//   clock_gettime(CLOCK_MONOTONIC,&curr);
+				//   printf("\ntime at which ul_tti handle fn %ld.%ld \n",curr.tv_sec,curr.tv_nsec);
+					printf("\nIn pnf_phy_ul_tti_req VNF: sfn %d slot %d, PNF:  sfn %d slot %d   \n",slot_buffer->ul_tti_req->SFN,slot_buffer->ul_tti_req->Slot,pnf_p7->sfn,pnf_p7->slot);
 					(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), slot_buffer->ul_tti_req);
-
+				}
 				//deallocate_nfapi_ul_config_request(subframe_buffer->ul_config_req, pnf_p7);
 			}
 			else
@@ -2720,31 +2725,6 @@ void pnf_nr_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7
 		case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
 			pnf_handle_tx_data_request(pRecvMsg, recvMsgLen, pnf_p7);
 			break;
-		#if 0
-		case NFAPI_DL_CONFIG_REQUEST:
-			pnf_handle_dl_config_request(pRecvMsg, recvMsgLen, pnf_p7);
-			break;
-
-		case NFAPI_UL_CONFIG_REQUEST:
-			pnf_handle_ul_config_request(pRecvMsg, recvMsgLen, pnf_p7);
-			break;
-
-		case NFAPI_HI_DCI0_REQUEST:
-			pnf_handle_hi_dci0_request(pRecvMsg, recvMsgLen, pnf_p7);
-			break;
-
-		case NFAPI_TX_REQUEST:
-			pnf_handle_tx_request(pRecvMsg, recvMsgLen, pnf_p7);
-			break;
-		#endif
-		case NFAPI_LBT_DL_CONFIG_REQUEST:
-			pnf_handle_lbt_dl_config_request(pRecvMsg, recvMsgLen, pnf_p7);
-			break;
-
-		case NFAPI_UE_RELEASE_REQUEST:
-			pnf_handle_ue_release_request(pRecvMsg, recvMsgLen, pnf_p7);
-			break;
-
 		default:
 			{
 				if(header.message_id >= NFAPI_VENDOR_EXT_MSG_MIN &&

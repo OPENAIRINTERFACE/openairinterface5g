@@ -20,7 +20,7 @@ void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
 int l1_north_init_gNB(void){}
 
 uint8_t slot_ahead=6;
-uint8_t nfapi_mode=0;
+//uint8_t nfapi_mode=0;
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {}
 
 void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,

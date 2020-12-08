@@ -1273,7 +1273,8 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     if (req->ul_dci_pdu_list[i].PDUType == 0) {
       //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
        nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
-      handle_nfapi_nr_ul_dci_pdu(gNB, req->SFN, req->Slot, ul_dci_req_pdu); 
+       int SFN=req->SFN+2;
+      handle_nfapi_nr_ul_dci_pdu(gNB, SFN, req->Slot, ul_dci_req_pdu); 
     } 
     else {
       LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), i, req->ul_dci_pdu_list[i].PDUType);

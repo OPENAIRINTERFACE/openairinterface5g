@@ -255,8 +255,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              sub_frame_t slot,
                              int num_slots_per_tdd)
 {
-  if (slot != 2)
-    return; /* only schedule in slot 1 for now */
+  if (slot != 1)
+    return; /* only schedule in slot 1 for now . DL in nFAPI mode is working when PDCCH and PDSCH are scheduled in even slots */
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
   const int CC_id = 0;
@@ -711,6 +711,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
     //Optional Data only included if indicated in pduBitmap
+    //int8_t harq_id=0;// Hard coding the harq id 
     int8_t harq_id = select_ul_harq_pid(&UE_info->UE_sched_ctrl[UE_id]);
     if (harq_id < 0) return;
     NR_UE_ul_harq_t *cur_harq = &UE_info->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];

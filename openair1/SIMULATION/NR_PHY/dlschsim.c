@@ -56,7 +56,7 @@ UE_nr_rxtx_proc_t proc;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};

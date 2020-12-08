@@ -1597,7 +1597,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   return retval;
 }
 
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
   //LOG_I(PHY, "sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
   //printf("\nEntering oai_nfapi_nr_dl_config_req sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);

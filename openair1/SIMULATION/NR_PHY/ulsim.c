@@ -52,7 +52,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
-//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/threadPool/thread-pool.h"
@@ -77,7 +77,7 @@ int sf_ahead=4 ;
 int slot_ahead=6 ;
 int sl_ahead=0;
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 

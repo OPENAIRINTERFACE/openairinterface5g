@@ -47,6 +47,7 @@
 #include "OCG_vars.h"
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 
 #define NR_PRACH_DEBUG 1
@@ -62,7 +63,7 @@ RU_t *ru;
 double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
-uint8_t nfapi_mode=0;
+//uint8_t nfapi_mode=0;
 int sl_ahead = 0;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
