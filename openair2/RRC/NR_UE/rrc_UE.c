@@ -2332,8 +2332,6 @@ nr_rrc_ue_decode_dcch(
                 if (first_rrcreconfigurationcomplete == 0) {
                     first_rrcreconfigurationcomplete = 1;
 #ifdef ITTI_SIM
-                    //wait send RRCReconfigurationComplete and InitialContextSetupResponse
-                    sleep(1);
                     as_nas_info_t initialNasMsg;
                     memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
                     generateRegistrationComplete(&initialNasMsg, NULL);
@@ -2346,8 +2344,6 @@ nr_rrc_ue_decode_dcch(
                         itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
                         LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
                     }
-                    //wait send RegistrationComplete
-                    usleep(100*150);
                     as_nas_info_t pduEstablishMsg;
                     memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
                     generatePduSessionEstablishRequest(&pduEstablishMsg);

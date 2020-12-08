@@ -505,6 +505,8 @@ void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
 }
 
 void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer               *sortransparentcontainer) {
+  //wait send RRCReconfigurationComplete and InitialContextSetupResponse
+  sleep(1);
   int length = 0;
   int size = 0;
   fgs_nas_message_t nas_msg;
@@ -583,6 +585,8 @@ void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentCo
 }
 
 void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
+  //wait send RegistrationComplete
+  usleep(100*150);
   int size = 0;
   fgs_nas_message_t nas_msg;
   memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
