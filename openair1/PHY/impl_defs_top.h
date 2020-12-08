@@ -253,7 +253,7 @@
 #ifdef BIT8_TX
 #define AMP_SHIFT 7
 #else
-#define AMP_SHIFT 10
+#define AMP_SHIFT 9
 #endif
 
 #define AMP ((1)<<AMP_SHIFT)
