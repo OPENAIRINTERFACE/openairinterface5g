@@ -150,7 +150,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
           x1 = x1 ^ (x1<<31) ^ (x1<<28);
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
           x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-          ue->nr_gold_pdsch[nscid][ns][l][n] = x1^x2;
+          ue->nr_gold_pdsch[0][ns][l][nscid][n] = x1^x2;
           // if ((ns==2)&&(l==0))
           //printf("n=%d : c %x\n",n,x1^x2);
         }
