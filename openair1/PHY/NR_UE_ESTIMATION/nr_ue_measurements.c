@@ -145,7 +145,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 
     ue->measurements.n0_power_avg = (int)(((k1*((long long int) (ue->measurements.n0_power_avg))) + (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
 
-    LOG_D(PHY, "Noise Power Computation: k1 %d k2 %d n0 avg %lu n0 tot %lu\n", k1, k2, ue->measurements.n0_power_avg, ue->measurements.n0_power_tot);
+    LOG_D(PHY, "Noise Power Computation: k1 %lld k2 %lld n0 avg %u n0 tot %u\n", k1, k2, ue->measurements.n0_power_avg, ue->measurements.n0_power_tot);
 
   } else {
 
