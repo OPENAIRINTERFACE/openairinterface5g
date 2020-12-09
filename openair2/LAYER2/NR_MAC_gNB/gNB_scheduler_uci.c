@@ -34,6 +34,51 @@
 
 extern RAN_CONTEXT_t RC;
 
+void nr_fill_nfapi_pucch(module_id_t mod_id,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         const NR_sched_pucch_t *pucch,
+                         int UE_id)
+{
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req =
+      &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
+  AssertFatal(future_ul_tti_req->SFN == pucch->frame
+              && future_ul_tti_req->Slot == pucch->ul_slot,
+              "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
+              future_ul_tti_req->SFN,
+              future_ul_tti_req->Slot,
+              pucch->frame,
+              pucch->ul_slot);
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+  nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
+  memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
+  future_ul_tti_req->n_pdus += 1;
+
+  LOG_I(MAC,
+        "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d on res %d\n",
+        frame,
+        slot,
+        pucch->frame,
+        pucch->ul_slot,
+        pucch->sr_flag,
+        pucch->dai_c,
+        pucch->csi_bits,
+        pucch->resource_indicator);
+
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  nr_configure_pucch(pucch_pdu,
+                     scc,
+                     UE_info->UE_sched_ctrl[UE_id].active_ubwp,
+                     UE_info->rnti[UE_id],
+                     pucch->resource_indicator,
+                     pucch->csi_bits,
+                     pucch->dai_c,
+                     pucch->sr_flag);
+}
+
 void nr_schedule_pucch(int Mod_idP,
                        int UE_id,
                        int nr_ulmix_slots,
@@ -54,41 +99,7 @@ void nr_schedule_pucch(int Mod_idP,
         || slotP != curr_pucch->ul_slot)
       continue;
 
-    nfapi_nr_ul_tti_request_t *future_ul_tti_req =
-        &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][curr_pucch->ul_slot];
-    AssertFatal(future_ul_tti_req->SFN == curr_pucch->frame
-                && future_ul_tti_req->Slot == curr_pucch->ul_slot,
-                "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
-                future_ul_tti_req->SFN,
-                future_ul_tti_req->Slot,
-                curr_pucch->frame,
-                curr_pucch->ul_slot);
-    future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-    future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-    nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
-    memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
-    future_ul_tti_req->n_pdus += 1;
-
-    LOG_I(MAC,
-          "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d\n",
-          frameP,
-          slotP,
-          curr_pucch->frame,
-          curr_pucch->ul_slot,
-          O_sr,
-          O_ack,
-          O_csi);
-
-    NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
-    nr_configure_pucch(pucch_pdu,
-                       scc,
-                       UE_info->UE_sched_ctrl[UE_id].active_ubwp,
-                       UE_info->rnti[UE_id],
-                       curr_pucch->resource_indicator,
-                       O_csi,
-                       O_ack,
-                       O_sr);
-
+    nr_fill_nfapi_pucch(Mod_idP, frameP, slotP, curr_pucch, UE_id);
     memset(curr_pucch, 0, sizeof(*curr_pucch));
   }
 }
