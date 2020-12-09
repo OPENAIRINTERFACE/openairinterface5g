@@ -486,7 +486,7 @@ class EPCManagement():
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
 		if healthyNb == expectedHealthyContainers:
 			mySSH.command('docker exec -d prod-oai-hss /bin/bash -c "nohup tshark -i any -f \'port 9042 or port 3868\' -w /tmp/hss_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
-			mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i any -f \'port 3868 or port 2123 or port 36421\' -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i any -f \'port 3868 or port 2123 or port 36412\' -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
 			mySSH.command('docker exec -d prod-oai-spgwc /bin/bash -c "nohup tshark -i any -f \'port 2123 or port 8805\' -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
 			# on SPGW-U, not capturing on SGI to avoid huge file
 			mySSH.command('docker exec -d prod-oai-spgwu-tiny /bin/bash -c "nohup tshark -i any -f \'port 8805\'  -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
