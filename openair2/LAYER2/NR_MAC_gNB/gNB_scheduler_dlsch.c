@@ -454,7 +454,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  const int current_harq_pid = sched_ctrl->current_harq_pid;
+  // for now HARQ PID is fixed and should be the same as in post-processor
+  const int current_harq_pid = slot % num_slots_per_tdd;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
   NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
@@ -586,7 +587,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        1 /* nrOfLayers */)
         >> 3;
 
-    const int current_harq_pid = sched_ctrl->current_harq_pid;
+    const int current_harq_pid = slot % num_slots_per_tdd;
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     NR_sched_pucch *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx][sched_ctrl->pucch_occ_idx];
     harq->feedback_slot = pucch->ul_slot;
@@ -639,7 +640,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
               retInfo->numDmrsCdmGrpsNoData);
       /* we do not have to do anything, since we do not require to get data
        * from RLC, encode MAC CEs, or copy data to FAPI structures */
-      LOG_W(MAC, "%d.%2d retransmission UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+      LOG_W(MAC,
+            "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
+            frame,
+            slot,
+            UE_id,
+            rnti,
+            current_harq_pid,
+            harq->round,
+            harq->ndi);
     } else { /* initial transmission */
 
       /* reserve space for timing advance of UE if necessary,

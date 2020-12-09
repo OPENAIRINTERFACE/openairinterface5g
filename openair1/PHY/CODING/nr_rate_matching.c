@@ -407,8 +407,16 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc: E %d, F %d, Foffset %d, k0 %d, Ncb %d, rvidx %d\n", E, F, Foffset,ind, Ncb, rvidx);
 #endif
-  AssertFatal(Foffset <= E,"Foffset %d > E %d\n",Foffset,E); 
-  AssertFatal(Foffset <= Ncb,"Foffset %d > Ncb %d\n",Foffset,Ncb); 
+  AssertFatal(Foffset <= E,
+              "Foffset %d > E %d "
+              "(Ilbrm %d, Tbslbrm %d, Z %d, BG %d, C %d)\n",
+              Foffset, E,
+              Ilbrm, Tbslbrm, Z, BG, C);
+  AssertFatal(Foffset <= Ncb,
+              "Foffset %d > Ncb %d "
+              "(Ilbrm %d, Tbslbrm %d, Z %d, BG %d, C %d)\n",
+              Foffset, Ncb,
+              Ilbrm, Tbslbrm, Z, BG, C);
 
   if (ind >= Foffset && ind < (F+Foffset)) ind = F+Foffset;
 

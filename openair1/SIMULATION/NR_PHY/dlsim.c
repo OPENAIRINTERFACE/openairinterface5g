@@ -860,7 +860,6 @@ int main(int argc, char **argv)
 
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
-        UE_info->UE_sched_ctrl[0].current_harq_pid = harq_pid;
         gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
@@ -878,7 +877,7 @@ int main(int argc, char **argv)
         Sched_INFO.frame     = frame;
         Sched_INFO.slot      = slot;
         Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-        Sched_INFO.UL_tti_req    = &gNB_mac->UL_tti_req[0];
+        Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[slot];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
         nr_schedule_response(&Sched_INFO);

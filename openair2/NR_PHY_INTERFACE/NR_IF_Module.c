@@ -216,8 +216,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
     ifi->CC_mask |= (1<<CC_id);
   }
 
-  // clear DL/UL info for new scheduling round
-  clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
   
   handle_nr_uci(UL_info,&mac->UE_info.UE_sched_ctrl[0],&mac->UE_info.mac_stats[0],mac->pucch_target_snrx10);
@@ -246,7 +244,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
-      sched_info->UL_tti_req  = &mac->UL_tti_req[CC_id];
+      sched_info->UL_tti_req  = mac->UL_tti_req[CC_id];
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
 #ifdef DUMP_FAPI
