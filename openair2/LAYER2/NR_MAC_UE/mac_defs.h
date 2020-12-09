@@ -227,9 +227,9 @@ typedef struct {
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
   /// Scheduled TX frame for RA Msg3
-  frame_t msg3_frame;
+  int16_t msg3_frame;
   /// Scheduled TX slot for RA Msg3
-  slot_t msg3_slot;
+  int16_t msg3_slot;
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
   /// Random-access variable for backoff (subframe of last change in backoff counter)

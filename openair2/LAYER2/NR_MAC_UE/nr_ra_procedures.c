@@ -500,6 +500,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
         mac->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
         mac->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
+        mac->msg3_frame = -1; // initialize to an invalid value
+        mac->msg3_slot = -1;
         mac->RA_prachMaskIndex = 0;
         // todo: add the backoff condition here
         mac->RA_backoff_cnt = 0;
@@ -560,7 +562,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_window_cnt = -1;
         mac->ra_state = RA_SUCCEEDED;
         mac->generate_nr_prach = 2;
-        LOG_I(MAC, "[MAC][UE %d][RAPROC]: RAR successfully received \n", mod_id);
+        LOG_I(MAC, "[MAC][UE %d][RAPROC]: frame %d slot %d RAR successfully received\n", mod_id, frame, nr_slot_tx);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 

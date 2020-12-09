@@ -1664,7 +1664,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
       NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
 
-      if (mac->RA_active && ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
+      if (ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
 
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
@@ -1701,7 +1701,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           }
         //}
 
-        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
+        LOG_I(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
           ul_info->module_id,
           ul_info->frame_tx,
           ul_info->slot_tx,
@@ -1721,6 +1721,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
+        mac->msg3_frame = -1; // re-initialize to an invalid value after scheduling
+        mac->msg3_slot = -1;
       }
     }
   }
@@ -1763,9 +1765,7 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
   else
     mac->msg3_frame = current_frame;
 
-  #ifdef DEBUG_MSG3
   LOG_D(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d mac->msg3_frame %d mac->msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, mac->msg3_frame, mac->msg3_slot);
-  #endif
 }
 
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
