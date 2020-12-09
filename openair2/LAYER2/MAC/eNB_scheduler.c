@@ -623,7 +623,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
               UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
 #if defined(PRE_SCD_THREAD)
-              dl_buffer_total[CC_id][UE_id],
+              UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
 #else
               0,
 #endif
