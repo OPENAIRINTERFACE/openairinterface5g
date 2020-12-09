@@ -266,14 +266,19 @@ void nr_process_mac_pdu(
             break;
 
         default:
-        	return;
-        	break;
+          LOG_E(MAC, "Received unknown MAC header (LCID = 0x%02x)\n", rx_lcid);
+          return;
+          break;
         }
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
         if (pdu_len < 0) {
           LOG_E(MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
+          LOG_E(MAC, "MAC PDU ");
+          for (int i = 0; i < 20; i++) // Only printf 1st - 20nd bytes
+            printf("%02x ", pdu_ptr[i]);
+          printf("\n");
           return;
         }
     }
