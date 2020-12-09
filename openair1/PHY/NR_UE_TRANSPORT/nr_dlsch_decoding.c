@@ -346,7 +346,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   else
     Coderate = (float) (harq_process->R) /(float) 2048;
 
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
+  if ((A <=292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
     kc = 52;
@@ -376,8 +376,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 
   if (harq_process->round == 0) {
-    // This is a new packet, so compute quantities regarding segmentation
-	if (A > 3824)
+  // This is a new packet, so compute quantities regarding segmentation
+  if (A > NR_MAX_PDSCH_TBS)
 	  harq_process->B = A+24;
 	else
 	  harq_process->B = A+16;
@@ -530,7 +530,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     //    printf("done\n");
     if (harq_process->C == 1){
-    	if (A > 3824) 
+      if (A > NR_MAX_PDSCH_TBS)
     		crc_type = CRC24_A;
     	else
     		crc_type = CRC16;
@@ -879,7 +879,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   else
     Coderate = (float) (harq_process->R) /(float) 2048;
 
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
+  if ((A <= 292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
     kc = 52;
@@ -909,7 +909,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (harq_process->round == 0) {
       // This is a new packet, so compute quantities regarding segmentation
-	  if (A > 3824)
+    if (A > NR_MAX_PDSCH_TBS)
 	  	  harq_process->B = A+24;
 	  else
 	  	  harq_process->B = A+16;
@@ -1105,7 +1105,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
     //    printf("done\n");
     if (harq_process->C == 1){
-      if (A > 3824)
+      if (A > NR_MAX_PDSCH_TBS)
     	crc_type = CRC24_A;
       else
     	crc_type = CRC16;
@@ -1429,7 +1429,7 @@ void nr_dlsch_decoding_process(void *arg)
   else
     Coderate = (float) (harq_process->R) /(float) 2048;
 
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
+  if ((A <= 292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
     kc = 52;
@@ -1460,7 +1460,7 @@ void nr_dlsch_decoding_process(void *arg)
   harq_process->round  =0;
  // if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
-	if (A > 3824)
+  if (A > NR_MAX_PDSCH_TBS)
 	  harq_process->B = A+24;
 	else
 	  harq_process->B = A+16;
@@ -1620,7 +1620,7 @@ void nr_dlsch_decoding_process(void *arg)
     memset(harq_process->c[r],0,Kr_bytes);
 
     if (harq_process->C == 1){
-    	if (A > 3824)
+      if (A > NR_MAX_PDSCH_TBS)
     	 	crc_type = CRC24_A;
     	else
     		crc_type = CRC16;
