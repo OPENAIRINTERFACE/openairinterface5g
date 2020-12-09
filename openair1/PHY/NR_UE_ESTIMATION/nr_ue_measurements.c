@@ -108,7 +108,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
 
   // signal measurements
-  for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++){
+  for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++){
 
     ue->measurements.rx_power_tot[gNB_id] = 0;
 
@@ -140,7 +140,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   // filter to remove jitter
   if (ue->init_averaging == 0) {
 
-    for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++)
+    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++)
       ue->measurements.rx_power_avg[gNB_id] = (int)(((k1*((long long int)(ue->measurements.rx_power_avg[gNB_id]))) + (k2*((long long int)(ue->measurements.rx_power_tot[gNB_id])))) >> 10);
 
     ue->measurements.n0_power_avg = (int)(((k1*((long long int) (ue->measurements.n0_power_avg))) + (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
@@ -149,7 +149,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 
   } else {
 
-    for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++)
+    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++)
       ue->measurements.rx_power_avg[gNB_id] = ue->measurements.rx_power_tot[gNB_id];
 
     ue->measurements.n0_power_avg = ue->measurements.n0_power_tot;
@@ -157,7 +157,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 
   }
 
-  for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++) {
+  for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     ue->measurements.rx_power_avg_dB[gNB_id] = dB_fixed( ue->measurements.rx_power_avg[gNB_id]);
     ue->measurements.wideband_cqi_tot[gNB_id] = dB_fixed2(ue->measurements.rx_power_tot[gNB_id], ue->measurements.n0_power_tot);

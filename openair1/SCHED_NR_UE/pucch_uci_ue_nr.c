@@ -762,7 +762,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
     number_of_code_word = 1;
   }
 
-  if (ue->n_connected_eNB > 1) {
+  if (ue->n_connected_gNB > 1) {
     LOG_E(PHY,"PUCCH ACK feedback is not implemented for mutiple gNB cells : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (0);
   }

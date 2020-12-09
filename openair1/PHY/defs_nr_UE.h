@@ -832,8 +832,8 @@ typedef struct {
   int tx_total_RE[NR_MAX_SLOTS_PER_FRAME];
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
-  /// \brief Number of eNB seen by UE
-  uint8_t n_connected_eNB;
+  /// \brief Number of gNB seen by UE
+  uint8_t n_connected_gNB;
   /// \brief indicator that Handover procedure has been initiated
   uint8_t ho_initiated;
   /// \brief indicator that Handover procedure has been triggered
