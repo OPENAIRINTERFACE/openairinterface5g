@@ -9,7 +9,7 @@ steps:
   - InitiateHtml,none
   - TesteNB,xml_files/fr1_multi_node_build.xml
   - TesteNB,xml_files/fr1_epc_start.xml
-  - TesteNB,xml_files/fr1_ran_ue_proc.xml #ue toggle, nodes initialize, ue toggle, ping, nodes terminate
+  - TesteNB,xml_files/fr1_ran_ue_base.xml #ue toggle, nodes initialize, ue toggle, ping, nodes terminate
   - TesteNB,xml_files/fr1_epc_closure.xml
 
 
