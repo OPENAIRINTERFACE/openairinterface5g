@@ -430,79 +430,153 @@ bool nr_acknack_scheduling(int mod_id,
                            frame_t frame,
                            sub_frame_t slot)
 {
-  /* FIXME: for the moment, we consider that
-   * * only pucch_sched[0] holds HARQ
-   * * a UE is not scheduled in more than two slots, and their ACKs come in the same slot!
-   * * we do not multiplex with CSI
-   * * we do not mux two UEs in the same PUCCH slot (on the two symbols)
-   * * we only use the first TDD period (5/10ms) */
-  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
-  NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[0];
-  AssertFatal(curr_pucch->csi_bits == 0,
-              "%s(): csi_bits %d in sched_pucch[0]\n",
-              __func__,
-              curr_pucch->csi_bits);
-
-  const int max_acknacks = 2;
-  AssertFatal(curr_pucch->dai_c <= max_acknacks,
-              "%s() called but already %d dai_c in sched_pucch[0]\n",
-              __func__,
-              curr_pucch->dai_c);
-
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  //const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols != 0);
+  const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols != 0);
   const int first_ul_slot_tdd = tdd_pattern->nrofDownlinkSlots;
   const int CC_id = 0;
+
+  AssertFatal(slot < first_ul_slot_tdd + (tdd_pattern->nrofUplinkSymbols != 0),
+              "cannot handle multiple TDD periods (yet): slot %d first_ul_slot_tdd %d nrofUplinkSlots %ld\n",
+              slot,
+              first_ul_slot_tdd,
+              tdd_pattern->nrofUplinkSlots);
+
+  /* FIXME: for the moment, we consider that
+   * * only pucch_sched[0] holds HARQ (and SR)
+   * * we do not multiplex with CSI
+   * * we only use the first TDD period (5/10ms) */
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
+  AssertFatal(pucch->csi_bits == 0,
+              "%s(): csi_bits %d in sched_pucch[0]\n",
+              __func__,
+              pucch->csi_bits);
+
+  const int max_acknacks = 2;
+  AssertFatal(pucch->dai_c + pucch->sr_flag <= max_acknacks,
+              "illegal number of bits in PUCCH of UE %d\n",
+              UE_id);
+  /* if the currently allocated PUCCH of this UE is full, allocate it */
+  if (pucch->sr_flag + pucch->dai_c == max_acknacks) {
+    /* advance the UL slot information in PUCCH by one so we won't schedule in
+     * the same slot again */
+    const int f = pucch->frame;
+    const int s = pucch->ul_slot;
+    nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
+    memset(pucch, 0, sizeof(*pucch));
+    pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
+    pucch->ul_slot = (s + 1) % n_slots_frame;
+  }
 
   // this is hardcoded for now as ue specific
   NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   uint8_t pdsch_to_harq_feedback[8];
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
+  /* there is a scheduled SR or HARQ. Check whether we can use it for this
+   * ACKNACK */
+  if (pucch->sr_flag + pucch->dai_c > 0) {
+    /* this UE already has a PUCCH occasion */
+    DevAssert(pucch->frame == frame);
+
+    // Find the right timing_indicator value.
+    int i = 0;
+    while (i < 8) {
+      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
+        break;
+      ++i;
+    }
+    if (i >= 8) {
+      // we cannot reach this timing anymore, allocate and try again
+      const int f = pucch->frame;
+      const int s = pucch->ul_slot;
+      const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+      nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
+      memset(pucch, 0, sizeof(*pucch));
+      pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
+      pucch->ul_slot = (s + 1) % n_slots_frame;
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
+    }
+
+    pucch->timing_indicator = i;
+    pucch->dai_c++;
+    // retain old resource indicator, and we are good
+    return true;
+  }
+
+  /* we need to find a new PUCCH occasion */
+
   NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
   DevAssert(pucch_Config->resourceToAddModList->list.count > 0);
-
-  curr_pucch->frame = frame;
-  curr_pucch->dai_c++;
-
+  DevAssert(pucch_Config->resourceSetToAddModList->list.count > 0);
+  const int n_res = pucch_Config->resourceSetToAddModList->list.array[0]->resourceList.list.count;
   int *pucch_index_used = RC.nrmac[mod_id]->pucch_index_used[sched_ctrl->active_ubwp->bwp_Id];
-  if (curr_pucch->dai_c == 1) {
-    /* FIXME for first allocation: find free resource, here assume first PUCCH
-     * resource and first_ul_slot_tdd */
-    const int pucch_res = 0;
-    curr_pucch->resource_indicator = pucch_res;
-    curr_pucch->ul_slot = first_ul_slot_tdd;
-    DevAssert(pucch_index_used[first_ul_slot_tdd] == 0);
-    pucch_index_used[first_ul_slot_tdd] += 1;
 
-    /* verify that at that slot and symbol, resources are free.
-     * Note: this does not handle potential mux of PUCCH in the same symbol! */
-    const NR_PUCCH_Resource_t *resource =
-        pucch_Config->resourceToAddModList->list.array[pucch_res];
-    DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
-    uint16_t *vrb_map_UL =
-        &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[first_ul_slot_tdd * 275];
+  /* if time information is outdated (e.g., last PUCCH occasion in last frame),
+   * set to first possible UL occasion in this frame */
+  if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
+    DevAssert(pucch->sr_flag + pucch->dai_c == 0);
+    pucch->frame = frame;
+    pucch->ul_slot = first_ul_slot_tdd;
+  }
+
+  // increase to first slot in which PUCCH resources are available
+  while (pucch_index_used[pucch->ul_slot] >= n_res) {
+    pucch->ul_slot++;
+    /* if there is no free resource anymore, abort search */
+    if (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots) {
+      LOG_E(MAC,
+            "%4d.%2d no free PUCCH resources anymore while searching for UE %d\n",
+            frame,
+            slot,
+            UE_id);
+      return false;
+    }
+  }
+
+  // advance ul_slot if it is not reachable by UE
+  pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
+
+  // Find the right timing_indicator value.
+  int i = 0;
+  while (i < 8) {
+    if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
+      break;
+    ++i;
+  }
+  if (i >= 8) {
+    LOG_W(MAC,
+          "%4d.%2d could not find pdsch_to_harq_feedback for UE %d: earliest "
+          "ack slot %d\n",
+          frame,
+          slot,
+          UE_id,
+          pucch->ul_slot);
+    return false;
+  }
+  pucch->timing_indicator = i; // index in the list of timing indicators
+
+  pucch->dai_c++;
+  const int pucch_res = pucch_index_used[pucch->ul_slot];
+  pucch->resource_indicator = pucch_res;
+  pucch_index_used[first_ul_slot_tdd] += 1;
+
+  /* verify that at that slot and symbol, resources are free. We only do this
+   * for initialCyclicShift 0 (we assume it always has that one), so other
+   * initialCyclicShifts can overlap with ICS 0!*/
+  const NR_PUCCH_Resource_t *resource =
+      pucch_Config->resourceToAddModList->list.array[pucch_res];
+  DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
+  if (resource->format.choice.format0->initialCyclicShift == 0) {
+    uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
     const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
     AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
                 "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
                 symb, resource->startingPRB, first_ul_slot_tdd);
     vrb_map_UL[resource->startingPRB] |= symb;
   }
-
-  /* Find the right timing_indicator value. FIXME: if previously ul_slot is not
-   * possible (anymore), we need to allocate previous HARQ feedback (since we
-   * cannot "reach" it anymore) and search a new one! */
-  int i = 0;
-  while (i < 8) {
-    if (pdsch_to_harq_feedback[i] == curr_pucch->ul_slot - slot)
-      break;
-    ++i;
-  }
-  AssertFatal(i < 8,
-              "could not find pdsch_to_harq_feedback: slot %d, ack slot %d\n",
-              slot, first_ul_slot_tdd);
-  curr_pucch->timing_indicator = i; // index in the list of timing indicators
   return true;
 }
 
