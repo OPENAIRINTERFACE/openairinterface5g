@@ -285,7 +285,6 @@ static void *nr_feptx_thread(void *param) {
   NR_DL_FRAME_PARMS *fp;
   int ofdm_mask_full;
   int txdataF_offset;
-  int32_t *txdataF;
   while (!oai_exit) {
     ret = 0;
     if (wait_on_condition(&feptx->mutex_feptx,&feptx->cond_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
@@ -314,16 +313,16 @@ static void *nr_feptx_thread(void *param) {
       }
       else {
         bw  = ru->beam_weights[0];
-        txdataF = &ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset];
         for(i=0; i<fp->symbols_per_slot>>1; ++i){
-          nr_beam_precoding(&txdataF,
+          nr_beam_precoding(ru->gNB_list[0]->common_vars.txdataF,
                         ru->common.txdataF_BF,
                         fp,
                         bw,
                         slot,
                         l+i,
                         aa,
-                        ru->nb_log_antennas);
+                        ru->nb_log_antennas,
+                        txdataF_offset);//here
         }
       }
       stop_meas(&ru->precoding_stats);
@@ -362,7 +361,8 @@ static void *nr_feptx_thread(void *param) {
                         slot,
                         l,
                         aa,
-                        nb_antenna_ports);
+                        ru->nb_log_antennas,
+                        0);
       }
       stop_meas(&ru->precoding_stats);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
@@ -485,7 +485,8 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
                             tti_tx,
                             l,
                             aa,
-                            ru->nb_log_antennas);
+                            ru->nb_log_antennas,
+                            0);
         }// for (aa=0;aa<ru->nb_tx;aa++)
       }// for (l=0;l<fp->symbols_per_slot;l++)
     }// if (ru->nb_tx == 1)

@@ -106,7 +106,8 @@ int nr_beam_precoding(int32_t **txdataF,
                       int slot,
                       int symbol,
                       int aa,
-                      int nb_antenna_ports
+                      int nb_antenna_ports,
+                      int offset
 );
 
 void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
