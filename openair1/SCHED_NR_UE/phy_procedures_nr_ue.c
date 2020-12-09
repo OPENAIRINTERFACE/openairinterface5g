@@ -725,14 +725,12 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 
   if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
-    uint16_t BWPStart       = dlsch0->harq_processes[harq_pid]->BWPStart;
-    //    uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
-    uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
-    uint16_t pdsch_nb_rb    = dlsch0->harq_processes[harq_pid]->nb_rb;
-    uint16_t s0             = dlsch0->harq_processes[harq_pid]->start_symbol;
-    uint16_t s1             = dlsch0->harq_processes[harq_pid]->nb_symbols;
     NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
-    uint16_t nb_rb = dlsch0_harq->nb_rb/ue->frame_parms.nb_antennas_rx;
+    uint16_t BWPStart       = dlsch0_harq->BWPStart;
+    uint16_t pdsch_start_rb = dlsch0_harq->start_rb;
+    uint16_t pdsch_nb_rb    = dlsch0_harq->nb_rb;
+    uint16_t s0             = dlsch0_harq->start_symbol;
+    uint16_t s1             = dlsch0_harq->nb_symbols;
 
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
@@ -766,10 +764,15 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     }
 
     uint16_t first_symbol_with_data = s0;
-    uint8_t pilots = ((1<<s0)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
-    uint32_t len = (pilots==1)? ((ue->dmrs_DownlinkConfig.pdsch_dmrs_type==pdsch_dmrs_type1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
-    if(len == 0) {
-      first_symbol_with_data = first_symbol_with_data + 1; // TODO: Replace "1" by dmrs duration
+    uint32_t dmrs_data_re;
+
+    if (ue->dmrs_DownlinkConfig.pdsch_dmrs_type == pdsch_dmrs_type1)
+      dmrs_data_re = 12 - 6 * dlsch0_harq->n_dmrs_cdm_groups;
+    else
+      dmrs_data_re = 12 - 4 * dlsch0_harq->n_dmrs_cdm_groups;
+
+    while ((dmrs_data_re == 0) && (dlsch0_harq->dlDmrsSymbPos & (1 << first_symbol_with_data))) {
+      first_symbol_with_data++;
     }
 
     for (m = s0; m < (s1 + s0); m++) {
@@ -778,9 +781,10 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
       eNB_id_i = eNB_id+1;
       i_mod = 0;
       if (( m==first_symbol_with_data ) && (m<4))
-	first_symbol_flag = 1;
+	      first_symbol_flag = 1;
       else
-	first_symbol_flag = 0;
+	      first_symbol_flag = 0;
+
 #if UE_TIMING_TRACE
       uint8_t slot = 0;
       if(m >= ue->frame_parms.symbols_per_slot>>1)
@@ -805,8 +809,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                       return -1;
       }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
-  else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
+	      if (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
+        else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
           if (nr_rx_pdsch(ue,
                     proc,
                     pdsch,
@@ -821,7 +825,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     dlsch0->current_harq_pid) < 0)
                       return -1;
         }
-	else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
+	      else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
       }
       if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]);
 #if UE_TIMING_TRACE

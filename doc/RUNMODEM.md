@@ -132,6 +132,32 @@ With the RF simulator (on the same machine):
 
 `sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
 
+## sa setup with OAI
+
+The sa flag is used to run gNB in standalone mode. Currently OAI in NR standalone mode transmits and receives SIB1.
+
+In order to run gNB in standalone mode, the following flag is needed at gNB:
+
+`--sa`
+
+### Run OAI in sa mode
+
+From the `cmake_targets/ran_build/build` folder:
+
+gNB on machine 1:
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --sa`
+
+UE on machine 2:
+
+`sudo ./nr-uesoftmodem --rrc_config_path . --phy-test`
+
+With the RF simulator (on the same machine):
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
+
+`sudo ./nr-uesoftmodem --rrc_config_path . --rfsim --phy-test`
+
 ## IF setup with OAI
 
 The -C and -CO flags can be used together at UE side to set custom downlink and uplink FR1 intermediate frequencies for the IF equipment.
