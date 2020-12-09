@@ -34,7 +34,6 @@
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
 
-#include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "RRC/NR/nr_rrc_defs.h"
 #include "common/utils/LOG/log.h"

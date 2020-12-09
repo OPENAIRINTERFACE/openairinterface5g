@@ -142,7 +142,6 @@ static ssb_list_info_t ssb_list;
 
 extern int bwp_id;
 extern dci_pdu_rel15_t *def_dci_pdu_rel15;
-extern const uint8_t nr_slots_per_frame[5];
 
 extern void mac_rlc_data_ind     (
 				  const module_id_t         module_idP,

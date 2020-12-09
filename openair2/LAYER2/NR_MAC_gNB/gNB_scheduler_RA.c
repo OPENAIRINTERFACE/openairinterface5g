@@ -42,7 +42,6 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 extern RAN_CONTEXT_t RC;
-extern const uint8_t nr_slots_per_frame[5];
 
 uint8_t DELTA[4]= {2,3,4,6};
 
@@ -1041,7 +1040,11 @@ void nr_fill_rar(uint8_t Mod_idP,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
-  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index);
+  LOG_I(MAC,
+        "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u\n",
+        ra->Msg2_frame,
+        ra->Msg2_slot,
+        ra->preamble_index);
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;

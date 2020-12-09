@@ -32,7 +32,6 @@
 
 #include "assertions.h"
 
-#include "LAYER2/MAC/mac.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 
@@ -47,9 +46,6 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/NR/nr_rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
-//#include "LAYER2/MAC/pre_processor.c"
-#include "pdcp.h"
 
 #include "intertask_interface.h"
 
