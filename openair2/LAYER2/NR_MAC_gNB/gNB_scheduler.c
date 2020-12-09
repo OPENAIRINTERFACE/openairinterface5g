@@ -86,7 +86,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP,
                                 sub_frame_t slotP){
   NR_ServingCellConfigCommon_t *scc = gNB->common_channels->ServingCellConfigCommon;
-  const int num_slots = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
   nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
@@ -373,7 +373,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     // clear vrb_maps
     memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
     // clear last scheduled slot's content (only)!
-    const int num_slots = slots_per_frame[*scc->ssbSubcarrierSpacing];
+    const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     const int last_slot = (slot + num_slots - 1) % num_slots;
     uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
     memset(&vrb_map_UL[last_slot * 275], 0, sizeof(uint16_t) * 275);
@@ -396,9 +396,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
        slot, because otherwise we would allocate the current slot in
        UL_tti_req_ahead), but be aware that, e.g., K2 is allowed to be larger
        (schedule_nr_prach will assert if resources are not free). */
-    const sub_frame_t n_slots_ahead = slots_per_frame[*scc->ssbSubcarrierSpacing] - 1;
-    const frame_t f = (frame + (slot + n_slots_ahead) / slots_per_frame[*scc->ssbSubcarrierSpacing]) % 1024;
-    const sub_frame_t s = (slot + n_slots_ahead) % slots_per_frame[*scc->ssbSubcarrierSpacing];
+    const sub_frame_t n_slots_ahead = nr_slots_per_frame[*scc->ssbSubcarrierSpacing] - 1;
+    const frame_t f = (frame + (slot + n_slots_ahead) / nr_slots_per_frame[*scc->ssbSubcarrierSpacing]) % 1024;
+    const sub_frame_t s = (slot + n_slots_ahead) % nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     schedule_nr_prach(module_idP, f, s);
   }
 
