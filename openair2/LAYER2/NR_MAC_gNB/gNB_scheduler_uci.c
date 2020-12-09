@@ -455,12 +455,15 @@ bool nr_acknack_scheduling(int mod_id,
   curr_pucch->frame = frame;
   curr_pucch->dai_c++;
 
+  int *pucch_index_used = RC.nrmac[mod_id]->pucch_index_used[sched_ctrl->active_ubwp->bwp_Id];
   if (curr_pucch->dai_c == 1) {
     /* FIXME for first allocation: find free resource, here assume first PUCCH
      * resource and first_ul_slot_tdd */
     const int pucch_res = 0;
     curr_pucch->resource_indicator = pucch_res;
     curr_pucch->ul_slot = first_ul_slot_tdd;
+    DevAssert(pucch_index_used[first_ul_slot_tdd] == 0);
+    pucch_index_used[first_ul_slot_tdd] += 1;
 
     /* verify that at that slot and symbol, resources are free.
      * Note: this does not handle potential mux of PUCCH in the same symbol! */

@@ -552,6 +552,10 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
+  /// PUCCH: keep track of the resources has already been used by saving the
+  /// highest index not yet been used in a given slot. Dynamically allocated
+  /// so we can have it for every slot as a function of the numerology
+  int *pucch_index_used[MAX_NUM_BWP];
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;

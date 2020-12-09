@@ -350,6 +350,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
                 "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
 
+    for (int i = 0; i < MAX_NUM_BWP; ++i) {
+      RC.nrmac[Mod_idP]->pucch_index_used[i] =
+        calloc(n, sizeof(*RC.nrmac[Mod_idP]->pucch_index_used));
+      AssertFatal(RC.nrmac[Mod_idP]->pucch_index_used[i],
+                  "could not allocate memory for RC.nrmac[]->pucch_index_used[%d]\n",
+                  i);
+    }
+
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
