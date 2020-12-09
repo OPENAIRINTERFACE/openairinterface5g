@@ -155,7 +155,7 @@ void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t 
                 UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =0;
               }
 
-              LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d",
+              LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d\n",
                      UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen,
                      UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen,
                      UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen);
@@ -221,7 +221,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     if ( (frame%(period/n_slots_frame)==(offset/n_slots_frame)) && (slot==((sched_slot/slots_per_tdd)*slots_per_tdd))) {
 
       // we are scheduling pucch for csi in the first pucch occasion (this comes before ack/nack)
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[sched_slot-slots_per_tdd+ul_slots][0];
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[(sched_slot%slots_per_tdd)-slots_per_tdd+ul_slots][0];
 
       NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
 

@@ -124,6 +124,9 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     }
   }
 
+  uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t frequency_range = band<100?FR1:FR2;
+
   lte_frame_type_t frame_type;
   get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
   RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
@@ -213,7 +216,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf.tl.tag = NFAPI_NR_CONFIG_PRACH_ZERO_CORR_CONF_TAG;
     cfg->num_tlv++;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.value = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,nb_preambles, frame_type);
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.value = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,nb_preambles, frame_type, frequency_range);
     cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.tl.tag = NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG;
     cfg->num_tlv++;
     cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = 1;
@@ -252,8 +255,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       for (i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[3-i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-i]<<i*8);
       }
       break;
     default:

@@ -441,6 +441,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             "reset RA state information for RA-RNTI %04x/index %d\n",
             ra->rnti,
             i);
+
       return;
     }
   }
