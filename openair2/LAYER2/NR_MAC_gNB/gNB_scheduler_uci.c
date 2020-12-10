@@ -80,27 +80,27 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 }
 
 void nr_schedule_pucch(int Mod_idP,
-                       int UE_id,
-                       int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP) {
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
+  const NR_UE_list_t *UE_list = &UE_info->list;
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int n = sizeof(sched_ctrl->sched_pucch) / sizeof(*sched_ctrl->sched_pucch);
-  for (int i = 0; i < n; i++) {
-    NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[i];
-    const uint16_t O_ack = curr_pucch->dai_c;
-    const uint16_t O_csi = curr_pucch->csi_bits;
-    const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
-    if (O_ack + O_csi + O_sr == 0
-        || frameP != curr_pucch->frame
-        || slotP != curr_pucch->ul_slot)
-      continue;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    const int n = sizeof(sched_ctrl->sched_pucch) / sizeof(*sched_ctrl->sched_pucch);
+    for (int i = 0; i < n; i++) {
+      NR_sched_pucch_t *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[i];
+      const uint16_t O_ack = curr_pucch->dai_c;
+      const uint16_t O_csi = curr_pucch->csi_bits;
+      const uint8_t O_sr = curr_pucch->sr_flag;
+      if (O_ack + O_csi + O_sr == 0
+          || frameP != curr_pucch->frame
+          || slotP != curr_pucch->ul_slot)
+        continue;
 
-    nr_fill_nfapi_pucch(Mod_idP, frameP, slotP, curr_pucch, UE_id);
-    memset(curr_pucch, 0, sizeof(*curr_pucch));
+      nr_fill_nfapi_pucch(Mod_idP, frameP, slotP, curr_pucch, UE_id);
+      memset(curr_pucch, 0, sizeof(*curr_pucch));
+    }
   }
 }
 

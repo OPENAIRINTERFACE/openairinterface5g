@@ -205,8 +205,6 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   int n_ubwp, int bwp_id);
 
 void nr_schedule_pucch(int Mod_idP,
-                       int UE_id,
-                       int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP);
 
