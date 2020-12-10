@@ -46,9 +46,8 @@
 #include "common_lib.h"
 #include "msc.h"
 #include "fapi_nr_ue_interface.h"
-
-//#include <complex.h>
 #include "assertions.h"
+
 #ifdef MEX
   #define msg mexPrintf
 #else
@@ -79,9 +78,6 @@
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
 
-//#define RX_NB_TH_MAX 3
-//#define RX_NB_TH 3
-
 #ifdef NR_UNIT_TEST
   #define FILE_NAME                " "
   #define LINE_FILE                (0)
@@ -92,53 +88,19 @@
   #define NR_TST_PHY_PRINTF(...)
 #endif
 
-//#ifdef SHRLIBDEV
-//extern int rxrescale;
-//#define RX_IQRESCALELEN rxrescale
-//#else
-//#define RX_IQRESCALELEN 15
-//#endif
-
-//! \brief Allocate \c size bytes of memory on the heap with alignment 16 and zero it afterwards.
-//! If no more memory is available, this function will terminate the program with an assertion error.
-/*static inline void* malloc16_clear( size_t size )
-{
-#ifdef __AVX2__
-  void* ptr = memalign(32, size);
-#else
-  void* ptr = memalign(16, size);
-#endif
-  DevAssert(ptr);
-  memset( ptr, 0, size );
-  return ptr;
-}*/
-
-
-
 #define PAGE_MASK 0xfffff000
 #define virt_to_phys(x) (x)
-
 #define openair_sched_exit() exit(-1)
 
-
-//#define max(a,b)  ((a)>(b) ? (a) : (b))
-//#define min(a,b)  ((a)<(b) ? (a) : (b))
-
-
 #define bzero(s,n) (memset((s),0,(n)))
-
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmin(a,b)  ((a<b) ? (a) : (b))
-
 #define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
-
 /// suppress compiler warning for unused arguments
 #define UNUSED(x) (void)x;
 
-
 #include "impl_defs_top.h"
 #include "impl_defs_nr.h"
-
 #include "PHY/TOOLS/time_meas.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/TOOLS/tools_defs.h"
@@ -146,16 +108,11 @@
 #include "NR_UE_TRANSPORT/nr_transport_ue.h"
 
 #if defined(UPGRADE_RAT_NR)
-
   #include "PHY/NR_REFSIG/ss_pbch_nr.h"
-
 #endif
 
 #include "PHY/NR_UE_TRANSPORT/dci_nr.h"
-//#include "PHY/LTE_TRANSPORT/defs.h"
-//#include "PHY/NR_UE_TRANSPORT/defs_nr.h"
 #include <pthread.h>
-
 #include "targets/ARCH/COMMON/common_lib.h"
 
 #ifndef NO_RAT_NR
@@ -187,9 +144,6 @@ typedef enum {
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 
 typedef struct {
-  //unsigned int   rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
-  //unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
-  //unsigned short rx_avg_power_dB[NUMBER_OF_CONNECTED_eNB_MAX];              //! estimated avg received signal power (dB)
 
   // RRC measurements
   uint32_t rssi;
@@ -859,19 +813,6 @@ typedef struct {
 
   fapi_nr_config_request_t nrUE_config;
 
-  // the following structures are not part of PHY_vars_UE anymore as it is not thread safe. They are now on the stack of the functions that actually need them
-  
-  //nr_downlink_indication_t dl_indication;
-  //nr_uplink_indication_t ul_indication;
-  /// UE FAPI DCI request
-  //nr_dcireq_t dcireq;
-
-  // pointers to the next 2 strcutres are also included in dl_indictation
-  /// UE FAPI indication for DLSCH reception
-  //fapi_nr_rx_indication_t rx_ind;
-  /// UE FAPI indication for DCI reception
-  //fapi_nr_dci_indication_t dci_ind;
-
   t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -1147,7 +1088,6 @@ typedef struct {
 
 } PHY_VARS_NR_UE;
 
-
 /* this structure is used to pass both UE phy vars and
  * proc to the function UE_thread_rxn_txnp4
  */
@@ -1160,81 +1100,12 @@ typedef struct syncData_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE *UE;
 } syncData_t;
-/*static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-
-  while (*instance_cnt < 0) {
-    // most of the time the thread is waiting here
-    // proc->instance_cnt_rxtx is -1
-    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
-  }
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-
-static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-
-  while (*instance_cnt == 0) {
-    // most of the time the thread will skip this
-    // waits only if proc->instance_cnt_rxtx is 0
-    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
-  }
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-
-static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-
-  *instance_cnt=*instance_cnt-1;
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(0);
-}
-*/
 typedef enum {
   pss = 0,
   pbch = 1,
   si = 2
 } sync_mode_t;
 
-
-/*
-#include "PHY/INIT/defs.h"
-#include "PHY/LTE_REFSIG/defs.h"
-#include "PHY/MODULATION/defs.h"
-#include "PHY/LTE_TRANSPORT/proto.h"
-#include "PHY/LTE_ESTIMATION/defs.h"
-*/
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif

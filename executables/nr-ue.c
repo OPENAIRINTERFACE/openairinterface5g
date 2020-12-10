@@ -18,40 +18,15 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#include "executables/thread-common.h"
+
 #include "executables/nr-uesoftmodem.h"
-
-#include "NR_MAC_UE/mac.h"
-//#include "RRC/LTE/rrc_extern.h"
-//#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
-#include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/MODULATION/modulation_UE.h"
 #include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
-
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
-
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
-#include "common/utils/LOG/log.h"
-#include "common/utils/system.h"
-#include "common/utils/LOG/vcd_signal_dumper.h"
-#include "executables/nr-softmodem.h"
-
-#include "T.h"
-
-#include "PHY_INTERFACE/phy_interface_extern.h"
-
-// Missing stuff?
-int next_ra_frame = 0;
-module_id_t next_Mod_id = 0;
-
-//static  nfapi_nr_config_request_t config_t;
-//static  nfapi_nr_config_request_t* config =&config_t;
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -387,9 +362,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, UE->mode);
-    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_slot_rx, (rdtsc()-a)/3500);
-    //printf(">>> nr_ue_pdcch_procedures ended\n");
+    phy_procedures_nrUE_RX(UE, proc, gNB_id, UE->mode);
+    LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
     if(IS_SOFTMODEM_NOS1){
@@ -399,23 +373,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       pdcp_run(&ctxt);
     }
   }
-
-  // no UL for now
-  /*
-  if (UE->mac_enabled==1) {
-    //  trigger L2 to run ue_scheduler thru IF module
-    //  [TODO] mapping right after NR initial sync
-    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
-      UE->ul_indication.module_id = 0;
-      UE->ul_indication.gNB_index = 0;
-      UE->ul_indication.cc_id = 0;
-      UE->ul_indication.frame = proc->frame_rx;
-      UE->ul_indication.slot = proc->nr_slot_rx;
-      UE->ul_indication.thread_id = proc->thread_id;
-      UE->if_inst->ul_indication(&UE->ul_indication);
-    }
-  }
-  */
 
 }
 

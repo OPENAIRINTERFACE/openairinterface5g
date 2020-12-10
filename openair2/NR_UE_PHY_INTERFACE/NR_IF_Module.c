@@ -66,7 +66,6 @@ int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, 
 //  L2 Abstraction Layer
 int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci){
 
-  //printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
   return nr_ue_process_dci_indication_pdu(module_id, cc_id, gNB_index, frame, slot, dci);
 
 }

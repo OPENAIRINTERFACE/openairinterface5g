@@ -204,6 +204,7 @@ void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, int frame_rx, int nr_slot
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             uint8_t gNB_id) {
+
   int slot_tx = proc->nr_slot_tx;
   int frame_tx = proc->frame_tx;
   runmode_t mode = normal_txrx;
@@ -237,11 +238,9 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     nr_ue_pusch_common_procedures(ue,
                                   slot_tx,
                                   &ue->frame_parms,1);
-                                  //ue->ulsch[proc->thread_id][gNB_id][0]->harq_processes[harq_pid]->pusch_pdu.nrOfLayers);
-  }
-  //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
 
-  /* RACH */
+  }
+
   if (get_softmodem_params()->do_ra==1) {
     if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
@@ -314,11 +313,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 			   UE_nr_rxtx_proc_t *proc,
 			   uint8_t abstraction_flag)
 {
-  //  int i;
-  //int pbch_tx_ant=0;
   int ret = 0;
-  //static uint8_t first_run = 1;
-  //uint8_t pbch_trials = 0;
 
   DevAssert(ue);
 
