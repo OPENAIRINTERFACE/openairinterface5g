@@ -374,8 +374,7 @@ uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
 
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
-                                  sub_frame_t slot,
-                                  int num_slots_per_tdd) {
+                                  sub_frame_t slot) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   AssertFatal(UE_info->num_UEs <= 1,
@@ -449,7 +448,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   // for now HARQ PID is fixed and should be the same as in post-processor
-  const int current_harq_pid = slot % num_slots_per_tdd;
+  const int current_harq_pid = slot % 8;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
   NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -530,12 +529,11 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot,
-                         int num_slots_per_tdd) {
+                         sub_frame_t slot) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
   /* PREPROCESSOR */
-  gNB_mac->pre_processor_dl(module_id, frame, slot, num_slots_per_tdd);
+  gNB_mac->pre_processor_dl(module_id, frame, slot);
 
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
@@ -588,7 +586,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        1 /* nrOfLayers */)
         >> 3;
 
-    const int current_harq_pid = slot % num_slots_per_tdd;
+    const int current_harq_pid = slot % 8;
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
     harq->feedback_slot = pucch->ul_slot;

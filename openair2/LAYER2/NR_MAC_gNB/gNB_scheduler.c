@@ -426,10 +426,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Downlink and PDSCH
-  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd)
-      && slot < 10) {
-    nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
-  }
+  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot) && slot < 10)
+    nr_schedule_ue_spec(module_idP, frame, slot);
 
 
   if (UE_info->active[UE_id])

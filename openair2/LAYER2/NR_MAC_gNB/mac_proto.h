@@ -77,8 +77,7 @@ int nr_generate_dlsch_pdu(module_id_t Mod_idP,
 
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot,
-                         int num_slots_per_tdd);
+                         sub_frame_t slot);
 
 void schedule_control_sib1(module_id_t module_id,
                            int CC_id,
@@ -92,8 +91,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 /* \brief default preprocessor */
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
-                                  sub_frame_t slot,
-                                  int num_slots_per_tdd);
+                                  sub_frame_t slot);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
@@ -159,8 +157,7 @@ uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
  * freq resources */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
-                             sub_frame_t slot,
-                             int num_slots_per_tdd);
+                             sub_frame_t slot);
 /* \brief UL preprocessor for phytest: schedules UE_id 0 with fixed MCS on a
  * fixed set of resources */
 void nr_ul_preprocessor_phytest(module_id_t module_id,

@@ -186,8 +186,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
 int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
-                           sub_frame_t slot,
-                           int num_slots_per_tdd) {
+                           sub_frame_t slot) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   AssertFatal(UE_info->num_UEs == 1, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[0];
@@ -902,10 +901,7 @@ int main(int argc, char **argv)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
       
         if (css_flag == 0) {
-          const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-          const NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-          const int num_slots_per_tdd = slots_per_frame[*scc->ssbSubcarrierSpacing] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
-          nr_schedule_ue_spec(0, frame, slot, num_slots_per_tdd);
+          nr_schedule_ue_spec(0, frame, slot);
         } else {
           nr_schedule_css_dlsch_phytest(0,frame,slot);
         }

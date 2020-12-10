@@ -255,8 +255,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 /* schedules whole bandwidth for first user, all the time */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
-                             sub_frame_t slot,
-                             int num_slots_per_tdd)
+                             sub_frame_t slot)
 {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
