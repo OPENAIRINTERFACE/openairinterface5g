@@ -57,9 +57,22 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
-  if(servingcellconfigcommon->ssb_PositionsInBurst->present !=2)
-    AssertFatal(1==0,"Currenrly implemented only for medium size SSB bitmap\n");
-  uint8_t bitmap = servingcellconfigcommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
+  uint64_t bitmap=0;
+  switch (servingcellconfigcommon->ssb_PositionsInBurst->present) {
+    case 1 :
+      bitmap = ((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.shortBitmap.buf[0])<<56;
+      break;
+    case 2 :
+      bitmap = ((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])<<56;
+      break;
+    case 3 :
+      for (int i=0; i<8; i++) {
+        bitmap |= (((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.longBitmap.buf[i])<<((7-i)*8));
+      }
+      break;
+    default:
+      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", servingcellconfigcommon->ssb_PositionsInBurst->present);
+  }
 
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
@@ -251,9 +264,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
  int n_ssb = 0;
- NR_TCI_State_t *tcic[8];
- for (int i=0;i<8;i++) {
-   if ((bitmap>>(7-i))&0x01){
+ NR_TCI_State_t *tcic[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
      tcic[i]=calloc(1,sizeof(*tcic[i]));
      tcic[i]->tci_StateId=n_ssb;
      tcic[i]->qcl_Type1.cell=NULL;
@@ -412,12 +425,21 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet));
 
+ int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+
  NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
  coreset->controlResourceSetId=1;
- // frequencyDomainResources '11111111 11111111 00000000 00000000 00000000 00000'B,
+ // frequency domain resources depends on BWP size
+ // options are 24, 48 or 96
  coreset->frequencyDomainResources.buf = calloc(1,6);
- coreset->frequencyDomainResources.buf[0] = 0xff;
- coreset->frequencyDomainResources.buf[1] = 0xff;
+ if (curr_bwp < 48)
+   coreset->frequencyDomainResources.buf[0] = 0xf0;
+ else
+   coreset->frequencyDomainResources.buf[0] = 0xff;
+ if (curr_bwp < 96)
+   coreset->frequencyDomainResources.buf[1] = 0;
+ else
+   coreset->frequencyDomainResources.buf[1] = 0xff;
  coreset->frequencyDomainResources.buf[2] = 0;
  coreset->frequencyDomainResources.buf[3] = 0;
  coreset->frequencyDomainResources.buf[4] = 0;
@@ -429,9 +451,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
  coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
- NR_TCI_StateId_t *tci[8];
- for (int i=0;i<8;i++) {
-   if ((bitmap>>(7-i))&0x01){
+ NR_TCI_StateId_t *tci[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
      tci[i]=calloc(1,sizeof(*tci[i]));
      *tci[i] = i;
      ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
@@ -531,7 +553,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
  ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
- ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
+ if (curr_bwp < 48)
+   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+ else if (curr_bwp < 96)
+   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n2;
+ else
+   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
  ss2->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
  ss2->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
  ss2->searchSpaceType=calloc(1,sizeof(*ss2->searchSpaceType));
@@ -653,9 +680,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
 
  n_ssb = 0;
- NR_TCI_State_t *tcid[8];
- for (int i=0;i<8;i++) {
-   if ((bitmap>>(7-i))&0x01){
+ NR_TCI_State_t *tcid[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
      tcid[i]=calloc(1,sizeof(*tcid[i]));
      tcid[i]->tci_StateId=n_ssb;
      tcid[i]->qcl_Type1.cell=NULL;
@@ -915,7 +942,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
  NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
  pucchres0->pucch_ResourceId=1;
- pucchres0->startingPRB=48;
+ pucchres0->startingPRB=8;
  pucchres0->intraSlotFrequencyHopping=NULL;
  pucchres0->secondHopPRB=NULL;
  pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -926,7 +953,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
 
  pucchres1->pucch_ResourceId=2;
- pucchres1->startingPRB=48;
+ pucchres1->startingPRB=8;
  pucchres1->intraSlotFrequencyHopping=NULL;
  pucchres1->secondHopPRB=NULL;
  pucchres1->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -937,23 +964,23 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres1);
 
  pucchres2->pucch_ResourceId=3;
- pucchres2->startingPRB=40;
+ pucchres2->startingPRB=0;
  pucchres2->intraSlotFrequencyHopping=NULL;
  pucchres2->secondHopPRB=NULL;
  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
  pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
- pucchres2->format.choice.format2->nrofPRBs=4;
+ pucchres2->format.choice.format2->nrofPRBs=8;
  pucchres2->format.choice.format2->nrofSymbols=1;
  pucchres2->format.choice.format2->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
 
  pucchres3->pucch_ResourceId=4;
- pucchres3->startingPRB=40;
+ pucchres3->startingPRB=0;
  pucchres3->intraSlotFrequencyHopping=NULL;
  pucchres3->secondHopPRB=NULL;
  pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;
  pucchres3->format.choice.format2=calloc(1,sizeof(*pucchres3->format.choice.format2));
- pucchres3->format.choice.format2->nrofPRBs=4;
+ pucchres3->format.choice.format2->nrofPRBs=8;
  pucchres3->format.choice.format2->nrofSymbols=1;
  pucchres3->format.choice.format2->startingSymbolIndex=12;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres3);
@@ -1076,45 +1103,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
  ssbresset0->csi_SSB_ResourceSetId=0;
- if ((bitmap>>7)&0x01){
-   NR_SSB_Index_t *ssbresset00=calloc(1,sizeof(*ssbresset00));
-   *ssbresset00=0;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset00);
- }
- if ((bitmap>>6)&0x01) {
-   NR_SSB_Index_t *ssbresset01=calloc(1,sizeof(*ssbresset01));
-   *ssbresset01=1;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset01);
- }
- if ((bitmap>>5)&0x01) {
-   NR_SSB_Index_t *ssbresset02=calloc(1,sizeof(*ssbresset02));
-   *ssbresset02=2;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset02);
- }
- if ((bitmap>>4)&0x01) {
-   NR_SSB_Index_t *ssbresset03=calloc(1,sizeof(*ssbresset03));
-   *ssbresset03=3;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset03);
- }
- if ((bitmap>>3)&0x01) {
-   NR_SSB_Index_t *ssbresset04=calloc(1,sizeof(*ssbresset04));
-   *ssbresset04=4;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset04);
- }
- if ((bitmap>>2)&0x01) {
-   NR_SSB_Index_t *ssbresset05=calloc(1,sizeof(*ssbresset05));
-   *ssbresset05=5;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset05);
- }
- if ((bitmap>>1)&0x01) {
-   NR_SSB_Index_t *ssbresset06=calloc(1,sizeof(*ssbresset06));
-   *ssbresset06=6;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset06);
- }
- if ((bitmap)&0x01) {
-   NR_SSB_Index_t *ssbresset07=calloc(1,sizeof(*ssbresset07));
-   *ssbresset07=7;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset07);
+
+ NR_SSB_Index_t *ssbresset[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
+     ssbresset[i]=calloc(1,sizeof(*ssbresset[i]));
+     *ssbresset[i] = i;
+     ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset[i]);
+   }
  }
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 

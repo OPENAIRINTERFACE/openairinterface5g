@@ -90,9 +90,8 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   if(nb_symbols == 0) return;
 
-  short temp[2*2*6144*4] __attribute__((aligned(32)));
-  unsigned short i,j;
-  short k;
+  int16_t temp[2*2*6144*4] __attribute__((aligned(32)));
+  int i,j;
 
   volatile int *output_ptr=(int*)0;
 
@@ -190,18 +189,9 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
       if (fftsize==128) 
 #endif
       {
-        /*for (j=0; j<fftsize ; j++) {
-          output_ptr[j] = temp_ptr[j];
-        }*/
-        memcpy1((void*)output_ptr,(void*)temp_ptr,fftsize<<2);
+        memcpy((void*)output_ptr,(void*)temp_ptr,fftsize<<2);
       }
-
-      j=fftsize;
-
-      for (k=-1; k>=-nb_prefix_samples; k--) {
-        output_ptr[k] = output_ptr[--j];
-      }
-
+      memcpy((void*)&output_ptr[-nb_prefix_samples],(void*)&output_ptr[fftsize-nb_prefix_samples],nb_prefix_samples<<2);
       break;
 
     case CYCLIC_SUFFIX:
