@@ -312,6 +312,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 
 
 
+extern uint16_t sl_ahead;
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
@@ -324,6 +325,30 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
+
+    /* dimension UL_tti_req_ahead for number of slots in frame */
+    const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
+    const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+    RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
+    AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
+                "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
+    /* fill in slot/frame numbers: slot is fixed, frame will be updated by
+     * scheduler */
+    for (int i = 0; i < n; ++i) {
+      nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
+      /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
+       * already "in the past" and thus we put frame 1 instead of 0!  Note that
+       * variable sl_ahead seems to not be correctly initialized, but I leave
+       * it for information purposes here (the fix would always put 0, what
+       * happens now, too) */
+      req->SFN = i < sl_ahead;
+      req->Slot = i;
+    }
+
+    RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
+        calloc(n * 275, sizeof(uint16_t));
+    AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
+                "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
 
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
@@ -372,6 +397,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   bwpList->list.count);
       const int bwp_id = 1;
       UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+      struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList =
+          secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
+      AssertFatal(ubwpList->list.count == 1,
+                  "uplinkBWP_ToAddModList has %d BWP!\n",
+                  ubwpList->list.count);
+      UE_info->UE_sched_ctrl[UE_id].active_ubwp = ubwpList->list.array[bwp_id - 1];
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       /* TODO: should check for free RA process */

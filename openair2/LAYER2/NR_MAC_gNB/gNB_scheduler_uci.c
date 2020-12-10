@@ -39,51 +39,59 @@ void nr_schedule_pucch(int Mod_idP,
                        int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP) {
-
-  uint16_t O_csi, O_ack, O_uci;
-  uint8_t O_sr = 0; // no SR in PUCCH implemented for now
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
-  int bwp_id=1;
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
-
-  NR_sched_pucch *curr_pucch;
-
   for (int k=0; k<nr_ulmix_slots; k++) {
     for (int l=0; l<2; l++) {
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
-      O_ack = curr_pucch->dai_c;
-      O_csi = curr_pucch->csi_bits;
-      O_uci = O_ack + O_csi + O_sr;
-      if ((O_uci>0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
-        UL_tti_req->SFN = curr_pucch->frame;
-        UL_tti_req->Slot = curr_pucch->ul_slot;
-        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-        nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
-        memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
-        UL_tti_req->n_pdus+=1;
+      NR_sched_pucch *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
+      const uint16_t O_ack = curr_pucch->dai_c;
+      const uint16_t O_csi = curr_pucch->csi_bits;
+      const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
+      if (O_ack + O_csi + O_sr == 0
+          || frameP != curr_pucch->frame
+          || slotP != curr_pucch->ul_slot)
+        continue;
 
-        LOG_D(MAC,"Scheduling pucch reception for frame %d slot %d with (%d, %d, %d) (SR ACK, CSI) bits\n",
-              frameP,slotP,O_sr,O_ack,curr_pucch->csi_bits);
+      nfapi_nr_ul_tti_request_t *future_ul_tti_req =
+          &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][curr_pucch->ul_slot];
+      AssertFatal(future_ul_tti_req->SFN == curr_pucch->frame
+                  && future_ul_tti_req->Slot == curr_pucch->ul_slot,
+                  "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
+                  future_ul_tti_req->SFN,
+                  future_ul_tti_req->Slot,
+                  curr_pucch->frame,
+                  curr_pucch->ul_slot);
+      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+      nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
+      memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
+      future_ul_tti_req->n_pdus += 1;
 
-        nr_configure_pucch(pucch_pdu,
-                           scc,
-                           ubwp,
-                           UE_info->rnti[UE_id],
-                           curr_pucch->resource_indicator,
-                           O_csi,
-                           O_ack,
-                           O_sr);
+      LOG_D(MAC,
+            "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d, k %d l %d\n",
+            frameP,
+            slotP,
+            curr_pucch->frame,
+            curr_pucch->ul_slot,
+            O_sr,
+            O_ack,
+            O_csi,
+            k, l);
 
-        memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
-               0,
-               sizeof(NR_sched_pucch));
-      }
+      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+      nr_configure_pucch(pucch_pdu,
+                         scc,
+                         UE_info->UE_sched_ctrl[UE_id].active_ubwp,
+                         UE_info->rnti[UE_id],
+                         curr_pucch->resource_indicator,
+                         O_csi,
+                         O_ack,
+                         O_sr);
+
+      memset(&UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l],
+             0,
+             sizeof(NR_sched_pucch));
     }
   }
 }
@@ -266,15 +274,27 @@ void nr_csi_meas_reporting(int Mod_idP,
 }
 
 
-void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
+void handle_nr_uci_pucch_0_1(module_id_t mod_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
+    return;
+  }
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  // tpc (power control)
+  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                uci_01->ul_cqi,
+                                30);
 
   // TODO
   int max_harq_rounds = 4; // TODO define macro
-
-  if (uci_01 != NULL) {
+  if (((uci_01->pduBitmap >> 1) & 0x01)) {
     // handle harq
     int harq_idx_s = 0;
 
@@ -283,7 +303,7 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       // search for the right harq process
       for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
         // if the gNB received ack with a good confidence
-        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+        if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
               (uci_01->harq->harq_confidence_level == 0)) {
@@ -299,13 +319,13 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
             sched_ctrl->harq_processes[harq_idx].round = 0;
-            stats->dlsch_errors++;
+            UE_info->mac_stats[UE_id].dlsch_errors++;
           }
           break;
         }
         // if feedback slot processing is aborted
         else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
-                 && (UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
+                 && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
                  && sched_ctrl->harq_processes[harq_idx].is_waiting) {
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;
@@ -318,9 +338,29 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       }
     }
   }
+}
 
+void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
+                               frame_t frame,
+                               sub_frame_t slot,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
+    return;
+  }
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  if (uci_234 != NULL) {
+  // tpc (power control)
+  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                uci_234->ul_cqi,
+                                30);
+
+  // TODO
+  int max_harq_rounds = 4; // TODO define macro
+  if ((uci_234->pduBitmap >> 1) & 0x01) {
     int harq_idx_s = 0;
     int acknack;
 
@@ -329,7 +369,7 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
       acknack = ((uci_234->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
       for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
         // if the gNB received ack with a good confidence or if the max harq rounds was reached
-        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+        if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
           // TODO add some confidence level for when there is no CRC
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_234->harq.harq_crc != 1) && acknack) {
@@ -345,13 +385,13 @@ void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
             sched_ctrl->harq_processes[harq_idx].round = 0;
-            stats->dlsch_errors++;
+            UE_info->mac_stats[UE_id].dlsch_errors++;
           }
           break;
         }
         // if feedback slot processing is aborted
         else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
-                 && (UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
+                 && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
                  && sched_ctrl->harq_processes[harq_idx].is_waiting) {
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;

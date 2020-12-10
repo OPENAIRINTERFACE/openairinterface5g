@@ -62,8 +62,6 @@
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
 /* MAC */
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_TAG.h"
@@ -142,8 +140,6 @@ typedef struct {
   uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
-  /// Msg3 pusch pdu
-  nfapi_nr_pusch_pdu_t pusch_pdu;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4
@@ -192,8 +188,9 @@ typedef struct {
   NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels
   uint16_t vrb_map[275];
-  /// VRB map for common channels and retransmissions by PHICH
-  uint16_t vrb_map_UL[275];
+  /// VRB map for common channels and PUSCH, dynamically allocated because
+  /// length depends on number of slots and RBs
+  uint16_t *vrb_map_UL;
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
   ///Number of active SSBs
@@ -285,12 +282,49 @@ typedef struct NR_sched_pucch {
   uint8_t resource_indicator;
 } NR_sched_pucch;
 
+/* this struct is a helper: as long as the TDA and DCI format remain the same
+ * over the same uBWP and search space, there is no need to recalculate all
+ * S/L, MCS table, or DMRS-related parameters over and over again. Hence, we
+ * store them in this struct for easy reference. */
+typedef struct NR_sched_pusch_save {
+  int dci_format;
+  int time_domain_allocation;
+  uint8_t num_dmrs_cdm_grps_no_data;
+
+  int startSymbolIndex;
+  int nrOfSymbols;
+
+  NR_PUSCH_Config_t *pusch_Config;
+  uint8_t transform_precoding;
+  uint8_t mcs_table;
+
+  long mapping_type;
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
+  uint16_t dmrs_config_type;
+  uint16_t ul_dmrs_symb_pos;
+  uint8_t num_dmrs_symb;
+  uint8_t N_PRB_DMRS;
+} NR_sched_pusch_save_t;
+
 typedef struct NR_sched_pusch {
   int frame;
   int slot;
-  bool active;
-  nfapi_nr_pusch_pdu_t pusch_pdu;
-} NR_sched_pusch;
+
+  /// RB allocation within active uBWP
+  uint16_t rbSize;
+  uint16_t rbStart;
+
+  // time-domain allocation for scheduled RBs
+  int time_domain_allocation;
+
+  /// MCS
+  uint8_t mcs;
+
+  /// TBS-related info
+  uint16_t R;
+  uint8_t Qm;
+  uint32_t tb_size;
+} NR_sched_pusch_t;
 
 typedef struct NR_UE_harq {
   uint8_t is_waiting;
@@ -348,11 +382,15 @@ typedef struct {
 
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
+  /// the currently active BWP in UL
+  NR_BWP_Uplink_t *active_ubwp;
+
   NR_sched_pucch **sched_pucch;
   /// selected PUCCH index, if scheduled
   int pucch_sched_idx;
   int pucch_occ_idx;
-  NR_sched_pusch *sched_pusch;
+  NR_sched_pusch_save_t pusch_save;
+  NR_sched_pusch_t sched_pusch;
 
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
@@ -381,7 +419,6 @@ typedef struct {
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
-  uint8_t current_harq_pid;
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   int dummy;
@@ -418,7 +455,6 @@ typedef struct {
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
 typedef struct {
-  DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
@@ -441,6 +477,11 @@ typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot,
                               int num_slots_per_tdd);
+typedef void (*nr_pp_impl_ul)(module_id_t mod_id,
+                              frame_t frame,
+                              sub_frame_t slot,
+                              int num_slots_per_tdd,
+                              uint64_t ulsch_in_slot_bitmap);
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -467,8 +508,12 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
   nfapi_nr_dl_tti_request_t         DL_req[NFAPI_CC_MAX];
-  /// NFAPI UL TTI Request Structure (this is from the new SCF specs)
-  nfapi_nr_ul_tti_request_t         UL_tti_req[NFAPI_CC_MAX];
+  /// NFAPI UL TTI Request Structure, simple pointer into structure
+  /// UL_tti_req_ahead for current frame/slot
+  nfapi_nr_ul_tti_request_t        *UL_tti_req[NFAPI_CC_MAX];
+  /// NFAPI UL TTI Request Structure for future TTIs, dynamically allocated
+  /// because length depends on number of slots
+  nfapi_nr_ul_tti_request_t        *UL_tti_req_ahead[NFAPI_CC_MAX];
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
@@ -502,11 +547,11 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
-  /// current slot
-  int current_slot;
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
+  /// UL preprocessor for differentiated scheduling
+  nr_pp_impl_ul pre_processor_ul;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

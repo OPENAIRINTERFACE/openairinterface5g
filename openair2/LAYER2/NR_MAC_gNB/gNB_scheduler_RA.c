@@ -202,12 +202,12 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
         cc->total_prach_occasions, cc->num_active_ssb, unused_RA_occasion, max_association_period, N_RA_sfn);
 }		
 		
-void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
-
+void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+{
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[0][slotP];
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   if (is_nr_UL_slot(scc,slotP)) {
@@ -575,7 +575,9 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   stop_meas(&mac->schedule_ra);
 }
 
-void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
+void nr_get_Msg3alloc(module_id_t module_id,
+                      int CC_id,
+                      NR_ServingCellConfigCommon_t *scc,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
@@ -609,27 +611,25 @@ void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
     ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
 
   LOG_I(MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
-  ra->msg3_nb_rb = 18;
-  ra->msg3_first_rb = 0;
-}
-
-
-void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
-  gNB_MAC_INST                                *mac = RC.nrmac[module_idP];
-  nfapi_nr_ul_tti_request_t                   *ul_req = &mac->UL_tti_req[0];
-  NR_COMMON_channels_t                        *cc = &mac->common_channels[CC_id];
-  NR_RA_t                                     *ra = &cc->ra[0];
-
-  if (ra->state == WAIT_Msg3) {
-    if ((frameP == ra->Msg3_frame) && (slotP == ra->Msg3_slot) ){
-      ul_req->SFN = ra->Msg3_frame;
-      ul_req->Slot = ra->Msg3_slot;
-      ul_req->pdus_list[ul_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-      ul_req->pdus_list[ul_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
-      ul_req->pdus_list[ul_req->n_pdus].pusch_pdu = ra->pusch_pdu;
-      ul_req->n_pdus+=1;
-    }
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * 275];
+  const uint16_t bwpSize = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  /* search 18 free RBs */
+  int rbSize = 0;
+  int rbStart = 0;
+  while (rbSize < 18) {
+    rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
+    rbSize = 0;
+    while (rbStart < bwpSize && vrb_map_UL[rbStart])
+      rbStart++;
+    AssertFatal(rbStart < bwpSize - 18, "no space to allocate Msg 3 for RA!\n");
+    while (rbStart + rbSize < bwpSize
+           && !vrb_map_UL[rbStart + rbSize]
+           && rbSize < 18)
+      rbSize++;
   }
+  ra->msg3_nb_rb = 18;
+  ra->msg3_first_rb = rbStart;
 }
 
 void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
@@ -644,10 +644,32 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     return;
   }
 
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * 275];
+  for (int i = 0; i < ra->msg3_nb_rb; ++i) {
+    AssertFatal(!vrb_map_UL[i + ra->msg3_first_rb],
+                "RB %d in %4d.%2d is already taken, cannot allocate Msg3!\n",
+                i + ra->msg3_first_rb,
+                ra->Msg3_frame,
+                ra->Msg3_slot);
+    vrb_map_UL[i + ra->msg3_first_rb] = 1;
+  }
+
   LOG_I(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &ra->pusch_pdu;
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[CC_id][ra->Msg3_slot];
+  AssertFatal(future_ul_tti_req->SFN == ra->Msg3_frame
+              && future_ul_tti_req->Slot == ra->Msg3_slot,
+              "future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",
+              future_ul_tti_req->SFN,
+              future_ul_tti_req->Slot,
+              ra->Msg3_frame,
+              ra->Msg3_slot);
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+  nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
+  future_ul_tti_req->n_pdus += 1;
 
   AssertFatal(ra->secondaryCellGroup,
               "no secondaryCellGroup for RNTI %04x\n",
@@ -926,7 +948,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dl_req->nPDUs+=2;
 
     // Program UL processing for Msg3
-    nr_get_Msg3alloc(scc, ubwp, slotP, frameP, ra);
+    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
     LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
     nr_add_msg3(module_idP, CC_id, frameP, slotP);
     ra->state = WAIT_Msg3;

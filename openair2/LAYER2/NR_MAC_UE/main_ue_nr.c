@@ -37,8 +37,6 @@
 #include "assertions.h"
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
-#include "openair2/LAYER2/RLC/rlc.h"
-#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
 
