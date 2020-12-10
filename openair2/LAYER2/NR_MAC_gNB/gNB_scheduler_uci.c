@@ -468,6 +468,22 @@ bool nr_acknack_scheduling(int mod_id,
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     pucch->ul_slot = (s + 1) % n_slots_frame;
+    // we assume that only two indices over the array sched_pucch exist
+    const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
+    // skip the CSI PUCCH if it is present and if in the next frame/slot
+    if (csi_pucch->csi_bits > 0
+        && csi_pucch->frame == pucch->frame
+        && csi_pucch->ul_slot == pucch->ul_slot) {
+      AssertFatal(!csi_pucch->simultaneous_harqcsi,
+                  "%s(): %d.%d cannot handle simultaneous_harqcsi, but found for UE %d\n",
+                  __func__,
+                  pucch->frame,
+                  pucch->ul_slot,
+                  UE_id);
+      nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
+      pucch->frame = s >= n_slots_frame - 2 ?  (f + 1) % 1024 : f;
+      pucch->ul_slot = (s + 2) % n_slots_frame;
+    }
   }
 
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
