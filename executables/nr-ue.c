@@ -23,9 +23,6 @@
 
 #include "NR_MAC_UE/mac.h"
 //#include "RRC/LTE/rrc_extern.h"
-#include "PHY_INTERFACE/phy_interface_extern.h"
-
-#undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "fapi_nr_ue_l1.h"
@@ -47,17 +44,12 @@
 
 #include "T.h"
 
-#ifdef XFORMS
-  #include "PHY/TOOLS/nr_phy_scope.h"
-
-  extern char do_forms;
-#endif
+#include "PHY_INTERFACE/phy_interface_extern.h"
 
 // Missing stuff?
 int next_ra_frame = 0;
 module_id_t next_Mod_id = 0;
 
-extern double cpuf;
 //static  nfapi_nr_config_request_t config_t;
 //static  nfapi_nr_config_request_t* config =&config_t;
 
@@ -118,22 +110,6 @@ extern double cpuf;
  *
  */
 
-#ifndef NO_RAT_NR
-  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
-#else
-  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
-#endif
-
-#define FRAME_PERIOD    100000000ULL
-#define DAQ_PERIOD      66667ULL
-
-typedef enum {
-  pss=0,
-  pbch=1,
-  si=2
-} sync_mode_t;
-
-
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
@@ -178,11 +154,6 @@ void fill_dl_indication(nr_downlink_indication_t *dl_ind, UE_nr_rxtx_proc_t *pro
  * It performs band scanning and synchonization.
  * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
  */
-
-typedef struct syncData_s {
-  UE_nr_rxtx_proc_t proc;
-  PHY_VARS_NR_UE *UE;
-} syncData_t;
 
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;

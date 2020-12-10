@@ -158,6 +158,16 @@
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
+#ifndef NO_RAT_NR
+  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
+#else
+  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
+#endif
+
+#define FRAME_PERIOD    100000000ULL
+#define DAQ_PERIOD      66667ULL
+
+#undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 /// Context data structure for eNB subframe processing
 typedef struct {
@@ -1146,6 +1156,10 @@ typedef struct nr_rxtx_thread_data_s {
   PHY_VARS_NR_UE    *UE;
 }  nr_rxtx_thread_data_t;
 
+typedef struct syncData_s {
+  UE_nr_rxtx_proc_t proc;
+  PHY_VARS_NR_UE *UE;
+} syncData_t;
 /*static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 
   if (pthread_mutex_lock(mutex) != 0) {
@@ -1208,6 +1222,11 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
   return(0);
 }
 */
+typedef enum {
+  pss = 0,
+  pbch = 1,
+  si = 2
+} sync_mode_t;
 
 
 /*
