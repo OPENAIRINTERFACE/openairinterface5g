@@ -60,8 +60,8 @@
 #define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
 
 typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
+  FR1 = 0,
+  FR2
 } frequency_range_t;
 
 // PRACH occasion details
@@ -130,11 +130,6 @@ typedef enum channel_bandwidth_e {
   bw_80MHz  = 0x16,
   bw_100MHz = 0x32
 } channel_bandwidth_t;
-
-typedef enum frequency_range_e {
-  FR1 = 0,
-  FR2
-} frequency_range_t;
 
 typedef enum nr_ssb_and_cset_mux_pattern_type_e {
   NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,

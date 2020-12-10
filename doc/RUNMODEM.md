@@ -142,6 +142,14 @@ In order to run gNB in standalone mode, the following flag is needed at gNB:
 
 ### Run OAI in sa mode
 
+At the gNB the --sa flag does the following
+- it reads the RRC configuration from the configuration file
+- it encodes the RRCConfiguration and the RBconfig message and stores them in the binary files rbconfig.raw and reconfig.raw
+- the RRC encodes SIB1 according the configuration file and transmits it through PDSCH
+
+At the UE the --phy-test flag will
+- read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them.
+
 From the `cmake_targets/ran_build/build` folder:
 
 gNB on machine 1:
