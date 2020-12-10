@@ -195,12 +195,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
   const uint16_t M_s_max = nr_of_candidates;
 
-  AssertFatal(m < nr_of_candidates,
-              "PDCCH candidate index %d in CORESET %d exceeds the maximum "
-              "number of PDCCH candidates (%d)\n",
-              m,
-              coreset_id,
-              nr_of_candidates);
+  //PDCCH candidate index m in CORESET exceeds the maximum number of PDCCH candidates
+  if(m >= nr_of_candidates)
+    return -1;
 
   int first_cce = aggregation * (( Y + CEILIDIV((m*N_cce),(aggregation*M_s_max)) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
