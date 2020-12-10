@@ -227,9 +227,9 @@ typedef struct {
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
   /// Scheduled TX frame for RA Msg3
-  frame_t msg3_frame;
+  int16_t msg3_frame;
   /// Scheduled TX slot for RA Msg3
-  slot_t msg3_slot;
+  int16_t msg3_slot;
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
   /// Random-access variable for backoff (subframe of last change in backoff counter)
@@ -250,6 +250,8 @@ typedef struct {
   uint8_t RA_BI_found;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
   uint8_t generate_nr_prach;
+  /// SSB index from MIB decoding
+  uint8_t mib_ssb;
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;

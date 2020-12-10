@@ -191,12 +191,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
   const uint16_t M_s_max = nr_of_candidates;
 
-  AssertFatal(m < nr_of_candidates,
-              "PDCCH candidate index %d in CORESET %d exceeds the maximum "
-              "number of PDCCH candidates (%d)\n",
-              m,
-              coreset_id,
-              nr_of_candidates);
+  //PDCCH candidate index m in CORESET exceeds the maximum number of PDCCH candidates
+  if(m >= nr_of_candidates)
+    return -1;
 
   int first_cce = aggregation * (( Y + CEILIDIV((m*N_cce),(aggregation*M_s_max)) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
@@ -1992,32 +1989,6 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   }
 }
 
-
-void find_aggregation_candidates(uint8_t *aggregation_level,
-                                 uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss) {
-
-  if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
-    *aggregation_level = 1;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
-  }
-  if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
-    *aggregation_level = 2;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
-  }
-  if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
-    *aggregation_level = 4;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
-  }
-  if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
-    *aggregation_level = 8;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
-  }
-  if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
-    *aggregation_level = 16;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
-  }
-}
 
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
