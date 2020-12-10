@@ -2826,8 +2826,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	case 5 :
 	case 6 :
 	case 7 :
-	  AssertFatal(1==0,"Incoompatible NrOfSymbols %d and dmrs_Additional_Position %d\n",
-		      NrOfSymbols,(int)*dmrs_config->dmrs_AdditionalPosition);
+    return(1<<l0);
 	  break;
 	case 8 :
 	case 9:
