@@ -991,3 +991,13 @@ void nr_rlc_tick(int frame, int subframe)
     nr_rlc_current_time++;
   }
 }
+
+/* This is a hack, to compile the gNB.
+ * TODO: remove it. The solution is to cleanup cmake_targets/CMakeLists.txt
+ */
+void rlc_tick(int a, int b)
+{
+  LOG_E(RLC, "%s:%d:%s: this code should not be reached\n",
+        __FILE__, __LINE__, __FUNCTION__);
+  exit(1);
+}

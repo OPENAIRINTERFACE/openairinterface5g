@@ -22,6 +22,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include "asn1_utils.h"
 #include "nr_pdcp_ue_manager.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
@@ -596,8 +597,17 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
   nr_pdcp_ue_t *ue;
 
   int drb_id = s->drb_Identity;
+  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int sn_size_ul = decode_sn_size_ul(*s->pdcp_Config->drb->pdcp_SN_SizeUL);
+  int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
+  int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
 
-  LOG_I(PDCP, "%s: adding drb %d for rnti %x\n", __FUNCTION__, drb_id, rnti);
+  /* TODO(?): accept different UL and DL SN sizes? */
+  if (sn_size_ul != sn_size_dl) {
+    LOG_E(PDCP, "%s:%d:%s: fatal, bad SN sizes, must be same. ul=%d, dl=%d\n",
+          __FILE__, __LINE__, __FUNCTION__, sn_size_ul, sn_size_dl);
+    exit(1);
+  }
 
   if (drb_id != 1) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad drb id %d\n",
@@ -611,7 +621,8 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity_drb_am(drb_id, deliver_sdu_drb, ue, deliver_pdu_drb, ue);
+    pdcp_drb = new_nr_pdcp_entity_drb_am(drb_id, deliver_sdu_drb, ue, deliver_pdu_drb, ue,
+                                         sn_size_dl, t_reordering, discard_timer);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
