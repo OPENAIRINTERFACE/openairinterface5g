@@ -622,17 +622,31 @@ void pf_ul(module_id_t module_id,
           b, UE_id, ul_thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
   }
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   /* Loop UE_sched to find max coeff and allocate transmission */
-  //while (UE_sched.head > 0 && max_num_ue> 0 && n_rb_sched > 0)
-  if (n_rb_sched > 0){ //temp
+  while (UE_sched.head >= 0 && max_num_ue> 0 && n_rb_sched > 0) {
     /* Find max coeff */
+    int *max = &UE_sched.head; /* Find max coeff: assume head is max */
+    int *p = &UE_sched.next[*max];
+    while (*p >= 0) {
+      /* Find max coeff: if the current one has larger coeff, save for later */
+      if (coeff_ue[*p] > coeff_ue[*max])
+        max = p;
+      p = &UE_sched.next[*p];
+    }
+    /* Find max coeff: remove the max one: do not use remove_nr_list() since it
+     * goes through the whole list every time. Note that UE_sched.tail might
+     * not be set correctly anymore */
+    const int UE_id = *max;
+    p = &UE_sched.next[*max];
+    *max = UE_sched.next[*max];
+    *p = -1;
 
     max_num_ue--;
 
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
 
 
@@ -665,6 +679,7 @@ void pf_ul(module_id_t module_id,
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
 
     /* Mark the corresponding RBs as used */
+    n_rb_sched -= sched_pusch->rbSize;
     for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
       rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
   }
