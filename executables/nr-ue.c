@@ -161,6 +161,19 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   init_N_TA_offset(ue);
 }
 
+void fill_dl_indication(nr_downlink_indication_t *dl_ind, UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *UE, uint8_t gNB_id){
+
+  memset((void*)dl_ind, 0, sizeof(nr_downlink_indication_t));
+
+  dl_ind->module_id = UE->Mod_id;
+  dl_ind->gNB_index = gNB_id;
+  dl_ind->cc_id     = UE->CC_id;
+  dl_ind->frame     = proc->frame_rx;
+  dl_ind->slot      = proc->nr_slot_rx;
+  dl_ind->thread_id = proc->thread_id;
+
+}
+
 /*!
  * It performs band scanning and synchonization.
  * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
@@ -394,15 +407,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
       nr_downlink_indication_t dl_indication;
-      memset((void*)&dl_indication, 0, sizeof(dl_indication));
-
-      dl_indication.module_id = UE->Mod_id;
-      dl_indication.gNB_index = gNB_id;
-      dl_indication.cc_id     = UE->CC_id;
-      dl_indication.frame     = proc->frame_rx;
-      dl_indication.slot      = proc->nr_slot_rx;
-      dl_indication.thread_id = proc->thread_id;
-
+      fill_dl_indication(&dl_indication, proc, UE, gNB_id);
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
 
