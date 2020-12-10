@@ -515,9 +515,14 @@ bool nr_acknack_scheduling(int mod_id,
   int *pucch_index_used = RC.nrmac[mod_id]->pucch_index_used[sched_ctrl->active_ubwp->bwp_Id];
 
   /* if time information is outdated (e.g., last PUCCH occasion in last frame),
-   * set to first possible UL occasion in this frame */
+   * set to first possible UL occasion in this frame. Note that if such UE is
+   * scheduled a lot and used all AckNacks, pucch->frame might have been
+   * wrapped around to next frame */
   if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
     DevAssert(pucch->sr_flag + pucch->dai_c == 0);
+    AssertFatal(frame + 1 != pucch->frame,
+                "frame wrap around not handled in %s() yet\n",
+                __func__);
     pucch->frame = frame;
     pucch->ul_slot = first_ul_slot_tdd;
   }
