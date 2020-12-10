@@ -524,7 +524,7 @@ void* ru_thread_control( void* param )
   }
 
   
-  ru->state = (ru->function==eNodeB_3GPP)? RU_RUN : RU_IDLE;
+  ru->state = (ru->function==eNodeB_3GPP || ru->if_south == REMOTE_IF5)? RU_RUN : RU_IDLE;
   LOG_I(PHY,"Control channel ON for RU %d\n", ru->idx);
 
   while (!oai_exit) // Change the cond
