@@ -41,38 +41,32 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
   int case_E[8] = {8, 12, 16, 20, 32, 36, 40, 44};
 
   switch(mu) {
-
-	case NR_MU_0: // case A
-	    n = i_ssb >> 1;
-	    symbol = case_AC[i_ssb % 2] + 14*n;
-	break;
-
-	case NR_MU_1: 
-	    if (type == 1){ // case B
-		n = i_ssb >> 2;
-	    	symbol = case_BD[i_ssb % 4] + 28*n;
-	    }
-	    if (type == 2){ // case C
-		n = i_ssb >> 1;
-		symbol = case_AC[i_ssb % 2] + 14*n;
-	    }
-	 break;
-
-	 case NR_MU_3: // case D
-	    n_temp = i_ssb >> 2; 
-	    n = n_temp + (n_temp >> 2);
-	    symbol = case_BD[i_ssb % 4] + 28*n;
-	 break;
-
-	 case NR_MU_4:  // case E
-	    n_temp = i_ssb >> 3; 
-	    n = n_temp + (n_temp >> 2);
-	    symbol = case_E[i_ssb % 8] + 56*n;
-	 break;
-
-
-	 default:
-	      AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+    case NR_MU_0: // case A
+      n = i_ssb >> 1;
+      symbol = case_AC[i_ssb % 2] + 14*n;
+      break;
+    case NR_MU_1:
+      if (type == 1){ // case B
+        n = i_ssb >> 2;
+        symbol = case_BD[i_ssb % 4] + 28*n;
+       }
+       if (type == 2){ // case C
+         n = i_ssb >> 1;
+         symbol = case_AC[i_ssb % 2] + 14*n;
+       }
+       break;
+     case NR_MU_3: // case D
+       n_temp = i_ssb >> 2;
+       n = n_temp + (n_temp >> 2);
+       symbol = case_BD[i_ssb % 4] + 28*n;
+       break;
+     case NR_MU_4:  // case E
+       n_temp = i_ssb >> 3;
+       n = n_temp + (n_temp >> 2);
+       symbol = case_E[i_ssb % 8] + 56*n;
+       break;
+     default:
+       AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
   }
 
   if (half_frame_index)
@@ -290,9 +284,9 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
-  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
-  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antenna_ports_gNB = cfg->carrier_config.num_tx_ant.value;// It corresponds to pdsch_AntennaPorts
+  fp->nb_antennas_rx = cfg->carrier_config.num_rx_ant.value;      // It denotes the number of rx antennas at gNB
+  fp->nb_antennas_tx = 1;                                         // It corresponds to the number of UE Tx antennas
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;

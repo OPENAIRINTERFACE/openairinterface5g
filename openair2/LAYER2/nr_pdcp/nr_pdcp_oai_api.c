@@ -22,6 +22,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include "asn1_utils.h"
 #include "nr_pdcp_ue_manager.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
@@ -595,8 +596,17 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
   nr_pdcp_ue_t *ue;
 
   int drb_id = s->drb_Identity;
+  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int sn_size_ul = decode_sn_size_ul(*s->pdcp_Config->drb->pdcp_SN_SizeUL);
+  int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
+  int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
 
-printf("\n\n################# rnti %d add drb %d\n\n\n", rnti, drb_id);
+  /* TODO(?): accept different UL and DL SN sizes? */
+  if (sn_size_ul != sn_size_dl) {
+    LOG_E(PDCP, "%s:%d:%s: fatal, bad SN sizes, must be same. ul=%d, dl=%d\n",
+          __FILE__, __LINE__, __FUNCTION__, sn_size_ul, sn_size_dl);
+    exit(1);
+  }
 
   if (drb_id != 1) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad drb id %d\n",
@@ -610,7 +620,8 @@ printf("\n\n################# rnti %d add drb %d\n\n\n", rnti, drb_id);
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity_drb_am(drb_id, deliver_sdu_drb, ue, deliver_pdu_drb, ue);
+    pdcp_drb = new_nr_pdcp_entity_drb_am(drb_id, deliver_sdu_drb, ue, deliver_pdu_drb, ue,
+                                         sn_size_dl, t_reordering, discard_timer);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue %d\n",
@@ -869,10 +880,45 @@ boolean_t pdcp_remove_UE(
   return 1;
 }
 
-void pdcp_config_set_security(const protocol_ctxt_t* const  ctxt_pP, pdcp_t *pdcp_pP, rb_id_t rb_id,
-                              uint16_t lc_idP, uint8_t security_modeP, uint8_t *kRRCenc_pP, uint8_t *kRRCint_pP, uint8_t *kUPenc_pP)
+void pdcp_config_set_security(
+        const protocol_ctxt_t* const  ctxt_pP,
+        pdcp_t *const pdcp_pP,
+        const rb_id_t rb_id,
+        const uint16_t lc_idP,
+        const uint8_t security_modeP,
+        uint8_t *const kRRCenc_pP,
+        uint8_t *const kRRCint_pP,
+        uint8_t *const kUPenc_pP)
 {
-  TODO;
+  DevAssert(pdcp_pP != NULL);
+
+  if ((security_modeP >= 0) && (security_modeP <= 0x77)) {
+    pdcp_pP->cipheringAlgorithm     = security_modeP & 0x0f;
+    pdcp_pP->integrityProtAlgorithm = (security_modeP>>4) & 0xf;
+    LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_SET_SECURITY_MODE: cipheringAlgorithm %d integrityProtAlgorithm %d\n",
+          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
+          pdcp_pP->cipheringAlgorithm,
+          pdcp_pP->integrityProtAlgorithm);
+    pdcp_pP->kRRCenc = kRRCenc_pP;
+    pdcp_pP->kRRCint = kRRCint_pP;
+    pdcp_pP->kUPenc  = kUPenc_pP;
+    /* Activate security */
+    pdcp_pP->security_activated = 1;
+    MSC_LOG_EVENT(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      "0 Set security ciph %X integ %x UE %"PRIx16" ",
+      pdcp_pP->cipheringAlgorithm,
+      pdcp_pP->integrityProtAlgorithm,
+      ctxt_pP->rnti);
+  } else {
+    MSC_LOG_EVENT(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      "0 Set security failed UE %"PRIx16" ",
+      ctxt_pP->rnti);
+    LOG_E(PDCP,PROTOCOL_PDCP_CTXT_FMT"  bad security mode %d",
+          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
+          security_modeP);
+  }
 }
 
 static boolean_t pdcp_data_req_drb(

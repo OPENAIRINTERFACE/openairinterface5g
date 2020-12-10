@@ -355,7 +355,7 @@ static void UE_synch(void *arg) {
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
-  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_tti_tx);
+  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
@@ -370,16 +370,16 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       ul_indication.gNB_index = gNB_id;
       ul_indication.cc_id     = UE->CC_id;
       ul_indication.frame_rx  = proc->frame_rx;
-      ul_indication.slot_rx   = proc->nr_tti_rx;
+      ul_indication.slot_rx   = proc->nr_slot_rx;
       ul_indication.frame_tx  = proc->frame_tx;
-      ul_indication.slot_tx   = proc->nr_tti_tx;
+      ul_indication.slot_tx   = proc->nr_slot_tx;
+      ul_indication.thread_id = proc->thread_id;
 
       UE->if_inst->ul_indication(&ul_indication);
     }
 
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_rx];
-      phy_procedures_nrUE_TX(UE,proc,0,thread_id);
+      phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
 }
@@ -387,7 +387,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
-  int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_tti_rx);
+  int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_slot_rx);
   uint8_t gNB_id = 0;
 
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
@@ -400,7 +400,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       dl_indication.gNB_index = gNB_id;
       dl_indication.cc_id     = UE->CC_id;
       dl_indication.frame     = proc->frame_rx;
-      dl_indication.slot      = proc->nr_tti_rx;
+      dl_indication.slot      = proc->nr_slot_rx;
+      dl_indication.thread_id = proc->thread_id;
 
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
@@ -411,16 +412,16 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 #else
     uint64_t a=rdtsc();
     phy_procedures_nrUE_RX( UE, proc, 0, UE->mode);
-    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
+    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_slot_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
 
-    if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
+    if(IS_SOFTMODEM_NOS1){ //&& proc->nr_slot_rx==1
       //Hardcoded rnti value
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
 				     0x1234, proc->frame_rx,
-				     proc->nr_tti_rx, 0);
+				     proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
     }
   }
@@ -435,7 +436,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       UE->ul_indication.gNB_index = 0;
       UE->ul_indication.cc_id = 0;
       UE->ul_indication.frame = proc->frame_rx;
-      UE->ul_indication.slot = proc->nr_tti_rx;
+      UE->ul_indication.slot = proc->nr_slot_rx;
+      UE->ul_indication.thread_id = proc->thread_id;
       UE->if_inst->ul_indication(&UE->ul_indication);
     }
   }
@@ -470,7 +472,7 @@ void UE_processing(void *arg) {
   if (UE->mac_enabled == 1) {
     uint8_t gNB_id = 0;
     NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
-    int slot_tx = proc->nr_tti_tx;
+    int slot_tx = proc->nr_slot_tx;
     int frame_tx = proc->frame_tx;
 
     if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
@@ -688,14 +690,12 @@ void *UE_thread(void *arg) {
     processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
-    curMsg->UE->current_thread_id[slot_nr] = thread_idx;
-    curMsg->proc.CC_id = UE->CC_id;
-    curMsg->proc.nr_tti_rx= slot_nr;
-    curMsg->proc.subframe_rx=slot_nr/(nb_slot_frame/10);
-    curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
-    curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
-    curMsg->proc.frame_rx = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg->proc.thread_id   = thread_idx;
+    curMsg->proc.CC_id       = UE->CC_id;
+    curMsg->proc.nr_slot_rx  = slot_nr;
+    curMsg->proc.nr_slot_tx  = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
+    curMsg->proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx    = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 

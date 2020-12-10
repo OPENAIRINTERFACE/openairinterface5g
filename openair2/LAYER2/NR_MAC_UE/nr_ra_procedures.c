@@ -63,7 +63,6 @@
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-extern const uint8_t nr_slots_per_frame[5];
 
 //extern uint8_t  nfapi_mode;
 
@@ -401,7 +400,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        UE_MODE_t UE_mode,
                        frame_t frame,
                        uint8_t gNB_id,
-                       int nr_tti_tx){
+                       int nr_slot_tx){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
@@ -489,9 +488,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       }
 
       //mac->RA_tx_frame = frame;
-      //mac->RA_tx_subframe = nr_tti_tx;
+      //mac->RA_tx_slot  = nr_slot_tx;
       //mac->RA_backoff_frame = frame;
-      //mac->RA_backoff_subframe = nr_tti_tx;
+      //mac->RA_backoff_slot  = nr_slot_tx;
 
       if (size_sdu > 0) {
 
@@ -510,7 +509,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -544,7 +543,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // - handle backoff and raResponseWindow params
 
       // LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
-      //   mod_id, frame, nr_tti_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
+      //   mod_id, frame, nr_slot_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
 
       if (mac->RA_BI_found){
         prach_resources->RA_PREAMBLE_BACKOFF = prach_resources->RA_SCALING_FACTOR_BI * mac->RA_backoff_indicator;
@@ -564,7 +563,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR reception failed \n", mod_id, frame, nr_tti_tx);
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_slot_tx %d: RAR reception failed \n", mod_id, frame, nr_slot_tx);
 
         mac->ra_state = RA_UE_IDLE;
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
@@ -622,22 +621,22 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         //   frame_diff = (sframe_t) frame - mac->RA_backoff_frame;
         //   if (frame_diff < 0) frame_diff = -frame_diff;
         //   mac->RA_backoff_frame = frame;
-        //   mac->RA_backoff_subframe = nr_tti_tx;
+        //   mac->RA_backoff_slot  = nr_slot_tx;
         // }
         // compute RA window parameters
         // if (mac->RA_window_cnt > 0){
         //   frame_diff = (frame_t) frame - mac->RA_tx_frame;
         //   if (frame_diff < 0) frame_diff = -frame_diff;
-        //   mac->RA_window_cnt -= ((10 * frame_diff) + (nr_tti_tx - mac->RA_tx_subframe));
-        //   LOG_D(MAC, "[MAC][UE %d][RAPROC] Frame %d, subframe %d: RA Active, adjusted window cnt %d\n", mod_id, frame, nr_tti_tx, mac->RA_window_cnt);
+        //   mac->RA_window_cnt -= ((10 * frame_diff) + (nr_slot_tx - mac->RA_tx_subframe));
+        //   LOG_D(MAC, "[MAC][UE %d][RAPROC] Frame %d, subframe %d: RA Active, adjusted window cnt %d\n", mod_id, frame, nr_slot_tx, mac->RA_window_cnt);
         // }
 
         // mac->RA_tx_frame = frame;
-        // mac->RA_tx_subframe = nr_tti_tx;
+        // mac->RA_tx_slot  = nr_slot_tx;
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       } else {
 
@@ -646,12 +645,12 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         LOG_D(MAC, "[MAC][UE %d][RAPROC][%d.%d]: RAR not received yet (RA window count %d) \n",
           mod_id,
           frame,
-          nr_tti_tx,
+          nr_slot_tx,
           mac->RA_window_cnt);
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       }
     }

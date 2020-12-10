@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   FILE *input_fd=NULL;
   //uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
-  int nr_tti_tx=0; 
+  int nr_slot_tx=0;
   uint64_t actual_payload=0,payload_received;
   int nr_bit=1; // maximum value possible is 2
   uint8_t m0=0;// higher layer paramater initial cyclic shift
@@ -501,13 +501,13 @@ int main(int argc, char **argv)
     for (trial=0; trial<n_trials; trial++) {
       bzero(txdataF[aa],frame_parms->ofdm_symbol_size*sizeof(int));
       if(format==0){
-        nr_generate_pucch0(UE,txdataF,frame_parms,PUCCH_GroupHopping,hopping_id,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
+        nr_generate_pucch0(UE,txdataF,frame_parms,PUCCH_GroupHopping,hopping_id,amp,nr_slot_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
       }
       else if (format == 1){
-        nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	
+        nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_slot_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);
       }
       else {
-	nr_generate_pucch2(UE,0x1234,dmrs_scrambling_id,data_scrambling_id,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,nrofSymbols,startingSymbolIndex,nrofPRB,startingPRB,nr_bit);	
+	nr_generate_pucch2(UE,0x1234,dmrs_scrambling_id,data_scrambling_id,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_slot_tx,nrofSymbols,startingSymbolIndex,nrofPRB,startingPRB,nr_bit);
       }
       
       int txlev = signal_energy(&txdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
@@ -536,21 +536,21 @@ int main(int argc, char **argv)
 
       if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
-	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
-	nfapi_nr_pucch_pdu_t pucch_pdu;
-	pucch_pdu.subcarrier_spacing    = 1;
-	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
-	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
-	pucch_pdu.bit_len_harq          = nr_bit;
-	pucch_pdu.bit_len_csi_part1     = 0;
-	pucch_pdu.bit_len_csi_part2     = 0;
-	pucch_pdu.sr_flag               = sr_flag;
-	pucch_pdu.nr_of_symbols         = nrofSymbols;
-	pucch_pdu.hopping_id            = hopping_id;
-	pucch_pdu.initial_cyclic_shift  = 0;
-	pucch_pdu.start_symbol_index    = startingSymbolIndex;
-	pucch_pdu.prb_start             = startingPRB;
-        nr_decode_pucch0(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
+        nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
+        nfapi_nr_pucch_pdu_t pucch_pdu;
+        pucch_pdu.subcarrier_spacing    = 1;
+        pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
+        pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
+        pucch_pdu.bit_len_harq          = nr_bit;
+        pucch_pdu.bit_len_csi_part1     = 0;
+        pucch_pdu.bit_len_csi_part2     = 0;
+        pucch_pdu.sr_flag               = sr_flag;
+        pucch_pdu.nr_of_symbols         = nrofSymbols;
+        pucch_pdu.hopping_id            = hopping_id;
+        pucch_pdu.initial_cyclic_shift  = 0;
+        pucch_pdu.start_symbol_index    = startingSymbolIndex;
+        pucch_pdu.prb_start             = startingPRB;
+        nr_decode_pucch0(gNB,nr_slot_tx,&uci_pdu,&pucch_pdu);
         if(sr_flag==1){
           if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
             sr_errors+=1;
@@ -565,7 +565,7 @@ int main(int argc, char **argv)
       }
       else if (format==1) {
         nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,
-                         &(payload_received),frame_parms,amp,nr_tti_tx,
+                         &(payload_received),frame_parms,amp,nr_slot_tx,
                          m0,nrofSymbols,startingSymbolIndex,startingPRB,
                          startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
         if(nr_bit==1)
@@ -574,34 +574,34 @@ int main(int argc, char **argv)
           ack_nack_errors+=((actual_payload^payload_received)&1) + (((actual_payload^payload_received)&2)>>1);
       }
       else if (format==2) {
-	nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu;
-	nfapi_nr_pucch_pdu_t pucch_pdu;
-	pucch_pdu.rnti = 0x1234;
-	pucch_pdu.subcarrier_spacing    = 1;
-	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
-	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
-	pucch_pdu.bit_len_csi_part1     = nr_bit;
-	pucch_pdu.bit_len_harq          = 0;
-	pucch_pdu.bit_len_csi_part2     = 0;
-	pucch_pdu.sr_flag               = 0;
-	pucch_pdu.nr_of_symbols         = nrofSymbols;
-	pucch_pdu.hopping_id            = hopping_id;
-	pucch_pdu.initial_cyclic_shift  = 0;
-	pucch_pdu.start_symbol_index    = startingSymbolIndex;
-	pucch_pdu.prb_size              = nrofPRB;
-	pucch_pdu.prb_start             = startingPRB;
-	pucch_pdu.dmrs_scrambling_id    = dmrs_scrambling_id;
-	pucch_pdu.data_scrambling_id    = data_scrambling_id;
-        nr_decode_pucch2(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
-	int csi_part1_bytes=pucch_pdu.bit_len_csi_part1>>3;
-	if ((pucch_pdu.bit_len_csi_part1&7) > 0) csi_part1_bytes++;
-	for (int i=0;i<csi_part1_bytes;i++) {
-	  if (uci_pdu.csi_part1.csi_part1_payload[i] != ((uint8_t*)&actual_payload)[i]) {
-	    ack_nack_errors++;
-	    break;
-	  }
-	}
-	free(uci_pdu.csi_part1.csi_part1_payload);
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu;
+        nfapi_nr_pucch_pdu_t pucch_pdu;
+        pucch_pdu.rnti = 0x1234;
+        pucch_pdu.subcarrier_spacing    = 1;
+        pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
+        pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
+        pucch_pdu.bit_len_csi_part1     = nr_bit;
+        pucch_pdu.bit_len_harq          = 0;
+        pucch_pdu.bit_len_csi_part2     = 0;
+        pucch_pdu.sr_flag               = 0;
+        pucch_pdu.nr_of_symbols         = nrofSymbols;
+        pucch_pdu.hopping_id            = hopping_id;
+        pucch_pdu.initial_cyclic_shift  = 0;
+        pucch_pdu.start_symbol_index    = startingSymbolIndex;
+        pucch_pdu.prb_size              = nrofPRB;
+        pucch_pdu.prb_start             = startingPRB;
+        pucch_pdu.dmrs_scrambling_id    = dmrs_scrambling_id;
+        pucch_pdu.data_scrambling_id    = data_scrambling_id;
+        nr_decode_pucch2(gNB,nr_slot_tx,&uci_pdu,&pucch_pdu);
+        int csi_part1_bytes=pucch_pdu.bit_len_csi_part1>>3;
+        if ((pucch_pdu.bit_len_csi_part1&7) > 0) csi_part1_bytes++;
+        for (int i=0;i<csi_part1_bytes;i++) {
+          if (uci_pdu.csi_part1.csi_part1_payload[i] != ((uint8_t*)&actual_payload)[i]) {
+            ack_nack_errors++;
+            break;
+          }
+        }
+        free(uci_pdu.csi_part1.csi_part1_payload);
 
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;

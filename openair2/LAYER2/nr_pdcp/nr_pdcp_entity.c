@@ -44,7 +44,10 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
     void *deliver_sdu_data,
     void (*deliver_pdu)(void *deliver_pdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size, int sdu_id),
-    void *deliver_pdu_data)
+    void *deliver_pdu_data,
+    int sn_size,
+    int t_reordering,
+    int discard_timer)
 {
   nr_pdcp_entity_drb_am_t *ret;
 
@@ -66,9 +69,12 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
   ret->common.deliver_pdu = deliver_pdu;
   ret->common.deliver_pdu_data = deliver_pdu_data;
 
-  ret->rb_id = rb_id;
+  ret->rb_id         = rb_id;
+  ret->sn_size       = sn_size;
+  ret->t_reordering  = t_reordering;
+  ret->discard_timer = discard_timer;
 
-  ret->common.maximum_nr_pdcp_sn = 4095;
+  ret->common.maximum_nr_pdcp_sn = (1 << sn_size) - 1;
 
   return (nr_pdcp_entity_t *)ret;
 }

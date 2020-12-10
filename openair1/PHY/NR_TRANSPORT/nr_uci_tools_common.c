@@ -33,11 +33,11 @@
 #include "nr_dci.h"
 
 void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
-  				uint32_t n_id,
-  				uint8_t n_hop,
-  				int nr_tti_tx,
-  				uint8_t *u,
-  				uint8_t *v) {
+                                uint32_t n_id,
+                                uint8_t n_hop,
+                                int nr_slot_tx,
+                                uint8_t *u,
+                                uint8_t *v) {
   /*
    * Implements TS 38.211 subclause 6.3.2.2.1 Group and sequence hopping
    * The following variables are set by higher layers:
@@ -65,7 +65,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
   *v=0;
   uint32_t c_init = 0; 
   uint32_t x1,s; // TS 38.211 Subclause 5.2.1
-  int l = 32, minShift = ((2*nr_tti_tx+n_hop)<<3);
+  int l = 32, minShift = ((2*nr_slot_tx+n_hop)<<3);
   int tmpShift =0;
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t\t [nr_group_sequence_hopping] calculating u,v -> ");
@@ -92,7 +92,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
     f_gh = f_gh%30;
     f_ss = n_id%30;
     /*    for (int m=0; m<8; m++){
-          f_gh = f_gh + ((1<<m)*((uint8_t)((s>>(8*(2*nr_tti_tx+n_hop)+m))&1))); // Not sure we have to use nr_tti_tx FIXME!!!
+          f_gh = f_gh + ((1<<m)*((uint8_t)((s>>(8*(2*nr_slot_tx+n_hop)+m))&1))); // Not sure we have to use nr_slot_tx FIXME!!!
         }
         f_gh = f_gh%30;
         f_ss = n_id%30;*/
@@ -102,7 +102,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
     c_init = (1<<5)*floor(n_id/30)+(n_id%30); // we initialize c_init to calculate u,v
     s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
     f_ss = n_id%30;
-    l = 32, minShift = (2*nr_tti_tx+n_hop);
+    l = 32, minShift = (2*nr_slot_tx+n_hop);
 
     while(minShift >= l) {
       s = lte_gold_generic(&x1, &c_init, 0);
@@ -111,7 +111,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
 
     tmpShift = (minShift&((1<<5)-1)); //minShift%32;
     *v = (uint8_t)((s>>tmpShift)&1);
-    //    *v = (uint8_t)((s>>(2*nr_tti_tx+n_hop))&1); // Not sure we have to use nr_tti_tx FIXME!!!
+    //    *v = (uint8_t)((s>>(2*nr_slot_tx+n_hop))&1); // Not sure we have to use nr_slot_tx FIXME!!!
   }
 
   *u = (f_gh+f_ss)%30;
@@ -125,7 +125,7 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
                                uint8_t mcs,
                                uint8_t lnormal,
                                uint8_t lprime,
-                               int nr_tti_tx) {
+                               int nr_slot_tx) {
   /*
    * Implements TS 38.211 subclause 6.3.2.2.2 Cyclic shift hopping
    *     - n_id: higher-layer parameter hoppingId
@@ -140,7 +140,7 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
 
   uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
   uint8_t n_cs=0;
-  int l = 32, minShift = (14*8*nr_tti_tx )+ 8*(lnormal+lprime);
+  int l = 32, minShift = (14*8*nr_slot_tx )+ 8*(lnormal+lprime);
   int tmpShift =0;
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) using c_init=%u -> \n",c_init);
@@ -155,8 +155,8 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
     tmpShift = (minShift&((1<<5)-1)); //minShift%32;
     minShift ++;
     n_cs = n_cs+((1<<m)*((uint8_t)((s>>tmpShift)&1)));
-    // calculating n_cs (Not sure we have to use nr_tti_tx FIXME!!!)
-    // n_cs = n_cs+((1<<m)*((uint8_t)((s>>((14*8*nr_tti_tx) + 8*(lnormal+lprime) + m))&1)));
+    // calculating n_cs (Not sure we have to use nr_slot_tx FIXME!!!)
+    // n_cs = n_cs+((1<<m)*((uint8_t)((s>>((14*8*nr_slot_tx) + 8*(lnormal+lprime) + m))&1)));
   }
 
   alpha = (alpha * (double)((m0+mcs+n_cs)%12));

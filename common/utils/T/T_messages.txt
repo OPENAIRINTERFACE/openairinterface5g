@@ -400,6 +400,27 @@ ID = LEGACY_S1AP_TRACE
     GROUP = ALL:LEGACY_S1AP:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_NGAP_INFO
+    DESC = NGAP legacy logs - info level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_ERROR
+    DESC = NGAP legacy logs - error level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_WARNING
+    DESC = NGAP legacy logs - warning level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_DEBUG
+    DESC = NGAP legacy logs - debug level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_TRACE
+    DESC = NGAP legacy logs - trace level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
 ID = LEGACY_X2AP_INFO
     DESC = X2AP legacy logs - info level
     GROUP = ALL:LEGACY_X2AP:LEGACY_GROUP_INFO:LEGACY

@@ -62,7 +62,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
   unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
 
  // if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
-          rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
+ rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
 
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
@@ -418,12 +418,11 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
-                uint8_t eNB_id,
+                uint8_t gNB_id,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
                 uint32_t high_speed_flag) {
 
-  int Ns = proc->nr_tti_rx;
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
   int symbol;
@@ -457,15 +456,15 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
 
 #ifdef DEBUG_PBCH
-  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF);
+  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
 
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   for (symbol=1; symbol<4; symbol++) {
 
-    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF,
+    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
                     nr_ue_pbch_vars->dl_ch_estimates,
                     nr_ue_pbch_vars->rxdataF_ext,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,
@@ -539,6 +538,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   M =  NR_POLAR_PBCH_E;
   nushift = (Lmax==4)? i_ssb&3 : i_ssb&7;
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
+
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
   const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
@@ -609,11 +609,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
     
-  dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
-  dl_indication.dci_ind = NULL; 
-  dl_indication.proc=proc;
-  dl_indication.module_id=0;
-  dl_indication.cc_id=proc->CC_id;
+  dl_indication.module_id = ue->Mod_id;
+  dl_indication.gNB_index = gNB_id;
+  dl_indication.cc_id     = proc->CC_id;
+  dl_indication.frame     = proc->frame_rx;
+  dl_indication.slot      = proc->nr_slot_rx;
+  dl_indication.thread_id = proc->thread_id;
+  dl_indication.rx_ind    = &rx_ind; //  hang on rx_ind instance
+  dl_indication.dci_ind   = NULL;
 
   rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
   rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0]; //not good as it is pointing to a memory that can change

@@ -33,12 +33,12 @@
 // last channel estimate of the receiver
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
-                      PHY_VARS_NR_UE *ue,
-                      module_id_t gNB_id,
-                      uint8_t frame,
-                      uint8_t subframe,
-                      unsigned char clear,
-                      short coef)
+                        PHY_VARS_NR_UE *ue,
+                        module_id_t gNB_id,
+                        uint8_t frame,
+                        uint8_t subframe,
+                        unsigned char clear,
+                        short coef)
 {
 
   static int max_pos_fil = 0;
@@ -47,6 +47,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   int temp = 0, i, aa, max_val = 0, max_pos = 0;
   int diff;
   short Re,Im,ncoef;
+  uint8_t sync_offset = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
 
@@ -80,11 +81,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   //max_pos_fil = max_pos;
 
-  if(subframe == 0)
-  {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
-      if ( abs(diff) < SYNCH_HYST )
+      if (frame_parms->freq_range==nr_FR2) 
+		sync_offset = 2;
+      else
+		sync_offset = 0;
+	
+      if ( abs(diff) < (SYNCH_HYST+sync_offset) )
           ue->rx_offset = 0;
       else
           ue->rx_offset = diff;
@@ -103,7 +107,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
           if (ue->mac_enabled==1) {
               LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
               //mac_resynch();
-              //dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
+              //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
               ue->UE_mode[0] = PRACH;
               ue->prach_resources[gNB_id]->sync_frame = frame;
               ue->prach_resources[gNB_id]->init_msg1 = 0;
@@ -122,9 +126,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
 
       #ifdef DEBUG_PHY
-      LOG_D(PHY,"AbsSubframe %d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
+      LOG_D(PHY,"AbsSubframe %d: diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
               subframe,
-              ue->current_thread_id[subframe],
               diff,
               ue->rx_offset,
               clear,
@@ -135,5 +138,5 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       #endif //DEBUG_PHY
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
-  }
+
 }

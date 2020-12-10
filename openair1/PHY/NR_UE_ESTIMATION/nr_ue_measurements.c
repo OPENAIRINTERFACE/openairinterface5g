@@ -107,11 +107,12 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
 
 
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
-                         unsigned int subframe_offset,
-                         unsigned char N0_symbol,
-                         unsigned char abstraction_flag,
-                         unsigned char rank_adaptation,
-                         uint8_t subframe)
+                        UE_nr_rxtx_proc_t *proc,
+                        unsigned int subframe_offset,
+                        unsigned char N0_symbol,
+                        unsigned char abstraction_flag,
+                        unsigned char rank_adaptation,
+                        uint8_t subframe)
 {
   int aarx,aatx,eNB_id=0; //,gain_offset=0;
   //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -131,7 +132,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
   
   /*int16_t *dl_ch;
-  dl_ch = (int16_t *)&ue->pdsch_vars[ue->current_thread_id[subframe]][0]->dl_ch_estimates[eNB_id][ch_offset];*/
+  dl_ch = (int16_t *)&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[eNB_id][ch_offset];*/
 
   ch_offset = ue->frame_parms.ofdm_symbol_size*2;
 
@@ -142,7 +143,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
         ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
-          (signal_energy_nodc(&ue->pdsch_vars[ue->current_thread_id[subframe]][0]->dl_ch_estimates[eNB_id][ch_offset],
+          (signal_energy_nodc(&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[eNB_id][ch_offset],
                               (50*12)));
         //- ue->measurements.n0_power[aarx];
 
@@ -224,6 +225,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 }
 
 void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
+    UE_nr_rxtx_proc_t *proc,
     uint8_t slot,
     uint8_t abstraction_flag)
 {
@@ -234,14 +236,14 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 	uint8_t eNB_offset=0,l,nushift;
 	uint16_t off,nb_rb;
 //	NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-	int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[slot]].rxdataF;
+	int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
 	nushift =  ue->frame_parms.Nid_cell%4;
 	ue->frame_parms.nushift = nushift;
 	unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
 	if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 	
-	symbol_offset = ue->frame_parms.ofdm_symbol_size*(ue->symbol_offset+1);
+	symbol_offset = ue->frame_parms.ofdm_symbol_size*((ue->symbol_offset+1)%(ue->frame_parms.symbols_per_slot));
 
     ue->measurements.rsrp[eNB_offset] = 0;
 
