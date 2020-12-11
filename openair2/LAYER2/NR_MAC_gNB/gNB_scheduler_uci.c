@@ -470,6 +470,14 @@ bool nr_acknack_scheduling(int mod_id,
     pucch->ul_slot = (s + 1) % n_slots_frame;
   }
 
+  /* if the UE's next PUCCH occasion is after the possible UL slots (within the
+   * same frame) or wrapped around to the next frame, then we assume there is
+   * no possible PUCCH allocation anymore */
+  if ((pucch->frame == frame
+       && (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots))
+      || (pucch->frame == frame + 1))
+    return false;
+
   // this is hardcoded for now as ue specific
   NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   uint8_t pdsch_to_harq_feedback[8];
@@ -531,7 +539,9 @@ bool nr_acknack_scheduling(int mod_id,
   while (pucch_index_used[pucch->ul_slot] >= n_res) {
     pucch->ul_slot++;
     /* if there is no free resource anymore, abort search */
-    if (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots) {
+    if ((pucch->frame == frame
+         && pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots)
+        || (pucch->frame == frame + 1)) {
       LOG_E(MAC,
             "%4d.%2d no free PUCCH resources anymore while searching for UE %d\n",
             frame,
