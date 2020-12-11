@@ -547,9 +547,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
+  const int CC_id = 0;
+  NR_ServingCellConfigCommon_t *scc = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
-  const int CC_id = 0;
   NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -583,10 +584,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     uint8_t N_PRB_DMRS =
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
-
     uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                                                RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
                                                nrOfSymbols);
+    const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
+    const int nrOfLayers = 1;
+    const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
+    const uint8_t Qm = nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
     const uint32_t TBS =
         nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
@@ -595,7 +599,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        N_PRB_DMRS * N_DMRS_SLOT,
                        0 /* N_PRB_oh, 0 for initialBWP */,
                        0 /* tb_scaling */,
-                       1 /* nrOfLayers */)
+                       nrOfLayers)
         >> 3;
 
     const int current_harq_pid = slot % 8;
@@ -605,26 +609,183 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = 1;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(MAC, "%4d.%2d RNTI %04x start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
-          frame, slot, rnti, sched_ctrl->rbStart, sched_ctrl->rbSize, sched_ctrl->mcs,
-          TBS, current_harq_pid, harq->round, harq->ndi);
+    LOG_D(MAC,
+          "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
+          frame,
+          slot,
+          rnti,
+          sched_ctrl->rbStart,
+          sched_ctrl->rbSize,
+          startSymbolIndex,
+          nrOfSymbols,
+          sched_ctrl->mcs,
+          TBS,
+          current_harq_pid,
+          harq->round,
+          harq->ndi);
+
+    NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
+    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList,
+                "searchSpacesToAddModList is null\n");
+    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0,
+                "searchSPacesToAddModList is empty\n");
+
 
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-    nr_fill_nfapi_dl_pdu(module_id,
-                         dl_req,
-                         rnti,
-                         UE_info->secondaryCellGroup[UE_id],
-                         sched_ctrl,
-                         pucch,
-                         getDmrsConfigType(sched_ctrl->active_bwp),
-                         nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                         nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                         TBS,
-                         startSymbolIndex,
-                         nrOfSymbols,
-                         current_harq_pid,
-                         harq->ndi,
-                         harq->round);
+
+    /* TODO: can be moved down? */
+    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+    memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
+    dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
+    dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
+    dl_req->nPDUs += 1;
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+
+    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+    memset(dl_tti_pdsch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
+    dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
+    dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
+    dl_req->nPDUs += 1;
+    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+
+    pdsch_pdu->pduBitmap = 0;
+    pdsch_pdu->rnti = rnti;
+    pdsch_pdu->pduIndex = gNB_mac->pdu_index[CC_id]++;
+
+    // BWP
+    pdsch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+    pdsch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+    if (bwp->bwp_Common->genericParameters.cyclicPrefix)
+      pdsch_pdu->CyclicPrefix = *bwp->bwp_Common->genericParameters.cyclicPrefix;
+    else
+      pdsch_pdu->CyclicPrefix = 0;
+
+    // Codeword information
+    pdsch_pdu->NrOfCodewords = 1;
+    pdsch_pdu->targetCodeRate[0] = R;
+    pdsch_pdu->qamModOrder[0] = Qm;
+    pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
+    pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
+    pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
+    pdsch_pdu->TBSize[0] = TBS;
+
+    pdsch_pdu->dataScramblingId = *scc->physCellId;
+    pdsch_pdu->nrOfLayers = nrOfLayers;
+    pdsch_pdu->transmissionScheme = 0;
+    pdsch_pdu->refPoint = 0; // Point A
+
+    // DMRS
+    pdsch_pdu->dlDmrsSymbPos =
+        fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+                       scc->dmrs_TypeA_Position,
+                       nrOfSymbols);
+    pdsch_pdu->dmrsConfigType = dmrsConfigType;
+    pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
+    pdsch_pdu->SCID = 0;
+    pdsch_pdu->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
+    pdsch_pdu->dmrsPorts = 1;
+
+    // Pdsch Allocation in frequency domain
+    pdsch_pdu->resourceAlloc = 1;
+    pdsch_pdu->rbStart = sched_ctrl->rbStart;
+    pdsch_pdu->rbSize = sched_ctrl->rbSize;
+    pdsch_pdu->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
+
+    // Resource Allocation in time domain
+    pdsch_pdu->StartSymbolIndex = startSymbolIndex;
+    pdsch_pdu->NrOfSymbols = nrOfSymbols;
+
+    /* Check and validate PTRS values */
+    struct NR_SetupRelease_PTRS_DownlinkConfig *phaseTrackingRS =
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS;
+    if (phaseTrackingRS) {
+      bool valid_ptrs_setup = set_dl_ptrs_values(phaseTrackingRS->choice.setup,
+                                                 pdsch_pdu->rbSize,
+                                                 pdsch_pdu->mcsIndex[0],
+                                                 pdsch_pdu->mcsTable[0],
+                                                 &pdsch_pdu->PTRSFreqDensity,
+                                                 &pdsch_pdu->PTRSTimeDensity,
+                                                 &pdsch_pdu->PTRSPortIndex,
+                                                 &pdsch_pdu->nEpreRatioOfPDSCHToPTRS,
+                                                 &pdsch_pdu->PTRSReOffset,
+                                                 pdsch_pdu->NrOfSymbols);
+      if (valid_ptrs_setup)
+        pdsch_pdu->pduBitmap |= 0x1; // Bit 0: pdschPtrs - Indicates PTRS included (FR2)
+    }
+
+    dci_pdu_rel15_t dci_pdu[MAX_DCI_CORESET];
+    memset(dci_pdu, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
+
+    // bwp indicator
+    const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+      AssertFatal(n_dl_bwp == 1,
+          "downlinkBWP_ToAddModList has %d BWP!\n",
+          n_dl_bwp);
+    // as per table 7.3.1.1.2-1 in 38.212
+    dci_pdu[0].bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
+    AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
+                "Only frequency resource allocation type 1 is currently supported\n");
+    dci_pdu[0].frequency_domain_assignment.val =
+        PRBalloc_to_locationandbandwidth0(
+            pdsch_pdu->rbSize,
+            pdsch_pdu->rbStart,
+            pdsch_pdu->BWPSize);
+    dci_pdu[0].time_domain_assignment.val = sched_ctrl->time_domain_allocation;
+    dci_pdu[0].mcs = sched_ctrl->mcs;
+    dci_pdu[0].rv = pdsch_pdu->rvIndex[0];
+    dci_pdu[0].harq_pid = current_harq_pid;
+    dci_pdu[0].ndi = harq->ndi;
+    dci_pdu[0].dai[0].val = (pucch->dai_c-1)&3;
+    dci_pdu[0].tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
+    dci_pdu[0].pucch_resource_indicator = pucch->resource_indicator;
+    dci_pdu[0].pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
+    dci_pdu[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_pdu[0].dmrs_sequence_initialization.val = pdsch_pdu->SCID;
+    LOG_D(MAC,
+          "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
+          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+          frame,
+          slot,
+          dci_pdu[0].frequency_domain_assignment.val,
+          pdsch_pdu->rbStart,
+          pdsch_pdu->rbSize,
+          pdsch_pdu->BWPSize,
+          dci_pdu[0].time_domain_assignment.val,
+          dci_pdu[0].vrb_to_prb_mapping.val,
+          dci_pdu[0].mcs,
+          dci_pdu[0].tb_scaling,
+          dci_pdu[0].ndi,
+          dci_pdu[0].rv);
+
+    nr_configure_pdcch(gNB_mac,
+                       pdcch_pdu,
+                       rnti,
+                       sched_ctrl->search_space,
+                       sched_ctrl->coreset,
+                       scc,
+                       bwp,
+                       sched_ctrl->aggregation_level,
+                       sched_ctrl->cce_index);
+
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    /*const*/ int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+    int rnti_types[2] = { NR_RNTI_C, 0 };
+
+    fill_dci_pdu_rel15(scc,
+                       UE_info->secondaryCellGroup[UE_id],
+                       pdcch_pdu,
+                       dci_pdu,
+                       &dci_format,
+                       rnti_types,
+                       pdsch_pdu->BWPSize,
+                       bwp->bwp_Id);
+
+    LOG_D(MAC,
+          "coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+          (unsigned long long)pdcch_pdu->FreqDomainResource,
+          pdcch_pdu->StartSymbolIndex,
+          pdcch_pdu->DurationSymbols);
 
     NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
     if (harq->round != 0) { /* retransmission */

@@ -170,22 +170,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
-void nr_fill_nfapi_dl_pdu(int Mod_id,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
-                          rnti_t rnti,
-                          NR_CellGroupConfig_t *secondaryCellGroup,
-                          NR_UE_sched_ctrl_t *sched_ctrl,
-                          NR_sched_pucch_t *pucch_sched,
-                          nfapi_nr_dmrs_type_e dmrsConfigType,
-                          uint16_t R,
-                          uint8_t Qm,
-                          uint32_t tbs,
-                          int StartSymbolIndex,
-                          int NrOfSymbols,
-                          int harq_pid,
-                          int ndi,
-                          int round);
-
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
                              sub_frame_t slot,
