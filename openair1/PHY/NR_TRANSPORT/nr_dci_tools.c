@@ -142,7 +142,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
   AssertFatal(N_reg > 0,"N_reg cannot be 0\n");
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
-    int  L = pdcch_pdu_rel15->dci_pdu.AggregationLevel[d];
+    int  L = pdcch_pdu_rel15->dci_pdu[d].AggregationLevel;
 
     if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1)
       AssertFatal(L>=4, "Invalid aggregation level for SIB1 configured PDCCH %d\n", L);
@@ -153,10 +153,10 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
       C = N_reg/(bsize*R);
     }
     
-    LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu.CceIndex[d]);
+    LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
       cce = &gNB->cce_list[d][cce_idx];
-      cce->cce_idx = pdcch_pdu_rel15->dci_pdu.CceIndex[d] + cce_idx;
+      cce->cce_idx = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
       LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
       
       if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
@@ -236,11 +236,11 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
-    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu[i].Payload;
 
-    int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu.RNTI[i],gNB,SEARCH_EXIST_OR_FREE);
+    int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu[i].RNTI,gNB,SEARCH_EXIST_OR_FREE);
     if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
-      LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->dci_pdu.RNTI[i],dlsch_id);
+      LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->dci_pdu[i].RNTI,dlsch_id);
       return;
     }
     
@@ -254,7 +254,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
 		"illegal harq_pid %d\n",harq_pid);
     
     dlsch->harq_mask                |= (1<<harq_pid);
-    dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu.RNTI[i];
+    dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu[i].RNTI;
     
     //    nr_fill_cce_list(gNB,0);  
     /*
@@ -300,7 +300,7 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
-    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu[i].Payload;
 
     // if there's no DL DCI then generate CCE list
     //    nr_fill_cce_list(gNB,0);  

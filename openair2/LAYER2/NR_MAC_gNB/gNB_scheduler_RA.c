@@ -936,7 +936,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     rnti_types[0] = NR_RNTI_RA;
 
     LOG_I(MAC, "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
-      pdcch_pdu_rel15->dci_pdu.RNTI[0],
+      pdcch_pdu_rel15->dci_pdu[0].RNTI,
       rnti_types[0],
       dci_formats[0],
       (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
