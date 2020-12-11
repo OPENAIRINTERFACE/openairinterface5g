@@ -84,7 +84,7 @@ int config_sync_var=-1;
 
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-volatile int             start_gNB = 0;
+//volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
 
 //static int wait_for_sync = 0;

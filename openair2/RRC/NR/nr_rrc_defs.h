@@ -326,7 +326,7 @@ typedef struct gNB_RRC_UE_s {
   NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */
-  NR_ReestablishmentCause_t             reestablishment_cause;
+  NR_ReestablishmentCause_t          reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;
@@ -439,6 +439,7 @@ typedef struct {
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
+  int                                       physCellId;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------

@@ -54,6 +54,7 @@
 #include "NR_UL-CCCH-Message.h"
 #include "NR_RRCSetupRequest-IEs.h"
 #include "NR_RRCSetupComplete-IEs.h"
+#include "NR_RRCReestablishmentRequest-IEs.h"
 
 #include "rlc.h"
 #include "rrc_eNB_UE_context.h"
@@ -565,6 +566,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 
   ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
   ASN_SEQUENCE_ADD(&DRB_configList2->list, DRB_config);
+
+  dedicatedNAS_MessageList = CALLOC(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
 
   if (ue_context_pP->ue_context.nas_pdu_flag == 1) {
     dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
@@ -1161,12 +1164,15 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            int                buffer_length,
                            const int          CC_id)
 {
-    asn_dec_rval_t                                    dec_rval;
-    NR_UL_CCCH_Message_t                             *ul_ccch_msg = NULL;
-    struct rrc_gNB_ue_context_s                      *ue_context_p = NULL;
-    gNB_RRC_INST                                     *gnb_rrc_inst = RC.nrrrc[ctxt_pP->module_id];
-    NR_RRCSetupRequest_IEs_t                         *rrcSetupRequest = NULL;
-    uint64_t                                         random_value = 0;
+  module_id_t                                       Idx;
+  asn_dec_rval_t                                    dec_rval;
+  NR_UL_CCCH_Message_t                             *ul_ccch_msg = NULL;
+  struct rrc_gNB_ue_context_s                      *ue_context_p = NULL;
+  gNB_RRC_INST                                     *gnb_rrc_inst = RC.nrrrc[ctxt_pP->module_id];
+  NR_RRCSetupRequest_IEs_t                         *rrcSetupRequest = NULL;
+  NR_RRCReestablishmentRequest_IEs_t                rrcReestablishmentRequest;
+  uint64_t                                          random_value = 0;
+  int i;
 
     dec_rval = uper_decode( NULL,
                             &asn_DEF_NR_UL_CCCH_Message,
@@ -1316,9 +1322,224 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                 break;
 
             case NR_UL_CCCH_MessageType__c1_PR_rrcReestablishmentRequest:
-                LOG_I(NR_RRC, "receive rrcReestablishmentRequest message \n");
-                /* TODO */
-                break;
+              LOG_I(NR_RRC, "receive rrcReestablishmentRequest message \n");
+              LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)(buffer), buffer_length,
+                    "[MSG] RRC Reestablishment Request\n");
+              LOG_D(NR_RRC,
+                    PROTOCOL_NR_RRC_CTXT_UE_FMT"MAC_gNB--- MAC_DATA_IND (rrcReestablishmentRequest on SRB0) --> RRC_gNB\n",
+                    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+
+              rrcReestablishmentRequest = ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest;
+              LOG_I(NR_RRC,
+                PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest cause %s\n",
+                PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                ((rrcReestablishmentRequest.reestablishmentCause == NR_ReestablishmentCause_otherFailure) ?   "Other Failure" :
+                (rrcReestablishmentRequest.reestablishmentCause == NR_ReestablishmentCause_handoverFailure) ? "Handover Failure" :
+                "reconfigurationFailure"));
+              {
+                uint16_t                          c_rnti = 0;
+                if (rrcReestablishmentRequest.ue_Identity.physCellId != RC.nrrrc[ctxt_pP->module_id]->carrier.physCellId) {
+                  /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was recieved in this cell */
+                  LOG_E(NR_RRC,
+                        PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%d), fallback to RRC establishment\n",
+                        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                        rrcReestablishmentRequest.ue_Identity.physCellId,
+                        RC.nrrrc[ctxt_pP->module_id]->carrier.physCellId);
+                  rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                        rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                        CC_id);
+                  break;
+                }
+
+                LOG_D(NR_RRC, "physCellId is %ld\n", rrcReestablishmentRequest.ue_Identity.physCellId);
+
+                for (i = 0; i < rrcReestablishmentRequest.ue_Identity.shortMAC_I.size; i++) {
+                  LOG_D(NR_RRC, "rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[%d] = %x\n",
+                        i, rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[i]);
+                }
+
+                if (rrcReestablishmentRequest.ue_Identity.c_RNTI < 0 ||
+                    rrcReestablishmentRequest.ue_Identity.c_RNTI > 65535) {
+                  /* c_RNTI range error should not happen */
+                  LOG_E(NR_RRC,
+                        PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest c_RNTI range error, fallback to RRC establishment\n",
+                        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+                  rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                        rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                        CC_id);
+                  break;
+                }
+
+                LOG_D(NR_RRC, "c_rnti is %x\n", c_rnti);
+                ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], c_rnti);
+
+                if (ue_context_p == NULL) {
+                  LOG_E(NR_RRC,
+                        PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest without UE context, fallback to RRC establishment\n",
+                        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+                  rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                        rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                        CC_id);
+                  break;
+                }
+
+                int UE_id = find_nr_UE_id(ctxt_pP->module_id, c_rnti);
+
+                if(UE_id == -1) {
+                  LOG_E(NR_RRC,
+                        PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest without UE_id(MAC) rnti %x, fallback to RRC establishment\n",
+                        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
+                  rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                        rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                        CC_id);
+                  break;
+                }
+
+                //previous rnti
+                rnti_t previous_rnti = 0;
+
+                for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+                  if (reestablish_rnti_map[i][1] == c_rnti) {
+                    previous_rnti = reestablish_rnti_map[i][0];
+                    break;
+                  }
+                }
+
+                if(previous_rnti != 0) {
+                  UE_id = find_nr_UE_id(ctxt_pP->module_id, previous_rnti);
+
+                  if(UE_id == -1) {
+                    LOG_E(NR_RRC,
+                          PROTOCOL_NR_RRC_CTXT_UE_FMT" RRCReestablishmentRequest without UE_id(MAC) previous rnti %x, fallback to RRC establishment\n",
+                          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),previous_rnti);
+                    rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                        rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                        CC_id);
+                    break;
+                  }
+                }
+
+                //c-plane not end
+                if((ue_context_p->ue_context.Status != NR_RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == NR_ReestablishmentCause_spare1)) {
+                  LOG_E(NR_RRC,
+                        PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest (UE %x c-plane is not end), fallback to RRC establishment\n",
+                        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
+                  rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                        rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                        CC_id);
+                  break;
+                }
+
+                if(ue_context_p->ue_context.ue_reestablishment_timer > 0) {
+                  LOG_E(NR_RRC,
+                        PROTOCOL_NR_RRC_CTXT_UE_FMT" RRRCReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status NR_RRC_RECONFIGURED\n",
+                        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                        ue_context_p->ue_context.Status
+                        );
+                  ue_context_p->ue_context.Status = NR_RRC_RECONFIGURED;
+                  protocol_ctxt_t  ctxt_old_p;
+                  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
+                                                ctxt_pP->instance,
+                                                GNB_FLAG_YES,
+                                                c_rnti,
+                                                ctxt_pP->frame,
+                                                ctxt_pP->subframe);
+                  rrc_gNB_process_RRCReconfigurationComplete(&ctxt_old_p,
+                      ue_context_p,
+                      ue_context_p->ue_context.reestablishment_xid);
+
+                  for (uint8_t pdusessionid = 0; pdusessionid < ue_context_p->ue_context.nb_of_pdusessions; pdusessionid++) {
+                    if (ue_context_p->ue_context.pdusession[pdusessionid].status == PDU_SESSION_STATUS_DONE) {
+                      ue_context_p->ue_context.pdusession[pdusessionid].status = PDU_SESSION_STATUS_ESTABLISHED;
+                    } else {
+                      ue_context_p->ue_context.pdusession[pdusessionid].status = PDU_SESSION_STATUS_FAILED;
+                    }
+                  }
+                }
+
+                LOG_D(NR_RRC,
+                      PROTOCOL_NR_RRC_CTXT_UE_FMT" UE context: %p\n",
+                      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                      ue_context_p);
+                /* reset timers */
+                ue_context_p->ue_context.ul_failure_timer = 0;
+                ue_context_p->ue_context.ue_release_timer = 0;
+                ue_context_p->ue_context.ue_reestablishment_timer = 0;
+                // ue_context_p->ue_context.ue_release_timer_s1 = 0;
+                ue_context_p->ue_context.ue_release_timer_rrc = 0;
+                ue_context_p->ue_context.reestablishment_xid = -1;
+
+                // insert C-RNTI to map
+                for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+                  if (reestablish_rnti_map[i][0] == 0) {
+                    reestablish_rnti_map[i][0] = ctxt_pP->rnti;
+                    reestablish_rnti_map[i][1] = c_rnti;
+                    LOG_D(NR_RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
+                          i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
+                    break;
+                  }
+                }
+
+                ue_context_p->ue_context.reestablishment_cause = rrcReestablishmentRequest.reestablishmentCause;
+                LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Accept reestablishment request from UE physCellId %ld cause %ld\n",
+                      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                      rrcReestablishmentRequest.ue_Identity.physCellId,
+                      ue_context_p->ue_context.reestablishment_cause);
+
+                ue_context_p->ue_context.primaryCC_id = CC_id;
+                //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
+                Idx = DCCH;
+                // SRB1
+                ue_context_p->ue_context.Srb1.Active = 1;
+                ue_context_p->ue_context.Srb1.Srb_info.Srb_id = Idx;
+                memcpy(&ue_context_p->ue_context.Srb1.Srb_info.Lchan_desc[0],
+                      &DCCH_LCHAN_DESC,
+                      LCHAN_DESC_SIZE);
+                memcpy(&ue_context_p->ue_context.Srb1.Srb_info.Lchan_desc[1],
+                      &DCCH_LCHAN_DESC,
+                      LCHAN_DESC_SIZE);
+                // SRB2: set  it to go through SRB1 with id 1 (DCCH)
+                ue_context_p->ue_context.Srb2.Active = 1;
+                ue_context_p->ue_context.Srb2.Srb_info.Srb_id = Idx;
+                memcpy(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[0],
+                      &DCCH_LCHAN_DESC,
+                      LCHAN_DESC_SIZE);
+                memcpy(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[1],
+                      &DCCH_LCHAN_DESC,
+                      LCHAN_DESC_SIZE);
+                // rrc_gNB_generate_RRCConnectionReestablishment(ctxt_pP, ue_context_p, CC_id);
+                LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT"CALLING RLC CONFIG SRB1 (rbid %d)\n",
+                      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                      Idx);
+                MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+                                  MSC_PDCP_GNB,
+                                  NULL,
+                                  0,
+                                  MSC_AS_TIME_FMT" CONFIG_REQ UE %x SRB",
+                                  MSC_AS_TIME_ARGS(ctxt_pP),
+                                  ue_context_p->ue_context.rnti);
+                nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                        ue_context_p->ue_context.SRB_configList,
+                                        NULL,
+                                        NULL,
+                                        0xff,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        NULL);
+
+                // if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+                  nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                          ue_context_p->ue_context.SRB_configList,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          NULL);
+                // }
+              }
+              break;
 
             case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
                 LOG_I(NR_RRC, "receive rrcSystemInfoRequest message \n");
