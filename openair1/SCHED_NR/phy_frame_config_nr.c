@@ -179,7 +179,7 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
     LOG_E(PHY,"set_tdd_configuration_nr: additionnal tdd configuration 2 is not supported for tdd configuration \n");
     return (-1);
   }*/
-  return (0);
+  return (nb_periods_per_frame);
 }
 
 /*******************************************************************

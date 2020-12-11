@@ -281,7 +281,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     cfg->num_tlv++;
   }
   for (int i=0;i<32;i++) {
-    cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;      
+    cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
     if ((cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>(31-i))&1) {
       cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.value = num_ssb;
       num_ssb++;
@@ -309,17 +309,19 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
   if(cfg->cell_config.frame_duplex_type.value == TDD){
     LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
-    int return_tdd = set_tdd_config_nr(cfg,
-		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
+    int periods_per_frame = set_tdd_config_nr(cfg,
+                                              scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
-    if (return_tdd != 0)
+    if (periods_per_frame < 0)
       LOG_E(MAC,"TDD configuration can not be done\n");
-    else 
+    else {
       LOG_I(MAC,"TDD has been properly configurated\n");
+       RC.nrmac[Mod_idP]->tdd_beam_association = (uint8_t *)malloc16(periods_per_frame*sizeof(uint8_t));
+    }
   }
 
 }

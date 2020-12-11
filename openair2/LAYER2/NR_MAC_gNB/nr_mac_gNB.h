@@ -547,7 +547,8 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
-
+  /// list of allocated beams per period
+  uint8_t *tdd_beam_association;
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
   /// UL preprocessor for differentiated scheduling

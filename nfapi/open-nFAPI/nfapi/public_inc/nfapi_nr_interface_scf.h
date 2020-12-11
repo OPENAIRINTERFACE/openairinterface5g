@@ -582,7 +582,7 @@ typedef struct {
   
 } nfapi_nr_slot_indication_t;
 
-// 3.4.2 
+// 3.4.2
 
 //for pdcch_pdu:
 

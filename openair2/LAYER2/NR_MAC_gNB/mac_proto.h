@@ -296,10 +296,6 @@ NR_SearchSpace_t *get_searchspace(
     NR_BWP_Downlink_t *bwp,
     NR_SearchSpace__searchSpaceType_PR target_ss);
 
-void find_aggregation_candidates(uint8_t *aggregation_level,
-                                 uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss);
-
 long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
 void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
