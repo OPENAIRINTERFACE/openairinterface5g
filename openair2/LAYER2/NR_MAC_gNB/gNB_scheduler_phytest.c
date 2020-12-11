@@ -328,6 +328,21 @@ void nr_preprocessor_phytest(module_id_t module_id,
               UE_id);
 
   const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  if (!alloc) {
+    LOG_D(MAC,
+          "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+          __func__,
+          UE_id,
+          rnti,
+          frame,
+          slot);
+    UE_info->num_pdcch_cand[UE_id][cid]--;
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
+      cce_list[sched_ctrl->cce_index + i] = 0;
+    return;
+  }
+
   AssertFatal(alloc,
               "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
               rnti, frame, slot);
