@@ -2382,9 +2382,9 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
-uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
-                               NR_PUSCH_Config_t *pusch_config,
-                               NR_BWP_Uplink_t *ubwp,
+uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+                               const NR_PUSCH_Config_t *pusch_config,
+                               const NR_BWP_Uplink_t *ubwp,
                                uint8_t *dci_format,
                                int rnti_type,
                                uint8_t configuredGrant){
@@ -2416,8 +2416,8 @@ uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
   return -1;
 }
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
