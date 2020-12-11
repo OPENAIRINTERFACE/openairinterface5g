@@ -260,7 +260,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
                         int N_RB,
                         int bwp_id);
 
-void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
+void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);

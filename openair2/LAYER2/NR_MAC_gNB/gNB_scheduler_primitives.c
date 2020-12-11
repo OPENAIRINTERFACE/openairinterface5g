@@ -877,7 +877,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 }
 
 
-void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
+void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id) {
