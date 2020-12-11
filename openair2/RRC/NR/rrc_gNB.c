@@ -912,6 +912,78 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
 //-----------------------------------------------------------------------------
 void
+rrc_gNB_generate_RRCReestablishment(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t  *const ue_context_pP,
+  const int             CC_id)
+//-----------------------------------------------------------------------------
+{
+    int UE_id = -1;
+    //NR_LogicalChannelConfig_t  *SRB1_logicalChannelConfig = NULL;
+    NR_SRB_ToAddModList_t      **SRB_configList;
+    //NR_SRB_ToAddMod_t          *SRB1_config = NULL;
+    //rrc_gNB_carrier_data_t     *carrier = NULL;
+    gNB_RRC_UE_t               *ue_context = NULL;
+    module_id_t                 module_id = ctxt_pP->module_id;
+    uint16_t                    rnti = ctxt_pP->rnti;
+    
+    SRB_configList = &(ue_context_pP->ue_context.SRB_configList);
+    //carrier = &(RC.nrrrc[ctxt_pP->module_id]->carrier);
+    ue_context = &(ue_context_pP->ue_context);
+    ue_context->Srb0.Tx_buffer.payload_size = do_RRCReestablishment(ctxt_pP,
+        ue_context_pP,
+        CC_id,
+        (uint8_t *) ue_context->Srb0.Tx_buffer.Payload,
+        //(uint8_t) carrier->p_gNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
+        rrc_gNB_get_next_transaction_identifier(module_id)
+        //SRB_configList,
+        //&(ue_context->physicalConfigDedicated)
+        );
+
+    /* Configure SRB1 for UE */
+    if (*SRB_configList != NULL) {
+        //TODO
+    }  // if (*SRB_configList != NULL)
+    
+    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+                       MSC_RRC_UE,
+                       ue_context->Srb0.Tx_buffer.Header,
+                       ue_context->Srb0.Tx_buffer.payload_size,
+                       MSC_AS_TIME_FMT" NR_RRCReestablishment UE %x size %u",
+                       MSC_AS_TIME_ARGS(ctxt_pP),
+                       ue_context->rnti,
+                       ue_context->Srb0.Tx_buffer.payload_size);
+    LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n",
+          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+          ue_context->Srb0.Tx_buffer.payload_size);
+    UE_id = find_UE_id(module_id, rnti);
+    
+    if (UE_id != -1) {
+      /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
+      RC.mac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+      /* Reject UE after 10 frames, LTE_RRCConnectionReestablishmentReject is triggered */
+      RC.mac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 100;
+    } else {
+      LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Generating NR_RRCReestablishment without UE_id(MAC) rnti %x\n",
+            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+            rnti);
+    }
+#ifdef ITTI_SIM
+        MessageDef *message_p;
+        uint8_t *message_buffer;
+        message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, ue_context->Srb0.Tx_buffer.payload_size);
+        memcpy (message_buffer, (uint8_t *) ue_context->Srb0.Tx_buffer.Payload, ue_context->Srb0.Tx_buffer.payload_size);
+        message_p = itti_alloc_new_message (TASK_RRC_GNB, GNB_RRC_DCCH_DATA_IND);
+        GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+        GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+        GNB_RRC_DCCH_DATA_IND (message_p).size  = ue_context->Srb0.Tx_buffer.payload_size;
+        itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+void
 rrc_gNB_process_RRCConnectionReestablishmentComplete(
   const protocol_ctxt_t *const ctxt_pP,
   const rnti_t reestablish_rnti,
@@ -1507,7 +1579,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                 memcpy(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[1],
                       &DCCH_LCHAN_DESC,
                       LCHAN_DESC_SIZE);
-                // rrc_gNB_generate_RRCConnectionReestablishment(ctxt_pP, ue_context_p, CC_id);
+                rrc_gNB_generate_RRCReestablishment(ctxt_pP, ue_context_p, CC_id);
                 LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT"CALLING RLC CONFIG SRB1 (rbid %d)\n",
                       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
                       Idx);
