@@ -370,7 +370,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
     vrb_map[rb + sched_ctrl->rbStart] = 1;
 }
 
-void nr_ul_preprocessor_phytest(module_id_t module_id,
+bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
                                 int num_slots_per_tdd,
@@ -386,7 +386,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_info->num_UEs);
   if (UE_info->num_UEs == 0)
-    return;
+    return false;
 
   const int UE_id = 0;
   const int CC_id = 0;
@@ -407,7 +407,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
   if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
-    return;
+    return false;
 
   const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
   uint16_t rbStart = 0;
@@ -425,7 +425,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
             frame,
             slot,
             i);
-      return;
+      return false;
     }
   }
 
@@ -452,7 +452,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
                                            nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    return;
+    return false;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
@@ -503,4 +503,5 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   /* mark the corresponding RBs as used */
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)
     vrb_map_UL[rb] = 1;
+  return true;
 }

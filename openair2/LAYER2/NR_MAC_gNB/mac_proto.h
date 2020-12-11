@@ -92,7 +92,7 @@ void nr_schedule_ulsch(module_id_t module_id,
                        int ul_slots,
                        uint64_t ulsch_in_slot_bitmap);
 
-void nr_simple_ulsch_preprocessor(module_id_t module_id,
+bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd,
@@ -149,7 +149,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              sub_frame_t slot);
 /* \brief UL preprocessor for phytest: schedules UE_id 0 with fixed MCS on a
  * fixed set of resources */
-void nr_ul_preprocessor_phytest(module_id_t module_id,
+bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
                                 int num_slots_per_tdd,
