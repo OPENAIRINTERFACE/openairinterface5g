@@ -219,7 +219,7 @@ void nr_csi_meas_reporting(int Mod_idP,
 
       // we are scheduling pucch for csi in the first pucch occasion (this comes before ack/nack)
       // FIXME: for the moment, we statically put it into the second sched_pucch!
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[1];
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[2];
 
       NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
 

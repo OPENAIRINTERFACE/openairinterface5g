@@ -387,11 +387,11 @@ typedef struct {
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
 
-  /// PUCCH scheduling information. Array of two, we assume for the moment:
-  /// HARQ (and SR) in the first field, CSI in second (as fixed by RRC conf.,
-  /// i.e. if actually present).  The order is important for
+  /// PUCCH scheduling information. Array of three, we assume for the moment:
+  /// HARQ in the first field, SR in second, CSI in third (as fixed by RRC
+  /// conf., i.e. if actually present).  The order is important for
   /// nr_acknack_scheduling()!
-  NR_sched_pucch_t sched_pucch[2];
+  NR_sched_pucch_t sched_pucch[3];
 
   NR_sched_pusch_save_t pusch_save;
   NR_sched_pusch_t sched_pusch;
