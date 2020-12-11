@@ -333,11 +333,11 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
 
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
-  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
-    exit_fun( "error locking mutex_rxtx" );
-    return(-1);
-  }
+  //if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+  //  LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+  //  exit_fun( "error locking mutex_rxtx" );
+  //  return(-1);
+  //}
 
   {
     static uint16_t old_sf = 0;
@@ -405,9 +405,6 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
     return(-1);
   }
 
-  //LOG_D(PHY,"%s() About to attempt pthread_mutex_unlock\n", __FUNCTION__);
-  pthread_mutex_unlock( &L1_proc->mutex );
-  //LOG_D(PHY,"%s() UNLOCKED pthread_mutex_unlock\n", __FUNCTION__);
   return(0);
 }
 
