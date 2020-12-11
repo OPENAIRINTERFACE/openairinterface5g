@@ -445,9 +445,15 @@ bool nr_acknack_scheduling(int mod_id,
               first_ul_slot_tdd,
               tdd->nrofUplinkSlots);
 
-  /* FIXME: for the moment, we consider that
+  /* for the moment, we consider:
    * * only pucch_sched[0] holds HARQ (and SR)
-   * * we do not multiplex with CSI */
+   * * we do not multiplex with CSI, which is always in pucch_sched[2]
+   * * SR uses format 0 and is allocated in the first UL (mixed) slot (and not
+   *   later)
+   * * that the PUCCH resource set 0 (for up to 2 bits) points to the first N
+   *   PUCCH resources, where N is the number of resources in the PUCCH
+   *   resource set. This is used in pucch_index_used, which counts the used
+   *   resources by index, and not by their ID! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
   AssertFatal(pucch->csi_bits == 0,
