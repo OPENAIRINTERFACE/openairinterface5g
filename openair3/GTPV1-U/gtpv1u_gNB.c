@@ -551,6 +551,96 @@ gtpv1u_create_ngu_tunnel(
   return ret;
 }
 
+int gtpv1u_update_ngu_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti
+) {
+  /* Local tunnel end-point identifier */
+  teid_t                      ngu_teid             = 0;
+  nr_gtpv1u_teid_data_t      *gtpv1u_teid_data_p   = NULL;
+  nr_gtpv1u_ue_data_t        *gtpv1u_ue_data_p     = NULL;
+  nr_gtpv1u_ue_data_t        *gtpv1u_ue_data_new_p     = NULL;
+  //MessageDef              *message_p            = NULL;
+  hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
+  int                      i,j;
+  uint8_t                  bearers_num = 0,bearers_total = 0;
+  //-----------------------
+  // PDCP->GTPV1U mapping
+  //-----------------------
+  hash_rc = hashtable_get(RC.nr_gtpv1u_data_g->ue_mapping, prior_rnti, (void **)&gtpv1u_ue_data_p);
+
+  if(hash_rc != HASH_TABLE_OK) {
+    LOG_E(GTPU,"Error get ue_mapping(rnti=%x) from GTPV1U hashtable error\n", prior_rnti);
+    return -1;
+  }
+
+  gtpv1u_ue_data_new_p = calloc (1, sizeof(nr_gtpv1u_ue_data_t));
+  memcpy(gtpv1u_ue_data_new_p,gtpv1u_ue_data_p,sizeof(nr_gtpv1u_ue_data_t));
+  gtpv1u_ue_data_new_p->ue_id       = create_tunnel_req_pP->rnti;
+  hash_rc = hashtable_insert(RC.nr_gtpv1u_data_g->ue_mapping, create_tunnel_req_pP->rnti, gtpv1u_ue_data_new_p);
+
+  //AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting ue_mapping in GTPV1U hashtable");
+  if ( hash_rc != HASH_TABLE_OK ) {
+    LOG_E(GTPU,"Failed to insert ue_mapping(rnti=%x) in GTPV1U hashtable\n",create_tunnel_req_pP->rnti);
+    return -1;
+  } else {
+    LOG_I(GTPU, "inserting ue_mapping(rnti=%x) in GTPV1U hashtable\n",
+          create_tunnel_req_pP->rnti);
+  }
+
+  hash_rc = hashtable_remove(RC.nr_gtpv1u_data_g->ue_mapping, prior_rnti);
+  LOG_I(GTPU, "hashtable_remove ue_mapping(rnti=%x) in GTPV1U hashtable\n",
+        prior_rnti);
+  //-----------------------
+  // GTPV1U->PDCP mapping
+  //-----------------------
+  bearers_total =gtpv1u_ue_data_new_p->num_bearers;
+
+  for(j = 0; j<GTPV1U_MAX_BEARERS_ID; j++) {
+    if(gtpv1u_ue_data_new_p->bearers[j].state != BEARER_IN_CONFIG)
+      continue;
+
+    bearers_num++;
+
+    for (i = 0; i < create_tunnel_req_pP->num_tunnels; i++) {
+      if(j == (create_tunnel_req_pP->pdusession_id[i]-GTPV1U_BEARER_OFFSET))
+        break;
+    }
+
+    if(i < create_tunnel_req_pP->num_tunnels) {
+      ngu_teid = gtpv1u_ue_data_new_p->bearers[j].teid_gNB;
+      hash_rc = hashtable_get(RC.nr_gtpv1u_data_g->teid_mapping, ngu_teid, (void **)&gtpv1u_teid_data_p);
+
+      if (hash_rc == HASH_TABLE_OK) {
+        gtpv1u_teid_data_p->ue_id         = create_tunnel_req_pP->rnti;
+        gtpv1u_teid_data_p->pdu_session_id = create_tunnel_req_pP->pdusession_id[i];
+        LOG_I(GTPU, "updata teid_mapping te_id %u (prior_rnti %x rnti %x) in GTPV1U hashtable\n",
+                    ngu_teid,prior_rnti,create_tunnel_req_pP->rnti);
+      } else {
+        LOG_W(GTPU, "Error get teid mapping(s1u_teid=%u) from GTPV1U hashtable", ngu_teid);
+      }
+    } else {
+      ngu_teid = gtpv1u_ue_data_new_p->bearers[j].teid_gNB;
+      hash_rc = hashtable_remove(RC.nr_gtpv1u_data_g->teid_mapping, ngu_teid);
+
+      if (hash_rc != HASH_TABLE_OK) {
+        LOG_D(GTPU, "Removed user rnti %x , enb S1U teid %u not found\n", prior_rnti, ngu_teid);
+      }
+
+      gtpv1u_ue_data_new_p->bearers[j].state = BEARER_DOWN;
+      gtpv1u_ue_data_new_p->num_bearers--;
+      LOG_I(GTPU, "delete teid_mapping te_id %u (rnti%x) bearer_id %d in GTPV1U hashtable\n",
+            ngu_teid,prior_rnti,j+GTPV1U_BEARER_OFFSET);;
+    }
+
+    if(bearers_num > bearers_total)
+      break;
+  }
+
+  return 0;
+}
+
 //-----------------------------------------------------------------------------
 int gtpv1u_delete_ngu_tunnel(
   const instance_t                             instanceP,

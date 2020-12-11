@@ -379,6 +379,8 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
   uint8_t                            pdu_session_release_command_flag;
+  uint32_t                           ue_rrc_inactivity_timer;
+  int8_t                             reestablishment_xid;
   //------------------------------------------------------------------------------//
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
