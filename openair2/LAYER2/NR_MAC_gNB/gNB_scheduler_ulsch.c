@@ -787,28 +787,36 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
     ul_dci_request_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
     ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
     ul_dci_req->numPdus += 1;
+    nr_configure_pdcch(pdcch_pdu, sched_ctrl->search_space, sched_ctrl->coreset, scc, sched_ctrl->active_bwp);
 
     LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
 
-    nr_configure_pdcch(RC.nrmac[0],
-                       pdcch_pdu_rel15,
-                       rnti,
-                       sched_ctrl->search_space,
-                       sched_ctrl->coreset,
-                       scc,
-                       sched_ctrl->active_bwp,
-                       sched_ctrl->aggregation_level,
-                       sched_ctrl->cce_index);
+    /* Fill PDCCH DL DCI PDU */
+    nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
+    pdcch_pdu->numDlDci++;
+    dci_pdu->RNTI = rnti;
+    if (sched_ctrl->coreset->pdcch_DMRS_ScramblingID &&
+        sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+      dci_pdu->ScramblingId = *sched_ctrl->coreset->pdcch_DMRS_ScramblingID;
+      dci_pdu->ScramblingRNTI = rnti;
+    } else {
+      dci_pdu->ScramblingId = *scc->physCellId;
+      dci_pdu->ScramblingRNTI = 0;
+    }
+    dci_pdu->AggregationLevel = sched_ctrl->aggregation_level;
+    dci_pdu->CceIndex = sched_ctrl->cce_index;
+    dci_pdu->beta_PDCCH_1_0 = 0;
+    dci_pdu->powerControlOffsetSS = 1;
 
-    dci_pdu_rel15_t dci_pdu_rel15;
-    memset(&dci_pdu_rel15, 0, sizeof(dci_pdu_rel15));
+    dci_pdu_rel15_t uldci_payload;
+    memset(&uldci_payload, 0, sizeof(uldci_payload));
     NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
     const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
     config_uldci(sched_ctrl->active_ubwp,
                  pusch_pdu,
-                 &dci_pdu_rel15,
+                 &uldci_payload,
                  ps->dci_format,
                  ps->time_domain_allocation,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
@@ -816,8 +824,8 @@ void nr_schedule_ulsch(module_id_t module_id,
                  sched_ctrl->active_bwp->bwp_Id);
     fill_dci_pdu_rel15(scc,
                        secondaryCellGroup,
-                       &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
-                       &dci_pdu_rel15,
+                       dci_pdu,
+                       &uldci_payload,
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,

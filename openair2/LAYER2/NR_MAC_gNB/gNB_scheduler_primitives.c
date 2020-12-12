@@ -557,15 +557,12 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
         dci_pdu_rel15->rv);
 }
 
-void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        uint16_t rnti,
+void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp,
-                        uint8_t aggregation_level,
-                        int CCEIndex) {
+                        NR_BWP_Downlink_t *bwp)
+{
   if (bwp) { // This is not the InitialBWP
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -620,27 +617,6 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
 
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
-
-    pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].RNTI = rnti;
-
-    if (coreset->pdcch_DMRS_ScramblingID != NULL &&
-        ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
-      pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].ScramblingId = *coreset->pdcch_DMRS_ScramblingID;
-      pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].ScramblingRNTI = rnti;
-    }
-    else {
-      pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].ScramblingId = *scc->physCellId;
-      pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].ScramblingRNTI = 0;
-    }
-
-    pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].AggregationLevel = aggregation_level;
-    pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].CceIndex = CCEIndex;
-
-    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats==NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0)
-      pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].beta_PDCCH_1_0 = 0;
-
-    pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci].powerControlOffsetSS = 1;
-    pdcch_pdu->numDlDci++;
   }
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");

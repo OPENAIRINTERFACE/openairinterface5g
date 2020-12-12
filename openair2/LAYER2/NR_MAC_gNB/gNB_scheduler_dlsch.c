@@ -630,16 +630,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0,
                 "searchSPacesToAddModList is empty\n");
 
-
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
 
-    /* TODO: can be moved down? */
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
     memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
     dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     dl_req->nPDUs += 1;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+    nr_configure_pdcch(pdcch_pdu, sched_ctrl->search_space, sched_ctrl->coreset, scc, bwp);
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
     memset(dl_tti_pdsch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -714,69 +713,75 @@ void nr_schedule_ue_spec(module_id_t module_id,
         pdsch_pdu->pduBitmap |= 0x1; // Bit 0: pdschPtrs - Indicates PTRS included (FR2)
     }
 
-    dci_pdu_rel15_t dci_pdu;
-    memset(&dci_pdu, 0, sizeof(dci_pdu_rel15_t));
+    /* Fill PDCCH DL DCI PDU */
+    nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
+    pdcch_pdu->numDlDci++;
+    dci_pdu->RNTI = rnti;
+    if (sched_ctrl->coreset->pdcch_DMRS_ScramblingID &&
+        sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+      dci_pdu->ScramblingId = *sched_ctrl->coreset->pdcch_DMRS_ScramblingID;
+      dci_pdu->ScramblingRNTI = rnti;
+    } else {
+      dci_pdu->ScramblingId = *scc->physCellId;
+      dci_pdu->ScramblingRNTI = 0;
+    }
+    dci_pdu->AggregationLevel = sched_ctrl->aggregation_level;
+    dci_pdu->CceIndex = sched_ctrl->cce_index;
+    dci_pdu->beta_PDCCH_1_0 = 0;
+    dci_pdu->powerControlOffsetSS = 1;
 
+    /* DCI payload */
+    dci_pdu_rel15_t dci_payload;
+    memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
     const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
       AssertFatal(n_dl_bwp == 1,
           "downlinkBWP_ToAddModList has %d BWP!\n",
           n_dl_bwp);
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_pdu.bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
+    dci_payload.bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
     AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
-    dci_pdu.frequency_domain_assignment.val =
+    dci_payload.frequency_domain_assignment.val =
         PRBalloc_to_locationandbandwidth0(
             pdsch_pdu->rbSize,
             pdsch_pdu->rbStart,
             pdsch_pdu->BWPSize);
-    dci_pdu.time_domain_assignment.val = sched_ctrl->time_domain_allocation;
-    dci_pdu.mcs = sched_ctrl->mcs;
-    dci_pdu.rv = pdsch_pdu->rvIndex[0];
-    dci_pdu.harq_pid = current_harq_pid;
-    dci_pdu.ndi = harq->ndi;
-    dci_pdu.dai[0].val = (pucch->dai_c-1)&3;
-    dci_pdu.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
-    dci_pdu.pucch_resource_indicator = pucch->resource_indicator;
-    dci_pdu.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
-    dci_pdu.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
-    dci_pdu.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
+    dci_payload.time_domain_assignment.val = sched_ctrl->time_domain_allocation;
+    dci_payload.mcs = sched_ctrl->mcs;
+    dci_payload.rv = pdsch_pdu->rvIndex[0];
+    dci_payload.harq_pid = current_harq_pid;
+    dci_payload.ndi = harq->ndi;
+    dci_payload.dai[0].val = (pucch->dai_c-1)&3;
+    dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
+    dci_payload.pucch_resource_indicator = pucch->resource_indicator;
+    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
+    dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
           "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
           frame,
           slot,
-          dci_pdu.frequency_domain_assignment.val,
+          dci_payload.frequency_domain_assignment.val,
           pdsch_pdu->rbStart,
           pdsch_pdu->rbSize,
           pdsch_pdu->BWPSize,
-          dci_pdu.time_domain_assignment.val,
-          dci_pdu.vrb_to_prb_mapping.val,
-          dci_pdu.mcs,
-          dci_pdu.tb_scaling,
-          dci_pdu.ndi,
-          dci_pdu.rv);
-
-    nr_configure_pdcch(gNB_mac,
-                       pdcch_pdu,
-                       rnti,
-                       sched_ctrl->search_space,
-                       sched_ctrl->coreset,
-                       scc,
-                       bwp,
-                       sched_ctrl->aggregation_level,
-                       sched_ctrl->cce_index);
+          dci_payload.time_domain_assignment.val,
+          dci_payload.vrb_to_prb_mapping.val,
+          dci_payload.mcs,
+          dci_payload.tb_scaling,
+          dci_payload.ndi,
+          dci_payload.rv);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
     const int rnti_type = NR_RNTI_C;
 
-    // nr_configure_pdcch() increased numDlDci, so we use numDlDci - 1
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
-                       &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci - 1],
-                       &dci_pdu,
+                       dci_pdu,
+                       &dci_payload,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
