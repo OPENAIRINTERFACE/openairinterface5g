@@ -808,7 +808,6 @@ void nr_schedule_ulsch(module_id_t module_id,
     const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
     config_uldci(sched_ctrl->active_ubwp,
                  pusch_pdu,
-                 pdcch_pdu_rel15,
                  &dci_pdu_rel15,
                  ps->dci_format,
                  ps->time_domain_allocation,

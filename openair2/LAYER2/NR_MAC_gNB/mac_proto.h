@@ -182,7 +182,6 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
-                  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
                   int time_domain_assignment,

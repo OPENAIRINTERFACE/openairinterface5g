@@ -504,53 +504,32 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
-                  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
                   int time_domain_assignment,
                   uint8_t tpc,
                   int n_ubwp,
-                  int bwp_id)
-{
+                  int bwp_id) {
   const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  dci_pdu_rel15->frequency_domain_assignment.val =
+      PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
+  dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
+  dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
+  dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
+  dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+  dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
+  dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
+  dci_pdu_rel15->tpc = tpc;
+  AssertFatal(ubwp->bwp_Dedicated->pusch_Config->choice.setup->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
+              "Only frequency resource allocation type 1 is currently supported\n");
   switch (dci_format) {
     case NR_UL_DCI_FORMAT_0_0:
-      dci_pdu_rel15->frequency_domain_assignment.val =
-          PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
-
-      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
-      dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
-      dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
-
       dci_pdu_rel15->format_indicator = 0;
-      dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
-      dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
-      dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
-      dci_pdu_rel15->tpc = tpc;
       break;
     case NR_UL_DCI_FORMAT_0_1:
-      dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
-      dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
-      dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
-      dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
       dci_pdu_rel15->dai[0].val = 0; //TODO
-      // bwp indicator
-      if (n_ubwp < 4)
-        dci_pdu_rel15->bwp_indicator.val = bwp_id;
-      else
-        dci_pdu_rel15->bwp_indicator.val = bwp_id - 1; // as per table 7.3.1.1.2-1 in 38.212
-      // frequency domain assignment
-      AssertFatal(ubwp->bwp_Dedicated->pusch_Config->choice.setup->resourceAllocation
-                      == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
-                  "Only frequency resource allocation type 1 is currently supported\n");
-      dci_pdu_rel15->frequency_domain_assignment.val =
-          PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
-      // time domain assignment
-      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
-      // mcs
-      dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
-      // tpc command for pusch
-      dci_pdu_rel15->tpc = tpc;
+      // bwp indicator as per table 7.3.1.1.2-1 in 38.212
+      dci_pdu_rel15->bwp_indicator.val = n_ubwp < 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
       if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
         AssertFatal(*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
@@ -567,10 +546,8 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   }
 
   LOG_D(MAC,
-        "%s() ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, "
-        "time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+        "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
         __func__,
-        pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci].CceIndex,
         dci_pdu_rel15->frequency_domain_assignment.val,
         dci_pdu_rel15->time_domain_assignment.val,
         dci_pdu_rel15->frequency_hopping_flag.val,
