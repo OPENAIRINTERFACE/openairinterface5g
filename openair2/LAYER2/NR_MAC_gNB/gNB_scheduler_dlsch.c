@@ -661,7 +661,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     pdsch_pdu->pduBitmap = 0;
     pdsch_pdu->rnti = rnti;
-    pdsch_pdu->pduIndex = gNB_mac->pdu_index[CC_id]++;
+    /* SCF222: PDU index incremented for each PDSCH PDU sent in TX control
+     * message. This is used to associate control information to data and is
+     * reset every slot. */
+    const int pduindex = gNB_mac->pdu_index[CC_id]++;
+    pdsch_pdu->pduIndex = pduindex;
 
     // BWP
     pdsch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -938,7 +942,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* the buffer has been filled by nr_generate_dlsch_pdu(), below we simply
        * fill the remaining information */
       tx_req->PDU_length = TBS;
-      tx_req->PDU_index  = gNB_mac->pdu_index[0]++;
+      tx_req->PDU_index  = pduindex;
       tx_req->num_TLV = 1;
       tx_req->TLVs[0].length = TBS + 2;
       gNB_mac->TX_req[CC_id].Number_of_PDUs++;
