@@ -251,12 +251,12 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                         uint8_t aggregation_level,
                         int CCEIndex);
 
-void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
-                        NR_CellGroupConfig_t *secondaryCellGroup,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
+                        const NR_CellGroupConfig_t *secondaryCellGroup,
+                        nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
-                        int *dci_formats,
-                        int *rnti_types,
+                        int dci_formats,
+                        int rnti_types,
                         int N_RB,
                         int bwp_id);
 

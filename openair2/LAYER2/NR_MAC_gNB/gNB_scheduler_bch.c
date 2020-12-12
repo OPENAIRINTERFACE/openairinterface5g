@@ -418,13 +418,17 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      gNB_mac->sched_ctrlCommon->aggregation_level,
                      gNB_mac->sched_ctrlCommon->cce_index);
 
-  int dci_formats[2];
-  int rnti_types[2];
+  int dci_format = NR_DL_DCI_FORMAT_1_0;
+  int rnti_type = NR_RNTI_SI;
 
-  dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
-  rnti_types[0]   = NR_RNTI_SI;
-
-  fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
+  fill_dci_pdu_rel15(scc,
+                     secondaryCellGroup,
+                     &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
+                     dci_pdu_rel15,
+                     dci_format,
+                     rnti_type,
+                     pdsch_pdu_rel15->BWPSize,
+                     gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
   dl_req->nPDUs += 2;
 

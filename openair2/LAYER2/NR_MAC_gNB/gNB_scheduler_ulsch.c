@@ -821,10 +821,10 @@ void nr_schedule_ulsch(module_id_t module_id,
                  sched_ctrl->active_bwp->bwp_Id);
     fill_dci_pdu_rel15(scc,
                        secondaryCellGroup,
-                       pdcch_pdu_rel15,
+                       &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        dci_pdu_rel15,
-                       &ps->dci_format,
-                       rnti_types,
+                       ps->dci_format,
+                       rnti_types[0],
                        pusch_pdu->bwp_size,
                        sched_ctrl->active_bwp->bwp_Id);
 

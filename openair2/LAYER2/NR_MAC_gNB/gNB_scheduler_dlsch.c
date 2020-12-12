@@ -769,15 +769,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        sched_ctrl->cce_index);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    /*const*/ int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-    int rnti_types[2] = { NR_RNTI_C, 0 };
+    const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+    const int rnti_type = NR_RNTI_C;
 
+    // nr_configure_pdcch() increased numDlDci, so we use numDlDci - 1
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
-                       pdcch_pdu,
+                       &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci - 1],
                        dci_pdu,
-                       &dci_format,
-                       rnti_types,
+                       dci_format,
+                       rnti_type,
                        pdsch_pdu->BWPSize,
                        bwp->bwp_Id);
 

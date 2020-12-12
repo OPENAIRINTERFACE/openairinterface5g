@@ -953,31 +953,35 @@ void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
 }
 
 
-void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
-                        NR_CellGroupConfig_t *secondaryCellGroup,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
+                        const NR_CellGroupConfig_t *secondaryCellGroup,
+                        nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
-                        int *dci_formats,
-                        int *rnti_types,
+                        int dci_format,
+                        int rnti_type,
                         int N_RB,
                         int bwp_id) {
 
   uint8_t fsize=0, pos=0;
 
-  for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
+    uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
+    int dci_size = nr_dci_size(scc,
+                               secondaryCellGroup,
+                               dci_pdu_rel15,
+                               dci_format,
+                               rnti_type,
+                               N_RB,
+                               bwp_id);
+    pdcch_dci_pdu->PayloadSizeBits = dci_size;
+    AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
 
-    uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->dci_pdu[d].Payload;
-    int dci_size = nr_dci_size(scc,secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],N_RB,bwp_id);
-    pdcch_pdu_rel15->dci_pdu[d].PayloadSizeBits = dci_size;
-    AssertFatal(pdcch_pdu_rel15->dci_pdu[d].PayloadSizeBits<=64, "DCI sizes above 64 bits not yet supported");
+    if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
+      prepare_dci(secondaryCellGroup, dci_pdu_rel15, dci_format, bwp_id);
 
-    if(dci_formats[d]==NR_DL_DCI_FORMAT_1_1 || dci_formats[d]==NR_UL_DCI_FORMAT_0_1)
-      prepare_dci(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],bwp_id);
-    
     /// Payload generation
-    switch(dci_formats[d]) {
+    switch(dci_format) {
     case NR_DL_DCI_FORMAT_1_0:
-      switch(rnti_types[d]) {
+      switch(rnti_type) {
       case NR_RNTI_RA:
 	// Freq domain assignment
 	fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
@@ -1216,7 +1220,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
       break;
       
     case NR_UL_DCI_FORMAT_0_0:
-      switch(rnti_types[d])
+      switch(rnti_type)
 	{
 	case NR_RNTI_C:
 	  // indicating a DL DCI format 1bit
@@ -1302,7 +1306,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
       break;
 
     case NR_UL_DCI_FORMAT_0_1:
-      switch(rnti_types[d])
+      switch(rnti_type)
 	{
 	case NR_RNTI_C:
           // Indicating a DL DCI format 1bit
@@ -1512,8 +1516,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
       pos+=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization.val&0x1)<<(dci_size-pos);
     }
-    LOG_D(MAC, "DCI index %d has %d bits and the payload is %lx\n", d, dci_size, *dci_pdu);
-  }
+    LOG_D(MAC, "DCI has %d bits and the payload is %lx\n", dci_size, *dci_pdu);
 }
 
   
