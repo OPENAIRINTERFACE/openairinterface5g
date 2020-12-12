@@ -766,7 +766,7 @@ void nr_generate_Msg2(module_id_t module_idP,
                       sub_frame_t slotP)
 {
 
-  int dci_formats[2], rnti_types[2], mcsIndex;
+  int mcsIndex;
   int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
@@ -887,23 +887,24 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols);
 
-    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-    dci_pdu_rel15[0].frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
+    dci_pdu_rel15_t dci_pdu_rel15;
+    dci_pdu_rel15.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
 										     pdsch_pdu_rel15->rbStart,dci10_bw);
-    dci_pdu_rel15[0].time_domain_assignment.val = time_domain_assignment;
-    dci_pdu_rel15[0].vrb_to_prb_mapping.val = 0;
-    dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
-    dci_pdu_rel15[0].tb_scaling = 0;
+    dci_pdu_rel15.time_domain_assignment.val = time_domain_assignment;
+    dci_pdu_rel15.vrb_to_prb_mapping.val = 0;
+    dci_pdu_rel15.mcs = pdsch_pdu_rel15->mcsIndex[0];
+    dci_pdu_rel15.tb_scaling = 0;
 
-    LOG_I(MAC, "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
-	  dci_pdu_rel15[0].frequency_domain_assignment.val,
-	  pdsch_pdu_rel15->rbStart,
-	  pdsch_pdu_rel15->rbSize,
-	  dci10_bw,
-	  dci_pdu_rel15[0].time_domain_assignment.val,
-	  dci_pdu_rel15[0].vrb_to_prb_mapping.val,
-	  dci_pdu_rel15[0].mcs,
-	  dci_pdu_rel15[0].tb_scaling);
+    LOG_I(MAC,
+          "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
+          dci_pdu_rel15.frequency_domain_assignment.val,
+          pdsch_pdu_rel15->rbStart,
+          pdsch_pdu_rel15->rbSize,
+          dci10_bw,
+          dci_pdu_rel15.time_domain_assignment.val,
+          dci_pdu_rel15.vrb_to_prb_mapping.val,
+          dci_pdu_rel15.mcs,
+          dci_pdu_rel15.tb_scaling);
 
     uint8_t nr_of_candidates, aggregation_level;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
@@ -932,24 +933,25 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     LOG_I(MAC, "Frame %d: Subframe %d : Adding common DL DCI for RA_RNTI %x\n", frameP, slotP, RA_rnti);
 
-    dci_formats[0] = NR_DL_DCI_FORMAT_1_0;
-    rnti_types[0] = NR_RNTI_RA;
+    const int dci_format = NR_DL_DCI_FORMAT_1_0;
+    const int rnti_type = NR_RNTI_RA;
 
-    LOG_I(MAC, "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
-      pdcch_pdu_rel15->dci_pdu[0].RNTI,
-      rnti_types[0],
-      dci_formats[0],
-      (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
-      pdcch_pdu_rel15->StartSymbolIndex,
-      pdcch_pdu_rel15->DurationSymbols);
+    LOG_I(MAC,
+          "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+          pdcch_pdu_rel15->dci_pdu[0].RNTI,
+          rnti_type,
+          dci_format,
+          (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
+          pdcch_pdu_rel15->StartSymbolIndex,
+          pdcch_pdu_rel15->DurationSymbols);
 
     // nr_configure_pdcch() increased numDlDci, so we use numDlDci - 1
     fill_dci_pdu_rel15(scc,
                        ra->secondaryCellGroup,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
-                       &dci_pdu_rel15[0],
-                       dci_formats[0],
-                       rnti_types[0],
+                       &dci_pdu_rel15,
+                       dci_format,
+                       rnti_type,
                        dci10_bw,
                        ra->bwp_id);
 
@@ -963,7 +965,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     LOG_I(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
 
     x_Overhead = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_pdu_rel15[0].tb_scaling);
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_pdu_rel15.tb_scaling);
 
     // DL TX request
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
