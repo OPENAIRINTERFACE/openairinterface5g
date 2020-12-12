@@ -1453,29 +1453,6 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   LOG_D(MAC, "DCI has %d bits and the payload is %lx\n", dci_size, *dci_pdu);
 }
 
-  
-    /*
-      int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
-      nfapi_nr_coreset_t coreset,
-      uint16_t frame,
-      uint16_t slot,
-      nfapi_nr_config_request_scf_t cfg) {
-      
-      AssertFatal(search_space.coreset_id==coreset.coreset_id, "Invalid association of coreset(%d) and search space(%d)\n",
-      search_space.search_space_id, coreset.coreset_id);
-      
-      uint8_t is_dci_opportunity=0;
-      uint16_t Ks=search_space.slot_monitoring_periodicity;
-      uint16_t Os=search_space.slot_monitoring_offset;
-      uint8_t Ts=search_space.duration;
-      
-      if (((frame*get_spf(&cfg) + slot - Os)%Ks)<Ts)
-    is_dci_opportunity=1;
-
-  return is_dci_opportunity;
-}
-*/
-
 int get_spf(nfapi_nr_config_request_scf_t *cfg) {
 
   int mu = cfg->ssb_config.scs_common.value;
