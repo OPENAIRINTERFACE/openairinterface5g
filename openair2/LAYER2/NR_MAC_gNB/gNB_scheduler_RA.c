@@ -858,7 +858,11 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = RA_rnti;
-    pdsch_pdu_rel15->pduIndex = 0;
+    /* SCF222: PDU index incremented for each PDSCH PDU sent in TX control
+     * message. This is used to associate control information to data and is
+     * reset every slot. */
+    const int pduindex = nr_mac->pdu_index[CC_id]++;
+    pdsch_pdu_rel15->pduIndex = pduindex;
 
 
     pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -976,7 +980,7 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     // DL TX request
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
-    tx_req->PDU_index = nr_mac->pdu_index[CC_id]++;
+    tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
     tx_req->TLVs[0].length = 8;
     nr_mac->TX_req[CC_id].SFN = frameP;
