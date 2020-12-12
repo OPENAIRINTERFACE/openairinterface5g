@@ -207,7 +207,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   int slot_tx = proc->nr_slot_tx;
   int frame_tx = proc->frame_tx;
-  runmode_t mode = normal_txrx;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
@@ -243,7 +242,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   if (get_softmodem_params()->do_ra==1) {
     if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
-      nr_ue_prach_procedures(ue, proc, gNB_id, mode);
+      nr_ue_prach_procedures(ue, proc, gNB_id);
     }
   }
   LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
@@ -259,8 +258,7 @@ void nr_ue_measurement_procedures(uint16_t l,
                                   PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   uint8_t eNB_id,
-                                  uint16_t slot,
-                                  runmode_t mode){
+                                  uint16_t slot){
 
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int frame_rx   = proc->frame_rx;
@@ -874,8 +872,7 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
         nr_process_timing_advance_rar(ue, frame_rx, nr_slot_rx, ta_command);
 
-        if (ue->mode != debug_prach)
-          ue->UE_mode[gNB_index] = RA_RESPONSE;
+        ue->UE_mode[gNB_index] = RA_RESPONSE;
 
       } else {
         LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n", ue->Mod_id, prach_resources->ra_PreambleIndex);
@@ -915,8 +912,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        PDSCH_t pdsch,
        NR_UE_DLSCH_t *dlsch0,
        NR_UE_DLSCH_t *dlsch1,
-       int *dlsch_errors,
-       runmode_t mode) {
+       int *dlsch_errors) {
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -1694,8 +1690,7 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           uint8_t gNB_id,
-                           runmode_t mode)
+                           uint8_t gNB_id)
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
@@ -1874,7 +1869,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   NULL);
 
-    nr_ue_measurement_procedures(2, ue, proc, gNB_id, nr_slot_rx, mode);
+    nr_ue_measurement_procedures(2, ue, proc, gNB_id, nr_slot_rx);
   }
 
   // do procedures for SI-RNTI
@@ -1893,8 +1888,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            SI_PDSCH,
                            ue->dlsch_SI[gNB_id],
                            NULL,
-                           &ue->dlsch_SI_errors[gNB_id],
-                           mode);
+                           &ue->dlsch_SI_errors[gNB_id]);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
@@ -1918,8 +1912,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            P_PDSCH,
                            ue->dlsch_p[gNB_id],
                            NULL,
-                           &ue->dlsch_p_errors[gNB_id],
-                           mode);
+                           &ue->dlsch_p_errors[gNB_id]);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_p[gNB_id]->active = 0;
@@ -1943,8 +1936,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            RA_PDSCH,
                            ue->dlsch_ra[gNB_id],
                            NULL,
-                           &ue->dlsch_ra_errors[gNB_id],
-                           mode);
+                           &ue->dlsch_ra_errors[gNB_id]);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_ra[gNB_id]->active = 0;
@@ -1969,8 +1961,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   PDSCH,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   ue->dlsch[proc->thread_id][gNB_id][1],
-			   &ue->dlsch_errors[gNB_id],
-			   mode);
+			   &ue->dlsch_errors[gNB_id]);
 
 
 #if UE_TIMING_TRACE
@@ -2134,7 +2125,7 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 // todo:
 // - set tx_total_RE
 // - power control as per 38.213 ch 7.4
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t runmode) {
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
   uint16_t /*preamble_tx = 50,*/ pathloss;
@@ -2158,26 +2149,22 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     nr_prach = 1;
   } else {
     // ask L2 for RACH transport
-    if ((runmode != rx_calib_ue) && (runmode != rx_calib_ue_med) && (runmode != rx_calib_ue_byp) && (runmode != no_L2_connect) ) {
-      LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
-      // flush Msg3 Buffer
-      if (prach_resources->Msg3 == NULL){
-        for(int i = 0; i<NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-          ue->ulsch_Msg3_active[i] = 0;
-        }
+    LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
+    // flush Msg3 Buffer
+    if (prach_resources->Msg3 == NULL){
+      for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
+        ue->ulsch_Msg3_active[i] = 0;
       }
-      nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_slot_tx);
     }
+    nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_slot_tx);
   }
 
   if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
 
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
-    LOG_D(PHY,"runmode %d\n",runmode);
 
-    if ((ue->mac_enabled == 1) && (runmode != calib_prach_tx)) {
+    if (ue->mac_enabled)
       ue->tx_power_dBm[nr_slot_tx] = prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
-    }
 
     LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_slot_tx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x\n",
       ue->Mod_id,
@@ -2200,21 +2187,16 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       ue->prach_vars[gNB_id]->amp = AMP;
     #endif */
 
-    if ((runmode == calib_prach_tx) && (((proc->frame_tx&0xfffe)%100)==0))
-      LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_slot_tx %d : PRACH TX power %d dBm, amp %d\n", ue->Mod_id,
-        proc->frame_rx,
-        proc->nr_slot_tx,
-        ue->tx_power_dBm[nr_slot_tx],
-        ue->prach_vars[gNB_id]->amp);
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_IN);
 
     prach_power = generate_nr_prach(ue, gNB_id, nr_slot_tx);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
 
-    LOG_D(PHY,"[UE %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
+    LOG_D(PHY, "[UE %d][RAPROC][%d.%d]: PRACH PL %d dB, TX power %d dBm, digital power %d dB (amp %d)\n",
       ue->Mod_id,
+      proc->frame_rx,
+      proc->nr_slot_tx,
       pathloss,
       ue->tx_power_dBm[nr_slot_tx],
       dB_fixed(prach_power),
@@ -2241,10 +2223,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   } else if (nr_prach == 2) {
     nr_ra_succeeded(mod_id, ue->CC_id, gNB_id);
   }
-
-  // if we're calibrating the PRACH kill the pointer to its resources so that the RA protocol doesn't continue
-  if (runmode == calib_prach_tx)
-    ue->prach_resources[gNB_id] = NULL;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);
 }

@@ -986,8 +986,7 @@ int main(int argc, char **argv)
         
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
-                               0,
-                               normal_txrx);
+                               0);
         
         //printf("dlsim round %d ends\n",round);
         round++;

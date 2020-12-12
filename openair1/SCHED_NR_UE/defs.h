@@ -113,14 +113,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   @param ue       Pointer to UE variables on which to act
   @param proc     Pointer to proc information
   @param gNB_id   Local id of eNB on which to act
-  @param mode     calibration/debug mode
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           uint8_t gNB_id,
-                           runmode_t mode);
+                           uint8_t gNB_id);
 
-int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
+int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
 
 
 #ifdef UE_SLOT_PARALLELISATION
@@ -221,7 +219,7 @@ void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
     @param
     @param
  */
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t mode);
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
 
 int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe);
 

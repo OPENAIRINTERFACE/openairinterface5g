@@ -641,7 +641,7 @@ int main(int argc, char **argv){
   UE_nr_rxtx_proc_t proc={0};
   proc.frame_tx   = frame;
   proc.nr_slot_tx = slot;
-  nr_ue_prach_procedures(UE,&proc,0,0);
+  nr_ue_prach_procedures(UE, &proc, 0);
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);

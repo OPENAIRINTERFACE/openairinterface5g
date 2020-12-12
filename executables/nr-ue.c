@@ -217,7 +217,7 @@ static void UE_synch(void *arg) {
       double rx_gain_off = 0;
       nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
-      if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
+      if (nr_initial_sync(&syncD->proc, UE, 2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
@@ -359,10 +359,10 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   // Process Rx data for one sub-frame
 #ifdef UE_SLOT_PARALLELISATION
-    phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+    phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, UE->mode);
+    phy_procedures_nrUE_RX(UE, proc, gNB_id);
     LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
