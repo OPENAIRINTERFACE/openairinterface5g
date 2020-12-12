@@ -818,6 +818,9 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
+    /* NOTE: below we assume that there are not multiple concurrent RAs. If
+     * this was the case, we would need to allocate all DCIs within the same
+     * PDCCH, i.e., the same RA coreset */
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
     memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
