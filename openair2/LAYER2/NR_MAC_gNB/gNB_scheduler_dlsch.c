@@ -714,8 +714,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
         pdsch_pdu->pduBitmap |= 0x1; // Bit 0: pdschPtrs - Indicates PTRS included (FR2)
     }
 
-    dci_pdu_rel15_t dci_pdu[MAX_DCI_CORESET];
-    memset(dci_pdu, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
+    dci_pdu_rel15_t dci_pdu;
+    memset(&dci_pdu, 0, sizeof(dci_pdu_rel15_t));
 
     // bwp indicator
     const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
@@ -723,40 +723,40 @@ void nr_schedule_ue_spec(module_id_t module_id,
           "downlinkBWP_ToAddModList has %d BWP!\n",
           n_dl_bwp);
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_pdu[0].bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
+    dci_pdu.bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
     AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
-    dci_pdu[0].frequency_domain_assignment.val =
+    dci_pdu.frequency_domain_assignment.val =
         PRBalloc_to_locationandbandwidth0(
             pdsch_pdu->rbSize,
             pdsch_pdu->rbStart,
             pdsch_pdu->BWPSize);
-    dci_pdu[0].time_domain_assignment.val = sched_ctrl->time_domain_allocation;
-    dci_pdu[0].mcs = sched_ctrl->mcs;
-    dci_pdu[0].rv = pdsch_pdu->rvIndex[0];
-    dci_pdu[0].harq_pid = current_harq_pid;
-    dci_pdu[0].ndi = harq->ndi;
-    dci_pdu[0].dai[0].val = (pucch->dai_c-1)&3;
-    dci_pdu[0].tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
-    dci_pdu[0].pucch_resource_indicator = pucch->resource_indicator;
-    dci_pdu[0].pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
-    dci_pdu[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
-    dci_pdu[0].dmrs_sequence_initialization.val = pdsch_pdu->SCID;
+    dci_pdu.time_domain_assignment.val = sched_ctrl->time_domain_allocation;
+    dci_pdu.mcs = sched_ctrl->mcs;
+    dci_pdu.rv = pdsch_pdu->rvIndex[0];
+    dci_pdu.harq_pid = current_harq_pid;
+    dci_pdu.ndi = harq->ndi;
+    dci_pdu.dai[0].val = (pucch->dai_c-1)&3;
+    dci_pdu.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
+    dci_pdu.pucch_resource_indicator = pucch->resource_indicator;
+    dci_pdu.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
+    dci_pdu.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_pdu.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
           "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
           frame,
           slot,
-          dci_pdu[0].frequency_domain_assignment.val,
+          dci_pdu.frequency_domain_assignment.val,
           pdsch_pdu->rbStart,
           pdsch_pdu->rbSize,
           pdsch_pdu->BWPSize,
-          dci_pdu[0].time_domain_assignment.val,
-          dci_pdu[0].vrb_to_prb_mapping.val,
-          dci_pdu[0].mcs,
-          dci_pdu[0].tb_scaling,
-          dci_pdu[0].ndi,
-          dci_pdu[0].rv);
+          dci_pdu.time_domain_assignment.val,
+          dci_pdu.vrb_to_prb_mapping.val,
+          dci_pdu.mcs,
+          dci_pdu.tb_scaling,
+          dci_pdu.ndi,
+          dci_pdu.rv);
 
     nr_configure_pdcch(gNB_mac,
                        pdcch_pdu,
@@ -776,7 +776,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
                        &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci - 1],
-                       dci_pdu,
+                       &dci_pdu,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
