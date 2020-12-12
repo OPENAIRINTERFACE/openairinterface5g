@@ -802,19 +802,15 @@ void nr_schedule_ulsch(module_id_t module_id,
                        sched_ctrl->aggregation_level,
                        sched_ctrl->cce_index);
 
-    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-    memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15));
+    dci_pdu_rel15_t dci_pdu_rel15;
+    memset(&dci_pdu_rel15, 0, sizeof(dci_pdu_rel15));
     NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
     const int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-    // NOTE: below functions assume that dci_formats is an array corresponding
-    // to all UL DCIs in the PDCCH, but for us it is a simple int. So before
-    // having multiple UEs, the below need to be changed (IMO the functions
-    // should fill for one DCI only and not handle all of them).
     config_uldci(sched_ctrl->active_ubwp,
                  pusch_pdu,
                  pdcch_pdu_rel15,
-                 &dci_pdu_rel15[0],
-                 &ps->dci_format,
+                 &dci_pdu_rel15,
+                 ps->dci_format,
                  ps->time_domain_allocation,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
                  n_ubwp,
@@ -822,7 +818,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     fill_dci_pdu_rel15(scc,
                        secondaryCellGroup,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
-                       dci_pdu_rel15,
+                       &dci_pdu_rel15,
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,

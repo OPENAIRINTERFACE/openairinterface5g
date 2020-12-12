@@ -180,13 +180,15 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
 
 
-void config_uldci(NR_BWP_Uplink_t *ubwp,
-                  nfapi_nr_pusch_pdu_t *pusch_pdu,
+void config_uldci(const NR_BWP_Uplink_t *ubwp,
+                  const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
-                  int *dci_formats,
-                  int time_domain_assignment, uint8_t tpc,
-                  int n_ubwp, int bwp_id);
+                  int dci_format,
+                  int time_domain_assignment,
+                  uint8_t tpc,
+                  int n_ubwp,
+                  int bwp_id);
 
 void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,

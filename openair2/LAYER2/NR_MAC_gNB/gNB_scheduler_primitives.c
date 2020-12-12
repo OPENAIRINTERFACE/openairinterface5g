@@ -502,15 +502,18 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 }
 
-void config_uldci(NR_BWP_Uplink_t *ubwp,
-                  nfapi_nr_pusch_pdu_t *pusch_pdu,
+void config_uldci(const NR_BWP_Uplink_t *ubwp,
+                  const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
-                  int *dci_formats,
-                  int time_domain_assignment, uint8_t tpc,
-                  int n_ubwp, int bwp_id) {
+                  int dci_format,
+                  int time_domain_assignment,
+                  uint8_t tpc,
+                  int n_ubwp,
+                  int bwp_id)
+{
   const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  switch (dci_formats[(pdcch_pdu_rel15->numDlDci) - 1]) {
+  switch (dci_format) {
     case NR_UL_DCI_FORMAT_0_0:
       dci_pdu_rel15->frequency_domain_assignment.val =
           PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
