@@ -241,7 +241,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   }
 
   if (get_softmodem_params()->do_ra==1) {
-    if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
+    if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1) && ue->mac_enabled) {
       nr_ue_prach_procedures(ue, proc, gNB_id);
     }
   }
@@ -846,9 +846,10 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
   UE_MODE_t UE_mode = ue->UE_mode[gNB_index];
   NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_index];
 
-  LOG_D(PHY,"[UE %d][RAPROC] Frame %d slot %d Received RAR mode %d\n", module_id, frame_rx, nr_slot_rx, UE_mode);
-
   if (ue->mac_enabled == 1) {
+
+    LOG_D(PHY,"[UE %d][RAPROC] Frame %d slot %d Received RAR mode %d\n", module_id, frame_rx, nr_slot_rx, UE_mode);
+
     if ((UE_mode != PUSCH) && (prach_resources->Msg3 != NULL)) {
 
       LOG_D(PHY,"[UE %d][RAPROC] Frame %d slot %d Invoking MAC for RAR (current preamble %d)\n", module_id, frame_rx, nr_slot_rx, prach_resources->ra_PreambleIndex);
@@ -878,10 +879,6 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
         LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n", ue->Mod_id, prach_resources->ra_PreambleIndex);
       }
     }
-  } else {
-    // rar = dlsch0->harq_processes[0]->b+1;
-    // ta_command = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
-    // nr_process_timing_advance_rar(ue, frame_rx, nr_slot_rx, ta_command);
   }
 }
 
@@ -2141,30 +2138,22 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     prach_resources->init_msg1 = 1;
   }
 
-  if (ue->mac_enabled == 0){
-    //    prach_resources->ra_PreambleIndex = preamble_tx;
-    prach_resources->ra_TDD_map_index = 0;
-    prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
-    prach_resources->ra_RNTI = 0x1234;
-    nr_prach = 1;
-  } else {
-    // ask L2 for RACH transport
-    LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
-    // flush Msg3 Buffer
-    if (prach_resources->Msg3 == NULL){
-      for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-        ue->ulsch_Msg3_active[i] = 0;
-      }
+  // ask L2 for RACH transport
+  LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
+  // flush Msg3 Buffer
+  if (prach_resources->Msg3 == NULL){
+    for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
+      ue->ulsch_Msg3_active[i] = 0;
     }
-    nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_slot_tx);
   }
+
+  nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_slot_tx);
 
   if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
 
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
 
-    if (ue->mac_enabled)
-      ue->tx_power_dBm[nr_slot_tx] = prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
+    ue->tx_power_dBm[nr_slot_tx] = prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
 
     LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_slot_tx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x\n",
       ue->Mod_id,
@@ -2202,8 +2191,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);
 
-    if (ue->mac_enabled == 1)
-      nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
+    nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
 
     LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_slot_tx %d: Generated PRACH Msg1 (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
       ue->Mod_id,

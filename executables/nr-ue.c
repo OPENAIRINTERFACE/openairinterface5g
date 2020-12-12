@@ -93,7 +93,6 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   int nb_connected_gNB = 1, gNB_id;
 
   ue->Mod_id      = UE_id;
-  ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
 
   // Setting UE mode to NOT_SYNCHED by default

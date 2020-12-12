@@ -111,6 +111,7 @@ volatile int             oai_exit = 0;
 extern int16_t  nr_dlsch_demod_shift;
 static int      tx_max_power[MAX_NUM_CCs] = {0};
 
+int             mac_enabled = 1;
 int      single_thread_flag = 1;
 int         threequarter_fs = 0;
 int         UE_scan_carrier = 0;
@@ -299,6 +300,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   tx_gain[0][CC_id]   = tx_gain[0][0];
 
   // Set UE variables
+  UE->mac_enabled          = mac_enabled;
   UE->UE_scan              = UE_scan;
   UE->UE_scan_carrier      = UE_scan_carrier;
   UE->UE_fo_compensation   = UE_fo_compensation;
