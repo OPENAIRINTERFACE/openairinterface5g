@@ -132,15 +132,11 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
 
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   uint8_t idx = 0;
-  uint8_t payload_size = ceil(((double)uci_pdu->csi_part1.csi_part1_bit_len)/8);
-  uint8_t *payload = calloc (payload_size, sizeof(uint8_t));
+  uint8_t *payload = uci_pdu->csi_part1.csi_part1_payload;
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
   NR_UE_list_t *UE_list = &(RC.nrmac[Mod_idP]->UE_list);
   long periodicity;
   uint8_t csi_report_id = 0;
-
-  memcpy ( payload, uci_pdu->csi_part1.csi_part1_payload, payload_size);
-  
 
   UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = 0;
   for ( csi_report_id =0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
@@ -209,7 +205,7 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
         *payload >>= 4;
       }
       UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
-      LOG_I(MAC,"csi_payload size = %d, rsrp_id = %d\n",payload_size, sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
+      LOG_I(MAC," rsrp_id = %d\n", sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
     }
   }
 

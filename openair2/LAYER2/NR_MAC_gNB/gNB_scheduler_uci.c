@@ -673,6 +673,19 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  if ( uci_234 -> pduBitmap & 0x01 ) {
+    ///Handle SR PDU
+    uint8_t sr_id = 0;
+
+    for (sr_id = 0; sr_id < uci_234->sr.sr_bit_len; sr_id++) {
+      sched_ctrl->sr_req.ul_SR[sr_id] = uci_234->sr.sr_payload & 1;
+      uci_234->sr.sr_payload >>= 1;
+    }
+
+    sched_ctrl->sr_req.nr_of_srs = uci_234->sr.sr_bit_len;
+  }
+  // TODO
+  int max_harq_rounds = 4; // TODO define macro
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
@@ -711,6 +724,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
        scs);
      //API to parse the csi report and store it into sched_ctrl
     extract_pucch_csi_report (csi_MeasConfig, uci_pdu, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, Mod_idP);
+    //TCI handling function
+    tci_handling(Mod_idP, UE_id, UL_info->CC_id, sched_ctrl, UL_info->frame, UL_info->slot);
   }
 
   if (uci_pdu -> pduBitmap & 0x08) {
@@ -1479,7 +1494,8 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
   if ( !(reportQuantity_type)) 
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
 
-
+  free(payload);
+  payload = NULL;
 #if 0
 
   if ( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
