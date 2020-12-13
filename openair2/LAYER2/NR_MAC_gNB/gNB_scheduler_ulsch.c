@@ -639,6 +639,12 @@ void nr_schedule_ulsch(module_id_t module_id,
                        int num_slots_per_tdd,
                        int ul_slots,
                        uint64_t ulsch_in_slot_bitmap) {
+  /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
+   * because we have to schedule the DCI0 first before schedule uplink data */
+  if (is_xlsch_in_slot(ulsch_in_slot_bitmap, slot)) {
+    LOG_D(MAC, "Current slot %d is NOT DL slot, cannot schedule DCI0 for UL data\n", slot);
+    return;
+  }
   RC.nrmac[module_id]->pre_processor_ul(
       module_id, frame, slot, num_slots_per_tdd, ulsch_in_slot_bitmap);
 
