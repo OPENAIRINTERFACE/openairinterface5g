@@ -552,10 +552,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-  /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
-   * allocated PDCCH so we can easily allocate UE's DCIs independent of any
-   * CORESET order */
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_bwp_coreset[MAX_NUM_BWP][MAX_NUM_CORESET] = {0};
 
   NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -636,11 +632,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0,
                 "searchSPacesToAddModList is empty\n");
 
-    /* look up the PDCCH PDU for this BWP and CORESET. If it does not exist,
-     * create it */
+    /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
+     * exist, create it */
     const int bwpid = sched_ctrl->active_bwp->bwp_Id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_bwp_coreset[bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -649,7 +645,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       nr_configure_pdcch(pdcch_pdu, sched_ctrl->search_space, sched_ctrl->coreset, scc, bwp);
-      pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
+      gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];

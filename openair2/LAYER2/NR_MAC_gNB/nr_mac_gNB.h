@@ -511,6 +511,10 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
   nfapi_nr_dl_tti_request_t         DL_req[NFAPI_CC_MAX];
+  /// a PDCCH PDU groups DCIs per BWP and CORESET. The following structure
+  /// keeps pointers to PDCCH PDUs within DL_req so that we can easily track
+  /// PDCCH PDUs per CC/BWP/CORESET
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_idx[NFAPI_CC_MAX][MAX_NUM_BWP][MAX_NUM_CORESET];
   /// NFAPI UL TTI Request Structure, simple pointer into structure
   /// UL_tti_req_ahead for current frame/slot
   nfapi_nr_ul_tti_request_t        *UL_tti_req[NFAPI_CC_MAX];
