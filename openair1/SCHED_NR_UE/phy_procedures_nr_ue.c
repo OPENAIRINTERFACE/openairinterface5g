@@ -1847,8 +1847,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
       for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
       AssertFatal(symb_dmrs>=0,"no dmrs in 0..3\n");
-      LOG_D(PHY,"Initializing dmrs for symb %d DMRS mask %x\n",symb_dmrs,dlsch0_harq->dlDmrsSymbPos);
-      nr_gold_pdsch(ue,0);
+      LOG_D(PHY,"Initializing dmrs for slot %d DMRS mask %x\n", nr_slot_rx, dlsch0_harq->dlDmrsSymbPos);
+      nr_gold_pdsch(ue, nr_slot_rx, 0);
     
       for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
         nr_slot_fep(ue,
