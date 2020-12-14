@@ -204,10 +204,8 @@ void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, int frame_rx, int nr_slot
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             uint8_t gNB_id) {
-  //int32_t ulsch_start=0;
   int slot_tx = proc->nr_slot_tx;
   int frame_tx = proc->frame_tx;
-  uint8_t harq_pid = 0;
   runmode_t mode = normal_txrx;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
@@ -222,16 +220,18 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   if (ue->UE_mode[gNB_id] <= PUSCH || get_softmodem_params()->phy_test == 1){
 
-   if (ue->ulsch[proc->thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
-     nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
+    for (uint8_t harq_pid = 0; harq_pid < ue->ulsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pusch; harq_pid++) {
+      if (ue->ulsch[proc->thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
+        nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
+    }
 
-   if (get_softmodem_params()->usim_test==0) {
+    if (get_softmodem_params()->usim_test==0) {
       LOG_D(PHY, "Generating PUCCH\n");
       pucch_procedures_ue_nr(ue,
                              gNB_id,
                              proc,
                              FALSE);
-   }
+    }
 
     LOG_D(PHY, "Sending Uplink data \n");
     nr_ue_pusch_common_procedures(ue,
