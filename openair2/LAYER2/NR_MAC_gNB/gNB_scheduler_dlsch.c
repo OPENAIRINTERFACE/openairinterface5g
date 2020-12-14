@@ -56,26 +56,21 @@
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
 
-int nr_generate_dlsch_pdu(module_id_t module_idP,
-                          NR_UE_sched_ctrl_t *ue_sched_ctl,
-                          unsigned char *sdus_payload,
+// Compute and write all MAC CEs and subheaders, and return number of written
+// bytes
+int nr_write_ce_dlsch_pdu(module_id_t module_idP,
+                          const NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *mac_pdu,
-                          unsigned char num_sdus,
-                          unsigned short *sdu_lengths,
-                          unsigned char *sdu_lcids,
                           unsigned char drx_cmd,
-                          unsigned char *ue_cont_res_id,
-                          unsigned short post_padding) {
+                          unsigned char *ue_cont_res_id)
+{
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
-  unsigned char *dlsch_buffer_ptr = sdus_payload;
   uint8_t last_size = 0;
   int offset = 0, mac_ce_size, i, timing_advance_cmd, tag_id = 0;
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
-
-  // 1) Compute MAC CE and related subheaders
 
   // DRX command subheader (MAC CE size 0)
   if (drx_cmd != 255) {
@@ -299,42 +294,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
         mac_pdu_ptr += (unsigned char) mac_ce_size;
       }
     }
-  }
-
-  // 2) Generation of DLSCH MAC subPDUs including subheaders and MAC SDUs
-  for (i = 0; i < num_sdus; i++) {
-
-    if (sdu_lengths[i] < 256) {
-      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
-      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
-      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
-      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
-      last_size = 2;
-    } else {
-      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
-      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
-      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->LCID = sdu_lcids[i];
-      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L1 = ((unsigned short) sdu_lengths[i] >> 8) & 0xff;
-      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L2 = (unsigned short) sdu_lengths[i] & 0xff;
-      last_size = 3;
-    }
-
-    mac_pdu_ptr += last_size;
-    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in
-    memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
-    dlsch_buffer_ptr += sdu_lengths[i];
-    mac_pdu_ptr += sdu_lengths[i];
-    LOG_D(MAC, "Generate DLSCH header num sdu %d len header %d len sdu %d -> offset %ld\n", num_sdus, last_size, sdu_lengths[i], (unsigned char *)mac_pdu_ptr - mac_pdu);
-  }
-
-  // 4) Compute final offset for padding
-  if (post_padding > 0) {
-    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
-    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = DL_SCH_LCID_PADDING;
-    mac_pdu_ptr++;
-    LOG_D(MAC, "Generate Padding -> offset %ld\n", (unsigned char *)mac_pdu_ptr - mac_pdu);
-  } else {
-    // no MAC subPDU with padding
   }
 
   // compute final offset
@@ -593,7 +552,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int nrOfLayers = 1;
     const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
     const uint8_t Qm = nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
-    const uint32_t TBS =
+    uint32_t TBS =
         nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        sched_ctrl->rbSize,
@@ -842,108 +801,105 @@ void nr_schedule_ue_spec(module_id_t module_id,
     } else { /* initial transmission */
 
       LOG_D(MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
-      /* reserve space for timing advance of UE if necessary,
-       * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
-      const int ta_len = (sched_ctrl->ta_apply) ? 2 : 0;
-
-      /* Get RLC data */
-      int header_length_total = 0;
-      int header_length_last = 0;
-      int sdu_length_total = 0;
-      int num_sdus = 0;
-      uint16_t sdu_lengths[NB_RB_MAX] = {0};
-      uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
-      unsigned char sdu_lcids[NB_RB_MAX] = {0};
-      const int lcid = DL_SCH_LCID_DTCH;
-      if (sched_ctrl->num_total_bytes > 0) {
-        /* this is the data from the RLC we would like to request (e.g., only
-         * some bytes for first LC and some more from a second one */
-        const rlc_buffer_occupancy_t ndata = sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-        /* this is the maximum data we can transport based on TBS minus headers */
-        const int mindata = min(ndata, TBS - ta_len - header_length_total - sdu_length_total -  2 - (ndata >= 256));
-        LOG_D(MAC,
-              "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
-              "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
-              module_id,
-              frame,
-              mindata,
-              lcid,
-              header_length_total,
-              TBS);
-
-        sdu_lengths[num_sdus] = mac_rlc_data_req(module_id,
-            rnti,
-            module_id,
-            frame,
-            ENB_FLAG_YES,
-            MBMS_FLAG_NO,
-            lcid,
-            mindata,
-            (char *)&mac_sdus[sdu_length_total],
-            0,
-            0);
-
-        LOG_D(MAC,
-              "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
-              module_id,
-              sdu_lengths[num_sdus],
-              lcid);
-
-        sdu_lcids[num_sdus] = lcid;
-        sdu_length_total += sdu_lengths[num_sdus];
-        header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
-        header_length_total += header_length_last;
-        num_sdus++;
-      }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
-        LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
-        // fill dlsch_buffer with random data
-        for (int i = 0; i < TBS; i++)
-          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
-        sdu_lcids[0] = 0x3f; // DRB
-        sdu_lengths[0] = TBS - ta_len - 3;
-        header_length_total += 2 + (sdu_lengths[0] >= 256);
-        sdu_length_total += sdu_lengths[0];
-        num_sdus +=1;
-      }
-
-      UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
-      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += sdu_length_total;
-
-      const int post_padding = TBS > header_length_total + sdu_length_total + ta_len;
-
       const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
-      /* pointer to directly generate the PDU into the nFAPI structure */
-      uint32_t *buf = tx_req->TLVs[0].value.direct;
-
-      const int offset = nr_generate_dlsch_pdu(
-          module_id,
-          sched_ctrl,
-          (unsigned char *)mac_sdus,
-          (unsigned char *)buf,
-          num_sdus, // num_sdus
-          sdu_lengths,
-          sdu_lcids,
-          255, // no drx
-          NULL, // contention res id
-          post_padding);
-
-      // Padding: fill remainder of DLSCH with 0
-      if (post_padding > 0) {
-        for (int j = 0; j < TBS - offset; j++)
-          buf[offset + j] = 0;
-      }
-
-      /* the buffer has been filled by nr_generate_dlsch_pdu(), below we simply
-       * fill the remaining information */
       tx_req->PDU_length = TBS;
       tx_req->PDU_index  = pduindex;
       tx_req->num_TLV = 1;
       tx_req->TLVs[0].length = TBS + 2;
+      /* pointer to directly generate the PDU into the nFAPI structure */
+      uint8_t *buf = (uint8_t *) tx_req->TLVs[0].value.direct;
       gNB_mac->TX_req[CC_id].Number_of_PDUs++;
       gNB_mac->TX_req[CC_id].SFN = frame;
       gNB_mac->TX_req[CC_id].Slot = slot;
+
+      /* first, write all CEs that might be there */
+      int written = nr_write_ce_dlsch_pdu(module_id,
+                                          sched_ctrl,
+                                          (unsigned char *)buf,
+                                          255, // no drx
+                                          NULL); // contention res id
+      buf += written;
+      TBS -= written;
+
+      DevAssert(TBS > 3);
+
+      /* next, get RLC data */
+      // we do not know how much data we will get from RLC, i.e., whether it
+      // will be longer than 256B or not. Therefore, reserve space for long header, then
+      // fetch data, then fill real length
+      NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+      buf += 3;
+      TBS -= 3;
+
+      const int lcid = DL_SCH_LCID_DTCH;
+      int dlsch_total_bytes = 0;
+      if (sched_ctrl->num_total_bytes > 0) {
+        /* this is the data from the RLC we would like to request (e.g., only
+         * some bytes for first LC and some more from a second one */
+        const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, TBS);
+        const tbs_size_t len = mac_rlc_data_req(module_id,
+                                                 rnti,
+                                                 module_id,
+                                                 frame,
+                                                 ENB_FLAG_YES,
+                                                 MBMS_FLAG_NO,
+                                                 lcid,
+                                                 ndata,
+                                                 (char *)buf,
+                                                 0,
+                                                 0);
+
+        LOG_D(MAC,
+              "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, rem TBS %d)\n",
+              frame,
+              slot,
+              rnti,
+              len,
+              lcid,
+              ndata,
+              TBS);
+
+        header->R = 0;
+        header->F = 1;
+        header->LCID = lcid;
+        header->L1 = (len >> 8) & 0xff;
+        header->L2 = len & 0xff;
+        TBS -= len;
+        buf += len;
+        dlsch_total_bytes += len;
+      }
+      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
+        LOG_D(MAC, "Configuring DL_TX in %d.%d: TBS %d B of random data\n", frame, slot, TBS);
+        // fill dlsch_buffer with random data
+        for (int i = 0; i < TBS; i++)
+          buf[i] = lrand48() & 0xff;
+        header->R = 0;
+        header->F = 1;
+        header->LCID = DL_SCH_LCID_PADDING;
+        header->L1 = (TBS >> 8) & 0xff;
+        header->L2 = TBS & 0xff;
+        TBS -= TBS;
+        buf += TBS;
+        dlsch_total_bytes += TBS;
+      }
+
+      // Add padding header and zero rest out if there is space left
+      if (TBS > 0) {
+        NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) buf;
+        padding->R = 0;
+        padding->LCID = DL_SCH_LCID_PADDING;
+        TBS -= 1;
+        buf += 1;
+        while (TBS > 0) {
+          *buf = 0;
+          buf += 1;
+          TBS -= 1;
+        }
+      }
+
+      UE_info->mac_stats[UE_id].dlsch_total_bytes += dlsch_total_bytes;
+      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
 
       retInfo->rbSize = sched_ctrl->rbSize;
       retInfo->time_domain_allocation = sched_ctrl->time_domain_allocation;
@@ -964,18 +920,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
         T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(buf, TBS));
-
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-      if (frame%100 == 0) {
-        LOG_I(MAC,
-              "%d.%d, first 10 payload bytes, TBS size: %d \n",
-              frame,
-              slot,
-              TBS);
-        for(int i = 0; i < 10; i++)
-          LOG_I(MAC, "byte %d: %x\n", i, ((uint8_t *) buf)[i]);
-      }
-#endif
     }
 
     /* mark UE as scheduled */

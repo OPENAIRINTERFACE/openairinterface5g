@@ -64,17 +64,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
-int nr_generate_dlsch_pdu(module_id_t Mod_idP,
-                          NR_UE_sched_ctrl_t *ue_sched_ctl,
-                          unsigned char *sdus_payload,
-                          unsigned char *mac_pdu,
-                          unsigned char num_sdus,
-                          unsigned short *sdu_lengths,
-                          unsigned char *sdu_lcids,
-                          unsigned char drx_cmd,
-                          unsigned char *ue_cont_res_id,
-                          unsigned short post_padding);
-
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot);
