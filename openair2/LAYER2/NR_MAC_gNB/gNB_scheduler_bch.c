@@ -184,27 +184,38 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
         break;
       case 3:
         AssertFatal(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing ==
-                      NR_SubcarrierSpacing_kHz120,
+                    NR_SubcarrierSpacing_kHz120,
                     "240kHZ subcarrier spacing currently not supported for SSBs\n");
         if ((abs_slot % slot_per_period) < 8) {
           eff_120_slot = slotP;
-          buf = longBitmap->buf[0];
-        } else if ((abs_slot % slot_per_period) < 17) {
-          eff_120_slot = slotP - 9;
-          buf = longBitmap->buf[1];
-        } else if ((abs_slot % slot_per_period) < 26) {
-          eff_120_slot = slotP - 18;
-          buf = longBitmap->buf[2];
-        } else if ((abs_slot % slot_per_period) < 35) {
-          eff_120_slot = slotP - 27;
-          buf = longBitmap->buf[3];
+          if((abs_slot % slot_per_period) < 3)
+            buf = longBitmap->buf[0];
+          else
+            buf = longBitmap->buf[1];
+        } else if ((abs_slot % slot_per_period) < 18) {
+          eff_120_slot = slotP - 10;
+          if((abs_slot % slot_per_period) < 13)
+            buf = longBitmap->buf[2];
+          else
+            buf = longBitmap->buf[3];
+        } else if ((abs_slot % slot_per_period) < 28) {
+          eff_120_slot = slotP - 20;
+          if((abs_slot % slot_per_period) < 23)
+            buf = longBitmap->buf[4];
+          else
+            buf = longBitmap->buf[5];
+        } else if ((abs_slot % slot_per_period) < 38) {
+          eff_120_slot = slotP - 30;
+          if((abs_slot % slot_per_period) < 33)
+            buf = longBitmap->buf[6];
+          else
+            buf = longBitmap->buf[7];
         }
-        if (((buf >> (6 - (eff_120_slot << 1))) & 3) != 0)
+        if ((eff_120_slot>=0) && (((buf >> (6 - (eff_120_slot << 1))) & 3) != 0))
           fill_ssb_vrb_map(cc, ssb_offset0 / (ratio * 12) - 10, CC_id);
         break;
     default:
-      AssertFatal(0,
-                  "SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
+      AssertFatal(0,"SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
                   cc->ServingCellConfigCommon->ssb_PositionsInBurst->present);
     }
   }
