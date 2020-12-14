@@ -71,6 +71,7 @@ uint32_t target_dl_mcs = 28;
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0;
+uint16_t rnti = 1;
 
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
@@ -427,6 +428,7 @@ void *itti_sim_ue_rrc_task( void *args_p) {
         memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
         memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, GNB_RRC_CCCH_DATA_IND(msg_p).sdu, GNB_RRC_CCCH_DATA_IND(msg_p).size);
         NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = GNB_RRC_CCCH_DATA_IND(msg_p).size;
+        NR_RRC_MAC_CCCH_DATA_IND(message_p).rnti       = rnti;
         itti_send_msg_to_task (TASK_RRC_NRUE, instance, message_p);
         break;
       case GNB_RRC_DCCH_DATA_IND:
@@ -435,6 +437,7 @@ void *itti_sim_ue_rrc_task( void *args_p) {
         NR_RRC_DCCH_DATA_IND (message_p).dcch_index = GNB_RRC_DCCH_DATA_IND(msg_p).rbid;
         NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = GNB_RRC_DCCH_DATA_IND(msg_p).size;
         NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = GNB_RRC_DCCH_DATA_IND(msg_p).sdu;
+        NR_RRC_DCCH_DATA_IND(message_p).rnti        = rnti;
         itti_send_msg_to_task (TASK_RRC_NRUE, instance, message_p);
         break;
       default:
@@ -476,6 +479,7 @@ void *itti_sim_gnb_rrc_task( void *args_p) {
           NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size = UE_RRC_CCCH_DATA_IND(msg_p).size;
           memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
           memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).size);
+          NR_RRC_MAC_CCCH_DATA_IND(message_p).rnti = rnti;
           itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
            break;
       case UE_RRC_DCCH_DATA_IND:
@@ -483,6 +487,7 @@ void *itti_sim_gnb_rrc_task( void *args_p) {
     	    NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = UE_RRC_DCCH_DATA_IND(msg_p).size;
           NR_RRC_DCCH_DATA_IND (message_p).dcch_index = UE_RRC_DCCH_DATA_IND(msg_p).rbid;
           NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = UE_RRC_DCCH_DATA_IND(msg_p).sdu;
+          NR_RRC_DCCH_DATA_IND(message_p).rnti        = rnti;
     	    itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
            break;
 
@@ -523,7 +528,7 @@ int main( int argc, char **argv )
   }
 
   AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
- // AMF_MODE_ENABLED = 0;
+//  AMF_MODE_ENABLED = 0;
   NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
 
 #if T_TRACER

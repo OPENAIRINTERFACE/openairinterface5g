@@ -1262,7 +1262,7 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8
     return encoded;
 }
 
-uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer) {
+uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti) {
   asn_enc_rval_t enc_rval;
   NR_UL_CCCH_Message_t ul_ccch_msg;
   NR_RRCReestablishmentRequest_t *rrcReestablishmentRequest;
@@ -1277,7 +1277,7 @@ uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer) {
   rrcReestablishmentRequest = ul_ccch_msg.message.choice.c1->choice.rrcReestablishmentRequest;
   // test
   rrcReestablishmentRequest->rrcReestablishmentRequest.reestablishmentCause = NR_ReestablishmentCause_reconfigurationFailure;
-  rrcReestablishmentRequest->rrcReestablishmentRequest.ue_Identity.c_RNTI = 0x1234;
+  rrcReestablishmentRequest->rrcReestablishmentRequest.ue_Identity.c_RNTI = c_rnti;
   rrcReestablishmentRequest->rrcReestablishmentRequest.ue_Identity.physCellId = 0;
   rrcReestablishmentRequest->rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf = buf;
   rrcReestablishmentRequest->rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[0] = 0x08;
