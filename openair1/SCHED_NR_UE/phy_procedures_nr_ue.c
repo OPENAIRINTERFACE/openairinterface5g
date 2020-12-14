@@ -241,7 +241,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   }
 
   if (get_softmodem_params()->do_ra==1) {
-    if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1) && ue->mac_enabled) {
+    if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && ue->mac_enabled) {
       nr_ue_prach_procedures(ue, proc, gNB_id);
     }
   }
@@ -2118,14 +2118,13 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
     return(0);
 }
 
-// WIP
 // todo:
 // - set tx_total_RE
 // - power control as per 38.213 ch 7.4
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
-  uint16_t /*preamble_tx = 50,*/ pathloss;
+  uint16_t pathloss;
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
@@ -2133,13 +2132,12 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
+  // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1 && ((MAX_FRAME_NUMBER+frame_tx-ue->prach_resources[gNB_id]->sync_frame)% MAX_FRAME_NUMBER)>150){
     ue->prach_cnt = 0;
     prach_resources->init_msg1 = 1;
   }
 
-  // ask L2 for RACH transport
-  LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
   // flush Msg3 Buffer
   if (prach_resources->Msg3 == NULL){
     for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {

@@ -32,19 +32,6 @@
 
 #include "mac.h"
 
-/*
-#include "common/utils/LOG/vcd_signal_dumper.h"
-#include "PHY_INTERFACE/phy_interface_extern.h"
-#include "SCHED_UE/sched_UE.h"
-#include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LTE/rrc_extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "common/utils/LOG/log.h"
-#include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
-#include "PHY/LTE_ESTIMATION/lte_estimation.h"*/
-
 /* Tools */
 #include "SIMULATION/TOOLS/sim.h"	// for taus
 
@@ -65,10 +52,10 @@
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 
 //extern uint8_t  nfapi_mode;
+static uint8_t first_Msg3 = 0;
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 
-// WIP
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
 // and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
 void nr_get_prach_resources(module_id_t mod_id,
@@ -93,12 +80,13 @@ void nr_get_prach_resources(module_id_t mod_id,
   nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
 
+  LOG_D(PHY, "Getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, first_Msg3);
+
   // NR_RSRP_Range_t rsrp_ThresholdSSB; // todo
 
   ///////////////////////////////////////////////////////////
   //////////* UE Random Access Resource Selection *//////////
   ///////////////////////////////////////////////////////////
-
 
   // todo: 
   // - switch initialisation cases
@@ -208,7 +196,8 @@ void nr_get_prach_resources(module_id_t mod_id,
       noGroupB = 1;
     } else {
       // RA preambles group B is configured 
-      // - Defining the number of RA preambles in RA Preamble Group A for each SSB */
+      // - Random Access Preambles group B is configured for 4-step RA type
+      // - Defining the number of RA preambles in RA Preamble Group A for each SSB
       sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
       switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
       /* - Threshold to determine the groups of RA preambles */
@@ -380,7 +369,6 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 /// the RA procedure on a SCell shall only be initiated by PDCCH order
 /// in the current implementation, RA is contention free only
 
-// WIP
 // todo TS 38.321:
 // - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX
 // - BWP operation (subclause 5.15 TS 38.321)
@@ -415,8 +403,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = mac->rach_ConfigDedicated;
 
-  // int32_t frame_diff = 0;
-
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   int TBS_bytes = 848, header_length_total=0, num_sdus, offset, preambleTransMax, mac_ce_len;
@@ -425,8 +411,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   if (prach_resources->init_msg1) {
 
-    LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
-
     AssertFatal(setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
     if (mac->RA_active == 0) {
@@ -434,6 +418,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       LOG_I(MAC, "RA not active. Starting RA preamble initialization.\n");
 
+      first_Msg3 = 0;
       mac->RA_RAPID_found = 0;
 
       /* Set RA_PREAMBLE_POWER_RAMPING_STEP */
@@ -509,7 +494,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, first_Msg3, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -542,8 +527,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // - handle DL assignment on PDCCH for RA-RNTI
       // - handle backoff and raResponseWindow params
 
-      // LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
-      //   mod_id, frame, nr_slot_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
+      LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d (RA_tx_frame %d, RA_tx_subframe %d)\n", __FUNCTION__, frame, nr_slot_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
 
       if (mac->RA_BI_found){
         prach_resources->RA_PREAMBLE_BACKOFF = prach_resources->RA_SCALING_FACTOR_BI * mac->RA_backoff_indicator;
@@ -636,7 +620,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, first_Msg3, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       } else {
 
@@ -650,7 +634,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, first_Msg3, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       }
     }
