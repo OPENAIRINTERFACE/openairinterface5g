@@ -420,7 +420,7 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	RAN.eNB_instance=0
 	RAN.eNB_serverId[0]='0'
 	RAN.eNBSourceCodePath='/tmp/'
-	RAN.TerminateeNB()
+	RAN.TerminateeNB(HTML, EPC)
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
 		HELP.GenericHelp(CONST.Version)
@@ -432,22 +432,22 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	EPC.TerminateHSS()
+	EPC.TerminateHSS(HTML)
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	EPC.TerminateMME()
+	EPC.TerminateMME(HTML)
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath== '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	EPC.TerminateSPGW()
+	EPC.TerminateSPGW(HTML)
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
 	if (RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
 		HELP.GenericHelp(CONST.Version)

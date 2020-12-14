@@ -2952,7 +2952,7 @@ class OaiCiTest():
 			job.join()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def TerminateOAIUE(self,HTML,RAN,COTS_UE):
+	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC):
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
@@ -3020,7 +3020,7 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of OAI-UE'
 			HTML.desc='Automatic Termination of OAI-UE'
 			self.ShowTestID()
-			self.TerminateOAIUE(HTML,RAN,COTS_UE)
+			self.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
 		if (RAN.Initialize_eNB_args != ''):
 			self.testCase_id = 'AUTO-KILL-RAN'
 			HTML.testCase_id=self.testCase_id
