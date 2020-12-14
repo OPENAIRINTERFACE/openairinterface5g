@@ -1089,6 +1089,108 @@ void nr_dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
   }
 }
 //#endif
+
+//----------------------------------------------------------------------------------------------
+// 256-QAM
+//----------------------------------------------------------------------------------------------
+
+void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+                     int32_t **rxdataF_comp,
+                     int16_t *dlsch_llr,
+                     int32_t **dl_ch_mag,
+                     int32_t **dl_ch_magb,
+                     int32_t **dl_ch_magr,
+                     uint8_t symbol,
+                     uint32_t len,
+                     uint8_t first_symbol_flag,
+                     uint16_t nb_rb,
+                     uint32_t llr_offset,
+                     uint8_t beamforming_mode)
+{
+  __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*nb_rb*12)];
+  __m128i *ch_mag,*ch_magb,*ch_magr;
+
+  int i,len2;
+  unsigned char len_mod4;
+  short *llr;
+  int16_t *llr2;
+  int8_t *pllr_symbol;
+
+  /*
+  if (first_symbol_flag==1)
+    llr = dlsch_llr;
+  else
+    llr = *llr_save;
+  */
+  llr = dlsch_llr;
+
+  pllr_symbol = (int8_t*)dlsch_llr;
+  pllr_symbol += llr_offset;
+
+  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*nb_rb*12)];
+  ch_magr = (__m128i*)&dl_ch_magr[0][(symbol*nb_rb*12)];
+  llr2 = llr;
+  llr += (len*8);
+
+  len_mod4 =len&3;
+  len2=len>>2;  // length in quad words (4 REs)
+  len2+=((len_mod4==0)?0:1);
+
+  for (i=0; i<len2; i++) {
+    xmm1 = _mm_abs_epi16(rxF[i]);
+    xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
+    xmm2 = _mm_abs_epi16(xmm1);
+    xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
+    xmm3 = _mm_abs_epi16(xmm2);
+    xmm3 = _mm_subs_epi16(ch_magr[i], xmm3);
+
+    llr2[0] = ((short *)&rxF[i])[0];
+    llr2[1] = ((short *)&rxF[i])[1];
+    llr2[2] = _mm_extract_epi16(xmm1,0);
+    llr2[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
+    llr2[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
+    llr2[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
+    llr2[6] = _mm_extract_epi16(xmm3,0);
+    llr2[7] = _mm_extract_epi16(xmm3,1);
+
+    llr2+=8;
+    llr2[0] = ((short *)&rxF[i])[2];
+    llr2[1] = ((short *)&rxF[i])[3];
+    llr2[2] = _mm_extract_epi16(xmm1,2);
+    llr2[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
+    llr2[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
+    llr2[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
+    llr2[6] = _mm_extract_epi16(xmm3,2);
+    llr2[7] = _mm_extract_epi16(xmm3,3);
+
+    llr2+=8;
+    llr2[0] = ((short *)&rxF[i])[4];
+    llr2[1] = ((short *)&rxF[i])[5];
+    llr2[2] = _mm_extract_epi16(xmm1,4);
+    llr2[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
+    llr2[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
+    llr2[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
+    llr2[6] = _mm_extract_epi16(xmm3,4);
+    llr2[7] = _mm_extract_epi16(xmm3,5);
+
+    llr2+=8;
+    llr2[0] = ((short *)&rxF[i])[6];
+    llr2[1] = ((short *)&rxF[i])[7];
+    llr2[2] = _mm_extract_epi16(xmm1,6);
+    llr2[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
+    llr2[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
+    llr2[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
+    llr2[6] = _mm_extract_epi16(xmm3,6);
+    llr2[7] = _mm_extract_epi16(xmm3,7);
+    llr2+=8;
+
+  }
+
+  _mm_empty();
+  _m_empty();
+}
+
 //==============================================================================================
 // DUAL-STREAM
 //==============================================================================================
