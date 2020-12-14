@@ -320,7 +320,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       LOG_E(MAC,"TDD configuration can not be done\n");
     else {
       LOG_I(MAC,"TDD has been properly configurated\n");
-       RC.nrmac[Mod_idP]->tdd_beam_association = (uint8_t *)malloc16(periods_per_frame*sizeof(uint8_t));
+       RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
     }
   }
 

@@ -86,7 +86,11 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd);
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
+void schedule_nr_mib(module_id_t module_idP,
+                     frame_t frameP,
+                     sub_frame_t subframeP,
+                     uint8_t slots_per_frame,
+                     int nb_periods_per_frame);
 
 /// uplink scheduler
 void nr_schedule_ulsch(module_id_t module_id,

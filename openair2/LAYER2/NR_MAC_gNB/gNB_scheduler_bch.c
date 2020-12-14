@@ -56,7 +56,11 @@
 extern RAN_CONTEXT_t RC;
 extern uint8_t SSB_Table[38];
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, uint8_t slots_per_frame){
+void schedule_nr_mib(module_id_t module_idP,
+                     frame_t frameP,
+                     sub_frame_t slotP,
+                     uint8_t slots_per_frame,
+                     int nb_periods_per_frame){
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
@@ -68,6 +72,9 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
   int mib_sdu_length;
   int CC_id;
   uint8_t beam_index = 0;
+  // re-initializing the cumulative number of ssb transmitted
+  if (slotP==0)
+    gNB->cumul_ssb=0;
   
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     cc = &gNB->common_channels[CC_id];
@@ -164,6 +171,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
     // checking if there is any SSB in slot
     const int abs_slot = (slots_per_frame * frameP) + slotP;
     const int slot_per_period = (slots_per_frame>>1)<<(*cc->ServingCellConfigCommon->ssb_periodicityServingCell);
+    const int num_tdd_period = slotP/(slots_per_frame/nb_periods_per_frame);
     int eff_120_slot;
     const BIT_STRING_t *shortBitmap = &cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.shortBitmap;
     const BIT_STRING_t *mediumBitmap = &cc->ServingCellConfigCommon->ssb_PositionsInBurst->choice.mediumBitmap;
@@ -211,8 +219,12 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
           else
             buf = longBitmap->buf[7];
         }
-        if ((eff_120_slot>=0) && (((buf >> (6 - (eff_120_slot << 1))) & 3) != 0))
+        if ((eff_120_slot>=0) && (((buf >> (6 - (eff_120_slot << 1))) & 3) != 0)) {
+          AssertFatal(((buf >> (6 - (eff_120_slot << 1))) & 3)<3,"We only support 1 ssb per slot max in FR2 for the moment\n");
+          gNB->tdd_beam_association[num_tdd_period] = gNB->cumul_ssb;
+          gNB->cumul_ssb++;
           fill_ssb_vrb_map(cc, ssb_offset0 / (ratio * 12) - 10, CC_id);
+        }
         break;
     default:
       AssertFatal(0,"SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
