@@ -1501,8 +1501,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     }
   } else if (ul_info) {
 
-    // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
-    if (get_softmodem_params()->phy_test) {
+    module_id_t mod_id    = ul_info->module_id;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+
+    if (mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
@@ -1511,14 +1513,12 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint32_t TBS;
       int i, N_PRB_oh;
 
-      module_id_t mod_id    = ul_info->module_id;
       uint32_t gNB_index    = ul_info->gNB_index;
       int cc_id             = ul_info->cc_id;
       frame_t rx_frame      = ul_info->frame_rx;
       slot_t rx_slot        = ul_info->slot_rx;
       frame_t frame_tx      = ul_info->frame_tx;
       slot_t slot_tx        = ul_info->slot_tx;
-      NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
       uint8_t access_mode   = SCHEDULED_ACCESS;
 
       fapi_nr_ul_config_request_t *ul_config_req = get_ul_config_request(mac, slot_tx);
@@ -4935,7 +4935,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                   if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
 
                     mac_rlc_data_ind(module_idP,
-                                     0x1234,
+                                     mac->crnti,
                                      gNB_index,
                                      frameP,
                                      ENB_FLAG_NO,
@@ -5147,6 +5147,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
   uint16_t sdu_length_total = 0;
   //unsigned short post_padding = 0;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
   rlc_buffer_occupancy_t lcid_buffer_occupancy_old =
     0, lcid_buffer_occupancy_new = 0;
@@ -5159,19 +5160,12 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   start_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
 #endif
 
-  //NR_UE_MAC_INST_t *nr_ue_mac_inst = get_mac_inst(0);
-
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
   for (lcid = UL_SCH_LCID_SRB1;
        lcid < NR_MAX_NUM_LCID; lcid++) {
 
-      lcid_buffer_occupancy_old =
-    		  //TODO: Replace static value with CRNTI
-        mac_rlc_get_buffer_occupancy_ind(module_idP,
-        								 0x1234, eNB_index, frameP, //nr_ue_mac_inst->crnti
-                                         subframe, ENB_FLAG_NO,
-                                         lcid);
+      lcid_buffer_occupancy_old = mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid);
       lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
 
       if(lcid_buffer_occupancy_new){
@@ -5187,17 +5181,17 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
         while(buflen_remain > 0 && lcid_buffer_occupancy_new){
 
-        //TODO: Replace static value with CRNTI
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-        						0x1234, eNB_index, //nr_ue_mac_inst->crnti
+                                mac->crnti,
+                                eNB_index,
                                 frameP,
                                 ENB_FLAG_NO,
                                 MBMS_FLAG_NO,
                                 lcid,
                                 buflen_remain,
                                 (char *)&ulsch_sdus[sdu_length_total],0,
-                                0
-                                                );
+                                0);
+
         AssertFatal(buflen_remain >= sdu_lengths[num_sdus],
                     "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
                     lcid, sdu_lengths[num_sdus], buflen_remain);
@@ -5213,14 +5207,13 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         }
 
         /* Get updated BO after multiplexing this PDU */
-        //TODO: Replace static value with CRNTI
-
-        lcid_buffer_occupancy_new =
-          mac_rlc_get_buffer_occupancy_ind(module_idP,
-                                           0x1234, //nr_ue_mac_inst->crnti
-                                           eNB_index, frameP,
-                                           subframe, ENB_FLAG_NO,
-                                           lcid);
+        lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP,
+                                                                     mac->crnti,
+                                                                     eNB_index,
+                                                                     frameP,
+                                                                     subframe,
+                                                                     ENB_FLAG_NO,
+                                                                     lcid);
         buflen_remain =
                   buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
         }
@@ -5236,7 +5229,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                          sdu_lengths, // sdu length
                                          sdu_lcids, // sdu lcid
                                          0, // power_headroom
-                                         0, // crnti
+                                         mac->crnti, // crnti
                                          0, // truncated_bsr
                                          0, // short_bsr
                                          0, // long_bsr
