@@ -42,6 +42,7 @@ import xml.etree.ElementTree as ET
 import logging
 import datetime
 import signal
+import statistics as stat
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
@@ -52,6 +53,52 @@ logging.basicConfig(
 import helpreadme as HELP
 import constants as CONST
 import sshconnection
+
+
+
+
+#-----------------------------------------------------------
+# Utility functions
+#-----------------------------------------------------------
+
+def GetPingTimeAnalysis(ping_log_file):
+	#ping time values read from file
+	t_ping=[]
+	#ping stats (dictionary) to be returned by the function
+	ping_stat={}
+	if (os.path.isfile(ping_log_file)):
+		with open(ping_log_file,"r") as f:
+			for line in f:
+				#looking for time=xxx ms field
+				result=re.match('^.+time=(?P<ping_time>[0-9\.]+)',line)
+				if result != None:
+					t_ping.append(float(result.group('ping_time')))
+
+		#initial stats
+		ping_stat['min_0']=min(t_ping)
+		ping_stat['mean_0']=stat.mean(t_ping)
+		ping_stat['median_0']=stat.median(t_ping)
+		ping_stat['max_0']=max(t_ping)
+
+		#get index of max value
+		
+		max_loc=t_ping.index(max(t_ping))
+		ping_stat['max_loc']=max_loc
+		#remove it
+		t_ping.pop(max_loc)
+		#new stats after removing max value
+		ping_stat['min_1']=min(t_ping)
+		ping_stat['mean_1']=stat.mean(t_ping)
+		ping_stat['median_1']=stat.median(t_ping)
+		ping_stat['max_1']=max(t_ping)
+
+		return ping_stat
+
+	else:
+		logging.error("Ping log file does not exist")
+		return -1
+
+	
 
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
@@ -1409,17 +1456,26 @@ class OaiCiTest():
 				if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
 					launchFromTrfContainer = True
 				if launchFromTrfContainer:
-					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)				
 				else:
 					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				#copy the ping log file to have it locally for analysis (ping stats)
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')				
 			else:
+				#ping log file is on the python executor
 				cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 > ping_' + self.testCase_id + '_' + device_id + '.log' 
 				message = cmd + '\n'
 				logging.debug(cmd)
 				ret = subprocess.run(cmd, shell=True)
 				ping_status = ret.returncode
+				#copy the ping log file to an other folder for log collection (source and destination are EPC)
 				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
+                #copy the ping log file to have it locally for analysis (ping stats)
+				logging.debug(EPC.SourceCodePath + 'ping_' + self.testCase_id + '_' + device_id + '.log')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath  +'/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')
+
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				#cat is executed on EPC
 				SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 			# TIMEOUT CASE
 			if ping_status < 0:
@@ -1428,6 +1484,7 @@ class OaiCiTest():
 				SSH.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
+			#search is done on cat result
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', SSH.getBefore())
 			if result is None:
 				message = 'Packet Loss Not Found!'
@@ -1462,7 +1519,27 @@ class OaiCiTest():
 			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
-			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+
+			#adding extra ping stats from local file
+			ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
+			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
+			ping_stat=GetPingTimeAnalysis(ping_log_file)
+			ping_stat_msg=''
+			if (ping_stat!=-1) and (len(ping_stat)!=0):
+				ping_stat_msg+='Ping stats before removing largest value : \n'
+				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
+				ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
+				ping_stat_msg+='Ping stats after removing largest value : \n'
+				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
+
+			#building html message
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n' + ping_stat_msg
 			packetLossOK = True
 			if packetloss is not None:
 				if float(packetloss) > float(self.ping_packetloss_threshold):

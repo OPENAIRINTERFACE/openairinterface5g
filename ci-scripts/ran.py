@@ -693,8 +693,10 @@ class RANManagement():
 		NSA_RAPROC_PUSCH_check = 0
 		#dlsch and ulsch statistics (dictionary)
 		dlsch_ulsch_stats = {}
-		#count L1 thread not ready msg 	
+		#count "L1 thread not ready" msg 	
 		L1_thread_not_ready_cnt = 0
+		#count "problem receiving samples" msg
+		pb_receiving_samples_cnt = 0
 	
 		for line in enb_log_file.readlines():
 			# Runtime statistics
@@ -860,10 +862,15 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
-			#count L1 thread not ready msg
+			#count "L1 thread not ready" msg
 			result = re.search('\[PHY\]\s+L1_thread isn\'t ready', str(line))
 			if result is not None:
-				L1_thread_not_ready_cnt += 1			
+				L1_thread_not_ready_cnt += 1	
+			#count "problem receiving samples" msg
+			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
+			if result is not None:
+				pb_receiving_samples_cnt += 1				
+
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
@@ -894,11 +901,16 @@ class RANManagement():
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
 			#L1 thread not ready log
-			if L1_thread_not_ready_cnt != 0:
-				statMsg = '[PHY] L1 thread is not ready msg count =  '+str(L1_thread_not_ready_cnt)
-				htmlMsg = statMsg+'\n'
+			statMsg = '[PHY] L1 thread is not ready msg count =  '+str(L1_thread_not_ready_cnt)
+			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
+			#problem receiving samples log
+			statMsg = '[PHY] problem receiving samples msg count =  '+str(pb_receiving_samples_cnt)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+
 			#ulsch and dlsch statistics
 			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
 				statMsg=''
