@@ -2200,7 +2200,7 @@ function run_test_on_vm {
             mkdir --parents $ARCHIVES_LOC
         fi
 
-        local try_cnt="0"
+        local try_cnt=0
         NR_STATUS=0
 
         ######### start of RA TEST loop
@@ -2232,7 +2232,7 @@ function run_test_on_vm {
                 scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
                 scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
                 SYNC_STATUS=-1
-                try_cnt=$[$try_cnt+1]
+                try_cnt=$((try_cnt+1))
                 continue
             fi
 
@@ -2255,9 +2255,10 @@ function run_test_on_vm {
             if [ $RA_STATUS -ne 0 ]
             then
                 echo "RA test NOT OK"
-                try_cnt=$[$try_cnt+1]
+                echo "try_cnt = " $try_cnt
+                try_cnt=$((try_cnt+1))
             else
-                try_cnt=$[$try_cnt+10]
+                try_cnt=$((try_cnt+10))
             fi
         done
         ########### end RA test
@@ -2266,7 +2267,7 @@ function run_test_on_vm {
 
 
         ######### start of PHY TEST loop
-        try_cnt="0"
+        try_cnt=0
         while [ $try_cnt -lt 4 ]
         do
 
@@ -2297,7 +2298,7 @@ function run_test_on_vm {
                 scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
                 scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
                 SYNC_STATUS=-1
-                try_cnt=$[$try_cnt+1]
+                try_cnt=$((try_cnt+1))
                 continue
             fi
 
@@ -2337,7 +2338,7 @@ function run_test_on_vm {
                 terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
                 scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
                 scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
-                try_cnt=$[$try_cnt+1]
+                try_cnt=$((try_cnt+1))
                 continue
             fi
 
@@ -2363,9 +2364,9 @@ function run_test_on_vm {
             if [ $IPERF_STATUS -ne 0 ]
             then
                 echo "UL test not OK"
-                try_cnt=$[$try_cnt+1]
+                try_cnt=$((try_cnt+1))
             else
-                try_cnt=$[$try_cnt+10]
+                try_cnt=$((try_cnt+10))
             fi
         done
         ######### end of loop
