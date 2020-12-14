@@ -154,6 +154,11 @@ typedef enum {
   MOD_QAM256
 }nr_mod_t;
 
+typedef enum {
+  RA_2STEP = 0,
+  RA_4STEP
+} nr_ra_type_e;
+
 typedef struct {
   /// Size of first RBG
   uint8_t start_size;
@@ -221,6 +226,8 @@ typedef struct {
   uint8_t RA_PREAMBLE_BACKOFF;
   ///
   uint8_t RA_SCALING_FACTOR_BI;
+  /// Indicating whether it is 2-step or 4-step RA
+  uint8_t RA_TYPE;
   ///
   uint8_t RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant

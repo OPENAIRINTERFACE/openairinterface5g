@@ -106,9 +106,20 @@ void nr_get_prach_resources(module_id_t mod_id,
     // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
     // - available CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
     // - network controlled Mobility
-    uint8_t cfra_ssb_resource_idx = 0;
-    prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
-    LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-free random access procedure... \n", prach_resources->ra_PreambleIndex);
+
+    if (rach_ConfigDedicated->cfra){
+      uint8_t cfra_ssb_resource_idx = 0;
+      prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure\n", __FUNCTION__, prach_resources->ra_PreambleIndex);
+    }
+
+    if (rach_ConfigDedicated->ext1){
+      if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
+        LOG_D(MAC, "In %s: 2-step RA type...\n", __FUNCTION__);
+        prach_resources->RA_TYPE = RA_2STEP;
+      }
+    }
+
   } else {
     //////////* Contention-based RA preamble selection *//////////
     // todo:
@@ -440,6 +451,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       prach_resources->RA_PREAMBLE_BACKOFF = 0;
       prach_resources->RA_SCALING_FACTOR_BI = 1;
       prach_resources->RA_PCMAX = 0; // currently hardcoded to 0
+      prach_resources->RA_TYPE = RA_4STEP;
 
       payload = (uint8_t*) &mac->CCCH_pdu.payload;
 
