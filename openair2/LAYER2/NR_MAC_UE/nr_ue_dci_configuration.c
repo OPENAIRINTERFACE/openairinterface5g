@@ -171,8 +171,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->BWPSize,
       rel15->BWPStart,
       rel15->SubcarrierSpacing,
-      rel15->dci_format,
-      rel15->dci_length,
+      rel15->dci_format_options[0],
+      rel15->dci_length_options[0],
       sps,
       monitoringSymbolsWithinSlot);
   #endif
@@ -213,9 +213,9 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
         // check available SS IDs
         if (pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
           if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
-            LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space\n");
             switch(mac->ra_state){
               case WAIT_RAR:
+              LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space\n");
               rel15->num_dci_options = 1;
               rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
               config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id);

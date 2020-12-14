@@ -242,7 +242,7 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
       if (eNB_offset == 0)
 
-      LOG_I(PHY,"[UE %d] slot %d RSRP Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
+      LOG_D(PHY,"[UE %d] slot %d RSRP Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
             ue->Mod_id,
             slot,eNB_offset,
             (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
@@ -310,6 +310,6 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   LOG_D(PHY, "In %s slot %d NF USRP %d dBm\n", __FUNCTION__, nf_usrp);
   #endif
 
-  LOG_I(PHY, "In %s slot %d Noise Level %d ue->measurements.n0_power_tot_dB %d \n", __FUNCTION__, slot, ue->measurements.n0_power_tot, ue->measurements.n0_power_tot_dB);
+  LOG_D(PHY, "In %s slot %d Noise Level %d ue->measurements.n0_power_tot_dB %d \n", __FUNCTION__, slot, ue->measurements.n0_power_tot, ue->measurements.n0_power_tot_dB);
 
 }
