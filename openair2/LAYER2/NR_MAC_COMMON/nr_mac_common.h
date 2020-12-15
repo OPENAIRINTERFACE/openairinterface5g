@@ -44,6 +44,9 @@
 #define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
 #define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
 
+// Definitions for MAC control and data
+#define MAX_BWP_SIZE    275
+
 typedef enum frequency_range_e {
     FR1 = 0, 
     FR2
