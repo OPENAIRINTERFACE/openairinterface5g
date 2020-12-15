@@ -347,13 +347,13 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
     }
     break;
   case 8:
-    e1=e+(E/6);
-    e2=e1+(E/6);
-    e3=e2+(E/6);
-    e4=e3+(E/6);
-    e5=e4+(E/6);
-    e6=e5+(E/6);
-    e7=e6+(E/6);
+    e1=e+(E/8);
+    e2=e1+(E/8);
+    e3=e2+(E/8);
+    e4=e3+(E/8);
+    e5=e4+(E/8);
+    e6=e5+(E/8);
+    e7=e6+(E/8);
     for (int j = 0,j2=0; j< E/8; j++,j2+=8){
       e[j]  = f[j2];
       e1[j] = f[j2+1];

@@ -217,33 +217,18 @@ void nr_process_mac_pdu(
 		    log_dump(MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
                 #endif
-                if(IS_SOFTMODEM_NOS1){
-                  mac_rlc_data_ind(module_idP,
-                      0x1234,
-                      module_idP,
-                      frameP,
-                      ENB_FLAG_YES,
-                      MBMS_FLAG_NO,
-                      rx_lcid,
-                      (char *) (pdu_ptr + mac_subheader_len),
-                      mac_sdu_len,
-                      1,
-                      NULL);
-                }
-                else{
-                  mac_rlc_data_ind(module_idP,
-                      rnti,
-                      module_idP,
-                      frameP,
-                      ENB_FLAG_YES,
-                      MBMS_FLAG_NO,
-                      rx_lcid,
-                      (char *) (pdu_ptr + mac_subheader_len),
-                      mac_sdu_len,
-                      1,
-                      NULL);
-                }
 
+                mac_rlc_data_ind(module_idP,
+                                 rnti,
+                                 module_idP,
+                                 frameP,
+                                 ENB_FLAG_YES,
+                                 MBMS_FLAG_NO,
+                                 rx_lcid,
+                                 (char *) (pdu_ptr + mac_subheader_len),
+                                 mac_sdu_len,
+                                 1,
+                                 NULL);
 
             break;
 

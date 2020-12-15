@@ -32,8 +32,13 @@ WORKDIR /oai-ran
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
+    rm -Rf log && \
     mkdir -p log && \
     ./build_oai --eNB --ninja -w USRP
+
+RUN apt-get install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
 
 # debug
 #RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15
@@ -73,6 +78,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/oai-enb/bin
 COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
+COPY --from=enb-build /oai-ran/docker/scripts/enb_entrypoint.sh entrypoint.sh
 
 WORKDIR /usr/local/lib/
 COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
@@ -104,21 +110,17 @@ RUN ldconfig
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-enb/etc
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/enb.* ./
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rcc.* ./
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/cu.* ./
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/du.* ./
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rru.* ./
+COPY --from=enb-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-enb
 
-#EXPOSE 2152/udp  # S1U, GTP/UDP
+# 2152 --> S1U, GTP/UDP
+# 36412 --> S1C, SCTP/UDP
+# 36422 --> X2C, SCTP/UDP
+EXPOSE 2152/udp 36412/udp 36422/udp
 #EXPOSE 22100/tcp # ?
-#EXPOSE 36412/udp # S1C, SCTP/UDP
-#EXPOSE 36422/udp # X2C, SCTP/UDP
 #EXPOSE 50000/udp # IF5 / ORI (control)
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
 
-#CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
-#ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["/opt/oai-enb/bin/lte-softmodem.Rel15", "-O", "/opt/oai-enb/etc/enb.conf"]
