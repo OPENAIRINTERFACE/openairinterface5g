@@ -821,55 +821,71 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                           NULL); // contention res id
       buf += written;
       int size = TBS - written;
-
-      DevAssert(size > 3);
+      DevAssert(size >= 0);
 
       /* next, get RLC data */
-      // we do not know how much data we will get from RLC, i.e., whether it
-      // will be longer than 256B or not. Therefore, reserve space for long header, then
-      // fetch data, then fill real length
-      NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-      buf += 3;
-      size -= 3;
 
       const int lcid = DL_SCH_LCID_DTCH;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
-        /* this is the data from the RLC we would like to request (e.g., only
-         * some bytes for first LC and some more from a second one */
-        const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
-        const tbs_size_t len = mac_rlc_data_req(module_id,
-                                                 rnti,
-                                                 module_id,
-                                                 frame,
-                                                 ENB_FLAG_YES,
-                                                 MBMS_FLAG_NO,
-                                                 lcid,
-                                                 ndata,
-                                                 (char *)buf,
-                                                 0,
-                                                 0);
+        tbs_size_t len = 0;
+        while (size > 3) {
+          // we do not know how much data we will get from RLC, i.e., whether it
+          // will be longer than 256B or not. Therefore, reserve space for long header, then
+          // fetch data, then fill real length
+          NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+          buf += 3;
+          size -= 3;
 
-        LOG_D(MAC,
-              "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
-              frame,
-              slot,
-              rnti,
-              len,
-              lcid,
-              ndata,
-              size);
+          /* limit requested number of bytes to what preprocessor specified, or
+           * such that TBS is full */
+          const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+          len = mac_rlc_data_req(module_id,
+                                 rnti,
+                                 module_id,
+                                 frame,
+                                 ENB_FLAG_YES,
+                                 MBMS_FLAG_NO,
+                                 lcid,
+                                 ndata,
+                                 (char *)buf,
+                                 0,
+                                 0);
 
-        header->R = 0;
-        header->F = 1;
-        header->LCID = lcid;
-        header->L1 = (len >> 8) & 0xff;
-        header->L2 = len & 0xff;
-        size -= len;
-        buf += len;
-        dlsch_total_bytes += len;
+          LOG_D(MAC,
+                "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
+                frame,
+                slot,
+                rnti,
+                len,
+                lcid,
+                ndata,
+                size);
+          if (len == 0)
+            break;
+
+          header->R = 0;
+          header->F = 1;
+          header->LCID = lcid;
+          header->L1 = (len >> 8) & 0xff;
+          header->L2 = len & 0xff;
+          size -= len;
+          buf += len;
+          dlsch_total_bytes += len;
+        }
+        if (len == 0) {
+          /* RLC did not have data anymore, mark buffer as unused */
+          buf -= 3;
+          size += 3;
+        }
       }
       else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
+        /* we will need the large header, phy-test typically allocates all
+         * resources and fills to the last byte below */
+        NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+        buf += 3;
+        size -= 3;
+        DevAssert(size > 0);
         LOG_D(MAC, "Configuring DL_TX in %d.%d: TBS %d with %d B of random data\n", frame, slot, TBS, size);
         // fill dlsch_buffer with random data
         for (int i = 0; i < size; i++)
