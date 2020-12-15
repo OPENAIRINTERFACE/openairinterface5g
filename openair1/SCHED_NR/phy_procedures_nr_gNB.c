@@ -137,7 +137,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  LOG_W(PHY,"beamforming currently not supported for more than one SSB per slot\n");
 	}
 	else if (ssb_per_slot==1) {
-	  LOG_I(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
+	  LOG_D(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
 	  for (int j=0;j<fp->symbols_per_slot;j++) 
 	    gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
 	}	

@@ -349,7 +349,8 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
                       NR_ServingCellConfigCommon_t *scc,
                       uint16_t monitoring_slot_period,
-                      uint16_t monitoring_offset,uint8_t index,uint8_t num_active_ssb){
+                      uint16_t monitoring_offset,uint8_t beam_index,
+                      int16_t *tdd_beam_association){
 
   // preferentially we schedule the msg2 in the mixed slot or in the last dl slot
   // if they are allowed by search space configuration
@@ -365,38 +366,6 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     last_dl_slot_period--;
   if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
     tdd_period_slot++;
-
-
-  // computing start of next period
-  /*
-  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
-  uint8_t start_next_period;
-
-  if (FR==nr_FR1) {
-    start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-  }
-  else {
-    // in FR2 we need to wait till the second half frame for msg2 since all beams are taken in first half frame by SSBs
-    if (rach_slot<30) start_next_period = 40;
-    else start_next_period = 50;
-    *msg2_slot = start_next_period;
-    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-  }
- 
-  */
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-
-  // we can't schedule msg2 before sl_ahead since prach
-  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
-  if ((eff_slot-rach_slot)<=sl_ahead) {
-    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-  }
-
 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
@@ -431,6 +400,31 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
   uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+
+  // computing start of next period
+
+  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
+
+  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
+  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+  *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+
+  // we can't schedule msg2 before sl_ahead since prach
+  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
+  if ((eff_slot-rach_slot)<=sl_ahead) {
+    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  }
+  if (FR==nr_FR2) {
+    int num_tdd_period = *msg2_slot/tdd_period_slot;
+    while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
+      *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+      *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+      num_tdd_period = *msg2_slot/tdd_period_slot;
+    }
+    if(tdd_beam_association[num_tdd_period] == -1)
+      tdd_beam_association[num_tdd_period] = beam_index;
+  }
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
@@ -524,7 +518,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                                               &monitoring_slot_period,
                                               &monitoring_offset);
 
-    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,beam_index,cc->num_active_ssb);
+    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,beam_index,nr_mac->tdd_beam_association);
 
     ra->Msg2_frame = msg2_frame;
     ra->Msg2_slot = msg2_slot;
