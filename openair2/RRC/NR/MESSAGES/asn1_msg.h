@@ -160,3 +160,9 @@ do_RRCReestablishment(
   //NR_SRB_ToAddModList_t               **SRB_configList,
   //struct LTE_PhysicalConfigDedicated   **physicalConfigDedicated
 );
+
+uint8_t 
+do_RRCReestablishmentComplete(
+    uint8_t *buffer, 
+    int64_t rrc_TransactionIdentifier);
+

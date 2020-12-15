@@ -1295,7 +1295,7 @@ uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c
                                    buffer,
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
-  LOG_D(NR_RRC,"[UE] RRCSetupRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+  LOG_D(NR_RRC,"[UE] RRCReestablishmentRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -1331,9 +1331,10 @@ const uint8_t                    Transaction_id
     *SRB_configList2 = CALLOC(1, sizeof(NR_SRB_ToAddModList_t));
     memset((void *)&dl_dcch_msg, 0, sizeof(NR_DL_DCCH_Message_t));
     dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+    dl_dcch_msg.message.choice.c1 = calloc(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
     dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment;
+    dl_dcch_msg.message.choice.c1->choice.rrcReestablishment = CALLOC(1,sizeof(NR_RRCReestablishment_t));
     rrcReestablishment = dl_dcch_msg.message.choice.c1->choice.rrcReestablishment;
-    rrcReestablishment = CALLOC(1,sizeof(NR_RRCReestablishment_t));
     /*
     // RRCReestablishment
     // Configure SRB1
@@ -1406,6 +1407,7 @@ const uint8_t                    Transaction_id
     // copy KgNB_star to ue_context_pP->ue_context.kgnb
     memcpy (ue_context_pP->ue_context.kgnb, KgNB_star, 32);
     ue_context_pP->ue_context.kgnb_ncc = 0;
+    rrcReestablishment->criticalExtensions.choice.rrcReestablishment->lateNonCriticalExtension = NULL;
     rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nonCriticalExtension = NULL;
 
     if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
@@ -1429,3 +1431,37 @@ const uint8_t                    Transaction_id
     return((enc_rval.encoded+7)/8);
 
 }
+
+uint8_t 
+do_RRCReestablishmentComplete(uint8_t *buffer, int64_t rrc_TransactionIdentifier) {
+  asn_enc_rval_t enc_rval;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  NR_RRCReestablishmentComplete_t *rrcReestablishmentComplete;
+
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present            = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_UL_DCCH_MessageType__c1));
+  ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_rrcReestablishmentComplete;
+  ul_dcch_msg.message.choice.c1->choice.rrcReestablishmentComplete = CALLOC(1, sizeof(NR_RRCReestablishmentComplete_t));
+
+  rrcReestablishmentComplete = ul_dcch_msg.message.choice.c1->choice.rrcReestablishmentComplete;
+  rrcReestablishmentComplete->rrc_TransactionIdentifier = rrc_TransactionIdentifier;
+  rrcReestablishmentComplete->criticalExtensions.present = NR_RRCReestablishmentComplete__criticalExtensions_PR_rrcReestablishmentComplete;
+  rrcReestablishmentComplete->criticalExtensions.choice.rrcReestablishmentComplete = CALLOC(1, sizeof(NR_RRCReestablishmentComplete_IEs_t));
+  rrcReestablishmentComplete->criticalExtensions.choice.rrcReestablishmentComplete->lateNonCriticalExtension = NULL;
+  rrcReestablishmentComplete->criticalExtensions.choice.rrcReestablishmentComplete->nonCriticalExtension = NULL;
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)&ul_dcch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
+                                   NULL,
+                                   (void *)&ul_dcch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(NR_RRC,"[UE] RRCReestablishmentComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+  return((enc_rval.encoded+7)/8);
+}
+

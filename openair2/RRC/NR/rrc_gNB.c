@@ -1032,7 +1032,7 @@ rrc_gNB_generate_RRCReestablishment(
     LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n",
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_context->Srb0.Tx_buffer.payload_size);
-    UE_id = find_UE_id(module_id, rnti);
+    UE_id = find_nr_UE_id(module_id, rnti);
     
     if (UE_id != -1) {
       /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
@@ -2175,7 +2175,7 @@ rrc_gNB_decode_dcch(
                 }
 
                 //clear
-                int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+                int UE_id = find_nr_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
                 if(UE_id == -1) {
                   LOG_E(NR_RRC,

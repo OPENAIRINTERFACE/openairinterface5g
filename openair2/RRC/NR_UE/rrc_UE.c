@@ -117,6 +117,15 @@ uint8_t do_NR_RRCReconfigurationComplete(
                         const uint8_t Transaction_id
                       );
 
+void rrc_ue_generate_RRCReestablishmentRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index );
+
+void
+nr_rrc_ue_generate_rrcReestablishmentComplete(
+  const protocol_ctxt_t *const ctxt_pP,
+  NR_RRCReestablishment_t *rrcReestablishment,
+  uint8_t gNB_index
+);
+
 mui_t nr_rrc_mui=0;
 uint8_t first_rrcreconfigurationcomplete = 0;
 uint8_t rrcReestablishmentRequest_flag = 1;
@@ -2386,7 +2395,7 @@ nr_rrc_ue_decode_dcch(
                   if (rrcReestablishmentRequest_flag == 1) {
                     rrcReestablishmentRequest_flag = 0;
                     rnti = 2;
-                    rrc_ue_generate_RRCReestablishmentRequest(ctxt_pP, gNB_indexP, rnti);
+                    rrc_ue_generate_RRCReestablishmentRequest(ctxt_pP, gNB_indexP);
                     NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_indexP].State = NR_RRC_SI_RECEIVED;
                     NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_indexP].rnti = rnti;
                   }
@@ -2421,6 +2430,14 @@ nr_rrc_ue_decode_dcch(
             	  gNB_indexP);
             	 break;
             case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
+                LOG_I(NR_RRC,
+                    "[UE%d] Frame %d : Logical Channel DL-DCCH (SRB1), Received RRCReestablishment\n",
+                    ctxt_pP->module_id,
+                    ctxt_pP->frame);
+                nr_rrc_ue_generate_rrcReestablishmentComplete(
+                  ctxt_pP,
+                  dl_dcch_msg->message.choice.c1->choice.rrcReestablishment,
+                  gNB_indexP);
                 break;
             case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
             {
@@ -2802,5 +2819,31 @@ void rrc_ue_generate_RRCReestablishmentRequest( const protocol_ctxt_t *const ctx
   UE_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
   UE_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size;
   itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+#endif
+}
+
+void
+nr_rrc_ue_generate_rrcReestablishmentComplete(
+  const protocol_ctxt_t *const ctxt_pP,
+  NR_RRCReestablishment_t *rrcReestablishment,
+  uint8_t gNB_index
+)
+//-----------------------------------------------------------------------------
+{
+    uint32_t length;
+    uint8_t buffer[100];
+    length = do_RRCReestablishmentComplete(buffer, rrcReestablishment->rrc_TransactionIdentifier);
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_NRUE,TASK_RRC_GNB_SIM,length);
+    memcpy (message_buffer, buffer, length);
+
+    message_p = itti_alloc_new_message (TASK_RRC_NRUE, UE_RRC_DCCH_DATA_IND);
+    UE_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+    UE_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+    UE_RRC_DCCH_DATA_IND (message_p).size  = length;
+    itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+
 #endif
 }
