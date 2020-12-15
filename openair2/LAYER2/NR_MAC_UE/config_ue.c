@@ -320,6 +320,49 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
 }
 
+/** \brief This function performs some configuration routines according to clause 12 "Bandwidth part operation" 3GPP TS 38.213 version 16.3.0 Release 16
+    @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
+    @returns void
+    */
+void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, int *dci_format){
+
+  NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
+
+  if (bwp_ind && dci_format){
+
+    switch(*dci_format){
+    case NR_UL_DCI_FORMAT_0_1:
+      mac->UL_BWP_Id = *bwp_ind;
+      break;
+    case NR_DL_DCI_FORMAT_1_1:
+      mac->DL_BWP_Id = *bwp_ind;
+      break;
+    default:
+      LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
+    }
+
+  } else {
+
+    if (scd->firstActiveDownlinkBWP_Id)
+      mac->DL_BWP_Id = *scd->firstActiveDownlinkBWP_Id;
+    else if (scd->defaultDownlinkBWP_Id)
+      mac->DL_BWP_Id = *scd->defaultDownlinkBWP_Id;
+    else
+      mac->DL_BWP_Id = 1;
+
+    if (scd->uplinkConfig){
+      if (scd->uplinkConfig->firstActiveUplinkBWP_Id)
+        mac->UL_BWP_Id = *scd->uplinkConfig->firstActiveUplinkBWP_Id;
+      else
+        mac->UL_BWP_Id = 1;
+
+    }
+  }
+
+  LOG_D(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
+
+}
+
 /** \brief This function is relavant for the UE procedures for control. It loads the search spaces, the BWPs and the CORESETs into the MAC instance and
     \brief performs assert checks on the relevant RRC configuration.
     @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
@@ -327,15 +370,20 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     */
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
-  uint8_t bwp_id = 1, coreset_id = 1, ss_id;
+  uint8_t coreset_id = 1, ss_id;
+  NR_BWP_Id_t dl_bwp_id;
+
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
   AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
-  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Common;
+  config_bwp_ue(mac, NULL, NULL);
+  dl_bwp_id = mac->DL_BWP_Id;
+
+  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
-  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Dedicated;
+  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated;
   AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
 
   NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
@@ -364,8 +412,8 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
 
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
-  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
-  mac->coreset[bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
+  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1];
+  mac->coreset[dl_bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
 
   // Check dedicated UL BWP and pass to MAC
   mac->ULbwp[0] = uplinkBWP_ToAddModList->list.array[0];
@@ -377,7 +425,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
-    AssertFatal(*ss->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
     mac->SSpace[0][0][ss_id] = ss;
@@ -388,7 +436,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*css->controlResourceSetId == mac->coreset[dl_bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(css->searchSpaceId != 0, "css->searchSpaceId is 0\n");
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");

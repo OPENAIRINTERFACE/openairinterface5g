@@ -69,14 +69,16 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id){
 
   uint16_t monitoringSymbolsWithinSlot = 0;
-  uint8_t bwp_id = 1, coreset_id = 1;
+  uint8_t coreset_id = 1;
   int sps = 0;
   def_dci_pdu_rel15 = calloc(1,2*sizeof(dci_pdu_rel15_t));
   AssertFatal(mac->scc != NULL, "scc is null\n");
+  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_DownlinkCommon_t *bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
   NR_SearchSpace_t *ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
+  long O_carrier_dl = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
 
   // CORESET configuration
   NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id - 1];

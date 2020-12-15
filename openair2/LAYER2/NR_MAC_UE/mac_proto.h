@@ -310,6 +310,7 @@ void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
 
 void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
 
+void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, int *dci_format);
 
 #endif
 /** @}*/

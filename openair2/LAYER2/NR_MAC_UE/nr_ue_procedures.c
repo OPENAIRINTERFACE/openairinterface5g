@@ -140,7 +140,6 @@ static ssb_list_info_t ssb_list;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 #define DEBUG_EXTRACT_DCI 1
 
-extern int bwp_id;
 extern dci_pdu_rel15_t *def_dci_pdu_rel15;
 
 extern void mac_rlc_data_ind     (
@@ -2571,16 +2570,17 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
-  int bwp_id = 1;
   int mu = 0;
   long k2 = 0;
   int pucch_res_set_cnt = 0, valid = 0;
   uint16_t frame_tx = 0, slot_tx = 0;
   bool valid_ptrs_setup = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = NULL;
-    
+  long O_carrier_dl = mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+
   //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
   AssertFatal(mac->ULbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
@@ -2755,6 +2755,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* CARRIER_IND */
     /* SUL_IND_0_1 */
     /* BANDWIDTH_PART_IND */
+    config_bwp_ue(mac, &dci->bwp_indicator.val, &dci_format);
     //pusch_config_pdu_0_1->bandwidth_part_ind = dci->bwp_indicator.val;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
     if (nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val) < 0)
@@ -3542,7 +3543,7 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
     case NR_RNTI_P:
     case NR_RNTI_SI:
       if (mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) {
-        uint8_t bwp_id = 1;
+        NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
         uint8_t coreset_id = 0; // assuming controlResourceSetId is 0 for controlResourceSetZero
         NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id];
         get_coreset_rballoc(coreset->frequencyDomainResources.buf,&N_RB,&start_RB);
@@ -3931,6 +3932,7 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         // BWP Indicator
         pos+=dci_pdu_rel15->bwp_indicator.nbits;
         dci_pdu_rel15->bwp_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->bwp_indicator.nbits)-1);
+        config_bwp_ue(mac, &dci_pdu_rel15->bwp_indicator.val, &dci_format);
         // Frequency domain resource assignment
         pos+=dci_pdu_rel15->frequency_domain_assignment.nbits;
         dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->frequency_domain_assignment.nbits)-1);
@@ -4021,7 +4023,8 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         // BWP Indicator
         pos+=dci_pdu_rel15->bwp_indicator.nbits;
         dci_pdu_rel15->bwp_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->bwp_indicator.nbits)-1);
-        
+        config_bwp_ue(mac, &dci_pdu_rel15->bwp_indicator.val, &dci_format);
+
         // Freq domain assignment  max 16 bit
         fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );
         //pos+=dci_pdu_rel15->frequency_domain_assignment.nbits;

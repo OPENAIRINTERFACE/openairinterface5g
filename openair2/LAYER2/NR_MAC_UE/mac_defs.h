@@ -177,6 +177,12 @@ typedef struct {
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP][FAPI_NR_MAX_SS_PER_CORESET];
 
+  /*BWP*/
+  // dedicated active DL BWP
+  NR_BWP_Id_t DL_BWP_Id;
+  // dedicated active UL BWP
+  NR_BWP_Id_t UL_BWP_Id;
+
   ///     Type0-PDCCH seach space
   fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
   uint32_t type0_pdcch_ss_mux_pattern;
