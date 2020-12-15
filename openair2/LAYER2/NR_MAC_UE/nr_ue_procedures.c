@@ -5160,9 +5160,6 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         module_idP, frameP, subframe, buflen);
   AssertFatal(CC_id == 0,
               "Transmission on secondary CCs is not supported yet\n");
-#if UE_TIMING_TRACE
-  start_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
-#endif
 
   //NR_UE_MAC_INST_t *nr_ue_mac_inst = get_mac_inst(0);
 
