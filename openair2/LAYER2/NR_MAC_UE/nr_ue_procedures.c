@@ -88,6 +88,7 @@
 #define MAX_NB_FRAME_IN_ASSOCIATION_PATTERN_PERIOD (16) // Maximum number of frames in the maximum association pattern period
 #define MAX_NB_SSB (64) // Maximum number of possible SSB indexes
 #define MAX_RO_PER_SSB (8) // Maximum number of consecutive ROs that can be mapped to an SSB according to the ssb_per_RACH config
+#define DURATION_RX_TO_TX (6)
 
 // Maximum number of ROs that can be mapped to an SSB in an association pattern
 // This is to reserve enough elements in the SSBs list for each mapped ROs for a single SSB
@@ -1367,7 +1368,11 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
     }
     k2 = *pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2;
   }
-  
+
+  AssertFatal(k2 >= DURATION_RX_TO_TX,
+              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d)\n",
+              k2,DURATION_RX_TO_TX);
+
   LOG_D(MAC, "get_k2(): k2 is %ld\n", k2);
   return k2;
 }
@@ -1664,7 +1669,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
 
       if (ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
-
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
         fapi_nr_tx_request_t tx_req;
@@ -1758,13 +1762,17 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
       break;
   }
 
+  AssertFatal((k2+delta) >= DURATION_RX_TO_TX,
+              "Slot offset (%d) for Msg3 cannot be less than DURATION_RX_TO_TX (%d)\n",
+              k2+delta,DURATION_RX_TO_TX);
+
   mac->msg3_slot = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
   if (current_slot + k2 + delta > nr_slots_per_frame[mu])
     mac->msg3_frame = (current_frame + 1) % 1024;
   else
     mac->msg3_frame = current_frame;
 
-  LOG_D(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d mac->msg3_frame %d mac->msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, mac->msg3_frame, mac->msg3_slot);
+  LOG_I(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d mac->msg3_frame %d mac->msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, mac->msg3_frame, mac->msg3_slot);
 }
 
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
