@@ -552,7 +552,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int nrOfLayers = 1;
     const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
     const uint8_t Qm = nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
-    uint32_t TBS =
+    const uint32_t TBS =
         nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        sched_ctrl->rbSize,
@@ -820,9 +820,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                           255, // no drx
                                           NULL); // contention res id
       buf += written;
-      TBS -= written;
+      int size = TBS - written;
 
-      DevAssert(TBS > 3);
+      DevAssert(size > 3);
 
       /* next, get RLC data */
       // we do not know how much data we will get from RLC, i.e., whether it
@@ -830,14 +830,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
       // fetch data, then fill real length
       NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
       buf += 3;
-      TBS -= 3;
+      size -= 3;
 
       const int lcid = DL_SCH_LCID_DTCH;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         /* this is the data from the RLC we would like to request (e.g., only
          * some bytes for first LC and some more from a second one */
-        const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, TBS);
+        const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
         const tbs_size_t len = mac_rlc_data_req(module_id,
                                                  rnti,
                                                  module_id,
@@ -851,54 +851,54 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                  0);
 
         LOG_D(MAC,
-              "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, rem TBS %d)\n",
+              "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
               frame,
               slot,
               rnti,
               len,
               lcid,
               ndata,
-              TBS);
+              size);
 
         header->R = 0;
         header->F = 1;
         header->LCID = lcid;
         header->L1 = (len >> 8) & 0xff;
         header->L2 = len & 0xff;
-        TBS -= len;
+        size -= len;
         buf += len;
         dlsch_total_bytes += len;
       }
       else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
-        LOG_D(MAC, "Configuring DL_TX in %d.%d: TBS %d B of random data\n", frame, slot, TBS);
+        LOG_D(MAC, "Configuring DL_TX in %d.%d: TBS %d with %d B of random data\n", frame, slot, TBS, size);
         // fill dlsch_buffer with random data
-        for (int i = 0; i < TBS; i++)
+        for (int i = 0; i < size; i++)
           buf[i] = lrand48() & 0xff;
         header->R = 0;
         header->F = 1;
         header->LCID = DL_SCH_LCID_PADDING;
-        header->L1 = (TBS >> 8) & 0xff;
-        header->L2 = TBS & 0xff;
-        TBS -= TBS;
-        buf += TBS;
-        dlsch_total_bytes += TBS;
+        header->L1 = (size >> 8) & 0xff;
+        header->L2 = size & 0xff;
+        size -= size;
+        buf += size;
+        dlsch_total_bytes += size;
       }
 
       // Add padding header and zero rest out if there is space left
-      if (TBS > 0) {
+      if (size > 0) {
         NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) buf;
         padding->R = 0;
         padding->LCID = DL_SCH_LCID_PADDING;
-        TBS -= 1;
+        size -= 1;
         buf += 1;
-        while (TBS > 0) {
+        while (size > 0) {
           *buf = 0;
           buf += 1;
-          TBS -= 1;
+          size -= 1;
         }
       }
 
-      UE_info->mac_stats[UE_id].dlsch_total_bytes += dlsch_total_bytes;
+      UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
       UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
 
       retInfo->rbSize = sched_ctrl->rbSize;
