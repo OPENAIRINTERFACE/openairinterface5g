@@ -131,7 +131,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_subframe,
                       frame_t current_frame,
-                      NR_RA_t *ra);
+                      NR_RA_t *ra,
+                      int16_t *tdd_beam_association);
 
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB

@@ -595,7 +595,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
-                      NR_RA_t *ra) {
+                      NR_RA_t *ra,
+                      int16_t *tdd_beam_association) {
 
   // msg3 is schedulend in mixed slot in the following TDD period
   // for now we consider a TBS of 18 bytes
@@ -623,6 +624,18 @@ void nr_get_Msg3alloc(module_id_t module_id,
     ra->Msg3_frame = current_frame;
   else
     ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
+
+  // beam association for FR2
+  if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
+    uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+    if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
+      tdd_period_slot++;
+    int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
+    if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
+      AssertFatal(1==0,"Cannot schedule MSG3\n");
+    else
+      tdd_beam_association[num_tdd_period] = ra->beam_id;
+  }
 
   LOG_I(MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
   uint16_t *vrb_map_UL =
@@ -968,7 +981,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dl_req->nPDUs+=2;
 
     // Program UL processing for Msg3
-    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
+    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra, nr_mac->tdd_beam_association);
     LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
     nr_add_msg3(module_idP, CC_id, frameP, slotP);
     ra->state = WAIT_Msg3;
