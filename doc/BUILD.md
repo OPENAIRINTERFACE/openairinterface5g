@@ -51,6 +51,19 @@ Calling the `build_oai` script with the -h option gives the list of all availabl
 
 # Building PHY Simulators
 
+The PHY layer simulators (LTE and NR) can be built as follows:  
+
+```
+cd <your oai installation directory>/openairinterface5g/
+source oaienv
+cd cmake_targets/
+./build_oai -I --phy_simulators
+```
+
+After completing the build, the binaries are available in the cmake_targets/phy_simulators/build directory.  
+A copy is also available in the target/bin directory, with all binaries suffixed by the 3GPP release number, today **.Rel15**.  
+
+
 Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 
 # Building UEs, eNodeB and gNodeB Executables
