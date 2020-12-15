@@ -347,13 +347,13 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
     }
     break;
   case 8:
-    e1=e+(E/6);
-    e2=e1+(E/6);
-    e3=e2+(E/6);
-    e4=e3+(E/6);
-    e5=e4+(E/6);
-    e6=e5+(E/6);
-    e7=e6+(E/6);
+    e1=e+(E/8);
+    e2=e1+(E/8);
+    e3=e2+(E/8);
+    e4=e3+(E/8);
+    e5=e4+(E/8);
+    e6=e5+(E/8);
+    e7=e6+(E/8);
     for (int j = 0,j2=0; j< E/8; j++,j2+=8){
       e[j]  = f[j2];
       e1[j] = f[j2+1];
@@ -407,8 +407,16 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc: E %d, F %d, Foffset %d, k0 %d, Ncb %d, rvidx %d\n", E, F, Foffset,ind, Ncb, rvidx);
 #endif
-  AssertFatal(Foffset <= E,"Foffset %d > E %d\n",Foffset,E); 
-  AssertFatal(Foffset <= Ncb,"Foffset %d > Ncb %d\n",Foffset,Ncb); 
+  AssertFatal(Foffset <= E,
+              "Foffset %d > E %d "
+              "(Ilbrm %d, Tbslbrm %d, Z %d, BG %d, C %d)\n",
+              Foffset, E,
+              Ilbrm, Tbslbrm, Z, BG, C);
+  AssertFatal(Foffset <= Ncb,
+              "Foffset %d > Ncb %d "
+              "(Ilbrm %d, Tbslbrm %d, Z %d, BG %d, C %d)\n",
+              Foffset, Ncb,
+              Ilbrm, Tbslbrm, Z, BG, C);
 
   if (ind >= Foffset && ind < (F+Foffset)) ind = F+Foffset;
 

@@ -194,7 +194,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->phy_proc_tx);
 #endif
 
-  if (ue->UE_mode[gNB_id] <= PUSCH || get_softmodem_params()->phy_test == 1){
+  if (ue->UE_mode[gNB_id] <= PUSCH){
 
    if (ue->ulsch[proc->thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
      nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
@@ -311,7 +311,6 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 {
   //  int i;
   //int pbch_tx_ant=0;
-  //uint8_t pbch_phase;
   int ret = 0;
   //static uint8_t first_run = 1;
   //uint8_t pbch_trials = 0;
@@ -323,7 +322,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,gNB_id);
+  LOG_D(PHY,"[UE  %d] Frame %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,ue->frame_parms.Nid_cell,gNB_id);
 
   ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[gNB_id],
@@ -1710,7 +1709,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   int slot_pbch;
-  //int slot_ssb;
+  int slot_ssb;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
@@ -1734,38 +1733,38 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
-  
+
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_slot_rx, fp);
-  //slot_ssb = is_ssb_in_slot(cfg, frame_rx, nr_slot_rx, fp);
+  slot_ssb  = is_ssb_in_slot(cfg, frame_rx, nr_slot_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
-  if ((ue->decode_MIB == 1) && slot_pbch)
-    {
-      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      for (int i=1; i<4; i++) {
+  if (slot_ssb) {
+    LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+    for (int i=1; i<4; i++) {
 
-        nr_slot_fep(ue,
-                    proc,
-                    (ue->symbol_offset+i)%(fp->symbols_per_slot),
-                    nr_slot_rx,
-                    0,
-                    0);
+      nr_slot_fep(ue,
+                  proc,
+                  (ue->symbol_offset+i)%(fp->symbols_per_slot),
+                  nr_slot_rx,
+                  0,
+                  0);
 
 #if UE_TIMING_TRACE
-        start_meas(&ue->dlsch_channel_estimation_stats);
+      start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-        nr_pbch_channel_estimation(ue,proc,0,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
+      nr_pbch_channel_estimation(ue,proc,0,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
 #if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_channel_estimation_stats);
+      stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+    }
 
-      }
-      
-      //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-        nr_ue_rsrp_measurements(ue, proc, nr_slot_rx, 0);
-      //}
-	
+    //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){
+    nr_ue_rsrp_measurements(ue,proc,nr_slot_rx,0);
+    //}
 
+    if ((ue->decode_MIB == 1) && slot_pbch) {
+
+      LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
       if (ue->no_timing_correction==0) {
@@ -1779,6 +1778,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            16384);
       }
     }
+  }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
     printf("============================================\n");
@@ -2165,7 +2165,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  if (!prach_resources->init_msg1 && (frame_tx == (ue->prach_resources[gNB_id]->sync_frame + 150) % MAX_FRAME_NUMBER)){
+  if (!prach_resources->init_msg1 && ((MAX_FRAME_NUMBER+frame_tx-ue->prach_resources[gNB_id]->sync_frame)% MAX_FRAME_NUMBER)>150){
     ue->prach_cnt = 0;
     prach_resources->init_msg1 = 1;
   }

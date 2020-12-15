@@ -36,15 +36,17 @@
 #include <netinet/ether.h>
 #include <stdint.h>
 
+#ifndef LITE_COMPILATION
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
+#endif
 
 // ETH transport preference modes
-#define ETH_UDP_MODE        0
-#define ETH_RAW_MODE        1
+#define ETH_UDP_MODE          0
+#define ETH_RAW_MODE          1
 #define ETH_UDP_IF4p5_MODE    2
 #define ETH_RAW_IF4p5_MODE    3
-#define ETH_RAW_IF5_MOBIPASS    4    
+#define ETH_UDP_IF5_ECPRI_MODE  4    
 
 // COMMOM HEADER LENGTHS
 

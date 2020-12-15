@@ -213,7 +213,7 @@ rx_sdu(const module_id_t enb_mod_idP,
             ul_cqi,
             UE_id,
             current_rnti,
-	          sdu_lenP);
+	    sdu_lenP);
 
       if (ul_cqi > 200) { // too high energy pattern
         UE_scheduling_control->pusch_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
@@ -938,20 +938,20 @@ rx_sdu(const module_id_t enb_mod_idP,
               UE_scheduling_control->uplane_inactivity_timer = 0;
               /* Reset RRC inactivity timer after uplane activity */
                 ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
-              
+
           } else {  // end if (UE_id != -1)
             LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
+                    enb_mod_idP,
+                    CC_idP,
+                    frameP,
+                    rx_lcids[i],
+                    UE_id);
+            }
+        }else {
+          LOG_E(MAC, "[eNB %d/%d] frame %d received a invalid LCID of size %d ( sdu_len %d, lcid %d), dropping packet\n",
                   enb_mod_idP,
                   CC_idP,
                   frameP,
-                  rx_lcids[i],
-                  UE_id);
-          }
-        }else {
-          LOG_E(MAC, "[eNB %d/%d] frame %d received a invalid LCID of size %d ( sdu_len %d, lcid %d), dropping packet\n",
-                enb_mod_idP,
-                CC_idP,
-                frameP,
                 rx_lengths[i],
                 sdu_lenP,rx_lcids[i]);
         }
@@ -959,7 +959,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         break;
     }
     if((sdu_lenP - (payload_ptr - sduP)) >= rx_lengths[i]){
-     payload_ptr += rx_lengths[i];
+    payload_ptr += rx_lengths[i];
     }else{
       LOG_E(MAC,"[eNB %d/%d] frame %d subframe %d rnti %x sdu_len %d  remain_len %d rx_lengths %d\n",
                  enb_mod_idP,CC_idP,frameP,subframeP,rntiP,sdu_lenP,(uint16_t)(sdu_lenP - (payload_ptr - sduP)), rx_lengths[i]);

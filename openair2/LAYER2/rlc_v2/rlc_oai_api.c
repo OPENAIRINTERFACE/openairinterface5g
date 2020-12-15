@@ -642,8 +642,7 @@ static void add_srb(int rnti, int module_id, struct LTE_SRB_ToAddMod *s)
                                poll_pdu, poll_byte, max_retx_threshold);
     rlc_ue_add_srb_rlc_entity(ue, srb_id, rlc_am);
 
-    LOG_D(RLC, "%s:%d:%s: added srb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added SRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   }
   rlc_manager_unlock(rlc_ue_manager);
 }
@@ -720,8 +719,7 @@ static void add_drb_am(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
                                poll_pdu, poll_byte, max_retx_threshold);
     rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_am);
 
-    LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added DRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   rlc_manager_unlock(rlc_ue_manager);
 }
@@ -791,8 +789,7 @@ static void add_drb_um(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
                                sn_field_length);
     rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
 
-    LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added DRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   rlc_manager_unlock(rlc_ue_manager);
 }
@@ -909,8 +906,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                                     );
           rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
 
-          LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-                __FILE__, __LINE__, __FUNCTION__, (int)drb_id, mbms_rnti);
+          LOG_D(RLC, "%s:%d:%s: added DRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, (int)drb_id, mbms_rnti);
         }
         rlc_manager_unlock(rlc_ue_manager);
 

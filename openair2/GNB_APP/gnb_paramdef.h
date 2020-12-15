@@ -83,6 +83,7 @@ typedef enum {
 /* global parameters, not under a specific section   */
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define GNB_CONFIG_STRING_ACTIVE_GNBS                      "Active_gNBs"
+#define GNB_CONFIG_PUSCH_THREADS                           "Num_Threads_PUSCH"
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            global configuration parameters                                                                                   */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                                        type           numelt     */
@@ -91,6 +92,11 @@ typedef enum {
 {GNB_CONFIG_STRING_ASN1_VERBOSITY,             NULL,     0,        uptr:NULL,   defstrval:GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
 {GNB_CONFIG_STRING_ACTIVE_GNBS,                NULL,     0,        uptr:NULL,   defstrval:NULL, 				   TYPE_STRINGLIST,  0}    \
 }
+
+#define NUM_THREADS_DESC { \
+{GNB_CONFIG_PUSCH_THREADS,                     NULL,     0,        uptr:&num_threads_pusch,   defuintval:1, 				   TYPE_UINT,  0}    \
+}
+
 #define GNB_ASN1_VERBOSITY_IDX                     0
 #define GNB_ACTIVE_GNBS_IDX                        1
 
