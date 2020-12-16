@@ -301,7 +301,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
  
   int nb_periods_per_frame;
 
-  const int UE_id = 0;
   const int bwp_id = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
@@ -368,8 +367,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
-  for (int i=0; i<MAX_NUM_CORESET; i++)
-    RC.nrmac[module_idP]->UE_info.num_pdcch_cand[UE_id][i] = 0;
+  NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])
+    for (int i=0; i<MAX_NUM_CORESET; i++)
+      UE_info->num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 
