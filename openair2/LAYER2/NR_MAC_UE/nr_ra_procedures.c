@@ -195,7 +195,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
       messageSizeGroupA = 72;
       break;
       default:
-      AssertFatal(1 == 0,"Unknown ra_Msg3SizeGroupA %lu\n", nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA);
+      AssertFatal(1 == 0, "Unknown ra_Msg3SizeGroupA %lu\n", nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA);
       /* todo cases 10 -15*/
       }
 
@@ -375,7 +375,6 @@ void nr_get_prach_resources(module_id_t mod_id,
 
 // TbD: RA_attempt_number not used
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
-  AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   mac->ra_state = WAIT_RAR;
   // Start contention resolution timer
@@ -383,7 +382,6 @@ void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 }
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
-  AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
   LOG_D(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Starting contention resolution timer\n", mod_id, frameP);
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   // start contention resolution timer
@@ -428,7 +426,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   unsigned short post_padding;
   //fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
+  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "In %s: FATAL! nr_rach_ConfigCommon is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = mac->rach_ConfigDedicated;
@@ -437,11 +437,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   int TBS_bytes = 848, header_length_total=0, num_sdus, offset, preambleTransMax, mac_ce_len;
 
-  AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
-
   if (prach_resources->init_msg1) {
-
-    AssertFatal(setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
     if (mac->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
