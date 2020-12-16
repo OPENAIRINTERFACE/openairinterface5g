@@ -460,32 +460,13 @@ void UE_processing(void *arg) {
   processingData_t *rxtxD = (processingData_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
+  int slot_tx = proc->nr_slot_tx;
+  int frame_tx = proc->frame_tx;
 
   processSlotRX(UE, proc);
   processSlotTX(UE, proc);
+  ue_ta_procedures(UE, slot_tx, frame_tx);
 
-  /* UL time alignment
-  // If the current tx frame and slot match the TA configuration in ul_time_alignment
-  // then timing advance is processed and set to be applied in the next UL transmission */
-  if (UE->mac_enabled == 1) {
-    uint8_t gNB_id = 0;
-    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
-    int slot_tx = proc->nr_slot_tx;
-    int frame_tx = proc->frame_tx;
-
-    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
-      uint8_t numerology = UE->frame_parms.numerology_index;
-      uint16_t bwp_ul_NB_RB = UE->frame_parms.N_RB_UL;
-
-      LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
-
-      //if (nfapi_mode!=3){
-      nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
-      ul_time_alignment->ta_frame = -1;
-      ul_time_alignment->ta_slot = -1;
-      //}
-    }
-  }
 }
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
@@ -597,7 +578,7 @@ void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
-  openair0_timestamp timestamp;
+  openair0_timestamp timestamp, writeTimestamp;
   void *rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
   int start_rx_stream = 0;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
@@ -728,11 +709,6 @@ void *UE_thread(void *arg) {
                      UE->rx_offset_diff;
     }
 
-    if (UE->timing_advance != timing_advance) {
-      writeBlockSize -= UE->timing_advance - timing_advance;
-      timing_advance = UE->timing_advance;
-    }
-
     AssertFatal(readBlockSize ==
                 UE->rfdevice.trx_read_func(&UE->rfdevice,
                                            &timestamp,
@@ -780,12 +756,19 @@ void *UE_thread(void *arg) {
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
+    // use previous timing_advance value to compute writeTimestamp
+    writeTimestamp = timestamp + UE->frame_parms.get_samples_slot_timestamp(slot_nr, &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) -
+                     firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - timing_advance;
+
+    // but use current UE->timing_advance value to compute writeBlockSize
+    if (UE->timing_advance != timing_advance) {
+      writeBlockSize -= UE->timing_advance - timing_advance;
+      timing_advance = UE->timing_advance;
+    }
+
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
-                     timestamp+
-                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) - firstSymSamp -
-                     openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - UE->timing_advance,
+                     writeTimestamp,
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
