@@ -53,90 +53,24 @@ extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 
 //extern uint8_t  nfapi_mode;
 static uint8_t first_Msg3 = 0;
+static int starting_preamble_nb = 0;
+static long cb_preambles_per_ssb; // Nb of preambles per SSB
+static int deltaPreamble_Msg3 = 0;
+static uint8_t RA_usedGroupA;
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 
-// This routine implements Section 5.1.2 (UE Random Access Resource Selection)
-// and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
-void nr_get_prach_resources(module_id_t mod_id,
-                            int CC_id,
-                            uint8_t gNB_id,
-                            uint8_t first_Msg3,
-                            NR_PRACH_RESOURCES_t *prach_resources,
-                            fapi_nr_ul_config_prach_pdu *prach_pdu,
-                            NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
+void ssb_rach_config(NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon, fapi_nr_ul_config_prach_pdu *prach_pdu){
 
-  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon;
-  NR_RACH_ConfigGeneric_t *rach_ConfigGeneric;
-
-  // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
-
-  int messagePowerOffsetGroupB = 0, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA = 0, numberOfRA_Preambles, deltaPreamble_Msg3 = 0;
-  uint8_t noGroupB = 0, s_id, t_id, f_id, ul_carrier_id, Msg3_size;
-
-  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
-  nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
-
-  LOG_D(PHY, "Getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, first_Msg3);
-
-  // NR_RSRP_Range_t rsrp_ThresholdSSB; // todo
-
-  ///////////////////////////////////////////////////////////
-  //////////* UE Random Access Resource Selection *//////////
-  ///////////////////////////////////////////////////////////
-
-  // todo: 
-  // - switch initialisation cases
-  // -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
-  // --- SSB selection, set prach_resources->ra_PreambleIndex
-  // -- RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000 
-  // --- set PREAMBLE_INDEX to ra_preamble_index
-  // --- select the SSB signalled by PDCCH
-  // -- RA initiated for SI request:
-  // --- SSB selection, set prach_resources->ra_PreambleIndex
-
-  if (rach_ConfigDedicated) {
-    //////////* Contention free RA *//////////
-    // - the PRACH preamble for the UE to transmit is set through RRC configuration
-    // - this is the default mode in current implementation!
-    // Operation for contention-free RA resources when:
-    // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
-    // - available CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
-    // - network controlled Mobility
-
-    if (rach_ConfigDedicated->cfra){
-      uint8_t cfra_ssb_resource_idx = 0;
-      prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
-      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure\n", __FUNCTION__, prach_resources->ra_PreambleIndex);
-    }
-
-    if (rach_ConfigDedicated->ext1){
-      if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
-        LOG_D(MAC, "In %s: 2-step RA type...\n", __FUNCTION__);
-        prach_resources->RA_TYPE = RA_2STEP;
-      }
-    }
-
-  } else {
-    //////////* Contention-based RA preamble selection *//////////
-    // todo:
-    // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
-    // - todo determine next available PRACH occasion
-
-    // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
-
-    // Determine the SSB to RACH mapping ratio
-    // =======================================
+  // Determine the SSB to RACH mapping ratio
+  // =======================================
+  if (prach_resources->RA_TYPE == RA_4STEP){
     NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
     boolean_t multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
     uint8_t ssb_rach_ratio; // Nb of SSBs per RACH or RACHs per SSB
-    long cb_preambles_per_ssb; // Nb of preambles per SSB
     int total_preambles_per_ssb;
-    int starting_preamble_nb = 0;
     uint8_t ssb_nb_in_ro;
+    int numberOfRA_Preambles = 64;
 
     switch (ssb_perRACH_config){
       case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
@@ -184,10 +118,7 @@ void nr_get_prach_resources(module_id_t mod_id,
         break;
     }
 
-    Msg3_size = mac->RA_Msg3_size;
-
-    numberOfRA_Preambles = 64;
-    if(nr_rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
+    if (nr_rach_ConfigCommon->totalNumberOfRA_Preambles)
       numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
 
     // Compute the proper Preamble selection params according to the selected SSB and the ssb_perRACH_OccasionAndCB_PreamblesPerSSB configuration
@@ -202,13 +133,34 @@ void nr_get_prach_resources(module_id_t mod_id,
       total_preambles_per_ssb = numberOfRA_Preambles;
       starting_preamble_nb = 0;
     }
+  } else {
+    LOG_E(MAC, "In %s:%d: missing implementation for 2-step RA...\n", __FUNCTION__, __LINE__);
+  }
+}
 
+// This routine implements RA premable configuration according to
+// section 5.1 (Random Access procedure) of 3GPP TS 38.321 version 16.2.1 Release 16
+void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t *mac, int16_t dl_pathloss){
+
+  int messageSizeGroupA = 0;
+  int sizeOfRA_PreamblesGroupA = 0;
+  int messagePowerOffsetGroupB = 0;
+  int PLThreshold;
+  uint8_t noGroupB = 0;
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
+  uint8_t Msg3_size = mac->RA_Msg3_size;
+
+  if (prach_resources->RA_TYPE == RA_4STEP){
     if (!nr_rach_ConfigCommon->groupBconfigured) {
       noGroupB = 1;
+      LOG_D(MAC, "In %s:%d: preambles group B is not configured...\n", __FUNCTION__, __LINE__);
     } else {
       // RA preambles group B is configured 
       // - Random Access Preambles group B is configured for 4-step RA type
       // - Defining the number of RA preambles in RA Preamble Group A for each SSB
+      LOG_D(MAC, "In %s:%d: preambles group B is configured...\n", __FUNCTION__, __LINE__);
       sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
       switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
       /* - Threshold to determine the groups of RA preambles */
@@ -278,42 +230,109 @@ void nr_get_prach_resources(module_id_t mod_id,
       AssertFatal(1 == 0,"Unknown messagePowerOffsetGroupB %lu\n", nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB);
       }
 
-      // todo Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
-      mac->deltaPreamble_Msg3 = 0;
-      deltaPreamble_Msg3 = mac->deltaPreamble_Msg3;
+      PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
+
+    }
+  } else {
+    // todo:
+    // - groupB-ConfiguredTwoStepRA
+    // - msgA-DeltaPreamble
+    LOG_E(MAC, "In %s:%d: missing implementation for 2-step RA...\n", __FUNCTION__, __LINE__);
+  }
+  /* Msg3 has not been transmitted yet */
+  if (first_Msg3) {
+    if (noGroupB) {
+      // use Group A preamble
+      prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % cb_preambles_per_ssb);
+      RA_usedGroupA = 1;
+    } else if ((Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
+      // Group B is configured and RA preamble Group A is used
+      // - todo add condition on CCCH_sdu_size for initiation by CCCH
+      prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
+      RA_usedGroupA = 1;
+    } else {
+      // Group B preamble is configured and used
+      // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
+      // the remaining belong to RA Preambles Group B
+      prach_resources->ra_PreambleIndex = starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+      RA_usedGroupA = 0;
+    }
+  } else { // Msg3 is being retransmitted
+    if (RA_usedGroupA && noGroupB) {
+      prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % cb_preambles_per_ssb);
+    } else if (RA_usedGroupA && !noGroupB){
+      prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
+    } else {
+      prach_resources->ra_PreambleIndex = starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+    }
+  }
+}
+
+// This routine implements Section 5.1.2 (UE Random Access Resource Selection)
+// and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
+void nr_get_prach_resources(module_id_t mod_id,
+                            int CC_id,
+                            uint8_t gNB_id,
+                            NR_PRACH_RESOURCES_t *prach_resources,
+                            fapi_nr_ul_config_prach_pdu *prach_pdu,
+                            NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
+
+  uint8_t s_id, t_id, f_id, ul_carrier_id;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+
+  LOG_D(PHY, "In %s: getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, first_Msg3);
+
+  ///////////////////////////////////////////////////////////
+  //////////* UE Random Access Resource Selection *//////////
+  ///////////////////////////////////////////////////////////
+
+  // todo:
+  // - switch initialisation cases
+  // -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
+  // --- SSB selection, set prach_resources->ra_PreambleIndex
+  // -- RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000
+  // --- set PREAMBLE_INDEX to ra_preamble_index
+  // --- select the SSB signalled by PDCCH
+  // -- RA initiated for SI request:
+  // --- SSB selection, set prach_resources->ra_PreambleIndex
+
+  if (rach_ConfigDedicated) {
+    //////////* Contention free RA *//////////
+    // - the PRACH preamble for the UE to transmit is set through RRC configuration
+    // - this is the default mode in current implementation!
+    // Operation for contention-free RA resources when:
+    // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
+    // - available CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
+    // - network controlled Mobility
+
+    if (rach_ConfigDedicated->cfra){
+      uint8_t cfra_ssb_resource_idx = 0;
+      prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure\n", __FUNCTION__, prach_resources->ra_PreambleIndex);
     }
 
-    PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
-
-    /* Msg3 has not been transmitted yet */
-    if (first_Msg3 == 1) {
-      if (noGroupB == 1) {
-        // use Group A preamble
-        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % cb_preambles_per_ssb);
-        mac->RA_usedGroupA = 1;
-      } else if ((Msg3_size < messageSizeGroupA) && (get_nr_PL(mod_id, CC_id, gNB_id) > PLThreshold)) {
-        // Group B is configured and RA preamble Group A is used
-        // - todo add condition on CCCH_sdu_size for initiation by CCCH
-        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
-        mac->RA_usedGroupA = 1;
-      } else {
-        // Group B preamble is configured and used
-        // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
-        // the remaining belong to RA Preambles Group B
-        prach_resources->ra_PreambleIndex = starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
-        mac->RA_usedGroupA = 0;
-      }
-    } else { // Msg3 is being retransmitted
-      if (mac->RA_usedGroupA == 1 && noGroupB == 1) {
-        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % cb_preambles_per_ssb);
-      } else if (mac->RA_usedGroupA == 1 && noGroupB == 0){
-        prach_resources->ra_PreambleIndex = starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
-      } else {
-        prach_resources->ra_PreambleIndex = starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+    if (rach_ConfigDedicated->ext1){
+      if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
+        LOG_I(MAC, "In %s: setting RA type to 2-step...\n", __FUNCTION__);
+        prach_resources->RA_TYPE = RA_2STEP;
       }
     }
 
+  } else {
+    //////////* Contention-based RA preamble selection *//////////
+    // todo:
+    // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
+    // - determine next available PRACH occasion
+    // - Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
+
+    // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
+    int16_t dl_pathloss = get_nr_PL(mod_id, CC_id, gNB_id);
+    ssb_rach_config(prach_resources, nr_rach_ConfigCommon, prach_pdu);
+    mac->deltaPreamble_Msg3 = deltaPreamble_Msg3;
+    ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
+
   }
 
   // todo determine next available PRACH occasion
@@ -427,7 +446,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     if (mac->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
-      LOG_I(MAC, "RA not active. Starting RA preamble initialization.\n");
+      LOG_I(MAC, "RA not active. Starting RA preamble initialization for 4-step RA\n");
 
       first_Msg3 = 0;
       mac->RA_RAPID_found = 0;
@@ -506,7 +525,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, first_Msg3, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -632,7 +651,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, first_Msg3, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       } else {
 
@@ -646,7 +665,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, first_Msg3, prach_resources, prach_pdu, rach_ConfigDedicated);
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
       }
     }

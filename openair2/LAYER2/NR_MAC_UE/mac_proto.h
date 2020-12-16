@@ -287,7 +287,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
-                            uint8_t first_Msg3,
                             NR_PRACH_RESOURCES_t *prach_resources,
                             fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);

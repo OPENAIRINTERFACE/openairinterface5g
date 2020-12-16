@@ -83,7 +83,6 @@ void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
                             uint8_t t_id,
-                            uint8_t first_Msg3,
                             NR_PRACH_RESOURCES_t *prach_resources,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 

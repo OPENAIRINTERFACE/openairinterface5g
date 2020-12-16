@@ -216,8 +216,6 @@ typedef struct {
   uint8_t RA_Msg3_size;
   /// Random-access prachMaskIndex
   uint8_t RA_prachMaskIndex;
-  /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
-  uint8_t RA_usedGroupA;
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
   /// Preamble Tx Counter
