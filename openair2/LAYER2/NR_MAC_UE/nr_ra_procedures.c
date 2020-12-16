@@ -55,7 +55,6 @@ extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 static uint8_t first_Msg3 = 0;
 static int starting_preamble_nb = 0;
 static long cb_preambles_per_ssb; // Nb of preambles per SSB
-static int deltaPreamble_Msg3 = 0;
 static uint8_t RA_usedGroupA;
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
@@ -146,6 +145,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   int sizeOfRA_PreamblesGroupA = 0;
   int messagePowerOffsetGroupB = 0;
   int PLThreshold;
+  long deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
@@ -153,6 +153,12 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   uint8_t Msg3_size = mac->RA_Msg3_size;
 
   if (prach_resources->RA_TYPE == RA_4STEP){
+
+    if (scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble){
+      deltaPreamble_Msg3 = *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
+      LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
+    }
+
     if (!nr_rach_ConfigCommon->groupBconfigured) {
       noGroupB = 1;
       LOG_D(MAC, "In %s:%d: preambles group B is not configured...\n", __FUNCTION__, __LINE__);
@@ -324,12 +330,10 @@ void nr_get_prach_resources(module_id_t mod_id,
     // todo:
     // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
     // - determine next available PRACH occasion
-    // - Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
 
     // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
     int16_t dl_pathloss = get_nr_PL(mod_id, CC_id, gNB_id);
     ssb_rach_config(prach_resources, nr_rach_ConfigCommon, prach_pdu);
-    mac->deltaPreamble_Msg3 = deltaPreamble_Msg3;
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
 

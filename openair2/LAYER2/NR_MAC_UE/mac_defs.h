@@ -244,8 +244,6 @@ typedef struct {
   uint8_t RA_contention_resolution_timer_active;
   /// Random-access Contention Resolution Timer count value
   uint8_t RA_contention_resolution_cnt;
-  /// Msg3 Delta Preamble
-  int8_t deltaPreamble_Msg3;
   /// Received TPC command (in dB) from RAR
   int8_t Msg3_TPC;
   /// Flag to monitor if matching RAPID was received in RAR

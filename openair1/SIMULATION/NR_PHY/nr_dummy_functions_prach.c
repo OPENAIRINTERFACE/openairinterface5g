@@ -205,9 +205,6 @@ void nr_get_prach_resources(module_id_t mod_id,
     AssertFatal(1 == 0,"Unknown messagePowerOffsetGroupB %lu\n", nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB);
     }
 
-    // todo Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
-    mac->deltaPreamble_Msg3 = 0;
-    deltaPreamble_Msg3 = mac->deltaPreamble_Msg3;
   }
 
   PLThreshold = prach_resources->RA_PCMAX - nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
