@@ -85,6 +85,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -942,7 +943,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==2) // VNF
+  if (nfapi_mode==NFAPI_MODE_VNF) // VNF
     wait_nfapi_init("main?");
 
   printf("START MAIN THREADS\n");
@@ -971,7 +972,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   config_sync_var=0;
 
-  if (nfapi_mode==1) { // PNF
+  if (nfapi_mode==NFAPI_MODE_PNF) { // PNF
     wait_nfapi_init("main?");
   }
 
@@ -991,7 +992,7 @@ if(!IS_SOFTMODEM_NOS1)
     load_softscope("nr",&p);
   }
 
-  if (nfapi_mode != 1 && nfapi_mode != 2) {
+  if (nfapi_mode != NFAPI_MODE_PNF && nfapi_mode != NFAPI_MODE_VNF) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
     init_eNB_afterRU();
   } else {

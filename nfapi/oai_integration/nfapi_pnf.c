@@ -818,7 +818,7 @@ int nr_param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nf
   nfapi_resp.num_tlv++;
   }
 
-  nfapi_resp.nfapi_config.p7_pnf_port.value = pnf->phys[0].local_port; // 32123; // DJP - hard code alert!!!! FIXME TODO
+  nfapi_resp.nfapi_config.p7_pnf_port.value = 32123; //pnf->phys[0].local_port; DJP - hard code alert!!!! FIXME TODO
   nfapi_resp.num_tlv++;
   pnf_p7_sockaddr.sin_addr.s_addr = inet_addr(pnf->phys[0].local_addr);
   
@@ -1791,7 +1791,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   p7_config->phy_id = phy->phy_id;
   p7_config->remote_p7_port = phy_info->remote_port;
   p7_config->remote_p7_addr = phy_info->remote_addr;
-  p7_config->local_p7_port = 50010; // DJP - good grief cannot seem to get the right answer phy_info->local_port;
+  p7_config->local_p7_port = 32123;//phy_info->local_port;//50010; // DJP - good grief cannot seem to get the right answer phy_info->local_port;
   //DJP p7_config->local_p7_addr = (char*)phy_info->local_addr.c_str();
   p7_config->local_p7_addr = phy_info->local_addr;
   printf("[PNF] P7 remote:%s:%d local:%s:%d\n", p7_config->remote_p7_addr, p7_config->remote_p7_port, p7_config->local_p7_addr, p7_config->local_p7_port);
@@ -2314,7 +2314,7 @@ void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_add
   config->vnf_ip_addr = vnf_ip_addr;
   config->vnf_p5_port = vnf_p5_port;
   pnf.phys[0].udp.enabled = 1;
-  pnf.phys[0].udp.rx_port = pnf_p7_port;
+  pnf.phys[0].udp.rx_port = 32123;//pnf_p7_port;
   pnf.phys[0].udp.tx_port = vnf_p7_port;
   strcpy(pnf.phys[0].udp.tx_addr, vnf_ip_addr);
   strcpy(pnf.phys[0].local_addr, pnf_ip_addr);
@@ -2365,7 +2365,7 @@ void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, 
   config->vnf_ip_addr = vnf_ip_addr;
   config->vnf_p5_port = vnf_p5_port;
   pnf.phys[0].udp.enabled = 1;
-  pnf.phys[0].udp.rx_port = pnf_p7_port;
+  pnf.phys[0].udp.rx_port = 32123;//pnf_p7_port;
   pnf.phys[0].udp.tx_port = vnf_p7_port;
   strcpy(pnf.phys[0].udp.tx_addr, vnf_ip_addr);
   strcpy(pnf.phys[0].local_addr, pnf_ip_addr);

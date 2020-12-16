@@ -551,9 +551,8 @@ int pnf_p7_send_message(pnf_p7_t* pnf_p7, uint8_t* msg, uint32_t len)
 	struct sockaddr_in remote_addr;
 	memset((char*)&remote_addr, 0, sizeof(struct sockaddr_in));
 	remote_addr.sin_family = AF_INET;
-	remote_addr.sin_port = htons(32123);//htons(pnf_p7->_public.remote_p7_port); //hardcoding for now
-	//remote_addr.sin_addr.s_addr = inet_addr(pnf_p7->_public.remote_p7_addr); 
-	//remote_addr.sin_port = 0; // hardcoded by Gokul
+	remote_addr.sin_port = htons(pnf_p7->_public.remote_p7_port);
+
 	
 	if(inet_aton(pnf_p7->_public.remote_p7_addr, &remote_addr.sin_addr) == -1)
 	{
@@ -2959,7 +2958,6 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 	int recvfrom_result = 0;
 	struct sockaddr_in remote_addr;
 	socklen_t remote_addr_size = sizeof(remote_addr);
-	remote_addr.sin_family = 2; // Gokul - hardcoded
 
 	do
 	{

@@ -83,7 +83,7 @@
 
 
 #include "T.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -155,7 +155,7 @@ clock_gettime(CLOCK_MONOTONIC, &current);
 
   // *******************************************************************
   // NFAPI not yet supported for NR - this code has to be revised
-  if (nfapi_mode == 1) {
+  if (nfapi_mode == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     //add_subframe(&frame, &subframe, 4);
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);

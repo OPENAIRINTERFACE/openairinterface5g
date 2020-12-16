@@ -43,6 +43,7 @@
 #include "config_userapi.h"
 #include "../utils/LOG/log.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 uint8_t nfapi_mode=0;
 
@@ -216,12 +217,12 @@ configmodule_interface_t *load_configmodule(int argc,
 
     if( strcmp(argv[i], "--vnf") == 0 ){
       printf("\nVNF ENABLED\n");
-      nfapi_mode = 2;
+      nfapi_mode = NFAPI_MODE_VNF;
     }
 
      if( strcmp(argv[i], "--pnf") == 0 ){
       printf("\nPNF ENABLED\n");
-      nfapi_mode = 1;
+      nfapi_mode = NFAPI_MODE_PNF;
     }
 
   }

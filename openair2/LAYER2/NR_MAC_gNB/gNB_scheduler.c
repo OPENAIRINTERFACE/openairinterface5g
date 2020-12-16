@@ -100,7 +100,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   gNB->pdu_index[CC_idP] = 0;
 
-  if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
+  if (nfapi_mode == NFAPI_MONOLITHIC || nfapi_mode == NFAPI_MODE_PNF) { // monolithic or PNF
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;

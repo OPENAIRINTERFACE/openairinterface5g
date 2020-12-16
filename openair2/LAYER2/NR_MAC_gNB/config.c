@@ -45,7 +45,7 @@
 
 #include "NR_MIB.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-
+#include "../../../../nfapi/oai_integration/vendor_ext.h"
 /* Softmodem params */
 #include "executables/softmodem-common.h"
 
@@ -332,7 +332,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
-    if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
+    if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
       while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
 	// DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
 	usleep(100 * 1000);
