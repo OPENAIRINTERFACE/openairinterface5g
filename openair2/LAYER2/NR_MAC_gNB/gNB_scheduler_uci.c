@@ -599,7 +599,7 @@ bool nr_acknack_scheduling(int mod_id,
   pucch->dai_c++;
   const int pucch_res = pucch_index_used[pucch->ul_slot];
   pucch->resource_indicator = pucch_res;
-  pucch_index_used[first_ul_slot_tdd] += 1;
+  pucch_index_used[pucch->ul_slot] += 1;
 
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
@@ -612,7 +612,7 @@ bool nr_acknack_scheduling(int mod_id,
     const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
     AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
                 "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
-                symb, resource->startingPRB, first_ul_slot_tdd);
+                symb, resource->startingPRB, pucch->ul_slot);
     vrb_map_UL[resource->startingPRB] |= symb;
   }
   return true;
