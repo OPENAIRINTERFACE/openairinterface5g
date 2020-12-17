@@ -214,8 +214,12 @@ typedef struct {
   uint16_t prach_format;
   /// Preamble index for PRACH (0-63)
   uint8_t ra_PreambleIndex;
-  /// RACH MaskIndex
-  uint8_t ra_RACH_MaskIndex;
+  /// Preamble Tx Counter
+  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
+  /// Preamble Power Ramping Counter
+  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
+  /// 2-step RA power offset
+  int POWER_OFFSET_2STEP_RA;
   /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
   int ra_PREAMBLE_RECEIVED_TARGET_POWER;
   /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex

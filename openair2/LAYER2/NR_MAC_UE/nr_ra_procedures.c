@@ -56,8 +56,106 @@ static uint8_t first_Msg3 = 0;
 static int starting_preamble_nb = 0;
 static long cb_preambles_per_ssb; // Nb of preambles per SSB
 static uint8_t RA_usedGroupA;
+// Random-access Msg3 size in bytes
+static uint8_t Msg3_size;
+// Random-access backoff counter
+static int16_t RA_backoff_cnt;
+static int preambleTransMax = -1;
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
+
+// Random Access procedure initialization as per 5.1.1 and initialization of variables specific
+// to Random Access type as specified in clause 5.1.1a (3GPP TS 38.321 version 16.2.1 Release 16)
+// todo:
+// - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX (currently hardcoded to 0)
+void init_RA(NR_PRACH_RESOURCES_t *prach_resources,
+             NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon,
+             NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
+             NR_RACH_ConfigDedicated_t *rach_ConfigDedicated) {
+
+  prach_resources->RA_PREAMBLE_BACKOFF = 0;
+  prach_resources->RA_PCMAX = 0;
+  prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
+  prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
+  prach_resources->POWER_OFFSET_2STEP_RA = 0;
+  prach_resources->RA_SCALING_FACTOR_BI = 1;
+
+  if (rach_ConfigDedicated) {
+    if (rach_ConfigDedicated->cfra){
+      LOG_I(MAC, "Initialization of 4-step contention-free random access procedure\n");
+      prach_resources->RA_TYPE = RA_4STEP;
+    }
+  } else if (rach_ConfigDedicated->ext1){
+    if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
+      LOG_I(MAC, "In %s: setting RA type to 2-step...\n", __FUNCTION__);
+      prach_resources->RA_TYPE = RA_2STEP;
+    }
+  }
+
+  if (prach_resources->RA_TYPE == RA_2STEP){
+    LOG_E(MAC, "Missing implementation of initialization of 2-step RA specific variables...\n");
+  } else if (prach_resources->RA_TYPE == RA_4STEP){
+    LOG_D(MAC, "Initialization of 4-step RA specific variables...\n");
+    switch (rach_ConfigGeneric->powerRampingStep){ // in dB
+      case 0:
+      prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 0;
+      break;
+      case 1:
+      prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 2;
+      break;
+      case 2:
+      prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 4;
+      break;
+      case 3:
+      prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 6;
+      break;
+    }
+
+    switch (rach_ConfigGeneric->preambleTransMax) {
+      case 0:
+      preambleTransMax = 3;
+      break;
+      case 1:
+      preambleTransMax = 4;
+      break;
+      case 2:
+      preambleTransMax = 5;
+      break;
+      case 3:
+      preambleTransMax = 6;
+      break;
+      case 4:
+      preambleTransMax = 7;
+      break;
+      case 5:
+      preambleTransMax = 8;
+      break;
+      case 6:
+      preambleTransMax = 10;
+      break;
+      case 7:
+      preambleTransMax = 20;
+      break;
+      case 8:
+      preambleTransMax = 50;
+      break;
+      case 9:
+      preambleTransMax = 100;
+      break;
+      case 10:
+      preambleTransMax = 200;
+      break;
+    }
+    if (nr_rach_ConfigCommon->ext1) {
+      if (nr_rach_ConfigCommon->ext1->ra_PrioritizationForAccessIdentity){
+        LOG_D(MAC, "In %s:%d: Missing implementation for Access Identity initialization procedures\n", __FUNCTION__, __LINE__);
+      }
+    }
+  }
+
+  return;
+
+}
 
 void ssb_rach_config(NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon, fapi_nr_ul_config_prach_pdu *prach_pdu){
 
@@ -150,7 +248,6 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
-  uint8_t Msg3_size = mac->RA_Msg3_size;
 
   if (prach_resources->RA_TYPE == RA_4STEP){
 
@@ -334,13 +431,6 @@ void nr_get_prach_resources(module_id_t mod_id,
       LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure\n", __FUNCTION__, prach_resources->ra_PreambleIndex);
     }
 
-    if (rach_ConfigDedicated->ext1){
-      if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
-        LOG_I(MAC, "In %s: setting RA type to 2-step...\n", __FUNCTION__);
-        prach_resources->RA_TYPE = RA_2STEP;
-      }
-    }
-
   } else {
     //////////* Contention-based RA preamble selection *//////////
     // todo:
@@ -367,8 +457,8 @@ void nr_get_prach_resources(module_id_t mod_id,
   // - condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
   // - check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
 
-  if (mac->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
-    mac->RA_PREAMBLE_POWER_RAMPING_COUNTER++;
+  if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
+    prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER++;
 
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
@@ -438,41 +528,16 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, preambleTransMax, mac_ce_len;
+  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, mac_ce_len;
 
   if (prach_resources->init_msg1) {
 
     if (mac->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
-      LOG_I(MAC, "RA not active. Starting RA preamble initialization for 4-step RA\n");
-
-      first_Msg3 = 0;
-      mac->RA_RAPID_found = 0;
-
-      /* Set RA_PREAMBLE_POWER_RAMPING_STEP */
-      switch (rach_ConfigGeneric->powerRampingStep){ // in dB
-       case 0:
-       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 0;
-       break;
-       case 1:
-       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 2;
-       break;
-       case 2:
-       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 4;
-       break;
-       case 3:
-       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 6;
-       break;
-      }
-
-      prach_resources->RA_PREAMBLE_BACKOFF = 0;
-      prach_resources->RA_SCALING_FACTOR_BI = 1;
-      prach_resources->RA_PCMAX = 0; // currently hardcoded to 0
-      prach_resources->RA_TYPE = RA_4STEP;
+      LOG_D(MAC, "RA not active. Checking for data to transmit from upper layers...\n");
 
       payload = (uint8_t*) &mac->CCCH_pdu.payload;
-
       mac_ce_len = 0;
       num_sdus = 1;
       post_padding = 1;
@@ -509,15 +574,17 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (size_sdu > 0) {
 
-        LOG_I(MAC, "[UE %d] Frame %d: Initialisation Random Access Procedure\n", mod_id, frame);
+        LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
-        mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
-        mac->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
-        mac->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
-        mac->RA_prachMaskIndex = 0;
-        // todo: add the backoff condition here
-        mac->RA_backoff_cnt = 0;
         mac->RA_active = 1;
+        mac->RA_RAPID_found = 0;
+        first_Msg3 = 0;
+        RA_backoff_cnt = 0;
+        Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // TBR global
+
+        // todo: add the backoff condition here  // TBR remove
+
+        init_RA(prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         prach_resources->Msg3 = payload;
 
         nr_get_RA_window(mac);
@@ -580,52 +647,15 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_slot_tx %d: RAR reception failed \n", mod_id, frame, nr_slot_tx);
 
         mac->ra_state = RA_UE_IDLE;
-        mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
-
-        preambleTransMax = -1;
-        switch (rach_ConfigGeneric->preambleTransMax) {
-        case 0:
-          preambleTransMax = 3;
-          break;
-        case 1:
-          preambleTransMax = 4;
-          break;
-        case 2:
-          preambleTransMax = 5;
-          break;
-        case 3:
-          preambleTransMax = 6;
-          break;
-        case 4:
-          preambleTransMax = 7;
-          break;
-        case 5:
-          preambleTransMax = 8;
-          break;
-        case 6:
-          preambleTransMax = 10;
-          break;
-        case 7:
-          preambleTransMax = 20;
-          break;
-        case 8:
-          preambleTransMax = 50;
-          break;
-        case 9:
-          preambleTransMax = 100;
-          break;
-        case 10:
-          preambleTransMax = 200;
-          break;
-        }
+        prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
 
         // Resetting RA window
         nr_get_RA_window(mac);
 
-        if (mac->RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax + 1){
+        if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax + 1){
           LOG_D(MAC, "[UE %d] Frame %d: Maximum number of RACH attempts (%d)\n", mod_id, frame, preambleTransMax);
-          mac->RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
-          mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
+          RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
+          prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
           prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP << 1; // 2 dB increment
           prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
         }

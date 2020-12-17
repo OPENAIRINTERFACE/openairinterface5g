@@ -212,20 +212,10 @@ typedef struct {
   uint8_t RA_active;
   /// Random-access window counter
   int16_t RA_window_cnt;
-  /// Random-access Msg3 size in bytes
-  uint8_t RA_Msg3_size;
-  /// Random-access prachMaskIndex
-  uint8_t RA_prachMaskIndex;
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
-  /// Preamble Tx Counter
-  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
-  /// Preamble Power Ramping Counter
-  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
   /// Random-access backoff counter
   int16_t RA_backoff_indicator;
-  /// Random-access backoff counter
-  int16_t RA_backoff_cnt;
   /// Random-access variable for window calculation (frame of last change in window counter)
   uint32_t RA_tx_frame;
   /// Random-access variable for window calculation (subframe of last change in window counter)
