@@ -275,11 +275,6 @@ void nr_csi_meas_reporting(int Mod_idP,
         }
         // verify resources are free
         for (int i = start; i < start + len; ++i) {
-          AssertFatal((vrb_map_UL[i] & mask) == 0,
-                      "cannot allocate CSI PUCCH for UE %04x: PRB %d used in symbs %lx\n",
-                      UE_info->rnti[UE_id],
-                      i,
-                      mask);
           vrb_map_UL[i] |= mask;
         }
         AssertFatal(!curr_pucch->simultaneous_harqcsi,
