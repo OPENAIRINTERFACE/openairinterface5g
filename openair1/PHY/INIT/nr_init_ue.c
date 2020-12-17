@@ -291,6 +291,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
+  ue->scramblingID_pdcch = fp->Nid_cell;
+  nr_gold_pdcch(ue,fp->Nid_cell);
+
   //PDSCH DMRS init (eNB offset = 0)
   ue->nr_gold_pdsch[0] = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   uint32_t ****pdsch_dmrs = ue->nr_gold_pdsch[0];

@@ -1715,7 +1715,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
 #ifdef NR_PDCCH_SCHED
-  nr_gold_pdcch(ue, 0, 2);
 
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
