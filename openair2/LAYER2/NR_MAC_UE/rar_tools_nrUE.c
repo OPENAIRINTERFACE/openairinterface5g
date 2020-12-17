@@ -264,7 +264,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
       } else {
         rarh += sizeof(NR_MAC_RAR) + 1;
       }
-    };
+    }
 
     #ifdef DEBUG_RAR
     LOG_D(MAC, "[DEBUG_RAR] (%d,%d) number of RAR subheader %d; number of RAR pyloads %d\n", frame, slot, n_subheaders, n_subPDUs);

@@ -216,10 +216,6 @@ typedef struct {
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
   /// Random-access backoff counter
   int16_t RA_backoff_indicator;
-  /// Random-access variable for window calculation (frame of last change in window counter)
-  uint32_t RA_tx_frame;
-  /// Random-access variable for window calculation (subframe of last change in window counter)
-  uint8_t RA_tx_subframe;
   /// Scheduled TX frame for RA Msg3
   frame_t msg3_frame;
   /// Scheduled TX slot for RA Msg3

@@ -390,6 +390,24 @@ uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_p
 
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
 // and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
+// - currently the PRACH preamble is set through RRC configuration for 4-step CFRA mode
+// todo:
+// - determine next available PRACH occasion
+// -- if RA initiated for SI request and ra_AssociationPeriodIndex and si-RequestPeriod are configured
+// -- else if SSB is selected above
+// -- else if CSI-RS is selected above
+// - switch initialisation cases
+// -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
+// --- SSB selection, set prach_resources->ra_PreambleIndex
+// -- RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000
+// --- set PREAMBLE_INDEX to ra_preamble_index
+// --- select the SSB signalled by PDCCH
+// -- RA initiated for SI request:
+// --- SSB selection, set prach_resources->ra_PreambleIndex
+// - condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
+// - check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
+// - Contention-based RA preamble selection:
+// -- selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
 void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
@@ -402,66 +420,22 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   LOG_D(PHY, "In %s: getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, first_Msg3);
 
-  ///////////////////////////////////////////////////////////
-  //////////* UE Random Access Resource Selection *//////////
-  ///////////////////////////////////////////////////////////
-
-  // todo:
-  // - switch initialisation cases
-  // -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
-  // --- SSB selection, set prach_resources->ra_PreambleIndex
-  // -- RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000
-  // --- set PREAMBLE_INDEX to ra_preamble_index
-  // --- select the SSB signalled by PDCCH
-  // -- RA initiated for SI request:
-  // --- SSB selection, set prach_resources->ra_PreambleIndex
-
   if (rach_ConfigDedicated) {
-    //////////* Contention free RA *//////////
-    // - the PRACH preamble for the UE to transmit is set through RRC configuration
-    // - this is the default mode in current implementation!
-    // Operation for contention-free RA resources when:
-    // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
-    // - available CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
-    // - network controlled Mobility
-
     if (rach_ConfigDedicated->cfra){
       uint8_t cfra_ssb_resource_idx = 0;
       prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
-      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure\n", __FUNCTION__, prach_resources->ra_PreambleIndex);
+      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, prach_resources->ra_PreambleIndex, cfra_ssb_resource_idx);
     }
-
   } else {
-    //////////* Contention-based RA preamble selection *//////////
-    // todo:
-    // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
-    // - determine next available PRACH occasion
-
-    // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
     int16_t dl_pathloss = get_nr_PL(mod_id, CC_id, gNB_id);
     ssb_rach_config(prach_resources, nr_rach_ConfigCommon, prach_pdu);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
-
   }
-
-  // todo determine next available PRACH occasion
-  // - if RA initiated for SI request and ra_AssociationPeriodIndex and si-RequestPeriod are configured
-  // - else if SSB is selected above
-  // - else if CSI-RS is selected above
-
-  /////////////////////////////////////////////////////////////////////////////
-  //////////* Random Access Preamble Transmission (5.1.3 TS 38.321) *//////////
-  /////////////////////////////////////////////////////////////////////////////
-  // todo:
-  // - condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
-  // - check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
 
   if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
     prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER++;
-
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
-
   prach_resources->ra_RNTI = set_ra_rnti(mac, prach_pdu);
 
 }
@@ -470,7 +444,6 @@ void nr_get_prach_resources(module_id_t mod_id,
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   mac->ra_state = WAIT_RAR;
-  // Start contention resolution timer
   mac->RA_attempt_number++;
 }
 
@@ -483,25 +456,21 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 }
 
 /////////////////////////////////////////////////////////////////////////
-///////* Random Access Preamble Initialization (5.1.1 TS 38.321) *///////
+// This function handles:
+// - Random Access Preamble Initialization (5.1.1 TS 38.321)
+// - Random Access Response reception (5.1.4 TS 38.321)
+/// In the current implementation, RA is 4-step contention free only
 /////////////////////////////////////////////////////////////////////////
-/// Handling inizialization by PDCCH order, MAC entity or RRC (TS 38.300)
-/// Only one RA procedure is ongoing at any point in time in a MAC entity
-/// the RA procedure on a SCell shall only be initiated by PDCCH order
-/// in the current implementation, RA is contention free only
-
 // todo TS 38.321:
-// - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX
 // - BWP operation (subclause 5.15 TS 38.321)
-// - handle initialization by beam failure recovery
+// - beam failure recovery
 // - handle initialization by handover
-// - handle transmission on DCCH using PRACH (during handover, or sending SR for example)
+// - handle DL assignment on PDCCH for RA-RNTI
+// - transmission on DCCH using PRACH (during handover, or sending SR for example)
 // - take into account MAC CEs in size_sdu (currently hardcoded size to 1 MAC subPDU and 1 padding subheader)
 // - fix rrc data req logic
 // - retrieve TBS
 // - add mac_rrc_nr_data_req_ue, etc ...
-// - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
-
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
@@ -514,16 +483,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
   uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload;
-  //uint8_t ra_ResponseWindow;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
-  //fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "In %s: FATAL! nr_rach_ConfigCommon is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
-  //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = mac->rach_ConfigDedicated;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -567,11 +533,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         size_sdu += sdu_lengths[0];
       }
 
-      //mac->RA_tx_frame = frame;
-      //mac->RA_tx_slot  = nr_slot_tx;
-      //mac->RA_backoff_frame = frame;
-      //mac->RA_backoff_slot  = nr_slot_tx;
-
       if (size_sdu > 0) {
 
         LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
@@ -580,13 +541,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_RAPID_found = 0;
         first_Msg3 = 0;
         RA_backoff_cnt = 0;
-        Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // TBR global
-
-        // todo: add the backoff condition here  // TBR remove
+        Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
 
         init_RA(prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         prach_resources->Msg3 = payload;
-
         nr_get_RA_window(mac);
 
         // Fill in preamble and PRACH resources
@@ -614,17 +572,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       } 
     } else if (mac->RA_window_cnt != -1) { // RACH is active
 
-      ////////////////////////////////////////////////////////////////
-      /////* Random Access Response reception (5.1.4 TS 38.321) */////
-      ////////////////////////////////////////////////////////////////
-      // Handling ra_responseWindow, RA_PREAMBLE_TRANSMISSION_COUNTER
-      // and RA_backoff_cnt
-      // todo:
-      // - handle beam failure recovery request
-      // - handle DL assignment on PDCCH for RA-RNTI
-      // - handle backoff and raResponseWindow params
-
-      LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d (RA_tx_frame %d, RA_tx_subframe %d)\n", __FUNCTION__, frame, nr_slot_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
+      LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, mac->RA_window_cnt, mac->RA_backoff_cnt);
 
       if (mac->RA_BI_found){
         prach_resources->RA_PREAMBLE_BACKOFF = prach_resources->RA_SCALING_FACTOR_BI * mac->RA_backoff_indicator;
@@ -633,7 +581,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       }
 
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
-
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
         // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
         mac->RA_active = 0;
@@ -644,7 +591,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_slot_tx %d: RAR reception failed \n", mod_id, frame, nr_slot_tx);
+        LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
 
         mac->ra_state = RA_UE_IDLE;
         prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
@@ -653,8 +600,11 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         nr_get_RA_window(mac);
 
         if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax + 1){
+
           LOG_D(MAC, "[UE %d] Frame %d: Maximum number of RACH attempts (%d)\n", mod_id, frame, preambleTransMax);
+
           RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
+
           prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
           prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP << 1; // 2 dB increment
           prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
@@ -699,10 +649,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       }
     }
   } else if (UE_mode == PUSCH) {
-    LOG_D(MAC, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...", mod_id);
-    AssertFatal(1 == 0, "");
+
+    AssertFatal(1 == 0, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet...", mod_id);
+
   }
- return mac->generate_nr_prach;
+
+  return mac->generate_nr_prach;
+
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
