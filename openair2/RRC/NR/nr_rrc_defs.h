@@ -438,6 +438,9 @@ typedef struct {
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
+  ngran_node_t                                        node_type;
+  uint32_t                                            node_id;
+  char                                               *node_name;
   int                                                 module_id;
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier;
@@ -448,6 +451,9 @@ typedef struct gNB_RRC_INST_s {
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *initial_id2_ngap_ids;
   hash_table_t                                        *ngap_id2_ngap_ids   ;
+
+  /// NR cell id
+  uint64_t nr_cellid;
 
   // other PLMN parameters
   /// Mobile country code
@@ -465,6 +471,8 @@ typedef struct gNB_RRC_INST_s {
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
 
 } gNB_RRC_INST;
 

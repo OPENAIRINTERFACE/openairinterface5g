@@ -76,6 +76,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
+int macrlc_has_f1 = 0;
 
 extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
@@ -469,6 +470,17 @@ void RCconfig_nr_macrlc() {
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
   // check number of instances is same as RRC/PDCP
   
+      }else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
+        printf("Configuring F1 interfaces for MACRLC\n");
+        RC.nrmac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
+        RC.nrmac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
+        RC.nrmac[j]->eth_params_n.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
+        RC.nrmac[j]->eth_params_n.my_portc                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTC_IDX].iptr);
+        RC.nrmac[j]->eth_params_n.remote_portc             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
+        RC.nrmac[j]->eth_params_n.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
+        RC.nrmac[j]->eth_params_n.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);;
+        RC.nrmac[j]->eth_params_n.transp_preference        = ETH_UDP_MODE;
+        macrlc_has_f1                                      = 1;
       }else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "cudu") == 0) {
         RC.nrmac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         RC.nrmac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
@@ -504,7 +516,8 @@ void RCconfig_nr_macrlc() {
       } 
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
-    AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
+    printf("No %s configuration found \n", CONFIG_STRING_MACRLC_LIST);
+    // AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
   }
 
 }
@@ -589,6 +602,41 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       fix_scc(scc,ssb_bitmap);
     }
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
+
+    if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+      paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+      char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+      sprintf(aprefix,"%s.[%u].%s",GNB_CONFIG_STRING_GNB_LIST,i,GNB_CONFIG_STRING_SCTP_CONFIG);
+      config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+      rrc->node_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+      LOG_I(GNB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
+      rrc->node_name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
+      LOG_I(GNB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
+      rrc->eth_params_s.local_if_name            = strdup(*(GNBParamList.paramarray[i][GNB_LOCAL_S_IF_NAME_IDX].strptr));
+      rrc->eth_params_s.my_addr                  = strdup(*(GNBParamList.paramarray[i][GNB_LOCAL_S_ADDRESS_IDX].strptr));
+      rrc->eth_params_s.remote_addr              = strdup(*(GNBParamList.paramarray[i][GNB_REMOTE_S_ADDRESS_IDX].strptr));
+      rrc->eth_params_s.my_portc                 = *(GNBParamList.paramarray[i][GNB_LOCAL_S_PORTC_IDX].uptr);
+      rrc->eth_params_s.remote_portc             = *(GNBParamList.paramarray[i][GNB_REMOTE_S_PORTC_IDX].uptr);
+      rrc->eth_params_s.my_portd                 = *(GNBParamList.paramarray[i][GNB_LOCAL_S_PORTD_IDX].uptr);
+      rrc->eth_params_s.remote_portd             = *(GNBParamList.paramarray[i][GNB_REMOTE_S_PORTD_IDX].uptr);
+      rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
+      rrc->node_type                             = ngran_gNB_CU;
+      rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+      rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+    } else {
+      // set to ngran_gNB for now, it will get set to ngran_gNB_DU if macrlc entity which uses F1 is present
+      // Note: we will have to handle the case of ngran_ng_gNB_DU
+      if (macrlc_has_f1 == 0) {
+        rrc->node_type = ngran_gNB;
+        LOG_I(RRC,"Setting node_type to ngran_eNB\n");
+      } else {
+        rrc->node_type = ngran_gNB_DU;
+        LOG_I(RRC,"Setting node_type to ngran_eNB_DU\n");
+      }
+    }
+
+    rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
+
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
