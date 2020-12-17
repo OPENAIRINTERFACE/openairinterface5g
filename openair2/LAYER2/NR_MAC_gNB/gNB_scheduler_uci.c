@@ -86,6 +86,11 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 #define L1_RSRP_HYSTERIS 10 //considering 10 dBm as hysterisis for avoiding frequent SSB Beam Switching. !Fixme provide exact value if any
 //#define L1_DIFF_RSRP_STEP_SIZE 2
 
+void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
+                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
+
 int ssb_index_sorted[MAX_NUM_SSB] = {0};
 int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
 //Sorts ssb_index and ssb_rsrp array data and keeps in ssb_index_sorted and
@@ -600,7 +605,8 @@ static void handle_dl_harq(module_id_t mod_id,
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
                              sub_frame_t slot,
-                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                             NR_UL_IND_t *UL_info)
 {
   int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
   if (UE_id < 0) {
@@ -648,21 +654,22 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     }
 
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
-    nr_rx_acknack(NULL,uci_01,NULL,UL_info,sched_ctrl,stats);
+    nr_rx_acknack(NULL,uci_01,NULL,UL_info,sched_ctrl,&UE_info->mac_stats[0]);
   }
 }
 
 void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                frame_t frame,
                                sub_frame_t slot,
-                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                               NR_UL_IND_t *UL_info)
 {
-  NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[Mod_idP]->UE_list.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
     return;
   }
+  NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
@@ -678,8 +685,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     uint8_t sr_id = 0;
 
     for (sr_id = 0; sr_id < uci_234->sr.sr_bit_len; sr_id++) {
-      sched_ctrl->sr_req.ul_SR[sr_id] = uci_234->sr.sr_payload & 1;
-      uci_234->sr.sr_payload >>= 1;
+      sched_ctrl->sr_req.ul_SR[sr_id] = *(uci_234->sr.sr_payload) & 1;
+      *(uci_234->sr.sr_payload) >>= 1;
     }
 
     sched_ctrl->sr_req.nr_of_srs = uci_234->sr.sr_bit_len;
@@ -718,17 +725,17 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
   if ((uci_234->pduBitmap >> 1) & 0x01) {
 
-    NR_SubcarrierSpacing_t scs=*(RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon->ssbSubcarrierSpacing);
+    NR_SubcarrierSpacing_t scs=*(RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon->ssbSubcarrierSpacing);
     LOG_I(PHY,"SFN/SF:%d%d scs %ld \n",
        UL_info->frame,UL_info->slot,
        scs);
      //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report (csi_MeasConfig, uci_pdu, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, Mod_idP);
+    extract_pucch_csi_report (csi_MeasConfig, uci_234, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, mod_id);
     //TCI handling function
-    tci_handling(Mod_idP, UE_id, UL_info->CC_id, sched_ctrl, UL_info->frame, UL_info->slot);
+    tci_handling(mod_id, UE_id, UL_info->CC_id, sched_ctrl, UL_info->frame, UL_info->slot);
   }
 
-  if (uci_pdu -> pduBitmap & 0x08) {
+  if (uci_234 -> pduBitmap & 0x08) {
           ///Handle CSI Report 2
   }
 }
@@ -1549,4 +1556,3 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
 }
 
 
->>>>>>> uci mac functions in a new file

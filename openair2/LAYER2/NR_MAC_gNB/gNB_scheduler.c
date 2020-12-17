@@ -322,7 +322,7 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
-
+/*
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
                        int num_slots_per_tdd,
@@ -333,7 +333,7 @@ void nr_schedule_pusch(int Mod_idP,
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   int k = slotP + ul_slots - num_slots_per_tdd;
-  NR_sched_pusch *pusch = &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k];
+  NR_sched_pusch_t *pusch = &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k];
   if ((pusch->active == true) && (frameP == pusch->frame) && (slotP == pusch->slot)) {
     UL_tti_req->SFN = pusch->frame;
     UL_tti_req->Slot = pusch->slot;
@@ -345,7 +345,7 @@ void nr_schedule_pusch(int Mod_idP,
            0, sizeof(NR_sched_pusch));
   }
 }
-
+*/
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   return (bitmap >> slot) & 0x01;
