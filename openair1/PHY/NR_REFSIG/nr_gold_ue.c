@@ -95,13 +95,8 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
   //unsigned short lbar = 0;
 
   for (nscid=0; nscid<2; nscid++) {
-    if (n_idDMRS)
-      nid = n_idDMRS[nscid];
-    else
-      nid = ue->frame_parms.Nid_cell;
-      
-      //printf("gold pdsch nid %d lbar %d\n",nid,lbar);
 
+    nid = n_idDMRS[nscid];
     for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
       for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
@@ -112,9 +107,9 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
         LOG_D(PHY,"UE DMRS slot %d, symb %d, x2 %x, nscid %d\n",ns,l,x2,nscid);
         
         for (n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-			ue->nr_gold_pdsch[0][ns][l][nscid][n] = lte_gold_generic(&x1, &x2, reset);
-			reset = 0;
-		}
+          ue->nr_gold_pdsch[0][ns][l][nscid][n] = lte_gold_generic(&x1, &x2, reset);
+          reset = 0;
+        }
       }
     }
   }

@@ -616,6 +616,12 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
+  // initializing the scrambling IDs for PDSCH DMRS
+  for (int i=0; i<2; i++)
+    ue->scramblingID[i]=fp->Nid_cell;
+
+  nr_gold_pdsch(ue,ue->scramblingID);
+
   // DLSCH
   for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {

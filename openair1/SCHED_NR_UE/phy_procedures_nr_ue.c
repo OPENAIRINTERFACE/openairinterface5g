@@ -1843,15 +1843,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
       uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
       uint16_t start_symb_sch = dlsch0_harq->start_symbol;
-      int symb_dmrs = -1;
 
       LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
       //to update from pdsch config
-
-      for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
-      AssertFatal(symb_dmrs>=0,"no dmrs in 0..3\n");
-      LOG_D(PHY,"Initializing dmrs for symb %d DMRS mask %x\n",symb_dmrs,dlsch0_harq->dlDmrsSymbPos);
-      nr_gold_pdsch(ue,0);
     
       for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
         nr_slot_fep(ue,
