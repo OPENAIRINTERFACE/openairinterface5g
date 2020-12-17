@@ -657,7 +657,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
                     int                          CC_id,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
-                    NR_SRB_ToAddModList_t        *SRB_configList)
+                    NR_SRB_ToAddModList_t        **SRB_configList)
 //------------------------------------------------------------------------------
 {
     asn_enc_rval_t                                   enc_rval;;
@@ -689,19 +689,19 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
 
     /****************************** radioBearerConfig ******************************/
     /* Configure SRB1 */
-    if (SRB_configList) {
-        free(SRB_configList);
+    if (*SRB_configList) {
+        free(*SRB_configList);
     }
 
-    SRB_configList = calloc(1, sizeof(NR_SRB_ToAddModList_t));
+    *SRB_configList = calloc(1, sizeof(NR_SRB_ToAddModList_t));
     // SRB1
     /* TODO */
     SRB1_config = calloc(1, sizeof(NR_SRB_ToAddMod_t));
     SRB1_config->srb_Identity = 1;
     // pdcp_Config->t_Reordering
     SRB1_config->pdcp_Config = pdcp_Config;
-    ie->radioBearerConfig.srb_ToAddModList = SRB_configList;
-    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB1_config);
+    ie->radioBearerConfig.srb_ToAddModList = *SRB_configList;
+    ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB1_config);
 
     ie->radioBearerConfig.srb3_ToRelease    = NULL;
     ie->radioBearerConfig.drb_ToAddModList  = NULL;
@@ -1307,19 +1307,17 @@ rrc_gNB_ue_context_t      *const ue_context_pP,
 int                              CC_id,
 uint8_t                   *const buffer,
 //const uint8_t                    transmission_mode,
-const uint8_t                    Transaction_id
-//NR_SRB_ToAddModList_t               **SRB_configList,
-//struct LTE_PhysicalConfigDedicated   **physicalConfigDedicated
+const uint8_t                    Transaction_id,
+NR_SRB_ToAddModList_t               **SRB_configList
 ) {
     asn_enc_rval_t enc_rval;
     //long *logicalchannelgroup = NULL;
-    //struct NR_SRB_ToAddMod *SRB1_config = NULL;
-    //struct NR_SRB_ToAddMod *SRB2_config = NULL;
+    struct NR_SRB_ToAddMod *SRB1_config = NULL;
+    struct NR_SRB_ToAddMod *SRB2_config = NULL;
     //gNB_RRC_INST *nrrrc               = RC.nrrrc[ctxt_pP->module_id];
-    //LTE_PhysicalConfigDedicated_t *physicalConfigDedicated2 = NULL;
     NR_DL_DCCH_Message_t dl_dcch_msg;
     NR_RRCReestablishment_t *rrcReestablishment = NULL;
-    //int i = 0;
+    int i = 0;
     ue_context_pP->ue_context.reestablishment_xid = Transaction_id;
     NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
     SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[Transaction_id];
@@ -1335,10 +1333,7 @@ const uint8_t                    Transaction_id
     dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment;
     dl_dcch_msg.message.choice.c1->choice.rrcReestablishment = CALLOC(1,sizeof(NR_RRCReestablishment_t));
     rrcReestablishment = dl_dcch_msg.message.choice.c1->choice.rrcReestablishment;
-    /*
-    // RRCReestablishment
-    // Configure SRB1
-    
+
     // get old configuration of SRB2
     if (*SRB_configList != NULL) {
       for (i = 0; (i < (*SRB_configList)->list.count) && (i < 3); i++) {
@@ -1352,7 +1347,7 @@ const uint8_t                    Transaction_id
         }
       }
     }
-    
+
     if (SRB1_config == NULL) {
       // default SRB1 configuration
       LOG_W(NR_RRC,"SRB1 configuration does not exist in SRB configuration list, use default\n");
@@ -1370,10 +1365,10 @@ const uint8_t                    Transaction_id
     if (*SRB_configList) {
       free(*SRB_configList);
     }
-    
+
     *SRB_configList = CALLOC(1, sizeof(LTE_SRB_ToAddModList_t));
     ASN_SEQUENCE_ADD(&(*SRB_configList)->list,SRB1_config);
-    */
+
     rrcReestablishment->rrc_TransactionIdentifier = Transaction_id;
     rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
     rrcReestablishment->criticalExtensions.choice.rrcReestablishment = CALLOC(1,sizeof(NR_RRCReestablishment_IEs_t));

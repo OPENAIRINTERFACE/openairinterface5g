@@ -91,7 +91,7 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
                     int                          CC_id,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
-                    NR_SRB_ToAddModList_t        *SRB_configList);
+                    NR_SRB_ToAddModList_t        **SRB_configList);
 uint8_t do_NR_SecurityModeCommand(
                     const protocol_ctxt_t *const ctxt_pP,
                     uint8_t *const buffer,
@@ -156,9 +156,8 @@ do_RRCReestablishment(
   int                              CC_id,
   uint8_t                   *const buffer,
   //const uint8_t                    transmission_mode,
-  const uint8_t                    Transaction_id
-  //NR_SRB_ToAddModList_t               **SRB_configList,
-  //struct LTE_PhysicalConfigDedicated   **physicalConfigDedicated
+  const uint8_t                    Transaction_id,
+  NR_SRB_ToAddModList_t               **SRB_configList
 );
 
 uint8_t 

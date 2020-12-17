@@ -128,8 +128,6 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 
 mui_t nr_rrc_mui=0;
 uint8_t first_rrcreconfigurationcomplete = 0;
-uint8_t rrcReestablishmentRequest_flag = 1;
-extern uint16_t rnti;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -1456,26 +1454,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                   ctxt_pP->frame,
                   ctxt_pP->rnti);
 
-            if (rrcReestablishmentRequest_flag == 1) {
-              free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config);
-              NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = NULL;
-
-              free(NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index]);
-              NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index] = NULL;
-
-              free(NR_UE_rrc_inst[ctxt_pP->module_id].SRB2_config[gNB_index]);
-              NR_UE_rrc_inst[ctxt_pP->module_id].SRB2_config[gNB_index] = NULL;
-
-              free(NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
-              NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB = NULL;
-
-              for (int i = 0; i < 8; i++) {
-                if (NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][i] != NULL) {
-                  free(NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][i]);
-                  NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][i] = NULL;
-                }
-              }
-            }
             // Get configuration
             // Release T300 timer
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
@@ -2362,6 +2340,7 @@ nr_rrc_ue_decode_dcch(
                 nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
                                             gNB_indexP,
                                             dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+
                 if (first_rrcreconfigurationcomplete == 0) {
                     first_rrcreconfigurationcomplete = 1;
 #ifdef ITTI_SIM
@@ -2390,14 +2369,6 @@ nr_rrc_ue_decode_dcch(
                         itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
                         LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
                     }
-                  }
-
-                  if (rrcReestablishmentRequest_flag == 1) {
-                    rrcReestablishmentRequest_flag = 0;
-                    rnti = 2;
-                    rrc_ue_generate_RRCReestablishmentRequest(ctxt_pP, gNB_indexP);
-                    NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_indexP].State = NR_RRC_SI_RECEIVED;
-                    NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_indexP].rnti = rnti;
                   }
 #endif
                 }
