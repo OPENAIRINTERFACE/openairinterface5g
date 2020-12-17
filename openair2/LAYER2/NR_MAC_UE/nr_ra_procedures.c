@@ -274,6 +274,23 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   }
 }
 
+// RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
+// - this does not apply to contention-free RA Preamble for beam failure recovery request
+// - getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
+// - ul_carrier_id: UL carrier used for RA preamble transmission, hardcoded for NUL carrier
+// - f_id: index of the PRACH occasion in the frequency domain
+// - s_id is starting symbol of the PRACH occasion [0...14]
+// - t_id is the first slot of the PRACH occasion in a system frame [0...80]
+uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu){
+  uint8_t ul_carrier_id = 0; // NUL
+  uint8_t f_id = prach_pdu->num_ra;
+  uint8_t t_id = prach_pdu->prach_slot;
+  uint8_t s_id = prach_pdu->prach_start_symbol;
+  mac->ra_rnti = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
+  LOG_D(MAC, "Computed ra_RNTI is %x \n", mac->ra_rnti);
+  return mac->ra_rnti;
+}
+
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
 // and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
 void nr_get_prach_resources(module_id_t mod_id,
@@ -283,7 +300,6 @@ void nr_get_prach_resources(module_id_t mod_id,
                             fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 
-  uint8_t s_id, t_id, f_id, ul_carrier_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
 
@@ -350,31 +366,14 @@ void nr_get_prach_resources(module_id_t mod_id,
   // todo:
   // - condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
   // - check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
-  // - Extend RA_rnti computation (e.g. f_id selection, ul_carrier_id are hardcoded)
 
   if (mac->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
     mac->RA_PREAMBLE_POWER_RAMPING_COUNTER++;
 
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
-   // RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
-   // 1) this does not apply to contention-free RA Preamble for beam failure recovery request
-   // 2) getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
+  prach_resources->ra_RNTI = set_ra_rnti(mac, prach_pdu);
 
-   // ra_RNTI computation
-   // - ul_carrier_id: UL carrier used for RA preamble transmission, hardcoded for NUL carrier
-   // - f_id: index of the PRACH occasion in the frequency domain
-   // - s_id is starting symbol of the PRACH occasion [0...14]
-   // - t_id is the first slot of the PRACH occasion in a system frame [0...80]
-   ul_carrier_id = 0; // NUL
-   f_id = prach_pdu->num_ra;
-   t_id = prach_pdu->prach_slot;
-   s_id = prach_pdu->prach_start_symbol;
-
-   prach_resources->ra_RNTI = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
-   mac->ra_rnti = prach_resources->ra_RNTI;
-
-   LOG_D(MAC, "Computed ra_RNTI is %x \n", prach_resources->ra_RNTI);
 }
 
 // TbD: RA_attempt_number not used
