@@ -53,22 +53,15 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 }
 
 void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
-                   unsigned short n_idDMRS,
-                   unsigned short length_dmrs)
+                   unsigned short nid)
 {
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
-  unsigned int nid;
   uint8_t reset;
-
-  if (n_idDMRS)
-    nid = n_idDMRS;
-  else
-    nid = ue->frame_parms.Nid_cell;
 
   for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
-    for (l=0; l<length_dmrs; l++) {
+    for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
 
       reset = 1;
       x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
