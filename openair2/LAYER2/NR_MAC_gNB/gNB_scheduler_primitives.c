@@ -218,7 +218,6 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
 {
   ps->dci_format = dci_format;
   ps->time_domain_allocation = tda;
-  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
       ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -240,13 +239,17 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                                     NR_RNTI_C,
                                     target_ss,
                                     false);
-  else
+  else {
     ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config->mcs_TableTransformPrecoder,
                                     1,
                                     ps->dci_format,
                                     NR_RNTI_C,
                                     target_ss,
                                     false);
+    num_dmrs_cdm_grps_no_data = 2; // in case of transform precoding - no Data sent in DMRS symbol
+  }
+
+  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   /* DMRS calculations */
   ps->mapping_type = tdaList->list.array[tda]->mappingType;
