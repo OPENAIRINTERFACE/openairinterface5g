@@ -866,13 +866,21 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     return -1;
   }
 
-
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[module_idP]);
-  ue_context_p->ue_id_rnti                    = rntiP; 
-  ue_context_p->ue_context.rnti               = rntiP;
-  ue_context_p->ue_context.random_ue_identity = rntiP;
-  ue_context_p->ue_context.Srb0.Active        = 1;
-  RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
+  if (RC.nrrrc[module_idP]->node_type == ngran_gNB_DU) {
+    struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_idP]);
+    ue_context_p->ue_id_rnti                    = rntiP; 
+    ue_context_p->ue_context.rnti               = rntiP;
+    ue_context_p->ue_context.random_ue_identity = rntiP;
+    ue_context_p->ue_context.Srb0.Active        = 1;
+    RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_idP]->rrc_ue_head, ue_context_p);
+  } else {
+    struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[module_idP]);
+    ue_context_p->ue_id_rnti                    = rntiP; 
+    ue_context_p->ue_context.rnti               = rntiP;
+    ue_context_p->ue_context.random_ue_identity = rntiP;
+    ue_context_p->ue_context.Srb0.Active        = 1;
+    RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
+  }
   du_f1ap_itti_send_sctp_data_req(module_idP, f1ap_du_data->assoc_id, buffer, len,  f1ap_du_data->default_sctp_stream_id);
 
   return 0;

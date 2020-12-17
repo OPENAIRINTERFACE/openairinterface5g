@@ -359,6 +359,7 @@ rrc_gNB_generate_RRCSetup(
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
   NR_SRB_ToAddModList_t        *SRB_configList = NULL;
+  MessageDef                   *message_p;
 
   // T(T_GNB_RRC_SETUP,
   //   T_INT(ctxt_pP->module_id),
@@ -379,31 +380,61 @@ rrc_gNB_generate_RRCSetup(
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Setup\n");
 
-  LOG_D(NR_RRC,
-      PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
-      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
+    case ngran_gNB_CU:
+      // create an ITTI message
+      /* TODO: F1 IDs ar missing in RRC */
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        =  (uint8_t *)ue_p->Srb0.Tx_buffer.Payload;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_p->rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = CCCH;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+      break;
 
-  // rrc_mac_config_req_eNB
+    case ngran_gNB_DU:
+      // nothing to do for DU
+      AssertFatal(1==0,"nothing to do for DU\n");
+      break;
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_RRC_GNB,
-      MSC_RRC_UE,
-      ue_p->Srb0.Tx_buffer.Header, // LG WARNING
-      ue_p->Srb0.Tx_buffer.payload_size,
-      MSC_AS_TIME_FMT" RRCSetup UE %x size %u",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_context.rnti,
-      ue_p->Srb0.Tx_buffer.payload_size);
-  LOG_I(NR_RRC,
-      PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
-      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-      ue_p->Srb0.Tx_buffer.payload_size);
-  // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-  ue_context_pP->ue_context.ue_release_timer = 1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres = 1000;
-  /* init timers */
-  //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+    case ngran_gNB:
+      // rrc_mac_config_req_gNB
+      break;
+
+    default :
+        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+
+    LOG_D(NR_RRC,
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+
+    MSC_LOG_TX_MESSAGE(
+        MSC_RRC_GNB,
+        MSC_RRC_UE,
+        ue_p->Srb0.Tx_buffer.Header, // LG WARNING
+        ue_p->Srb0.Tx_buffer.payload_size,
+        MSC_AS_TIME_FMT" RRCSetup UE %x size %u",
+        MSC_AS_TIME_ARGS(ctxt_pP),
+        ue_context_pP->ue_context.rnti,
+        ue_p->Srb0.Tx_buffer.payload_size);
+    LOG_I(NR_RRC,
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+        ue_p->Srb0.Tx_buffer.payload_size);
+    // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
+    ue_context_pP->ue_context.ue_release_timer = 1;
+    // remove UE after 10 frames after RRCConnectionRelease is triggered
+    ue_context_pP->ue_context.ue_release_timer_thres = 1000;
+    /* init timers */
+    //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+  }
+
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
