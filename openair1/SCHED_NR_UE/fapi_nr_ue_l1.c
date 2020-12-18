@@ -61,13 +61,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
 
-      LOG_D(PHY,"Received %d DL pdus\n",dl_config->number_pdus);
+      LOG_D(PHY,"Received %d DL pdus:\n",dl_config->number_pdus);
       pdcch_vars->nb_search_space = 0;
 
       for (i = 0; i < dl_config->number_pdus; ++i){
 
         if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
 
+          LOG_D(PHY,"FAPI_NR_DL_CONFIG_TYPE_DCI\n");
           fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
           memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
           pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
@@ -76,9 +77,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         } else {
 
           if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
+            LOG_D(PHY,"FAPI_NR_DL_CONFIG_TYPE_DLSCH\n");
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
+            LOG_D(PHY,"FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH\n");
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
@@ -95,6 +98,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->active = 1;
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
+
+          LOG_D(PHY,"current_harq_pid = %d\n", current_harq_pid);
 
           if (dlsch0_harq){
 
@@ -123,8 +128,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
             dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
             dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
-            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
-		
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\tpdsch_to_harq_feedback_time_ind = %d\tslot_for_feedback_ack = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs, dlsch_config_pdu->pdsch_to_harq_feedback_time_ind, dlsch0_harq->harq_ack.slot_for_feedback_ack);
           }
         }
       }

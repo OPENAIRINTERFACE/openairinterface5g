@@ -59,6 +59,29 @@ The RF simulator is using the configuration module, and its parameters are defin
         
 Setting the env variable RFSIMULATOR can be used instead of using the serveraddr parameter; it is to preserve compatibility with previous version.
 
+## How to use the RF simulator options
+
+Add the following options to the command line to enable the channel model and the IQ samples saving for future replay:
+```bash
+--rfsimulator.options chanmod,saviq
+```
+or just:
+```bash
+--rfsimulator.options chanmod
+```
+to enable the channel model. 
+
+set the model with:
+```bash
+--rfsimulator.modelname AWGN
+```
+
+Example run:
+
+```bash
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test --rfsimulator.options chanmod --rfsimulator.modelname AWGN 
+```
+
 ## 4G case
 
 For the UE, it should be set to the IP address of the eNB. For example:
@@ -165,5 +188,50 @@ Only the input noise can be changed on command line with the `-s` parameter.
 
 With path loss = 0 set `-s 5` to see a little noise. `-s` is a shortcut to `channelmod.s`. It is expected to enhance the channel modelization flexibility by the addition of more parameters in the channelmod section.
 
+Example to add a very small noise:
+```bash
+-s 30
+```
+to add a lot of noise:
+```bash
+-s 5
+```
+
+Example run commands:
+```bash
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test --rfsimulator.options chanmod --rfsimulator.modelname AWGN 
+
+```
+# Real time control and monitoring
+
+Add the `--telnetsrv` option to the command line. Then in a new shell, connect to the telnet server, example:
+```bash
+telnet 127.0.0.1 9090
+```
+once connected it is possible to monitor the current status:
+```bash
+channelmod show current
+```
+
+see the available channel models:
+```bash
+channelmod show predef
+```
+
+or modify the channel model, for example setting a new model:
+```bash
+rfsimu setmodel AWGN
+```
+setting the pathloss, etc...:
+```bash
+channelmod modify <channelid> <param> <value>
+channelmod modify 0 ploss 15
+```
+where:
+```bash
+<param name> can be one of "riceanf", "aoa", "randaoa", "ploss", "offset", "forgetf"
+```
+
 # Caveats
 Still issues in power control: txgain, rxgain are not used.
+

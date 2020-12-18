@@ -243,12 +243,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       }
     } else
       LOG_W(RRC, "No E-RAB to be added received from SgNB Addition Request message \n");
-  }
 
-  if (m != NULL) {
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).MeNB_ue_x2_id = m->ue_x2_id;
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).SgNB_ue_x2_id = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
-
     //X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = CG_Config_size; //Need to verify correct value for the buffer_size
     // Send to X2 entity to transport to MeNB
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_Config,
@@ -258,6 +255,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               1024);
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
     itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
+  } else if (get_softmodem_params()->do_ra) {
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
   }
 
   rrc->Nb_ue++;
@@ -271,6 +270,15 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                          1, // add_ue flag
                          ue_context_p->ue_id_rnti,
                          ue_context_p->ue_context.secondaryCellGroup);
+
+  if(m == NULL){
+    LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
+                                                                                                                                                        ctxt.module_id,
+                                                                                                                                                        ctxt.rnti,
+                                                                                                                                                        ctxt.frame,
+                                                                                                                                                        ctxt.subframe,
+                                                                                                                                                        ctxt.eNB_index);
+  }
 
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
@@ -291,6 +299,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       ue_context_p->ue_context.rb_config->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
       ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+
+  LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 
 }
 

@@ -75,7 +75,7 @@
 
 #include "rrc_eNB_GTPV1U.h"
 
-
+#include "nr_pdcp/nr_pdcp_entity.h"
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
 

@@ -413,10 +413,16 @@ sctp_handle_new_association_req(
     }
 
     /* Subscribe to all events */
-    memset((void *)&events, 1, sizeof(struct sctp_event_subscribe));
+    events.sctp_data_io_event = 1;
+    events.sctp_association_event = 1;
+    events.sctp_address_event = 1;
+    events.sctp_send_failure_event = 1;
+    events.sctp_peer_error_event = 1;
+    events.sctp_shutdown_event = 1;
+    events.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &events,
-                   sizeof(struct sctp_event_subscribe)) < 0) {
+                   8) < 0) {
         SCTP_ERROR("Setsockopt IPPROTO_SCTP_EVENTS failed: %s\n",
                    strerror(errno));
         close(sd);
@@ -759,10 +765,16 @@ static int sctp_create_new_listener(
         }
     }
 
-    memset((void *)&event, 1, sizeof(struct sctp_event_subscribe));
+    event.sctp_data_io_event = 1;
+    event.sctp_association_event = 1;
+    event.sctp_address_event = 1;
+    event.sctp_send_failure_event = 1;
+    event.sctp_peer_error_event = 1;
+    event.sctp_shutdown_event = 1;
+    event.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &event,
-                   sizeof(struct sctp_event_subscribe)) < 0) {
+                   8) < 0) {
         SCTP_ERROR("setsockopt: %s:%d\n", strerror(errno), errno);
         if (sd != -1) {
             close(sd);

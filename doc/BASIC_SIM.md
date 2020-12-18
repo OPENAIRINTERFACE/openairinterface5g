@@ -27,7 +27,7 @@ $ cd cmake_targets
 $ ./build_oai --eNB --UE
 ```
 
-Both eNB (lte-softmodem) and UE (lte-uesoftmodem) are present on `cmake_targets/lte_build_oai/build` folder.
+Both eNB (lte-softmodem) and UE (lte-uesoftmodem) are present on `cmake_targets/ran_build/build` folder.
 
 More details are available on the [build page](BUILD.md).
 
@@ -50,7 +50,7 @@ Example 1: running in FDD mode with EPC.
 
 ```bash
 $ source oaienv
-$ cd cmake_targets/lte_build_oai/build
+$ cd cmake_targets/ran_build/build
 $ ENODEB=1 sudo -E ./lte-softmodem -O $OPENAIR_HOME/ci-scripts/conf_files/lte-fdd-basic-sim.conf --basicsim
 ```
 
@@ -64,7 +64,7 @@ Example 2: running in TDD mode without any EPC.
 
 ```bash
 $ source oaienv
-$ cd cmake_targets/lte_build_oai/build
+$ cd cmake_targets/ran_build/build
 $ ENODEB=1 sudo -E ./lte-softmodem -O $OPENAIR_HOME/ci-scripts/conf_files/lte-tdd-basic-sim.conf --basicsim --noS1
 ```
 
@@ -79,7 +79,7 @@ You need to set the correct OPC, USIM_API_K, MSIN (this is the end par of the IM
 ```bash
 $ source oaienv
 # Edit openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
-$ cd cmake_targets/lte_build_oai/build
+$ cd cmake_targets/ran_build/build
 $ ../../nas_sim_tools/build/conf2uedata -c $OPENAIR_HOME/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .
 $ sudo -E ./lte-uesoftmodem -C 2625000000 -r 25 --ue-rxgain 140 --basicsim [--noS1]
 ```
