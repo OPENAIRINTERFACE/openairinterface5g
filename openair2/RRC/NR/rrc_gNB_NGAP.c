@@ -57,6 +57,7 @@
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 #include "NR_UERadioAccessCapabilityInformation.h"
 #include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "f1ap_messages_types.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -575,6 +576,26 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
     }
 
+#if(0)
+  if (RC.nrrrc[ctxt.module_id]->node_type == ngran_gNB_CU) {
+    MessageDef *message_p;
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_UE_CONTEXT_SETUP_REQ);
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container =  ue_context_p->Srb0.Tx_buffer.Payload;
+
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = ue_context_p->Srb0.Tx_buffer.payload_size;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_p->rnti;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).srb_id = CCCH;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).execute_duplication      = 1;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).RAT_frequency_priority_information.en_dc      = 0;
+    itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+    LOG_D(NR_RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
+
+  }
+#endif
+
     return 0;
   }
 }
@@ -719,6 +740,8 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     struct rrc_gNB_ue_context_s *ue_context_p = NULL;
     protocol_ctxt_t              ctxt;
     memset(&ctxt, 0, sizeof(protocol_ctxt_t));
+    MessageDef *message_p;
+
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
     ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
@@ -786,7 +809,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         * switch UL or DL NAS message without RRC piggybacked to SRB2 if active.
         */
 #ifdef ITTI_SIM
-        MessageDef *message_p;
         uint8_t *message_buffer;
         message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
         memcpy (message_buffer, buffer, length);
@@ -797,6 +819,20 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
         LOG_I(NR_RRC, "Send DL NAS message \n");
 #else
+      // F1AP_DL_RRC_MESSAGE
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = length;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_p->ue_context.rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+#if(0)
         /* Transfer data to PDCP */
         nr_rrc_data_req (
             &ctxt,
@@ -806,6 +842,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
             length,
             buffer,
             PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
 #endif
         return (0);
     }

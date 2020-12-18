@@ -69,11 +69,11 @@ nr_rrc_data_req(
   }
 
   MSC_LOG_TX_MESSAGE(
-    ctxt_pP->enb_flag ? MSC_RRC_ENB : MSC_RRC_UE,
+    ctxt_pP->enb_flag ? MSC_RRC_GNB : MSC_RRC_UE,
     ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,
     buffer_pP,
     sdu_sizeP,
-    MSC_AS_TIME_FMT"RRC_DCCH_DATA_REQ UE %x MUI %d size %u",
+    MSC_AS_TIME_FMT"NR_RRC_DCCH_DATA_REQ UE %x MUI %d size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ctxt_pP->rnti,
     muiP,
@@ -82,28 +82,28 @@ nr_rrc_data_req(
   // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
   uint8_t *message_buffer;
   message_buffer = itti_malloc (
-                     ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
+                     ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_UE,
                      ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
                      sdu_sizeP);
   memcpy (message_buffer, buffer_pP, sdu_sizeP);
-  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, RRC_DCCH_DATA_REQ);
-  RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
-  RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
-  RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;
-  RRC_DCCH_DATA_REQ (message_p).muip      = muiP;
-  RRC_DCCH_DATA_REQ (message_p).confirmp  = confirmP;
-  RRC_DCCH_DATA_REQ (message_p).sdu_size  = sdu_sizeP;
-  RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
-  //memcpy (RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
-  RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
-  RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
-  RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
-  RRC_DCCH_DATA_REQ (message_p).eNB_index = ctxt_pP->eNB_index;
+  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_UE, NR_RRC_DCCH_DATA_IND);
+  NR_RRC_DCCH_DATA_IND (message_p).frame     = ctxt_pP->frame;
+  // NR_RRC_DCCH_DATA_IND (message_p).gnb_flag  = ctxt_pP->enb_flag;
+  // NR_RRC_DCCH_DATA_IND (message_p).rb_id     = rb_idP;
+  // NR_RRC_DCCH_DATA_IND (message_p).muip      = muiP;
+  // NR_RRC_DCCH_DATA_IND (message_p).confirmp  = confirmP;
+  NR_RRC_DCCH_DATA_IND (message_p).sdu_size  = sdu_sizeP;
+  NR_RRC_DCCH_DATA_IND (message_p).sdu_p     = message_buffer;
+  //memcpy (NR_RRC_DCCH_DATA_IND (message_p).sdu_p, buffer_pP, sdu_sizeP);
+  // NR_RRC_DCCH_DATA_IND (message_p).mode      = modeP;
+  NR_RRC_DCCH_DATA_IND (message_p).module_id = ctxt_pP->module_id;
+  NR_RRC_DCCH_DATA_IND (message_p).rnti      = ctxt_pP->rnti;
+  NR_RRC_DCCH_DATA_IND (message_p).gNB_index = ctxt_pP->eNB_index;
   itti_send_msg_to_task (
     ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
     ctxt_pP->instance,
     message_p);
-  LOG_I(RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
+  LOG_I(NR_RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_GNB\n");
 
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI

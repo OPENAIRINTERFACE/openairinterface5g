@@ -166,13 +166,19 @@ void *F1AP_CU_task(void *arg) {
                                                &F1AP_SETUP_RESP(received_msg));
         break;
 
-     case F1AP_DL_RRC_MESSAGE: // from rrc
+      case F1AP_DL_RRC_MESSAGE: // from rrc
         LOG_I(F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                                &F1AP_DL_RRC_MESSAGE(received_msg));
         break;
 
-     case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
+      case F1AP_UE_CONTEXT_SETUP_REQ: // from rrc
+        LOG_I(F1AP, "CU Task Received F1AP_UE_CONTEXT_SETUP_REQ\n");
+        CU_send_UE_CONTEXT_SETUP_REQUEST(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                               &F1AP_UE_CONTEXT_SETUP_REQ(received_msg));
+        break;
+
+      case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
         LOG_I(F1AP, "CU Task Received F1AP_UE_CONTEXT_RELEASE_CMD\n");
         CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                            &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));

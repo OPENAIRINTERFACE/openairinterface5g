@@ -42,13 +42,19 @@
 #include "LTE_DL-DCCH-Message.h"
 #include "LTE_UL-DCCH-Message.h"
 
+#include "NR_DL-CCCH-Message.h"
+#include "NR_UL-CCCH-Message.h"
+#include "NR_DL-DCCH-Message.h"
+#include "NR_UL-DCCH-Message.h"
 // for SRB1_logicalChannelConfig_defaultValue
 #include "rrc_extern.h"
 #include "common/ran_context.h"
 
 #include "rrc_eNB_UE_context.h"
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "asn1_msg.h"
 #include "intertask_interface.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -892,4 +898,191 @@ void init_f1ap_du_ue_inst (void) {
    memset(f1ap_du_inst, 0, sizeof(f1ap_du_inst));
 }
 
+int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, 
+                                    const f1ap_ul_rrc_message_t *msg) {
+  const rnti_t rnti = msg->rnti;
+
+  F1AP_F1AP_PDU_t                pdu;
+  F1AP_ULRRCMessageTransfer_t    *out;
+  F1AP_ULRRCMessageTransferIEs_t *ie;
+
+  uint8_t *buffer = NULL;
+  uint32_t len;
+
+
+  LOG_I(F1AP, "[DU %d] %s: size %d UE RNTI %x in SRB %d\n",
+        instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
+
+  //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, msg->rrc_container_length);
+  //for (int i = 0;i < msg->rrc_container_length; i++)
+  //  printf("%02x ", msg->rrc_container[i]);
+  //printf("\n");
+
+  /* Create */
+  /* 0. Message Type */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
+  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_ULRRCMessageTransfer;
+  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_ignore;
+  pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_ULRRCMessageTransfer;
+  out = &pdu.choice.initiatingMessage->value.choice.ULRRCMessageTransfer;
+  
+  /* mandatory */
+  /* c1. GNB_CU_UE_F1AP_ID */
+  ie = (F1AP_ULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_ULRRCMessageTransferIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
+
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_inst[instance], rnti);
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c2. GNB_DU_UE_F1AP_ID */
+  ie = (F1AP_ULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_ULRRCMessageTransferIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_du_inst[instance], rnti);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c3. SRBID */
+  ie = (F1AP_ULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_ULRRCMessageTransferIEs_t));
+  ie->id                            = F1AP_ProtocolIE_ID_id_SRBID;
+  ie->criticality                   = F1AP_Criticality_reject;
+  ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_SRBID;
+  ie->value.choice.SRBID            = msg->srb_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  // issue in here
+  /* mandatory */
+  /* c4. RRCContainer */
+  ie = (F1AP_ULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_ULRRCMessageTransferIEs_t));
+  ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
+  ie->criticality                   = F1AP_Criticality_reject;
+  ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_RRCContainer;
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer,
+                       (const char *) msg->rrc_container,
+                       msg->rrc_container_length);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (msg->srb_id == 1 || msg->srb_id == 2) {
+    struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
+
+   
+    NR_UL_DCCH_Message_t* ul_dcch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    dec_rval = uper_decode(NULL,
+         &asn_DEF_LTE_UL_DCCH_Message,
+         (void**)&ul_dcch_msg,
+         &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
+         msg->rrc_container_length, 0, 0);
+    
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) 
+      LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
+    else
+      LOG_I(F1AP, "Received message: present %d and c1 present %d\n",
+            ul_dcch_msg->message.present, ul_dcch_msg->message.choice.c1->present);
+
+    if (ul_dcch_msg->message.present == NR_UL_DCCH_MessageType_PR_c1) {
+
+      switch (ul_dcch_msg->message.choice.c1->present) {
+      case NR_UL_DCCH_MessageType__c1_PR_NOTHING:   /* No components present */
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_measurementReport:
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete:
+        LOG_I(F1AP, "[MSG] RRC UL rrcReconfigurationComplete\n");
+        
+        /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
+#if(0)
+        int UE_id_mac = find_nr_UE_id(instance, rnti);
+        
+        if (UE_id_mac == -1) {
+          LOG_E(F1AP, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
+          break;
+        }
+        
+        UE_sched_ctrl_t *UE_scheduling_control = &(RC.nrmac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
+        
+        if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+          UE_scheduling_control->cdrx_waiting_ack = FALSE;
+          UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
+          LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+        }
+        /* End of CDRX processing */
+#endif
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete:
+        LOG_I(F1AP, "[MSG] RRC UL rrcSetupComplete \n");
+        
+        if(!ue_context_p){
+          LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
+
+        } else {
+          LOG_I(F1AP, "Processing RRCSetupComplete UE %x\n", rnti);
+          ue_context_p->ue_context.Status = NR_RRC_CONNECTED;
+        }
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_rrcReestablishmentComplete:
+        LOG_I(F1AP, "[MSG] RRC ReestablishmentComplete \n");
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_rrcResumeComplete:
+        LOG_I(F1AP, "[MSG] RRC ResumeComplete \n");
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
+        LOG_I(F1AP, "[MSG] RRC securityModeComplete \n");
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_securityModeFailure:
+        LOG_I(F1AP, "[MSG] RRC securityModeFailure \n");
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+        LOG_I(F1AP, "[MSG] RRC UL Information Transfer \n");
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_locationMeasurementIndication:
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
+        LOG_I(F1AP, "[MSG] RRC ueCapabilityInformation \n");
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_ueAssistanceInformation:
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_failureInformation:
+       break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_scgFailureInformation:
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_scgFailureInformationEUTRA:
+       break;
+
+      default:
+        LOG_E(NR_RRC, "Unknown UL DCCH message type, present %d \n", ul_dcch_msg->message.choice.c1->present);
+       break;
+      }
+    }
+  }
+    /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(F1AP, "Failed to encode F1 UL RRC MESSAGE TRANSFER \n");
+    return -1;
+  }
+
+  du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, f1ap_du_data->default_sctp_stream_id);
+  return 0;
+}
 
