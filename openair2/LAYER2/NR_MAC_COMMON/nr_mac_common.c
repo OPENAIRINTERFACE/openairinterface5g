@@ -937,14 +937,22 @@ int64_t table_6_3_3_2_4_prachConfig_Index [256][10] = {
 
 
 int get_format0(uint8_t index,
-                uint8_t unpaired){
+                uint8_t unpaired,
+		frequency_range_t frequency_range){
 
   uint16_t format;
-  if (unpaired)
-    format = table_6_3_3_2_3_prachConfig_Index[index][0];
-  else
-    format = table_6_3_3_2_2_prachConfig_Index[index][0];
-
+  if (unpaired) {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_3_prachConfig_Index[index][0];
+    else
+      format = table_6_3_3_2_4_prachConfig_Index[index][0];
+  }
+  else {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_2_prachConfig_Index[index][0];
+    else
+      AssertFatal(0==1,"no paired spectrum for FR2\n");
+  }
   return format;
 }
 
@@ -1402,11 +1410,12 @@ uint16_t table_63313[838] = {
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired) {
+                            uint8_t unpaired,
+			    frequency_range_t frequency_range) {
 
   uint8_t config_index = rach_config->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t ncs_index = rach_config->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-  uint16_t format0 = get_format0(config_index, unpaired);
+  uint16_t format0 = get_format0(config_index, unpaired, frequency_range);
   uint16_t NCS = get_NCS(ncs_index, format0, rach_config->restrictedSetConfig);
   uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139) ? 139 : 839;
   uint16_t r,u,index,q,d_u,n_shift_ra,n_shift_ra_bar,d_start;
@@ -1879,7 +1888,8 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   }
   uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
   uint8_t Imcs = pdsch_rel15->mcsIndex[0];
-  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  uint16_t dmrs_length = get_num_dmrs(pdsch_rel15->dlDmrsSymbPos);
+  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS*dmrs_length - N_PRB_oh;
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
   uint16_t R;
@@ -1896,10 +1906,10 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 
   TBS = nr_compute_tbs(Qm,
                        R,
-		       pdsch_rel15->rbSize,
-		       N_sh_symb,
-		       N_PRB_DMRS, // FIXME // This should be multiplied by the number of dmrs symbols
-		       N_PRB_oh,
+                       pdsch_rel15->rbSize,
+                       N_sh_symb,
+                       N_PRB_DMRS*dmrs_length,
+                       N_PRB_oh,
                        tb_scaling,
 		       pdsch_rel15->nrOfLayers)>>3;
 
@@ -2784,6 +2794,8 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
+        if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
+	if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
       }
     }
     else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
@@ -2846,3 +2858,72 @@ int binomial(int n, int k) {
   return c;
 }
 
+/* extract PTRS values from RC and validate it based upon 38.214 5.1.6.3 */
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *portIndex,uint8_t *nERatio, uint8_t *reOffset,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 5.1.6.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ptrs_config->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 5.1.6.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ptrs_config->frequencyDensity->list.array[0],
+                         *ptrs_config->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ptrs_config->timeDensity->list.count < 3) {
+    /* Default value for L_PTRS = 1 as defined in T 38.214 5.1.6.3 */
+       *L_ptrs = 1;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ptrs_config->timeDensity->list.array[0],
+                         *ptrs_config->timeDensity->list.array[1],
+                         *ptrs_config->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  *portIndex =*ptrs_config->epre_Ratio;
+  *nERatio = *ptrs_config->resourceElementOffset;
+  *reOffset  = 0;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 5.1.6.3-1 and Table 5.1.6.3-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PDSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PDSCH with allocation duration of 2 symbols as defined in Clause 7.4.1.1.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+  return valid;
+}

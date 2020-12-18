@@ -205,7 +205,7 @@ typedef struct {
   /// Random-access procedure flag
   uint8_t RA_active;
   /// Random-access window counter
-  int8_t RA_window_cnt;
+  int16_t RA_window_cnt;
   /// Random-access Msg3 size in bytes
   uint8_t RA_Msg3_size;
   /// Random-access prachMaskIndex
@@ -292,10 +292,6 @@ typedef enum channel_bandwidth_e {
     bw_100MHz = 0x32
 } channel_bandwidth_t;
 
-typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
-} frequency_range_t;
 
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:

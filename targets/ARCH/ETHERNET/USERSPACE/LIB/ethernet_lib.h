@@ -49,7 +49,10 @@
 #define RX_FLAG 0
 
 #include "if_defs.h"
-#define APP_HEADER_SIZE_BYTES (sizeof(int32_t) + sizeof(openair0_timestamp))
+#define ECPRICOMMON_BYTES 4
+#define ECPRIPCID_BYTES 2
+#define APP_HEADER_SIZE_BYTES (ECPRICOMMON_BYTES + ECPRIPCID_BYTES + sizeof(openair0_timestamp))
+#define ECPRIREV 1 // ECPRI Version 1, C=0 - single ECPRI message per OAI TX packet
 
 /*!\brief opaque ethernet data structure */
 typedef struct {
@@ -234,8 +237,8 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value);
 * @ingroup  _oai
 */
 int eth_socket_init_udp(openair0_device *device);
-int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
-int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int cc, int flags);
+int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void *buff, int nsamps, int *cc);
 
 
 int eth_socket_init_raw(openair0_device *device);

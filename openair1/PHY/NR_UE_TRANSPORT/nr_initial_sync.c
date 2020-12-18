@@ -304,8 +304,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
       if (ret == 0) {
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
-        sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-
+        int mu = fp->numerology_index;
+        // number of symbols with different prefix length
+        // every 7*(1<<mu) symbols there is a different prefix length (38.211 5.3.1)
+        int n_symb_prefix0 = (ue->symbol_offset/(7*(1<<mu)))+1;
+        sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
         if (ue->ssb_offset < sync_pos_frame)
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
         else
