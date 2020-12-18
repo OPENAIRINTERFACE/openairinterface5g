@@ -555,7 +555,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
 	  }
 
-          if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
+          if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS < 1000)
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
 
           b->lastReceivedTS=b->th.timestamp;
@@ -628,7 +628,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       t->nextTimestamp+=nsamps;
 
       if ( ((t->nextTimestamp/nsamps)%100) == 0)
-        LOG_W(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextTimestamp);
+        LOG_D(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextTimestamp);
 
       *ptimestamp = t->nextTimestamp-nsamps;
       return nsamps;
