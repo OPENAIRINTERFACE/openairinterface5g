@@ -33,12 +33,12 @@
 // last channel estimate of the receiver
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
-                      PHY_VARS_NR_UE *ue,
-                      module_id_t gNB_id,
-                      uint8_t frame,
-                      uint8_t subframe,
-                      unsigned char clear,
-                      short coef)
+                        PHY_VARS_NR_UE *ue,
+                        module_id_t gNB_id,
+                        uint8_t frame,
+                        uint8_t subframe,
+                        unsigned char clear,
+                        short coef)
 {
 
   static int max_pos_fil = 0;
@@ -47,6 +47,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   int temp = 0, i, aa, max_val = 0, max_pos = 0;
   int diff;
   short Re,Im,ncoef;
+  uint8_t sync_offset = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
 
@@ -80,11 +81,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   //max_pos_fil = max_pos;
 
-  if(subframe == 0)
-  {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
-      if ( abs(diff) < SYNCH_HYST )
+      if (frame_parms->freq_range==nr_FR2) 
+		sync_offset = 2;
+      else
+		sync_offset = 0;
+	
+      if ( abs(diff) < (SYNCH_HYST+sync_offset) )
           ue->rx_offset = 0;
       else
           ue->rx_offset = diff;
@@ -134,5 +138,5 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       #endif //DEBUG_PHY
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
-  }
+
 }

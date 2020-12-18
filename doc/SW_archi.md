@@ -70,7 +70,7 @@ if the input is a UE RACH detection
     * nr_schedule_msg2()
 {: .func4}
 * handle_nr_uci()  
-????	      
+handles uplink control information, i.e., for the moment HARQ feedback.
 {: .func4}
 * handle_nr_ulsch()  
 handles ulsch data prepared by nr_fill_indication()
@@ -143,7 +143,8 @@ the samples numbers are the future time for these samples emission on-air
 {: .func3}
 
 # Scheduler
-The scheduler is called by the chain: nr_ul_indication()=>gNB_dlsch_ulsch_scheduler()
+
+The main scheduler function  is called by the chain: nr_ul_indication()=>gNB_dlsch_ulsch_scheduler()
 It calls sub functions to process each physical channel (rach, ...)  
 The scheduler uses and internal map of used RB: vrb_map and vrb_map_UL, so each specific channel scheduler can see the already filled RB in each subframe (the function gNB_dlsch_ulsch_scheduler() clears these two arrays when it starts)   
 
@@ -153,16 +154,71 @@ it sends a iiti message to activate the thread for RRC, the answer will be async
 
 Calls schedule_nr_mib() that calls mac_rrc_nr_data_req() to fill MIB,  
 
-Calls each channel allocation: schedule SI, schedule_ul, schedule_dl, ...  
-this is a major entry for "phy-test" mode: in this mode, the allocation is fixed  
-all these channels goes to mac_rrc_nr_data_req() to get the data to transmit  
+Calls schedule_nr_prach() which schedules the (fixed) PRACH region one frame in
+advance.
 
-nr_schedule_ue_spec() is called  
-* calls nr_simple_dlsch_preprocessor()=> mac_rlc_status_ind() mac_rlc_status_ind() locks and checks directly inside rlc data the quantity of waiting data. So, the scheduler can allocate RBs
-* calls nr_update_pucch_scheduling()  
-    * get_pdsch_to_harq_feedback() to schedule retransmission in DL
+Calls nr_csi_meas_reporting() to check when to schedule CSI in PUCCH.
 
-Calls nr_fill_nfapi_dl_pdu() to actually populate what should be done by the lower layers to make the Tx subframe
+Calls nr_schedule_RA(): checks RA process 0's state. Schedules Msg.2 via
+nr_generate_Msg2() if an RA process is ongoing, and pre-allocates the Msg. 3
+for PUSCH as well.
+
+Calls nr_schedule_ulsch(): It is divided into the "preprocessor" and the
+"postprocessor": the first makes the scheduling decisions, the second fills
+nFAPI structures to indicate to the PHY what it is supposed to do. To signal
+which users have how many resources, the preprocessor populates the
+NR_sched_pusch_t (for values changing every TTI, e.g., frequency domain
+allocation) and NR_sched_pusch_save_t (for values changing less frequently, at
+least in FR1 [to my understanding], e.g., DMRS fields when the time domain
+allocation stays between TTIs) structures. Furthermore, the preprocessor is an
+exchangeable module that might schedule differently, e.g., one user for
+phytest, multiple users in FR1, or maybe FR2: phytest is in
+nr_ul_preprocessor_phytest(), for FR1 is nr_simple_ulsch_preprocessor() [under
+development], for FR2 does not exist yet.
+* calls preprocessor via pre_processor_ul(): the preprocessor is responsible
+  for allocating CCEs (using allocate_nr_CCEs()). Note that we do not yet have
+  scheduling requests or buffer status reports, and only one UE. E.g.,
+  nr_simple_ulsch_preprocessor():
+  1)  check whether the current frame/slot plus K2 is an UL slot, and return if
+      not.
+  2)  Find first free start RB in vrb_map_UL, and as many free consecutive RBs
+      as possible.
+  3)  allocate a CCE for the UE (and return if it is not possible)
+  4)  Calculate DMRS stuff (nr_save_pusch_fields()) and the TBS.
+  5)  Mark used resources in vrb_map_UL.
+* loop through all users: get a free HARQ PID using select_ul_harq_pid() and
+  update statistics. Fill nFAPI structures directly for PUSCH, and call
+  config_uldci() and fill_dci_pdu_rel15() for DCI filling and PDCCH messages.
+
+Calls nr_schedule_ue_spec(). It is divided into the "preprocessor" and the
+"postprocessor": the first makes the scheduling decisions, the second fills
+nFAPI structures to indicate to the PHY what it is supposed to do. To signal
+which users have how many resources, the preprocessor populates the
+NR_UE_sched_ctrl_t structure of affected users. In particular, the field rbSize
+decides whether a user is to be allocated. Furthermore, the preprocessor is an
+exchangeable module that might schedule differently, e.g., one user for
+phytest, multiple users in FR1, or maybe FR2: phytest is in
+nr_preprocessor_phytest(), for FR1 is nr_simple_dlsch_preprocessor() [under
+development], for FR2 does not exist yet.
+* calls preprocessor via pre_processor_dl(): the preprocessor is responsible
+  for allocating CCEs and PUCCH (using allocate_nr_CCEs() and
+  nr_acknack_scheduling()) and deciding on the frequency/time domain
+  allocation. E.g., nr_simple_dlsch_preprocessor():
+  1)  mac_rlc_status_ind() locks and checks directly inside rlc data the
+      quantity of waiting data.
+  2)  return from the preprocessor if there is no data and no timing advance to
+      send,
+  3)  otherwise, allocate a CCE for the UE (and return if it is not possible)
+  4)  find a PUCCH occasion for HARQ
+  5a) check if there is a retransmission: if yes, find free resources to
+      transmit using the same resources, else
+  5b) calculate the necessary RBs needed to get a TBS large enough to hold all
+      data, or until no more resources are available
+  6)  Mark taken resources in the vrb_map
+* loop through all users: check if a new TA is necessary. Then, if a user has
+  allocated resources, compute its TBS, and fill nFAPI structures
+  (nr_fill_nfapi_dl_pdu() to populate what should be done by the lower layers
+  to make the Tx subframe). Update statistics (round, sent bytes).
 
 # RRC
 RRC is a regular thread with itti loop on queue: TASK_RRC_GNB

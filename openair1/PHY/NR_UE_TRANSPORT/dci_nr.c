@@ -154,9 +154,11 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
     for (int i=0; i<9; i++) {
       z[index_z + i] = llr[index_llr + i];
+#ifdef NR_PDCCH_DCI_DEBUG
       LOG_D(PHY,"[reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
              reg,bundle_j,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
              f_reg,f_bundle_j,(index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
+#endif
     }
 
     if ((reg%reg_bundle_size_L) == 0) r++;
@@ -373,7 +375,10 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
     for (int rb=0;rb<coreset_nbr_rb;rb++,c_rb++) {
       c_rb_by6 = c_rb/6;
       // skip zeros in frequency domain bitmap
-      while ((coreset_freq_dom[c_rb_by6>>3] & (1<<(c_rb_by6&7))) == 0) c_rb+=6;
+      while ((coreset_freq_dom[c_rb_by6>>3] & (1<<(7-(c_rb_by6&7)))) == 0) {
+	  c_rb+=6;
+	  c_rb_by6 = c_rb/6;
+	}
 
       LOG_DDD("c_rb=%d\n",c_rb);
       rxF=NULL;

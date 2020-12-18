@@ -72,6 +72,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
+#include "gnb_paramdef.h"
 
 
 #ifndef OPENAIR2
@@ -101,6 +102,7 @@ extern int transmission_mode;
 
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
+
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -884,7 +886,18 @@ void init_gNB_proc(int inst) {
 
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  char ul_pool[] = "-1,-1";
+  int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  uint32_t num_threads_pusch;
+  paramdef_t PUSCHThreads[] = NUM_THREADS_DESC;
+  config_get( PUSCHThreads,sizeof(PUSCHThreads)/sizeof(paramdef_t),NULL);
+  int threadCnt = min(numCPU, num_threads_pusch);
+  char ul_pool[80];
+  sprintf(ul_pool,"-1");
+  int s_offset = 0;
+  for (int icpu=1; icpu<threadCnt; icpu++) {
+    sprintf(ul_pool+2+s_offset,",-1");
+    s_offset += 3;
+  }
   initTpool(ul_pool, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
 }

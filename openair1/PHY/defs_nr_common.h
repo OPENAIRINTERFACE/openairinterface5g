@@ -228,7 +228,7 @@ typedef struct {
   /// Pointer to Msg3 payload for UL-grant
   uint8_t *Msg3;
   /// Frame of last completed synch
-  uint8_t sync_frame;
+  uint16_t sync_frame;
   /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
   uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;
