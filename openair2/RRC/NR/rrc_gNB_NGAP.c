@@ -808,42 +808,69 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         /*
         * switch UL or DL NAS message without RRC piggybacked to SRB2 if active.
         */
+       switch (RC.nrrrc[ctxt.module_id]->node_type) {
+        case ngran_gNB_CU:
+          // create an ITTI message
+          // F1AP_DL_RRC_MESSAGE
+          message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+          F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
+          F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = length;
+          F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+          F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+          F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+          F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_p->ue_context.rnti;
+          F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
+          F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+          F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+          itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+          LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+
+          /* Transfer data to PDCP */
+          nr_rrc_data_req (
+              &ctxt,
+              ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
+              (*rrc_gNB_mui)++,
+              SDU_CONFIRM_NO,
+              length,
+              buffer,
+              PDCP_TRANSMISSION_MODE_CONTROL);
+          break;
+
+        case ngran_gNB_DU:
+          // nothing to do for DU
+          AssertFatal(1==0,"nothing to do for DU\n");
+          break;
+
+        case ngran_gNB:
+          // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
-        uint8_t *message_buffer;
-        message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
-        memcpy (message_buffer, buffer, length);
-        message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
-        GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-        GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-        GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
-        itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
-        LOG_I(NR_RRC, "Send DL NAS message \n");
+          uint8_t *message_buffer;
+          message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
+          memcpy (message_buffer, buffer, length);
+          message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+          GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+          GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+          GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
+          itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
+          LOG_I(NR_RRC, "Send DL NAS message \n");
 #else
-      // F1AP_DL_RRC_MESSAGE
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = length;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_p->ue_context.rnti;
-      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
-      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-      itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
-      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
 #if(0)
-        /* Transfer data to PDCP */
-        nr_rrc_data_req (
-            &ctxt,
-            ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
-            (*rrc_gNB_mui)++,
-            SDU_CONFIRM_NO,
-            length,
-            buffer,
-            PDCP_TRANSMISSION_MODE_CONTROL);
+          /* Transfer data to PDCP */
+          nr_rrc_data_req (
+              &ctxt,
+              ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
+              (*rrc_gNB_mui)++,
+              SDU_CONFIRM_NO,
+              length,
+              buffer,
+              PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
 #endif
+          break;
+
+        default :
+            LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt.module_id]->node_type);
+      }
         return (0);
     }
 }

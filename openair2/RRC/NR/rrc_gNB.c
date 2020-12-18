@@ -405,16 +405,21 @@ rrc_gNB_generate_RRCSetup(
 
     case ngran_gNB:
       // rrc_mac_config_req_gNB
-      break;
-
-    default :
-        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
-
-    LOG_D(NR_RRC,
+#ifdef ITTI_SIM
+      MessageDef *message_p;
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
+                ue_p->Srb0.Tx_buffer.payload_size);
+      memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
+      message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
+      GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
+      GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#endif
+      LOG_D(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-
-    MSC_LOG_TX_MESSAGE(
+      MSC_LOG_TX_MESSAGE(
         MSC_RRC_GNB,
         MSC_RRC_UE,
         ue_p->Srb0.Tx_buffer.Header, // LG WARNING
@@ -423,42 +428,22 @@ rrc_gNB_generate_RRCSetup(
         MSC_AS_TIME_ARGS(ctxt_pP),
         ue_context_pP->ue_context.rnti,
         ue_p->Srb0.Tx_buffer.payload_size);
-    LOG_I(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        ue_p->Srb0.Tx_buffer.payload_size);
-    // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-    ue_context_pP->ue_context.ue_release_timer = 1;
-    // remove UE after 10 frames after RRCConnectionRelease is triggered
-    ue_context_pP->ue_context.ue_release_timer_thres = 1000;
-    /* init timers */
-    //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
-  }
+      LOG_I(NR_RRC,
+          PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
+          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+          ue_p->Srb0.Tx_buffer.payload_size);
+      // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
+      ue_context_pP->ue_context.ue_release_timer = 1;
+      // remove UE after 10 frames after RRCConnectionRelease is triggered
+      ue_context_pP->ue_context.ue_release_timer_thres = 1000;
+      /* init timers */
+      //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+      break;
 
-#ifdef ITTI_SIM
-  MessageDef *message_p;
-  uint8_t *message_buffer;
-  message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
-            ue_p->Srb0.Tx_buffer.payload_size);
-  memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
-  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
-  GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-  GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
-  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#else
-  message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = (uint8_t *)ue_p->Srb0.Tx_buffer.Payload;
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-  F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_p->rnti;
-  F1AP_DL_RRC_MESSAGE (message_p).srb_id               = CCCH;
-  F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-  F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-  itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-  LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
-#endif
+    default :
+        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+
+  }
 }
 
 void
@@ -471,6 +456,8 @@ rrc_gNB_generate_RRCReject(
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCReject \n");
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  MessageDef *message_p;
+
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCReject(ctxt_pP->module_id,
                                                   (uint8_t *)ue_p->Srb0.Tx_buffer.Payload);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
@@ -490,17 +477,45 @@ rrc_gNB_generate_RRCReject(
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
       ue_p->Srb0.Tx_buffer.payload_size);
 
+  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
+    case ngran_gNB_CU:
+      // create an ITTI message
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = (uint8_t *)ue_p->Srb0.Tx_buffer.Payload;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_p->rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = CCCH;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+      break;
+
+    case ngran_gNB_DU:
+      // nothing to do for DU
+      AssertFatal(1==0,"nothing to do for DU\n");
+      break;
+
+    case ngran_gNB:
 #ifdef ITTI_SIM
-  MessageDef *message_p;
-  uint8_t *message_buffer;
-  message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
-            ue_p->Srb0.Tx_buffer.payload_size);
-  memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
-  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
-  GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-  GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
-  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
+                ue_p->Srb0.Tx_buffer.payload_size);
+      memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
+      message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_CCCH_DATA_IND);
+      GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
+      GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #endif
+      // rrc_mac_config_req_gNB
+      break;
+
+    default :
+      LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -553,7 +568,51 @@ rrc_gNB_generate_defaultRRCReconfiguration(
           ctxt_pP->frame,
           size,
           ue_context_pP->ue_context.rnti);
-  LOG_D(NR_RRC, "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
+    case ngran_gNB_CU:
+      // create an ITTI message
+      // F1AP_DL_RRC_MESSAGE
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_I(NR_RRC, "send RRCReconfiguration to F1AP by F1AP_DL_RRC_MESSAGE \n");
+
+      nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      // rrc_pdcp_config_asn1_req
+
+      break;
+
+    case ngran_gNB_DU:
+      // nothing to do for DU
+      AssertFatal(1==0,"nothing to do for DU\n");
+      break;
+
+    case ngran_gNB:
+#ifdef ITTI_SIM
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
+      memcpy (message_buffer, buffer, size);
+      message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+      GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
+      LOG_D(NR_RRC, "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
           ctxt_pP->frame,
           ctxt_pP->module_id,
           size,
@@ -561,7 +620,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
           rrc_gNB_mui,
           ctxt_pP->module_id,
           DCCH);
-  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+      MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
           MSC_RRC_UE,
           buffer,
           size,
@@ -570,40 +629,23 @@ rrc_gNB_generate_defaultRRCReconfiguration(
           ue_context_pP->ue_context.rnti,
           rrc_gNB_mui,
           size);
-#ifdef ITTI_SIM
-  uint8_t *message_buffer;
-  message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
-  memcpy (message_buffer, buffer, size);
-  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
-  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-  GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-  GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
-  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#else
-// F1AP_DL_RRC_MESSAGE
-  message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-  F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
-  F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
-  F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-  F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-  itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
 #if(0)
-  nr_rrc_data_req(ctxt_pP,
-              DCCH,
-              rrc_gNB_mui++,
-              SDU_CONFIRM_NO,
-              size,
-              buffer,
-              PDCP_TRANSMISSION_MODE_CONTROL);
+      nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      // rrc_pdcp_config_asn1_req
 #endif
 #endif
-  // rrc_pdcp_config_asn1_req
-  // rrc_rlc_config_asn1_req
+      // rrc_rlc_config_asn1_req
+      break;
+
+    default :
+        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1598,58 +1640,82 @@ rrc_gNB_generate_SecurityModeCommand(
         PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d)\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
-  LOG_D(NR_RRC,
+
+  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
+    case ngran_gNB_CU:
+      // create an ITTI message
+      // F1AP_DL_RRC_MESSAGE
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+
+      LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
+      nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+      break;
+
+    case ngran_gNB_DU:
+      // nothing to do for DU
+      AssertFatal(1==0,"nothing to do for DU\n");
+      break;
+
+    case ngran_gNB:
+      LOG_D(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (securityModeCommand to UE MUI %d) --->[PDCP][RB %02d]\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size,
         rrc_gNB_mui,
         DCCH);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_GNB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" securityModeCommand UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_gNB_mui,
-    size);
-
-  LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
+      MSC_LOG_TX_MESSAGE(
+        MSC_RRC_GNB,
+        MSC_RRC_UE,
+        buffer,
+        size,
+        MSC_AS_TIME_FMT" securityModeCommand UE %x MUI %d size %u",
+        MSC_AS_TIME_ARGS(ctxt_pP),
+        ue_context_pP->ue_context.rnti,
+        rrc_gNB_mui,
+        size);
 #ifdef ITTI_SIM
-  uint8_t *message_buffer;
-  message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,size);
-  memcpy (message_buffer, buffer, size);
-  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
-  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-  GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-  GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
-  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,size);
+      memcpy (message_buffer, buffer, size);
+      message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+      GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-  // F1AP_DL_RRC_MESSAGE
-  message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-  F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
-  F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
-  F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-  F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-  itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-  LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
 #if(0)
-  nr_rrc_data_req(ctxt_pP,
-               DCCH,
-               rrc_gNB_mui++,
-               SDU_CONFIRM_NO,
-               size,
-               buffer,
-               PDCP_TRANSMISSION_MODE_CONTROL);
+      LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
+      nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
 #endif
+      break;
 
+    default :
+        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+  }
 }
 
 void
@@ -1669,60 +1735,86 @@ rrc_gNB_generate_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
-  LOG_I(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+  LOG_I(NR_RRC,
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
-  LOG_D(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (NR UECapabilityEnquiry MUI %d) --->[PDCP][RB %02d]\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
+    case ngran_gNB_CU:
+      // create an ITTI message
+      // F1AP_DL_RRC_MESSAGE
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+
+      nr_rrc_data_req(
+        ctxt_pP,
+        DCCH,
+        rrc_gNB_mui++,
+        SDU_CONFIRM_NO,
+        size,
+        buffer,
+        PDCP_TRANSMISSION_MODE_CONTROL);
+      break;
+
+    case ngran_gNB_DU:
+      // nothing to do for DU
+      AssertFatal(1==0,"nothing to do for DU\n");
+      break;
+
+    case ngran_gNB:
+      // rrc_mac_config_req_gNB
+      LOG_D(NR_RRC,
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (NR UECapabilityEnquiry MUI %d) --->[PDCP][RB %02d]\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size,
         rrc_gNB_mui,
         DCCH);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_GNB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" rrcNRUECapabilityEnquiry UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_gNB_mui,
-    size);
+      MSC_LOG_TX_MESSAGE(
+        MSC_RRC_GNB,
+        MSC_RRC_UE,
+        buffer,
+        size,
+        MSC_AS_TIME_FMT" rrcNRUECapabilityEnquiry UE %x MUI %d size %u",
+        MSC_AS_TIME_ARGS(ctxt_pP),
+        ue_context_pP->ue_context.rnti,
+        rrc_gNB_mui,
+        size);
 #ifdef ITTI_SIM
-  uint8_t *message_buffer;
-  message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
-  memcpy (message_buffer, buffer, size);
-  message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
-  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-  GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-  GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
-  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+      uint8_t *message_buffer;
+      message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
+      memcpy (message_buffer, buffer, size);
+      message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+      GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
+      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-  // F1AP_DL_RRC_MESSAGE
-  message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
-  F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-  F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-  F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
-  F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
-  F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-  F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-  itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-  LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
 #if(0)
-  nr_rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_gNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+      nr_rrc_data_req(
+        ctxt_pP,
+        DCCH,
+        rrc_gNB_mui++,
+        SDU_CONFIRM_NO,
+        size,
+        buffer,
+        PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
 #endif
+      break;
+
+    default :
+        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+  }
 }
 
 //-----------------------------------------------------------------------------
