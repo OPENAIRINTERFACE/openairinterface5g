@@ -145,3 +145,11 @@ nr_rrc_data_req(
 int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);
+
+void
+rrc_gNB_generate_dedicatedRRCReconfiguration_release(
+    const protocol_ctxt_t   *const ctxt_pP,
+    rrc_gNB_ue_context_t    *const ue_context_pP,
+    uint8_t                  xid,
+    uint32_t                 nas_length,
+    uint8_t                 *nas_buffer);

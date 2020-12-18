@@ -1754,7 +1754,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
 
   return 0;
 }
-// handle e-rab release command and send it to rrc_end
+// handle pdu session release command and send it to rrc_end
 static
 int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
     uint32_t               stream,
@@ -1772,7 +1772,7 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
   container = &pdu->choice.initiatingMessage->value.choice.PDUSessionResourceReleaseCommand;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received E-RAB release command for non existing AMF context\n", assoc_id);
+    NGAP_ERROR("[SCTP %d] Received pdu session release command for non existing AMF context\n", assoc_id);
     return -1;
   }
 
@@ -1805,11 +1805,11 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
   }
 
   /* Initial context request = UE-related procedure -> stream != 0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
-               assoc_id, stream);
-    return -1;
-  }
+  // if (stream == 0) {
+  //   NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+  //              assoc_id, stream);
+  //   return -1;
+  // }
 
   ue_desc_p->rx_stream = stream;
 
@@ -1818,7 +1818,7 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
               (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
   }
 
-  NGAP_DEBUG("[SCTP %d] Received E-RAB release command for gNB_UE_NGAP_ID %lu amf_ue_ngap_id %lu\n",
+  NGAP_DEBUG("[SCTP %d] Received pdu session release command for gNB_UE_NGAP_ID %lu amf_ue_ngap_id %lu\n",
              assoc_id, gnb_ue_ngap_id, amf_ue_ngap_id);
   message_p = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_RELEASE_COMMAND);
   NGAP_PDUSESSION_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
@@ -1850,7 +1850,18 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
       item_p = (NGAP_PDUSessionResourceToReleaseItemRelCmd_t *)ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.array[i];
     
       NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].pdusession_id = item_p->pDUSessionID;
-      NGAP_DEBUG("[SCTP] Received E-RAB release command for pDUSessionID id %ld\n", item_p->pDUSessionID);
+      if(item_p->pDUSessionResourceReleaseCommandTransfer.size > 0) {
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_length = item_p->pDUSessionResourceReleaseCommandTransfer.size;
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer = malloc(sizeof(uint8_t) * item_p->pDUSessionResourceReleaseCommandTransfer.size);
+        memcpy(NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer,
+               item_p->pDUSessionResourceReleaseCommandTransfer.buf,
+               item_p->pDUSessionResourceReleaseCommandTransfer.size);
+      }else {
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_length = 0;
+        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer = NULL;
+        NGAP_ERROR("[NGAP] Received pdu session release command for pDUSessionResourceReleaseCommandTransfer is NULL!\n");
+      }
+      NGAP_DEBUG("[NGAP] Received pdu session release command for pDUSessionID id %ld\n", item_p->pDUSessionID);
     }
   } else {
     return -1;

@@ -852,21 +852,22 @@ int ngap_gNB_initial_ctxt_resp(
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)buffer,
-      length,
-      MSC_AS_TIME_FMT" InitialContextSetup successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      initial_ctxt_resp_p->gNB_ue_ngap_id,
-      ue_context_p->amf_ue_ngap_id);
-  /* UE associated signalling -> use the allocated stream */
-  ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
-                                   ue_context_p->amf_ref->assoc_id, buffer,
-                                   length, ue_context_p->tx_stream);
+    MSC_LOG_TX_MESSAGE(
+        MSC_NGAP_GNB,
+        MSC_NGAP_AMF,
+        (const char *)buffer,
+        length,
+        MSC_AS_TIME_FMT" InitialContextSetup successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
+        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+        initial_ctxt_resp_p->gNB_ue_ngap_id,
+        ue_context_p->amf_ue_ngap_id);
+    /* UE associated signalling -> use the allocated stream */
+    LOG_I(NR_RRC,"Send message to sctp: NGAP_InitialContextSetupResponse\n");
+    ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
+                                     ue_context_p->amf_ref->assoc_id, buffer,
+                                     length, ue_context_p->tx_stream);
 
-  return 0;
+    return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -1421,7 +1422,52 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
     ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceReleasedListRelRes;
     ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_PDUSessionResourceReleasedListRelRes;
+    ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_AMF_UE_NGAP_ID;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    /* mandatory */
+    ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = pdusession_release_resp_p->gNB_ue_ngap_id;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+    /* optional */
+    if (pdusession_release_resp_p->nb_of_pdusessions_released > 0) {
+        ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
+        ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceReleasedListRelRes;
+        ie->criticality = NGAP_Criticality_ignore;
+        ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_PDUSessionResourceReleasedListRelRes;
+
+        for (i = 0; i < pdusession_release_resp_p->nb_of_pdusessions_released; i++) {
+            NGAP_PDUSessionResourceReleasedItemRelRes_t *item;
+            item = (NGAP_PDUSessionResourceReleasedItemRelRes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleasedItemRelRes_t));
+        
+            item->pDUSessionID = pdusession_release_resp_p->pdusession_release[i].pdusession_id;
+            if(pdusession_release_resp_p->pdusession_release[i].transfer_length > 0){
+                item->pDUSessionResourceReleaseResponseTransfer.size = pdusession_release_resp_p->pdusession_release[i].transfer_length;
+                item->pDUSessionResourceReleaseResponseTransfer.buf = malloc(sizeof(uint8_t) * pdusession_release_resp_p->pdusession_release[i].transfer_length);
+                memcpy(item->pDUSessionResourceReleaseResponseTransfer.buf,
+                       pdusession_release_resp_p->pdusession_release[i].transfer_buffer,
+                       pdusession_release_resp_p->pdusession_release[i].transfer_length);
+            }else {
+                item->pDUSessionResourceReleaseResponseTransfer.size = 0;
+                item->pDUSessionResourceReleaseResponseTransfer.buf = NULL;
+                NGAP_DEBUG("pdusession_release_resp: transfer_buffer is NULL!\n");
+#ifdef ITTI_SIM
+                //For testing only
+                item->pDUSessionResourceReleaseResponseTransfer.buf = malloc(sizeof(uint8_t) * 1);
+                item->pDUSessionResourceReleaseResponseTransfer.size = 1;
+                uint8_t temp = 0;
+                memcpy(item->pDUSessionResourceReleaseResponseTransfer.buf,
+                       &temp,
+                       item->pDUSessionResourceReleaseResponseTransfer.size);    
+#endif
+            }
+            NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
+            ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceReleasedListRelRes.list, item);
+        }
 
     for (i = 0; i < pdusession_release_resp_p->nb_of_pdusessions_released; i++) {
         NGAP_PDUSessionResourceReleasedItemRelRes_t *item;
