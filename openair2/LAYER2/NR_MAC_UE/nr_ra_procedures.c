@@ -572,7 +572,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       } 
     } else if (mac->RA_window_cnt != -1) { // RACH is active
 
-      LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, mac->RA_window_cnt, mac->RA_backoff_cnt);
+      LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, mac->RA_window_cnt, RA_backoff_cnt);
 
       if (mac->RA_BI_found){
         prach_resources->RA_PREAMBLE_BACKOFF = prach_resources->RA_SCALING_FACTOR_BI * mac->RA_backoff_indicator;
@@ -583,21 +583,29 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
         // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
-        mac->RA_active = 0;
-        mac->RA_window_cnt = -1;
-        mac->ra_state = RA_SUCCEEDED;
-        mac->generate_nr_prach = 2;
-        LOG_I(MAC, "[MAC][UE %d][RAPROC]: RAR successfully received \n", mod_id);
+        if (rach_ConfigDedicated) {
+          if (rach_ConfigDedicated->cfra){
 
+            // CFRA
+            mac->RA_active = 0;
+            mac->RA_window_cnt = -1;
+            mac->ra_state = RA_SUCCEEDED;
+            mac->generate_nr_prach = 2;
+
+            LOG_I(MAC, "[UE %d][%d.%d] RAR successfully received\n", mod_id, frame, nr_slot_tx);
+
+          }
+        } else {
+
+          LOG_E(MAC, "[%s:%d][UE %d] todo: handling of received contention-based RA praemble...\n", __FUNCTION__, __LINE__, mod_id);
+
+        }
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
         LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
 
         mac->ra_state = RA_UE_IDLE;
         prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
-
-        // Resetting RA window
-        nr_get_RA_window(mac);
 
         if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax + 1){
 
@@ -608,43 +616,30 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
           prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP << 1; // 2 dB increment
           prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
+
+        } else {
+
+          // Resetting RA window
+          nr_get_RA_window(mac);
+
         }
+      } else if (mac->RA_window_cnt > 0) {
 
-        // compute backoff parameters
-        // if (mac->RA_backoff_cnt > 0){
-        //   frame_diff = (sframe_t) frame - mac->RA_backoff_frame;
-        //   if (frame_diff < 0) frame_diff = -frame_diff;
-        //   mac->RA_backoff_frame = frame;
-        //   mac->RA_backoff_slot  = nr_slot_tx;
-        // }
-        // compute RA window parameters
-        // if (mac->RA_window_cnt > 0){
-        //   frame_diff = (frame_t) frame - mac->RA_tx_frame;
-        //   if (frame_diff < 0) frame_diff = -frame_diff;
-        //   mac->RA_window_cnt -= ((10 * frame_diff) + (nr_slot_tx - mac->RA_tx_subframe));
-        //   LOG_D(MAC, "[MAC][UE %d][RAPROC] Frame %d, subframe %d: RA Active, adjusted window cnt %d\n", mod_id, frame, nr_slot_tx, mac->RA_window_cnt);
-        // }
-
-        // mac->RA_tx_frame = frame;
-        // mac->RA_tx_slot  = nr_slot_tx;
+        LOG_D(MAC, "[UE %d][%d.%d]: RAR not received yet (RA window count %d) \n", mod_id, frame, nr_slot_tx, mac->RA_window_cnt);
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach == 1)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-
-      } else {
-
         mac->RA_window_cnt--;
+        nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
-        LOG_D(MAC, "[MAC][UE %d][RAPROC][%d.%d]: RAR not received yet (RA window count %d) \n",
-          mod_id,
-          frame,
-          nr_slot_tx,
-          mac->RA_window_cnt);
+      } else if (RA_backoff_cnt > 0) {
 
-        // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach == 1)
+        LOG_D(MAC, "[UE %d][%d.%d]: RAR not received yet (RA backoff count %d) \n", mod_id, frame, nr_slot_tx, RA_backoff_cnt);
+
+        RA_backoff_cnt--;
+
+        if ((RA_backoff_cnt > 0 && mac->generate_nr_prach == 1) || RA_backoff_cnt == 0){
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+        }
 
       }
     }
