@@ -757,8 +757,8 @@ void *UE_thread(void *arg) {
     }
 
     curMsg->proc.timestamp_tx = timestamp+
-                                UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                                &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp;
+      UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX-RX_NB_TH) 
+      - firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - UE->timing_advance;
 
     notifiedFIFO_elt_t *res;
 
@@ -780,17 +780,24 @@ void *UE_thread(void *arg) {
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
-    AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-                     timestamp+
-                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) - firstSymSamp -
-                     openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - UE->timing_advance,
-                     txp,
-                     writeBlockSize,
-                     UE->frame_parms.nb_antennas_tx,
-                     1),"");
+    int flags = 0;
+    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
+    if (slot_tx_usrp%10==7)
+      flags=2;
+    else     if (slot_tx_usrp%10==8)
+      flags = 1;
+    else     if (slot_tx_usrp%10==9)
+      flags = 3;
 
+    if (flags || IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1)
+      AssertFatal( writeBlockSize ==
+		   UE->rfdevice.trx_write_func(&UE->rfdevice,
+					       curMsg->proc.timestamp_tx,
+					       txp,
+					       writeBlockSize,
+					       UE->frame_parms.nb_antennas_tx,
+					       flags),"");
+    
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
 
