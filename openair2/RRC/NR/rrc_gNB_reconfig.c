@@ -191,7 +191,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   NR_SchedulingRequestToAddMod_t *SchedulingRequestConf = calloc(1,sizeof(*SchedulingRequestConf));
   SchedulingRequestConf->schedulingRequestId = 0;  //Could be changed
   SchedulingRequestConf->sr_ProhibitTimer = calloc(1,sizeof(*SchedulingRequestConf->sr_ProhibitTimer));
-  *SchedulingRequestConf->sr_ProhibitTimer = NR_SchedulingRequestToAddMod__sr_ProhibitTimer_ms16; //NR_SchedulingRequestToAddMod__sr_ProhibitTimer_ms32
+  *SchedulingRequestConf->sr_ProhibitTimer = NR_SchedulingRequestToAddMod__sr_ProhibitTimer_ms16;
   SchedulingRequestConf->sr_TransMax = NR_SchedulingRequestToAddMod__sr_TransMax_n32;
   ASN_SEQUENCE_ADD(&secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list,SchedulingRequestConf);
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToReleaseList = NULL;
@@ -1040,7 +1040,19 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchfmt2->nrofSlots=NULL;
  pucchfmt2->pi2BPSK=NULL;
  pucchfmt2->simultaneousHARQ_ACK_CSI=NULL;
- pucch_Config->schedulingRequestResourceToAddModList=NULL;
+
+ // for scheduling requestresource
+ pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
+ NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
+ schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
+ schedulingRequestResourceConfig->schedulingRequestID = 0;
+ schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
+ schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10;
+ schedulingRequestResourceConfig->periodicityAndOffset->choice.sl10 = 7;
+ schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
+ *schedulingRequestResourceConfig->resource = 1;
+ ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
+
  pucch_Config->schedulingRequestResourceToReleaseList=NULL;
  pucch_Config->multi_CSI_PUCCH_ResourceList=NULL;
  pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
