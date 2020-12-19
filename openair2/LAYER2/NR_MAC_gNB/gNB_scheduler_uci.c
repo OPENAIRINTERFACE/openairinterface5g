@@ -1398,3 +1398,154 @@ uint16_t compute_pucch_prb_size(uint8_t format,
     AssertFatal(1==0,"Not yet implemented");
   }
 }
+
+void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
+{
+  gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
+  if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slot / 64], slot))
+    return;
+  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  NR_UE_info_t *UE_info = &nrmac->UE_info;
+  NR_list_t *UE_list = &UE_info->list;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+    AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
+
+    for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {
+      NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id];
+
+      int SR_period; int SR_offset;
+
+      periodicity__SRR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+      // convert to int to avoid underflow of uint
+      int sfn_sf = SFN * n_slots_frame + slot;
+      if ((sfn_sf - SR_offset) % SR_period != 0)
+        continue;
+      LOG_D(MAC, "%4d.%2d Scheduling Request identified\n", SFN, slot);
+      NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
+
+      int found = -1;
+      NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[0]; // set with formats 0,1
+      int n_list = pucchresset->resourceList.list.count;
+       for (int i=0; i<n_list; i++) {
+        if (*pucchresset->resourceList.list.array[i] == *PucchResourceId )
+          found = i;
+      }
+      AssertFatal(found>-1,"SR resource not found among PUCCH resources");
+
+      /* loop through nFAPI PUCCH messages: if the UEs is in there in this slot
+       * with the resource_indicator, it means we already allocated that PUCCH
+       * resource for AckNack (e.g., the UE has been scheduled often), and we
+       * just need to add the SR_flag. Otherwise, just allocate in the internal
+       * PUCCH resource, and nr_schedule_pucch() will handle the rest */
+      NR_PUCCH_Resource_t *pucch_res = pucch_Config->resourceToAddModList->list.array[found];
+      /* for the moment, can only handle SR on PUCCH Format 0 */
+      DevAssert(pucch_res->format.present == NR_PUCCH_Resource__format_PR_format0);
+      nfapi_nr_ul_tti_request_t *ul_tti_req = &nrmac->UL_tti_req_ahead[0][slot];
+      bool nfapi_allocated = false;
+      for (int i = 0; i < ul_tti_req->n_pdus; ++i) {
+        if (ul_tti_req->pdus_list[i].pdu_type != NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
+          continue;
+        nfapi_nr_pucch_pdu_t *pdu = &ul_tti_req->pdus_list[i].pucch_pdu;
+        /* check that it is our PUCCH F0. Assuming there can be only one */
+        if (pdu->rnti == UE_info->rnti[UE_id]
+            && pdu->format_type == 0 // does not use NR_PUCCH_Resource__format_PR_format0
+            && pdu->initial_cyclic_shift == pucch_res->format.choice.format0->initialCyclicShift
+            && pdu->nr_of_symbols == pucch_res->format.choice.format0->nrofSymbols
+            && pdu->start_symbol_index == pucch_res->format.choice.format0->startingSymbolIndex) {
+          LOG_D(MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR for RNTI %04x\n", SFN, slot, pdu->rnti);
+          pdu->sr_flag = 1;
+          nfapi_allocated = true;
+          break;
+        }
+      }
+
+      if (nfapi_allocated)  // break scheduling resource loop, continue next UE
+        break;
+
+      /* we did not find it: check if current PUCCH is for the current slot, in
+       * which case we add the SR to it; otherwise, allocate SR separately */
+      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[0];
+      if (curr_pucch->frame == SFN && curr_pucch->ul_slot == slot) {
+        if (curr_pucch->resource_indicator != found) {
+          LOG_W(MAC, "%4d.%2d expected PUCCH in this slot to have resource indicator of SR (%d), skipping SR\n", SFN, slot, found);
+          continue;
+        }
+        curr_pucch->sr_flag = true;
+      } else {
+        NR_sched_pucch_t sched_sr;
+        memset(&sched_sr, 0, sizeof(sched_sr));
+        sched_sr.frame = SFN;
+        sched_sr.ul_slot = slot;
+        sched_sr.resource_indicator = found;
+        sched_sr.sr_flag = true;
+        nr_fill_nfapi_pucch(Mod_idP, SFN, slot, &sched_sr, UE_id);
+      }
+    }
+  }
+}
+
+
+void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset)
+{
+  NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
+  switch (P_O){
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl1:
+      *period = 1;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl1;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl2:
+      *period = 2;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl2;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl4:
+      *period = 4;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl4;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5:
+      *period = 5;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl5;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl8:
+      *period = 8;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl8;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10:
+      *period = 10;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl10;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl16:
+      *period = 16;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl16;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20:
+      *period = 20;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl20;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40:
+      *period = 40;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl40;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80:
+      *period = 80;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl80;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160:
+      *period = 160;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl160;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320:
+      *period = 320;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl320;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640:
+      *period = 640;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl640;
+      break;
+    default:
+      AssertFatal(1==0,"No periodicityAndOffset resources found in schedulingrequestresourceconfig");
+  }
+}
+
