@@ -92,6 +92,72 @@ extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 
+void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
+                           fapi_nr_dci_indication_t *dci_ind,
+                           fapi_nr_rx_indication_t *rx_ind,
+                           UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           uint8_t gNB_id){
+
+  memset((void*)dl_ind, 0, sizeof(nr_downlink_indication_t));
+
+  dl_ind->gNB_index = gNB_id;
+  dl_ind->module_id = ue->Mod_id;
+  dl_ind->cc_id     = ue->CC_id;
+  dl_ind->frame     = proc->frame_rx;
+  dl_ind->slot      = proc->nr_slot_rx;
+  dl_ind->thread_id = proc->thread_id;
+
+  if (dci_ind) {
+
+    dl_ind->rx_ind = NULL; //no data, only dci for now
+    dl_ind->dci_ind = dci_ind;
+
+  } else if (rx_ind) {
+
+    dl_ind->rx_ind = rx_ind; //  hang on rx_ind instance
+    dl_ind->dci_ind = NULL;
+
+  }
+
+}
+
+void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
+                           uint8_t pdu_type,
+                           uint8_t gNB_id,
+                           PHY_VARS_NR_UE *ue,
+                           NR_UE_DLSCH_t *dlsch0,
+                           uint16_t n_pdus){
+
+  int harq_pid;
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+
+  if (n_pdus > 1){
+    LOG_E(PHY, "In %s: multiple number of DL PDUs not supported yet...\n", __FUNCTION__);
+  }
+
+  switch (pdu_type){
+    case FAPI_NR_RX_PDU_TYPE_DLSCH:
+      harq_pid = dlsch0->current_harq_pid;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS / 8;
+    break;
+    case FAPI_NR_RX_PDU_TYPE_MIB:
+      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.pdu = ue->pbch_vars[gNB_id]->decoded_output;
+      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.additional_bits = ue->pbch_vars[gNB_id]->xtra_byte;
+      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_index = frame_parms->ssb_index;
+      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_length = frame_parms->Lmax;
+      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.cell_id = frame_parms->Nid_cell;
+    break;
+    default:
+    break;
+  }
+
+  rx_ind->rx_indication_body[n_pdus -1].pdu_type = pdu_type;
+  rx_ind->number_pdus = n_pdus;
+
+}
+
 int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
 
   int gain_dB = power_dBm - power_max_dBm, amp_x_100 = -1;
@@ -432,6 +498,8 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   unsigned int dci_cnt=0;
+  fapi_nr_dci_indication_t dci_ind = {0};
+  nr_downlink_indication_t dl_indication;
 
   /*
   //  unsigned int dci_cnt=0, i;  //removed for nr_ue_pdcch_procedures and added in the loop for nb_coreset_active
@@ -628,8 +696,6 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 	 pdcch_vars->nb_search_space);
 #endif
 
-  fapi_nr_dci_indication_t dci_ind={0};
-  nr_downlink_indication_t dl_indication={0};
   dci_cnt = nr_dci_decoding_procedure(ue, proc, &dci_ind);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
@@ -687,15 +753,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
     */
 
     // fill dl_indication message
-    dl_indication.module_id = ue->Mod_id;
-    dl_indication.cc_id = ue->CC_id;
-    dl_indication.gNB_index = gNB_id;
-    dl_indication.frame = frame_rx;
-    dl_indication.slot = nr_slot_rx;
-    dl_indication.thread_id = proc->thread_id;
-    dl_indication.rx_ind = NULL; //no data, only dci for now
-    dl_indication.dci_ind = &dci_ind; 
-    
+    nr_fill_dl_indication(&dl_indication, &dci_ind, NULL, proc, ue, gNB_id);
     //  send to mac
     ue->if_inst->dl_indication(&dl_indication, NULL);
 
@@ -928,6 +986,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
+  uint16_t number_pdus = 1;
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[eNB_id];
   uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
@@ -1181,39 +1240,28 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
       LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------  \n", frame_rx, nr_slot_rx);
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch0: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS);
-      
+
       if(ret<dlsch0->max_ldpc_iterations+1){
 
-        // fill dl_indication message
-        dl_indication.module_id = ue->Mod_id;
-        dl_indication.cc_id = ue->CC_id;
-        dl_indication.gNB_index = eNB_id;
-        dl_indication.frame = frame_rx;
-        dl_indication.slot = nr_slot_rx;
-        dl_indication.thread_id = proc->thread_id;
-        dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
-        dl_indication.dci_ind = NULL;
-
-        //dl_indication.rx_ind->number_pdus
         switch (pdsch) {
           case RA_PDSCH:
-          rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, eNB_id, ue, dlsch0, number_pdus);
           break;
           case PDSCH:
-          rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, eNB_id, ue, dlsch0, number_pdus);
           break;
           default:
           break;
         }
 
-        rx_ind.rx_indication_body[0].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
-        rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS>>3;
-        LOG_D(PHY, "PDU length in bits: %d, in bytes: %d \n", dlsch0->harq_processes[harq_pid]->TBS, rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length);
-        rx_ind.number_pdus = 1;
+        LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch0->harq_processes[harq_pid]->TBS, dlsch0->harq_processes[harq_pid]->TBS / 8);
 
         //  send to mac
-        if (ue->if_inst && ue->if_inst->dl_indication)
-        ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
+        if (ue->if_inst && ue->if_inst->dl_indication) {
+          ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
+        }
       }
 
       // TODO CRC check for CW0

@@ -392,7 +392,33 @@ int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
 int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 
+/*! \brief This function prepares the dl indication to pass to the MAC
+    @param
+    @param
+    @param
+    @param
+ */
+void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
+                           fapi_nr_dci_indication_t *dci_ind,
+                           fapi_nr_rx_indication_t *rx_ind,
+                           UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           uint8_t gNB_id);
+
 /*@}*/
+
+/*! \brief This function prepares the dl rx indication
+    @param
+    @param
+    @param
+    @param
+ */
+void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
+                           uint8_t pdu_type,
+                           uint8_t gNB_id,
+                           PHY_VARS_NR_UE *ue,
+                           NR_UE_DLSCH_t *dlsch0,
+                           uint16_t n_pdus);
 
 
 #endif
