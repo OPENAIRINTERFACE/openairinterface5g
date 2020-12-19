@@ -600,6 +600,13 @@ bool nr_acknack_scheduling(int mod_id,
   const int pucch_res = pucch_index_used[pucch->ul_slot];
   pucch->resource_indicator = pucch_res;
   pucch_index_used[pucch->ul_slot] += 1;
+  AssertFatal(pucch_index_used[pucch->ul_slot] <= n_res,
+              "UE %d in %4d.%2d: pucch_index_used is %d (%d available)\n",
+              UE_id,
+              pucch->frame,
+              pucch->ul_slot,
+              pucch_index_used[pucch->ul_slot],
+              n_res);
 
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
