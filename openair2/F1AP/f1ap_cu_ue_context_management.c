@@ -729,15 +729,13 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* OPTIONAL */
   /* RRCContainer */
-  if (0) {
-    ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
-    ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
-    ie->criticality                    = F1AP_Criticality_reject;
-    ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
-    OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
-                         strlen("asdsa1d32sa1d31asd31as"));
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
+  ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
+                        f1ap_ue_context_setup_req->rrc_container_length);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* OPTIONAL */
   /* MaskedIMEISV */
@@ -763,7 +761,42 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
                                         uint32_t         assoc_id,
                                         uint32_t         stream,
                                         F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+  F1AP_UEContextSetupResponse_t    *container;
+  F1AP_UEContextSetupResponseIEs_t *ie;
+
+  DevAssert(pdu);
+
+  container = &pdu->choice.successfulOutcome->value.choice.UEContextSetupResponse;
+
+  /* GNB_CU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
+
+  /* GNB_DU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
+
+  /* DUtoCURRCInformation */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_DUtoCURRCInformation, true);
+
+  /* DRBs_Setup_List */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_DRBs_Setup_List, true);
+
+  /* SRBs_FailedToBeSetup_List */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetup_List, true);
+
+  /* DRBs_FailedToBeSetup_List */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetup_List, true);
+
+  /* SCell_FailedtoSetup_List */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_SCell_FailedtoSetup_List, true);
+
+  return 0;
 }
 
 int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,

@@ -152,6 +152,17 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     }
   }
 
+  /* RRCContainer */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_RRCContainer, false);
+  if (ie) {
+    /* correct here */
+    f1ap_ue_context_setup_req->rrc_container = malloc(ie->value.choice.RRCContainer.size);
+    memcpy(f1ap_ue_context_setup_req->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+  } else {
+    LOG_E(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %d \n", F1AP_ProtocolIE_ID_id_RRCContainer);
+  }
+
   AssertFatal(0, "check configuration, send to appropriate handler\n");
   return 0;
 }

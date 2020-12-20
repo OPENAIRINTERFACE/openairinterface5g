@@ -1618,13 +1618,12 @@ void *rrc_gnb_task(void *args_p) {
 void
 rrc_gNB_generate_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_gNB_ue_context_t          *const ue_context_pP
+  rrc_gNB_ue_context_t  *const ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
   uint8_t                             buffer[100];
   uint8_t                             size;
-  MessageDef                         *message_p;
 
   T(T_ENB_RRC_SECURITY_MODE_COMMAND, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -1644,19 +1643,8 @@ rrc_gNB_generate_SecurityModeCommand(
   switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
     case ngran_gNB_CU:
       // create an ITTI message
-      // F1AP_DL_RRC_MESSAGE
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_pP->ue_context.rnti;
-      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
-      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+      memcpy(ue_context_pP->ue_context.Srb1.Srb_info.Tx_buffer.Payload, buffer, size);
+      ue_context_pP->ue_context.Srb1.Srb_info.Tx_buffer.payload_size = size;
 
       LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
       nr_rrc_data_req(ctxt_pP,
@@ -1691,6 +1679,7 @@ rrc_gNB_generate_SecurityModeCommand(
         rrc_gNB_mui,
         size);
 #ifdef ITTI_SIM
+      MessageDef                         *message_p;
       uint8_t *message_buffer;
       message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,size);
       memcpy (message_buffer, buffer, size);

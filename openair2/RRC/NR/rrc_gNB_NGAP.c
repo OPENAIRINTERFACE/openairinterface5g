@@ -576,25 +576,18 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
     }
 
-#if(0)
-  if (RC.nrrrc[ctxt.module_id]->node_type == ngran_gNB_CU) {
+if (RC.nrrrc[ctxt.module_id]->node_type == ngran_gNB_CU) {
     MessageDef *message_p;
     message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_UE_CONTEXT_SETUP_REQ);
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container =  ue_context_p->Srb0.Tx_buffer.Payload;
-
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = ue_context_p->Srb0.Tx_buffer.payload_size;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container = (uint8_t *)ue_context_p->ue_context.Srb1.Srb_info.Tx_buffer.Payload;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = ue_context_p->ue_context.Srb1.Srb_info.Tx_buffer.payload_size;
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id = 0;
     F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_p->rnti;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).srb_id = CCCH;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).execute_duplication      = 1;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).RAT_frequency_priority_information.en_dc      = 0;
-    itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-    LOG_D(NR_RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
+    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_p->ue_context.rnti;
 
+    itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+    LOG_D(NR_RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
   }
-#endif
 
     return 0;
   }

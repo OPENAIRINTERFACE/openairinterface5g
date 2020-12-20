@@ -1242,19 +1242,19 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         NR_RRCSetup_IEs_t *rrcSetup_ies = rrcSetup->criticalExtensions.choice.rrcSetup;
 
         // get SRB logical channel information
-        NR_SRB_ToAddModList_t       *SRB_configList;
-        NR_SRB_ToAddMod_t           *SRB1_config;
+        // NR_SRB_ToAddModList_t       *SRB_configList;
+        // NR_SRB_ToAddMod_t           *SRB1_config;
         NR_CellGroupConfig_t        *cellGroupConfig      = NULL;
-        NR_LogicalChannelConfig_t   *logicalChannelConfig = NULL;
+        // NR_LogicalChannelConfig_t   *logicalChannelConfig = NULL;
 
         AssertFatal(rrcSetup_ies->masterCellGroup.buf!=NULL,"masterCellGroup is null\n");
-        cellGroupConfig = rrcSetup_ies->masterCellGroup.buf;
+        cellGroupConfig = (NR_CellGroupConfig_t *)rrcSetup_ies->masterCellGroup.buf;
 
         // SRB_configList                 = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
         // AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
         for (int cnt = 0; cnt < cellGroupConfig->rlc_BearerToAddModList->list.count; cnt++) {
           if (cellGroupConfig->rlc_BearerToAddModList->list.array[cnt]) {
-            logicalChannelConfig = cellGroupConfig->rlc_BearerToAddModList->list.array[cnt];
+            // logicalChannelConfig = (NR_LogicalChannelConfig_t *)cellGroupConfig->rlc_BearerToAddModList->list.array[cnt];
           }
         } // for
 
@@ -1275,9 +1275,9 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
       ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
 
-      NR_MAC_CellGroupConfig_t *mac_CellGroupConfig  = NULL;
-      if (cellGroupConfig->mac_CellGroupConfig)
-        mac_CellGroupConfig = cellGroupConfig->mac_CellGroupConfig;
+      // NR_MAC_CellGroupConfig_t *mac_CellGroupConfig  = NULL;
+      // if (cellGroupConfig->mac_CellGroupConfig)
+      //   mac_CellGroupConfig = cellGroupConfig->mac_CellGroupConfig;
 
       // rrc_mac_config_req_gNB
           break;
@@ -1328,7 +1328,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
                 du_ue_f1ap_id,
                 f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], du_ue_f1ap_id));
     
-          NR_RRCReconfiguration_t* rrcReconfiguration = &dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration;
+          NR_RRCReconfiguration_t* rrcReconfiguration = dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration;
 
           if (rrcReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration) {
             NR_RRCReconfiguration_IEs_t* rrcReconfiguration_ies =
@@ -1345,7 +1345,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
                 int i;
                 NR_DRB_ToAddModList_t  *DRB_configList  = rrcReconfiguration_ies->radioBearerConfig->drb_ToAddModList;
                 NR_SRB_ToAddModList_t  *SRB_configList  = rrcReconfiguration_ies->radioBearerConfig->srb_ToAddModList;
-                NR_DRB_ToReleaseList_t *DRB_ReleaseList = rrcReconfiguration_ies->radioBearerConfig->drb_ToReleaseList;
+                // NR_DRB_ToReleaseList_t *DRB_ReleaseList = rrcReconfiguration_ies->radioBearerConfig->drb_ToReleaseList;
 
                 for (i = 0; i< 8; i++){
                   DRB2LCHAN[i] = 0;
@@ -1433,6 +1433,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   }
 
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
+#if(0)
   rlc_op_status_t    rlc_status;
   boolean_t          ret             = TRUE;
   mem_block_t       *pdcp_pdu_p      = NULL; 
@@ -1446,7 +1447,6 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   //for (int i=0;i<rrc_dl_sdu_len;i++) printf("%2x ",pdcp_pdu_p->data[i]);
   //printf("\n");
 
-#if(0)
   if (pdcp_pdu_p != NULL) {
     memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
     memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
