@@ -1597,11 +1597,6 @@ int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
-  NR_COMMON_channels_t *cc = RC.nrmac[mod_idP]->common_channels;
-  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  int num_slots_ul = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0)
-    num_slots_ul++;
   LOG_W(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
         rntiP,
@@ -1617,16 +1612,16 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->active[UE_id] = true;
     UE_info->rnti[UE_id] = rntiP;
     add_nr_list(&UE_info->list, UE_id);
+    memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
     set_Y(UE_info->Y[UE_id], rntiP);
-    memset((void *) &UE_info->UE_sched_ctrl[UE_id],
-           0,
-           sizeof(NR_UE_sched_ctrl_t));
-    UE_info->UE_sched_ctrl[UE_id].ta_frame = 0;
-    UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
-    UE_info->UE_sched_ctrl[UE_id].ta_apply = false;
-    UE_info->UE_sched_ctrl[UE_id].ul_rssi = 0;
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    memset(sched_ctrl, 0, sizeof(*sched_ctrl));
+    sched_ctrl->ta_frame = 0;
+    sched_ctrl->ta_update = 31;
+    sched_ctrl->ta_apply = false;
+    sched_ctrl->ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
-    UE_info->UE_sched_ctrl[UE_id].pusch_save.time_domain_allocation = -1;
+    sched_ctrl->pusch_save.time_domain_allocation = -1;
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
@@ -1666,9 +1661,6 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     UE_info->active[UE_id] = FALSE;
     UE_info->rnti[UE_id] = 0;
     remove_nr_list(&UE_info->list, UE_id);
-    memset((void *) &UE_info->UE_sched_ctrl[UE_id],
-           0,
-           sizeof(NR_UE_sched_ctrl_t));
     LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
           mod_id,
           UE_id,
