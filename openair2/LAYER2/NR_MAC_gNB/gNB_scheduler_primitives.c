@@ -1442,35 +1442,105 @@ int extract_length(int startSymbolAndLength) {
 /*
  * Dump the UL or DL UE_info into LOG_T(MAC)
  */
-void dump_nr_ue_list(NR_UE_list_t *listP) {
+void dump_nr_list(NR_list_t *listP)
+{
   for (int j = listP->head; j >= 0; j = listP->next[j])
-    LOG_T(MAC, "DL list node %d => %d\n", j, listP->next[j]);
+    LOG_T(MAC, "NR list node %d => %d\n", j, listP->next[j]);
 }
 
 /*
- * Add a UE to NR_UE_list listP
+ * Create a new NR_list
  */
-inline void add_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
+void create_nr_list(NR_list_t *list, int len)
+{
+  list->head = -1;
+  list->next = calloc(len, sizeof(*list->next));
+  AssertFatal(list, "cannot calloc() memory for NR_list_t->next\n");
+  for (int i = 0; i < len; ++i)
+    list->next[i] = -1;
+  list->tail = -1;
+  list->len = len;
+}
+
+/*
+ * Destroy an NR_list
+ */
+void destroy_nr_list(NR_list_t *list)
+{
+  free(list->next);
+}
+
+/*
+ * Add an ID to an NR_list at the end, traversing the whole list. Note:
+ * add_tail_nr_list() is a faster alternative, but this implementation ensures
+ * we do not add an existing ID.
+ */
+void add_nr_list(NR_list_t *listP, int id)
+{
   int *cur = &listP->head;
   while (*cur >= 0) {
-    AssertFatal(*cur != UE_id, "UE_id %d already in NR_UE_list!\n", UE_id);
+    AssertFatal(*cur != id, "id %d already in NR_UE_list!\n", id);
     cur = &listP->next[*cur];
   }
-  *cur = UE_id;
+  *cur = id;
+  if (listP->next[id] < 0)
+    listP->tail = id;
 }
 
 /*
- * Remove a UE from NR_UE_list listP
+ * Remove an ID from an NR_list
  */
-static inline void remove_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
+void remove_nr_list(NR_list_t *listP, int id)
+{
   int *cur = &listP->head;
-  while (*cur != -1 && *cur != UE_id)
+  int *prev = &listP->head;
+  while (*cur != -1 && *cur != id) {
+    prev = cur;
     cur = &listP->next[*cur];
-  AssertFatal(*cur != -1, "UE %d not found in UE_list\n", UE_id);
+  }
+  AssertFatal(*cur != -1, "ID %d not found in UE_list\n", id);
   int *next = &listP->next[*cur];
   *cur = listP->next[*cur];
   *next = -1;
-  return; 
+  listP->tail = *prev >= 0 && listP->next[*prev] >= 0 ? listP->tail : *prev;
+}
+
+/*
+ * Add an ID to the tail of the NR_list in O(1). Note that there is
+ * corresponding remove_tail_nr_list(), as we cannot set the tail backwards and
+ * therefore need to go through the whole list (use remove_nr_list())
+ */
+void add_tail_nr_list(NR_list_t *listP, int id)
+{
+  int *last = listP->tail < 0 ? &listP->head : &listP->next[listP->tail];
+  *last = id;
+  listP->next[id] = -1;
+  listP->tail = id;
+}
+
+/*
+ * Add an ID to the front of the NR_list in O(1)
+ */
+void add_front_nr_list(NR_list_t *listP, int id)
+{
+  const int ohead = listP->head;
+  listP->head = id;
+  listP->next[id] = ohead;
+  if (listP->tail < 0)
+    listP->tail = id;
+}
+
+/*
+ * Remove an ID from the front of the NR_list in O(1)
+ */
+void remove_front_nr_list(NR_list_t *listP)
+{
+  AssertFatal(listP->head >= 0, "Nothing to remove\n");
+  const int ohead = listP->head;
+  listP->head = listP->next[ohead];
+  listP->next[ohead] = -1;
+  if (listP->head < 0)
+    listP->tail = -1;
 }
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
@@ -1536,7 +1606,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
         mod_idP,
         rntiP,
         UE_info->num_UEs);
-  dump_nr_ue_list(&UE_info->list);
+  dump_nr_list(&UE_info->list);
 
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_info->active[i])
@@ -1546,7 +1616,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->num_UEs++;
     UE_info->active[UE_id] = true;
     UE_info->rnti[UE_id] = rntiP;
-    add_nr_ue_list(&UE_info->list, UE_id);
+    add_nr_list(&UE_info->list, UE_id);
     set_Y(UE_info->Y[UE_id], rntiP);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
@@ -1561,13 +1631,13 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
           mod_idP,
           UE_id,
           rntiP);
-    dump_nr_ue_list(&UE_info->list);
+    dump_nr_list(&UE_info->list);
     return (UE_id);
   }
 
   // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
   LOG_E(MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
-  dump_nr_ue_list(&UE_info->list);
+  dump_nr_list(&UE_info->list);
   return -1;
 }
 
@@ -1595,7 +1665,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     UE_info->num_UEs--;
     UE_info->active[UE_id] = FALSE;
     UE_info->rnti[UE_id] = 0;
-    remove_nr_ue_list(&UE_info->list, UE_id);
+    remove_nr_list(&UE_info->list, UE_id);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));

@@ -293,8 +293,15 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB);
 
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 
-void dump_nr_ue_list(NR_UE_list_t *listP);
-void add_nr_ue_list(NR_UE_list_t *listP, int UE_id);
+/* Functions to manage an NR_list_t */
+void dump_nr_list(NR_list_t *listP);
+void create_nr_list(NR_list_t *listP, int len);
+void destroy_nr_list(NR_list_t *list);
+void add_nr_list(NR_list_t *listP, int id);
+void remove_nr_list(NR_list_t *listP, int id);
+void add_tail_nr_list(NR_list_t *listP, int id);
+void add_front_nr_list(NR_list_t *listP, int id);
+void remove_front_nr_list(NR_list_t *listP);
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 

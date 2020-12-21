@@ -79,6 +79,15 @@
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
 
+/*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
+ * Especially useful in the scheduler and to keep "classes" of users. */
+typedef struct {
+  int head;
+  int *next;
+  int tail;
+  int len;
+} NR_list_t;
+
 typedef enum {
   RA_IDLE = 0,
   Msg2 = 1,
@@ -447,15 +456,6 @@ typedef struct {
 } NR_mac_stats_t;
 
 
-
-/*! \brief UNR_E_list_t is a "list" of users within UE_info_t. Especial useful in
- * the scheduler and to keep "classes" of users. */
-typedef struct {
-  int head;
-  int next[MAX_MOBILES_PER_GNB];
-} NR_UE_list_t;
-
-
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
 typedef struct {
@@ -463,7 +463,7 @@ typedef struct {
   nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
-  NR_UE_list_t list;
+  NR_list_t list;
   int num_UEs;
 
   bool active[MAX_MOBILES_PER_GNB];

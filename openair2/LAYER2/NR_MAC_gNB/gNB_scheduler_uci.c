@@ -83,7 +83,7 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP) {
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  const NR_UE_list_t *UE_list = &UE_info->list;
+  const NR_list_t *UE_list = &UE_info->list;
 
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -198,7 +198,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_UE_list_t *UE_list = &UE_info->list;
+  NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     const NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];

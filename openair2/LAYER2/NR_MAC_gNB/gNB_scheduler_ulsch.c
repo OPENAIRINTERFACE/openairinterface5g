@@ -607,7 +607,7 @@ void nr_schedule_ulsch(module_id_t module_id,
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  const NR_UE_list_t *UE_list = &UE_info->list;
+  const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
