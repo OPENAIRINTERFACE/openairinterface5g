@@ -404,6 +404,7 @@ rrc_gNB_generate_RRCSetup(
       break;
 
     case ngran_gNB:
+    {
       // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
       MessageDef *message_p;
@@ -438,6 +439,7 @@ rrc_gNB_generate_RRCSetup(
       ue_context_pP->ue_context.ue_release_timer_thres = 1000;
       /* init timers */
       //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+    }
       break;
 
     default :
@@ -500,6 +502,7 @@ rrc_gNB_generate_RRCReject(
       break;
 
     case ngran_gNB:
+    {
 #ifdef ITTI_SIM
       uint8_t *message_buffer;
       message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM,
@@ -511,6 +514,7 @@ rrc_gNB_generate_RRCReject(
       itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #endif
       // rrc_mac_config_req_gNB
+    }
       break;
 
     default :
@@ -602,6 +606,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
       break;
 
     case ngran_gNB:
+    {
 #ifdef ITTI_SIM
       uint8_t *message_buffer;
       message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, size);
@@ -641,6 +646,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 #endif
 #endif
       // rrc_rlc_config_asn1_req
+    }
       break;
 
     default :

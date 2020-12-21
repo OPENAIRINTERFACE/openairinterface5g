@@ -835,6 +835,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
           break;
 
         case ngran_gNB:
+        {
           // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
           uint8_t *message_buffer;
@@ -859,6 +860,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
               PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
 #endif
+        }
           break;
 
         default :
