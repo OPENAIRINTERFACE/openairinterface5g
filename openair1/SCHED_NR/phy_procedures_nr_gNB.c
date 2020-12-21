@@ -622,7 +622,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           (ulsch_harq->slot == slot_rx) &&
           (ulsch_harq->handled == 0)){
 
-          LOG_I(PHY, "PUSCH detection started in frame %d slot %d\n",
+          LOG_D(PHY, "PUSCH detection started in frame %d slot %d\n",
                 frame_rx,slot_rx);
 
 #ifdef DEBUG_RXDATA

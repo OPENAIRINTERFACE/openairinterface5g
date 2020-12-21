@@ -414,12 +414,6 @@ static uint8_t pack_param_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t
 	return (pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
 }
 
-static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t* end, nfapi_p4_p5_codec_config_t* config)
-{	
-	nfapi_param_response_t *pNfapiMsg = (nfapi_param_response_t*)msg;
-	return (pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
-}
-
 static uint8_t pack_uint32_tlv_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	nfapi_uint32_tlv_t* value = (nfapi_uint32_tlv_t*)tlv;
@@ -540,58 +534,128 @@ static uint8_t pack_embms_mbsfn_config_value(void* tlv, uint8_t **ppWritePackedM
                 pusharray8(value->fourframes_flag, 8,value->num_mbsfn_config,ppWritePackedMsg, end) &&
                 pusharrays32(value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, ppWritePackedMsg, end));
 }
-//static uint8_t unpack_embms_mbsfn_config_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t* end)
-//{
+// static uint8_t unpack_embms_mbsfn_config_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t* end)
+// {
 //     nfapi_embms_mbsfn_config_t* value = (nfapi_embms_mbsfn_config_t*)tlv;
-//
+
 //     return ( pull16(ppReadPackedMsg, &value->num_mbsfn_config, end) &&
 //              pull16(ppReadPackedMsg, &value->radioframe_allocation_period, end) &&
 //              pull16(ppReadPackedMsg, &value->radioframe_allocation_offset, end) &&
 //              pull8(ppReadPackedMsg, &value->fourframes_flag, end) &&
 //                      pullarrays32(ppReadPackedMsg, value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, end));
-//}
-
-#if 0
-static uint8_t pack_array_tlv_uint8_t_iisc(uint8_t element_count, void *msg, uint8_t **ppWritePackedMsg, uint8_t *end)
-{   
-
-	nfapi_uint8_tlv_t* list_of_tlvs = (nfapi_uint8_tlv_t*)msg;
-
-	int ret = push8(element_count, ppWritePackedMsg, end); // pushing the element count
-	if(!ret) return ret;
-
-	for(int i=0; i<element_count; i++)
-	{
-		ret = pack_uint8_tlv_value(x[i], ppWritePackedMsg, end);
-		if(!ret) return ret;
-	}
-	return ret;
-}
-
-static uint8_t unpack_array_tlv_uint8_t_iisc(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-{   
-	uint8_t element_count = pull8(ppReadPackedMsg, &tlv, end); //pulling the element count
-
-	nfapi_uint8_tlv_t* value;
-	
-	int ret = 0;
-
-	for(int i=0; i<element_count; i++)
-	{
-		value = (nfapi_uint8_tlv_t*)(tlv);
-		ret = unpack_uint8_tlv_value(value->value, ppReadPackedMsg, end);
-		if(!ret) return ret;
-	}
-
-	return ret;
-}
-#endif
-// static uint8_t unpack_uint8_tlv_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-// {
-// 	nfapi_uint8_tlv_t* value = (nfapi_uint8_tlv_t*)tlv;
-// 	return pull8(ppReadPackedMsg, &value->value, end);
 // }
 
+static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t* end, nfapi_p4_p5_codec_config_t* config)
+{	
+	nfapi_param_response_t *pNfapiMsg = (nfapi_param_response_t*)msg;
+
+	return( push8(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
+			push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
+			pack_tlv(NFAPI_L1_STATUS_PHY_STATE_TAG,  &pNfapiMsg->l1_status.phy_state, ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			// Do we check the phy state and then just fill those sepecified, however
+			// we do not know the duplex mode, so just attempt to pack all and assumme
+			// that the callee has set the right tlvs
+
+			pack_tlv(NFAPI_PHY_CAPABILITIES_DL_BANDWIDTH_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.dl_bandwidth_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) && 
+			pack_tlv(NFAPI_PHY_CAPABILITIES_UL_BANDWIDTH_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.ul_bandwidth_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PHY_CAPABILITIES_DL_MODULATION_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.dl_modulation_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) && 
+			pack_tlv(NFAPI_PHY_CAPABILITIES_UL_MODULATION_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.ul_modulation_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PHY_CAPABILITIES_PHY_ANTENNA_CAPABILITY_TAG, &(pNfapiMsg->phy_capabilities.phy_antenna_capability), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PHY_CAPABILITIES_RELEASE_CAPABILITY_TAG, &(pNfapiMsg->phy_capabilities.release_capability), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PHY_CAPABILITIES_MBSFN_CAPABILITY_TAG, &(pNfapiMsg->phy_capabilities.mbsfn_capability), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			// laa capability
+
+			pack_tlv(NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG, &(pNfapiMsg->subframe_config.duplex_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SUBFRAME_CONFIG_PCFICH_POWER_OFFSET_TAG, &(pNfapiMsg->subframe_config.pcfich_power_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value)&&
+			pack_tlv(NFAPI_SUBFRAME_CONFIG_PB_TAG, &(pNfapiMsg->subframe_config.pb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG, &(pNfapiMsg->subframe_config.dl_cyclic_prefix_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG, &(pNfapiMsg->subframe_config.ul_cyclic_prefix_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG, &(pNfapiMsg->rf_config.dl_channel_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG, &(pNfapiMsg->rf_config.ul_channel_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG, &(pNfapiMsg->rf_config.reference_signal_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) && 
+			pack_tlv(NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG, &(pNfapiMsg->rf_config.tx_antenna_ports), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_RF_CONFIG_RX_ANTENNA_PORTS_TAG, &(pNfapiMsg->rf_config.rx_antenna_ports), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_PHICH_CONFIG_PHICH_RESOURCE_TAG, &(pNfapiMsg->phich_config.phich_resource), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG, &(pNfapiMsg->phich_config.phich_duration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG, &(pNfapiMsg->phich_config.phich_power_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_SCH_CONFIG_PRIMARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG, &(pNfapiMsg->sch_config.primary_synchronization_signal_epre_eprers), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SCH_CONFIG_SECONDARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG, &(pNfapiMsg->sch_config.secondary_synchronization_signal_epre_eprers), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG, &(pNfapiMsg->sch_config.physical_cell_id), ppWritePackedMsg, end ,&pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_PRACH_CONFIG_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->prach_config.configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PRACH_CONFIG_ROOT_SEQUENCE_INDEX_TAG, &(pNfapiMsg->prach_config.root_sequence_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PRACH_CONFIG_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG, &(pNfapiMsg->prach_config.zero_correlation_zone_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PRACH_CONFIG_HIGH_SPEED_FLAG_TAG, &(pNfapiMsg->prach_config.high_speed_flag), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PRACH_CONFIG_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->prach_config.frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_PUSCH_CONFIG_HOPPING_MODE_TAG, &(pNfapiMsg->pusch_config.hopping_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PUSCH_CONFIG_HOPPING_OFFSET_TAG, &(pNfapiMsg->pusch_config.hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PUSCH_CONFIG_NUMBER_OF_SUBBANDS_TAG, &(pNfapiMsg->pusch_config.number_of_subbands), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_PUCCH_CONFIG_DELTA_PUCCH_SHIFT_TAG, &(pNfapiMsg->pucch_config.delta_pucch_shift), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PUCCH_CONFIG_N_CQI_RB_TAG, &(pNfapiMsg->pucch_config.n_cqi_rb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PUCCH_CONFIG_N_AN_CS_TAG, &(pNfapiMsg->pucch_config.n_an_cs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG, &(pNfapiMsg->pucch_config.n1_pucch_an), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+                       pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDX_TAG, &(pNfapiMsg->embms_sib13_config.mbsfn_area_idx), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDR9_TAG, &(pNfapiMsg->embms_sib13_config.mbsfn_area_id_r9), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+                       pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_TAG, &(pNfapiMsg->embms_mbsfn_config), ppWritePackedMsg, end, &pack_embms_mbsfn_config_value) &&
+
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG, &(pNfapiMsg->fembms_config.non_mbsfn_config_flag), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG, &(pNfapiMsg->fembms_config.non_mbsfn_subframeconfig), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+
+			pack_tlv(NFAPI_SRS_CONFIG_BANDWIDTH_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.bandwidth_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG, &(pNfapiMsg->srs_config.max_up_pts), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SRS_CONFIG_SRS_SUBFRAME_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.srs_subframe_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG, &(pNfapiMsg->srs_config.srs_acknack_srs_simultaneous_transmission), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG, &(pNfapiMsg->uplink_reference_signal_config.uplink_rs_hopping), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG, &(pNfapiMsg->uplink_reference_signal_config.group_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_CYCLIC_SHIFT_1_FOR_DRMS_TAG, &(pNfapiMsg->uplink_reference_signal_config.cyclic_shift_1_for_drms), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_TDD_FRAME_STRUCTURE_SUBFRAME_ASSIGNMENT_TAG, &(pNfapiMsg->tdd_frame_structure_config.subframe_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_TDD_FRAME_STRUCTURE_SPECIAL_SUBFRAME_PATTERNS_TAG, &(pNfapiMsg->tdd_frame_structure_config.special_subframe_patterns), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_L23_CONFIG_DATA_REPORT_MODE_TAG, &(pNfapiMsg->l23_config.data_report_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_L23_CONFIG_SFNSF_TAG, &(pNfapiMsg->l23_config.sfnsf), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_NFAPI_P7_VNF_ADDRESS_IPV4_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv4), ppWritePackedMsg, end, &pack_ipv4_address_value) &&
+			pack_tlv(NFAPI_NFAPI_P7_VNF_ADDRESS_IPV6_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv6), ppWritePackedMsg, end, &pack_ipv6_address_value) &&
+
+			pack_tlv(NFAPI_NFAPI_P7_VNF_PORT_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_port), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_NFAPI_P7_PNF_ADDRESS_IPV4_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv4), ppWritePackedMsg, end, &pack_ipv4_address_value) &&
+			pack_tlv(NFAPI_NFAPI_P7_PNF_ADDRESS_IPV6_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv6), ppWritePackedMsg, end, &pack_ipv6_address_value) &&
+
+			pack_tlv(NFAPI_NFAPI_P7_PNF_PORT_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_port), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+			pack_tlv(NFAPI_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.dl_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+			pack_tlv(NFAPI_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.ul_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+
+			pack_tlv(NFAPI_NFAPI_RF_BANDS_TAG, &(pNfapiMsg->nfapi_config.rf_bands), ppWritePackedMsg, end, &pack_rf_bands_value) &&
+
+			pack_tlv(NFAPI_NFAPI_TIMING_WINDOW_TAG, &(pNfapiMsg->nfapi_config.timing_window), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+			pack_tlv(NFAPI_NFAPI_TIMING_INFO_MODE_TAG, &(pNfapiMsg->nfapi_config.timing_info_mode), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+			pack_tlv(NFAPI_NFAPI_TIMING_INFO_PERIOD_TAG, &(pNfapiMsg->nfapi_config.timing_info_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+
+			pack_tlv(NFAPI_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG, &(pNfapiMsg->nfapi_config.max_transmit_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NFAPI_EARFCN_TAG, &(pNfapiMsg->nfapi_config.earfcn), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+
+			pack_tlv(NFAPI_NFAPI_NMM_GSM_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_gsm_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
+			pack_tlv(NFAPI_NFAPI_NMM_UMTS_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_umts_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
+			pack_tlv(NFAPI_NFAPI_NMM_LTE_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_lte_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
+			pack_tlv(NFAPI_NFAPI_NMM_UPLINK_RSSI_SUPPORTED_TAG, &(pNfapiMsg->nfapi_config.nmm_uplink_rssi_supported), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
+
+}
 
 static uint8_t pack_nr_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
 {
@@ -675,126 +739,8 @@ static uint8_t pack_nr_param_response(void *msg, uint8_t **ppWritePackedMsg, uin
 			pack_tlv(NFAPI_NR_NFAPI_TIMING_WINDOW_TAG, &(pNfapiMsg->nfapi_config.timing_window), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG, &(pNfapiMsg->nfapi_config.timing_info_mode), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG, &(pNfapiMsg->nfapi_config.timing_info_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-            /*
-			pack_tlv(NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.dl_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_NR_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.ul_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
-			pack_tlv(NFAPI_NR_NFAPI_RF_BANDS_TAG, &(pNfapiMsg->nfapi_config.rf_bands), ppWritePackedMsg, end, &pack_rf_bands_value) &&
-			pack_tlv(NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG, &(pNfapiMsg->nfapi_config.max_transmit_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			*/
-			// vendor extension:
 			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
     	
-
-#if LTE
-{
-	return( push8(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
-			push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
-			pack_tlv(NFAPI_L1_STATUS_PHY_STATE_TAG,  &pNfapiMsg->l1_status.phy_state, ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			// Do we check the phy state and then just fill those sepecified, however
-			// we do not know the duplex mode, so just attempt to pack all and assumme
-			// that the callee has set the right tlvs
-
-			pack_tlv(NFAPI_PHY_CAPABILITIES_DL_BANDWIDTH_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.dl_bandwidth_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) && 
-			pack_tlv(NFAPI_PHY_CAPABILITIES_UL_BANDWIDTH_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.ul_bandwidth_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PHY_CAPABILITIES_DL_MODULATION_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.dl_modulation_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) && 
-			pack_tlv(NFAPI_PHY_CAPABILITIES_UL_MODULATION_SUPPORT_TAG, &(pNfapiMsg->phy_capabilities.ul_modulation_support), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PHY_CAPABILITIES_PHY_ANTENNA_CAPABILITY_TAG, &(pNfapiMsg->phy_capabilities.phy_antenna_capability), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PHY_CAPABILITIES_RELEASE_CAPABILITY_TAG, &(pNfapiMsg->phy_capabilities.release_capability), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PHY_CAPABILITIES_MBSFN_CAPABILITY_TAG, &(pNfapiMsg->phy_capabilities.mbsfn_capability), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			// laa capability
-
-			pack_tlv(NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG, &(pNfapiMsg->subframe_config.duplex_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SUBFRAME_CONFIG_PCFICH_POWER_OFFSET_TAG, &(pNfapiMsg->subframe_config.pcfich_power_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value)&&
-			pack_tlv(NFAPI_SUBFRAME_CONFIG_PB_TAG, &(pNfapiMsg->subframe_config.pb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG, &(pNfapiMsg->subframe_config.dl_cyclic_prefix_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG, &(pNfapiMsg->subframe_config.ul_cyclic_prefix_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG, &(pNfapiMsg->rf_config.dl_channel_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG, &(pNfapiMsg->rf_config.ul_channel_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG, &(pNfapiMsg->rf_config.reference_signal_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) && 
-			pack_tlv(NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG, &(pNfapiMsg->rf_config.tx_antenna_ports), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_RF_CONFIG_RX_ANTENNA_PORTS_TAG, &(pNfapiMsg->rf_config.rx_antenna_ports), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_PHICH_CONFIG_PHICH_RESOURCE_TAG, &(pNfapiMsg->phich_config.phich_resource), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG, &(pNfapiMsg->phich_config.phich_duration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG, &(pNfapiMsg->phich_config.phich_power_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_SCH_CONFIG_PRIMARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG, &(pNfapiMsg->sch_config.primary_synchronization_signal_epre_eprers), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SCH_CONFIG_SECONDARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG, &(pNfapiMsg->sch_config.secondary_synchronization_signal_epre_eprers), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG, &(pNfapiMsg->sch_config.physical_cell_id), ppWritePackedMsg, end ,&pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_PRACH_CONFIG_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->prach_config.configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PRACH_CONFIG_ROOT_SEQUENCE_INDEX_TAG, &(pNfapiMsg->prach_config.root_sequence_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PRACH_CONFIG_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG, &(pNfapiMsg->prach_config.zero_correlation_zone_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PRACH_CONFIG_HIGH_SPEED_FLAG_TAG, &(pNfapiMsg->prach_config.high_speed_flag), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PRACH_CONFIG_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->prach_config.frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_PUSCH_CONFIG_HOPPING_MODE_TAG, &(pNfapiMsg->pusch_config.hopping_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PUSCH_CONFIG_HOPPING_OFFSET_TAG, &(pNfapiMsg->pusch_config.hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PUSCH_CONFIG_NUMBER_OF_SUBBANDS_TAG, &(pNfapiMsg->pusch_config.number_of_subbands), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_PUCCH_CONFIG_DELTA_PUCCH_SHIFT_TAG, &(pNfapiMsg->pucch_config.delta_pucch_shift), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PUCCH_CONFIG_N_CQI_RB_TAG, &(pNfapiMsg->pucch_config.n_cqi_rb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PUCCH_CONFIG_N_AN_CS_TAG, &(pNfapiMsg->pucch_config.n_an_cs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG, &(pNfapiMsg->pucch_config.n1_pucch_an), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDX_TAG, &(pNfapiMsg->embms_sib13_config.mbsfn_area_idx), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDR9_TAG, &(pNfapiMsg->embms_sib13_config.mbsfn_area_id_r9), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_TAG, &(pNfapiMsg->embms_mbsfn_config), ppWritePackedMsg, end, &pack_embms_mbsfn_config_value) &&
-
-			pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG, &(pNfapiMsg->fembms_config.non_mbsfn_config_flag), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG, &(pNfapiMsg->fembms_config.non_mbsfn_subframeconfig), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-
-			pack_tlv(NFAPI_SRS_CONFIG_BANDWIDTH_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.bandwidth_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG, &(pNfapiMsg->srs_config.max_up_pts), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SRS_CONFIG_SRS_SUBFRAME_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.srs_subframe_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSset_tdd_config_nrMISSION_TAG, &(pNfapiMsg->srs_config.srs_acknack_srs_simultaneous_transmission), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG, &(pNfapiMsg->uplink_reference_signal_config.uplink_rs_hopping), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG, &(pNfapiMsg->uplink_reference_signal_config.group_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_CYCLIC_SHIFT_1_FOR_DRMS_TAG, &(pNfapiMsg->uplink_reference_signal_config.cyclic_shift_1_for_drms), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_TDD_FRAME_STRUCTURE_SUBFRAME_ASSIGNMENT_TAG, &(pNfapiMsg->tdd_frame_structure_config.subframe_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_TDD_FRAME_STRUCTURE_SPECIAL_SUBFRAME_PATTERNS_TAG, &(pNfapiMsg->tdd_frame_structure_config.special_subframe_patterns), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_L23_CONFIG_DATA_REPORT_MODE_TAG, &(pNfapiMsg->l23_config.data_report_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_L23_CONFIG_SFNSF_TAG, &(pNfapiMsg->l23_config.sfnsf), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv4), ppWritePackedMsg, end, &pack_ipv4_address_value) &&
-			pack_tlv(NFAPI_NFAPI_P7_VNF_ADDRESS_IPV6_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv6), ppWritePackedMsg, end, &pack_ipv6_address_value) &&
-
-			pack_tlv(NFAPI_NFAPI_P7_VNF_PORT_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_port), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_NFAPI_P7_PNF_ADDRESS_IPV4_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv4), ppWritePackedMsg, end, &pack_ipv4_address_value) &&
-			pack_tlv(NFAPI_NFAPI_P7_PNF_ADDRESS_IPV6_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv6), ppWritePackedMsg, end, &pack_ipv6_address_value) &&
-
-			pack_tlv(NFAPI_NFAPI_P7_PNF_PORT_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_port), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			pack_tlv(NFAPI_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.dl_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.ul_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
-			pack_tlv(NFAPI_NFAPI_RF_BANDS_TAG, &(pNfapiMsg->nfapi_config.rf_bands), ppWritePackedMsg, end, &pack_rf_bands_value) &&
-
-			pack_tlv(NFAPI_NFAPI_TIMING_WINDOW_TAG, &(pNfapiMsg->nfapi_config.timing_window), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_NFAPI_TIMING_INFO_MODE_TAG, &(pNfapiMsg->nfapi_config.timing_info_mode), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_tlv(NFAPI_NFAPI_TIMING_INFO_PERIOD_TAG, &(pNfapiMsg->nfapi_config.timing_info_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
-			pack_tlv(NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG, &(pNfapiMsg->nfapi_config.max_transmit_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_NFAPI_EARFCN_TAG, &(pNfapiMsg->nfapi_config.earfcn), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-
-			pack_tlv(NFAPI_NFAPI_NMM_GSM_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_gsm_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
-			pack_tlv(NFAPI_NFAPI_NMM_UMTS_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_umts_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
-			pack_tlv(NFAPI_NFAPI_NMM_LTE_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_lte_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
-			pack_tlv(NFAPI_NFAPI_NMM_UPLINK_RSSI_SUPPORTED_TAG, &(pNfapiMsg->nfapi_config.nmm_uplink_rssi_supported), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
-}
-#endif
 }
 
 static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
@@ -994,138 +940,6 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
 			//pack_tlv(NFAPI_NR_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.ul_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 
 			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
-
-#if LTE
-{   
-		 push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
-
-			 // Do we check the phy state and then just fill those sepecified, however
-			 // we do not know the duplex mode, so just attempt to pack all and assumme
-			 // that the callee has set the right tlvs
-
-			 pack_tlv(NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG, &(pNfapiMsg->subframe_config.duplex_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SUBFRAME_CONFIG_PCFICH_POWER_OFFSET_TAG, &(pNfapiMsg->subframe_config.pcfich_power_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SUBFRAME_CONFIG_PB_TAG, &(pNfapiMsg->subframe_config.pb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG, &(pNfapiMsg->subframe_config.dl_cyclic_prefix_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG, &(pNfapiMsg->subframe_config.ul_cyclic_prefix_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG, &(pNfapiMsg->rf_config.dl_channel_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG, &(pNfapiMsg->rf_config.ul_channel_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG, &(pNfapiMsg->rf_config.reference_signal_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG, &(pNfapiMsg->rf_config.tx_antenna_ports), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_RF_CONFIG_RX_ANTENNA_PORTS_TAG, &(pNfapiMsg->rf_config.rx_antenna_ports), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_PHICH_CONFIG_PHICH_RESOURCE_TAG, &(pNfapiMsg->phich_config.phich_resource), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG, &(pNfapiMsg->phich_config.phich_duration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG, &(pNfapiMsg->phich_config.phich_power_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_SCH_CONFIG_PRIMARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG, &(pNfapiMsg->sch_config.primary_synchronization_signal_epre_eprers), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SCH_CONFIG_SECONDARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG, &(pNfapiMsg->sch_config.secondary_synchronization_signal_epre_eprers), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG, &(pNfapiMsg->sch_config.physical_cell_id), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_PRACH_CONFIG_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->prach_config.configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PRACH_CONFIG_ROOT_SEQUENCE_INDEX_TAG, &(pNfapiMsg->prach_config.root_sequence_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PRACH_CONFIG_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG, &(pNfapiMsg->prach_config.zero_correlation_zone_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PRACH_CONFIG_HIGH_SPEED_FLAG_TAG, &(pNfapiMsg->prach_config.high_speed_flag), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PRACH_CONFIG_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->prach_config.frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_PUSCH_CONFIG_HOPPING_MODE_TAG, &(pNfapiMsg->pusch_config.hopping_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PUSCH_CONFIG_HOPPING_OFFSET_TAG, &(pNfapiMsg->pusch_config.hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PUSCH_CONFIG_NUMBER_OF_SUBBANDS_TAG, &(pNfapiMsg->pusch_config.number_of_subbands), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_PUCCH_CONFIG_DELTA_PUCCH_SHIFT_TAG, &(pNfapiMsg->pucch_config.delta_pucch_shift), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PUCCH_CONFIG_N_CQI_RB_TAG, &(pNfapiMsg->pucch_config.n_cqi_rb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PUCCH_CONFIG_N_AN_CS_TAG, &(pNfapiMsg->pucch_config.n_an_cs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG, &(pNfapiMsg->pucch_config.n1_pucch_an), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_SRS_CONFIG_BANDWIDTH_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.bandwidth_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG, &(pNfapiMsg->srs_config.max_up_pts), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SRS_CONFIG_SRS_SUBFRAME_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.srs_subframe_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG, &(pNfapiMsg->srs_config.srs_acknack_srs_simultaneous_transmission), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG, &(pNfapiMsg->uplink_reference_signal_config.uplink_rs_hopping), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG, &(pNfapiMsg->uplink_reference_signal_config.group_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_CYCLIC_SHIFT_1_FOR_DRMS_TAG, &(pNfapiMsg->uplink_reference_signal_config.cyclic_shift_1_for_drms), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_LAA_CONFIG_ED_THRESHOLD_FOR_LBT_FOR_PDSCH_TAG, &(pNfapiMsg->laa_config.ed_threshold_lbt_pdsch), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_ED_THRESHOLD_FOR_LBT_FOR_DRS_TAG, &(pNfapiMsg->laa_config.ed_threshold_lbt_drs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_PD_THRESHOLD_TAG, &(pNfapiMsg->laa_config.pd_threshold), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_MULTI_CARRIER_TYPE_TAG, &(pNfapiMsg->laa_config.multi_carrier_type), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_MULTI_CARRIER_TX_TAG, &(pNfapiMsg->laa_config.multi_carrier_tx), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_MULTI_CARRIER_FREEZE_TAG, &(pNfapiMsg->laa_config.multi_carrier_freeze), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_TX_ANTENNA_PORTS_FOR_DRS_TAG, &(pNfapiMsg->laa_config.tx_antenna_ports_drs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_LAA_CONFIG_TRANSMISSION_POWER_FOR_DRS_TAG, &(pNfapiMsg->laa_config.tx_power_drs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_EMTC_CONFIG_PBCH_REPETITIONS_ENABLE_R13_TAG, &(pNfapiMsg->emtc_config.pbch_repetitions_enable_r13), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CATM_ROOT_SEQUENCE_INDEX_TAG, &(pNfapiMsg->emtc_config.prach_catm_root_sequence_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CATM_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG, &(pNfapiMsg->emtc_config.prach_catm_zero_correlation_zone_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CATM_HIGH_SPEED_FLAG, &(pNfapiMsg->emtc_config.prach_catm_high_speed_flag), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_STARTING_SUBFRAME_PERIODICITY_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_starting_subframe_periodicity), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_HOPPING_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_hopping_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_HOPPING_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_0_hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_STARTING_SUBFRAME_PERIODICITY_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_starting_subframe_periodicity), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_HOPPING_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_hopping_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_HOPPING_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_1_hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_STARTING_SUBFRAME_PERIODICITY_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_starting_subframe_periodicity), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_HOPPING_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_hopping_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_HOPPING_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_2_hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_CONFIGURATION_INDEX_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_configuration_index), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_FREQUENCY_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_frequency_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_STARTING_SUBFRAME_PERIODICITY_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_starting_subframe_periodicity), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_HOPPING_ENABLE_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_hopping_enable), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_HOPPING_OFFSET_TAG, &(pNfapiMsg->emtc_config.prach_ce_level_3_hopping_offset), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PUCCH_INTERVAL_ULHOPPINGCONFIGCOMMONMODEA_TAG, &(pNfapiMsg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_EMTC_CONFIG_PUCCH_INTERVAL_ULHOPPINGCONFIGCOMMONMODEB_TAG, &(pNfapiMsg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_TDD_FRAME_STRUCTURE_SUBFRAME_ASSIGNMENT_TAG, &(pNfapiMsg->tdd_frame_structure_config.subframe_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_TDD_FRAME_STRUCTURE_SPECIAL_SUBFRAME_PATTERNS_TAG, &(pNfapiMsg->tdd_frame_structure_config.special_subframe_patterns), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-			 pack_tlv(NFAPI_L23_CONFIG_DATA_REPORT_MODE_TAG, &(pNfapiMsg->l23_config.data_report_mode), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_L23_CONFIG_SFNSF_TAG, &(pNfapiMsg->l23_config.sfnsf), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-
-			 pack_tlv(NFAPI_NFAPI_P7_VNF_ADDRESS_IPV4_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv4), ppWritePackedMsg, end, &pack_ipv4_address_value) &&
-			 pack_tlv(NFAPI_NFAPI_P7_VNF_ADDRESS_IPV6_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv6), ppWritePackedMsg, end, &pack_ipv6_address_value) &&
-			 pack_tlv(NFAPI_NFAPI_P7_VNF_PORT_TAG, &(pNfapiMsg->nfapi_config.p7_vnf_port), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_NFAPI_P7_PNF_ADDRESS_IPV4_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv4), ppWritePackedMsg, end, &pack_ipv4_address_value) &&
-			 pack_tlv(NFAPI_NFAPI_P7_PNF_ADDRESS_IPV6_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv6), ppWritePackedMsg, end, &pack_ipv6_address_value) &&
-			 pack_tlv(NFAPI_NFAPI_P7_PNF_PORT_TAG, &(pNfapiMsg->nfapi_config.p7_pnf_port), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.dl_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			 pack_tlv(NFAPI_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.ul_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
-			 pack_tlv(NFAPI_PHY_RF_BANDS_TAG, &(pNfapiMsg->nfapi_config.rf_bands), ppWritePackedMsg, end, &pack_rf_bands_value) &&
-
-			 pack_tlv(NFAPI_NFAPI_TIMING_WINDOW_TAG, &(pNfapiMsg->nfapi_config.timing_window), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			 pack_tlv(NFAPI_NFAPI_TIMING_INFO_MODE_TAG, &(pNfapiMsg->nfapi_config.timing_info_mode), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			 pack_tlv(NFAPI_NFAPI_TIMING_INFO_PERIOD_TAG, &(pNfapiMsg->nfapi_config.timing_info_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
-			 pack_tlv(NFAPI_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG, &(pNfapiMsg->nfapi_config.max_transmit_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			 pack_tlv(NFAPI_NFAPI_EARFCN_TAG, &(pNfapiMsg->nfapi_config.earfcn), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-
-
-			 pack_tlv(NFAPI_NFAPI_NMM_GSM_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_gsm_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
-			 pack_tlv(NFAPI_NFAPI_NMM_UMTS_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_umts_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
-			 pack_tlv(NFAPI_NFAPI_NMM_LTE_FREQUENCY_BANDS_TAG, &(pNfapiMsg->nfapi_config.nmm_lte_frequency_bands), ppWritePackedMsg, end, &pack_nmm_frequency_bands_value) &&
-			 pack_tlv(NFAPI_NFAPI_NMM_UPLINK_RSSI_SUPPORTED_TAG, &(pNfapiMsg->nfapi_config.nmm_uplink_rssi_supported), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
-
-			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
-}
-#endif
 }
 
 static uint8_t pack_nr_config_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
