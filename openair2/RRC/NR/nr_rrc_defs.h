@@ -345,8 +345,6 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                            nb_of_e_rabs;
   /* Total number of pdu session already setup in the list */
   uint8_t                           setup_pdu_sessions;
-  /* Number of e_rab to be setup in the list */
-  uint8_t                            nb_of_e_rabs;
   /* Number of pdu session to be setup in the list */
   uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */

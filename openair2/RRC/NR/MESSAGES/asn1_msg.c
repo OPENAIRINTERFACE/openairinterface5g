@@ -1193,10 +1193,6 @@ LOG_D(NR_RRC,"RRCSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,
 return((enc_rval.encoded+7)/8);
 }
 
-int do_DLInformationTransfer_NR (void * p) {
-	return 0;
-}
-
 //------------------------------------------------------------------------------
 uint8_t 
 do_NR_DLInformationTransfer(

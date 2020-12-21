@@ -1417,22 +1417,6 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
   ie->value.choice.RAN_UE_NGAP_ID = pdusession_release_resp_p->gNB_ue_ngap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  /* optional */
-  if (pdusession_release_resp_p->nb_of_pdusessions_released > 0) {
-    ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceReleasedListRelRes;
-    ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_AMF_UE_NGAP_ID;
-    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-    /* mandatory */
-    ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
-    ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_RAN_UE_NGAP_ID;
-    ie->value.choice.RAN_UE_NGAP_ID = pdusession_release_resp_p->gNB_ue_ngap_id;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
     /* optional */
     if (pdusession_release_resp_p->nb_of_pdusessions_released > 0) {
         ie = (NGAP_PDUSessionResourceReleaseResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleaseResponseIEs_t));
@@ -1468,15 +1452,6 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
             NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
             ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceReleasedListRelRes.list, item);
         }
-
-    for (i = 0; i < pdusession_release_resp_p->nb_of_pdusessions_released; i++) {
-        NGAP_PDUSessionResourceReleasedItemRelRes_t *item;
-        item = (NGAP_PDUSessionResourceReleasedItemRelRes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceReleasedItemRelRes_t));
-    
-        item->pDUSessionID = pdusession_release_resp_p->pdusession_release[i].pdusession_id;
-        NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
-        ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceReleasedListRelRes.list, item);
-    }
 
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
