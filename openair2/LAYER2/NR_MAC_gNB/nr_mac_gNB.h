@@ -432,7 +432,14 @@ typedef struct {
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
+  /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  /// HARQ processes that are free
+  NR_list_t available_dl_harq;
+  /// HARQ processes that await feedback
+  NR_list_t feedback_dl_harq;
+  /// HARQ processes that await retransmission
+  NR_list_t retrans_dl_harq;
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information

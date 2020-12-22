@@ -1593,6 +1593,26 @@ int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
   return -1;
 }
 
+int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH n)
+{
+  switch (n) {
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n2:
+    return 2;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n4:
+    return 4;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n6:
+    return 6;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n10:
+    return 10;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n12:
+    return 12;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16:
+    return 16;
+  default:
+    return 8;
+  }
+}
+
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup)
 {
@@ -1638,6 +1658,20 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
                 "uplinkBWP_ToAddModList has %d BWP!\n",
                 ubwpList->list.count);
     sched_ctrl->active_ubwp = ubwpList->list.array[bwp_id - 1];
+
+    /* get Number of HARQ processes for this UE */
+    AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
+                "no pdsch-ServingCellConfig found for UE %d\n",
+                UE_id);
+    const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig->pdsch_ServingCellConfig->choice.setup;
+    const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
+        get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
+    // add all available DL HARQ processes for this UE
+    create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+    for (int harq = 0; harq < nrofHARQ; harq++)
+      add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+    create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
+    create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
@@ -1677,6 +1711,10 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     UE_info->active[UE_id] = FALSE;
     UE_info->rnti[UE_id] = 0;
     remove_nr_list(&UE_info->list, UE_id);
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    destroy_nr_list(&sched_ctrl->available_dl_harq);
+    destroy_nr_list(&sched_ctrl->feedback_dl_harq);
+    destroy_nr_list(&sched_ctrl->retrans_dl_harq);
     LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
           mod_id,
           UE_id,
