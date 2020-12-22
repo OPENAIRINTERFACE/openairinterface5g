@@ -207,6 +207,20 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_ctrl->mcs = g_mcsIndex;
   sched_ctrl->time_domain_allocation = 2;
   sched_ctrl->mcsTableIdx = g_mcsTableIdx;
+  /* the simulator assumes the HARQ PID is equal to the slot number */
+  sched_ctrl->dl_harq_pid = slot;
+  /* The scheduler uses lists to track whether a HARQ process is
+   * free/busy/awaiting retransmission, and updates the HARQ process states.
+   * However, in the simulation, we never get ack or nack for any HARQ process,
+   * thus the list and HARQ states don't match what the scheduler expects.
+   * Therefore, below lines just "repair" everything so that the scheduler
+   * won't remark that there is no HARQ feedback */
+  sched_ctrl->feedback_dl_harq.head = -1; // always overwrite feedback HARQ process
+  if (sched_ctrl->harq_processes[slot].round == 0) // depending on round set in simulation ...
+    add_front_nr_list(&sched_ctrl->available_dl_harq, slot); // ... make PID available
+  else
+    add_front_nr_list(&sched_ctrl->retrans_dl_harq, slot);   // ... make PID retransmission
+  sched_ctrl->harq_processes[slot].is_waiting = false;
   AssertFatal(sched_ctrl->rbStart >= 0, "invalid rbStart %d\n", sched_ctrl->rbStart);
   AssertFatal(sched_ctrl->rbSize > 0, "invalid rbSize %d\n", sched_ctrl->rbSize);
   AssertFatal(sched_ctrl->mcs >= 0, "invalid sched_ctrl->mcs %d\n", sched_ctrl->mcs);

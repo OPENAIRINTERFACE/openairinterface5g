@@ -418,14 +418,13 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   }
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  // for now HARQ PID is fixed and should be the same as in post-processor
-  const int current_harq_pid = slot % 8;
-  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-  NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
+  /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
+  sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  if (harq->round != 0) { /* retransmission */
+  if (sched_ctrl->dl_harq_pid >= 0) { /* retransmission */
+    NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[sched_ctrl->dl_harq_pid];
     sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
 
     /* ensure that there is a free place for RB allocation */
@@ -563,11 +562,29 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        nrOfLayers)
         >> 3;
 
-    const int current_harq_pid = slot % 8;
+    int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
+    if (current_harq_pid < 0) {
+      /* PP has not selected a specific HARQ Process, get a new one */
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      AssertFatal(current_harq_pid >= 0,
+                  "no free HARQ process available for UE %d\n",
+                  UE_id);
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    } else {
+      /* PP selected a specific HARQ process. Check whether it will be a new
+       * transmission or a retransmission, and remove from the corresponding
+       * list */
+      if (sched_ctrl->harq_processes[current_harq_pid].round == 0)
+        remove_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
+      else
+        remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
+    }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    DevAssert(!harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
     harq->feedback_slot = pucch->ul_slot;
-    harq->is_waiting = 1;
+    harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_D(MAC,

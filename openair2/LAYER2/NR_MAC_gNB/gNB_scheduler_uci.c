@@ -290,6 +290,31 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
 }
 
+static void handle_dl_harq(module_id_t mod_id,
+                           int UE_id,
+                           int8_t harq_pid,
+                           bool success)
+{
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[harq_pid];
+  harq->feedback_slot = -1;
+  harq->is_waiting = false;
+  if (success) {
+    add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
+    harq->round = 0;
+    harq->ndi ^= 1;
+  } else if (harq->round == MAX_HARQ_ROUNDS) {
+    add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
+    harq->round = 0;
+    harq->ndi ^= 1;
+    NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+    stats->dlsch_errors++;
+    LOG_D(MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
+  } else {
+    add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
+    harq->round++;
+  }
+}
 
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
@@ -309,50 +334,23 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                                 uci_01->ul_cqi,
                                 30);
 
-  // TODO
-  int max_harq_rounds = 4; // TODO define macro
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
-    // handle harq
-    int harq_idx_s = 0;
-
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-      // search for the right harq process
-      for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
-        // if the gNB received ack with a good confidence
-        if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
-          if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
-              (uci_01->harq->harq_confidence_level == 0)) {
-            // toggle NDI and reset round
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          else
-            sched_ctrl->harq_processes[harq_idx].round++;
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-          harq_idx_s = harq_idx + 1;
-          // if the max harq rounds was reached
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-            UE_info->mac_stats[UE_id].dlsch_errors++;
-          }
-          break;
-        }
-        // if feedback slot processing is aborted
-        else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
-                 && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
-                 && sched_ctrl->harq_processes[harq_idx].is_waiting) {
-          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
-          sched_ctrl->harq_processes[harq_idx].round++;
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-        }
-      }
+      const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
+      const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      DevAssert(pid >= 0);
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      AssertFatal(harq->feedback_slot == feedback_slot,
+                  "expected feedback slot %d, but found %d instead\n",
+                  harq->feedback_slot, feedback_slot);
+      DevAssert(harq->is_waiting);
+      handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
   }
 }
@@ -375,50 +373,21 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                 uci_234->ul_cqi,
                                 30);
 
-  // TODO
-  int max_harq_rounds = 4; // TODO define macro
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if ((uci_234->pduBitmap >> 1) & 0x01) {
-    int harq_idx_s = 0;
-    int acknack;
-
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
-      acknack = ((uci_234->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
-      for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
-        // if the gNB received ack with a good confidence or if the max harq rounds was reached
-        if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-          // TODO add some confidence level for when there is no CRC
-          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
-          if ((uci_234->harq.harq_crc != 1) && acknack) {
-            // toggle NDI and reset round
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          else
-            sched_ctrl->harq_processes[harq_idx].round++;
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-          harq_idx_s = harq_idx + 1;
-          // if the max harq rounds was reached
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-            UE_info->mac_stats[UE_id].dlsch_errors++;
-          }
-          break;
-        }
-        // if feedback slot processing is aborted
-        else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
-                 && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
-                 && sched_ctrl->harq_processes[harq_idx].is_waiting) {
-          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
-          sched_ctrl->harq_processes[harq_idx].round++;
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-        }
-      }
+      const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      DevAssert(pid >= 0);
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      AssertFatal(harq->feedback_slot == feedback_slot,
+                  "expected feedback slot %d, but found %d instead\n",
+                  harq->feedback_slot, feedback_slot);
+      handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
 }

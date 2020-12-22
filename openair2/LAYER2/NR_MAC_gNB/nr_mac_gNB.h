@@ -75,6 +75,7 @@
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
+#define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
@@ -338,7 +339,7 @@ typedef struct NR_sched_pusch {
 } NR_sched_pusch_t;
 
 typedef struct NR_UE_harq {
-  uint8_t is_waiting;
+  bool is_waiting;
   uint8_t ndi;
   uint8_t round;
   uint16_t feedback_slot;
@@ -425,6 +426,8 @@ typedef struct {
 
   /// Retransmission-related information
   NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
+  /// DL HARQ PID to use for this UE, or -1 for "any new"
+  int8_t dl_harq_pid;
 
   uint16_t ta_frame;
   int16_t ta_update;
