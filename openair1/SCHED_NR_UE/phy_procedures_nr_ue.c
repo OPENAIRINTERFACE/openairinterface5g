@@ -1760,6 +1760,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   // looking for pbch only in slot where it is supposed to be
   if (slot_ssb) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
     LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
     for (int i=1; i<4; i++) {
 
@@ -1801,6 +1802,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
       LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
       nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_OUT);
     }
   }
 
@@ -1814,12 +1816,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   nr_gold_pdcch(ue, 0, 2);
 
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_IN);
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
 
 #if UE_TIMING_TRACE
     start_meas(&ue->ofdm_demod_stats);
 #endif
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
     nr_slot_fep(ue,
                 proc,
                 l,
@@ -1843,7 +1845,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                                   fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                   coreset_nb_rb);
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
 #endif
@@ -1851,6 +1852,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
     }
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
 
   if (dci_cnt > 0) {
 
@@ -1866,6 +1868,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
 
     if (dlsch) {
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_IN);
       uint8_t harq_pid = dlsch->current_harq_pid;
       NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
       uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
@@ -1888,6 +1891,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                     0,
                     0);
       }
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_OUT);
     }
   } else {
     LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: No DCIs found\n", ue->Mod_id, frame_rx, nr_slot_rx);
@@ -1901,7 +1905,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for C-RNTI
   int ret_pdsch = 0;
   if (ue->dlsch[proc->thread_id][gNB_id][0]->active == 1) {
-    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_IN);
     ret_pdsch = nr_ue_pdsch_procedures(ue,
 			   proc,
 			   gNB_id,
@@ -1910,6 +1914,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   NULL);
 
     nr_ue_measurement_procedures(2, ue, proc, gNB_id, nr_slot_rx, mode);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
@@ -1960,7 +1965,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_p[gNB_id]->active = 0;
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
