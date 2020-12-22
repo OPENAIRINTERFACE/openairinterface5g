@@ -214,16 +214,18 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
   rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
   LOG_I(NR_RRC,"Done init_NR_SI\n");
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->carrier.ssb_SubcarrierOffset,
-                         rrc->carrier.pdsch_AntennaPorts,
-                         rrc->carrier.pusch_TargetSNRx10,
-                         rrc->carrier.pucch_TargetSNRx10,
-                         (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
-                         0,
-                         0, // WIP hardcoded rnti
-                         (NR_CellGroupConfig_t *)NULL
-                        );
+  if (!NODE_IS_CU(RC.nrrrc[0]->node_type)){
+    rrc_mac_config_req_gNB(rrc->module_id,
+                          rrc->carrier.ssb_SubcarrierOffset,
+                          rrc->carrier.pdsch_AntennaPorts,
+                          rrc->carrier.pusch_TargetSNRx10,
+                          rrc->carrier.pucch_TargetSNRx10,
+                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+                          0,
+                          0, // WIP hardcoded rnti
+                          (NR_CellGroupConfig_t *)NULL
+                          );
+  }
 
   if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present

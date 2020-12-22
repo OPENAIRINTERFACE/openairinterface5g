@@ -107,7 +107,11 @@ void cu_task_send_sctp_init_req(instance_t enb_id) {
   message_p->ittiMsg.sctp_init.ipv4 = 1;
   message_p->ittiMsg.sctp_init.ipv6 = 0;
   message_p->ittiMsg.sctp_init.nb_ipv4_addr = 1;
-  message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.rrc[enb_id]->eth_params_s.my_addr);
+  if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+    message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.nrrrc[enb_id]->eth_params_s.my_addr);
+  } else{
+    message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.rrc[enb_id]->eth_params_s.my_addr);
+  }
   /*
    * SR WARNING: ipv6 multi-homing fails sometimes for localhost.
    * * * * Disable it for now.

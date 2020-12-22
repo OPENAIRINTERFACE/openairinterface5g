@@ -105,6 +105,7 @@ extern void NRRCConfig(void);
 void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
 int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i);
+int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */
