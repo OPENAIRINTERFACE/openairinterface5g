@@ -298,6 +298,13 @@ uint16_t nr_get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
 
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
+/*! \brief UL time alignment procedures for TA application
+  @param PHY_VARS_NR_UE ue
+  @param int slot_tx
+  @param int frame_tx
+*/
+void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx);
+
 /*! \brief Compute the timing adjustment at UE side from the old TA offset and the new received TA command
   @param Mod_id Local UE index on which to act
   @param CC_id Component Carrier Index

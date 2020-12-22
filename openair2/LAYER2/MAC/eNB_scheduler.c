@@ -914,7 +914,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 #if (!defined(PRE_SCD_THREAD))
   if (!NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
+    void rlc_tick(int, int);
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
+    rlc_tick(frameP, subframeP);
     pdcp_run(&ctxt);
     pdcp_mbms_run(&ctxt);
     rrc_rx_tx(&ctxt, CC_id);

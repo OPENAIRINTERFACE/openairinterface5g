@@ -1098,7 +1098,9 @@
                                  (Test13: HARQ test 50% TP (2 rounds),
                                  (Test14: 3 PTRS, 8 Interpolated Symbols),
                                  (Test15: 6 PTRS, 5 Interpolated Symbols),
-                                 (Test16: 11 PTRS, 0 Interpolated Symbols)</desc>
+                                 (Test16: 11 PTRS, 0 Interpolated Symbols),
+                                 (Test17: 2 DMRS Symbols),
+                                 (Test18: 3 DMRS Symbols)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1120,8 +1122,10 @@
                   -n100 -s1 -t50
                   -n100 -s5 -T 2 2 2
                   -n100 -s5 -T 2 1 2
-                  -n100 -s5 -T 2 0 4</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14 nr_dlsim.test15 nr_dlsim.test16</tags>
+                  -n100 -s5 -T 2 0 4
+                  -n100 -s2 -U 2 0 1
+                  -n100 -s2 -U 2 0 2</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14 nr_dlsim.test15 nr_dlsim.test16 nr_dlsim.test17 nr_dlsim.test18</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

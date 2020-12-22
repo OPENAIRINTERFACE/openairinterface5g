@@ -108,8 +108,8 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
     fd = fopen("reconfig.raw","w");
     if (fd != NULL) {
       fwrite((void *)buffer,1,(size_t)((enc_rval.encoded+7)>>3),fd);
+      fclose(fd);
     }
-    fclose(fd);
   }
   
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig, NULL, (void *)rbconfig, buffer, 1024);
@@ -134,8 +134,8 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
     fd = fopen("rbconfig.raw","w");
     if (fd != NULL) {
       fwrite((void *)buffer,1,(size_t)((enc_rval.encoded+7)>>3),fd);
+      fclose(fd);
     }
-    fclose(fd);
   }
   
   total_size = total_size + ((enc_rval.encoded+7)>>3);

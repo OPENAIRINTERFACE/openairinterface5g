@@ -358,16 +358,7 @@ boolean_t pdcp_data_req(
       LOG_D(PDCP, "pdcp data req on drb %ld, size %d, rnti %x, node_type %d \n",
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc ? RC.rrc[ctxt_pP->module_id]->node_type: -1);
 
-      // The check on nos1 is done only for the use case of LTE stack running over 5g-nr PHY. This should be changed
-      // before future merge of develop with develop-nr and instead of a check of IS_SOFTMODEM_NOS1, we should use a check
-      // with a new execution option capturing the nr-ip-over-LTE-stack use case.
-      ngran_node_t node_type;
-      if (IS_SOFTMODEM_NOS1)
-    	  node_type = ngran_gNB;
-      else
-    	  node_type = RC.rrc[ctxt_pP->module_id]->node_type;
-
-      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(node_type)) { //RC.rrc[ctxt_pP->module_id]->node_type
+      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
         LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
         ret=FALSE;
       } else {

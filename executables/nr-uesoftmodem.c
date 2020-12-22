@@ -150,6 +150,7 @@ double            cpuf;
 runmode_t            mode = normal_txrx;
 int               UE_scan = 0;
 int          chain_offset = 0;
+int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
 int            numerology = 0;
@@ -235,8 +236,7 @@ static void get_options(void) {
   paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
-  for (int card=1; card<MAX_CARDS; card++)
-    openair0_cfg[card].threequarter_fs = openair0_cfg[0].threequarter_fs ;
+
   if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
 
   if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
@@ -285,6 +285,9 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
+  UE->rf_map.card          = card_offset;
+  UE->rf_map.chain         = CC_id + chain_offset;
+  UE->timing_advance       = timing_advance;
 
   LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", mode, UE_fo_compensation, UE_scan, UE_scan_carrier, UE_no_timing_correction);
 

@@ -937,14 +937,22 @@ int64_t table_6_3_3_2_4_prachConfig_Index [256][10] = {
 
 
 int get_format0(uint8_t index,
-                uint8_t unpaired){
+                uint8_t unpaired,
+		frequency_range_t frequency_range){
 
   uint16_t format;
-  if (unpaired)
-    format = table_6_3_3_2_3_prachConfig_Index[index][0];
-  else
-    format = table_6_3_3_2_2_prachConfig_Index[index][0];
-
+  if (unpaired) {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_3_prachConfig_Index[index][0];
+    else
+      format = table_6_3_3_2_4_prachConfig_Index[index][0];
+  }
+  else {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_2_prachConfig_Index[index][0];
+    else
+      AssertFatal(0==1,"no paired spectrum for FR2\n");
+  }
   return format;
 }
 
@@ -1402,11 +1410,12 @@ uint16_t table_63313[838] = {
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired) {
+                            uint8_t unpaired,
+			    frequency_range_t frequency_range) {
 
   uint8_t config_index = rach_config->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t ncs_index = rach_config->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-  uint16_t format0 = get_format0(config_index, unpaired);
+  uint16_t format0 = get_format0(config_index, unpaired, frequency_range);
   uint16_t NCS = get_NCS(ncs_index, format0, rach_config->restrictedSetConfig);
   uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139) ? 139 : 839;
   uint16_t r,u,index,q,d_u,n_shift_ra,n_shift_ra_bar,d_start;
@@ -2121,6 +2130,10 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
 
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
+}
+/* returns the total DMRS symbols in a slot*/
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols));
 }
 
 // Table 5.1.2.2.1-1 38.214
