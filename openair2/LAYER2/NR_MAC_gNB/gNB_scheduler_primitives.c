@@ -1594,8 +1594,8 @@ int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
 }
 
 //------------------------------------------------------------------------------
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
-
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup)
+{
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
   LOG_W(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
@@ -1611,9 +1611,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     UE_info->num_UEs++;
     UE_info->active[UE_id] = true;
     UE_info->rnti[UE_id] = rntiP;
+    UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
     set_Y(UE_info->Y[UE_id], rntiP);
+    compute_csi_bitlen(secondaryCellGroup, UE_info, UE_id);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->ta_frame = 0;
@@ -1622,6 +1624,20 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     sched_ctrl->ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
     sched_ctrl->pusch_save.time_domain_allocation = -1;
+    const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
+
+    /* Set default BWPs */
+    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+    AssertFatal(bwpList->list.count == 1,
+                "downlinkBWP_ToAddModList has %d BWP!\n",
+                bwpList->list.count);
+    const int bwp_id = 1;
+    sched_ctrl->active_bwp = bwpList->list.array[bwp_id - 1];
+    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+    AssertFatal(ubwpList->list.count == 1,
+                "uplinkBWP_ToAddModList has %d BWP!\n",
+                ubwpList->list.count);
+    sched_ctrl->active_ubwp = ubwpList->list.array[bwp_id - 1];
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,

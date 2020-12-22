@@ -395,21 +395,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               current_rnti);
         continue;
       }
-      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti);
-      UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
-      compute_csi_bitlen(ra->secondaryCellGroup, UE_info, UE_id);
+      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
-      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-      AssertFatal(bwpList->list.count == 1,
-                  "downlinkBWP_ToAddModList has %d BWP!\n",
-                  bwpList->list.count);
-      const int bwp_id = 1;
-      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
-      struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
-      AssertFatal(ubwpList->list.count == 1,
-                  "uplinkBWP_ToAddModList has %d BWP!\n",
-                  ubwpList->list.count);
-      UE_info->UE_sched_ctrl[UE_id].active_ubwp = ubwpList->list.array[bwp_id - 1];
       LOG_I(MAC,
             "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
             "adding UE MAC Context UE_id %d/RNTI %04x\n",

@@ -307,7 +307,7 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup);
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
