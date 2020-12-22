@@ -362,7 +362,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
 #define BIT(x) (1 << (x))
-  const uint64_t dlsch_in_slot_bitmap = BIT(1) | BIT(3);
+  const uint64_t dlsch_in_slot_bitmap = BIT( 1) | BIT( 2) | BIT( 3) | BIT( 4) | BIT( 5) | BIT( 6)
+                                      | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
   const uint64_t ulsch_in_slot_bitmap = BIT(8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
