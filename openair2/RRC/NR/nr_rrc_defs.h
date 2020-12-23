@@ -66,6 +66,7 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_EstablishmentCause.h"
+#include "NR_SIB1.h"
 //-------------------
 
 #include "intertask_interface.h"
@@ -428,7 +429,12 @@ typedef struct {
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
+  int                                       physCellId;
+
   NR_BCCH_BCH_Message_t                     mib;
+  NR_BCCH_BCH_Message_t                    *mib_DU;
+  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *sib1;
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
   int pusch_TargetSNRx10;
@@ -439,7 +445,6 @@ typedef struct {
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
-  int                                       physCellId;
   int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;
@@ -466,6 +471,9 @@ typedef struct gNB_RRC_INST_s {
 
   /// NR cell id
   uint64_t nr_cellid;
+
+  // RRC configuration
+  gNB_RrcConfigurationReq configuration;
 
   // other PLMN parameters
   /// Mobile country code

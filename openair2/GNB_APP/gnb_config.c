@@ -636,7 +636,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       }
     }
 
-    rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
+    rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
@@ -711,6 +711,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	  
       }//
     }//End for (k=0; k <num_gnbs ; k++)
+    memcpy(&rrc->configuration, &NRRRC_CONFIGURATION_REQ(msg_p), sizeof(NRRRC_CONFIGURATION_REQ(msg_p)));
   }//End if (num_gnbs>0)
 
 
@@ -1364,10 +1365,11 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         //   pthread_mutex_unlock(&rrc->cell_info_mutex);
         // } while (cell_info_configured ==0);
 
-        // rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).mcc[k];
-        // rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
-        // rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
+        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).mcc[k];
+        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
+        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
         rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
+        // F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier.physCellId;
         F1AP_SETUP_REQ (msg_p).nr_pci[k]    = 0;
         F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
 
@@ -1381,7 +1383,7 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0] = 1;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active = 0;
         } else {
-          // for test
+          /***************** for test *****************/
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
           F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
@@ -1402,6 +1404,7 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
+          /***************** for test *****************/
         }
 
         F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = "0";

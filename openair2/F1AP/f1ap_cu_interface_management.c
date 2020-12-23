@@ -37,6 +37,7 @@
 #include "f1ap_cu_interface_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
+extern RAN_CONTEXT_t RC;
 
 int CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
@@ -102,8 +103,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p = itti_alloc_new_message(TASK_RRC_ENB, F1AP_SETUP_REQ); 
-  
+  message_p = itti_alloc_new_message(TASK_CU_F1, F1AP_SETUP_REQ);
+
   /* assoc_id */
   F1AP_SETUP_REQ(message_p).assoc_id = assoc_id;
   
@@ -245,10 +246,18 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   );
 
   if (num_cells_available > 0) {
-    itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
+    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+      itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
+    } else {
+      itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
+    }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
-    itti_free(TASK_RRC_ENB,message_p);
+    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+      itti_free(TASK_RRC_GNB,message_p);
+    } else {
+      itti_free(TASK_RRC_ENB,message_p);
+    }
     return -1;
   }
   return 0;
