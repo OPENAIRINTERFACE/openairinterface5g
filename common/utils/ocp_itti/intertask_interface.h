@@ -501,6 +501,8 @@ int itti_create_task(task_id_t task_id,
                      void *(*start_routine) (void *),
                      void *args_p);
 
+int itti_create_queue(const task_info_t *task_info);
+
 /** \brief Exit the current task.
  **/
 void itti_exit_task(void);

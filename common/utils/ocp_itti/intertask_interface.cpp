@@ -336,7 +336,7 @@ extern "C" {
     usleep(100*1000); // Allow the tasks to receive the message before going returning to main thread
   }
 
-  void itti_create_queue(const task_info_t *task_info) {
+  int itti_create_queue(const task_info_t *task_info) {
     pthread_mutex_lock (&lock_nb_queues);
     int newQueue=nb_queues;
     nb_queues++;
@@ -351,6 +351,7 @@ extern "C" {
 
     if (tasks[newQueue].admin.threadFunc != NULL)
       itti_create_task((task_id_t)newQueue, tasks[newQueue].admin.threadFunc, NULL);
+    return newQueue;
   }
 
   int itti_init(task_id_t task_max,
