@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include "SIMULATION/TOOLS/sim.h"
 
-unsigned int s0, s1, s2, b;
+static unsigned int s0, s1, s2;
 
 //----------------------------------------------
 //
@@ -33,7 +33,7 @@ unsigned int s0, s1, s2, b;
 
 unsigned int taus(void)
 {
-  b = (((s0 << 13) ^ s0) >> 19);
+  unsigned int b = (((s0 << 13) ^ s0) >> 19);
   s0 = (((s0 & 0xFFFFFFFE) << 12)^  b);
   b = (((s1 << 2) ^ s1) >> 25);
   s1 = (((s1 & 0xFFFFFFF8) << 4)^  b);
