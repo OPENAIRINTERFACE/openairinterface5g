@@ -3099,6 +3099,9 @@ ue_scheduler(const module_id_t module_idP,
     }
   }
 
+  void rlc_tick(int, int);
+  rlc_tick(rxFrameP % 1024, rxSubframeP);
+
   //#endif
   UE_mac_inst[module_idP].txFrame = txFrameP;
   UE_mac_inst[module_idP].txSubframe = txSubframeP;

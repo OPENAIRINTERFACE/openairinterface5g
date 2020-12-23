@@ -47,7 +47,7 @@ void rrc_gNB_send_NGAP_NAS_FIRST_REQ(void ) {
    rrc_gNB_process_NGAP_DOWNLINK_NAS();
 }
 
-void nr_rrc_rx_tx() {
+void nr_rrc_rx_tx(void) {
   // check timers 
 
   // check if UEs are lost, to remove them from upper layers

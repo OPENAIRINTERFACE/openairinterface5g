@@ -80,6 +80,31 @@ uint8_t is_ptrs_subcarrier(uint16_t k,
 
 static inline uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols) { return ((ptrs_symbols >> l) & 1); }
 
+uint8_t get_ptrs_symbols_in_slot(uint16_t l_prime_mask, uint16_t start_symb, uint16_t nb_symb);
+int8_t get_next_ptrs_symbol_in_slot(uint16_t  ptrsSymbPos, uint8_t counter, uint8_t nb_symb);
+int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, uint8_t counter,uint8_t nb_symb);
 
+int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
+                            uint16_t ptrsSymbPos,
+                            int16_t *estPerSymb,
+                            uint16_t startSymbIdx,
+                            uint16_t noSymb
+                            );
+/*  general function to estimate common phase error based upon PTRS */
+void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
+                            uint8_t ptrsReOffset,
+                            uint8_t dmrsConfigType,
+                            uint16_t nb_rb,
+                            uint16_t rnti,
+                            int16_t *ptrs_ch_p,
+                            unsigned char Ns,
+                            unsigned char symbol,
+                            uint16_t ofdm_symbol_size,
+                            int16_t *rxF_comp,
+                            uint32_t *gold_seq,
+                            int16_t *error_est,
+                            int32_t *ptrs_sc);
 
+void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double *slope_p);
+void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end);
 #endif /* PTRS_NR_H */

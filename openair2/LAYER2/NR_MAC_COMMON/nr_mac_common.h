@@ -44,6 +44,11 @@
 #define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
 #define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
 
+typedef enum frequency_range_e {
+    FR1 = 0, 
+    FR2
+} frequency_range_t;
+
 // PRACH occasion details
 typedef struct prach_occasion_info {
   uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
@@ -159,11 +164,12 @@ uint8_t get_pusch_mcs_table(long *mcs_Table,
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired);
+                            uint8_t unpaired,
+			    frequency_range_t);
 
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
 
-int get_format0(uint8_t index, uint8_t unpaired);
+int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
 int64_t *get_prach_config_info(uint32_t pointa,
                                uint8_t index,
@@ -179,4 +185,10 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
+
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
+                        uint8_t *nERatio,uint8_t *reOffset,
+                        uint8_t NrOfSymbols);
 #endif

@@ -564,6 +564,18 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint32_t llr_offset,
                      uint8_t beamforming_mode);
 
+void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+                     int32_t **rxdataF_comp,
+                     int16_t *dlsch_llr,
+                     int32_t **dl_ch_mag,
+                     int32_t **dl_ch_magb,
+                     int32_t **dl_ch_magr,
+                     uint8_t symbol,
+                     uint32_t len,
+                     uint8_t first_symbol_flag,
+                     uint16_t nb_rb,
+                     uint32_t llr_offset,
+                     uint8_t beamforming_mode);
 
 /** \fn dlsch_siso(NR_DL_FRAME_PARMS *frame_parms,
     int32_t **rxdataF_comp,
@@ -707,7 +719,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         unsigned short nb_pdsch_rb,
                                         unsigned char nr_slot_rx,
                                         uint32_t high_speed_flag,
-                                        NR_DL_FRAME_PARMS *frame_parms);
+                                        NR_DL_FRAME_PARMS *frame_parms,
+                                        uint16_t dlDmrsSymbPos);
 
 /** \fn dlsch_extract_rbs_dual(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
@@ -797,6 +810,7 @@ void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 int32_t **dl_ch_estimates_ext,
                                 int32_t **dl_ch_mag,
                                 int32_t **dl_ch_magb,
+                                int32_t **dl_ch_magr,
                                 int32_t **rxdataF_comp,
                                 int32_t **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,

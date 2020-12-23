@@ -33,6 +33,7 @@
 *
 **************************************************************************/
 
+#include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
@@ -228,13 +229,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
   int       n_HARQ_ACK;
 
-  uint16_t crnti=0x1234;
   int dmrs_scrambling_id=0,data_scrambling_id=0;
-
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_PUCCH_Resource_t *pucch_resource;
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  uint16_t crnti = mac->crnti;
 
   /* update current context */
 
@@ -1008,6 +1007,12 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 
     if (resource_set_found == TRUE) {
       if (pucch_resource_indicator < MAX_PUCCH_RESOURCE_INDICATOR) {
+        // Verify that the value of pucch_resource_indicator is valid
+        if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.count <= pucch_resource_indicator)
+        {
+          LOG_E(PHY, "Value of pucch_resource_indicator is out of bounds! Possibly due to a false DCI. \n");
+          return (FALSE);
+        }
         /* check if resource indexing by pucch_resource_indicator of this set is compatible */
         if ((ready_pucch_resource_id == TRUE) || (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0] != MAX_NB_OF_PUCCH_RESOURCES)) {
 

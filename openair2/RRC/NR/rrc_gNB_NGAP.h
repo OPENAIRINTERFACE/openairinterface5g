@@ -142,4 +142,25 @@ rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
   NR_UL_DCCH_Message_t     *const ul_dcch_msg
 );
 
+int
+rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t instance
+);
+
+void
+rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  uint8_t                   xid
+);
+
+void
+nr_rrc_pdcp_config_security(
+    const protocol_ctxt_t  *const ctxt_pP,
+    rrc_gNB_ue_context_t   *const ue_context_pP,
+    const uint8_t          send_security_mode_command
+);
+
 #endif
