@@ -1672,6 +1672,13 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
       add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
     create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
     create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+
+    // add all available UL HARQ processes for this UE
+    create_nr_list(&sched_ctrl->available_ul_harq, 16);
+    for (int harq = 0; harq < 16; harq++)
+      add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
+    create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
+    create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
@@ -1715,6 +1722,9 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     destroy_nr_list(&sched_ctrl->available_dl_harq);
     destroy_nr_list(&sched_ctrl->feedback_dl_harq);
     destroy_nr_list(&sched_ctrl->retrans_dl_harq);
+    destroy_nr_list(&sched_ctrl->available_ul_harq);
+    destroy_nr_list(&sched_ctrl->feedback_ul_harq);
+    destroy_nr_list(&sched_ctrl->retrans_ul_harq);
     LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
           mod_id,
           UE_id,

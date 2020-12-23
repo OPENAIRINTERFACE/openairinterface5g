@@ -443,7 +443,14 @@ typedef struct {
   NR_list_t feedback_dl_harq;
   /// HARQ processes that await retransmission
   NR_list_t retrans_dl_harq;
+  /// information about every UL HARQ process
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  /// UL HARQ processes that are free
+  NR_list_t available_ul_harq;
+  /// UL HARQ processes that await feedback
+  NR_list_t feedback_ul_harq;
+  /// UL HARQ processes that await retransmission
+  NR_list_t retrans_ul_harq;
   int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
