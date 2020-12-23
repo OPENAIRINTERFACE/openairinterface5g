@@ -315,25 +315,21 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t timing_advance,
                const uint8_t ul_cqi,
                const uint16_t rssi){
-  int current_rnti = 0, UE_id = -1, harq_pid = 0;
-  gNB_MAC_INST *gNB_mac = NULL;
-  NR_UE_info_t *UE_info = NULL;
-  NR_UE_sched_ctrl_t *UE_scheduling_control = NULL;
+  gNB_MAC_INST *gNB_mac = RC.nrmac[gnb_mod_idP];
+  NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
-  current_rnti = rntiP;
-  UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
-  gNB_mac = RC.nrmac[gnb_mod_idP];
-  UE_info = &gNB_mac->UE_info;
-  int target_snrx10 = gNB_mac->pusch_target_snrx10;
-
-  if (sduP != NULL) {
-    T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
-      T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
-      T_BUFFER(sduP, sdu_lenP));
-  }
+  const int current_rnti = rntiP;
+  const int UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
+  const int target_snrx10 = gNB_mac->pusch_target_snrx10;
 
   if (UE_id != -1) {
-    UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
+    NR_UE_sched_ctrl_t *UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
+    const int8_t harq_pid = UE_scheduling_control->feedback_ul_harq.head;
+
+    if (sduP)
+      T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
+        T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(harq_pid),
+        T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
     LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
@@ -380,6 +376,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   } else {
     if (!sduP) // check that CRC passed
       return;
+
+    T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
+      T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
+      T_BUFFER(sduP, sdu_lenP));
 
     /* we don't know this UE (yet). Check whether there is a ongoing RA (Msg 3)
      * and check the corresponding UE's RNTI match, in which case we activate
