@@ -348,9 +348,9 @@ void init_main_gNB(void) {
   LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
   int gnb_id=0; // only 1 gnb per process, index 0 for now
   RC.nrrrc[gnb_id] = (gNB_RRC_INST *)calloc(sizeof(gNB_RRC_INST),1);
-  MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
+  MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
   RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
-  openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(ITTI_MSG_INSTANCE(msg_p)), &NRRRC_CONFIGURATION_REQ(msg_p));
+  openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(ITTI_MSG_DESTINATION_INSTANCE(msg_p)), &NRRRC_CONFIGURATION_REQ(msg_p));
   //AssertFatal(itti_create_task(TASK_GNB_APP, gNB_app_task, NULL) >= 0, "");
   AssertFatal(itti_create_task(TASK_RRC_GNB, rrc_gnb_task, NULL) >= 0, "");
   //AssertFatal(itti_create_task(TASK_X2AP, x2ap_task, NULL) >= 0, "");
@@ -928,7 +928,7 @@ int main( int argc, char **argv ) {
   get_common_options(SOFTMODEM_GNB_BIT );
   AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   set_taus_seed (0);
   init_opt();
   init_pdcp();

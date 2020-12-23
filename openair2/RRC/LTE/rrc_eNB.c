@@ -332,7 +332,7 @@ init_SI(
     if (carrier->MBMS_flag > 0) {
       for (i = 0; i < carrier->sib2->mbsfn_SubframeConfigList->list.count; i++) {
         // SIB 2
-        //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", enb_mod_idP, RC.rrc[enb_mod_idP].sib2->mbsfn_SubframeConfigList->list.count);
+        //   LOG_D(RRC, "[eNB %ld] mbsfn_SubframeConfigList.list.count = %ld\n", enb_mod_idP, RC.rrc[enb_mod_idP].sib2->mbsfn_SubframeConfigList->list.count);
         LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN subframe allocation %d/%d(partial)\n",
               PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
               i,
@@ -1132,7 +1132,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
         rrc_rlc_remove_ue(&ctxt);
         pdcp_remove_UE(&ctxt);
       } else {
-        MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+        MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
         F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = rnti;
         F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
         F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
@@ -2173,7 +2173,7 @@ void rrc_generate_SgNBReleaseRequest(
 //-----------------------------------------------------------------------------
 {
   MessageDef      *msg;
-  msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_RELEASE_REQ);
+  msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_RELEASE_REQ);
   memset(&(X2AP_ENDC_SGNB_RELEASE_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_release_req_t));
   // X2AP_ENDC_SGNB_RELEASE_REQ(msg).MeNB_ue_x2_id = ;
   // X2AP_ENDC_SGNB_RELEASE_REQ(msg).SgNB_ue_x2_id = ;
@@ -2268,7 +2268,7 @@ rrc_eNB_generate_RRCConnectionRelease(
   pthread_mutex_unlock(&rrc_release_freelist);
 
   if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+    MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
@@ -3110,7 +3110,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
       LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
     } else {
       /* Send DRX configuration to MAC task to configure timers of local UE context */
-      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, RRC_MAC_DRX_CONFIG_REQ);
       RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
       RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
       itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
@@ -3883,7 +3883,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
       LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
     } else {
       /* Send DRX configuration to MAC task to configure timers of local UE context */
-      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, RRC_MAC_DRX_CONFIG_REQ);
       RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
       RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
       itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
@@ -4670,7 +4670,7 @@ rrc_eNB_process_MeasurementReport(
         if(encode_CG_ConfigInfo(enc_buf,sizeof(enc_buf),ue_context_pP,&enc_size) == RRC_OK)
           LOG_I(RRC,"CG-ConfigInfo encoded successfully\n");
 
-        msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
+        msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ);
         memset(&(X2AP_ENDC_SGNB_ADDITION_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_addition_req_t));
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
         memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
@@ -4766,7 +4766,7 @@ rrc_eNB_process_MeasurementReport(
     ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
     /* HO Preparation message */
-    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ);
+    msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ);
     rrc_eNB_generate_HandoverPreparationInformation(
       ue_context_pP,
       X2AP_HANDOVER_REQ(msg).rrc_buffer,
@@ -5015,11 +5015,11 @@ void rrc_eNB_handover_ue_context_release(
   //MessageDef *msg_release_p = NULL;
   MessageDef *msg_delete_tunnels_p = NULL;
   uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
-  //msg_release_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE);
+  //msg_release_p = itti_alloc_new_message(TASK_RRC_ENB, 0, S1AP_UE_CONTEXT_RELEASE);
   //itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_release_p);
   s1ap_ue_context_release(ctxt_pP->instance, ue_context_p->ue_context.eNB_ue_s1ap_id);
   //MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
-  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
@@ -5096,7 +5096,7 @@ flexran_rrc_eNB_trigger_handover (int mod_id,
     ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
     /* HO Preparation message */
-    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ);
+    msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ);
     rrc_eNB_generate_HandoverPreparationInformation(
       ue_context_pP,
       X2AP_HANDOVER_REQ(msg).rrc_buffer,
@@ -5183,7 +5183,7 @@ check_handovers(
         MessageDef *msg;
         // Configure target
         ue_context_p->ue_context.handover_info->state = HO_FORWARDING;
-        msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ_ACK);
+        msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ_ACK);
         rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p, X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
             &X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size);
         rrc_eNB_configure_rbs_handover(ue_context_p,ctxt_pP);
@@ -5227,11 +5227,11 @@ check_handovers(
                 GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).frame,
                 0,
                 GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).eNB_index);
-              LOG_D(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
+              LOG_D(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %ld, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
                     PROTOCOL_CTXT_ARGS(&ctxt),
                     ITTI_MSG_NAME (msg_p),
                     ITTI_MSG_ORIGIN_NAME(msg_p),
-                    ITTI_MSG_INSTANCE (msg_p),
+                    ITTI_MSG_DESTINATION_INSTANCE (msg_p),
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
@@ -5295,11 +5295,11 @@ check_handovers(
                 GTPV1U_ENB_END_MARKER_IND (msg_p).frame,
                 0,
                 GTPV1U_ENB_END_MARKER_IND (msg_p).eNB_index);
-              LOG_I(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
+              LOG_I(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %ld, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
                     PROTOCOL_CTXT_ARGS(&ctxt),
                     ITTI_MSG_NAME (msg_p),
                     ITTI_MSG_ORIGIN_NAME(msg_p),
-                    ITTI_MSG_INSTANCE (msg_p),
+                    ITTI_MSG_DESTINATION_INSTANCE (msg_p),
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
@@ -6860,7 +6860,7 @@ rrc_eNB_generate_RRCConnectionSetup(
     case ngran_gNB_CU    :
       // create an ITTI message
       /* TODO: F1 IDs ar missing in RRC */
-      message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_DL_RRC_MESSAGE);
+      message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, F1AP_DL_RRC_MESSAGE);
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  (uint8_t *)ue_p->Srb0.Tx_buffer.Payload;
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
       F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;
@@ -6972,7 +6972,7 @@ void rrc_eNB_process_reconfiguration_complete_endc(const protocol_ctxt_t *const 
 {
   MessageDef *msg_p;
 
-  msg_p = itti_alloc_new_message (TASK_RRC_ENB, X2AP_ENDC_SGNB_RECONF_COMPLETE);
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_RECONF_COMPLETE);
 
   /* MeNB_ue_x2_id is unknown, set to 0.
    * This is not correct but X2 id in the eNB is only 12 bits,
@@ -7085,7 +7085,7 @@ char openair_rrc_eNB_configuration(
     LOG_W(RRC, "[inst %d] RRC->MCC/MSG->MCC %d/%d \n", ctxt.module_id, RC.rrc[ctxt.module_id]->mcc, rrc_configuration_req->mcc);
     */
   if (NODE_IS_CU(RC.rrc[ctxt.module_id]->node_type))
-    // msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SCTP_REQ);
+    // msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, F1AP_SCTP_REQ);
     // RCconfig_CU_F1(msg_p, enb_id);
     setup_ngran_CU(RC.rrc[ctxt.module_id]);
 
@@ -7466,7 +7466,7 @@ rrc_eNB_decode_ccch(
                 if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
                   rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
                 } else {
-                  MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+                  MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
                   F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
                   F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
                   F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
@@ -7570,7 +7570,7 @@ rrc_eNB_decode_ccch(
             if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type))
               rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
             else if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-              MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+              MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
               F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
               F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
               F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
@@ -7954,7 +7954,7 @@ rrc_eNB_decode_dcch(
               xid = ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier;
               ue_context_p->ue_context.e_rab_release_command_flag = 0;
               //gtp tunnel delete
-              msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+              msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
               memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
               GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
               GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
@@ -8636,7 +8636,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         // prepare F1_SETUP_RESPONSE
 
         if (msg_p == NULL) {
-          msg_p = itti_alloc_new_message (TASK_CU_F1,F1AP_SETUP_RESP);
+          msg_p = itti_alloc_new_message (TASK_CU_F1, 0,F1AP_SETUP_RESP);
         }
 
         F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
@@ -8672,7 +8672,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 
     if (found_cell==0) {
       AssertFatal(1==0,"No cell found\n");
-      /*msg_p = itti_alloc_new_message (TASK_CU_F1,F1AP_SETUP_FAILURE);
+      /*msg_p = itti_alloc_new_message (TASK_CU_F1, 0,F1AP_SETUP_FAILURE);
       F1AP_SETUP_RESP (msg_p).cause                             = rrc->node_name;
       F1AP_SETUP_RESP (msg_p).time_to_wait                      = rrc->node_id;
       F1AP_SETUP_RESP (msg_p).criticality_diagnostics           = rrc->node_name;*/
@@ -8861,7 +8861,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
   if (RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2) {
     /* send a tick to x2ap */
-    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_SUBFRAME_PROCESS);
+    msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_SUBFRAME_PROCESS);
     itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
     check_handovers(ctxt_pP); // counter, get the value and aggregate
   }
@@ -9053,7 +9053,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     if (ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA ||
         ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA_RECONFIGURED) {
       MessageDef *message_p;
-      message_p = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_RELEASE_REQUEST);
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_RELEASE_REQUEST);
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).rnti = ue_to_be_removed[cur_ue]->ue_context.gnb_rnti;
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).assoc_id = ue_to_be_removed[cur_ue]->ue_context.gnb_x2_assoc_id;
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).cause = X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST;
@@ -9300,7 +9300,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   // Wait for a message
   itti_receive_msg(TASK_RRC_ENB, &msg_p);
   msg_name_p = ITTI_MSG_NAME(msg_p);
-  instance = ITTI_MSG_INSTANCE(msg_p);
+  instance = ITTI_MSG_DESTINATION_INSTANCE(msg_p);
 
   /* RRC_SUBFRAME_PROCESS is sent every subframe, do not log it */
   if (ITTI_MSG_ID(msg_p) != RRC_SUBFRAME_PROCESS)
@@ -9313,7 +9313,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     case MESSAGE_TEST:
-      LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[eNB %ld] Received %s\n", instance, msg_name_p);
       break;
 
     /* Messages from MAC */
@@ -9324,7 +9324,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
                                     RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
                                     msg_p->ittiMsgHeader.lte_time.frame,
                                     msg_p->ittiMsgHeader.lte_time.slot);
-      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+      LOG_I(RRC,"Decoding CCCH : inst %ld, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
             instance,
             RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
             &ctxt,
@@ -9382,13 +9382,13 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     case S1AP_PAGING_IND:
-      LOG_D(RRC, "[eNB %d] Received Paging message from S1AP: %s\n", instance, msg_name_p);
+      LOG_D(RRC, "[eNB %ld] Received Paging message from S1AP: %s\n", instance, msg_name_p);
       rrc_eNB_process_PAGING_IND(msg_p, msg_name_p, instance);
       break;
 
     case S1AP_E_RAB_SETUP_REQ:
       rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(msg_p, msg_name_p, instance);
-      LOG_D(RRC, "[eNB %d] Received the message %s\n", instance, msg_name_p);
+      LOG_D(RRC, "[eNB %ld] Received the message %s\n", instance, msg_name_p);
       break;
 
     case S1AP_E_RAB_MODIFY_REQ:
@@ -9422,7 +9422,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     }
 
     case S1AP_PATH_SWITCH_REQ_ACK:
-      LOG_I(RRC, "[eNB %d] received path switch ack %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[eNB %ld] received path switch ack %s\n", instance, msg_name_p);
       rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK(msg_p, msg_name_p, instance);
       break;
 
@@ -9435,7 +9435,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     case X2AP_HANDOVER_REQ:
-      LOG_I(RRC, "[eNB %d] target eNB Receives X2 HO Req %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[eNB %ld] target eNB Receives X2 HO Req %s\n", instance, msg_name_p);
       rrc_eNB_process_handoverPreparationInformation(instance, &X2AP_HANDOVER_REQ(msg_p));
       break;
 
@@ -9453,7 +9453,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
         exit(1);
       }
 
-      LOG_I(RRC, "[eNB %d] source eNB receives the X2 HO ACK %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[eNB %ld] source eNB receives the X2 HO ACK %s\n", instance, msg_name_p);
       DevAssert(ue_context_p != NULL);
 
       if (ue_context_p->ue_context.handover_info->state != HO_REQUEST) abort();
@@ -9504,7 +9504,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     case X2AP_UE_CONTEXT_RELEASE: {
       struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
       ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_UE_CONTEXT_RELEASE(msg_p).rnti);
-      LOG_I(RRC, "[eNB %d] source eNB receives the X2 UE CONTEXT RELEASE %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[eNB %ld] source eNB receives the X2 UE CONTEXT RELEASE %s\n", instance, msg_name_p);
       DevAssert(ue_context_p != NULL);
 
       if (ue_context_p->ue_context.handover_info->state != HO_COMPLETE) abort();
@@ -9535,7 +9535,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
       if (ue_context_p != NULL &&
           ue_context_p->ue_context.handover_info != NULL) {
-        LOG_I(RRC, "[eNB %d] eNB receives X2 HANDOVER CANCEL for rnti %x, cause %s [%s]\n",
+        LOG_I(RRC, "[eNB %ld] eNB receives X2 HANDOVER CANCEL for rnti %x, cause %s [%s]\n",
               instance,
               X2AP_HANDOVER_CANCEL(msg_p).rnti,
               cause,
@@ -9560,7 +9560,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
         else
           failure_cause = "UE not in handover";
 
-        LOG_W(RRC, "[eNB %d] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n",
+        LOG_W(RRC, "[eNB %ld] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n",
               instance, failure_cause, X2AP_HANDOVER_CANCEL(msg_p).rnti, cause);
       }
 
@@ -9588,7 +9588,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
     /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
-      LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p, &RRC_CONFIGURATION_REQ(msg_p));
+      LOG_I(RRC, "[eNB %ld] Received %s : %p\n", instance, msg_name_p, &RRC_CONFIGURATION_REQ(msg_p));
       openair_rrc_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
       break;
 
@@ -9596,7 +9596,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     case F1AP_SETUP_REQ:
       AssertFatal(NODE_IS_CU(RC.rrc[instance]->node_type),
                   "should not receive F1AP_SETUP_REQUEST, need call by CU!\n");
-      LOG_I(RRC,"[eNB %d] Received %s : %p\n", instance, msg_name_p, &F1AP_SETUP_REQ(msg_p));
+      LOG_I(RRC,"[eNB %ld] Received %s : %p\n", instance, msg_name_p, &F1AP_SETUP_REQ(msg_p));
       handle_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
       break;
 
@@ -9649,7 +9649,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     default:
-      LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);
+      LOG_E(RRC, "[eNB %ld] Received unexpected message %s\n", instance, msg_name_p);
       break;
   }
 
@@ -10023,7 +10023,7 @@ rrc_rx_tx(
 //-----------------------------------------------------------------------------
 {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_SUBFRAME_PROCESS);
+  message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, RRC_SUBFRAME_PROCESS);
   RRC_SUBFRAME_PROCESS(message_p).ctxt  = *ctxt_pP;
   RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
   itti_send_msg_to_task(TASK_RRC_ENB, ctxt_pP->module_id, message_p);

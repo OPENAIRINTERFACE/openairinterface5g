@@ -45,7 +45,7 @@ typedef struct {
   uint32_t      interval_sec;
   uint32_t      interval_us;
   long          task_id;
-  int32_t       instance;
+  instance_t       instance;
   timer_type_t  type;
   void         *timer_arg;
   long          timer_id;
@@ -403,7 +403,8 @@ typedef struct MessageHeader_s {
   MessagesIds messageId;          /**< Unique message id as referenced in enum MessagesIds */
   task_id_t  originTaskId;        /**< ID of the sender task */
   task_id_t  destinationTaskId;   /**< ID of the destination task */
-  instance_t instance;            /**< Task instance for virtualization */
+  instance_t originInstance;            
+  instance_t destinationInstance;            
   itti_lte_time_t lte_time;
   MessageHeaderSize ittiMsgSize;         /**< Message size (not including header size) */
 } MessageHeader;
@@ -433,11 +434,11 @@ typedef struct MessageDef_s {
 
 
 /* Extract the instance from a message */
-#define ITTI_MESSAGE_GET_INSTANCE(mESSAGE)  ((mESSAGE)->ittiMsgHeader.instance)
 #define ITTI_MSG_ID(mSGpTR)                 ((mSGpTR)->ittiMsgHeader.messageId)
 #define ITTI_MSG_ORIGIN_ID(mSGpTR)          ((mSGpTR)->ittiMsgHeader.originTaskId)
 #define ITTI_MSG_DESTINATION_ID(mSGpTR)     ((mSGpTR)->ittiMsgHeader.destinationTaskId)
-#define ITTI_MSG_INSTANCE(mSGpTR)           ((mSGpTR)->ittiMsgHeader.instance)
+#define ITTI_MSG_ORIGIN_INSTANCE(mSGpTR)           ((mSGpTR)->ittiMsgHeader.originInstance)
+#define ITTI_MSG_DESTINATION_INSTANCE(mSGpTR)           ((mSGpTR)->ittiMsgHeader.destinationInstance)
 #define ITTI_MSG_NAME(mSGpTR)               itti_get_message_name(ITTI_MSG_ID(mSGpTR))
 #define ITTI_MSG_ORIGIN_NAME(mSGpTR)        itti_get_task_name(ITTI_MSG_ORIGIN_ID(mSGpTR))
 #define ITTI_MSG_DESTINATION_NAME(mSGpTR)   itti_get_task_name(ITTI_MSG_DESTINATION_ID(mSGpTR))
@@ -530,6 +531,7 @@ const char *itti_get_task_name(task_id_t task_id);
  **/
 MessageDef *itti_alloc_new_message(
   task_id_t         origin_task_id,
+  instance_t originInstance,
   MessagesIds       message_id);
 
 /** \brief Alloc and memset(0) a new itti message.
@@ -540,6 +542,7 @@ MessageDef *itti_alloc_new_message(
  **/
 MessageDef *itti_alloc_new_message_sized(
   task_id_t         origin_task_id,
+  instance_t originInstance,
   MessagesIds       message_id,
   MessageHeaderSize size);
 
@@ -547,7 +550,7 @@ MessageDef *itti_alloc_new_message_sized(
    This function should be called from the main thread after having created all ITTI tasks.
  **/
 void itti_wait_tasks_end(void);
-#define  THREAD_MAX 0 //for compatibility
+#define  ADDED_QUEUES_MAX 10 // Fix me: MSC component too hard to understand, we keep room for 10 queues created dynamically
 void itti_set_task_real_time(task_id_t task_id);
 
 /** \brief Send a termination message to all tasks.
@@ -561,13 +564,13 @@ void *malloc_or_fail(size_t size);
 int memory_read(const char *datafile, void *data, size_t size);
 int itti_free(task_id_t task_id, void *ptr);
 
-int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
+int itti_init(task_id_t task_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
               const message_info_t *messages_info);
 int timer_setup(
   uint32_t      interval_sec,
   uint32_t      interval_us,
   task_id_t     task_id,
-  int32_t       instance,
+  instance_t       instance,
   timer_type_t  type,
   void         *timer_arg,
   long         *timer_id);

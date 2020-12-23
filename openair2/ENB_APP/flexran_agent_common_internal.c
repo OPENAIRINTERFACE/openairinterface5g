@@ -565,6 +565,6 @@ void initiate_soft_restart(module_id_t mod_id, Protocol__FlexCellConfig *c)
   }
 
   MessageDef *msg;
-  msg = itti_alloc_new_message(TASK_FLEXRAN_AGENT, SOFT_RESTART_MESSAGE);
+  msg = itti_alloc_new_message(TASK_FLEXRAN_AGENT, 0, SOFT_RESTART_MESSAGE);
   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }

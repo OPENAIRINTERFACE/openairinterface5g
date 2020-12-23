@@ -3465,7 +3465,7 @@ int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
   if (!rrc_is_present(mod_id)) return -2;
 
   /* Reconstruct S1AP_REGISTER_ENB_REQ */
-  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, S1AP_REGISTER_ENB_REQ);
+  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, 0, S1AP_REGISTER_ENB_REQ);
   RCconfig_S1(m, mod_id);
 
   const int CC_id = 0;
@@ -3525,7 +3525,7 @@ int flexran_remove_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
   if (!mme)
     return -2;
 
-  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, SCTP_CLOSE_ASSOCIATION);
+  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, 0, SCTP_CLOSE_ASSOCIATION);
   SCTP_CLOSE_ASSOCIATION(m).assoc_id = mme->assoc_id;
   itti_send_msg_to_task (TASK_SCTP, ENB_MODULE_ID_TO_INSTANCE(mod_id), m);
 

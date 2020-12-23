@@ -229,9 +229,7 @@ typedef uint8_t            ebi_t;  // eps bearer id
 //
 //-----------------------------------------------------------------------------
 // may be ITTI not enabled, but type instance is useful also for OTG,
-#if !defined(instance_t)
-  typedef uint16_t instance_t;
-#endif
+typedef int64_t instance_t;
 typedef struct protocol_ctxt_s {
   module_id_t module_id;     /*!< \brief  Virtualized module identifier      */
   eNB_flag_t  enb_flag;      /*!< \brief  Flag to indicate eNB (1) or UE (0) */
@@ -292,7 +290,8 @@ typedef struct protocol_ctxt_s {
   (Ctxt_Pp)->subframe  = sUBfRAME; \
   PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp)
 
-#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %" PRIx16 "]"
+#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02d][RNTI %" PRIx16 "]"
+#define PROTOCOL_CTXT_FMTL "[FRAME %05u][%s][MOD %08ld][RNTI %" PRIx16 "]"
 #define PROTOCOL_CTXT_ARGS(CTXT_Pp) \
   (CTXT_Pp)->frame, \
   ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB":" UE", \
