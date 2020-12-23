@@ -750,7 +750,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 UE CONTEXT SETUP REQUEST\n");
     return -1;
   }
 
@@ -1505,7 +1505,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 UE CONTEXT_MODIFICATION REQUEST\n");
     return -1;
   }
 

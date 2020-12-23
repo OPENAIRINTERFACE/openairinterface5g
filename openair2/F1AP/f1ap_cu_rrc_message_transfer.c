@@ -303,7 +303,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
  
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 DL RRC MESSAGE TRANSFER \n");
     return -1;
   }
 

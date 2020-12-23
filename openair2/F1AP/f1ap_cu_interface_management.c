@@ -383,7 +383,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup response\n");
     return -1;
   }
 
@@ -469,7 +469,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup failure\n");
     return -1;
   }
 
@@ -876,7 +876,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 gNB-CU CONFIGURATION UPDATE\n");
     return -1;
   }
 

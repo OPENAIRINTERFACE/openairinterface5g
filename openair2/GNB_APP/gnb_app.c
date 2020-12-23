@@ -84,7 +84,7 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
         // configure F1AP here for F1C
         LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
         msg_p = itti_alloc_new_message (TASK_GNB_APP, F1AP_SETUP_REQ);
-        RCconfig_DU_F1(msg_p, gnb_id);
+        RCconfig_NR_DU_F1(msg_p, gnb_id);
 
         LOG_I(GNB_APP,"[gNB %d] gNB_app_register via F1AP for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
         itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
@@ -200,7 +200,7 @@ void *gNB_app_task(void *args_p)
         // configure F1AP here for F1C
         LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
         msg_p = itti_alloc_new_message (TASK_GNB_APP, F1AP_SETUP_REQ);
-        RCconfig_DU_F1(msg_p, gnb_id);
+        RCconfig_NR_DU_F1(msg_p, gnb_id);
 
         itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
       }

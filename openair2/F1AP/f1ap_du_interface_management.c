@@ -1021,7 +1021,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
 
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 gNB-DU CONFIGURATION UPDATE\n");
     return -1;
   }
 

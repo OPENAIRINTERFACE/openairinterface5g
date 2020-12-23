@@ -103,10 +103,10 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
 
   /* setup parameters for F1U and start the server */
   const cudu_params_t params = {
-    .local_ipv4_address  = RC.mac[instance]->eth_params_n.my_addr,
-    .local_port          = RC.mac[instance]->eth_params_n.my_portd,
-    .remote_ipv4_address = RC.mac[instance]->eth_params_n.remote_addr,
-    .remote_port         = RC.mac[instance]->eth_params_n.remote_portd
+    .local_ipv4_address  = RC.nrmac[instance]->eth_params_n.my_addr,
+    .local_port          = RC.nrmac[instance]->eth_params_n.my_portd,
+    .remote_ipv4_address = RC.nrmac[instance]->eth_params_n.remote_addr,
+    .remote_port         = RC.nrmac[instance]->eth_params_n.remote_portd
   };
   AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %d!\n", instance);

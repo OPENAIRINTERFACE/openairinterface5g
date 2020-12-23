@@ -771,7 +771,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   }
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 UL RRC MESSAGE TRANSFER\n");
     return -1;
   }
 
@@ -868,7 +868,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 INITIAL UL RRC MESSAGE TRANSFER\n");
     return -1;
   }
 
