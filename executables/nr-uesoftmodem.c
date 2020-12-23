@@ -111,17 +111,10 @@ extern int16_t  nr_dlsch_demod_shift;
 static int      tx_max_power[MAX_NUM_CCs] = {0};
 
 int      single_thread_flag = 1;
-int         threequarter_fs = 0;
-int         UE_scan_carrier = 0;
-int      UE_fo_compensation = 0;
-int UE_no_timing_correction = 0;
-int                 N_RB_DL = 0;
 int                 tddflag = 0;
 int                 vcdflag = 0;
-uint8_t       nb_antenna_tx = 1;
-uint8_t       nb_antenna_rx = 1;
+
 double          rx_gain_off = 0.0;
-uint32_t     timing_advance = 0;
 char             *usrp_args = NULL;
 char       *rrc_config_path = NULL;
 int               dumpframe = 0;
@@ -147,8 +140,7 @@ int16_t           node_synch_ref[MAX_NUM_CCs];
 int               otg_enabled;
 double            cpuf;
 
-runmode_t            mode = normal_txrx;
-int               UE_scan = 0;
+
 int          chain_offset = 0;
 int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
@@ -222,38 +214,21 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  
-  initTpool("-1,-1", &(nrUE_params.Tpool), false);
-  init_dlsch_tpool(nrUE_params.nr_dlsch_parallel);
+  char *params=calloc(1,(RX_NB_TH*2)+1);
+  for (int i=0; i<RX_NB_TH; i++) {
+    memcpy(params+(i*2),"-1",2);
+  }
+  initTpool(params, &(nrUE_params.Tpool), false);
+  free(params);
+  init_dlsch_tpool( nun_dlsch_threads);
 }
 static void get_options(void) {
 
-  char *loopfile=NULL;
+  paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
+  int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
+  config_process_cmdline( cmdline_params,numparams,NULL);
 
-  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
-  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-  paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
-  paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
-  config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
-  config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
 
-  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
-
-  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
-
-  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
-
-  if (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr)
-    if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
-
-  if (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr)
-    if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
-
-  if (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr)
-    if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx;
-
-  if ((cmdline_uemodeparams[CMDLINE_DUMPMEMORY_IDX].paramflags & PARAMFLAG_PARAMSET) != 0)
-    mode = rx_dump_frame;
 
   if (vcdflag > 0)
     ouput_vcd = 1;
@@ -270,6 +245,38 @@ static void get_options(void) {
 
 // set PHY vars from command line
 void set_options(int CC_id, PHY_VARS_NR_UE *UE){
+  NR_DL_FRAME_PARMS *fp       = &UE->frame_parms;
+  paramdef_t cmdline_params[] = CMDLINE_NRUE_PHYPARAMS_DESC ;
+  int numparams               = sizeof(cmdline_params)/sizeof(paramdef_t);
+
+  UE->mode = normal_txrx;
+
+  config_process_cmdline( cmdline_params,numparams,NULL);
+
+  int pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRX_OPT);
+  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue;
+  
+  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXMED_OPT);
+  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_med;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXBYP_OPT);              
+  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_byp;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams, DBGPRACH_OPT); 
+  if (cmdline_params[pindex].uptr)
+    if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = debug_prach;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams,NOL2CONNECT_OPT ); 
+  if (cmdline_params[pindex].uptr)
+    if ( *(cmdline_params[pindex].uptr) > 0)  UE->mode = no_L2_connect;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams,CALIBPRACH_OPT );
+  if (cmdline_params[pindex].uptr)
+    if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = calib_prach_tx;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams,DUMPFRAME_OPT );
+  if ((cmdline_params[pindex].paramflags & PARAMFLAG_PARAMSET) != 0)
+    UE->mode = rx_dump_frame;
 
   // Init power variables
   tx_max_power[CC_id] = tx_max_power[0];
@@ -277,35 +284,29 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   tx_gain[0][CC_id]   = tx_gain[0][0];
 
   // Set UE variables
-  UE->UE_scan              = UE_scan;
-  UE->UE_scan_carrier      = UE_scan_carrier;
-  UE->UE_fo_compensation   = UE_fo_compensation;
-  UE->no_timing_correction = UE_no_timing_correction;
-  UE->mode                 = mode;
+
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
   UE->rf_map.card          = card_offset;
   UE->rf_map.chain         = CC_id + chain_offset;
-  UE->timing_advance       = timing_advance;
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", mode, UE_fo_compensation, UE_scan, UE_scan_carrier, UE_no_timing_correction);
+
+  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", 
+  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction);
 
   // Set FP variables
-  NR_DL_FRAME_PARMS *fp = &UE->frame_parms;
-  fp->nb_antennas_tx    = nb_antenna_tx;
-  fp->nb_antennas_rx    = nb_antenna_rx;
-  fp->threequarter_fs   = threequarter_fs;
+
+
+  
   if (tddflag){
     fp->frame_type = TDD;
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
-  if (N_RB_DL){
-    fp->N_RB_DL = N_RB_DL;
-    LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
-  }
 
-  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", nb_antenna_rx, nb_antenna_tx, threequarter_fs);
+  LOG_I(PHY, "Set UE N_RB_DL %d\n", fp->N_RB_DL);
+
+  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
 
@@ -555,7 +556,7 @@ int main( int argc, char **argv ) {
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-    PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
+    PHY_vars_UE_g[0][CC_id]->timing_advance = UE[CC_id]->timing_advance;
   }
   
   init_NR_UE_threads(1);

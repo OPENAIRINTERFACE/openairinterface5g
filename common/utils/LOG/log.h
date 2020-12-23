@@ -167,6 +167,7 @@ extern "C" {
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
     {"RLC",         DEBUG_RLC},\
+    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
