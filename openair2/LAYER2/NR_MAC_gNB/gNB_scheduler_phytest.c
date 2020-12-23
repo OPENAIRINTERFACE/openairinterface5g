@@ -477,6 +477,8 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   sched_pusch->mcs = mcs;
   sched_pusch->rbStart = rbStart;
   sched_pusch->rbSize = rbSize;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 for "any new" */
+  sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   /* Calculate TBS from MCS */
   sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);

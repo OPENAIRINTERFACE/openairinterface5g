@@ -259,45 +259,47 @@ void handle_nr_ul_harq(module_id_t mod_id,
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  int max_harq_rounds = 4; // TODO define macro
-  uint8_t hrq_id = crc_pdu->harq_id;
-  NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
-  if (cur_harq->state==ACTIVE_SCHED) {
-    if (!crc_pdu->tb_crc_status) {
-      cur_harq->ndi ^= 1;
-      cur_harq->round = 0;
-      cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
-      LOG_D(MAC,
-            "Ulharq id %d crc passed for RNTI %04x\n",
-            hrq_id,
-            crc_pdu->rnti);
-    } else {
-      cur_harq->round++;
-      cur_harq->state = ACTIVE_NOT_SCHED;
-      LOG_D(MAC,
-            "Ulharq id %d crc failed for RNTI %04x\n",
-            hrq_id,
-            crc_pdu->rnti);
-    }
-
-    if (!(cur_harq->round<max_harq_rounds)) {
-      cur_harq->ndi ^= 1;
-      cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
-      cur_harq->round = 0;
-      LOG_D(MAC,
-            "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
-            crc_pdu->rnti,
-            hrq_id);
-      UE_info->mac_stats[UE_id].ulsch_errors++;
-    }
-    return;
-  } else
+  const int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
+  if (crc_pdu->harq_id != harq_pid && harq_pid < 0) {
     LOG_W(MAC,
-          "Incorrect ULSCH HARQ PID %d or invalid state %d for RNTI %04x "
-          "(ignore this warning for RA)\n",
-          hrq_id,
-          cur_harq->state,
+          "Unexpected ULSCH HARQ PID %d (have %d) for RNTI %04x (ignore this warning for RA)\n",
+          crc_pdu->harq_id,
+          harq_pid,
           crc_pdu->rnti);
+    return;
+  }
+  DevAssert(harq_pid == crc_pdu->harq_id);
+  remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
+  NR_UE_ul_harq_t *harq = &sched_ctrl->ul_harq_processes[harq_pid];
+  DevAssert(harq->feedback_slot == slot - 1);
+  DevAssert(harq->is_waiting);
+  harq->feedback_slot = -1;
+  harq->is_waiting = false;
+  if (!crc_pdu->tb_crc_status) {
+    harq->ndi ^= 1;
+    harq->round = 0;
+    LOG_D(MAC,
+          "Ulharq id %d crc passed for RNTI %04x\n",
+          harq_pid,
+          crc_pdu->rnti);
+    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+  } else if (harq->round == MAX_HARQ_ROUNDS) {
+    harq->ndi ^= 1;
+    harq->round = 0;
+    LOG_D(MAC,
+          "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
+          crc_pdu->rnti,
+          harq_pid);
+    UE_info->mac_stats[UE_id].ulsch_errors++;
+    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+  } else {
+    harq->round++;
+    LOG_D(MAC,
+          "Ulharq id %d crc failed for RNTI %04x\n",
+          harq_pid,
+          crc_pdu->rnti);
+    add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+  }
 }
 
 /*
@@ -432,29 +434,6 @@ long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
     return 3;
 }
 
-int8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
-  const uint8_t max_ul_harq_pids = 3; // temp: for testing
-  // schedule active harq processes
-  for (uint8_t hrq_id = 0; hrq_id < max_ul_harq_pids; hrq_id++) {
-    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
-    if (cur_harq->state == ACTIVE_NOT_SCHED) {
-      LOG_D(MAC, "Found ulharq id %d, scheduling it for retransmission\n", hrq_id);
-      return hrq_id;
-    }
-  }
-
-  // schedule new harq processes
-  for (uint8_t hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
-    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
-    if (cur_harq->state == INACTIVE) {
-      LOG_D(MAC, "Found new ulharq id %d, scheduling it\n", hrq_id);
-      return hrq_id;
-    }
-  }
-  LOG_E(MAC, "All UL HARQ processes are busy. Cannot schedule ULSCH\n");
-  return -1;
-}
-
 void nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
@@ -502,6 +481,8 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
 
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
+  sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
@@ -605,11 +586,28 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     uint16_t rnti = UE_info->rnti[UE_id];
 
-    int8_t harq_id = select_ul_harq_pid(sched_ctrl);
-    if (harq_id < 0) return;
+    int8_t harq_id = sched_pusch->ul_harq_pid;
+    if (harq_id < 0) {
+      /* PP has not selected a specific HARQ Process, get a new one */
+      harq_id = sched_ctrl->available_ul_harq.head;
+      AssertFatal(harq_id >= 0,
+                  "no free HARQ process available for UE %d\n",
+                  UE_id);
+      remove_front_nr_list(&sched_ctrl->available_ul_harq);
+    } else {
+      /* PP selected a specific HARQ process. Check whether it will be a new
+       * transmission or a retransmission, and remove from the corresponding
+       * list */
+      if (sched_ctrl->ul_harq_processes[harq_id].round == 0)
+        remove_nr_list(&sched_ctrl->available_ul_harq, harq_id);
+      else
+        remove_nr_list(&sched_ctrl->retrans_ul_harq, harq_id);
+    }
     NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
-    cur_harq->state = ACTIVE_SCHED;
-    cur_harq->last_tx_slot = sched_pusch->slot;
+    DevAssert(!cur_harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_ul_harq, harq_id);
+    cur_harq->feedback_slot = sched_pusch->slot;
+    cur_harq->is_waiting = true;
 
     int rnti_types[2] = { NR_RNTI_C, 0 };
 

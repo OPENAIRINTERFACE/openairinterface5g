@@ -336,6 +336,9 @@ typedef struct NR_sched_pusch {
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
+
+  /// UL HARQ PID to use for this UE, or -1 for "any new"
+  int8_t ul_harq_pid;
 } NR_sched_pusch_t;
 
 typedef struct NR_UE_harq {
@@ -360,10 +363,12 @@ typedef enum {
 } NR_UL_harq_states_t;
 
 typedef struct NR_UE_ul_harq {
+  bool is_waiting;
   uint8_t ndi;
   uint8_t round;
-  uint16_t last_tx_slot;
-  NR_UL_harq_states_t state;
+  uint16_t feedback_slot;
+
+  /* TODO PUSCH of last transmission */
 } NR_UE_ul_harq_t;
 
 
