@@ -360,6 +360,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 
   proc->nbEncode=0;
 
+
   //  if (hadlsch->Ndi == 1) {  // this is a new packet
   if (hadlsch->round == 0) {  // this is a new packet
     // Add 24-bit crc (polynomial A) to payload

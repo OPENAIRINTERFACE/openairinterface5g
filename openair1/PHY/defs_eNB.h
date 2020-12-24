@@ -164,8 +164,10 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_magb;
-  /// measured RX power based on DRS
-  int ulsch_power[2];
+  /// measured RX power based on DMRS
+  int ulsch_power[4];
+  /// measured RX power of noise
+  int ulsch_noise_power[4];
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
@@ -421,6 +423,42 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
+typedef struct {
+  uint16_t rnti;
+  int frame;
+  int round_trials[8];
+  int total_bytes_tx;
+  int total_bytes_rx;
+  int current_G;
+  int current_TBS;
+  int current_Qm;
+  int current_mcs;
+  int current_RI;
+  int timing_offset;
+  int ulsch_power[4];
+  int ulsch_noise_power[4];
+} eNB_SCH_STATS_t;
+
+typedef struct {
+  uint16_t rnti;
+  int frame;
+  int pucch1_trials;
+  int pucch1_thres;
+  int current_pucch1_stat;
+  int pucch1_positive_SR;
+  int pucch1_low_stat[4];
+  int pucch1_high_stat[4];
+  int pucch1_phase;
+  int pucch1a_trials;
+  int current_pucch1a_stat_re;
+  int current_pucch1a_stat_im;
+  int pucch1ab_DTX;
+  int pucch1b_trials;
+  int current_pucch1b_stat_re;
+  int current_pucch1b_stat_im;
+  int pucch3_trials;
+  int current_pucch3_stat;
+} eNB_UCI_STATS_t;
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {
@@ -591,7 +629,12 @@ typedef struct PHY_VARS_eNB_s {
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 
-
+  /// statistics for DLSCH measurement collection
+  eNB_SCH_STATS_t dlsch_stats[NUMBER_OF_SCH_STATS_MAX];
+  /// statistics for ULSCH measurement collection
+  eNB_SCH_STATS_t ulsch_stats[NUMBER_OF_SCH_STATS_MAX];
+  /// statis for UCI (PUCCH) measurement collection
+  eNB_UCI_STATS_t uci_stats[NUMBER_OF_SCH_STATS_MAX];
   /// target_ue_dl_mcs : only for debug purposes
   uint32_t target_ue_dl_mcs;
   /// target_ue_ul_mcs : only for debug purposes

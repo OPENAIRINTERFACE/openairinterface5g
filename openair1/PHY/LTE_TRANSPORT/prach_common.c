@@ -34,7 +34,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/phy_extern_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#include "common/utils/lte/prach_utils.h"
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 uint16_t NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -44,6 +44,9 @@ int16_t ru[2*839]; // quantized roots of unity
 uint32_t ZC_inv[839]; // multiplicative inverse for roots u
 uint16_t du[838];
 
+extern PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7];
+
+/*
 // This is table 5.7.1-4 from 36.211
 PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7] = {
   // TDD Configuration Index 0
@@ -254,7 +257,7 @@ PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7] = {
   }
 };
 
-
+*/
 
 uint16_t prach_root_sequence_map0_3[838] = { 129, 710, 140, 699, 120, 719, 210, 629, 168, 671, 84, 755, 105, 734, 93, 746, 70, 769, 60, 779,
                                              2, 837, 1, 838,
@@ -377,7 +380,7 @@ uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index) {
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][0]->frame_parms;
   return(tdd_preamble_map[fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][fp->tdd_config].map[tdd_map_index].f_ra);
 }
-
+/*
 uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type) {
   if (frame_type == FDD) // FDD
     return(prach_ConfigIndex>>4);
@@ -556,14 +559,15 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
 
   return(prach_mask);
 }
+*/
 
 int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe) {
   uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  int prach_mask             = is_prach_subframe0(frame_parms, prach_ConfigIndex, frame, subframe);
+  int prach_mask             = is_prach_subframe0(frame_parms->tdd_config,frame_parms->frame_type, prach_ConfigIndex, frame, subframe);
 
   for (int i=0; i<4; i++) {
     if (frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] == 1)
-      prach_mask |= (is_prach_subframe0(frame_parms, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i],
+      prach_mask |= (is_prach_subframe0(frame_parms->tdd_config,frame_parms->frame_type, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i],
                                         frame, subframe) << (i+1));
   }
 

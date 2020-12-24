@@ -331,6 +331,7 @@ static void *L1_thread_tx(void *param) {
 
   //wait_sync("tx_thread");
 
+  proc->respEncode = eNB->proc.L1_proc.respEncode;
   while (!oai_exit) {
     LOG_D(PHY,"Waiting for TX (IC %d)\n",proc->instance_cnt);
 
@@ -391,6 +392,8 @@ static void *L1_thread( void *param ) {
   }
 
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
+
+
   char thread_name[100];
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
