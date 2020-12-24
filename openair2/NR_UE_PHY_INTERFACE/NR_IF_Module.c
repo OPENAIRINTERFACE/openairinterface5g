@@ -82,14 +82,7 @@ int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_n
                  ul_time_alignment);
 
   return 0;
-  /*
-  return nr_ue_process_dlsch(module_id,
-                             cc_id,
-                             gNB_index,
-                             dci_ind,
-                             pduP,
-                             pdu_len);
-  */
+
 }
 
 int8_t handle_rar (nr_downlink_indication_t *dl_info){
