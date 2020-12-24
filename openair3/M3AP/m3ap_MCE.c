@@ -142,6 +142,20 @@ void m3ap_MCE_handle_sctp_association_resp(instance_t instance, sctp_new_associa
               sctp_new_association_resp->ulp_cnx_id);
     //m3ap_handle_m3_setup_message(instance_p, m3ap_enb_data_p,
                                  //sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+	  sleep(4);
+	  int index;
+	  /* Trying to connect to the provided list of eNB ip address */
+	  for (index = 0; index < instance_p->nb_m3; index++) {
+	    //M2AP_INFO("eNB[%d] eNB id %u acting as an initiator (client)\n",
+	     //         instance_id, instance->eNB_id);
+	    m3ap_MCE_register_MCE(instance_p,
+				  &instance_p->target_mme_m3_ip_address[index],
+				  &instance_p->mme_m3_ip_address,
+				  instance_p->sctp_in_streams,
+				  instance_p->sctp_out_streams,
+				  instance_p->mce_port_for_M3C,
+				  instance_p->multi_sd);
+	  }
     return;
   }
 

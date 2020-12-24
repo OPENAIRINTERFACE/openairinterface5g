@@ -502,8 +502,8 @@ typedef struct{ // CSI-MeasConfig IE is used to configure CSI-RS (reference sign
   uint8_t reportTriggerSize;
 } csi_MeasConfig_t;
 typedef enum {
-  pdsch_dmrs_type1 = 1,
-  pdsch_dmrs_type2 = 2
+  pdsch_dmrs_type1 = 0,
+  pdsch_dmrs_type2 = 1
 } pdsch_dmrs_type_t;
 typedef enum {
   pusch_dmrs_type1 = 0,
@@ -763,11 +763,11 @@ typedef struct {
 #define MAX_NR_OF_SPATIAL_RELATION_INFOS          (8)
 
 typedef enum {
-  pucch_format0_nr  = 0,
-  pucch_format1_nr  = 1,
-  pucch_format2_nr  = 2,
-  pucch_format3_nr  = 3,
-  pucch_format4_nr  = 4,
+  pucch_format0_nr  = 1,
+  pucch_format1_nr  = 2,
+  pucch_format2_nr  = 3,
+  pucch_format3_nr  = 4,
+  pucch_format4_nr  = 5
 } pucch_format_nr_t;
 
 typedef enum {

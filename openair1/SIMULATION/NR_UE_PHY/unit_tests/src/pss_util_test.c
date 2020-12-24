@@ -300,7 +300,7 @@ typedef enum {
 
 void set_random_rx_buffer(PHY_VARS_NR_UE *PHY_vars_UE, int amp) {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
-  int samples_for_frame = (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+  int samples_for_frame = frame_parms->samples_per_frame;
   int16_t random;
   int16_t *data_p;
   random_data_format_t data_format = SINUSOIDAL_DATA;
@@ -394,7 +394,7 @@ void set_random_rx_buffer(PHY_VARS_NR_UE *PHY_vars_UE, int amp) {
 
 int set_pss_in_rx_buffer_from_external_buffer(PHY_VARS_NR_UE *PHY_vars_UE, short *input_buffer) {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
-  int samples_for_frame = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe; /* both i and q */
+  int samples_for_frame = frame_parms->samples_per_frame; /* both i and q */
 
   for (int aa=0; aa<PHY_vars_UE->frame_parms.nb_antennas_rx; aa++) {
     for (int i = 0; i < samples_for_frame; i++) {

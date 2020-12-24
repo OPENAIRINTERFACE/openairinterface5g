@@ -52,6 +52,7 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   else                      return(N_RB-1-tmp2);
 }
 
+/* TS 38.214 ch. 6.1.2.2.2 - Resource allocation type 1 for DL and UL */
 int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize) {
   AssertFatal(NPRB>0 && (NPRB + RBstart <= BWPsize),"Illegal NPRB/RBstart Configuration (%d,%d) for BWPsize %d\n",NPRB,RBstart,BWPsize);
 
@@ -62,14 +63,21 @@ int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize) {
 int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {
   return(PRBalloc_to_locationandbandwidth0(NPRB,RBstart,275));
 }
+
 /// Target code rate tables indexed by Imcs
+/* TS 38.214 table 5.1.3.1-1 - MCS index table 1 for PDSCH */
 uint16_t nr_target_code_rate_table1[29] = {120, 157, 193, 251, 308, 379, 449, 526, 602, 679, 340, 378, 434, 490, 553, \
                                             616, 658, 438, 466, 517, 567, 616, 666, 719, 772, 822, 873, 910, 948};
-  // Imcs values 20 and 26 have been multiplied by 2 to avoid the floating point
+
+/* TS 38.214 table 5.1.3.1-2 - MCS index table 2 for PDSCH */
+// Imcs values 20 and 26 have been multiplied by 2 to avoid the floating point
 uint16_t nr_target_code_rate_table2[28] = {120, 193, 308, 449, 602, 378, 434, 490, 553, 616, 658, 466, 517, 567, \
                                             616, 666, 719, 772, 822, 873, 1365, 711, 754, 797, 841, 885, 1833, 948};
+
+/* TS 38.214 table 5.1.3.1-3 - MCS index table 3 for PDSCH */
 uint16_t nr_target_code_rate_table3[29] = {30, 40, 50, 64, 78, 99, 120, 157, 193, 251, 308, 379, 449, 526, 602, 340, \
                                             378, 434, 490, 553, 616, 438, 466, 517, 567, 616, 666, 719, 772};
+
 uint16_t nr_tbs_table[93] = {24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 208, 224, 240, 256, 272, 288, 304, 320, \
                               336, 352, 368, 384, 408, 432, 456, 480, 504, 528, 552, 576, 608, 640, 672, 704, 736, 768, 808, 848, 888, 928, 984, 1032, 1064, 1128, 1160, 1192, 1224, 1256, \
                               1288, 1320, 1352, 1416, 1480, 1544, 1608, 1672, 1736, 1800, 1864, 1928, 2024, 2088, 2152, 2216, 2280, 2408, 2472, 2536, 2600, 2664, 2728, 2792, 2856, 2976, \

@@ -69,7 +69,6 @@ s1ap_eNB_config_t s1ap_config;
 static int s1ap_eNB_generate_s1_setup_request(
   s1ap_eNB_instance_t *instance_p, s1ap_eNB_mme_data_t *s1ap_mme_data_p);
 
-
 void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *s1ap_register_eNB);
 
 void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
@@ -90,6 +89,7 @@ uint32_t s1ap_generate_eNB_id(void) {
 
 static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
                                   net_ip_address_t    *mme_ip_address,
+                                  uint16_t             mme_port,
                                   net_ip_address_t    *local_ip_addr,
                                   uint16_t             in_streams,
                                   uint16_t             out_streams,
@@ -103,7 +103,7 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   DevAssert(mme_ip_address != NULL);
   message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
   sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
-  sctp_new_association_req_p->port = S1AP_PORT_NUMBER;
+  sctp_new_association_req_p->port = mme_port;
   sctp_new_association_req_p->ppid = S1AP_SCTP_PPID;
   sctp_new_association_req_p->in_streams  = in_streams;
   sctp_new_association_req_p->out_streams = out_streams;
@@ -221,8 +221,23 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
 
   /* Trying to connect to provided list of MME ip address */
   for (index = 0; index < s1ap_register_eNB->nb_mme; index++) {
+    net_ip_address_t *mme_ip = &s1ap_register_eNB->mme_ip_address[index];
+    uint16_t mme_port = s1ap_register_eNB->mme_port[index];
+    struct s1ap_eNB_mme_data_s *mme = NULL;
+    RB_FOREACH(mme, s1ap_mme_map, &new_instance->s1ap_mme_head) {
+      /* Compare whether IPv4 and IPv6 information is already present, in which
+       * wase we do not register again */
+      if (mme->mme_s1_ip.ipv4 == mme_ip->ipv4 && (!mme_ip->ipv4
+              || strncmp(mme->mme_s1_ip.ipv4_address, mme_ip->ipv4_address, 16) == 0)
+          && mme->mme_s1_ip.ipv6 == mme_ip->ipv6 && (!mme_ip->ipv6
+              || strncmp(mme->mme_s1_ip.ipv6_address, mme_ip->ipv6_address, 46) == 0))
+        break;
+    }
+    if (mme)
+      continue;
     s1ap_eNB_register_mme(new_instance,
-                          &s1ap_register_eNB->mme_ip_address[index],
+                          mme_ip,
+                          mme_port,
                           &s1ap_register_eNB->enb_ip_address,
                           s1ap_register_eNB->sctp_in_streams,
                           s1ap_register_eNB->sctp_out_streams,
@@ -358,6 +373,12 @@ void *s1ap_eNB_process_itti_msg(void *notUsed) {
     case S1AP_PATH_SWITCH_REQ: {
       s1ap_eNB_path_switch_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                &S1AP_PATH_SWITCH_REQ(received_msg));
+    }
+    break;
+
+    case S1AP_E_RAB_MODIFICATION_IND: {
+    	s1ap_eNB_generate_E_RAB_Modification_Indication(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    	                               &S1AP_E_RAB_MODIFICATION_IND(received_msg));
     }
     break;
 
@@ -508,3 +529,7 @@ static int s1ap_eNB_generate_s1_setup_request(
   s1ap_eNB_itti_send_sctp_data_req(instance_p->instance, s1ap_mme_data_p->assoc_id, buffer, len, 0);
   return ret;
 }
+
+
+
+

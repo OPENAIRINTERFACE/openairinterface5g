@@ -4,26 +4,18 @@
 #include <targets/ARCH/COMMON/common_lib.h>
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
-  /// index of the current UE RX/TX proc
-  int                  proc_id;
+  /// index of the current UE RX/TX thread
+  int                  thread_id;
   /// Component Carrier index
   uint8_t              CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   //#ifdef UE_NR_PHY_DEMO
-  /// NR TTI index within subframe_tx [0 .. ttis_per_subframe - 1] to act upon for transmission
-  int nr_tti_tx;
-  /// NR TTI index within subframe_rx [0 .. ttis_per_subframe - 1] to act upon for reception
-  int nr_tti_rx;
   /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_tx;
   /// NR slot index within frame_rx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_rx;
   //#endif
-  /// subframe to act upon for transmission
-  int subframe_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
   /// frame to act upon for transmission
   int frame_tx;
   /// frame to act upon for reception

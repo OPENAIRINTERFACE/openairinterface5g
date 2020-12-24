@@ -28,7 +28,7 @@ typedef void nr_rlc_ue_manager_t;
 
 typedef struct nr_rlc_ue_t {
   int rnti;
-  nr_rlc_entity_t *srb[2];
+  nr_rlc_entity_t *srb[3];
   nr_rlc_entity_t *drb[5];
 } nr_rlc_ue_t;
 

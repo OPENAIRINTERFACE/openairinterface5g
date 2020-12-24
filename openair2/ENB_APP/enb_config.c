@@ -29,6 +29,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <dlfcn.h>
 
 #include "common/utils/LOG/log.h"
 #include "assertions.h"
@@ -260,6 +261,16 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
         global_scheduler_mode=SCHED_MODE_DEFAULT;
         printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
       }
+
+      char *s = *MacRLC_ParamList.paramarray[j][MACRLC_DEFAULT_SCHED_DL_ALGO_IDX].strptr;
+      void *d = dlsym(NULL, s);
+      AssertFatal(d, "%s(): no default scheduler DL algo '%s' found\n", __func__, s);
+      // release default, add new
+      pp_impl_param_t *dl_pp = &RC.mac[j]->pre_processor_dl;
+      dl_pp->dl_algo.unset(&dl_pp->dl_algo.data);
+      dl_pp->dl_algo = *(default_sched_dl_algo_t *) d;
+      dl_pp->dl_algo.data = dl_pp->dl_algo.setup();
+      LOG_I(ENB_APP, "using default scheduler DL algo '%s'\n", dl_pp->dl_algo.name);
     }// j=0..num_inst
   } /*else {// MacRLC_ParamList.numelt > 0 // ignore it
 
@@ -1545,7 +1556,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
               printf("No eMBMS configuration, skipping it\n");
               // eMTC configuration
-              char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char brparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
               config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
               RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
@@ -1554,7 +1565,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               else                            printf("No eMTC configuration, skipping it\n");
 
               // Sidelink configuration
-              char SLparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char SLparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
               config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
               // Sidelink Resource pool information
@@ -1564,6 +1575,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               else                                 printf("No SL configuration skipping it\n");
             } // !NODE_IS_DU(node_type)
           }
+
+          RRC_CONFIGURATION_REQ (msg_p).nr_scg_ssb_freq = ccparams_lte.nr_scg_ssb_freq;
 
           if (!NODE_IS_DU(rrc->node_type)) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
@@ -2498,6 +2511,9 @@ int RCconfig_S1(
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
               }
 
+              /* set S1-mme port (sctp) */
+              S1AP_REGISTER_ENB_REQ(msg_p).mme_port[l] = *S1ParamList.paramarray[l][ENB_MME_PORT_IDX].u16ptr;
+
               AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
                           "List of broadcast PLMN to be sent to MME can not be longer than actual "
                           "PLMN list (max %d, but is %d)\n",
@@ -2720,20 +2736,28 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             {
               int t_reloc_prep = 0;
               int tx2_reloc_overall = 0;
+              int t_dc_prep = 0;
+              int t_dc_overall = 0;
               paramdef_t p[] = {
                 { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
-                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 }
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 },
+                { "t_dc_prep", "t_dc_prep", 0, iptr:&t_dc_prep, defintval:0, TYPE_INT, 0 },
+                { "t_dc_overall", "t_dc_overall", 0, iptr:&t_dc_overall, defintval:0, TYPE_INT, 0 }
               };
               config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
 
               if (t_reloc_prep <= 0 || t_reloc_prep > 10000 ||
-                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000) {
-                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000]\n");
+                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000 ||
+                  t_dc_prep <= 0 || t_dc_prep > 10000 ||
+                  t_dc_overall <= 0 || t_dc_overall > 20000) {
+                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000] and [0 < t_dc_prep <= 10000] and [0 < t_dc_overall <= 20000]\n");
                 exit(1);
               }
 
               X2AP_REGISTER_ENB_REQ (msg_p).t_reloc_prep = t_reloc_prep;
               X2AP_REGISTER_ENB_REQ (msg_p).tx2_reloc_overall = tx2_reloc_overall;
+              X2AP_REGISTER_ENB_REQ (msg_p).t_dc_prep = t_dc_prep;
+              X2AP_REGISTER_ENB_REQ (msg_p).t_dc_overall = t_dc_overall;
             }
             // SCTP SETTING
             X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
@@ -3041,7 +3065,8 @@ void configure_du_mac(int inst) {
                          (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+			 (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                         );
 }
 

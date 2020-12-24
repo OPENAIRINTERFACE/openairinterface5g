@@ -1,0 +1,147 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-05-tm1</htmlTabRef>
+	<htmlTabName>Test-05MHz-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>4</repeatCount>
+	<TestCaseRequestedList>
+ 030201
+ 040101
+ 030101 040301 040501 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="030101">
+		<class>Initialize_eNB</class>
+		<desc>Initialize OCP-eNB (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
+		<air_interface>ocp</air_interface>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate OCP-eNB</desc>
+		<air_interface>ocp</air_interface>
+	</testCase>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
+	<testCase id="040501">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040603">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)(balanced profile)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>balanced</iperf_profile>
+	</testCase>
+
+	<testCase id="040604">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040605">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)(unbalanced profile)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>unbalanced</iperf_profile>
+	</testCase>
+
+	<testCase id="040606">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/TCP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040607">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/TCP)(30 sec)(balanced profile)</desc>
+		<iperf_args>-t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>balanced</iperf_profile>
+	</testCase>
+
+	<testCase id="040641">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/9Mbps/UDP)(30 sec)(balanced profile)</desc>
+		<iperf_args>-u -b 9M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>balanced</iperf_profile>
+	</testCase>
+
+	<testCase id="040642">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/9Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 9M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040643">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/TCP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040644">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/TCP)(30 sec)(balanced profile)</desc>
+		<iperf_args>-t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>balanced</iperf_profile>
+	</testCase>
+
+</testCaseList>

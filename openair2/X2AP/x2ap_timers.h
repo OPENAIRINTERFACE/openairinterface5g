@@ -36,9 +36,15 @@ typedef struct {
   /* timer values (unit: TTI, ie. millisecond when in realtime) */
   int      t_reloc_prep;
   int      tx2_reloc_overall;
+  int      t_dc_prep;
+  int      t_dc_overall;
 } x2ap_timers_t;
 
-void x2ap_timers_init(x2ap_timers_t *t, int t_reloc_prep, int tx2_reloc_overall);
+void x2ap_timers_init(x2ap_timers_t *t,
+    int t_reloc_prep,
+    int tx2_reloc_overall,
+    int t_dc_prep,
+    int t_dc_overall);
 void x2ap_check_timers(instance_t instance);
 uint64_t x2ap_timer_get_tti(x2ap_timers_t *t);
 

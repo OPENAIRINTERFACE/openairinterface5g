@@ -56,6 +56,8 @@
 #include "flexran.pb-c.h"
 #include "flexran_agent_mac.h"
 #include <dlfcn.h>
+#include <openair2/LAYER2/MAC/mac.h>
+
 
 #include "T.h"
 
@@ -180,7 +182,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         UE_template_ptr->scheduled_ul_bytes = 0;
       }
     } else {  // sduP == NULL => error
-      LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
+      LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
             enb_mod_idP,
             harq_pid,
             CC_idP,
@@ -1301,11 +1303,11 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
   /*
    * ULSCH preprocessor: set UE_template->
-   * pre_allocated_nb_rb_ul[slice_idx]
+   * pre_allocated_nb_rb_ul
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
    */
-  ulsch_scheduler_pre_processor(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP);
+  mac->pre_processor_ul.ul(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP);
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     if (UE_info->UE_template[CC_id][UE_id].rach_resource_type > 0)

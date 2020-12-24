@@ -38,6 +38,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 //#include "SCHED/defs.h"
 //#include "SCHED/extern.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "common_lib.h"
 #include <math.h>
@@ -130,12 +131,12 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 #endif
       // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
       for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-          nr_pbch_dmrs_correlation(ue,0,0,i,i-pbch_initial_symbol,current_ssb);
+          nr_pbch_dmrs_correlation(ue,proc,0,0,i,i-pbch_initial_symbol,current_ssb);
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
       
-      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
+      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im*current_ssb->c_im;
       
       // generate a list of SSB structures
       if (best_ssb == NULL)
@@ -154,7 +155,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 #endif
   // computing channel estimation for selected best ssb
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-      nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
+      nr_pbch_channel_estimation(ue,proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
@@ -213,6 +214,9 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
   int rx_power=0; //aarx,
+  
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_IN);
+
 
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", fp->N_RB_DL);
 
@@ -282,19 +286,17 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 
       for(int i=0; i<4;i++)
         nr_slot_fep_init_sync(ue,
-	            i,
-	            0,
-	            is*fp->samples_per_frame+ue->ssb_offset,
-	            0);
+                              proc,
+                              i,
+                              0,
+                              is*fp->samples_per_frame+ue->ssb_offset,
+                              0);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
 #endif
 
-      rx_sss_nr(ue,&metric_tdd_ncp,&phase_tdd_ncp);
-
-      //FK: why do we need to do this again here?
-      //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
+      rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp);
 
       nr_gold_pbch(ue);
       ret = nr_pbch_detection(proc, ue,1,mode);  // start pbch detection at first symbol after pss
@@ -302,8 +304,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
       if (ret == 0) {
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
-        sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-
+        int mu = fp->numerology_index;
+        // number of symbols with different prefix length
+        // every 7*(1<<mu) symbols there is a different prefix length (38.211 5.3.1)
+        int n_symb_prefix0 = (ue->symbol_offset/(7*(1<<mu)))+1;
+        sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
         if (ue->ssb_offset < sync_pos_frame)
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
         else
@@ -317,8 +322,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
     int nb_prefix_samples0 = fp->nb_prefix_samples0;
     fp->nb_prefix_samples0 = fp->nb_prefix_samples;
 	  
-    nr_slot_fep(ue,0, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
-    nr_slot_fep(ue,1, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
+    nr_slot_fep(ue, proc, 0, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
+    nr_slot_fep(ue, proc, 1, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
     fp->nb_prefix_samples0 = nb_prefix_samples0;	
 
     LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
@@ -477,6 +482,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   }
 
   //  exit_fun("debug exit");
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
   return ret;
 }
 

@@ -183,10 +183,6 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
 
 
 
-
-
-
-
 #ifdef OAIDFTS_MAIN
 typedef  void(*adftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
 typedef  void(*aidftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);     

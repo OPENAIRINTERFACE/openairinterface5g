@@ -223,12 +223,12 @@ int test_srs_periodicity(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc)
       }
       printf("srs period %d offset %d \n", srs_current_period, p_srs_resource->SRS_Offset);
 
-      int duration = (10 * srs_current_period)/(NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->ttis_per_subframe);
+      int duration = (10 * srs_current_period) / frame_parms->slots_per_frame;
 
       for (int frame_tx = 0; frame_tx < duration; frame_tx++) {
-        for (int slot_tx = 0; slot_tx < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->ttis_per_subframe); slot_tx++) {
-          proc->frame_tx = frame_tx;
-          proc->nr_tti_tx = slot_tx;
+        for (int slot_tx = 0; slot_tx < frame_parms->slots_per_frame; slot_tx++) {
+          proc->frame_tx   = frame_tx;
+          proc->nr_slot_tx = slot_tx;
           if (ue_srs_procedure_nr( ue, proc, 0) == 0)  {
             printf("test_srs_periodicity srs at frame %d slot %d \n", frame_tx, slot_tx);
           }
@@ -372,7 +372,7 @@ int test_srs(PHY_VARS_NR_UE *PHY_vars_UE)
   /* start test of sounding reference signals */
   default_srs_configuration(frame_parms);
 
-  txptr = calloc(frame_parms->samples_per_tti , sizeof(int32_t));
+  txptr = calloc(frame_parms->samples_per_slot , sizeof(int32_t));
   if (txptr == NULL) {
     printf("Error test_srs: memory allocation problem txptr \n");
     assert(0);

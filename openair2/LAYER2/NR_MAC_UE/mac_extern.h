@@ -91,3 +91,5 @@ extern const int32_t table_38213_10_1_1_c2[5];
 extern uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3];
 //  for PDSCH from TS 38.214 subclause 5.1.2.1.1
 extern uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3];
+
+extern dci_pdu_rel15_t *def_dci_pdu_rel15;

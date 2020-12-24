@@ -243,6 +243,11 @@ ts += nsamps;
   return nsamps;
 }
 
+int tcp_bridge_write_init(openair0_device *device)
+{
+    return 0;
+}
+
 __attribute__((__visibility__("default")))
 int device_init(openair0_device* device, openair0_config_t *openair0_cfg)
 {
@@ -267,6 +272,7 @@ int device_init(openair0_device* device, openair0_config_t *openair0_cfg)
   device->trx_set_gains_func = tcp_bridge_set_gains;
   device->trx_write_func   = tcp_bridge_write;
   device->trx_read_func    = tcp_bridge_read;
+  device->trx_write_init   = tcp_bridge_write_init;
 
   device->priv = tcp_bridge;
 

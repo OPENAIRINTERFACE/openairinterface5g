@@ -73,6 +73,11 @@ rrc_eNB_get_ue_context(
   rnti_t rntiP
 );
 
+struct rrc_eNB_ue_context_s *
+rrc_eNB_find_ue_context_from_gnb_rnti(
+  eNB_RRC_INST *rrc_instance_pP,
+  int gnb_rnti);
+
 void rrc_eNB_remove_ue_context(
   const protocol_ctxt_t* const ctxt_pP,
   eNB_RRC_INST*                rrc_instance_pP,

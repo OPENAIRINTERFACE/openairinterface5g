@@ -93,6 +93,11 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
 
       frame_parms->N_RBGS = 4;
       frame_parms->N_RBG = 25;
+      frame_parms->ofdm_symbol_size_khz_1dot25     = 2*2*6144*osf;
+      frame_parms->first_carrier_offset_khz_1dot25 = frame_parms->ofdm_symbol_size_khz_1dot25 - 1800*2*2;
+      frame_parms->nb_prefix_samples_khz_1dot25>>=(2-log2_osf);
+      frame_parms->nb_prefix_samples0_khz_1dot25>>=(2-log2_osf);
+
       break;
 
     case 75:
@@ -104,6 +109,12 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
       frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
       frame_parms->N_RBGS = 4;
       frame_parms->N_RBG = 25;
+
+      frame_parms->ofdm_symbol_size_khz_1dot25     = 2*6144*osf;
+      frame_parms->first_carrier_offset_khz_1dot25 = frame_parms->ofdm_symbol_size_khz_1dot25 - 1800*2; 
+      frame_parms->nb_prefix_samples_khz_1dot25>>=(2-log2_osf);
+      frame_parms->nb_prefix_samples0_khz_1dot25>>=(2-log2_osf);
+
       break;
 
     case 50:
@@ -115,6 +126,10 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
       frame_parms->nb_prefix_samples0>>=(1-log2_osf);
       frame_parms->N_RBGS = 3;
       frame_parms->N_RBG = 17;
+      frame_parms->ofdm_symbol_size_khz_1dot25     = 2*6144*osf;
+      frame_parms->first_carrier_offset_khz_1dot25 = frame_parms->ofdm_symbol_size_khz_1dot25 - 1800*2; 
+      frame_parms->nb_prefix_samples_khz_1dot25>>=(2-log2_osf);
+      frame_parms->nb_prefix_samples0_khz_1dot25>>=(2-log2_osf);
       break;
 
     case 25:

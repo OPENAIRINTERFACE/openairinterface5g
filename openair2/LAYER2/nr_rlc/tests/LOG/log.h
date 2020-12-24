@@ -1,5 +1,5 @@
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef _NR_RLC_TESTS_LOG_H_
+#define _NR_RLC_TESTS_LOG_H_
 
 #include <stdio.h>
 
@@ -7,4 +7,4 @@
 #define LOG_D(x, ...) printf(__VA_ARGS__)
 #define LOG_W(x, ...) printf(__VA_ARGS__)
 
-#endif /* _LOG_H_ */
+#endif /* _NR_RLC_TESTS_LOG_H_ */

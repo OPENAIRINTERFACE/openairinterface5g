@@ -111,9 +111,10 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   pool->activated=true;
   initNotifiedFIFO(&pool->incomingFifo);
   char *saveptr, * curptr;
+  char *parms_cpy=strdup(params);
   pool->nbThreads=0;
   pool->restrictRNTI=false;
-  curptr=strtok_r(params,",",&saveptr);
+  curptr=strtok_r(parms_cpy,",",&saveptr);
   struct one_thread * ptr;
   while ( curptr!=NULL ) {
     int c=toupper(curptr[0]);
@@ -145,7 +146,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
 
     curptr=strtok_r(NULL,",",&saveptr);
   }
-
+  free(parms_cpy);
   if (pool->activated && pool->nbThreads==0) {
     printf("No servers created in the thread pool, exit\n");
     exit(1);

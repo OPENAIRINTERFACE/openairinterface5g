@@ -66,13 +66,14 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
-    /// proc is needed to signal back decoded frame number to PHY. However, this is not really FAPI procedure and should be done differently
-    UE_nr_rxtx_proc_t * proc;
+    /// index of the current UE RX/TX thread
+    int thread_id;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
     fapi_nr_rx_indication_t *rx_ind;
-
+    /// ssb_index, if ssb is not present in current TTI, value set to -1
+    int ssb_index;
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
 
@@ -87,11 +88,16 @@ typedef struct {
     /// component carrier id
     int cc_id;
     /// frame 
-    frame_t frame;
-    /// slot
-    uint32_t slot;
-    /// ssb_index, if ssb is not present in current TTI, thie value set to -1
-    int ssb_index;
+    frame_t frame_rx;
+    /// slot rx
+    uint32_t slot_rx;
+    /// frame tx
+    frame_t frame_tx;
+    /// slot tx
+    uint32_t slot_tx;
+    /// index of the current UE RX/TX thread
+    int thread_id;
+
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
 } nr_uplink_indication_t;
@@ -108,6 +114,8 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
+    /// index of the current UE RX/TX thread
+    int thread_id;
 
     /// NR UE FAPI-like P7 message, direction: L2 to L1
     /// downlink transmission configuration request structure
@@ -221,7 +229,7 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
    \param pduP      pointer to pdu*/
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
 
-int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_indication_pdu_t *dci);
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 #endif
 

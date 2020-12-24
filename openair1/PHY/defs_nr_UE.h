@@ -212,10 +212,8 @@ typedef struct {
   unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
 
   /// estimated received signal power (sum over all TX antennas)
-  //int            wideband_cqi[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   int            rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   /// estimated received signal power (sum over all TX antennas)
-  //int            wideband_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
 
   /// estimated received signal power (sum over all TX/RX antennas)
@@ -338,6 +336,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
+  /// \brief Downlink channel estimates extracted in PRBS.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
+  int32_t **dl_ch_ptrs_estimates_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
   /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
   /// - second index: ? [0..7] (hard coded) accessed via \c round
@@ -375,6 +377,8 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_magb1[8][8];
+  /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
+  int32_t **dl_ch_magr0;
   /// \brief Cross-correlation of two eNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
@@ -414,56 +418,17 @@ typedef struct {
   uint32_t llr_offset[14];
   // llr length per ofdm symbol
   uint32_t llr_length[14];
+  // llr offset per ofdm symbol
+  uint32_t dl_valid_re[14];
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_phase_per_slot;
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_re_per_slot;
 } NR_UE_PDSCH;
-
-typedef struct {
-  /// \brief Received frequency-domain signal after extraction.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  int32_t **rxdataF_ext;
-  /// \brief Received frequency-domain signal after extraction and channel compensation.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **rxdataF_comp;
-  /// \brief Downlink channel estimates extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  int32_t **dl_ch_estimates_ext;
-  ///  \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **dl_ch_rho_ext;
-  /// \brief Downlink PMIs extracted in PRBS and grouped in subbands.
-  /// - first index: ressource block [0..N_RB_DL[
-  uint8_t *pmi_ext;
-  /// \brief Magnitude of Downlink Channel (16QAM level/First 64QAM level).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **dl_ch_mag;
-  /// \brief Magnitude of Downlink Channel (2nd 64QAM level).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **dl_ch_magb;
-  /// \brief Cross-correlation of two eNB signals.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..]
-  double **rho;
-  /// never used... always send dl_ch_rho_ext instead...
-  double **rho_i;
-  /// \brief Pointers to llr vectors (2 TBs).
-  /// - first index: ? [0..1] (hard coded)
-  /// - second index: ? [0..1179743] (hard coded)
-  int16_t *llr[2];
-  /// \f$\log_2(\max|H_i|^2)\f$
-  uint8_t log2_maxh;
-  /// \brief Pointers to llr vectors (128-bit alignment).
-  /// - first index: ? [0..0] (hard coded)
-  /// - second index: ? [0..]
-  int16_t **llr128;
-  //uint32_t *rb_alloc;
-  //uint8_t Qm[2];
-  //MIMO_mode_t mimo_mode;
-} NR_UE_PDSCH_FLP;
 
 #define NR_PDCCH_DEFS_NR_UE
 #define NR_NBR_CORESET_ACT_BWP      3  // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
@@ -782,6 +747,8 @@ typedef struct {
   int16_t amp;
   int16_t *prachF;
   int16_t *prach;
+  fapi_nr_ul_config_prach_pdu prach_pdu;
+  uint8_t prach_Config_enabled;
 } NR_UE_PRACH;
 
 // structure used for multiple SSB detection
@@ -882,8 +849,6 @@ typedef struct {
 
   fapi_nr_config_request_t nrUE_config;
 
-  uint16_t frame_gap;
-
   // the following structures are not part of PHY_vars_UE anymore as it is not thread safe. They are now on the stack of the functions that actually need them
   
   //nr_downlink_indication_t dl_indication;
@@ -897,16 +862,8 @@ typedef struct {
   /// UE FAPI indication for DCI reception
   //fapi_nr_dci_indication_t dci_ind;
 
-  // point to the current rxTx thread index
-  uint8_t current_thread_id[NR_MAX_SLOTS_PER_FRAME];
-
   t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
-  NR_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  NR_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  NR_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  NR_UE_PDSCH     *pdsch_vars_p[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  NR_UE_PDSCH     *pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -930,7 +887,7 @@ typedef struct {
   uint8_t               pucch_sel[10];
   uint8_t               pucch_payload[22];
 
-  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  UE_MODE_t           UE_mode[NUMBER_OF_CONNECTED_gNB_MAX];
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
@@ -946,7 +903,7 @@ typedef struct {
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
   /// PDSCH DMRS
-  uint32_t nr_gold_pdsch[2][20][2][NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD];
+  uint32_t nr_gold_pdsch[2][20][14][NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD];
 
   /// PDCCH DMRS
   uint32_t nr_gold_pdcch[7][20][3][52];
@@ -965,12 +922,9 @@ typedef struct {
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_gNB_MAX];
 
-
-  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
-  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
+  NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   /// \brief ?.
   /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
@@ -1005,8 +959,6 @@ typedef struct {
   int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint8_t               generate_prach;
-  uint8_t               generate_nr_prach;
   uint8_t               prach_cnt;
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;
@@ -1023,7 +975,6 @@ typedef struct {
   /// Timing Advance updates variables
   /// Timing advance update computed from the TA command signalled from gNB
   int                      timing_advance;
-  int                      hw_timing_advance;
   int                      N_TA_offset; ///timing offset used in TDD
   NR_UL_TIME_ALIGNMENT_t   ul_time_alignment[NUMBER_OF_CONNECTED_gNB_MAX];
 
@@ -1181,6 +1132,8 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
+  
+  int dl_stats[5];
 
 } PHY_VARS_NR_UE;
 

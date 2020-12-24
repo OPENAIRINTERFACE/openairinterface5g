@@ -270,6 +270,9 @@ int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parm
 */
 int is_fembms_cas_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
 
+int is_fembms_nonMBSFN_subframe (frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+
+
 /*!
   \brief Return the status of MBSFN in this frame/subframe
   @param frame Frame index

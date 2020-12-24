@@ -112,6 +112,12 @@ static int s1ap_eNB_decode_successful_outcome(S1AP_S1AP_PDU_t *pdu) {
       free(res.buffer);
       break;
 
+    case S1AP_ProcedureCode_id_E_RABModificationIndication:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
+      free(res.buffer);
+      break;
+
+
     default:
       S1AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
                  (int)pdu->choice.successfulOutcome.procedureCode);

@@ -31,5 +31,5 @@
  */
 
 
-int load_softscope(char *exectype);
+int load_softscope(char *exectype, void *initarg);
 int end_forms(void) ;

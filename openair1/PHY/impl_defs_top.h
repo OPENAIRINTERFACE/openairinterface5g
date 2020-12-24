@@ -219,6 +219,13 @@
 ///Third Amplitude for QAM64 (\f$ 2^{15} \times 1/\sqrt{42}\f$)
 #define QAM64_n3 5056
 
+///First Amplitude for QAM256 (\f$ 2^{15} \times 8/\sqrt{170}\f$)
+#define QAM256_n1 20106
+///Second Amplitude for QAM256 (\f$ 2^{15} \times 4/\sqrt{170}\f$)
+#define QAM256_n2 10053
+///Third Amplitude for QAM256 (\f$ 2^{15} \times 2/\sqrt{170}\f$)
+#define QAM256_n3 5026
+
 /// First Amplitude for QAM16 for TM5 (\f$ 2^{15} \times 2/sqrt(20)\f$)
 #define QAM16_TM5_n1 14654
 /// Second Amplitude for QAM16 for TM5 Receiver (\f$ 2^{15} \times 1/\sqrt{20}\f$)
@@ -265,7 +272,7 @@
 #define NB_NUMEROLOGIES_NR                       (5)
 #define TDD_CONFIG_NB_FRAMES                     (2)
 #define NR_MAX_SLOTS_PER_FRAME                   (160)                    /* number of slots per frame */
-#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (4)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
+#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (6)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
                                                                           /* - between reception of pdsch and tarnsmission of its acknowlegment */
                                                                           /* - between reception of un uplink grant and its related transmission */
 

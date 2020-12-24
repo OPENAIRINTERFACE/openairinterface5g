@@ -34,10 +34,6 @@
 #ifndef __PDCP_H__
 #    define __PDCP_H__
 //-----------------------------------------------------------------------------
-#ifndef NON_ACCESS_STRATUM
-  #include "UTIL/MEM/mem_block.h"
-  #include "UTIL/LISTS/list.h"
-#endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
 #include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
@@ -57,9 +53,6 @@ typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *cons
 typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_flag_t,
     const MBMS_flag_t, const rb_id_t, const sdu_size_t,
     mem_block_t *,const uint32_t *const, const uint32_t *const);
-/* maximum number of tun interfaces that will be created to emulates UEs */
-/* UEs beyond that will be multiplexed on the same tun   */
-#define MAX_NUMBER_NETIF           16
 
 #define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
@@ -522,7 +515,7 @@ pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceC
 
 sdu_size_t             pdcp_output_sdu_bytes_to_write;
 sdu_size_t             pdcp_output_header_bytes_to_write;
-list_t                 pdcp_sdu_list;
+notifiedFIFO_t         pdcp_sdu_list;
 int                    pdcp_sent_a_sdu;
 pdcp_data_req_header_t pdcp_input_header;
 unsigned char          pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];

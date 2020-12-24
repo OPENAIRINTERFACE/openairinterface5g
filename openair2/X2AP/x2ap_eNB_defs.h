@@ -119,6 +119,8 @@ typedef struct x2ap_eNB_data_s {
   /* Nid cells */
   uint32_t                Nid_cell[MAX_NUM_CCs];
   int                     num_cc;
+  /*Frequency band of NR neighbor cell supporting ENDC NSA */
+  uint32_t                servedNrCell_band[MAX_NUM_CCs];
 
   /* Only meaningfull in virtual mode */
   struct x2ap_eNB_instance_s *x2ap_eNB_instance;
@@ -177,6 +179,7 @@ typedef struct x2ap_eNB_instance_s {
   uint32_t                specialSubframe[MAX_NUM_CCs];
 
 //#ifdef Rel15
+  int32_t                 nr_band[MAX_NUM_CCs];
   uint32_t				  tdd_nRARFCN[MAX_NUM_CCs];
   int16_t                 nr_SCS[MAX_NUM_CCs];
 //#endif

@@ -45,42 +45,13 @@ extern RAN_CONTEXT_t RC;
 
 void init_UE_info(UE_info_t *UE_info)
 {
-  int list_el;
   UE_info->num_UEs = 0;
-  UE_info->list.head = -1;
-  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB; list_el++)
-    UE_info->list.next[list_el] = -1;
+  init_ue_list(&UE_info->list);
   memset(UE_info->DLSCH_pdu, 0, sizeof(UE_info->DLSCH_pdu));
   memset(UE_info->UE_template, 0, sizeof(UE_info->UE_template));
   memset(UE_info->eNB_UE_stats, 0, sizeof(UE_info->eNB_UE_stats));
   memset(UE_info->UE_sched_ctrl, 0, sizeof(UE_info->UE_sched_ctrl));
   memset(UE_info->active, 0, sizeof(UE_info->active));
-}
-
-void init_slice_info(slice_info_t *sli)
-{
-  sli->intraslice_share_active = 1;
-  sli->interslice_share_active = 1;
-
-  sli->n_dl = 1;
-  memset(sli->dl, 0, sizeof(slice_sched_conf_dl_t) * MAX_NUM_SLICES);
-  sli->dl[0].pct = 1.0;
-  sli->dl[0].prio = 10;
-  sli->dl[0].pos_high = N_RBG_MAX;
-  sli->dl[0].maxmcs = 28;
-  sli->dl[0].sorting = 0x012345;
-  sli->dl[0].sched_name = "schedule_ue_spec";
-  sli->dl[0].sched_cb = dlsym(NULL, sli->dl[0].sched_name);
-  AssertFatal(sli->dl[0].sched_cb, "DLSCH scheduler callback is NULL\n");
-
-  sli->n_ul = 1;
-  memset(sli->ul, 0, sizeof(slice_sched_conf_ul_t) * MAX_NUM_SLICES);
-  sli->ul[0].pct = 1.0;
-  sli->ul[0].maxmcs = 20;
-  sli->ul[0].sorting = 0x0123;
-  sli->ul[0].sched_name = "schedule_ulsch_rnti";
-  sli->ul[0].sched_cb = dlsym(NULL, sli->ul[0].sched_name);
-  AssertFatal(sli->ul[0].sched_cb, "ULSCH scheduler callback is NULL\n");
 }
 
 void mac_top_init_eNB(void)
@@ -129,8 +100,23 @@ void mac_top_init_eNB(void)
 
     mac[i]->if_inst = IF_Module_init(i);
 
+    mac[i]->pre_processor_dl.algorithm = 0;
+    mac[i]->pre_processor_dl.dl = dlsch_scheduler_pre_processor;
+    char *s = "round_robin_dl";
+    void *d = dlsym(NULL, s);
+    AssertFatal(d, "%s(): no scheduler algo '%s' found\n", __func__, s);
+    mac[i]->pre_processor_dl.dl_algo = *(default_sched_dl_algo_t *) d;
+    mac[i]->pre_processor_dl.dl_algo.data = mac[i]->pre_processor_dl.dl_algo.setup();
+
+    mac[i]->pre_processor_ul.algorithm = 0;
+    mac[i]->pre_processor_ul.ul = ulsch_scheduler_pre_processor;
+    s = "round_robin_ul";
+    d = dlsym(NULL, s);
+    AssertFatal(d, "%s(): no scheduler algo '%s' found\n", __func__, s);
+    mac[i]->pre_processor_ul.ul_algo = *(default_sched_ul_algo_t *) d;
+    mac[i]->pre_processor_ul.ul_algo.data = mac[i]->pre_processor_ul.ul_algo.setup();
+
     init_UE_info(&mac[i]->UE_info);
-    init_slice_info(&mac[i]->slice_info);
   }
 
   RC.mac = mac;

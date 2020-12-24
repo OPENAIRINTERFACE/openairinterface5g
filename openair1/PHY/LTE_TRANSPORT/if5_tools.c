@@ -1070,6 +1070,8 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );
   if (packet_type == IF5_RRH_GW_DL) {    
     if (eth->compression == ALAW_COMPRESS) {
+     AssertFatal(1==0,"IF5 compression needs reworking\n");
+/*
       if (eth->flags == ETH_RAW_MODE) {
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES);
       } else {
@@ -1100,28 +1102,31 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );
       }
+*/
     } else if (eth->compression == NO_COMPRESS) {
 
-      for (i=0; i < fp->nb_antennas_tx; i++)
-        txp[i] = (void*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
+      for (i=0; i < ru->nb_tx; i++)
+        txp[i] = (int32_t*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
-        clock_gettime( CLOCK_MONOTONIC, &start_comp);
-        ru->ifdevice.trx_write_func(&ru->ifdevice,
-				    (proc_timestamp + packet_id*spp_eth),
-				    (void**)txp,
-				    spp_eth,
-				    fp->nb_antennas_tx,
-				    0);
-        clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
-        for (i=0; i < fp->nb_antennas_tx; i++)
-          txp[i] += spp_eth;
+        for (int aid=0; aid<ru->nb_tx;aid++) {
+          //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
+          //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
+          clock_gettime( CLOCK_MONOTONIC, &start_comp);
+          ru->ifdevice.trx_write_func2(&ru->ifdevice,
+	  			       (proc_timestamp + packet_id*spp_eth-500)*(30720/spsf),
+				       (void*)txp[aid],
+				       spp_eth,
+				       aid,
+				       0); 
+          LOG_D(HW,"SF %d : packet %d, TS %llu\n",subframe,packet_id,(unsigned long long)(proc_timestamp+packet_id*spp_eth));
+          clock_gettime( CLOCK_MONOTONIC, &end_comp);
+          LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
+          //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
+	  txp[aid] += spp_eth;
 
-      }
+        }
+     }
     }
   } else if (packet_type == IF5_RRH_GW_UL) {
     if (eth->compression == ALAW_COMPRESS) {
@@ -1131,8 +1136,8 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES);
       }
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );
+        //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
         for (i=0; i < fp->nb_antennas_rx; i++) {
           for (element_id=0; element_id< spp_eth; element_id++){
@@ -1142,8 +1147,8 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
         }
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] Compress_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
         ru->ifdevice.trx_write_func(&ru->ifdevice,
                                      (proc_timestamp + packet_id*spp_eth),
@@ -1310,9 +1315,9 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type) {
 
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
-  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+  int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
 
-  uint16_t packet_id=0, i=0, element_id=0;
+  uint16_t packet_id=0, i=0;
 #ifdef DEBUG_UL_MOBIPASS
   //int8_t dummy_buffer_rx[fp->samples_per_tti*2];
   uint8_t rxe;
@@ -1321,11 +1326,12 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 
   int32_t spp_eth  = (int32_t) ru->ifdevice.openair0_cfg->samples_per_packet;
   int32_t spsf     = (int32_t) ru->ifdevice.openair0_cfg->samples_per_frame/10;
-  void    *alaw_buffer = ru->ifbuffer.rx; 
-  uint16_t *data_block = NULL;
-  uint16_t *j      = NULL;
 
-  openair0_timestamp timestamp[spsf / spp_eth];
+  openair0_timestamp timestamp[ru->nb_rx*spsf / spp_eth];
+  long timein[ru->nb_rx*spsf/spp_eth];
+  long timeout[ru->nb_rx*spsf/spp_eth];
+  struct timespec if_time;
+ 
   memset(timestamp, 0, sizeof(timestamp));
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
 
@@ -1333,6 +1339,9 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   
   if (packet_type == IF5_RRH_GW_DL) {
     if (eth->compression == ALAW_COMPRESS) {
+     AssertFatal(1==0,"IF5 compression needs reworking\n");
+
+/*
       if (eth->flags == ETH_RAW_MODE) {
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES);
       } else {
@@ -1364,13 +1373,14 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         LOG_D(HW,"[SF %d] Decomperss_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );
       }
+*/
     } else if (eth->compression == NO_COMPRESS) {
       for (i=0; i < fp->nb_antennas_tx; i++)
         txp[i] = (void*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RECV_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );  
+        //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RECV_IF5_PKT_ID, packet_id );
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );  
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         ru->ifdevice.trx_read_func(&ru->ifdevice,
 				   &timestamp[packet_id],
@@ -1379,7 +1389,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 				   fp->nb_antennas_tx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );  
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );  
         for (i=0; i < fp->nb_antennas_tx; i++)
           txp[i] += spp_eth;
 
@@ -1389,6 +1399,8 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
     
   } else if (packet_type == IF5_RRH_GW_UL) { 
     if (eth->compression == ALAW_COMPRESS) {
+     AssertFatal(1==0,"IF5 compression needs reworking\n");
+/*
       if (eth->flags == ETH_RAW_MODE) {
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES);
       } else {
@@ -1419,197 +1431,55 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         LOG_D(HW,"[SF %d] Decomperss_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );
       }
+*/
     } else if (eth->compression == NO_COMPRESS) {
-      for (i=0; i < fp->nb_antennas_rx; i++)
-        rxp[i] = (void*)&ru->common.rxdata[i][subframe*fp->samples_per_tti];
-    
-      for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
-        clock_gettime( CLOCK_MONOTONIC, &start_decomp);
-        ru->ifdevice.trx_read_func(&ru->ifdevice,
+      int16_t temp_rx[spp_eth*2] __attribute__((aligned(32))); 
+      for (i=0; i < ru->nb_rx; i++)
+        rxp[i] = &ru->common.rxdata[i][subframe*fp->samples_per_tti];
+      int aid;
+      int firstTS=1;
+      openair0_timestamp oldTS=0;
+
+      for (packet_id=0; packet_id < ru->nb_rx*spsf / spp_eth; packet_id++) {
+        //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
+        clock_gettime( CLOCK_MONOTONIC, &if_time);
+        timein[packet_id] = if_time.tv_nsec;
+        ru->ifdevice.trx_read_func2(&ru->ifdevice,
 				   &timestamp[packet_id],
-				   (void**)rxp,
+				   (void*)temp_rx,
 				   spp_eth,
-				   fp->nb_antennas_rx);
+				   &aid);
+        clock_gettime( CLOCK_MONOTONIC, &if_time);
+        timeout[packet_id] = if_time.tv_nsec;
+        timestamp[packet_id] /= (30720/spsf);
+        LOG_D(PHY,"subframe %d: Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",subframe,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
+        if (aid==0) {
+           if (firstTS==1) firstTS=0;
+           else if (oldTS + 256 != timestamp[packet_id]) {
+              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timein %lu, timeout %lu\n",(long long unsigned int)oldTS,(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[packet_id]-oldTS,timein[packet_id],timeout[packet_id]); 
+              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu, timein %lu, timeout %lu\n",i,(long long unsigned int)timestamp[i],timein[i],timeout[i]);
+              AssertFatal(1==0,"fronthaul problem\n");
+           }
+
+           oldTS = timestamp[packet_id];
+        }
+   
+
+        // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
+        // should detect out of order and act accordingly ....
+        AssertFatal(aid==0 || aid==1,"aid %d != 0 or 1\n",aid);
+        //LOG_I(PHY,"rxp[%d] %p, dest %p, offset %d (%lld,%lld)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(timestamp[packet_id]-timestamp[0]),timestamp[packet_id],timestamp[0]);
+        memcpy((void*)(rxp[aid]+(timestamp[packet_id]-timestamp[0])),
+               (void*)temp_rx,
+               spp_eth<<2);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );            
-        for (i=0; i < fp->nb_antennas_rx; i++)
-          rxp[i] += spp_eth;
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );            
 
       }
     }
     *proc_timestamp = timestamp[0];
-      
-  } else if (packet_type == IF5_MOBIPASS) {
-    if (ru->if_timing == synch_to_mobipass_standalone) {
-      uint16_t db_fulllength = PAYLOAD_MOBIPASS_NUM_SAMPLES;
-      openair0_timestamp timestamp_mobipass[fp->samples_per_tti/db_fulllength];
-      int32_t *rx_buffer=NULL;
-      __m128i *data_block=NULL, *data_block_head=NULL;
-      __m128i *rxp128;
-      __m128i r0;
-
-      unsigned char _rx_buffer[MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t)];
-      rx_buffer = (int32_t *)_rx_buffer;
-      data_block_head = (__m128i *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t);
-
-      rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms->samples_per_tti];
-      rxp128 = (__m128i *) (rxp[0]);
-
-      packet_id=0;
-      while(packet_id<fp->samples_per_tti/db_fulllength) {
-        data_block = data_block_head;
-
-        ru->ifdevice.trx_read_func(&ru->ifdevice,
-                                         &timestamp_mobipass[packet_id],
-                                         (void**)&rx_buffer,
-                                         db_fulllength,
-                                          1
-                                          );
-
-          //store rxdata and increase packet_id
-          rxp[0] = (void*)&ru->common.rxdata[0][(subframe*ru->frame_parms->samples_per_tti)+packet_id*db_fulllength];
-          rxp128 = (__m128i *) (rxp[0]);
-          for (i=0; i<db_fulllength>>2; i+=2) {
-            r0 = _mm_loadu_si128(data_block++);
-            *rxp128++ =_mm_slli_epi16(_mm_srai_epi16(_mm_unpacklo_epi8(r0,r0),8),4);
-            *rxp128++ =_mm_slli_epi16(_mm_srai_epi16(_mm_unpackhi_epi8(r0,r0),8),4);
-          }
-          packet_id++;
-      }//end while
-
-      *proc_timestamp = ntohl(timestamp_mobipass[0]);
-    } else {
-      
-      uint16_t db_fulllength = PAYLOAD_MOBIPASS_NUM_SAMPLES;
-      openair0_timestamp timestamp_mobipass[fp->samples_per_tti/db_fulllength];
-#ifdef DEBUG_UL_MOBIPASS
-      int lower_offset = 0;
-      int  upper_offset = 70000;
-#endif
-      int subframe_skip = 0;
-      int reset_flag = 0;
-      int32_t *rx_buffer=NULL;
-      __m128i *data_block=NULL, *data_block_head=NULL;
-      __m128i *rxp128;
-      __m128i r0;
-
-      //rx_buffer = memalign(16, MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t));
-      rx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + db_fulllength*sizeof(int16_t));
-      IF5_mobipass_header_t *header = (IF5_mobipass_header_t *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES);
-      data_block_head = (__m128i *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t);
-   
-      rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms->samples_per_tti];
-      rxp128 = (__m128i *) (rxp[0]);
-   
-      RU_proc_t *proc = &ru->proc;
-/*
-   //   while(packet_id<fp->samples_per_tti/db_fulllength) {
-        data_block = data_block_head;
-
-        eNB->ifdevice.trx_read_func(&eNB->ifdevice,
-                                         &ts0,
-                                         (void**)&rx_buffer,
-                                         db_fulllength,
-                                          1
-                                          );
-
-        if ((header->seqno == 1)&&(first_packet==1))  { 
-           first_packet = 0;  //ignore the packets before synchnorization
-           packet_id = 0;
-          ts_offset = ntohl(ts0);
-        } 
-        if (first_packet==0) { 
-          packet_cnt++;
-          ts = ntohl(ts0);
-          packet_id = (ts-ts_offset)/db_fulllength;
-          packet_id = packet_id % (fp->samples_per_tti/db_fulllength);
-
-          printf("[IF5_tools]packet_id:%d\n", packet_id);
-          // if (ts_stored == 0) {
-          //   ts_stored = 1;
-          *proc_timestamp = ntohl(ts - (packet_id*db_fulllength));
-          // }
-          rxp[0] = (void*)&eNB->common_vars.rxdata[0][0][(subframe*eNB->frame_parms.samples_per_tti)+packet_id*db_fulllength];
-          rxp128 = (__m128i *) (rxp[0]);
-
-          for (i=0; i<db_fulllength>>2; i+=2) {
-            r0 = _mm_loadu_si128(data_block++);
-            *rxp128++ =_mm_slli_epi16(_mm_srai_epi16(_mm_unpacklo_epi8(r0,r0),8),4);
-            *rxp128++ =_mm_slli_epi16(_mm_srai_epi16(_mm_unpackhi_epi8(r0,r0),8),4);
-          }
-        }
-    //  }//end while
-*/
-   
-
-      packet_id=0; 
-      while(packet_id<fp->samples_per_tti/db_fulllength) {
-        data_block = data_block_head;
-
-	
-	ru->ifdevice.trx_read_func(&ru->ifdevice,
-				 &timestamp_mobipass[packet_id],
-				 (void**)&rx_buffer,
-				 db_fulllength,
-				 1
-				 );
-#ifdef DEBUG_UL_MOBIPASS
-        if (((proc->timestamp_tx + lower_offset) > ntohl(timestamp_mobipass[packet_id])) || ((proc->timestamp_tx + upper_offset) < ntohl(timestamp_mobipass[packet_id]))) {
-          //ignore the packet
-          subframe_skip_extra = (subframe_skip_extra + 1)%67;         
-         LOG_D("[Mobipass] ignored packet, id:[%d,%d], proc->timestamp_tx:%llu, proc->timestamp_rx:%llu, seqno:%d\n", packet_id,subframe_skip_extra, proc->timestamp_tx, ntohl(timestamp_mobipass[packet_id]), header->seqno);
-        }             
-#endif
-        //skip SUBFRAME_SKIP_NUM_MOBIPASS additional UL packets
-        if ((start_flag == 1) && (subframe_skip < SUBFRAME_SKIP_NUM_MOBIPASS)){
-          subframe_skip++;
-          offset_cnt = header->seqno;
-        } else {
-          if ((offset_cnt != header->seqno) && (start_flag == 0) && (proc->first_rx > 3)){
-#ifdef DEBUG_UL_MOBIPASS
-             LOG_D(PHY,"[Mobipass] Reset sequence number, offset_cnt:%d, header->seqno:%d, packet_id:%d\n", offset_cnt, header->seqno, packet_id);
-#endif
-             reset_flag=1;
-          }
-          if ((reset_flag == 1) && (proc->first_rx > 3 ) && (start_flag == 0) && (packet_id == 0)) {
-             packet_id = 1;  
-             reset_flag = 0;
-          }
-          start_flag = 0;
-
-          //store rxdata and increase packet_id
-          rxp[0] = (void*)&ru->common.rxdata[0][(subframe*ru->frame_parms->samples_per_tti)+packet_id*db_fulllength];
-          rxp128 = (__m128i *) (rxp[0]);
-          for (i=0; i<db_fulllength>>2; i+=2) {
-            r0 = _mm_loadu_si128(data_block++);
-            *rxp128++ =_mm_slli_epi16(_mm_srai_epi16(_mm_unpacklo_epi8(r0,r0),8),4);
-            *rxp128++ =_mm_slli_epi16(_mm_srai_epi16(_mm_unpackhi_epi8(r0,r0),8),4);
-          }   
-          packet_id++; 
-          offset_cnt = (header->seqno+1)&255;
-        }
-      }//end while
-    
-        *proc_timestamp = ntohl(timestamp_mobipass[0]); 
-#ifdef DEBUG_UL_MOBIPASS
-	LOG_I(PHY,"[Mobipass][Recv_MOBIPASS] timestamp: %llu\n ",  *proc_timestamp);
-	if (eNB->CC_id>0) {
-	  rxe = dB_fixed(signal_energy(rxp[0],fp->samples_per_tti)); 
-	  if (rxe > 0){
-	    LOG_I(PHY,"[Mobipass] frame:%d, subframe:%d, energy %d\n", (*proc_timestamp/(10*fp->samples_per_tti))&1023,subframe, rxe);
-	    
-	    //    LOG_M("rxsigmb.m","rxs",(void*)dummy_buffer_rx, fp->samples_per_tti,1, 5); 
-	    //    exit(-1);
-	  }
-	}
-#endif
-      free(rx_buffer);
-
-     
-    }
   } else {
     AssertFatal(1==0, "recv_IF5 - Unknown packet_type %x", packet_type);     
   }  

@@ -66,6 +66,7 @@ MESSAGE_DEF(S1AP_E_RAB_MODIFY_RESP          , MESSAGE_PRIORITY_MED, s1ap_e_rab_m
 MESSAGE_DEF(S1AP_E_RAB_RELEASE_RESPONSE    , MESSAGE_PRIORITY_MED, s1ap_e_rab_release_resp_t        , s1ap_e_rab_release_resp)
 MESSAGE_DEF(S1AP_PATH_SWITCH_REQ           , MESSAGE_PRIORITY_MED, s1ap_path_switch_req_t           , s1ap_path_switch_req)
 MESSAGE_DEF(S1AP_PATH_SWITCH_REQ_ACK       , MESSAGE_PRIORITY_MED, s1ap_path_switch_req_ack_t       , s1ap_path_switch_req_ack)
+MESSAGE_DEF(S1AP_E_RAB_MODIFICATION_IND    , MESSAGE_PRIORITY_MED, s1ap_e_rab_modification_ind_t    , s1ap_e_rab_modification_ind)
 
 /* S1AP -> RRC messages */
 MESSAGE_DEF(S1AP_DOWNLINK_NAS              , MESSAGE_PRIORITY_MED, s1ap_downlink_nas_t              , s1ap_downlink_nas )

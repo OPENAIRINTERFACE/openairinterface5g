@@ -41,6 +41,9 @@
 /************** INCLUDE *******************************************/
 
 #include "PHY/defs_nr_UE.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_defs.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 #ifdef DEFINE_VARIABLES_PUCCH_UE_NR_H
 #define EXTERN
@@ -57,6 +60,111 @@
 
 /************** VARIABLES *****************************************/
 
+float RSRP_meas_mapping_nr[98] 
+#ifdef INIT_VARIABLES_PUCCH_UE_NR_H 
+= {
+  -140,
+    -139,
+    -138,
+    -137,
+    -136,
+    -135,
+    -134,
+    -133,
+    -132,
+    -131,
+    -130,
+    -129,
+    -128,
+    -127,
+    -126,
+    -125,
+    -124,
+    -123,
+    -122,
+    -121,
+    -120,
+    -119,
+    -118,
+    -117,
+    -116,
+    -115,
+    -114,
+    -113,
+    -112,
+    -111,
+    -110,
+    -109,
+    -108,
+    -107,
+    -106,
+    -105,
+    -104,
+    -103,
+    -102,
+    -101,
+    -100,
+    -99,
+    -98,
+    -97,
+    -96,
+    -95,
+    -94,
+    -93,
+    -92,
+    -91,
+    -90,
+    -89,
+    -88,
+    -87,
+    -86,
+    -85,
+    -84,
+    -83,
+    -82,
+    -81,
+    -80,
+    -79,
+    -78,
+    -77,
+    -76,
+    -75,
+    -74,
+    -73,
+    -72,
+    -71,
+    -70,
+    -69,
+    -68,
+    -67,
+    -66,
+    -65,
+    -64,
+    -63,
+    -62,
+    -61,
+    -60,
+    -59,
+    -58,
+    -57,
+    -56,
+    -55,
+    -54,
+    -53,
+    -52,
+    -51,
+    -50,
+    -49,
+    -48,
+    -47,
+    -46,
+    -45,
+    -44,
+    -43
+  }
+  #endif
+  ;
+  
 /* TS 36.213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
 const initial_pucch_resource_t initial_pucch_resource[NB_INITIAL_PUCCH_RESOURCE]
 #ifdef INIT_VARIABLES_PUCCH_UE_NR_H
@@ -187,7 +295,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
     @param resource_id       pucch resource id if any
     @returns TRUE  a pucch resource has been found FALSE no valid pucch resource */
 
-boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
+boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
                                 int *initial_pucch_id, int *resource_set_id, int *resource_id, NR_UE_HARQ_STATUS_t *harq_status);
 
 /** \brief This function select a pucch resource set
@@ -196,7 +304,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
     @param uci size number of uci bits
     @returns number of the pucch resource set */
 
-int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size);
+int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size);
 
 /** \brief This function check pucch format
     @param ue context
@@ -206,7 +314,7 @@ int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size);
     @param uci size number of uci bits
     @returns TRUE pucch format matched uci size and constraints, FALSE invalid pucch format */
 
-boolean_t check_pucch_format(PHY_VARS_NR_UE *ue, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, 
+boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, 
                              int uci_size);
 
 /** \brief This function selects a pucch resource
@@ -223,13 +331,22 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
     @param csi_payload is updated with CSI
     @returns number of bits of CSI */
 
-int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
+int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
 
 /** \brief This dummy function sets current CSI for simulation
     @param csi_status
     @param csi_payload is updated with CSI
     @returns none */
+    
+uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac);
 
 void set_csi_nr(int csi_status, uint32_t csi_payload);
 
+uint8_t get_nb_symbols_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type);
+
+uint16_t get_starting_symb_idx(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type);
+
+int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type);
+
+NR_PUCCH_Resource_t *select_resource_by_id(int resource_id, NR_PUCCH_Config_t *pucch_config);
 #endif /* PUCCH_UCI_UE_NR_H */

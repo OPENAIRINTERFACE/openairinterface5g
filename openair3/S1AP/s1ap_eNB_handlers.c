@@ -104,6 +104,11 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
     uint32_t               stream,
     S1AP_S1AP_PDU_t       *pdu);
 
+static
+int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               assoc_id,
+    uint32_t               stream,
+    S1AP_S1AP_PDU_t       *pdu);
+
 /* Handlers matrix. Only eNB related procedure present here */
 s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* HandoverPreparation */
@@ -154,6 +159,9 @@ s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* UplinkUEAssociatedLPPaTransport */
   { 0, 0, 0 }, /* DownlinkNonUEAssociatedLPPaTransport */
   { 0, 0, 0 }, /* UplinkNonUEAssociatedLPPaTransport */
+  { 0, 0, 0 }, /* UERadioCapabilityMatch */
+  { 0, 0, 0 }, /* PWSRestartIndication */
+  { 0, s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm, 0 }, /* E_RABModificationIndication */
 };
 char *s1ap_direction2String(int s1ap_dir) {
   static char *s1ap_direction_String[] = {
@@ -1722,3 +1730,13 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
   // TODO continue
   return 0;
 }
+
+static
+int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               assoc_id,
+    uint32_t               stream,
+    S1AP_S1AP_PDU_t       *pdu){
+
+	LOG_I(S1AP, "Received S1AP E-RAB Modification confirm message \n");
+	return 0;
+}
+

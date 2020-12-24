@@ -95,9 +95,6 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-#ifdef UESIM_EXPANSION
-  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 uint16_t sf_ahead=2;
 int tddflag;
 char *emul_iface;
@@ -170,6 +167,8 @@ extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id,
 extern void get_uethreads_params(void);
 
 int transmission_mode=1;
+
+int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;
@@ -541,12 +540,15 @@ void init_pdcp(void) {
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
 
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_msg(void *notUsed) {
+AssertFatal(false,"");
+	return NULL;
+}
+
 int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef UESIM_EXPANSION
-  memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
-#endif
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
@@ -757,7 +759,7 @@ int main( int argc, char **argv ) {
   }
 
   if(IS_SOFTMODEM_DOFORMS)
-    load_softscope("ue");
+    load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);

@@ -33,11 +33,11 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "PHY/phy_vars.h"
@@ -46,6 +46,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_NR_PBCHSIM
 
@@ -60,7 +61,13 @@ uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+
 uint64_t get_softmodem_optmask(void) {return 0;}
+
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
@@ -103,6 +110,9 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);
+
+  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
@@ -466,6 +476,7 @@ int main(int argc, char **argv)
                                 channel_model,
  				fs, 
 				bw, 
+				300e-9,
                                 0,
                                 0,
                                 0);
@@ -546,10 +557,35 @@ int main(int argc, char **argv)
 				     frame_parms->nb_prefix_samples,
 				     CYCLIC_PREFIX);
     		} else {
-    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+		  /*    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
     			                     &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
 			                     14,
-			                     frame_parms);
+			                     frame_parms);*/
+		  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+			       (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+			       frame_parms->ofdm_symbol_size,
+			       1,
+			       frame_parms->nb_prefix_samples0,
+			       CYCLIC_PREFIX);
+		  
+		  apply_nr_rotation(frame_parms,
+				    (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+				    slot,
+				    0,
+				    1,
+				    frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
+		  PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
+			       (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+			       frame_parms->ofdm_symbol_size,
+			       13,
+			       frame_parms->nb_prefix_samples,
+			       CYCLIC_PREFIX);
+		  apply_nr_rotation(frame_parms,
+				    (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+				    slot,
+				    1,
+				    13,
+				    frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
     		}
     	}
     }
@@ -644,6 +680,7 @@ int main(int argc, char **argv)
 	if (ret<0) n_errors++;
       }
       else {
+	UE_nr_rxtx_proc_t proc={0};
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
@@ -652,16 +689,16 @@ int main(int argc, char **argv)
 
         int ssb_slot = (ssb_index>>1)+(n_hf*frame_parms->slots_per_frame);
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
-	  nr_slot_fep(UE,
-	  	      i%frame_parms->symbols_per_slot,
-		      ssb_slot,
-		      0,
-		      0);
+          nr_slot_fep(UE,
+                      &proc,
+                      i%frame_parms->symbols_per_slot,
+                      ssb_slot,
+                      0,
+                      0);
 
-          nr_pbch_channel_estimation(UE,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+          nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 
         }
-	UE_nr_rxtx_proc_t proc={0};
 
         ret = nr_rx_pbch(UE,
 	                 &proc,

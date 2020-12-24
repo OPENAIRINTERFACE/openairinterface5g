@@ -2240,7 +2240,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
   uint8_t first_ue_total[MAX_NUM_CCs][20];
   uint8_t first_ue_id[MAX_NUM_CCs][20];
   uint8_t ul_inactivity_num[MAX_NUM_CCs];
-  uint8_t ul_inactivity_id[MAX_NUM_CCs][20]={0};
+  uint8_t ul_inactivity_id[MAX_NUM_CCs][20]={{0}};
   //  LTE_DL_FRAME_PARMS *frame_parms;
   uint8_t ulsch_ue_max_num[MAX_NUM_CCs];
   uint16_t saved_ulsch_dci[MAX_NUM_CCs];

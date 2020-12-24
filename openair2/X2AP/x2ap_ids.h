@@ -38,7 +38,8 @@ typedef enum {
   X2ID_STATE_SOURCE_PREPARE,
   X2ID_STATE_SOURCE_OVERALL,
   X2ID_STATE_TARGET,
-  X2ID_STATE_NSA_PREPARE,
+  X2ID_STATE_NSA_ENB_PREPARE,
+  X2ID_STATE_NSA_GNB_OVERALL,
 } x2id_state_t;
 
 typedef struct {
@@ -55,6 +56,8 @@ typedef struct {
   /* timers */
   uint64_t      t_reloc_prep_start;
   uint64_t      tx2_reloc_overall_start;
+  uint64_t      t_dc_prep_start;
+  uint64_t      t_dc_overall_start;
 } x2ap_id;
 
 typedef struct {
@@ -66,6 +69,7 @@ int x2ap_allocate_new_id(x2ap_id_manager *m);
 void x2ap_release_id(x2ap_id_manager *m, int id);
 int x2ap_find_id(x2ap_id_manager *, int id_source, int id_target);
 int x2ap_find_id_from_id_source(x2ap_id_manager *, int id_source);
+int x2ap_find_id_from_id_target(x2ap_id_manager *, int id_source);
 int x2ap_find_id_from_rnti(x2ap_id_manager *, int rnti);
 void x2ap_set_ids(x2ap_id_manager *m, int ue_id, int rnti, int id_source, int id_target);
 void x2ap_id_set_state(x2ap_id_manager *m, int ue_id, x2id_state_t state);
@@ -73,6 +77,8 @@ void x2ap_id_set_state(x2ap_id_manager *m, int ue_id, x2id_state_t state);
 void x2ap_id_set_target(x2ap_id_manager *m, int ue_id, void *target);
 void x2ap_set_reloc_prep_timer(x2ap_id_manager *m, int ue_id, uint64_t time);
 void x2ap_set_reloc_overall_timer(x2ap_id_manager *m, int ue_id, uint64_t time);
+void x2ap_set_dc_prep_timer(x2ap_id_manager *m, int ue_id, uint64_t time);
+void x2ap_set_dc_overall_timer(x2ap_id_manager *m, int ue_id, uint64_t time);
 int x2ap_id_get_id_source(x2ap_id_manager *m, int ue_id);
 int x2ap_id_get_id_target(x2ap_id_manager *m, int ue_id);
 int x2ap_id_get_rnti(x2ap_id_manager *m, int ue_id);

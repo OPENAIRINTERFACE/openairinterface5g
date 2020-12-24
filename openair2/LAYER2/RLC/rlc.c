@@ -519,7 +519,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     //  LOG_I(RLC,"DUY rlc_data_req: mbms_rb_id in RLC instant is: %d\n", mbms_rb_id);
     if (sdu_pP != NULL) {
       if (sdu_sizeP > 0) {
-        LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
+        LOG_D(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
         new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc), __func__);
 
         if (new_sdu_p != NULL) {

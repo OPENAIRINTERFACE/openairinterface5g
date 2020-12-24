@@ -93,134 +93,66 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
-                               uint8_t frame,
+                               uint32_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id) {
 
-  uint32_t available_bits, TBS;
-  uint8_t mod_order, cwd_index, num_of_codewords, l;
+  LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
+
+  uint32_t available_bits;
+  uint8_t cwd_index, l;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  uint32_t ***pusch_dmrs;
   int16_t **tx_layers;
   int32_t **txdataF;
-  uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l_prime[2], delta;
-  uint16_t rnti, n_dmrs, code_rate, number_dmrs_symbols, nb_rb, k;
-  uint8_t dmrs_type, nb_dmrs_re_per_rb, number_of_symbols, mcs, Nl;
-  int ap, start_symbol, Nid_cell, i;
-  int sample_offsetF, N_RE_prime, N_PRB_oh;
-  uint16_t ul_dmrs_symb_pos;
-  uint8_t data_existing =0;
-  uint8_t L_ptrs, K_ptrs; // PTRS parameters
-  uint16_t beta_ptrs; // PTRS parameter related to power control
+  uint8_t nb_dmrs_re_per_rb;
+  int ap, i;
+  int sample_offsetF, N_RE_prime;
 
-  NR_UE_ULSCH_t *ulsch_ue;
-  NR_UL_UE_HARQ_t *harq_process_ul_ue=NULL;
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
-  uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
   // ptrs_UplinkConfig_t *ptrs_Uplink_Config = &UE->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
 
-  num_of_codewords = 1; // tmp assumption
-  Nid_cell = 0;
-  N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
-  number_dmrs_symbols = 0;
+  uint8_t  num_of_codewords = 1; // tmp assumption
+  int      Nid_cell = 0;
+  int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
+  uint16_t number_dmrs_symbols = 0;
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
-    ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
-    harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+    NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
+    NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+    nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
 
-    start_symbol      = harq_process_ul_ue->pusch_pdu.start_symbol_index;
-    ul_dmrs_symb_pos  = harq_process_ul_ue->pusch_pdu.ul_dmrs_symb_pos;
-    number_of_symbols = harq_process_ul_ue->pusch_pdu.nr_of_symbols;
-    dmrs_type         = harq_process_ul_ue->pusch_pdu.dmrs_config_type;
+    int start_symbol          = pusch_pdu->start_symbol_index;
+    uint16_t ul_dmrs_symb_pos = pusch_pdu->ul_dmrs_symb_pos;
+    uint8_t number_of_symbols = pusch_pdu->nr_of_symbols;
+    uint8_t dmrs_type         = pusch_pdu->dmrs_config_type;
+    uint16_t start_rb         = pusch_pdu->rb_start;
+    uint16_t nb_rb            = pusch_pdu->rb_size;
+    uint8_t Nl                = pusch_pdu->nrOfLayers;
+    uint8_t mod_order         = pusch_pdu->qam_mod_order;
+    uint16_t rnti             = pusch_pdu->rnti;
+    uint8_t cdm_grps_no_data  = pusch_pdu->num_dmrs_cdm_grps_no_data;
+    uint16_t start_sc         = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
 
-    for (i = start_symbol; i < start_symbol + number_of_symbols; i++) {
+    if (start_sc >= frame_parms->ofdm_symbol_size)
+      start_sc -= frame_parms->ofdm_symbol_size;
 
-      if((ul_dmrs_symb_pos >> i) & 0x01)
-        number_dmrs_symbols += 1;
-
-    }
-
-    rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    nb_dmrs_re_per_rb     = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
 
+    get_num_re_dmrs(pusch_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+
+    // TbD num_of_mod_symbols is set but never used
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
-
-    nb_rb = harq_process_ul_ue->pusch_pdu.rb_size;
-
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*num_of_codewords;
-
-    mcs            = harq_process_ul_ue->pusch_pdu.mcs_index;
-    Nl             = harq_process_ul_ue->pusch_pdu.nrOfLayers;
-    mod_order      = nr_get_Qm_ul(mcs, 0);
-    code_rate      = nr_get_code_rate_ul(mcs, 0);
-
-    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size = nr_compute_tbs(mod_order,
-                                             code_rate,
-                                             nb_rb,
-                                             number_of_symbols,
-                                             nb_dmrs_re_per_rb*number_dmrs_symbols,
-                                             0,
-                                             harq_process_ul_ue->pusch_pdu.nrOfLayers);
-
-    uint8_t access_mode = SCHEDULED_ACCESS;
-
-    //-----------------------------------------------------//
-    // to be removed later when MAC is ready
-
-    if (harq_process_ul_ue != NULL){
-      TBS = harq_process_ul_ue->pusch_pdu.pusch_data.tb_size;
-      data_existing = 0;
-
-    	if (IS_SOFTMODEM_NOS1){
-        data_existing = nr_ue_get_sdu(UE->Mod_id, UE->CC_id, frame,
-                                      slot, 0, ulsch_input_buffer, TBS/8, &access_mode);
-    		//IP traffic to be transmitted
-        if(data_existing){
-          //harq_process_ul_ue->a = (unsigned char*)calloc(TBS/8, sizeof(unsigned char));
-          memcpy(harq_process_ul_ue->a, ulsch_input_buffer, TBS/8);
-
-    			#ifdef DEBUG_MAC_PDU
-            LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS/8);
-            for (i = 0; i < TBS / 8; i++) {
-    					printf("0x%02x",harq_process_ul_ue->a[i]);
-    				}
-    				printf("\n");
-				#endif
-    		}
-      }
-      //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-      if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-        //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-        //and block this traffic from being forwarded to the upper layers at the gNB
-        uint16_t payload_offset = 5;
-        LOG_D(PHY, "Random data to be tranmsitted: \n");
-        //Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
-        for (i = 0; i<payload_offset; i++)
-          harq_process_ul_ue->a[i] = 0;
-
-        for (i = payload_offset; i < TBS / 8; i++) {
-          harq_process_ul_ue->a[i] = (unsigned char) rand();
-          //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-        }
-      }
-    } else {
-      LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
-      return;
-    }
-
-    //-----------------------------------------------------//
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
 
     unsigned int G = nr_get_G(nb_rb, number_of_symbols,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
-
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
@@ -257,15 +189,11 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ///////////
     ////////////////////////////////////////////////////////////////////////
 
-
-  //}
-  }
-
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
-  pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
-  n_dmrs = (nb_rb*nb_dmrs_re_per_rb*number_dmrs_symbols);
-  int16_t mod_dmrs[n_dmrs<<1];
+  uint32_t ***pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
+  uint16_t n_dmrs = (start_rb+nb_rb)*((dmrs_type == pusch_dmrs_type1) ? 6:4);
+  int16_t mod_dmrs[n_dmrs<<1] __attribute((aligned(16)));
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -273,12 +201,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////PTRS parameters' initialization/////////////////////////
   ///////////
 
-  int16_t mod_ptrs[(nb_rb/2)*(NR_SYMBOLS_PER_SLOT-1)*2]; // assume maximum number of PTRS per pusch allocation
-  K_ptrs = 0; // just to avoid a warning
+  int16_t mod_ptrs[nb_rb] __attribute((aligned(16))); // assume maximum number of PTRS per pusch allocation
+  uint8_t L_ptrs, K_ptrs = 0;
+  uint16_t beta_ptrs = 1; // temp value until power control is implemented
 
-  if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+  if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-    K_ptrs = (harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density)?4:2;
+    K_ptrs = harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density;
     L_ptrs = 1<<harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
 
     beta_ptrs = 1; // temp value until power control is implemented
@@ -301,9 +230,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   tx_layers = (int16_t **)pusch_ue->txdataF_layers;
 
   nr_ue_layer_mapping(UE->ulsch[thread_id][gNB_id],
-                   Nl,
-                   available_bits/mod_order,
-                   tx_layers);
+                      Nl,
+                      available_bits/mod_order,
+                      tx_layers);
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -321,11 +250,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   for (l = start_symbol; l < start_symbol + number_of_symbols; l++) {
 
     if((ul_dmrs_symb_pos >> l) & 0x01)
-      is_dmrs = 1;
-    else
-      is_dmrs = 0;
-
-    if (is_dmrs == 1)
       nb_re_dmrs_per_rb = nb_dmrs_re_per_rb;
     else
       nb_re_dmrs_per_rb = 0;
@@ -350,61 +274,69 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   txdataF = UE->common_vars.txdataF;
 
-  start_rb = harq_process_ul_ue->pusch_pdu.rb_start;
-  start_sc = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
-
-  if (start_sc >= frame_parms->ofdm_symbol_size)
-    start_sc -= frame_parms->ofdm_symbol_size;
-
   for (ap=0; ap< Nl; ap++) {
+
+    uint8_t k_prime = 0;
+    uint16_t m = 0;
 
     // DMRS params for this ap
     get_Wt(Wt, ap, dmrs_type);
     get_Wf(Wf, ap, dmrs_type);
     delta = get_delta(ap, dmrs_type);
-    
-
-    uint8_t k_prime=0;
-    uint8_t is_dmrs, is_ptrs;
-    uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+number_of_symbols; l++) {
 
-      k = start_sc;
-      n = 0;
-      dmrs_idx = 0;
+      uint16_t k = start_sc;
+      uint16_t n = 0;
+      uint8_t is_dmrs_sym = 0;
+      uint8_t is_ptrs_sym = 0;
+      uint16_t dmrs_idx = 0, ptrs_idx = 0;
+
+      if ((ul_dmrs_symb_pos >> l) & 0x01) {
+        is_dmrs_sym = 1;
+
+        if (pusch_pdu->transform_precoding == 1){ // if transform precoding is disabled
+          if (dmrs_type == pusch_dmrs_type1)
+            dmrs_idx = start_rb*6;
+          else
+            dmrs_idx = start_rb*4;
+        } else {
+            dmrs_idx = 0;
+        }
+
+        nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+
+      } else if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+
+        if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols)) {
+          is_ptrs_sym = 1;
+          nr_modulation(pusch_dmrs[l][0], nb_rb, DMRS_MOD_ORDER, mod_ptrs);
+        }
+      }
 
       for (i=0; i< nb_rb*NR_NB_SC_PER_RB; i++) {
 
+        uint8_t is_dmrs = 0;
+        uint8_t is_ptrs = 0;
+
         sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
 
-        is_dmrs = 0;
-        is_ptrs = 0;
-
-        if((ul_dmrs_symb_pos >> l) & 0x01) {
+        if (is_dmrs_sym) {
           if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%frame_parms->ofdm_symbol_size))
             is_dmrs = 1;
-        }
-
-        if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS){
-
-          if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols))
+        } else if (is_ptrs_sym) {
             is_ptrs = is_ptrs_subcarrier(k,
                                          rnti,
                                          ap,
                                          dmrs_type,
                                          K_ptrs,
                                          nb_rb,
-                                         harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                         pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
                                          start_sc,
                                          frame_parms->ofdm_symbol_size);
         }
 
         if (is_dmrs == 1) {
-
-          if (k == start_sc){
-            nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-          }
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
@@ -423,27 +355,29 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         }  else if (is_ptrs == 1) {
 
-          if (k == start_sc){
-            nr_modulation(pusch_dmrs[l][0], nb_rb, DMRS_MOD_ORDER, mod_ptrs);
-          }
-
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (beta_ptrs*AMP*mod_ptrs[ptrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (beta_ptrs*AMP*mod_ptrs[(ptrs_idx<<1) + 1]) >> 15;
 
           ptrs_idx++;
 
-          } else {
+        } else if (!is_dmrs_sym || allowed_xlsch_re_in_dmrs_symbol(k, start_sc, frame_parms->ofdm_symbol_size, cdm_grps_no_data, dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
 
-          #ifdef DEBUG_PUSCH_MAPPING
-            printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-            m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-            ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-          #endif
+        #ifdef DEBUG_PUSCH_MAPPING
+          printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+          m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
+        #endif
 
           m++;
+
+        } else {
+
+          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = 0;
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = 0;
+
         }
 
         if (++k >= frame_parms->ofdm_symbol_size)
@@ -451,42 +385,31 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       }
     }
   }
+  }
 
-  //}
+  NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;
+  harq_process_ulsch = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid];
+  harq_process_ulsch->status = SCH_IDLE;
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
 }
 
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
-                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t thread_id,
-                                      uint8_t gNB_id,
-                                      NR_DL_FRAME_PARMS *frame_parms) {
+                                      NR_DL_FRAME_PARMS *frame_parms,
+                                      uint8_t Nl) {
 
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
-  int timing_advance;
-  uint8_t Nl = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->pusch_pdu.nrOfLayers; // cw 0
 
   /////////////////////////IFFT///////////////////////
   ///////////
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)  || defined(OAI_ADRV9371_ZC706)
-  timing_advance = UE->timing_advance;
-#else
-  timing_advance = 0;
-#endif
-
-  tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0) - timing_advance;
-
-  if (tx_offset < 0)
-    tx_offset += frame_parms->samples_per_frame;
+  tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
 
   // clear the transmit data array for the current subframe
   /*for (int aa=0; aa<UE->frame_parms.nb_antennas_tx; aa++) {
@@ -498,21 +421,34 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 
-  for (ap = 0; ap < Nl; ap++) {
-      if (frame_parms->Ncp == 1) { // extended cyclic prefix
-  PHY_ofdm_mod(txdataF[ap],
-         &txdata[ap][tx_offset],
-         frame_parms->ofdm_symbol_size,
-         12,
-         frame_parms->nb_prefix_samples,
-         CYCLIC_PREFIX);
-      } else { // normal cyclic prefix
-  nr_normal_prefix_mod(txdataF[ap],
-           &txdata[ap][tx_offset],
-           14,
-           frame_parms);
-      }
+  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+  for(ap = 0; ap < Nl; ap++) {
+    for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
+      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
+	    s,s+symb_offset,frame_parms->symbol_rotation[2*(s+symb_offset)],frame_parms->symbol_rotation[1+(2*(s+symb_offset))]);
+      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
+			&frame_parms->symbol_rotation[2*(s+symb_offset)],
+			(int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
+			frame_parms->ofdm_symbol_size,
+			15);
     }
+  }
+
+  for (ap = 0; ap < Nl; ap++) {
+    if (frame_parms->Ncp == 1) { // extended cyclic prefix
+      PHY_ofdm_mod(txdataF[ap],
+                   &txdata[ap][tx_offset],
+                   frame_parms->ofdm_symbol_size,
+                   12,
+                   frame_parms->nb_prefix_samples,
+                   CYCLIC_PREFIX);
+    } else { // normal cyclic prefix
+      nr_normal_prefix_mod(txdataF[ap],
+                           &txdata[ap][tx_offset],
+                           14,
+                           frame_parms);
+    }
+  }
 
   ///////////
   ////////////////////////////////////////////////////
