@@ -40,6 +40,7 @@
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
 #include "ngap_messages_types.h"
+#include "f1ap_messages_types.h"
 
 #ifdef CMAKER
 #include "rrc_messages_types.h"
@@ -106,6 +107,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
 int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i);
+void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */

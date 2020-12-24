@@ -38,7 +38,7 @@
 #include "assertions.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
-
+extern RAN_CONTEXT_t RC;
 
 int DU_handle_RESET(instance_t instance,
                                 uint32_t assoc_id,
@@ -539,10 +539,16 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
     MSC_AS_TIME_FMT" DU_handle_F1_SETUP_RESPONSE successfulOutcome assoc_id %d",
     0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
     assoc_id);
- 
-   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
+
+  if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+    LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to GNB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
-   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+    itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  } else {
+    LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
+         assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
+    itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  }
 
    return 0;
 }

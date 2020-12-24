@@ -136,7 +136,6 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
   return register_gnb_x2_pending;
 }
 
-
 /*------------------------------------------------------------------------------*/
 void *gNB_app_task(void *args_p)
 {
@@ -144,6 +143,9 @@ void *gNB_app_task(void *args_p)
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
+  uint32_t                        registered_gnb = 0;
+  uint32_t                        register_gnb_pending;
+  long                            gnb_register_retry_timer_id;
 
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
@@ -189,8 +191,10 @@ void *gNB_app_task(void *args_p)
   if (AMF_MODE_ENABLED) {
   /* Try to register each gNB */
   //registered_gnb = 0;
-  __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
+  register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
   } else {
+    // for test
+    register_gnb_pending = 1;
     for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
       if (!NODE_IS_DU(RC.nrrrc[gnb_id]->node_type)) {
         /* Start L2L1 task */
@@ -266,6 +270,50 @@ void *gNB_app_task(void *args_p)
         }
       }
 */
+      break;
+
+    case F1AP_SETUP_RESP:
+      AssertFatal(NODE_IS_DU(RC.nrrrc[0]->node_type), "Should not have received F1AP_SETUP_RESP in CU/gNB\n");
+
+      LOG_I(GNB_APP, "Received %s: associated ngran_gNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
+      F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
+      
+      gNB_app_handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
+
+      DevAssert(register_gnb_pending > 0);
+      register_gnb_pending--;
+
+      /* Check if at least gNB is registered with one AMF */
+      if (F1AP_SETUP_RESP(msg_p).num_cells_to_activate > 0) {
+        registered_gnb++;
+      }
+
+      /* Check if all register gNB requests have been processed */
+      if (register_gnb_pending == 0) {
+        if (registered_gnb == gnb_nb) {
+          /* If all gNB cells are registered, start L2L1 task */
+          MessageDef *msg_init_p;
+
+          msg_init_p = itti_alloc_new_message (TASK_GNB_APP, INITIALIZE_MESSAGE);
+          itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
+
+        } else {
+          LOG_W(GNB_APP, " %d gNB not associated with a AMF, retrying registration in %d seconds ...\n",
+                gnb_nb - registered_gnb,  GNB_REGISTER_RETRY_DELAY);
+
+          /* Restart the gNB registration process in GNB_REGISTER_RETRY_DELAY seconds */
+          if (timer_setup (GNB_REGISTER_RETRY_DELAY, 0, TASK_GNB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
+                           NULL, &gnb_register_retry_timer_id) < 0) {
+            LOG_E(GNB_APP, " Can not start gNB register retry timer, use \"sleep\" instead!\n");
+
+            sleep(GNB_REGISTER_RETRY_DELAY);
+            /* Restart the registration process */
+            registered_gnb = 0;
+            register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
+          }
+        }
+      }
+
       break;
 
     case NGAP_DEREGISTERED_GNB_IND:

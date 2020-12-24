@@ -1419,3 +1419,39 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
   }
   return 0;
 }
+
+int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t mnc,uint8_t mnc_digit_length) {
+  return (1);
+}
+
+void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
+  int i, j, si_ind;
+  LOG_I(GNB_APP, "cells_to_activated %d, RRC instances %d\n",
+        resp->num_cells_to_activate, RC.nb_nr_inst);
+
+  for (j = 0; j < resp->num_cells_to_activate; j++) {
+    for (i = 0; i < RC.nb_nr_inst; i++) {
+      rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
+      // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
+      LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
+            j, i, RC.nrrrc[i]->nr_cellid, resp->nr_cellid[j]);
+
+      if (RC.nrrrc[i]->nr_cellid == resp->nr_cellid[j] &&
+          (du_check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
+           resp->nrpci[j] == carrier->physCellId)) {
+        // copy system information and decode it
+        for (si_ind=0; si_ind<resp->num_SI[j]; si_ind++)  {
+          // extract_and_decode_SI(i,
+          //                       si_ind,
+          //                       resp->SI_container[j][si_ind],
+          //                       resp->SI_container_length[j][si_ind]);
+        }
+
+        // perform MAC/L1 common configuration
+        // configure_du_mac(i);
+      } else {
+        LOG_E(GNB_APP, "F1 Setup Response not matching\n");
+      }
+    }
+  }
+}
