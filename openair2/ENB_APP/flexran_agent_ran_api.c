@@ -32,6 +32,9 @@
 #include "s1ap_eNB_management_procedures.h"
 #include "openair2/LAYER2/MAC/slicing/slicing.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 static inline int phy_is_present(mid_t mod_id, uint8_t cc_id) {
   return RC.eNB && RC.eNB[mod_id] && RC.eNB[mod_id][cc_id];
 }

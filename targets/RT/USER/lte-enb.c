@@ -96,6 +96,9 @@
 
 #include "T.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -323,7 +326,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
 static void *L1_thread_tx(void *param) {
   L1_proc_t *eNB_proc  = (L1_proc_t *)param;
   L1_rxtx_proc_t *proc = &eNB_proc->L1_proc_tx;
-  PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
+  PHY_VARS_eNB *eNB = eNB_proc->eNB;
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&eNB->proc.L1_proc == proc ? 0 : 1);
   thread_top_init(thread_name,1,470000,500000,500000);
@@ -858,6 +861,7 @@ void init_eNB_proc(int inst) {
     L1_proc_tx->instance_cnt       = -1;
     L1_proc->instance_cnt_RUs      = 0;
     L1_proc_tx->instance_cnt_RUs   = 0;
+    proc->eNB                      = eNB;
     proc->instance_cnt_prach       = -1;
     proc->instance_cnt_asynch_rxtx = -1;
     proc->instance_cnt_synch       = -1;

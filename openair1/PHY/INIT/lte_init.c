@@ -46,6 +46,8 @@ uint8_t         dmrs1_tab[8] = { 0, 2, 3, 4, 6, 8, 9, 10 };
 
 int             N_RB_DL_array[6] = { 6, 15, 25, 50, 75, 100 };
 
+extern RAN_CONTEXT_t RC;
+
 int
 l1_north_init_eNB () {
   int i,j;

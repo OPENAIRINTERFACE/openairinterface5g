@@ -63,6 +63,8 @@ extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t 
 extern char *parallel_config;
 extern char *worker_config;
 
+RAN_CONTEXT_t RC;
+
 void RCconfig_flexran() {
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;

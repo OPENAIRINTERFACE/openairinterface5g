@@ -169,6 +169,8 @@ extern void print_opp_meas(void);
 
 extern void init_eNB_afterRU(void);
 
+RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
+
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
@@ -426,7 +428,6 @@ int stop_L1L2(module_id_t enb_id) {
  * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
  */
 int restart_L1L2(module_id_t enb_id) {
-  RU_t *ru = RC.ru[enb_id];
   int cc_id;
   MessageDef *msg_p = NULL;
   LOG_W(ENB_APP, "restarting lte-softmodem\n");
@@ -437,10 +438,12 @@ int restart_L1L2(module_id_t enb_id) {
 
   for (cc_id = 0; cc_id < RC.nb_L1_CC[enb_id]; cc_id++) {
     RC.eNB[enb_id][cc_id]->configured = 0;
+    for (int ru_id=0;ru_id<RC.eNB[enb_id][cc_id]->num_RU;ru_id++) {
+      int ru_idx = RC.eNB[enb_id][cc_id]->RU_list[ru_id]->idx;
+      RC.ru_mask |= (1 << ru_idx);
+      set_function_spec_param(RC.ru[ru_idx]);
+    }
   }
-
-  RC.ru_mask |= (1 << ru->idx);
-  set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
   init_UE_info(&RC.mac[enb_id]->UE_info);
@@ -461,9 +464,15 @@ int restart_L1L2(module_id_t enb_id) {
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
    * broken, so we cannot test it */
   wait_eNBs();
-  init_RU_proc(ru);
-  ru->rf_map.card = 0;
-  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
+  for (int cc_id=0;cc_id<RC.nb_L1_CC[enb_id]; cc_id++) {
+    for (int ru_id=0;ru_id<RC.eNB[enb_id][cc_id]->num_RU;ru_id++) {
+      int ru_idx = RC.eNB[enb_id][cc_id]->RU_list[ru_id]->idx;
+
+      init_RU_proc(RC.ru[ru_idx]);
+      RC.ru[ru_idx]->rf_map.card = 0;
+      RC.ru[ru_idx]->rf_map.chain = 0; /* CC_id + chain_offset;*/
+    }
+  }
   wait_RUs();
   init_eNB_afterRU();
   printf("Sending sync to all threads\n");
@@ -576,7 +585,7 @@ int main ( int argc, char **argv )
   /* We need to read RU configuration before FlexRAN starts so it knows what
    * splits to report. Actual RU start comes later. */
   if (RC.nb_RU > 0 && NFAPI_MODE != NFAPI_MODE_VNF) {
-    RCconfig_RU();
+    RC.ru = RCconfig_RU(RC.nb_RU,RC.nb_L1_inst,RC.eNB,&RC.ru_mask,&RC.ru_mutex,&RC.ru_cond);
     LOG_I(PHY,
           "number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
           RC.nb_L1_inst, RC.nb_RU, get_nprocs());
@@ -679,7 +688,7 @@ int main ( int argc, char **argv )
   // some initialization is necessary and init_ru_vnf do this.
   if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
     printf("Initializing RU threads\n");
-    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
+    init_RU(RC.ru,RC.nb_RU,RC.eNB,RC.nb_L1_inst,RC.nb_L1_CC,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
     
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
