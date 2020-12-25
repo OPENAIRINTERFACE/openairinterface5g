@@ -83,6 +83,8 @@ extern void set_function_spec_param(RU_t *ru);
 
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
+int usrp_tx_thread=0;
+
 void exit_function(const char *file, const char *function, const int line, const char *s) {
 
   if (s != NULL) {
