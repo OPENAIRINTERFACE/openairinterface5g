@@ -161,6 +161,8 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *
   AssertFatal(false, "Must not be called in this context\n");
 }
 
+RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
+
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 

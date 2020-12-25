@@ -77,6 +77,7 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "T.h"
 
+#include "executables/softmodem-common.h"
 
 #define MBMS_EXPERIMENTAL
 
