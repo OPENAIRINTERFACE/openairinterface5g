@@ -19,6 +19,8 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint16_t sf_ahead;
 extern UL_RCC_IND_t  UL_RCC_INFO;
 
+extern RAN_CONTEXT_t RC;
+
 uint16_t frame_cnt=0;
 void handle_rach(UL_IND_t *UL_info) {
   int i;

@@ -171,7 +171,7 @@ extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
-extern void init_RU(char *, int send_dmrssync);
+extern void init_RU(RU_t **rup,int nb_RU,PHY_VARS_eNB ***eNBp,int nb_L1,int *nb_CC,char *rf_config_file, int send_dmrssync);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
