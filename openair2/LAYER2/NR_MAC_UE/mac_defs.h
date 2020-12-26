@@ -220,12 +220,6 @@ typedef struct {
   frame_t msg3_frame;
   /// Scheduled TX slot for RA Msg3
   slot_t msg3_slot;
-  /// Random-access variable for backoff (frame of last change in backoff counter)
-  uint32_t RA_backoff_frame;
-  /// Random-access variable for backoff (subframe of last change in backoff counter)
-  uint8_t RA_backoff_subframe;
-  /// Random-access Group B maximum path-loss
-  uint16_t RA_maxPL;
   /// Random-access Contention Resolution Timer active flag
   uint8_t RA_contention_resolution_timer_active;
   /// Random-access Contention Resolution Timer count value
