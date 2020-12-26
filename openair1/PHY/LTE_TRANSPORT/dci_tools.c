@@ -476,7 +476,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->harq_pid  = rel8->harq_process;
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->dai       = rel8->downlink_assignment_index;
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->padding   = 0;
-            //        printf("TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+            LOG_D(PHY,"TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,NPRB);
           } else {
             dci_alloc->dci_length                         = sizeof_DCI1A_20MHz_FDD_t;
             ((DCI1A_20MHz_FDD_t *)dci_pdu)->type          = 1;
@@ -535,7 +535,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 
       dlsch0->harq_mask |= (1 << rel8->harq_process);
 
-      if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,
+      if (rel8->rnti != SI_RNTI) LOG_I(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,
                                         rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
 
       break;

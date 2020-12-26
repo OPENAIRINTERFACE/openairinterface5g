@@ -775,7 +775,6 @@ typedef struct {
   uint32_t num_mac_sdu_rx;
   // Length of SDU Got from LC UL - Size array can be refined
   uint32_t      sdu_length_rx[NB_RB_MAX];
-
 } eNB_UE_STATS;
 /*! \brief eNB template for UE context information  */
 
@@ -964,7 +963,8 @@ typedef struct {
   uint16_t feedback_cnt[NFAPI_CC_MAX];
   uint16_t timing_advance;
   uint16_t timing_advance_r9;
-  uint8_t tpc_accumulated[NFAPI_CC_MAX];
+  int8_t pusch_tpc_accumulated[NFAPI_CC_MAX];
+  int8_t pucch_tpc_accumulated[NFAPI_CC_MAX];
   uint8_t periodic_wideband_cqi[NFAPI_CC_MAX];
   uint8_t periodic_wideband_spatial_diffcqi[NFAPI_CC_MAX];
   uint8_t periodic_wideband_pmi[NFAPI_CC_MAX];

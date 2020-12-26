@@ -1079,6 +1079,10 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
                                  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
     LOG_D(PHY,"%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid,
           ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i]));
+    pusch_vars->ulsch_noise_power[i]=0;
+    for (int rb=0;rb<ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;rb++)
+      pusch_vars->ulsch_noise_power[i]+=eNB->measurements.n0_subband_power[i][rb]/ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
+    LOG_D(PHY,"noise power[%d] %d\n",i,dB_fixed_times10(pusch_vars->ulsch_noise_power[i]));
   }
 
   ulsch_channel_level(pusch_vars->drs_ch_estimates,

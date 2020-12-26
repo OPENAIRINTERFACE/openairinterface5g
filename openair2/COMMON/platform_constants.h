@@ -86,9 +86,14 @@
   #define MAX_gNB                      2
 #endif
 
+#define NUMBER_OF_DLSCH_MAX 16
+#define NUMBER_OF_ULSCH_MAX 16
+#define NUMBER_OF_SCH_STATS_MAX 16
+
 #define NUMBER_OF_NR_DLSCH_MAX 2//16
 #define NUMBER_OF_NR_ULSCH_MAX 2//16
 #define NUMBER_OF_NR_SCH_STATS_MAX 16
+
 #define NUMBER_OF_NR_PUCCH_MAX 16
 #define NUMBER_OF_NR_SR_MAX 16
 #define NUMBER_OF_NR_PDCCH_MAX 16

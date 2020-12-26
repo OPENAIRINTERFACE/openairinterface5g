@@ -74,17 +74,6 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
 uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
 
 
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
-
-
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, 
-			     uint8_t prach_ConfigIndex, 
-			     uint8_t n_ra_prboffset,
-			     uint8_t tdd_mapindex, uint16_t Nf); 
-
-
-int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex,uint32_t frame, uint8_t subframe);
-
 int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t subframe);
 
 

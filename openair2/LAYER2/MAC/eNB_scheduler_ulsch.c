@@ -57,7 +57,7 @@
 #include "flexran_agent_mac.h"
 #include <dlfcn.h>
 #include <openair2/LAYER2/MAC/mac.h>
-
+#include "common/utils/lte/prach_utils.h"
 
 #include "T.h"
 
@@ -144,16 +144,18 @@ rx_sdu(const module_id_t enb_mod_idP,
   if (UE_id != -1) {
     UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
     UE_template_ptr = &UE_info->UE_template[CC_idP][UE_id];
-    LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH (%s) sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d, timing_advance %d\n",
           enb_mod_idP,
           harq_pid,
           CC_idP,
           frameP,
           subframeP,
+          sduP==NULL ? "in error" : "OK",
           UE_scheduling_control->round_UL[CC_idP][harq_pid],
           current_rnti,
           UE_id,
-          ul_cqi);
+          ul_cqi,
+	  timing_advance);
     AssertFatal(UE_scheduling_control->round_UL[CC_idP][harq_pid] < 8, "round >= 8\n");
 
     if (sduP != NULL) {
@@ -270,14 +272,17 @@ rx_sdu(const module_id_t enb_mod_idP,
     AssertFatal(mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx > 1,
                 "maxHARQ %d should be greater than 1\n",
                 (int) mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
-    LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
+    LOG_I(MAC, "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu (%s) round %d from PHY (rnti %x, RA_id %d) ul_cqi %d, timing advance %d\n",
           enb_mod_idP,
           harq_pid,
           CC_idP,
+	  sduP!=NULL ? "OK" : "in error",
           ra->msg3_round,
           current_rnti,
           RA_id,
-          ul_cqi);
+          ul_cqi,
+	  timing_advance);
+
     first_rb = ra->msg3_first_rb;
 
     if (sduP == NULL) { // we've got an error on Msg3
@@ -1214,16 +1219,19 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
-    LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[module_idP][CC_id]->frame_parms;
-    if (is_prach_subframe(frame_parms, sched_frame, sched_subframe)) {
-      int start_rb = get_prach_prb_offset(
-          frame_parms,
-          frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
-          frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
-          0, // tdd_mapindex
-          sched_frame); // Nf
+    
+    if (is_prach_subframe0(cc->tdd_Config!=NULL ? cc->tdd_Config->subframeAssignment : 0,cc->tdd_Config!=NULL ? 1 : 0,
+                           cc->radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex, 
+                           sched_frame, sched_subframe)) {
+      int start_rb = get_prach_prb_offset(cc->tdd_Config!=NULL ? 1 : 0,
+                                          cc->tdd_Config!=NULL ? cc->tdd_Config->subframeAssignment : 0,
+                                          to_prb(cc->ul_Bandwidth),
+                                          cc->radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex,
+                                          cc->radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset,
+                                          0, // tdd_mapindex
+                                          sched_frame); // Nf
       for (int i = 0; i < 6; i++)
-        cc[CC_id].vrb_map_UL[start_rb + i] = 1;
+        cc->vrb_map_UL[start_rb + i] = 1;
     }
 
     /* HACK: let's remove the PUCCH from available RBs
@@ -1235,24 +1243,24 @@ schedule_ulsch(module_id_t module_idP,
      */
     switch (to_prb(cc[CC_id].ul_Bandwidth)) {
       case 25:
-        cc[CC_id].vrb_map_UL[0] = 1;
-        cc[CC_id].vrb_map_UL[24] = 1;
+        cc->vrb_map_UL[0] = 1;
+        cc->vrb_map_UL[24] = 1;
         break;
 
       case 50:
-        cc[CC_id].vrb_map_UL[0] = 1;
-        cc[CC_id].vrb_map_UL[1] = 1;
-        cc[CC_id].vrb_map_UL[48] = 1;
-        cc[CC_id].vrb_map_UL[49] = 1;
+        cc->vrb_map_UL[0] = 1;
+        cc->vrb_map_UL[1] = 1;
+        cc->vrb_map_UL[48] = 1;
+        cc->vrb_map_UL[49] = 1;
         break;
 
       case 100:
-        cc[CC_id].vrb_map_UL[0] = 1;
-        cc[CC_id].vrb_map_UL[1] = 1;
-        cc[CC_id].vrb_map_UL[2] = 1;
-        cc[CC_id].vrb_map_UL[97] = 1;
-        cc[CC_id].vrb_map_UL[98] = 1;
-        cc[CC_id].vrb_map_UL[99] = 1;
+        cc->vrb_map_UL[0] = 1;
+        cc->vrb_map_UL[1] = 1;
+        cc->vrb_map_UL[2] = 1;
+        cc->vrb_map_UL[97] = 1;
+        cc->vrb_map_UL[98] = 1;
+        cc->vrb_map_UL[99] = 1;
         break;
 
       default:
@@ -1270,6 +1278,8 @@ schedule_ulsch(module_id_t module_idP,
 /*
 * Schedule the DCI0 for ULSCH
 */
+
+
 void
 schedule_ulsch_rnti(module_id_t   module_idP,
                     int           CC_id,
@@ -1277,7 +1287,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                     sub_frame_t   subframeP,
                     unsigned char sched_subframeP) {
   /* TODO: does this need to be static? */
-  static int32_t tpc_accumulated = 0;
   /* values from 0 to 7 can be used for mapping the cyclic shift
    * (36.211 , Table 5.5.2.1.1-1) */
   const uint32_t cshift = 0;
@@ -1401,8 +1410,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     /* Power control */
     /*
      * Compute the expected ULSCH RX snr (for the stats)
-     * This is the normalized RX snr and this should be constant (regardless
-     * of mcs) Is not in dBm, unit from nfapi, converting to dBm
+     * 
      */
     const int32_t snr = (5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10;
     const int32_t target_snr = mac->puSch10xSnr / 10;
@@ -1423,10 +1431,10 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
       if (snr > target_snr + 4) {
         tpc = 0; // -1
-        tpc_accumulated--;
+        UE_sched_ctrl_ptr->pusch_tpc_accumulated[CC_id]--;
       } else if (snr < target_snr - 4) {
         tpc = 2; // +1
-        tpc_accumulated++;
+        UE_sched_ctrl_ptr->pusch_tpc_accumulated[CC_id]++;
       }
     }
     if (tpc != 1) {
@@ -1438,7 +1446,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
             subframeP,
             harq_pid,
             tpc,
-            tpc_accumulated,
+            UE_sched_ctrl_ptr->pusch_tpc_accumulated[CC_id],
             snr,
             target_snr);
     }
@@ -1998,10 +2006,10 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
             if (snr > target_snr + 4) {
               tpc = 0; //-1
-              UE_sched_ctrl->tpc_accumulated[CC_id]--;
+              UE_sched_ctrl->pusch_tpc_accumulated[CC_id]--;
             } else if (snr < target_snr - 4) {
               tpc = 2; //+1
-              UE_sched_ctrl->tpc_accumulated[CC_id]++;
+              UE_sched_ctrl->pusch_tpc_accumulated[CC_id]++;
             } else {
               tpc = 1; //0
             }
@@ -2016,7 +2024,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                   subframeP,
                   harq_pid,
                   tpc,
-                  UE_sched_ctrl->tpc_accumulated[CC_id],
+                  UE_sched_ctrl->pusch_tpc_accumulated[CC_id],
                   snr,
                   target_snr);
           }

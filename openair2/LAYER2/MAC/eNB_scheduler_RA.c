@@ -483,8 +483,8 @@ void generate_Msg2(module_id_t module_idP,
       first_rb = 0;
       vrb_map[first_rb] = 1;
       vrb_map[first_rb + 1] = 1;
-      vrb_map[first_rb + 2] = 1;
-      vrb_map[first_rb + 3] = 1;
+      //vrb_map[first_rb + 2] = 1;
+      //vrb_map[first_rb + 3] = 1;
       memset((void *) dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
       dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
@@ -495,12 +495,12 @@ void generate_Msg2(module_id_t module_idP,
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 2;  // RA-RNTI : see Table 4-10 from SCF082 - nFAPI specifications
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;  // equal to RS power
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = 0;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 1;  // no TPC
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 0;  // no TPC
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = 1;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = 0;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = 1;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = 0;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(N_RB_DL, first_rb, 4);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(N_RB_DL, first_rb, 2);
 
       // This checks if the above DCI allocation is feasible in current subframe
       if (!CCE_allocation_infeasible(module_idP, CC_idP, 0, subframeP,
@@ -519,7 +519,7 @@ void generate_Msg2(module_id_t module_idP,
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = ra->RA_rnti;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2; // format 1A/1B/1D
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0; // localized
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL, first_rb, 4);
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL, first_rb, 2);
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = 0;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1; // first block
@@ -1295,9 +1295,9 @@ initiate_ra_proc(module_id_t module_idP,
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
   }
 
-  LOG_D(MAC,
-        "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
-        module_idP, CC_id, frameP, subframeP, preamble_index);
+  LOG_I(MAC,
+        "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d, timing offset %d\n",
+        module_idP, CC_id, frameP, subframeP, preamble_index, timing_offset);
   LOG_D(MAC,
         "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",
         module_idP, CC_id, frameP, subframeP, rach_resource_type);
@@ -1339,6 +1339,9 @@ initiate_ra_proc(module_id_t module_idP,
             abort();
 
           case 1 :
+	  case 3 :
+	  case 4 :
+          case 5 :
             offset = 6;
             break;
         }

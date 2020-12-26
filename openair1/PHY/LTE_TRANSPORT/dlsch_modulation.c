@@ -2375,16 +2375,14 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
   if (dlsch0 != NULL ) {
-#ifdef DEBUG_DLSCH_MODULATION
-    LOG_I(PHY,"Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %d)\n",
-            harq_pid,
+     LOG_D(PHY,"Generating DLSCH (num_pdcch_symb %d harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %x)\n",
+            num_pdcch_symbols,harq_pid,
             dlsch0_harq->mimo_mode,
             pmi2hex_2Ar2(dlsch0_harq->pmi_alloc),
             mod_order0,
             mod_order1,
             rb_alloc[0]
             );
-#endif
   }
 
     if (frame_parms->Ncp==0) { // normal prefix
