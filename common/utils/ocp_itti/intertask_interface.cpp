@@ -340,7 +340,7 @@ extern "C" {
     pthread_mutex_lock (&lock_nb_queues);
     int newQueue=nb_queues;
     nb_queues++;
-    AssertFatal(reallocarray(tasks, nb_queues, sizeof(*tasks)),"no memory");
+    AssertFatal(realloc(tasks, nb_queues* sizeof(*tasks)),"no memory");
     pthread_mutex_unlock (&lock_nb_queues);
     LOG_I(TMR,"Starting itti queue: %s as task %d\n", tasks_info->name, newQueue);
     pthread_mutex_init(&tasks[newQueue].queue_cond_lock, NULL);
