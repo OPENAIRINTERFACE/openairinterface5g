@@ -131,33 +131,18 @@ uint32_t get_ssb_slot(uint32_t ssb_index);
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
 /* \brief Get payload (MAC PDU) from UE PHY
-@param module_idP Instance id of UE in machine
-@param CC_id Component Carrier index
-@param frameP Current Rx frame
-@param slotP Current Rx slot
-@param pdu Pointer to the MAC PDU
-@param pdu_len Length of the MAC PDU
-@param gNB_id Index of gNB that UE is attached to
-@param ul_time_alignment of struct handling the timing advance parameters
+@param dl_info            pointer to dl indication
+@param ul_time_alignment  pointer to timing advance parameters
+@param pdu_id             index of DL PDU
 @returns void
 */
-void nr_ue_send_sdu(module_id_t module_idP, 
-                    uint8_t CC_id,
-                    frame_t frameP,
-                    int slotP,
-                    uint8_t * pdu,
-                    uint16_t pdu_len,
-                    uint8_t gNB_index,
-                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
+void nr_ue_send_sdu(nr_downlink_indication_t *dl_info,
+                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
+                    int pdu_id);
 
-void nr_ue_process_mac_pdu(module_id_t module_idP,
-                           uint8_t CC_id,
-                           frame_t frameP,
-                           uint8_t *pduP, 
-                           uint16_t mac_pdu_len,
-                           uint8_t gNB_index,
-                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
-
+void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
+                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
+                           int pdu_id);
 
 uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint8_t *pdu,
@@ -239,14 +224,7 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-uint16_t nr_ue_process_rar(module_id_t mod_id,
-                           int CC_id,
-                           frame_t frameP,
-                           sub_frame_t slotP,
-                           uint8_t * dlsch_buffer,
-                           rnti_t * t_crnti,
-                           uint8_t preamble_index,
-                           uint8_t * selected_rar_buffer);
+void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id);
 
 void nr_process_rar(nr_downlink_indication_t *dl_info);
 

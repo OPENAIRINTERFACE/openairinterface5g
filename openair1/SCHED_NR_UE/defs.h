@@ -301,15 +301,6 @@ int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 */
 void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx);
 
-/*! \brief Compute the timing adjustment at UE side from the old TA offset and the new received TA command
-  @param Mod_id Local UE index on which to act
-  @param CC_id Component Carrier Index
-  @param ta_command TA command received from the network
-  @param mu numerology index (0,1,2..)
-*/
-void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB);
-void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, int frame_rx, int nr_slot_rx, uint16_t ta_command);
-
 unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
 
 void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
@@ -342,6 +333,8 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
   @returns UE mode
 */
 UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
+
+uint8_t get_ra_PreambleIndex(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id);
 
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables

@@ -138,6 +138,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
 
   switch (pdu_type){
     case FAPI_NR_RX_PDU_TYPE_DLSCH:
+    case FAPI_NR_RX_PDU_TYPE_RAR:
       harq_pid = dlsch0->current_harq_pid;
       rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
       rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS / 8;
@@ -200,6 +201,13 @@ UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_id){
   return(PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[gNB_id]);
 }
 
+uint8_t get_ra_PreambleIndex(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id){
+
+  return PHY_vars_UE_g[Mod_id][CC_id]->prach_resources[gNB_id]->ra_PreambleIndex;
+
+}
+
+
 // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
 uint16_t get_bw_scaling(uint16_t nb_rb){
   uint16_t bw_scaling;
@@ -215,9 +223,12 @@ uint16_t get_bw_scaling(uint16_t nb_rb){
   return bw_scaling;
 }
 
-/* UL time alignment
-// If the current tx frame and slot match the TA configuration in ul_time_alignment
-// then timing advance is processed and set to be applied in the next UL transmission */
+// UL time alignment procedures:
+// - If the current tx frame and slot match the TA configuration in ul_time_alignment
+//   then timing advance is processed and set to be applied in the next UL transmission
+// - Application of timing adjustment according to TS 38.213 p4.2
+// todo:
+// - handle RAR TA application as per ch 4.2 TS 38.213
 void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
   if (ue->mac_enabled == 1) {
@@ -229,42 +240,42 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       uint8_t numerology = ue->frame_parms.numerology_index;
       uint16_t bwp_ul_NB_RB = ue->frame_parms.N_RB_UL;
+      int factor_mu = 1 << numerology;
+      uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
 
       LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d\n", __FUNCTION__, frame_tx, slot_tx);
 
-      nr_process_timing_advance(ue->Mod_id, ue->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
+      if (ue->UE_mode[gNB_id] == RA_RESPONSE){
+
+        ue->timing_advance = ul_time_alignment->ta_command * bw_scaling / factor_mu;
+
+        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Received (RAR) timing advance command %d new value is %u \n",
+          __FUNCTION__,
+          ue->Mod_id,
+          frame_tx,
+          slot_tx,
+          ul_time_alignment->ta_command,
+          ue->timing_advance);
+
+      } else if (ue->UE_mode[gNB_id] == PUSCH){
+
+        ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling / factor_mu;
+
+        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+          __FUNCTION__,
+          ue->Mod_id,
+          frame_tx,
+          slot_tx,
+          ul_time_alignment->ta_command,
+          ue->timing_advance);
+
+      }
 
       ul_time_alignment->ta_frame = -1;
       ul_time_alignment->ta_slot = -1;
 
     }
   }
-}
-
-void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB){
-
-  // 3GPP TS 38.213 p4.2
-  // scale by the scs numerology
-  int factor_mu = 1 << mu;
-  uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
-
-  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (ta_command - 31) * bw_scaling / factor_mu;
-
-  LOG_D(PHY, "[UE %d] Got timing advance command %u from MAC, new value is %d\n", Mod_id, ta_command, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
-}
-
-// WIP
-// - todo: handle TA application as per ch 4.2 TS 38.213
-void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, int frame_rx, int nr_slot_rx, uint16_t ta_command) {
-
-  int factor_mu = 1 << ue->frame_parms.numerology_index;
-  uint16_t bwp_ul_NB_RB = ue->frame_parms.N_RB_UL;
-  uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
-
-  // Transmission timing adjustment (TS 38.213 p4.2)
-  ue->timing_advance = bw_scaling / factor_mu;
-
-  LOG_D(PHY, "[UE %d] Frame %d Slot %d, Received (RAR) timing advance command %d new value is %u \n", ue->Mod_id, frame_rx, nr_slot_rx, ta_command, ue->timing_advance);
 }
 
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
@@ -888,60 +899,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
   return 0;
 }
 
-// WIP fix:
-// - time domain indication hardcoded to 0 for k2 offset
-// - extend TS 38.213 ch 8.3 Msg3 PUSCH
-// - b buffer
-// - ulsch power offset
-// - UE_mode == PUSCH case (should be handled by TA updates)
-// - harq
-// - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
-void nr_process_rar(nr_downlink_indication_t *dl_info) {
-
-  module_id_t module_id = dl_info->module_id;
-  int cc_id = dl_info->cc_id, frame_rx = dl_info->frame, nr_slot_rx = dl_info->slot, ta_command;
-  uint8_t gNB_index = dl_info->gNB_index; // *rar;
-  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
-  NR_UE_DLSCH_t *dlsch0 = ue->dlsch_ra[gNB_index];
-  UE_MODE_t UE_mode = ue->UE_mode[gNB_index];
-  NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_index];
-
-  if (ue->mac_enabled == 1) {
-
-    LOG_D(PHY,"[UE %d][RAPROC] Frame %d slot %d Received RAR mode %d\n", module_id, frame_rx, nr_slot_rx, UE_mode);
-
-    if ((UE_mode != PUSCH) && (prach_resources->Msg3 != NULL)) {
-
-      LOG_D(PHY,"[UE %d][RAPROC] Frame %d slot %d Invoking MAC for RAR (current preamble %d)\n", module_id, frame_rx, nr_slot_rx, prach_resources->ra_PreambleIndex);
-
-      ta_command = nr_ue_process_rar(ue->Mod_id,
-                                     cc_id,
-                                     frame_rx,
-                                     nr_slot_rx,
-                                     dlsch0->harq_processes[0]->b,
-                                     &ue->pdcch_vars[dl_info->thread_id][gNB_index]->pdcch_config[0].rnti,
-                                     prach_resources->ra_PreambleIndex,
-                                     dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
-
-      if (ta_command != 0xffff) {
-        LOG_D(PHY,"[UE %d][RAPROC] Frame %d slot %d Got Temporary C-RNTI %x and timing advance %d from RAR\n",
-          ue->Mod_id,
-          frame_rx,
-          nr_slot_rx,
-          ue->pdcch_vars[dl_info->thread_id][gNB_index]->pdcch_config[0].rnti,
-          ta_command);
-
-        nr_process_timing_advance_rar(ue, frame_rx, nr_slot_rx, ta_command);
-
-        ue->UE_mode[gNB_index] = RA_RESPONSE;
-
-      } else {
-        LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n", ue->Mod_id, prach_resources->ra_PreambleIndex);
-      }
-    }
-  }
-}
-
 // if contention resolution fails, go back to UE mode PRACH
 void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index) {
 
@@ -1245,8 +1202,16 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         switch (pdsch) {
           case RA_PDSCH:
+
+            if(!ue->mac_enabled){
+              return;
+            }
+
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
             nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, eNB_id, ue, dlsch0, number_pdus);
+
+            ue->UE_mode[eNB_id] = RA_RESPONSE;
+
           break;
           case PDSCH:
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
@@ -1620,7 +1585,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 			  abstraction_flag);
     }
     // do procedures for RA-RNTI
-    if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
+    if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1) && (UE_mode != PUSCH)) {
       ue_pdsch_procedures(ue,
 			  proc,
 			  eNB_id,
@@ -1968,7 +1933,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
   // do procedures for RA-RNTI
-  if ((ue->dlsch_ra[gNB_id]) && (ue->dlsch_ra[gNB_id]->active == 1)) {
+  if ((ue->dlsch_ra[gNB_id]) && (ue->dlsch_ra[gNB_id]->active == 1) && (ue->UE_mode[gNB_id] != PUSCH)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
                            proc,

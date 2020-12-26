@@ -223,135 +223,140 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
 // TbD WIP Msg3 development ongoing
 // - apply UL grant freq alloc & time alloc as per 8.2 TS 38.213
 // - apply tpc command
-uint16_t nr_ue_process_rar(module_id_t mod_id,
-                           int CC_id,
-                           frame_t frame,
-                           sub_frame_t slot,
-                           uint8_t * dlsch_buffer,
-                           rnti_t * t_crnti,
-                           uint8_t preamble_index,
-                           uint8_t * selected_rar_buffer){
+// WIP fix:
+// - time domain indication hardcoded to 0 for k2 offset
+// - extend TS 38.213 ch 8.3 Msg3 PUSCH
+// - b buffer
+// - ulsch power offset
+// - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
+void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
-    NR_UE_MAC_INST_t *ue_mac = get_mac_inst(mod_id);
-    NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
-    NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);            // RAR subPDU pointer
-    uint8_t n_subPDUs = 0;        // number of RAR payloads
-    uint8_t n_subheaders = 0;     // number of MAC RAR subheaders
-    uint16_t ta_command = 0;
+  module_id_t mod_id       = dl_info->module_id;
+  frame_t frame            = dl_info->frame;
+  int slot                 = dl_info->slot;
+  int cc_id                = dl_info->cc_id;
+  uint8_t gNB_id           = dl_info->gNB_index;
+  NR_UE_MAC_INST_t *ue_mac = get_mac_inst(mod_id);
+  uint8_t n_subPDUs        = 0;  // number of RAR payloads
+  uint8_t n_subheaders     = 0;  // number of MAC RAR subheaders
+  uint8_t *dlsch_buffer    = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.pdu;
+  NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
+  NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
+  uint8_t preamble_index   = get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
 
-    AssertFatal(CC_id == 0, "RAR reception on secondary CCs is not supported yet\n");
+  LOG_D(MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
-    while (1) {
-      n_subheaders++;
-      if (rarh->T == 1) {
-        n_subPDUs++;
-        LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
-      } else {
-        n_subPDUs++;
-        ue_mac->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
-        ue_mac->RA_BI_found = 1;
-        LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ue_mac->RA_backoff_indicator);
-      }
-      if (rarh->RAPID == preamble_index) {
-        LOG_I(PHY, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
-        rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
-        ue_mac->RA_RAPID_found = 1;
-        break;
-      }
-      if (rarh->E == 0) {
-        LOG_I(PHY, "No RAR found with the intended RAPID. \n");
-        break;
-      } else {
-        rarh += sizeof(NR_MAC_RAR) + 1;
-      }
-    }
-
-    #ifdef DEBUG_RAR
-    LOG_D(MAC, "[DEBUG_RAR] (%d,%d) number of RAR subheader %d; number of RAR pyloads %d\n", frame, slot, n_subheaders, n_subPDUs);
-    LOG_D(MAC, "[DEBUG_RAR] Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n", *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
-    #endif
-
-    if (ue_mac->RA_RAPID_found) {
-
-      uint8_t freq_hopping, mcs, Msg3_t_alloc, Msg3_f_alloc;
-      unsigned char tpc_command;
-#ifdef DEBUG_RAR
-      unsigned char csi_req;
-#endif
-
-      // TC-RNTI
-      *t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
-      ue_mac->t_crnti = *t_crnti;
-      // TA command
-      ta_command = rar->TA2 + (rar->TA1 << 5);
-
-#ifdef DEBUG_RAR
-      // CSI
-      csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
-#endif
-
-      // TPC
-      tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
-      switch (tpc_command){
-        case 0:
-          ue_mac->Msg3_TPC = -6;
-          break;
-        case 1:
-          ue_mac->Msg3_TPC = -4;
-          break;
-        case 2:
-          ue_mac->Msg3_TPC = -2;
-          break;
-        case 3:
-          ue_mac->Msg3_TPC = 0;
-          break;
-        case 4:
-          ue_mac->Msg3_TPC = 2;
-          break;
-        case 5:
-          ue_mac->Msg3_TPC = 4;
-          break;
-        case 6:
-          ue_mac->Msg3_TPC = 6;
-          break;
-        case 7:
-          ue_mac->Msg3_TPC = 8;
-          break;
-      }
-      // MCS
-      mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
-      // time alloc
-      Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x07);
-      // frequency alloc
-      Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
-      // frequency hopping
-      freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
-
-      #ifdef DEBUG_RAR
-      LOG_D(MAC, "[DEBUG_RAR] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
-        Msg3_t_alloc,
-        Msg3_f_alloc,
-        ta_command,
-        mcs,
-        freq_hopping,
-        tpc_command,
-        csi_req,
-        ue_mac->t_crnti);
-      #endif
-
-      // Config Msg3 PDU
-      nr_config_Msg3_pdu(ue_mac, Msg3_f_alloc, Msg3_t_alloc, mcs, freq_hopping);
-      // Schedule Msg3
-      nr_ue_msg3_scheduler(ue_mac, frame, slot, Msg3_t_alloc);
-
+  while (1) {
+    n_subheaders++;
+    if (rarh->T == 1) {
+      n_subPDUs++;
+      LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
     } else {
-      ue_mac->t_crnti = 0;
-      ta_command = (0xffff);
+      n_subPDUs++;
+      ue_mac->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
+      ue_mac->RA_BI_found = 1;
+      LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ue_mac->RA_backoff_indicator);
     }
+    if (rarh->RAPID == preamble_index) {
+      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
+      rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
+      ue_mac->RA_RAPID_found = 1;
+      break;
+    }
+    if (rarh->E == 0) {
+      LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match the intended RAPID...\n", mod_id, preamble_index);
+      break;
+    } else {
+      rarh += sizeof(NR_MAC_RAR) + 1;
+    }
+  }
 
-    // move the selected RAR to the front of the RA_PDSCH buffer
-    memcpy((void *) (selected_rar_buffer + 0), (void *) rarh, 1);
-    memcpy((void *) (selected_rar_buffer + 1), (void *) rar, sizeof(NR_MAC_RAR));
+  #ifdef DEBUG_RAR
+  LOG_D(MAC, "[DEBUG_RAR] (%d,%d) number of RAR subheader %d; number of RAR pyloads %d\n", frame, slot, n_subheaders, n_subPDUs);
+  LOG_D(MAC, "[DEBUG_RAR] Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n", *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
+  #endif
 
-    return ta_command;
+  if (ue_mac->RA_RAPID_found) {
+
+    uint8_t freq_hopping, mcs, Msg3_t_alloc, Msg3_f_alloc;
+    unsigned char tpc_command;
+#ifdef DEBUG_RAR
+    unsigned char csi_req;
+#endif
+
+  // TC-RNTI
+  ue_mac->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+
+  // TA command
+  ul_time_alignment->apply_ta = 1;
+  ul_time_alignment->ta_command = rar->TA2 + (rar->TA1 << 5);
+
+#ifdef DEBUG_RAR
+  // CSI
+  csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
+#endif
+
+  // TPC
+  tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
+  switch (tpc_command){
+    case 0:
+      ue_mac->Msg3_TPC = -6;
+      break;
+    case 1:
+      ue_mac->Msg3_TPC = -4;
+      break;
+    case 2:
+      ue_mac->Msg3_TPC = -2;
+      break;
+    case 3:
+      ue_mac->Msg3_TPC = 0;
+      break;
+    case 4:
+      ue_mac->Msg3_TPC = 2;
+      break;
+    case 5:
+      ue_mac->Msg3_TPC = 4;
+      break;
+    case 6:
+      ue_mac->Msg3_TPC = 6;
+      break;
+    case 7:
+      ue_mac->Msg3_TPC = 8;
+      break;
+  }
+  // MCS
+  mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
+  // time alloc
+  Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x07);
+  // frequency alloc
+  Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
+  // frequency hopping
+  freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
+
+  #ifdef DEBUG_RAR
+  LOG_D(MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+    __FUNCTION__,
+    frame,
+    slot,
+    mod_id,
+    Msg3_t_alloc,
+    Msg3_f_alloc,
+    ul_time_alignment->ta_command,
+    mcs,
+    freq_hopping,
+    tpc_command,
+    csi_req,
+    ue_mac->t_crnti);
+  #endif
+
+  // Config Msg3 PDU
+  nr_config_Msg3_pdu(ue_mac, Msg3_f_alloc, Msg3_t_alloc, mcs, freq_hopping);
+  // Schedule Msg3
+  nr_ue_msg3_scheduler(ue_mac, frame, slot, Msg3_t_alloc);
+
+  } else {
+    ue_mac->t_crnti = 0;
+    ul_time_alignment->ta_command = (0xffff);
+  }
+
 }

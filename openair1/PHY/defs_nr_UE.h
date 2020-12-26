@@ -748,7 +748,7 @@ typedef struct NR_UL_TIME_ALIGNMENT {
   int16_t          ta_frame;
   char             ta_slot;
   /// TA command and TAGID received from the gNB
-  uint8_t          ta_command;
+  uint16_t         ta_command;
   uint8_t          tag_id;
 } NR_UL_TIME_ALIGNMENT_t;
 
