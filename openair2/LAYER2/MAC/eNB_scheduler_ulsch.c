@@ -197,10 +197,6 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_template_ptr->scheduled_ul_bytes < 0) {
         UE_template_ptr->scheduled_ul_bytes = 0;
       }
-      UE_template_ptr->estimated_ul_buffer -= UE_template_ptr->TBS_UL[harq_pid];
-      if (UE_template_ptr->estimated_ul_buffer < 0) {
-        UE_template_ptr->estimated_ul_buffer = 0;
-      }
     } else {  // sduP == NULL => error
       UE_scheduling_control->pusch_rx_error_num[CC_idP]++;
       LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
@@ -233,10 +229,6 @@ rx_sdu(const module_id_t enb_mod_idP,
 
         if (UE_template_ptr->scheduled_ul_bytes < 0) {
           UE_template_ptr->scheduled_ul_bytes = 0;
-        }
-        UE_template_ptr->estimated_ul_buffer -= UE_template_ptr->TBS_UL[harq_pid];
-        if (UE_template_ptr->estimated_ul_buffer < 0) {
-          UE_template_ptr->estimated_ul_buffer = 0;
         }
 
         if (find_RA_id(enb_mod_idP, CC_idP, current_rnti) != -1) {
@@ -573,8 +565,6 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_template_ptr->ul_buffer_info[LCGID1] +
             UE_template_ptr->ul_buffer_info[LCGID2] +
             UE_template_ptr->ul_buffer_info[LCGID3];
-          UE_template_ptr->scheduled_ul_bytes = 0;
-
           RC.eNB[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = (payload_ptr[0] & 0x3f);
 
           if (UE_id == UE_info->list.head) {
@@ -620,8 +610,6 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_template_ptr->ul_buffer_info[LCGID1] +
             UE_template_ptr->ul_buffer_info[LCGID2] +
             UE_template_ptr->ul_buffer_info[LCGID3];
-          UE_template_ptr->scheduled_ul_bytes = 0;
-
           LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d: Received long BSR. Size is LCGID0 = %u LCGID1 = %u LCGID2 = %u LCGID3 = %u\n",
                 enb_mod_idP,
                 CC_idP,
@@ -829,9 +817,6 @@ rx_sdu(const module_id_t enb_mod_idP,
               UE_template_ptr->ul_buffer_info[1] +
               UE_template_ptr->ul_buffer_info[2] +
               UE_template_ptr->ul_buffer_info[3];
-              if (UE_template_ptr->estimated_ul_buffer == 0) {
-                UE_template_ptr->scheduled_ul_bytes = 0;
-              }
             //UE_template_ptr->estimated_ul_buffer += UE_template_ptr->estimated_ul_buffer / 4;
           }
 
