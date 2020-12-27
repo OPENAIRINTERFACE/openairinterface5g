@@ -28,10 +28,13 @@
 
  ***************************************************************************/
 #ifndef __PLATFORM_TYPES_H__
-#    define __PLATFORM_TYPES_H__
+#define __PLATFORM_TYPES_H__
 
 #if !defined(NAS_NETLINK)
-  #include <stdint.h>
+#include <stdint.h>
+#else
+#include <linux/types.h>
+typedef void * intptr_t;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -229,7 +232,7 @@ typedef uint8_t            ebi_t;  // eps bearer id
 //
 //-----------------------------------------------------------------------------
 // may be ITTI not enabled, but type instance is useful also for OTG,
-typedef int64_t instance_t;
+typedef intptr_t instance_t;
 typedef struct protocol_ctxt_s {
   module_id_t module_id;     /*!< \brief  Virtualized module identifier      */
   eNB_flag_t  enb_flag;      /*!< \brief  Flag to indicate eNB (1) or UE (0) */
@@ -291,7 +294,6 @@ typedef struct protocol_ctxt_s {
   PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp)
 
 #define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02d][RNTI %" PRIx16 "]"
-#define PROTOCOL_CTXT_FMTL "[FRAME %05u][%s][MOD %08ld][RNTI %" PRIx16 "]"
 #define PROTOCOL_CTXT_ARGS(CTXT_Pp) \
   (CTXT_Pp)->frame, \
   ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB":" UE", \
