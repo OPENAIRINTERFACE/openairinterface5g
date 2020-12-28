@@ -383,7 +383,8 @@ void phy_scope_gNB(OAI_phy_scope_t *form,
   else
     remeberForm=form;
 
-  if (form==NULL) return;
+  if (form==NULL)
+    return;
 
   int i=0;
 
@@ -766,11 +767,11 @@ void nrUEinitScope(PHY_VARS_NR_UE *ue) {
 
 void nrscope_autoinit(void *dataptr) {
   AssertFatal( (IS_SOFTMODEM_GNB_BIT||IS_SOFTMODEM_5GUE_BIT),"Scope cannot find NRUE or GNB context");
-  
+
   if (IS_SOFTMODEM_GNB_BIT)
-  	 gNBinitScope(dataptr);
+    gNBinitScope(dataptr);
   else
-     nrUEinitScope(dataptr);
+    nrUEinitScope(dataptr);
 }
 // Kept to put back the functionality soon
 #if 0
