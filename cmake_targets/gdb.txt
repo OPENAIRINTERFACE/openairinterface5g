@@ -1,3 +1,6 @@
+-------------------------------------------------------------------------------
+Build.
+
 Make sure you've built with debug info:
 
   cd ~/openairinterface5g # or wherever
@@ -5,6 +8,9 @@ Make sure you've built with debug info:
   cd cmake_targets
   ./build_oai --UE --eNB --verbose-compile --run-with-gdb RelWithDebInfo
   make -C ran_build/build -j4 lte-softmodem lte-uesoftmodem
+
+-------------------------------------------------------------------------------
+Verify.
 
 Verify the build was done correctly:
 
@@ -46,9 +52,32 @@ the build as above.
 
 (gdb) b main
 
-Using Vscode
+-------------------------------------------------------------------------------
+Password-less sudo.
+
+Vscode launches lte-softmodem via sudo.  Make sure sudo does not prompt you
+for a password:
+
+  sudo -n id
+
+If that command fails, do the following:
+
+  echo "$USER ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+
+Then verify:
+
+  sudo -n id
+
+-------------------------------------------------------------------------------
+Vscode.
+
+Launch Vscode:
 
   cd ~/openairinterface5g # or wherever
   code . targets/RT/USER/lte-softmodem.c .vscode/launch.json
 
-See launch.json for details about how lte-softmodem is launched.
+See launch.json for details about how vscode launches lte-softmodem for debugging.
+
+For example, in lte-softmodem.c, scroll to main() and click the line number to
+the left of main to add a breakpoint.  then do Run => Start debugging (F5) to
+run lte-softmodem in the debugger
