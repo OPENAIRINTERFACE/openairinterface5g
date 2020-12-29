@@ -84,7 +84,7 @@ static int cmpdouble(const void *p1, const void *p2) {
   return *(double *)p1 > *(double *)p2;
 }
 
-
+RAN_CONTEXT_t RC;
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL, "Cannot load configuration module, exiting\n");
   logInit();
-  set_glog(OAILOG_WARNING);
+  set_glog(OAILOG_INFO);
   T_stdout = 1;
   // enable these lines if you need debug info
   // however itti will catch all signals, so ctrl-c won't work anymore
@@ -1137,6 +1137,15 @@ int main(int argc, char **argv) {
                          sqrt(sigma2/2)*gaussdouble(0.0,1.0));
             }
           }
+          if (n_frames==1)
+            for (i=0; i<eNB->frame_parms.samples_per_tti; i++) {
+              for (aa=0; aa<eNB->frame_parms.nb_antennas_rx; aa++) {
+                ((short *) &ru->common.rxdata[aa][eNB->frame_parms.samples_per_tti*(subframe+1)%10])[2*i] =
+                  (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+                ((short *) &ru->common.rxdata[aa][eNB->frame_parms.samples_per_tti*(subframe+1)%10])[2*i+1] =
+                  (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+              }
+            }
 
           if (n_frames<=10) {
             printf("rx_level Null symbol %f\n",10*log10((double)signal_energy((int *)
@@ -1162,9 +1171,10 @@ int main(int argc, char **argv) {
           start_meas(&eNB->phy_proc_rx);
           ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
           ru->feprx(ru,subframe);
+          if (n_frames==1) lte_eNB_I0_measurements(eNB,(subframe+1)%10,0,1);
+
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
           stop_meas(&eNB->phy_proc_rx);
-
           if (cqi_flag > 0) {
             cqi_error = 0;
 
@@ -1290,6 +1300,7 @@ int main(int argc, char **argv) {
         LOG_UDUMPMSG(SIM,dataArray(table_rx),table_rx->size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
+      dump_ulsch_stats(eNB);
       printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %u dB, delta_IF %d [ (%d,%d) dB / (%u,%u) dB ]**************************\n",
              nb_rb,mcs,SNR,SNR2,
              tx_lev_dB,

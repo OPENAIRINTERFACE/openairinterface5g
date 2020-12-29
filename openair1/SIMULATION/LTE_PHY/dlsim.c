@@ -82,6 +82,7 @@ double DS_TDL = .03;
 static int cmpdouble(const void *p1, const void *p2) {
   return *(double *)p1 > *(double *)p2;
 }
+RAN_CONTEXT_t RC;
 
 int emulate_rf = 0;
 int split73=0;

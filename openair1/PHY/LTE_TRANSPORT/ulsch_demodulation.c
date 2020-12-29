@@ -1203,10 +1203,13 @@ void dump_ulsch(PHY_VARS_eNB *eNB,int frame,int subframe,uint8_t UE_id,int round
   uint8_t harq_pid;
   char fname[100],vname[100];
   harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
-  LOG_UI(PHY,"Dumping ULSCH in subframe %d with harq_pid %d, round %d for NB_rb %d, TBS %d, Qm %d, N_symb %d\n",
+  LOG_UI(PHY,"Dumping ULSCH in subframe %d with harq_pid %d, round %d for NB_rb %d, first_rb %d, TBS %d, Qm %d, N_symb %d\n",
          subframe,harq_pid,round,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+         eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS,eNB->ulsch[UE_id]->harq_processes[harq_pid]->Qm,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
+  for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++)
+     LOG_UI(PHY,"ulsch_power[%d] %d, ulsch_noise_power[%d] %d\n",aa,dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[aa]),aa,dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_noise_power[aa]));
   sprintf(fname,"/tmp/ulsch_r%d_d",round);
   sprintf(vname,"/tmp/ulsch_r%d_dseq",round);
   LOG_UM(fname,vname,&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
@@ -1264,6 +1267,13 @@ void dump_ulsch(PHY_VARS_eNB *eNB,int frame,int subframe,uint8_t UE_id,int round
   sprintf(fname,"/tmp/ulsch0_rxF_comp0_r%d.m",round);
   sprintf(vname,"ulsch0_rxF_comp0_r%d",round);
   LOG_UM(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_comp[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  if (eNB->frame_parms.nb_antennas_rx>1) {
+    sprintf(fname,"/tmp/ulsch0_rxF_comp1_r%d.m",round);
+    sprintf(vname,"ulsch0_rxF_comp1_r%d",round);
+    LOG_UM(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_comp[1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+
+  }
+
   //  LOG_M("ulsch_rxF_comp1.m","ulsch0_rxF_comp1",&eNB->pusch_vars[UE_id]->rxdataF_comp[0][1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   sprintf(fname,"/tmp/ulsch_rxF_llr_r%d.m",round);
   sprintf(vname,"ulsch_llr_r%d",round);

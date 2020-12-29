@@ -301,6 +301,7 @@ function main() {
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
+	    RU=0
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
        -S | --core_simulators)

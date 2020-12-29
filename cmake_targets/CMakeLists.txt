@@ -60,6 +60,8 @@ elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
 
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
+message("RU=${RU}")
+
 pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
 if(NOT ${OPENPGM_FOUND})
   message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
@@ -3396,6 +3398,8 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${OPENAIR_DIR}/common/utils/backtrace.c
     ${OPENAIR_DIR}/common/utils/system.c
     ${OPENAIR_DIR}/common/utils/utils.c
+    ${OPENAIR_DIR}/common/utils/lte/ue_power.c
+    ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
     ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
     ${XFORMS_SOURCE}
     ${T_SOURCE}
