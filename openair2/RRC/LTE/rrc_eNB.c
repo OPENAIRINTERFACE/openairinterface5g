@@ -1055,7 +1055,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
         if (id>=0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
 
         // clean UCI entries for rnti
-        for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+        for (i=0; i<NUMBER_OF_UCI_MAX; i++) {
           if(eNB_PHY->uci_vars[i].rnti == rnti) {
             LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
             memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
@@ -1089,7 +1089,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
                 clean_eNb_ulsch(ulsch);
               }
 
-              for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+              for (i=0; i<NUMBER_OF_UCI_MAX; i++) {
                 if(eNB_PHY->uci_vars[i].rnti == rnti) {
                   LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
                   memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));

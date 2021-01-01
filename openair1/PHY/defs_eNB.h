@@ -507,7 +507,7 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_MPDCCH       mpdcch_vars[2];
   LTE_eNB_PRACH        prach_vars_br;
   LTE_eNB_COMMON       common_vars;
-  LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_VARS_MAX];
+  LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];

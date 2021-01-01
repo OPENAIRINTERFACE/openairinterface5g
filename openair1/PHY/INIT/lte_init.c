@@ -48,6 +48,14 @@ int             N_RB_DL_array[6] = { 6, 15, 25, 50, 75, 100 };
 
 extern RAN_CONTEXT_t RC;
 
+void pdsch_procedures(PHY_VARS_eNB *eNB,
+                      L1_rxtx_proc_t *proc,
+                      int harq_pid,
+                      LTE_eNB_DLSCH_t *dlsch,
+                      LTE_eNB_DLSCH_t *dlsch1);
+
+void init_sss(void);
+
 int
 l1_north_init_eNB () {
   int i,j;
@@ -364,7 +372,7 @@ void fill_subframe_mask(PHY_VARS_eNB *eNB) {
       eNB->dlsch[0][0]->harq_ids[0][sf]=0;
       eNB->dlsch[0][0]->rnti=0x1234;
       dlsch_harq->nb_rb=48;
-      dlsch_harq->rb_alloc[0]=0xffffffffffff;
+      dlsch_harq->rb_alloc[0]=(uint32_t)0xffffffff;
       dlsch_harq->Qm=2;
       dlsch_harq->Nl=1;
       dlsch_harq->pdsch_start=1;

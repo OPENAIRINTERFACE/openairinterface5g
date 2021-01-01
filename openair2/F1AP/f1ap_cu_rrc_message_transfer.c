@@ -109,7 +109,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   /* RNTI */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_C_RNTI, true);
-  BUFFER_TO_INT16(ie->value.choice.C_RNTI.buf, rnti);
+  rnti = ie->value.choice.C_RNTI;
 
   /* RRC Container */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
@@ -260,19 +260,22 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   /* optional */
   /* c7. RAT_FrequencyPriorityInformation */
   /* TODO */ 
-  if (0) {
-    ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
-    ie->id                            = F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation;
-    ie->criticality                   = F1AP_Criticality_reject;
-    ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RAT_FrequencyPriorityInformation;
-
-    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_subscriberProfileIDforRFP;
-    ie->value.choice.RAT_FrequencyPriorityInformation.choice.subscriberProfileIDforRFP = 123L;
-
+  int endc=1;
+  ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
+  ie->id                            = F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation;
+  ie->criticality                   = F1AP_Criticality_reject;
+  ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RAT_FrequencyPriorityInformation;
+  if (endc==1) {
+    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
+    ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 123L;
+  }
+  else {
+    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN;
+    ie->value.choice.RAT_FrequencyPriorityInformation.choice.nGRAN = 11L;
+  }
     //ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority;
     //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
  
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
