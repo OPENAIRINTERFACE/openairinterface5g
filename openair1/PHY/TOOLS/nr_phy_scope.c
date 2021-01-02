@@ -30,7 +30,7 @@
 #include <forms.h>
 
 #define TPUT_WINDOW_LENGTH 100
-
+#define ScaleZone 4
 #define localBuff(NaMe,SiZe) float NaMe[SiZe]; memset(NaMe,0,sizeof(NaMe));
 
 int otg_enabled;
@@ -57,6 +57,7 @@ typedef struct OAIgraph {
   int h;
   int waterFallh;
   double *waterFallAvg;
+  boolean_t initDone;
   int iteration;
   void (*gNBfunct) (struct OAIgraph *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id);
   void (*nrUEfunct)(struct OAIgraph *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id);
@@ -104,8 +105,9 @@ static void commonGraph(OAIgraph_t *graph, int type, FL_Coord x, FL_Coord y, FL_
   if (type==WATERFALL) {
     graph->waterFallh=h-15;
     graph->waterFallAvg=malloc(sizeof(*graph->waterFallAvg) * graph->waterFallh);
-  for (int i=0; i< graph->waterFallh; i++)
-    graph->waterFallAvg[i]=0;
+
+    for (int i=0; i< graph->waterFallh; i++)
+      graph->waterFallAvg[i]=0;
 
     graph->graph=fl_add_canvas(FL_NORMAL_CANVAS, x, y, w, graph->waterFallh, label);
     graph->text=fl_add_text(FL_NORMAL_TEXT, x, y+graph->waterFallh, w, 15, label);
@@ -129,8 +131,7 @@ static void commonGraph(OAIgraph_t *graph, int type, FL_Coord x, FL_Coord y, FL_
   graph->maxY=0;
   graph->minX=0;
   graph->minY=0;
-
-
+  graph->initDone=false;
   graph->iteration=0;
 }
 
@@ -153,13 +154,24 @@ static OAIgraph_t nrUEcommonGraph( void (*funct) (OAIgraph_t *graph, PHY_VARS_NR
 }
 
 static void setRange(OAIgraph_t *graph, float minX, float maxX, float minY, float maxY) {
-  if ( maxX > graph->maxX || maxY > graph->maxY || minX < graph->minX || minY < graph->minY ) {
+  if ( maxX > graph->maxX ||  minX < graph->minX ||
+       abs(maxX-graph->maxX)>abs(graph->maxX)/2 ||
+       abs(maxX-graph->maxX)>abs(graph->maxX)/2 ) {
+    graph->maxX/=2;
+    graph->minX/=2;
     graph->maxX=max(graph->maxX,maxX);
     graph->minX=min(graph->minX,minX);
+    fl_set_xyplot_xbounds(graph->graph, graph->minX*1.2, graph->maxX*1.2);
+  }
+
+  if ( maxY > graph->maxY || minY < graph->minY ||
+       abs(maxY-graph->maxY)>abs(graph->maxY)/2 ||
+       abs(maxY-graph->maxY)>abs(graph->maxY)/2 ) {
+    graph->maxY/=2;
+    graph->minY/=2;
     graph->maxY=max(graph->maxY,maxY);
     graph->minY=min(graph->minY,minY);
-    fl_set_xyplot_ybounds(graph->graph, graph->minY, graph->maxY);
-    fl_set_xyplot_xbounds(graph->graph, graph->minX, graph->maxX);
+    fl_set_xyplot_ybounds(graph->graph, graph->minY*1.2, graph->maxY*1.2);
   }
 }
 
@@ -167,7 +179,6 @@ static void oai_xygraph_getbuff(OAIgraph_t *graph, float **x, float **y, int len
   float *old_x;
   float *old_y;
   int old_len=-1;
-  //LOG_E(HW,"enter oai_xygraph_getbuff, it=%d\n",graph->iteration);
 
   if (graph->iteration >1)
     fl_get_xyplot_data_pointer(graph->graph, layer, &old_x, &old_y, &old_len);
@@ -213,16 +224,17 @@ static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int laye
   graph->iteration++;
 }
 
-static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const int datasize) {
+static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const int datasize, const int divisions, const char *label) {
   fl_winset(FL_ObjWin(graph->graph));
   const int samplesPerPixel=datasize/graph->w;
-  int row=graph->iteration%(graph->waterFallh);
+  int displayPart=graph->waterFallh-ScaleZone;
+  int row=graph->iteration%displayPart;
   double avg=0;
 
-  for (int i=0; i <graph->waterFallh; i++)
+  for (int i=0; i < displayPart; i++)
     avg+=graph->waterFallAvg[i];
 
-  avg/=graph->waterFallh;
+  avg/=displayPart;
   graph->waterFallAvg[row]=0;
 
   for (int pix=0; pix<graph->w; pix++) {
@@ -249,10 +261,22 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
     if (val > avg*100 )
       col=3;
 
-    fl_point(pix, graph->iteration%(graph->waterFallh), water_colors[col]);
+    fl_point(pix, graph->iteration%displayPart, water_colors[col]);
   }
 
-  fl_set_object_label_f(graph->text, "average I/Q module: %4.1f", sqrt(avg));
+  if (graph->initDone==false) {
+    for ( int i=0; i < graph->waterFallh; i++ )
+      for ( int j = 0 ; j < graph->w ; j++ )
+        fl_point(j, i, FL_BLACK);
+
+    for ( int i=1; i<divisions; i++)
+      for (int j= displayPart; j<graph->waterFallh; j++)
+        fl_point(i*(graph->w/divisions),j, FL_WHITE);
+
+    graph->initDone=true;
+  }
+
+  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, sqrt(avg));
   graph->iteration++;
 }
 
@@ -298,7 +322,9 @@ static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const sc
 static void gNBWaterFall (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
   //use 1st antenna
-  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdata[0], frame_parms->samples_per_frame);
+  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdata[0],
+                   frame_parms->samples_per_frame,  frame_parms->slots_per_frame,
+                   "X axis:one frame in time");
 }
 
 /* replaced by waterfall
@@ -336,7 +362,9 @@ static void timeResponse (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *p
 static void gNBfreqWaterFall (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
   //use 1st antenna
-  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdataF[0], frame_parms->samples_per_frame_wCP);
+  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdataF[0], frame_parms->samples_per_frame_wCP,
+                   frame_parms->slots_per_frame,
+                   "X axis: Frequency domain, one frame");
 }
 
 /*
@@ -453,7 +481,7 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   fdui->graph[2] = gNBcommonGraph( gNBfreqWaterFall, WATERFALL, 0, curY, 800, 100,
                                    "Channel Frequency domain (RE, one frame)", FL_RED );
   fl_get_object_bbox(fdui->graph[2].graph,&x, &y,&w, &h);
-  curY+=h+15;
+  curY+=h+20;
   // LLR of PUSCH
   fdui->graph[3] = gNBcommonGraph( puschLLR, FL_POINTS_XYPLOT, 0, curY, 500, 200,
                                    "PUSCH Log-Likelihood Ratios (LLR, mag)", FL_YELLOW );
@@ -542,7 +570,9 @@ static void ueWaterFall  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eN
   // Received signal in time domain of receive antenna 0
   genericWaterFall(graph,
                    (scopeSample_t *) phy_vars_ue->common_vars.rxdata[0],
-                   phy_vars_ue->frame_parms.samples_per_frame);
+                   phy_vars_ue->frame_parms.samples_per_frame,
+                   phy_vars_ue->frame_parms.slots_per_frame,
+                   "X axis: one frame time");
 }
 
 /* replaced by waterfall
@@ -566,7 +596,9 @@ static void ueFreqWaterFall (OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int 
   //use 1st antenna
   genericWaterFall(graph,
                    (scopeSample_t *)phy_vars_ue->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],
-                   frame_parms->samples_per_slot_wCP);
+                   frame_parms->samples_per_slot_wCP,
+                   phy_vars_ue->frame_parms.slots_per_frame,
+                   "X axis: one frame frequency" );
 }
 
 /*
@@ -629,6 +661,8 @@ static void uePbchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   scopeSample_t *pbch_comp = (scopeSample_t *) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
   float *I, *Q;
   oai_xygraph_getbuff(graph, &I, &Q, 180*3, 0);
+  memset(I,0,180*3*sizeof(*I));
+  memset(Q,0,180*3*sizeof(*Q));
   int first_symbol=1;
   int base=0;
 
@@ -651,7 +685,7 @@ static void uePbchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   }
 
   AssertFatal(base <= 180*3,"");
-  oai_xygraph(graph,I,Q,base,0,10);
+  oai_xygraph(graph,I,Q,base,0, 10);
 }
 
 static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
@@ -806,7 +840,7 @@ static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   fdui->graph[2] = nrUEcommonGraph(ueFreqWaterFall,
                                    WATERFALL, 0, curY, 800, 100, "Channel Frequency (RE, one slot)", FL_RED );
   fl_get_object_bbox(fdui->graph[2].graph,&x, &y,&w, &h);
-  curY+=h+15;
+  curY+=h+20;
   // LLR of PBCH
   fdui->graph[3] = nrUEcommonGraph(uePbchLLR,
                                    FL_POINTS_XYPLOT, 0, curY, 500, 100, "PBCH Log-Likelihood Ratios (LLR, mag)", FL_GREEN );
@@ -892,9 +926,12 @@ static void *nrUEscopeThread(void *arg) {
   OAI_phy_scope_t  *form_nrue=create_phy_scope_nrue(0);
 
   while (!oai_exit) {
+    fl_freeze_form(form_nrue->phy_scope);
     phy_scope_nrUE(form_nrue,
                    ue,
                    0,0);
+    fl_unfreeze_form(form_nrue->phy_scope);
+    fl_redraw_form(form_nrue->phy_scope);
     usleep(99*1000);
   }
 

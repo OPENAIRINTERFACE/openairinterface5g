@@ -1500,11 +1500,11 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
     }
     sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
     if (*(int64_t*)sib1 != 1) {
-    printf("%llx\n", *(int64_t*)sib1);
-    xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
+       printf("%llx\n", *(int64_t*)sib1);
+       xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
     }
     else
-    LOG_E(PHY, "sib1 is starting by 8 times 0\n");
+       LOG_E(PHY, "sib1 is starting by 8 times 0\n");
   }
 
   return 0;

@@ -1236,10 +1236,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         rx_ind.rx_indication_body[0].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
         rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS>>3;
-        LOG_W(PHY, "PDU length in bits: %d, in bytes: %d \n", dlsch0->harq_processes[harq_pid]->TBS, rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length);
-        for (int i=0; i< rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length ; i++)
-           printf("%x:", dlsch0->harq_processes[harq_pid]->b[i]);
-        printf ("ret: %d\n", ret);
+        LOG_D(PHY, "PDU length in bits: %d, in bytes: %d \n", dlsch0->harq_processes[harq_pid]->TBS, rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length);
         rx_ind.number_pdus = 1;
 
         //  send to mac

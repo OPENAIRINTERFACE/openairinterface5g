@@ -780,7 +780,7 @@ void *UE_thread(void *arg) {
     msgToPush->key=slot_nr;
     pushTpool(Tpool, msgToPush);
 
-    if ( getenv("RFSIMULATOR") ||IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
+    if ( IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done

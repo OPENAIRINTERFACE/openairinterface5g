@@ -657,12 +657,6 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       }
       if (samples_received == nsamps) s->wait_for_first_pps=0;
     }
-    if ( getenv("recorded") ) {
-      static int h=-1;
-      if (h==-1)
-	h=open(getenv("recorded"), O_RDONLY, 0);
-      read(h, buff_tmp[0], nsamps*4);
-    }
 
     // bring RX data into 12 LSBs for softmodem RX
     for (int i=0; i<cc; i++) {
