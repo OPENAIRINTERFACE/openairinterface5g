@@ -1968,10 +1968,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe=subframeP;
 
-              if (snr > target_snr + 4) {
+              if (snr > target_snr + PUSCH_PCHYST) {
                 tpc = 0; //-1
                 ue_sched_ctl->pucch_tpc_accumulated[CC_id]--;
-              } else if (snr < target_snr - 4) {
+              } else if (snr < target_snr - PUSCH_PCHYST) {
                 tpc = 2; //+1
                 ue_sched_ctl->pucch_tpc_accumulated[CC_id]++;
               } else {

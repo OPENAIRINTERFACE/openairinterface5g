@@ -1067,60 +1067,47 @@ void print_opp_meas(void) {
 
 
 void free_transport(PHY_VARS_eNB *eNB) {
-  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_D(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
+  for (int i=0; i<NUMBER_OF_DLSCH_MAX; i++) {
+    LOG_D(PHY, "Freeing Transport Channel Buffers for DLSCH %d\n",i);
 
     for (int j=0; j<2; j++) free_eNB_dlsch(eNB->dlsch[i][j]);
-
-    LOG_D(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
-    free_eNB_ulsch(eNB->ulsch[1+i]);
   }
-
-  free_eNB_ulsch(eNB->ulsch[0]);
+  for (int i=0;i<NUMBER_OF_ULSCH_MAX;i++) {
+    LOG_D(PHY, "Freeing Transport Channel Buffer for ULSCH %d\n",i);
+    free_eNB_ulsch(eNB->ulsch[i]);
+  }
 }
 
 
 void init_transport(PHY_VARS_eNB *eNB) {
-  int i;
-  int j;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   LOG_I(PHY, "Initialise transport\n");
 
   if (NFAPI_MODE!=NFAPI_MODE_VNF) {
-    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-      LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
+    for (int i=0;i<NUMBER_OF_DLSCH_MAX; i++) {
+      LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d/%d\n",i,NUMBER_OF_DLSCH_MAX,(i-NUMBER_OF_DLSCH_MAX)<0);
 
-      for (j=0; j<2; j++) {
+      for (int j=0; j<2; j++) {
         eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
-
+        LOG_I(PHY,"eNB->dlsch[%d][%d] %p\n",i,j,eNB->dlsch[i][j]);
         if (!eNB->dlsch[i][j]) {
-          LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
+          LOG_E(PHY,"Can't get eNB dlsch structures for DLSCH %d \n", i);
           exit(-1);
         } else {
           eNB->dlsch[i][j]->rnti=0;
           LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,eNB->dlsch[i][j], eNB->dlsch[i][j]->rnti);
         }
       }
+    }
+    for (int i=0;i<NUMBER_OF_ULSCH_MAX; i++) {
 
-      LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
-      eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
+      LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH %d/%d\n",i,NUMBER_OF_ULSCH_MAX);
+      eNB->ulsch[i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
 
-      if (!eNB->ulsch[1+i]) {
+      if (!eNB->ulsch[i]) {
         LOG_E(PHY,"Can't get eNB ulsch structures\n");
         exit(-1);
       }
-
-      // this is the transmission mode for the signalling channels
-      // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-      eNB->transmission_mode[i] = fp->nb_antenna_ports_eNB==1 ? 1 : 2;
-    }
-
-    // ULSCH for RA
-    eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
-
-    if (!eNB->ulsch[0]) {
-      LOG_E(PHY,"Can't get eNB ulsch structures\n");
-      exit(-1);
     }
 
     eNB->dlsch_SI  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
@@ -1133,7 +1120,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
 
   eNB->rx_total_gain_dB=130;
 
-  for(i=0; i<NUMBER_OF_UE_MAX; i++)
+  for(int i=0; i<NUMBER_OF_UE_MAX; i++)
     eNB->mu_mimo_mode[i].dl_pow_off = 2;
 
   eNB->check_for_total_transmissions = 0;

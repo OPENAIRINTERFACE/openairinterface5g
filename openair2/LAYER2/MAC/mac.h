@@ -143,7 +143,8 @@
 #define MAX_SUPPORTED_BW  4
 /*!\brief CQI values range from 1 to 15 (4 bits) */
 #define CQI_VALUE_RANGE 16
-
+/*!\brief Hysteresis of PUSCH power control loop */
+#define PUSCH_PCHYST 1
 /*!\brief value for indicating BSR Timer is not running */
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 

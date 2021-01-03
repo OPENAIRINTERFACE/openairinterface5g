@@ -396,30 +396,30 @@ typedef struct {
   short n0_subband_power_avg_dB;
   // eNB measurements (per user)
   //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
+  unsigned int   rx_spatial_power[NUMBER_OF_SRS_MAX][2][2];
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_UE_MAX][2][2];
+  unsigned short rx_spatial_power_dB[NUMBER_OF_SRS_MAX][2][2];
   //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_UE_MAX];
+  short          rx_rssi_dBm[NUMBER_OF_SRS_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_UE_MAX][2];
+  int            rx_correlation[NUMBER_OF_SRS_MAX][2];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
+  int            rx_correlation_dB[NUMBER_OF_SRS_MAX][2];
 
   /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  int            wideband_cqi[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB];
   /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  int            wideband_cqi_dB[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB];
   /// Wideband CQI (sum of all RX antennas, in dB)
-  char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
+  char           wideband_cqi_tot[NUMBER_OF_SRS_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  int            subband_cqi[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB (= SINR)
   int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  int            subband_cqi_dB[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
+  int            subband_cqi_tot_dB[NUMBER_OF_SRS_MAX][100];
   /// PRACH background noise level
   int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
@@ -508,12 +508,12 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_PRACH        prach_vars_br;
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_MAX];
-  LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_SRS          srs_vars[NUMBER_OF_SRS_MAX];
   LTE_eNB_PBCH         pbch;
-  LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_ULSCH_MAX];
   LTE_eNB_PRACH        prach_vars;
-  LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
-  LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
+  LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_DLSCH_MAX][2];   // Num active DLSCH contexts times two spatial streams
+  LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_ULSCH_MAX];      // Num active ULSCH contexts
   LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   LTE_eNB_DLSCH_t     *dlsch_MCH;
   LTE_eNB_DLSCH_t     *dlsch_PCH;
@@ -524,7 +524,7 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t         lte_gold_table[20][2][14];
 
   /// UE-specific reference symbols (p=5), TM 7
-  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][38];
+  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_DLSCH_MAX][20][38];
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];

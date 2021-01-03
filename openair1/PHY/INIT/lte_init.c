@@ -456,13 +456,13 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     }
 
     // Channel estimates for SRS
-    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-      srs_vars[UE_id].srs_ch_estimates = (int32_t **) malloc16 (64 * sizeof (int32_t *));
-      srs_vars[UE_id].srs_ch_estimates_time = (int32_t **) malloc16 (64 * sizeof (int32_t *));
+    for (int srs_id = 0; srs_id < NUMBER_OF_SRS_MAX; srs_id++) {
+      srs_vars[srs_id].srs_ch_estimates = (int32_t **) malloc16 (64 * sizeof (int32_t *));
+      srs_vars[srs_id].srs_ch_estimates_time = (int32_t **) malloc16 (64 * sizeof (int32_t *));
 
       for (i = 0; i < 64; i++) {
-        srs_vars[UE_id].srs_ch_estimates[i] = (int32_t *) malloc16_clear (sizeof (int32_t) * fp->ofdm_symbol_size);
-        srs_vars[UE_id].srs_ch_estimates_time[i] = (int32_t *) malloc16_clear (sizeof (int32_t) * fp->ofdm_symbol_size * 2);
+        srs_vars[srs_id].srs_ch_estimates[i] = (int32_t *) malloc16_clear (sizeof (int32_t) * fp->ofdm_symbol_size);
+        srs_vars[srs_id].srs_ch_estimates_time[i] = (int32_t *) malloc16_clear (sizeof (int32_t) * fp->ofdm_symbol_size * 2);
       }
     }                             //UE_id
 
@@ -470,8 +470,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     init_ulsch_power_LUT ();
 
     // SRS
-    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-      srs_vars[UE_id].srs = (int32_t *) malloc16_clear (2 * fp->ofdm_symbol_size * sizeof (int32_t));
+    for (int srs_id = 0; srs_id < NUMBER_OF_SRS_MAX; srs_id++) {
+      srs_vars[srs_id].srs = (int32_t *) malloc16_clear (2 * fp->ofdm_symbol_size * sizeof (int32_t));
     }
 
     // PRACH
@@ -504,34 +504,33 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
       }*/
 
-    for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_ULSCH_MAX; ULSCH_id++) {
       //FIXME
-      pusch_vars[UE_id] = (LTE_eNB_PUSCH *) malloc16_clear (NUMBER_OF_UE_MAX * sizeof (LTE_eNB_PUSCH));
-      pusch_vars[UE_id]->rxdataF_ext = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[UE_id]->rxdataF_ext2 = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[UE_id]->drs_ch_estimates = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[UE_id]->rxdataF_comp = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[UE_id]->ul_ch_mag = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[UE_id]->ul_ch_magb = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id] = (LTE_eNB_PUSCH *) malloc16_clear (NUMBER_OF_ULSCH_MAX * sizeof (LTE_eNB_PUSCH));
+      pusch_vars[ULSCH_id]->rxdataF_ext = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->rxdataF_ext2 = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->drs_ch_estimates = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->drs_ch_estimates_time = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->rxdataF_comp = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->ul_ch_mag = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->ul_ch_magb = (int32_t **) malloc16 (2 * sizeof (int32_t *));
       AssertFatal (fp->ofdm_symbol_size > 127, "fp->ofdm_symbol_size %d<128\n", fp->ofdm_symbol_size);
       AssertFatal (fp->symbols_per_tti > 11, "fp->symbols_per_tti %d < 12\n", fp->symbols_per_tti);
       AssertFatal (fp->N_RB_UL > 5, "fp->N_RB_UL %d < 6\n", fp->N_RB_UL);
 
       for (i = 0; i < 2; i++) {
-        // RK 2 times because of output format of FFT!
         // FIXME We should get rid of this
-        pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-        pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-        pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-        pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
-        pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-        pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t *)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
-        pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t *)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+        pusch_vars[ULSCH_id]->rxdataF_ext[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+
+        pusch_vars[ULSCH_id]->drs_ch_estimates[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+        pusch_vars[ULSCH_id]->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
+        pusch_vars[ULSCH_id]->rxdataF_comp[i]     = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+        pusch_vars[ULSCH_id]->ul_ch_mag[i]  = (int32_t *)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
+        pusch_vars[ULSCH_id]->ul_ch_magb[i] = (int32_t *)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
       }
 
-      pusch_vars[UE_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
-    } //UE_id
+      pusch_vars[ULSCH_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+    } //ULSCH_id
 
     for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++)
       eNB->UE_stats_ptr[UE_id] = &eNB->UE_stats[UE_id];
@@ -561,19 +560,19 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
   free_and_zero(common_vars->rxdataF);
 
   // Channel estimates for SRS
-  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+  for (int srs_id = 0; srs_id < NUMBER_OF_SRS_MAX; srs_id++) {
     for (i=0; i<64; i++) {
-      free_and_zero(srs_vars[UE_id].srs_ch_estimates[i]);
-      free_and_zero(srs_vars[UE_id].srs_ch_estimates_time[i]);
+      free_and_zero(srs_vars[srs_id].srs_ch_estimates[i]);
+      free_and_zero(srs_vars[srs_id].srs_ch_estimates_time[i]);
     }
 
-    free_and_zero(srs_vars[UE_id].srs_ch_estimates);
-    free_and_zero(srs_vars[UE_id].srs_ch_estimates_time);
+    free_and_zero(srs_vars[srs_id].srs_ch_estimates);
+    free_and_zero(srs_vars[srs_id].srs_ch_estimates_time);
   } //UE_id
 
   free_ul_ref_sigs();
 
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) free_and_zero(srs_vars[UE_id].srs);
+  for (UE_id=0; UE_id<NUMBER_OF_SRS_MAX; UE_id++) free_and_zero(srs_vars[UE_id].srs);
 
   free_and_zero(prach_vars->prachF);
 
@@ -591,26 +590,26 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
   free_and_zero(prach_vars_br->prachF);
   free_and_zero(prach_vars->rxsigF[0]);
 
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+  for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_ULSCH_MAX; ULSCH_id++) {
     for (i = 0; i < 2; i++) {
-      free_and_zero(pusch_vars[UE_id]->rxdataF_ext[i]);
-      free_and_zero(pusch_vars[UE_id]->rxdataF_ext2[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time[i]);
-      free_and_zero(pusch_vars[UE_id]->rxdataF_comp[i]);
-      free_and_zero(pusch_vars[UE_id]->ul_ch_mag[i]);
-      free_and_zero(pusch_vars[UE_id]->ul_ch_magb[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->drs_ch_estimates[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->drs_ch_estimates_time[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb[i]);
     }
 
-    free_and_zero(pusch_vars[UE_id]->rxdataF_ext);
-    free_and_zero(pusch_vars[UE_id]->rxdataF_ext2);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time);
-    free_and_zero(pusch_vars[UE_id]->rxdataF_comp);
-    free_and_zero(pusch_vars[UE_id]->ul_ch_mag);
-    free_and_zero(pusch_vars[UE_id]->ul_ch_magb);
-    free_and_zero(pusch_vars[UE_id]->llr);
-    free_and_zero(pusch_vars[UE_id]);
+    free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext);
+    free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2);
+    free_and_zero(pusch_vars[ULSCH_id]->drs_ch_estimates);
+    free_and_zero(pusch_vars[ULSCH_id]->drs_ch_estimates_time);
+    free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb);
+    free_and_zero(pusch_vars[ULSCH_id]->llr);
+    free_and_zero(pusch_vars[ULSCH_id]);
   } //UE_id
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) eNB->UE_stats_ptr[UE_id] = NULL;

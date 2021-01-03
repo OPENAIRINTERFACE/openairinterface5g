@@ -8270,7 +8270,7 @@ rrc_eNB_decode_dcch(
               ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
               ue_context_p->ue_context.UE_Capability_nr = 0;
             }
-
+            LOG_I(RRC,"Received NR_UE_Capabilities\n");
             dec_rval = uper_decode(NULL,
                                    &asn_DEF_NR_UE_NR_Capability,
                                    (void **)&ue_context_p->ue_context.UE_Capability_nr,
@@ -8295,6 +8295,8 @@ rrc_eNB_decode_dcch(
 
           if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type ==
               LTE_RAT_Type_eutra_nr) {
+            LOG_I(RRC,"Received UE_Capabilities_MRDC\n");
+
             if(ue_context_p->ue_context.UE_Capability_MRDC) {
               ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability,ue_context_p->ue_context.UE_Capability_MRDC);
               ue_context_p->ue_context.UE_Capability_MRDC = 0;

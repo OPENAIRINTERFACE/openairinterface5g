@@ -57,7 +57,7 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits.
 
-#define MAX_NUM_DLSCH_SEGMENTS 16
+#define MAX_NUM_DLSCH_SEGMENTS 13
 #define MAX_NUM_ULSCH_SEGMENTS MAX_NUM_DLSCH_SEGMENTS
 #define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
 #define MAX_ULSCH_PAYLOAD_BYTES (MAX_NUM_ULSCH_SEGMENTS*768)

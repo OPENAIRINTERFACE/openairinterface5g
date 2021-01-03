@@ -79,11 +79,14 @@ void dump_uci_stats(PHY_VARS_eNB *eNB,int frame) {
             dB_fixed(uci_stats->pucch1_high_stat[0]),
             dB_fixed(uci_stats->pucch1_high_stat[1]));
       
-      LOG_I(PHY,"UCI RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d) pucch1ab_DTX %d\n",
+      LOG_I(PHY,"UCI RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d), pucch1b_trials %d, pucch1b_stat (%d,%d) pucch1ab_DTX %d\n",
             uci_stats->rnti,
             uci_stats->pucch1a_trials,
             uci_stats->current_pucch1a_stat_re,
             uci_stats->current_pucch1a_stat_im,
+            uci_stats->pucch1b_trials,
+	    uci_stats->current_pucch1b_stat_re,
+	    uci_stats->current_pucch1b_stat_im,
             uci_stats->pucch1ab_DTX);
     }
 
