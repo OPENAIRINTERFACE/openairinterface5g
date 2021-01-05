@@ -204,7 +204,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_scheduling_control->round_UL[CC_idP][harq_pid] == 3) {
         UE_scheduling_control->ul_scheduled &= (~(1 << harq_pid));
         UE_scheduling_control->round_UL[CC_idP][harq_pid] = 0;
-
+        UE_info->eNB_UE_stats[CC_idP][UE_id].ulsch_errors++;
         if (UE_scheduling_control->ul_consecutive_errors++ == 10) {
           UE_scheduling_control->ul_failure_timer = 1;
         }
@@ -221,6 +221,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         }
       } else {
         UE_scheduling_control->round_UL[CC_idP][harq_pid]++;
+        UE_info->eNB_UE_stats[CC_idP][UE_id].ulsch_rounds[UE_scheduling_control->round_UL[CC_idP][harq_pid]]++;
       }
 
       /* CDRX UL HARQ timers */

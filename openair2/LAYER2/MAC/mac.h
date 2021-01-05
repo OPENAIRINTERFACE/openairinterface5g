@@ -145,6 +145,8 @@
 #define CQI_VALUE_RANGE 16
 /*!\brief Hysteresis of PUSCH power control loop */
 #define PUSCH_PCHYST 1
+/*!\brief Hysteresis of PUCCH power control loop */
+#define PUCCH_PCHYST 1
 /*!\brief value for indicating BSR Timer is not running */
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
@@ -615,6 +617,8 @@ typedef struct {
 
   // here for RX
   //
+
+  uint32_t ulsch_rounds[4];
   uint32_t ulsch_bitrate;
   //
   uint32_t ulsch_bytes_rx;
@@ -683,6 +687,17 @@ typedef struct {
   unsigned char lcid_sdu[NB_RB_MAX];
   // Length of SDU Got from LC DL
   uint32_t sdu_length_tx[NB_RB_MAX];
+
+  int lc_bytes_tx[64];
+  int dlsch_rounds[8];
+  int dlsch_errors;
+  int dlsch_total_bytes;
+
+  int lc_bytes_rx[64];
+  int ulsch_rounds[8];
+  int ulsch_errors;
+  int ulsch_total_bytes_scheduled;
+  int ulsch_total_bytes_rx;
 
 
   /// overall
@@ -1324,6 +1339,7 @@ typedef struct {
   uint8_t FeMBMS_flag;
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
+
 typedef struct eNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t eth_params_n;

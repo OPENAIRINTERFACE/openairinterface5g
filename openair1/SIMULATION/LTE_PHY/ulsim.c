@@ -1300,7 +1300,7 @@ int main(int argc, char **argv) {
         LOG_UDUMPMSG(SIM,dataArray(table_rx),table_rx->size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
-      dump_ulsch_stats(eNB);
+      dump_ulsch_stats(eNB,0);
       printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %u dB, delta_IF %d [ (%d,%d) dB / (%u,%u) dB ]**************************\n",
              nb_rb,mcs,SNR,SNR2,
              tx_lev_dB,

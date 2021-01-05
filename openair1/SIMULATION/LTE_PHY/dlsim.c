@@ -935,9 +935,10 @@ int main(int argc, char **argv) {
 
     NB_RB = conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
   } else {
-    if (rballocset==0) NB_RB = 8;
+    if (rballocset==0) NB_RB = 2+TPC;
     else               NB_RB = DLSCH_RB_ALLOC;
 
+    printf("Common PDSCH: NB_RB = %d\n",NB_RB);
     AssertFatal(NB_RB <= N_RB_DL,"illegal NB_RB %d\n",NB_RB);
   }
 

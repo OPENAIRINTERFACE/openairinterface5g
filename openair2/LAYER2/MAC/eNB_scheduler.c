@@ -603,6 +603,17 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               UE_scheduling_control->dl_cqi[CC_id],
               (5 * UE_scheduling_control->pusch_snr[CC_id] - 640) / 10, UE_scheduling_control->pucch_tpc_accumulated[CC_id],
               (5 * UE_scheduling_control->pucch1_snr[CC_id] - 640) / 10, UE_scheduling_control->pusch_tpc_accumulated[CC_id]);
+        LOG_I(MAC,"              ULSCH rounds %d/%d/%d/%d, DLSCH rounds %d/%d/%d/%d, ULSCH errors %d, DLSCH errors %d\n",
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[1],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[2],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[3],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[0],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[1],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[2],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[3],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_errors,
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_errors);
       }
 
       RC.eNB[module_idP][CC_id]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = -63;

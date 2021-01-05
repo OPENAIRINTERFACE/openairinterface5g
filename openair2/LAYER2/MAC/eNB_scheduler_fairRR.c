@@ -1495,7 +1495,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                             subframeP,
                             S_DL_SCHEDULED,
                             rnti);
-          //eNB_UE_stats->dlsch_trials[round]++;
+          UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[round]++;
           UE_info->eNB_UE_stats[CC_id][UE_id].num_retransmission += 1;
           UE_info->eNB_UE_stats[CC_id][UE_id].rbs_used_retx = nb_rb;
           UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_retx += nb_rb;
@@ -1936,6 +1936,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           // store stats
           eNB->eNB_stats[CC_id].dlsch_bytes_tx+=sdu_length_total;
           eNB->eNB_stats[CC_id].dlsch_pdus_tx+=1;
+          UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[0]++;
           UE_info->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
           UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
           UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
@@ -1968,10 +1969,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe=subframeP;
 
-              if (snr > target_snr + PUSCH_PCHYST) {
+              if (snr > target_snr + PUCCH_PCHYST) {
                 tpc = 0; //-1
                 ue_sched_ctl->pucch_tpc_accumulated[CC_id]--;
-              } else if (snr < target_snr - PUSCH_PCHYST) {
+              } else if (snr < target_snr - PUCCH_PCHYST) {
                 tpc = 2; //+1
                 ue_sched_ctl->pucch_tpc_accumulated[CC_id]++;
               } else {
@@ -3051,10 +3052,10 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         UE_template->pusch_tpc_tx_frame=frameP;
         UE_template->pusch_tpc_tx_subframe=subframeP;
 
-        if (snr > target_snr + 4) {
+        if (snr > target_snr + PUSCH_PCHYST) {
           tpc = 0; //-1
           UE_sched_ctrl->pusch_tpc_accumulated[CC_id]--;
-        } else if (snr < target_snr - 4) {
+        } else if (snr < target_snr - PUSCH_PCHYST) {
           tpc = 2; //+1
           UE_sched_ctrl->pusch_tpc_accumulated[CC_id]++;
         } else {
@@ -3080,6 +3081,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
               UE_sched_ctrl->cqi_req_timer);
         ndi = 1-UE_template->oldNDI_UL[harq_pid];
         UE_template->oldNDI_UL[harq_pid]=ndi;
+        UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0]++;
         UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
         UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
         UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
@@ -3257,6 +3259,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
           T_INT(round));
         UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
         UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
+
         uint8_t mcs_rv = 0;
 
         if(rvidx_tab[round&3]==1) {
