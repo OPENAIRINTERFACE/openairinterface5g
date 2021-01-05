@@ -178,6 +178,8 @@ function build_on_vm {
         echo "mkdir -p cmake_targets/log" >> $VM_CMDS
         echo "chmod 777 cmake_targets/log" >> $VM_CMDS
         echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
+        # Patching the pistache build for Xenial (cmake too old for new commits)
+        echo "sed -i -e 's@cd pistache@cd pistache \&\& git checkout -f 9a65f40975fafca5bb5370ba6d0d00f42cbc4356@' ./tools/install_dependencies" >> $VM_CMDS
         echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
         echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
         echo "echo \"mkdir build\"" >> $VM_CMDS
