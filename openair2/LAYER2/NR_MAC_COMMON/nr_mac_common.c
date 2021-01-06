@@ -3235,7 +3235,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
-    uint32_t temp = (uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
     type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
     if((temp/num_slot_per_frame) & 0x1){
       type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
@@ -3377,7 +3377,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
-  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
   return 0;
