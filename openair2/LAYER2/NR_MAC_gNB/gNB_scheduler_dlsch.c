@@ -805,7 +805,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
               retInfo->mcs,
               retInfo->numDmrsCdmGrpsNoData);
       /* we do not have to do anything, since we do not require to get data
-       * from RLC, encode MAC CEs, or copy data to FAPI structures */
+       * from RLC or encode MAC CEs. The TX_req structure is filled below */
       LOG_W(MAC,
             "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
             frame,
@@ -815,20 +815,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
             current_harq_pid,
             harq->round,
             harq->ndi);
+      AssertFatal(harq->tb_size == TBS,
+                  "UE %d mismatch between scheduled TBS and buffered TB for HARQ PID %d\n",
+                  UE_id,
+                  current_harq_pid);
     } else { /* initial transmission */
 
       LOG_D(MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
-      const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
-      nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
-      tx_req->PDU_length = TBS;
-      tx_req->PDU_index  = pduindex;
-      tx_req->num_TLV = 1;
-      tx_req->TLVs[0].length = TBS + 2;
-      /* pointer to directly generate the PDU into the nFAPI structure */
-      uint8_t *buf = (uint8_t *) tx_req->TLVs[0].value.direct;
-      gNB_mac->TX_req[CC_id].Number_of_PDUs++;
-      gNB_mac->TX_req[CC_id].SFN = frame;
-      gNB_mac->TX_req[CC_id].Slot = slot;
+
+      harq->tb_size = TBS;
+      uint8_t *buf = (uint8_t *) harq->tb;
 
       /* first, write all CEs that might be there */
       int written = nr_write_ce_dlsch_pdu(module_id,
@@ -952,8 +948,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
       }
 
       T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
-        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(buf, TBS));
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(harq->tb, TBS));
     }
+
+    const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
+    nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
+    tx_req->PDU_length = TBS;
+    tx_req->PDU_index  = pduindex;
+    tx_req->num_TLV = 1;
+    tx_req->TLVs[0].length = TBS + 2;
+    memcpy(tx_req->TLVs[0].value.direct, harq->tb, TBS);
+    gNB_mac->TX_req[CC_id].Number_of_PDUs++;
+    gNB_mac->TX_req[CC_id].SFN = frame;
+    gNB_mac->TX_req[CC_id].Slot = slot;
 
     /* mark UE as scheduled */
     sched_ctrl->rbSize = 0;

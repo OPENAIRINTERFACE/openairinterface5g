@@ -346,6 +346,10 @@ typedef struct NR_UE_harq {
   uint8_t ndi;
   uint8_t round;
   uint16_t feedback_slot;
+
+  /* Transport block to be sent using this HARQ process */
+  uint32_t tb[16384];
+  uint32_t tb_size;
 } NR_UE_harq_t;
 
 typedef struct NR_UE_old_sched {
