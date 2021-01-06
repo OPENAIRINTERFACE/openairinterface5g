@@ -322,7 +322,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
   unsigned int G;
   unsigned int crc=1;
-  uint8_t harq_pid = dlsch->harq_ids[frame%2][slot];
+  uint8_t harq_pid = 0;//dlsch->harq_ids[frame%2][slot];
   AssertFatal(harq_pid<8 && harq_pid>=0,"illegal harq_pid %d\b",harq_pid);
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
@@ -347,8 +347,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  dlsch->harq_processes[harq_pid]->round = nr_rv_round_map[rel15->rvIndex[0]];
-
+  dlsch->harq_processes[harq_pid]->round = 0;// regenerate all code segments every round. was nr_rv_round_map[rel15->rvIndex[0]];
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
@@ -367,20 +367,20 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
 
   if (stats) {
-    stats->round_trials[dlsch->harq_processes[harq_pid]->round]++;
+    //    stats->round_trials[dlsch->harq_processes[harq_pid]->round]++;
     stats->rnti = dlsch->rnti;
-    if (dlsch->harq_processes[harq_pid]->round == 0){
+    //if (dlsch->harq_processes[harq_pid]->round == 0){
       stats->total_bytes_tx += rel15->TBSize[0];
       stats->current_RI   = rel15->nrOfLayers;
       stats->current_Qm   = rel15->qamModOrder[0];
-    }
+      //}
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
-  if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
+  if (1) { //dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 #ifdef DEBUG_DLSCH_CODING
   LOG_D(PHY,"encoding thinks this is a new packet \n");
 #endif

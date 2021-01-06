@@ -291,10 +291,10 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
   NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
   NR_DL_gNB_HARQ_t **harq  = dlsch->harq_processes;
   /// DLSCH struct
-  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
+  memcpy((void*)&harq[0/*dlsch->harq_ids[frame%2][slot]*/]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
   gNB->num_pdsch_rnti[slot]++;
   AssertFatal(sdu!=NULL,"sdu is null\n");
-  harq[dlsch->harq_ids[frame%2][slot]]->pdu = sdu;
+  harq[0/*dlsch->harq_ids[frame%2][slot]*/]->pdu = sdu;
 
 
 }

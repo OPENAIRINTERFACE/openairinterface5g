@@ -246,10 +246,10 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     
     dlsch = gNB->dlsch[dlsch_id][0];
     int num_slots_tdd = (gNB->frame_parms.slots_per_frame)>>(7-gNB->gNB_config.tdd_table.tdd_period.value);
-    int harq_pid = slot % num_slots_tdd;
+    int harq_pid = 0;//slot % num_slots_tdd;
 
     dlsch->slot_tx[slot]             = 1;
-    dlsch->harq_ids[frame%2][slot]   = harq_pid;
+    dlsch->harq_ids[frame%2][slot]   = 0;//harq_pid;
     AssertFatal(harq_pid < 8 && harq_pid >= 0,
 		"illegal harq_pid %d\n",harq_pid);
     
