@@ -86,6 +86,8 @@ extern "C"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
+#define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
+
 #define CONFIG_HLP_NOS1          "Disable s1 interface\n"
 #define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
@@ -139,6 +141,7 @@ extern "C"
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
+    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
   }
 
   
@@ -236,6 +239,7 @@ extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+extern int usrp_tx_thread;
 #ifdef __cplusplus
 }
 #endif

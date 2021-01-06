@@ -1659,6 +1659,17 @@ static void *ru_thread( void *param ) {
   pthread_cond_signal(&proc->cond_FH1);
   AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_FH1))==0,"mutex_unlock returns %d\n",ret);
 
+  if(usrp_tx_thread == 1){
+     if (ru->start_write_thread){
+        if(ru->start_write_thread(ru) != 0){
+            LOG_E(HW,"Could not start tx write thread\n");
+        }
+        else{
+            LOG_I(PHY,"tx write thread ready\n");
+        }
+     }
+  }
+
   while (!oai_exit) {
     if (ru->if_south != LOCAL_RF && ru->is_slave==1) {
       ru->wait_cnt = 100;
@@ -2174,6 +2185,9 @@ void reset_proc(RU_t *ru) {
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
 }
 
+int start_write_thread(RU_t *ru) {
+    return(ru->rfdevice.trx_write_init(&ru->rfdevice));
+}
 
 void init_RU_proc(RU_t *ru) {
   int i=0;
@@ -2536,6 +2550,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->start_if             = NULL;                    // no if interface
         ru->rfdevice.host_type   = RAU_HOST;
+        ru->start_write_thread     = start_write_thread;
       }
 
       ru->fh_south_in            = rx_rf;                               // local synchronous RF RX

@@ -464,6 +464,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
       write_package[end].buff[i]    = buff[i];
     write_thread->count_write++;
     write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
+    LOG_I(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
     pthread_cond_signal(&write_thread->cond_write);
     pthread_mutex_unlock(&write_thread->mutex_write);
     return 0;
@@ -1263,7 +1264,7 @@ extern "C" {
   LOG_I(HW,"Actual time source %s...\n",s->usrp->get_time_source(0).c_str());
    sleep(1);
   // create tx & rx streamer
-  uhd::stream_args_t stream_args_rx("sc16", "sc12");
+  uhd::stream_args_t stream_args_rx("sc16", "sc16");
   int samples=openair0_cfg[0].sample_rate;
   int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
   samples/=10000;
@@ -1280,7 +1281,7 @@ extern "C" {
     stream_args_rx.channels.push_back(i);
   
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
-  uhd::stream_args_t stream_args_tx("sc16", "sc12");
+  uhd::stream_args_t stream_args_tx("sc16", "sc16");
   
   for (int i = 0; i<openair0_cfg[0].tx_num_channels; i++)
     stream_args_tx.channels.push_back(i);
