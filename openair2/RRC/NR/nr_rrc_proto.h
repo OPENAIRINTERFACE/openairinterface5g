@@ -123,6 +123,14 @@ void *rrc_gnb_task(void *args_p);
 /* Trigger RRC periodic processing. To be called once per ms. */
 void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
 
+/**\ Function to set or overwrite PTRS DL RRC parameters.
+   \ *bwp Pointer to dedicated RC config structure
+   \ *ptrsNrb Pointer to K_ptrs N_RB related parameters
+   \ *ptrsMcs Pointer to L_ptrs MCS related parameters
+   \ *epre_Ratio Pointer to ep_ratio
+   \ *reOffset Pointer to RE Offset Value */
+void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset);
+
 uint8_t
 nr_rrc_data_req(
   const protocol_ctxt_t   *const ctxt_pP,
@@ -138,3 +146,10 @@ int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);
 
+void
+rrc_gNB_generate_dedicatedRRCReconfiguration_release(
+    const protocol_ctxt_t   *const ctxt_pP,
+    rrc_gNB_ue_context_t    *const ue_context_pP,
+    uint8_t                  xid,
+    uint32_t                 nas_length,
+    uint8_t                 *nas_buffer);

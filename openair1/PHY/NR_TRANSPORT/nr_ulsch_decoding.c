@@ -292,7 +292,7 @@ void nr_processULSegment(void* arg) {
   int no_iteration_ldpc;
   int Kr;
   int Kr_bytes;
-  int K_bytes_F;
+  int K_bits_F;
   uint8_t crc_type;
   int i;
   int j;
@@ -318,8 +318,7 @@ void nr_processULSegment(void* arg) {
 
   Kr = ulsch_harq->K;
   Kr_bytes = Kr>>3;
-
-  K_bytes_F = Kr_bytes-(ulsch_harq->F>>3);
+  K_bits_F = Kr-ulsch_harq->F;
 
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
@@ -402,23 +401,19 @@ void nr_processULSegment(void* arg) {
 
   //start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 
-  memset(pv,0,2*ulsch_harq->Z*sizeof(int16_t));
-  memset((pv+K_bytes_F),127,ulsch_harq->F*sizeof(int16_t));
-
-  for (i=((2*p_decoderParms->Z)>>3), j = 0; i < K_bytes_F; i++, j++) {
-    pv[i]= _mm_loadu_si128((__m128i*)(&ulsch_harq->d[r][8*j]));
-  }
-
-  AssertFatal(kc!=255,"");
-  j+=(ulsch_harq->F>>3);
-  for (i=Kr_bytes; i < ((kc*p_decoderParms->Z)>>3); i++, j++) {
-    pv[i]= _mm_loadu_si128((__m128i*)(&ulsch_harq->d[r][8*j]));
-  }
-
-  for (i=0, j=0; j < ((kc*p_decoderParms->Z)>>4);  i+=2, j++) {
+  //set first 2*Z_c bits to zeros
+  memset(&z[0],0,2*ulsch_harq->Z*sizeof(int16_t));
+  //set Filler bits
+  memset((&z[0]+K_bits_F),127,ulsch_harq->F*sizeof(int16_t));
+  //Move coded bits before filler bits
+  memcpy((&z[0]+2*ulsch_harq->Z),ulsch_harq->d[r],(K_bits_F-2*ulsch_harq->Z)*sizeof(int16_t));
+  //skip filler bits
+  memcpy((&z[0]+Kr),ulsch_harq->d[r]+(Kr-2*ulsch_harq->Z),(kc*ulsch_harq->Z-Kr)*sizeof(int16_t));
+  //Saturate coded bits before decoding into 8 bits values
+  for (i=0, j=0; j < ((kc*ulsch_harq->Z)>>4)+1;  i+=2, j++)
+  {
     pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
   }
-
   //////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -523,31 +518,27 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333) {
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667) {
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   } else {
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667) {
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889) {
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }
   

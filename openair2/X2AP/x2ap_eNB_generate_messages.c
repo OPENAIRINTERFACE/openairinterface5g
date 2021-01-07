@@ -39,7 +39,6 @@
 #include "x2ap_ids.h"
 
 #include "x2ap_eNB_itti_messaging.h"
-#include "X2AP_SupportedSULFreqBandItem.h"
 
 #include "msc.h"
 #include "assertions.h"
@@ -1236,7 +1235,6 @@ int x2ap_gNB_generate_ENDC_x2_setup_request(
   X2AP_En_gNB_ENDCX2SetupReqIEs_t 			 *ie_GNB_ENDC;
   X2AP_PLMN_Identity_t               	 *plmn;
   ServedNRcellsENDCX2ManagementList__Member                *servedCellMember;
-  X2AP_SupportedSULFreqBandItem_t *SULFreqBandItem;
 
   uint8_t  *buffer;
   uint32_t  len;
@@ -1284,8 +1282,8 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
   ie_GNB_ENDC->value.present = X2AP_En_gNB_ENDCX2SetupReqIEs__value_PR_ServedNRcellsENDCX2ManagementList;
 
   {
-      for (int i = 0; i<instance_p->num_cc; i++){
-        servedCellMember = (ServedNRcellsENDCX2ManagementList__Member *)calloc(1,sizeof(ServedNRcellsENDCX2ManagementList__Member));
+    for (int i = 0; i<instance_p->num_cc; i++){
+      servedCellMember = (ServedNRcellsENDCX2ManagementList__Member *)calloc(1,sizeof(ServedNRcellsENDCX2ManagementList__Member));
         {
           servedCellMember->servedNRCellInfo.nrpCI = instance_p->Nid_cell[i];
 
@@ -1299,60 +1297,63 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
           NR_FIVEGS_TAC_ID_TO_BIT_STRING(instance_p->tac, servedCellMember->servedNRCellInfo.fiveGS_TAC);
 
           X2AP_INFO("TAC: %d -> %02x%02x%02x\n", instance_p->tac,
-        		  	  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[0],
-					  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[1],
-					  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[2]);
+              servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[0],
+              servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[1],
+              servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[2]);
 
           plmn = (X2AP_PLMN_Identity_t *)calloc(1,sizeof(X2AP_PLMN_Identity_t));
           {
             MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.broadcastPLMNs.list, plmn);
           }
-
-  	if (instance_p->frame_type[i] == TDD) {
+          if (instance_p->frame_type[i] == TDD) {
             X2AP_FreqBandNrItem_t *freq_band;
             servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
-            servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = 0; //instance_p->tdd_nRARFCN[i];
+            servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = instance_p->tdd_nRARFCN[i];
             /* addition of Frequency Band List */
             freq_band = calloc(1, sizeof(X2AP_FreqBandNrItem_t));
             if (freq_band == NULL)
                exit(1);
-            freq_band->freqBandIndicatorNr = instance_p->eutra_band[0];
-
-            SULFreqBandItem = calloc(1, sizeof(X2AP_SupportedSULFreqBandItem_t));
-            SULFreqBandItem->freqBandIndicatorNr=80; /* TODO: put correct value */
-            ASN_SEQUENCE_ADD(&freq_band->supportedSULBandList.list, SULFreqBandItem);
+            freq_band->freqBandIndicatorNr = instance_p->nr_band[i];
 
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.freqBandListNr, freq_band);
             switch (instance_p->N_RB_DL[i]) {
-        	case 50:
-			//This is not correct. Just to be able to test X2 only using an eNB instead of gNB
-                	servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb51;
+            case 32:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb32;
+              break;
+            case 66:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb66;
+              break;
+            case 93 :
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb93;
+              break;
+            case 106:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb106;
+              break;
+            case 121:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb121;
+              break;
+            case 217:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb217;
+              break;
+            case 273:
+              servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb273;
+              break;
+              /*More cases to be added */
+            default:
+              AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
 			break;
-		case 93 :
-			servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb93;
-			break;
-		case 106:
-			servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb106;
-			break;
-		case 121:
-			servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_TxBW.nRNRB = X2AP_NRNRB_nrb121;
-			break;
-		/*More cases to be added */
-		default:
-			AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
-			break;
-		}
-	}
+            }
+          }
           else {
             AssertFatal(0,"ENDC_X2Setuprequest not supported for FDD!");
           }
-  	/*Don't know where to extract the value of measurementTimingConfiguration from. Set it to 0 for now */
-  	INT8_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
+          /*Don't know where to extract the value of measurementTimingConfiguration from. Set it to 0 for now */
+          INT8_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
         }
         ASN_SEQUENCE_ADD(&ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list, servedCellMember);
-      }
     }
+  }
   ASN_SEQUENCE_ADD(&ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_en_gNB.list, ie_GNB_ENDC);
 
 
@@ -1438,7 +1439,7 @@ int x2ap_eNB_generate_ENDC_x2_setup_response(
           }
 
           if (instance_p->frame_type[i] == FDD) {
-                  servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.present = X2AP_EUTRA_Mode_Info_PR_fDD;
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.present = X2AP_EUTRA_Mode_Info_PR_fDD;
             servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_EARFCN = instance_p->fdd_earfcn_DL[i];
             servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_EARFCN = instance_p->fdd_earfcn_UL[i];
         	  switch (instance_p->N_RB_DL[i]) {
@@ -1472,12 +1473,98 @@ int x2ap_eNB_generate_ENDC_x2_setup_response(
             }
           }
           else {
-        	  AssertFatal(0,"X2Setupresponse not supported for TDD!");
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.present = X2AP_EUTRA_Mode_Info_PR_tDD;
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.eARFCN = instance_p->fdd_earfcn_DL[i];
+
+            switch (instance_p->subframeAssignment[i]) {
+            case 0:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa0;
+              break;
+            case 1:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa1;
+              break;
+            case 2:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa2;
+              break;
+            case 3:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa3;
+              break;
+            case 4:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa4;
+              break;
+            case 5:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa5;
+              break;
+            case 6:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa6;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for subframeAssignment");
+              break;
+            }
+            switch (instance_p->specialSubframe[i]) {
+            case 0:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp0;
+              break;
+            case 1:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp1;
+              break;
+            case 2:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp2;
+              break;
+            case 3:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp3;
+              break;
+            case 4:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp4;
+              break;
+            case 5:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp5;
+              break;
+            case 6:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp6;
+              break;
+            case 7:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp7;
+              break;
+            case 8:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp8;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for subframeAssignment");
+              break;
+            }
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.cyclicPrefixDL=X2AP_CyclicPrefixDL_normal;
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.cyclicPrefixUL=X2AP_CyclicPrefixUL_normal;
+
+            switch (instance_p->N_RB_DL[i]) {
+            case 6:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw6;
+              break;
+            case 15:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw15;
+              break;
+            case 25:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw25;
+              break;
+            case 50:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw50;
+              break;
+            case 75:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw75;
+              break;
+            case 100:
+              servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw100;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
+              break;
+            }
           }
         }
-        ASN_SEQUENCE_ADD(&ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list, servedCellMember);
+      ASN_SEQUENCE_ADD(&ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list, servedCellMember);
       }
-    }
+  }
   ASN_SEQUENCE_ADD(&ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list, ie_ENB_ENDC);
 
 

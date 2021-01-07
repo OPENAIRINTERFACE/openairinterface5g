@@ -88,6 +88,20 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
+/// uplink scheduler
+void nr_schedule_ulsch(module_id_t module_id,
+                       frame_t frame,
+                       sub_frame_t slot,
+                       int num_slots_per_tdd,
+                       int ul_slots,
+                       uint64_t ulsch_in_slot_bitmap);
+
+void nr_simple_ulsch_preprocessor(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot,
+                                  int num_slots_per_tdd,
+                                  uint64_t ulsch_in_slot_bitmap);
+
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
 void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
@@ -107,7 +121,9 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
-void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
+void nr_get_Msg3alloc(module_id_t module_id,
+                      int CC_id,
+                      NR_ServingCellConfigCommon_t *scc,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_subframe,
                       frame_t current_frame,
@@ -136,6 +152,13 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
                              sub_frame_t slot,
                              int num_slots_per_tdd);
+/* \brief UL preprocessor for phytest: schedules UE_id 0 with fixed MCS on a
+ * fixed set of resources */
+void nr_ul_preprocessor_phytest(module_id_t module_id,
+                                frame_t frame,
+                                sub_frame_t slot,
+                                int num_slots_per_tdd,
+                                uint64_t ulsch_in_slot_bitmap);
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
@@ -157,31 +180,32 @@ void nr_fill_nfapi_dl_pdu(int Mod_id,
                           int ndi,
                           int round);
 
-void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
+void handle_nr_uci_pucch_0_1(module_id_t mod_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01);
+void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
+                               frame_t frame,
+                               sub_frame_t slot,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
+
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_pusch_pdu_t *pusch_pdu,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
-                  int *dci_formats, int *rnti_types,
+                  int *dci_formats,
                   int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id);
-
-void nr_schedule_pusch(int Mod_idP,
-                       int UE_id,
-                       int num_slots_per_tdd,
-                       int ul_slots,
-                       frame_t       frameP,
-                       sub_frame_t   slotP);
 
 void nr_schedule_pucch(int Mod_idP,
                        int UE_id,
                        int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP);
+
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       int *period, int *offset);
 
 void nr_csi_meas_reporting(int Mod_idP,
                            int UE_id,
@@ -276,6 +300,15 @@ void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
                                  NR_SearchSpace_t *ss);
 
+long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
+
+void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
+                          const NR_BWP_Uplink_t *ubwp,
+                          long dci_format,
+                          int tda,
+                          uint8_t num_dmrs_cdm_grps_no_data,
+                          NR_sched_pusch_save_t *ps);
+
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
@@ -350,16 +383,6 @@ void nr_generate_Msg2(module_id_t module_idP,
                       frame_t frameP,
                       sub_frame_t slotP);
 
-void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
-
-void schedule_fapi_ul_pdu(int Mod_idP,
-                          frame_t frameP,
-                          sub_frame_t slotP,
-                          int num_slots_per_tdd,
-                          int ul_slots,
-                          int time_domain_assignment,
-                          uint64_t ulsch_in_slot_bitmap);
-
 void nr_process_mac_pdu(
     module_id_t module_idP,
     rnti_t rnti,
@@ -395,7 +418,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
-void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu);
+void handle_nr_ul_harq(module_id_t mod_id,
+                       frame_t frame,
+                       sub_frame_t slot,
+                       const nfapi_nr_crc_t *crc_pdu);
 
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,
@@ -406,5 +432,4 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
-void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

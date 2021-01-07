@@ -37,8 +37,6 @@
 #include "assertions.h"
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
-#include "openair2/LAYER2/RLC/rlc.h"
-#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
 
@@ -56,11 +54,9 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
       nr_rrc_mac_config_req_ue(0,0,0,NULL,rrc_inst->cell_group_config);
       
       if (IS_SOFTMODEM_NOS1){
-        if (rlc_module_init(0) != 0) {
-          LOG_I(RLC, "Problem at RLC initiation \n");
-        }
+        AssertFatal(rlc_module_init(0) == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
         pdcp_layer_init();
-        nr_DRB_preconfiguration();
+        nr_DRB_preconfiguration(nr_ue_mac_inst->crnti);
       }
 
       // Allocate memory for ul_config_request in the mac instance. This is now a pointer and will

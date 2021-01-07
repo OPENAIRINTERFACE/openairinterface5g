@@ -212,10 +212,8 @@ typedef struct {
   unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
 
   /// estimated received signal power (sum over all TX antennas)
-  //int            wideband_cqi[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   int            rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   /// estimated received signal power (sum over all TX antennas)
-  //int            wideband_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
 
   /// estimated received signal power (sum over all TX/RX antennas)
@@ -338,6 +336,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
+  /// \brief Downlink channel estimates extracted in PRBS.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
+  int32_t **dl_ch_ptrs_estimates_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
   /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
   /// - second index: ? [0..7] (hard coded) accessed via \c round
@@ -375,6 +377,8 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_magb1[8][8];
+  /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
+  int32_t **dl_ch_magr0;
   /// \brief Cross-correlation of two eNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
@@ -414,6 +418,16 @@ typedef struct {
   uint32_t llr_offset[14];
   // llr length per ofdm symbol
   uint32_t llr_length[14];
+  // llr offset per ofdm symbol
+  uint32_t dl_valid_re[14];
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_phase_per_slot;
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_re_per_slot;
 } NR_UE_PDSCH;
 
 #define NR_PDCCH_DEFS_NR_UE
@@ -889,7 +903,7 @@ typedef struct {
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
   /// PDSCH DMRS
-  uint32_t nr_gold_pdsch[2][20][2][NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD];
+  uint32_t nr_gold_pdsch[2][20][14][NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD];
 
   /// PDCCH DMRS
   uint32_t nr_gold_pdcch[7][20][3][52];

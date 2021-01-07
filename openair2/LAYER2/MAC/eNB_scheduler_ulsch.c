@@ -182,7 +182,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         UE_template_ptr->scheduled_ul_bytes = 0;
       }
     } else {  // sduP == NULL => error
-      LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
+      LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
             enb_mod_idP,
             harq_pid,
             CC_idP,

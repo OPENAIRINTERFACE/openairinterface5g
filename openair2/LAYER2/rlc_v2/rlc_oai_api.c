@@ -177,14 +177,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   mac_rlc_status_resp_t ret;
   rlc_entity_t *rb;
 
-  /* TODO: handle time a bit more properly */
-  if (rlc_current_time_last_frame != frameP ||
-      rlc_current_time_last_subframe != subframeP) {
-    rlc_current_time++;
-    rlc_current_time_last_frame = frameP;
-    rlc_current_time_last_subframe = subframeP;
-  }
-
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
 
@@ -242,14 +234,6 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   if (enb_flagP) {
     LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
     exit(1);
-  }
-
-  /* TODO: handle time a bit more properly */
-  if (rlc_current_time_last_frame != frameP ||
-      rlc_current_time_last_subframe != subframeP) {
-    rlc_current_time++;
-    rlc_current_time_last_frame = frameP;
-    rlc_current_time_last_subframe = subframeP;
   }
 
   rlc_manager_lock(rlc_ue_manager);
@@ -658,8 +642,7 @@ static void add_srb(int rnti, int module_id, struct LTE_SRB_ToAddMod *s)
                                poll_pdu, poll_byte, max_retx_threshold);
     rlc_ue_add_srb_rlc_entity(ue, srb_id, rlc_am);
 
-    LOG_D(RLC, "%s:%d:%s: added srb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added SRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   }
   rlc_manager_unlock(rlc_ue_manager);
 }
@@ -736,8 +719,7 @@ static void add_drb_am(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
                                poll_pdu, poll_byte, max_retx_threshold);
     rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_am);
 
-    LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added DRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   rlc_manager_unlock(rlc_ue_manager);
 }
@@ -807,8 +789,7 @@ static void add_drb_um(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
                                sn_field_length);
     rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
 
-    LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added DRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   }
   rlc_manager_unlock(rlc_ue_manager);
 }
@@ -925,8 +906,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                                     );
           rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
 
-          LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-                __FILE__, __LINE__, __FUNCTION__, (int)drb_id, mbms_rnti);
+          LOG_D(RLC, "%s:%d:%s: added DRB %d to UE RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, (int)drb_id, mbms_rnti);
         }
         rlc_manager_unlock(rlc_ue_manager);
 
@@ -1027,4 +1007,28 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
   rlc_manager_unlock(rlc_ue_manager);
 
   return RLC_OP_STATUS_OK;
+}
+
+void rlc_tick(int frame, int subframe)
+{
+  int expected_next_frame;
+  int expected_next_subframe;
+
+  if (frame != rlc_current_time_last_frame ||
+      subframe != rlc_current_time_last_subframe) {
+    /* warn if discontinuity in ticks */
+    expected_next_subframe = (rlc_current_time_last_subframe + 1) % 10;
+    if (expected_next_subframe == 0)
+      expected_next_frame = (rlc_current_time_last_frame + 1) % 1024;
+    else
+      expected_next_frame = rlc_current_time_last_frame;
+    if (expected_next_frame != frame || expected_next_subframe != subframe)
+      LOG_W(RLC, "rlc_tick: discontinuity (expected %d.%d, got %d.%d)\n",
+            expected_next_frame, expected_next_subframe,
+            frame, subframe);
+
+    rlc_current_time++;
+    rlc_current_time_last_frame = frame;
+    rlc_current_time_last_subframe = subframe;
+  }
 }

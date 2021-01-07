@@ -241,7 +241,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t G;
   uint32_t ret,offset;
   int32_t no_iteration_ldpc, length_dec;
-  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
+  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bits_F,err_flag=0;
   uint8_t crc_type;
   int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   t_nrLDPC_dec_params decParams;
@@ -279,7 +279,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
   }
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
-  AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
 
   uint32_t i,j;
 
@@ -350,32 +349,28 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333){
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667){
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   }
   else{
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667){
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889){
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }
 
@@ -435,8 +430,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
-
-  K_bytes_F = Kr_bytes-(harq_process->F>>3);
+  K_bits_F = Kr-harq_process->F;
 
   for (r=0; r<harq_process->C; r++) {
 
@@ -559,24 +553,16 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       //printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
 
-      memset(pv,0,2*harq_process->Z*sizeof(int16_t));
-      //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-      memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
-
-
-      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-      // Kbytes_F = Kr_bytes - F>>3
-      j+=(harq_process->F>>3);
-      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-
-      for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+      //set first 2*Z_c bits to zeros
+      memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+      //set Filler bits
+      memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+      //Move coded bits before filler bits
+      memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+      //skip filler bits
+      memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+      //Saturate coded bits before decoding into 8 bits values
+      for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
       {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
       }
@@ -777,7 +763,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,err_flag=0,K_bytes_F;
+  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,err_flag=0,K_bits_F;
   uint8_t crc_type;
   //UE_rxtx_proc_t *proc = &phy_vars_ue->proc;
   int32_t no_iteration_ldpc,length_dec;
@@ -896,32 +882,28 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333){
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667){
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   }
   else{
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667){
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889){
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }
 
@@ -1021,7 +1003,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
     Kr = harq_process->K;
     Kr_bytes = Kr>>3;
-    K_bytes_F = Kr_bytes-(harq_process->F>>3);
+    K_bits_F = Kr-harq_process->F;
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1153,24 +1135,16 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
         inv_d[cnt] = (1)*harq_process->d[r][cnt];
       }*/
 
-      memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
-      //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-      memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
-
-
-      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-
-      j+=(harq_process->F>>3);
-      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-      
-      for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+      //set first 2*Z_c bits to zeros
+      memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+      //set Filler bits
+      memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+      //Move coded bits before filler bits
+      memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+      //skip filler bits
+      memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+      //Saturate coded bits before decoding into 8 bits values
+      for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
       {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
       }
@@ -1396,7 +1370,7 @@ void nr_dlsch_decoding_process(void *arg)
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
+  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bits_F;
   uint8_t crc_type;
   uint8_t C,Cprime;
   uint8_t Qm;
@@ -1458,32 +1432,28 @@ void nr_dlsch_decoding_process(void *arg)
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333){
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667){
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   }
   else{
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667){
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889){
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }    
 
@@ -1562,7 +1532,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
-  K_bytes_F = Kr_bytes-(harq_process->F>>3);
+  K_bits_F = Kr-harq_process->F;
 
   E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1682,23 +1652,16 @@ void nr_dlsch_decoding_process(void *arg)
               }
 */
 
-        memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
-        //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-        memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
-
-        for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-        {
-          pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-        }
-
-        j+=(harq_process->F>>3);
-        //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-        for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
-        {
-         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-        }
-
-        for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+        //set first 2*Z_c bits to zeros
+        memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+        //set Filler bits
+        memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+        //Move coded bits before filler bits
+        memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+        //skip filler bits
+        memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+        //Saturate coded bits before decoding into 8 bits values
+        for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
         {
           pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
         }

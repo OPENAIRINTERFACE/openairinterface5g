@@ -27,6 +27,9 @@
 typedef struct {
   nr_pdcp_entity_t common;
   int rb_id;
+  int sn_size;               /* unit: bits */
+  int t_reordering;          /* unit: ms */
+  int discard_timer;         /* unit: ms, -1 means infinity */
 } nr_pdcp_entity_drb_am_t;
 
 void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *entity, char *buffer, int size);

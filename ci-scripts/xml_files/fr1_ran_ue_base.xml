@@ -32,9 +32,16 @@
  000001
  050000
  050001
+ 050002
+ 050002
+ 000001
+ 060000
+ 060001
+ 000001
+ 010002
+ 000001
  070001
  070000
- 010002
  010003
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -97,6 +104,30 @@
 		<desc>Ping: 5pings in 1sec</desc>
 		<ping_args>-c 5 -i 0.2</ping_args>
 		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="050002">
+		<class>Ping</class>
+		<desc>Ping: 100pings in 20sec</desc>
+		<ping_args>-c 100 -i 0.2</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+
+	<testCase id="060000">
+		<class>Iperf</class>
+		<desc>iperf (DL/1Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="060001">
+		<class>Iperf</class>
+		<desc>iperf (UL/1Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
 	<testCase id="070000">

@@ -261,7 +261,10 @@ typedef enum pdu_session_satus_e {
   PDU_SESSION_STATUS_NEW,
   PDU_SESSION_STATUS_DONE,
   PDU_SESSION_STATUS_ESTABLISHED,
+  PDU_SESSION_STATUS_REESTABLISHED, // after HO
+  PDU_SESSION_STATUS_TOMODIFY,      // ENDC NSA
   PDU_SESSION_STATUS_FAILED,
+  PDU_SESSION_STATUS_TORELEASE  // to release DRB between eNB and UE
 } pdu_session_status_t;
 
 typedef struct pdu_session_param_s {
@@ -323,7 +326,7 @@ typedef struct gNB_RRC_UE_s {
   NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */
-  NR_ReestablishmentCause_t             reestablishment_cause;
+  NR_ReestablishmentCause_t          reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;
@@ -349,10 +352,14 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                            nb_of_failed_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
+  /* list of pdu session to be setup by RRC layers */
+  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   pdu_session_param_t                pdusession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
+  uint8_t                            nb_release_of_pdusessions;
+  pdusession_failed_t                pdusessions_release_failed[NGAP_MAX_PDUSESSION];
   // LG: For GTPV1 TUNNELS
   uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
@@ -371,6 +378,9 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+  uint8_t                            pdu_session_release_command_flag;
+  uint32_t                           ue_rrc_inactivity_timer;
+  int8_t                             reestablishment_xid;
   //------------------------------------------------------------------------------//
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
@@ -429,6 +439,8 @@ typedef struct {
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
+  int                                       physCellId;
+  int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------

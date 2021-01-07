@@ -389,6 +389,8 @@ typedef struct {
   short n0_subband_power_tot_dB[100];
   //! estimated avg noise power per RB (dBm)
   short n0_subband_power_tot_dBm[100];
+  //! etimated avg noise power over all RB (dB)
+  short n0_subband_power_avg_dB;
   // eNB measurements (per user)
   //! estimated received spatial signal power (linear)
   unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];

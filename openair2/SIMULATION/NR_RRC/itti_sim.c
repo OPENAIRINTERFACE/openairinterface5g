@@ -104,7 +104,7 @@ int config_sync_var=-1;
 
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-volatile int             start_gNB = 0;
+//volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
 
 //static int wait_for_sync = 0;
@@ -543,7 +543,7 @@ int main( int argc, char **argv )
   }
 
   AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
- // AMF_MODE_ENABLED = 0;
+//  AMF_MODE_ENABLED = 0;
   NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
 
 #if T_TRACER
