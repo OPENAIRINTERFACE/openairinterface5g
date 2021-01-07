@@ -191,4 +191,7 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
                         uint8_t *nERatio,uint8_t *reOffset,
                         uint8_t NrOfSymbols);
+
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
 #endif
