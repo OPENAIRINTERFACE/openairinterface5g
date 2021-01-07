@@ -603,16 +603,6 @@ void pf_ul(module_id_t module_id,
       sched_pusch->Qm <<= 1;
     }
 
-    uint32_t tbs = nr_compute_tbs(sched_pusch->Qm,
-                                  sched_pusch->R,
-                                  1, // rbSize
-                                  ps->nrOfSymbols,
-                                  ps->N_PRB_DMRS * ps->num_dmrs_symb,
-                                  0, // nb_rb_oh
-                                  0,
-                                  1 /* NrOfLayers */)
-                    >> 3;
-
     /* Check BSR */
     if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
       /* if no data, pre-allocate 5RB */
@@ -646,6 +636,15 @@ void pf_ul(module_id_t module_id,
     add_tail_nr_list(&UE_sched, UE_id);
 
     /* Calculate coefficient*/
+    const uint32_t tbs = nr_compute_tbs(sched_pusch->Qm,
+                                        sched_pusch->R,
+                                        1, // rbSize
+                                        ps->nrOfSymbols,
+                                        ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                        0, // nb_rb_oh
+                                        0,
+                                        1 /* NrOfLayers */)
+                          >> 3;
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
           b, UE_id, ul_thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
