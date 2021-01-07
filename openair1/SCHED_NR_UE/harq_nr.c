@@ -302,7 +302,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-UL-PUSCH harqId : %d] first new transmission \n", harq_pid);
+    LOG_D(PHY, "[HARQ-UL-PUSCH harqId : %d] first new transmission \n", harq_pid);
   }
   /* 38.321 5.4.2.1  2> if the received grant was not addressed to a Temporary C-RNTI on PDCCH, and the NDI provided in the associated HARQ */
   /* information has been toggled compared to the value in the previous transmission of this TB of this HARQ process */
@@ -313,7 +313,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-UL-PUSCH harqId : %d] new transmission due to toogle of ndi \n", harq_pid);
+    LOG_D(PHY, "[HARQ-UL-PUSCH harqId : %d] new transmission due to toogle of ndi \n", harq_pid);
    }
    /* 38.321 5.4.2.1 2> else (i.e. retransmission): */
    else {
@@ -322,7 +322,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
      result_harq = RETRANSMISSION_HARQ;
 
-     NR_TST_PHY_PRINTF("[HARQ-UL-PUSCH harqId : %d] retransmission \n", harq_pid);
+     LOG_D(PHY, "[HARQ-UL-PUSCH harqId : %d] retransmission \n", harq_pid);
    }
 
   return (result_harq);
@@ -476,7 +476,7 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] first new reception \n", harq_pid);
+    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] first new reception \n", harq_pid);
   }
   else if (dl_harq->DCINdi != ndi) {
     dl_harq->round = 0;
@@ -485,7 +485,7 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] new reception due to toogle of ndi \n", harq_pid);
+    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] new reception due to toogle of ndi \n", harq_pid);
   }
   else {
 
@@ -495,7 +495,7 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
 
     result_harq = RETRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] reception of a retransmission \n", harq_pid);
+    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] reception of a retransmission \n", harq_pid);
   }
 
   return (result_harq);
