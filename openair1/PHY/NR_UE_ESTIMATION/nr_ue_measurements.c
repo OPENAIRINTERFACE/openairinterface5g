@@ -19,6 +19,18 @@
  *      contact@openairinterface.org
  */
 
+/*! \file nr_ue_measurements.c
+ * \brief UE measurements routines
+ * \author  R. Knopp, G. Casati
+ * \date 2020
+ * \version 0.1
+ * \company Eurecom, Fraunhofer IIS
+ * \email: knopp@eurecom.fr, guido.casati@iis.fraunhofer.de
+ * \note
+ * \warning
+ */
+
+#include "nr-softmodem-common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/LOG/log.h"
@@ -32,29 +44,6 @@
 //#define DEBUG_MEAS_RRC
 //#define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
-
-#if 0
-int16_t cond_num_threshold = 0;
-
-void print_shorts(char *s,short *x)
-{
-
-
-  printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d\n",s,
-         x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7]
-        );
-
-}
-void print_ints(char *s,int *x)
-{
-
-
-  printf("%s  : %d,%d,%d,%d\n",s,
-         x[0],x[1],x[2],x[3]
-        );
-
-}
-#endif
 
 int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
 
@@ -105,117 +94,84 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
   return -140.0;
 }
 
-
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                         UE_nr_rxtx_proc_t *proc,
-                        unsigned int subframe_offset,
-                        unsigned char N0_symbol,
-                        unsigned char abstraction_flag,
-                        unsigned char rank_adaptation,
-                        uint8_t subframe)
+                        uint8_t slot)
 {
-  int aarx,aatx,eNB_id=0; //,gain_offset=0;
-  //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
-
-/*#if defined(__x86_64__) || defined(__i386__)
-  __m128i *dl_ch0_128, *dl_ch1_128;
-#elif defined(__arm__)
-  int16x8_t *dl_ch0_128, *dl_ch1_128get_PL;
-#endif*/
-
+  int aarx, aatx, gNB_id = 0;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  //unsigned int limit, subband;
-  //int nb_subbands, subband_size, last_subband_size, *dl_ch0, *dl_ch1, N_RB_DL = frame_parms->N_RB_DL;
-
-  int ch_offset, rank_tm3_tm4 = 0;
+  int ch_offset = frame_parms->ofdm_symbol_size*2;
+  NR_UE_DLSCH_t *dlsch = ue->dlsch[proc->thread_id][gNB_id][0];
+  uint8_t harq_pid = dlsch->current_harq_pid;
+  int N_RB_DL = dlsch->harq_processes[harq_pid]->nb_rb;
 
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
-  
-  /*int16_t *dl_ch;
-  dl_ch = (int16_t *)&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[eNB_id][ch_offset];*/
 
-  ch_offset = ue->frame_parms.ofdm_symbol_size*2;
-
-//printf("testing measurements\n");
   // signal measurements
+  for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++){
 
-  for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
-        ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
-          (signal_energy_nodc(&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[eNB_id][ch_offset],
-                              (50*12)));
-        //- ue->measurements.n0_power[aarx];
+    ue->measurements.rx_power_tot[gNB_id] = 0;
 
-        if (ue->measurements.rx_spatial_power[eNB_id][aatx][aarx]<0)
-          ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] = 0; //ue->measurements.n0_power[aarx];
+    for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++){
 
-        ue->measurements.rx_spatial_power_dB[eNB_id][aatx][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_spatial_power[eNB_id][aatx][aarx]);
+      ue->measurements.rx_power[gNB_id][aarx] = 0;
 
-        if (aatx==0)
-          ue->measurements.rx_power[eNB_id][aarx] = ue->measurements.rx_spatial_power[eNB_id][aatx][aarx];
-        else
-          ue->measurements.rx_power[eNB_id][aarx] += ue->measurements.rx_spatial_power[eNB_id][aatx][aarx];
-      } //aatx
+      for (aatx = 0; aatx < frame_parms->nb_antenna_ports_gNB; aatx++){
 
-      ue->measurements.rx_power_dB[eNB_id][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_power[eNB_id][aarx]);
+        ue->measurements.rx_spatial_power[gNB_id][aatx][aarx] = (signal_energy_nodc(&ue->pdsch_vars[proc->thread_id][0]->dl_ch_estimates[gNB_id][ch_offset], N_RB_DL*NR_NB_SC_PER_RB));
 
-      if (aarx==0)
-        ue->measurements.rx_power_tot[eNB_id] = ue->measurements.rx_power[eNB_id][aarx];
-      else
-        ue->measurements.rx_power_tot[eNB_id] += ue->measurements.rx_power[eNB_id][aarx];
-    } //aarx
+        if (ue->measurements.rx_spatial_power[gNB_id][aatx][aarx]<0)
+          ue->measurements.rx_spatial_power[gNB_id][aatx][aarx] = 0;
 
-    ue->measurements.rx_power_tot_dB[eNB_id] = (unsigned short) dB_fixed(ue->measurements.rx_power_tot[eNB_id]);
+        ue->measurements.rx_spatial_power_dB[gNB_id][aatx][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_spatial_power[gNB_id][aatx][aarx]);
+        ue->measurements.rx_power[gNB_id][aarx] += ue->measurements.rx_spatial_power[gNB_id][aatx][aarx];
 
-  } //eNB_id
-  
-  //printf("ue measurement addr dlch %p\n", dl_ch);
+      }
 
-  eNB_id=0;
+      ue->measurements.rx_power_dB[gNB_id][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_power[gNB_id][aarx]);
+      ue->measurements.rx_power_tot[gNB_id] += ue->measurements.rx_power[gNB_id][aarx];
 
-  if (ue->transmission_mode[eNB_id]!=4 && ue->transmission_mode[eNB_id]!=3)
-    ue->measurements.rank[eNB_id] = 0;
-  else
-    ue->measurements.rank[eNB_id] = rank_tm3_tm4;
-  //  printf ("tx mode %d\n", ue->transmission_mode[eNB_id]);
-  //  printf ("rank %d\n", ue->PHY_measurements.rank[eNB_id]);
+    }
+
+    ue->measurements.rx_power_tot_dB[gNB_id] = (unsigned short) dB_fixed(ue->measurements.rx_power_tot[gNB_id]);
+
+  }
 
   // filter to remove jitter
   if (ue->init_averaging == 0) {
-    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++)
-      ue->measurements.rx_power_avg[eNB_id] = (int)
-          (((k1*((long long int)(ue->measurements.rx_power_avg[eNB_id]))) +
-            (k2*((long long int)(ue->measurements.rx_power_tot[eNB_id]))))>>10);
 
-    //LOG_I(PHY,"Noise Power Computation: k1 %d k2 %d n0 avg %d n0 tot %d\n", k1, k2, ue->measurements.n0_power_avg,
-     //   ue->measurements.n0_power_tot);
-    ue->measurements.n0_power_avg = (int)
-        (((k1*((long long int) (ue->measurements.n0_power_avg))) +
-          (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
+    for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++)
+      ue->measurements.rx_power_avg[gNB_id] = (int)(((k1*((long long int)(ue->measurements.rx_power_avg[gNB_id]))) + (k2*((long long int)(ue->measurements.rx_power_tot[gNB_id])))) >> 10);
+
+    ue->measurements.n0_power_avg = (int)(((k1*((long long int) (ue->measurements.n0_power_avg))) + (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
+
+    LOG_D(PHY, "Noise Power Computation: k1 %lld k2 %lld n0 avg %u n0 tot %u\n", k1, k2, ue->measurements.n0_power_avg, ue->measurements.n0_power_tot);
+
   } else {
-    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++)
-      ue->measurements.rx_power_avg[eNB_id] = ue->measurements.rx_power_tot[eNB_id];
+
+    for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++)
+      ue->measurements.rx_power_avg[gNB_id] = ue->measurements.rx_power_tot[gNB_id];
 
     ue->measurements.n0_power_avg = ue->measurements.n0_power_tot;
     ue->init_averaging = 0;
+
   }
 
-  for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++) {
-    ue->measurements.rx_power_avg_dB[eNB_id] = dB_fixed( ue->measurements.rx_power_avg[eNB_id]);
-    ue->measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(ue->measurements.rx_power_tot[eNB_id],ue->measurements.n0_power_tot);
-    ue->measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(ue->measurements.rx_power_avg[eNB_id],ue->measurements.n0_power_avg);
-    ue->measurements.rx_rssi_dBm[eNB_id] = ue->measurements.rx_power_avg_dB[eNB_id] - ue->rx_total_gain_dB;
-//#ifdef DEBUG_MEAS_UE
-      LOG_D(PHY,"[eNB %d] Subframe %d, RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
-            eNB_id,
-            subframe,
-            ue->measurements.rx_rssi_dBm[eNB_id],
-            ue->measurements.rx_power_avg_dB[eNB_id],
-            ue->measurements.wideband_cqi_avg[eNB_id],
-            ue->measurements.rx_power_avg[eNB_id],
-            ue->measurements.n0_power_tot);
-//#endif
+  for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++) {
+
+    ue->measurements.rx_power_avg_dB[gNB_id] = dB_fixed( ue->measurements.rx_power_avg[gNB_id]);
+    ue->measurements.wideband_cqi_tot[gNB_id] = dB_fixed2(ue->measurements.rx_power_tot[gNB_id], ue->measurements.n0_power_tot);
+    ue->measurements.wideband_cqi_avg[gNB_id] = dB_fixed2(ue->measurements.rx_power_avg[gNB_id], ue->measurements.n0_power_avg);
+    ue->measurements.rx_rssi_dBm[gNB_id] = ue->measurements.rx_power_avg_dB[gNB_id] - ue->rx_total_gain_dB;
+
+    LOG_D(PHY, "[gNB %d] Slot %d, RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
+      gNB_id,
+      slot,
+      ue->measurements.rx_rssi_dBm[gNB_id],
+      ue->measurements.rx_power_avg_dB[gNB_id],
+      ue->measurements.wideband_cqi_avg[gNB_id],
+      ue->measurements.rx_power_avg[gNB_id],
+      ue->measurements.n0_power_tot);
   }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -286,11 +242,74 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
       if (eNB_offset == 0)
 
-      LOG_I(PHY,"[UE %d] slot %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
+      LOG_D(PHY,"[UE %d] slot %d RSRP Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
             ue->Mod_id,
             slot,eNB_offset,
             (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
             10*log10(ue->measurements.rsrp[eNB_offset])-ue->rx_total_gain_dB,
             ue->measurements.rsrp[eNB_offset]);
+
+}
+
+void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            uint8_t slot){
+
+  uint8_t k;
+  int aarx, nb_nulls;
+  int16_t *rxF_sss;
+  uint8_t k_left = 48;
+  uint8_t k_right = 183;
+  uint8_t k_length = 8;
+  uint8_t l_sss = ue->symbol_offset + 2;
+  unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
+  ue->measurements.n0_power_tot = 0;
+
+  LOG_D(PHY, "In %s doing measurements for ssb_offset %d l_sss %d \n", __FUNCTION__, ssb_offset, l_sss);
+
+  for (aarx = 0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+
+    nb_nulls = 0;
+    ue->measurements.n0_power[aarx] = 0;
+    rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
+
+    //-ve spectrum from SSS
+    for(k = k_left; k < k_left + k_length; k++){
+
+      #ifdef DEBUG_MEAS_RRC
+      LOG_I(PHY, "In %s -rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+      #endif
+
+      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
+      nb_nulls++;
+
+    }
+
+    //+ve spectrum from SSS
+    for(k = k_right; k < k_right + k_length; k++){
+
+      #ifdef DEBUG_MEAS_RRC
+      LOG_I(PHY, "In %s +rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+      #endif
+
+      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
+      nb_nulls++;
+
+    }
+
+    ue->measurements.n0_power[aarx] /= nb_nulls;
+    ue->measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(ue->measurements.n0_power[aarx]);
+    ue->measurements.n0_power_tot += ue->measurements.n0_power[aarx];
+
+  }
+
+  ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/aarx);
+
+  #ifdef DEBUG_MEAS_RRC
+  int nf_usrp = ue->measurements.n0_power_tot_dB + 30 - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - 90 - (-174 + dB_fixed(30000/*scs*/) + dB_fixed(ue->frame_parms.ofdm_symbol_size));
+  LOG_D(PHY, "In %s slot %d NF USRP %d dBm\n", __FUNCTION__, nf_usrp);
+  #endif
+
+  LOG_D(PHY, "In %s slot %d Noise Level %d ue->measurements.n0_power_tot_dB %d \n", __FUNCTION__, slot, ue->measurements.n0_power_tot, ue->measurements.n0_power_tot_dB);
 
 }

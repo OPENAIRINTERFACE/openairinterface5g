@@ -265,7 +265,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
               "%s(): expected UE %d to be active\n",
               __func__,
               UE_id);
-
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
@@ -341,7 +340,14 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->rbStart = rbStart;
   sched_ctrl->rbSize = rbSize;
   sched_ctrl->time_domain_allocation = 2;
-  sched_ctrl->mcsTableIdx = 0;
+  if (!UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
+    sched_ctrl->mcsTableIdx = 0;
+  else {
+    if (*UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table == 0)
+      sched_ctrl->mcsTableIdx = 1;
+    else
+      sched_ctrl->mcsTableIdx = 2;
+  }
   sched_ctrl->mcs = 9;
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
 

@@ -626,32 +626,33 @@ typedef struct {
   short n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
   short n0_subband_power_tot_dBm[275];
+
   // gNB measurements (per user)
   //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NUMBER_OF_NR_DLSCH_MAX][2][2];
+  unsigned int   rx_spatial_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_NR_DLSCH_MAX][2][2];
+  unsigned short rx_spatial_power_dB[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
   //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_NR_DLSCH_MAX];
+  short          rx_rssi_dBm[NUMBER_OF_NR_ULSCH_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_NR_DLSCH_MAX][2];
+  int            rx_correlation[NUMBER_OF_NR_ULSCH_MAX][2];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_NR_DLSCH_MAX][2];
+  int            rx_correlation_dB[NUMBER_OF_NR_ULSCH_MAX][2];
 
   /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB];
+  int            wideband_cqi[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB];
   /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB];
+  int            wideband_cqi_dB[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB];
   /// Wideband CQI (sum of all RX antennas, in dB)
-  char           wideband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX];
+  char           wideband_cqi_tot[NUMBER_OF_NR_ULSCH_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][275];
+  int            subband_cqi[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB][275];
   /// Total Subband CQI and RB (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX][275];
+  int            subband_cqi_tot[NUMBER_OF_NR_ULSCH_MAX][275];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][275];
+  int            subband_cqi_dB[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB][275];
   /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_NR_DLSCH_MAX][275];
+  int            subband_cqi_tot_dB[NUMBER_OF_NR_ULSCH_MAX][275];
   /// PRACH background noise level
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;

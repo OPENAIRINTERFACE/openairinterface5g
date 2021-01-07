@@ -212,10 +212,8 @@ typedef struct {
   unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
 
   /// estimated received signal power (sum over all TX antennas)
-  //int            wideband_cqi[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   int            rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   /// estimated received signal power (sum over all TX antennas)
-  //int            wideband_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
   unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
 
   /// estimated received signal power (sum over all TX/RX antennas)
@@ -379,6 +377,8 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_magb1[8][8];
+  /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
+  int32_t **dl_ch_magr0;
   /// \brief Cross-correlation of two eNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
