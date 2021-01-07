@@ -504,7 +504,15 @@ long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
     return 3;
 }
 
+int next_list_entry_looped(NR_list_t *list, int UE_id)
+{
+  if (UE_id < 0)
+    return list->head;
+  return list->next[UE_id] < 0 ? list->head : list->next[UE_id];
+}
+
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
+int bsr0ue = -1;
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -523,6 +531,12 @@ void pf_ul(module_id_t module_id,
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
+
+  /* Hack: currently, we do not have SR, and need to schedule UEs continuously.
+   * To keep the wasted resources low, we switch UEs to be scheduled in a
+   * round-robin fashion below, and only schedule a UE with BSR=0 if it is the
+   * selected one */
+  bsr0ue = next_list_entry_looped(UE_list, bsr0ue);
 
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -607,8 +621,11 @@ void pf_ul(module_id_t module_id,
       sched_pusch->Qm <<= 1;
     }
 
-    /* Check BSR */
+    /* Check BSR and schedule UE if it is zero to avoid starvation, since we do
+     * not have SR (yet) */
     if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
+      if (UE_id != bsr0ue)
+        continue;
       /* if no data, pre-allocate 5RB */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE) {
