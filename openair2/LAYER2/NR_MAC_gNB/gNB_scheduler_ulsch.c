@@ -535,13 +535,6 @@ void pf_ul(module_id_t module_id,
     const uint32_t b = UE_info->mac_stats[UE_id].ulsch_current_bytes;
     ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
 
-    /* Find free CCE */
-    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-    if (!freeCCE) {
-      LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, UE_info->rnti[UE_id]);
-      continue;
-    }
-
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
      * every TTI if we can save it, so check whether dci_format, TDA, or
@@ -562,6 +555,17 @@ void pf_ul(module_id_t module_id,
     sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
     if (sched_ctrl->sched_pusch.ul_harq_pid >= 0) {
       /* RETRANSMISSION: Allocate retransmission*/
+      /* Find free CCE */
+      bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+      if (!freeCCE) {
+        LOG_E(MAC, "%4d.%2d no free CCE for retransmission UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+        continue;
+      }
+      /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+      max_num_ue--;
+      if (max_num_ue < 0)
+        return;
+
       /* Save shced_frame and sched_slot before overwrite by previous PUSCH filed */
       NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[sched_ctrl->sched_pusch.ul_harq_pid];
       cur_harq->sched_pusch.frame = sched_ctrl->sched_pusch.frame;
@@ -606,6 +610,16 @@ void pf_ul(module_id_t module_id,
     /* Check BSR */
     if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
       /* if no data, pre-allocate 5RB */
+      bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+      if (!freeCCE) {
+        LOG_E(MAC, "%4d.%2d no free CCE for UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+        continue;
+      }
+      /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+      max_num_ue--;
+      if (max_num_ue < 0)
+        return;
+
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + min_rb >= bwpSize) {
         LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
@@ -670,7 +684,16 @@ void pf_ul(module_id_t module_id,
     *max = UE_sched.next[*max];
     *p = -1;
 
+    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+    if (!freeCCE) {
+      LOG_E(MAC, "%4d.%2d no free CCE for UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+      continue;
+    }
+
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
     max_num_ue--;
+    if (max_num_ue < 0)
+      return;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
