@@ -24,113 +24,6 @@
 cmake_minimum_required (VERSION 3.0)
 
 
-# System packages that are required
-# We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
-# or cmake provide a generic interface to pkg-config that widely used
-###################################
-include(FindPkgConfig)
-
-pkg_search_module(LIBXML2 libxml-2.0 REQUIRED)
-include_directories(${LIBXML2_INCLUDE_DIRS})
-
-pkg_search_module(LIBXSLT libxslt REQUIRED)
-include_directories(${LIBXSLT_INCLUDE_DIRS})
-
-pkg_search_module(OPENSSL openssl REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIRS})
-
-pkg_search_module(CONFIG libconfig REQUIRED)
-include_directories(${CONFIG_INCLUDE_DIRS})
-
-pkg_search_module(CRYPTO libcrypto REQUIRED)
-include_directories(${CRYPTO_INCLUDE_DIRS})
-
-#use native cmake method as this package is not in pkg-config
-if (${RF_BOARD} STREQUAL "OAI_USRP")
-  find_package(Boost REQUIRED)
-  include_directories(${LIBBOOST_INCLUDE_DIR})
-
-elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
-    include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
-    include_directories("/usr/local/include/")
-    set(HW_SOURCE ${HW_SOURCE}
-            ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp)
-    LINK_DIRECTORIES("/usr/local/lib")
-    set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
-
-endif (${RF_BOARD} STREQUAL "OAI_USRP")
-
-pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
-if(NOT ${OPENPGM_FOUND})
-  message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
-else()
-  include_directories(${OPENPGM_INCLUDE_DIRS})
-endif()
-
-pkg_search_module(NETTLE nettle)
-if(NOT ${NETTLE_FOUND})
-  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
-else()
-  include_directories(${NETTLE_INCLUDE_DIRS})
-endif()
-
-message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
-
-string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
-string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
-message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
-message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
-
-if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
-  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
-endif()
-
-add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
-add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
-
-pkg_search_module(XPM xpm)
-if(NOT ${XPM_FOUND})
-  message("PACKAGE xpm not found: some targets will fail")
-else()
-  include_directories(${XPM_INCLUDE_DIRS})
-endif()
-
-# Atlas is required by some packages, but not found in pkg-config
-# So, here are some hacks here. Hope this gets fixed in future!
-if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
-  include_directories("/usr/include/atlas")
-  LINK_DIRECTORIES("/usr/lib/lapack")
-  LINK_DIRECTORIES("/usr/lib64")
-  LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
-
-  if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
-     list(APPEND ATLAS_LIBRARIES blas)
-
-  else() # Case for Ubuntu
-     list(APPEND ATLAS_LIBRARIES cblas)
-  endif()
-
-  if(EXISTS "/usr/lib/atlas/libtatlas.so" OR EXISTS "/usr/lib64/atlas/libtatlas.so") #Case for CentOS7
-     list(APPEND ATLAS_LIBRARIES tatlas)
-  else()
-     list(APPEND ATLAS_LIBRARIES atlas) #Case for Ubuntu
-  endif()
-
-  list(APPEND ATLAS_LIBRARIES lapack)
-
-# for ubuntu 17.10, directories are different
-elseif(EXISTS "/usr/include/x86_64-linux-gnu/cblas.h")
-
-  include_directories("/usr/include/x86_64-linux-gnu")
-  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
-  list(APPEND ATLAS_LIBRARIES cblas)
-  list(APPEND ATLAS_LIBRARIES atlas)
-  list(APPEND ATLAS_LIBRARIES lapack)
-
-else()
-  message("No Blas/Atlas libs found, some targets will fail")
-endif()
-
 #########################################################
 # Base directories, compatible with legacy OAI building #
 #########################################################
@@ -3593,3 +3486,111 @@ ADD_CUSTOM_TARGET(oarf
 )
 
 include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
+
+
+# System packages that are required
+# We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
+# or cmake provide a generic interface to pkg-config that widely used
+###################################
+include(FindPkgConfig)
+
+pkg_search_module(LIBXML2 libxml-2.0 REQUIRED)
+include_directories(${LIBXML2_INCLUDE_DIRS})
+
+pkg_search_module(LIBXSLT libxslt REQUIRED)
+include_directories(${LIBXSLT_INCLUDE_DIRS})
+
+pkg_search_module(OPENSSL openssl REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIRS})
+
+pkg_search_module(CONFIG libconfig REQUIRED)
+include_directories(${CONFIG_INCLUDE_DIRS})
+
+pkg_search_module(CRYPTO libcrypto REQUIRED)
+include_directories(${CRYPTO_INCLUDE_DIRS})
+
+#use native cmake method as this package is not in pkg-config
+if (${RF_BOARD} STREQUAL "OAI_USRP")
+  find_package(Boost REQUIRED)
+  include_directories(${LIBBOOST_INCLUDE_DIR})
+
+elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
+  include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
+  include_directories("/usr/local/include/")
+  set(HW_SOURCE ${HW_SOURCE}
+          ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp)
+  LINK_DIRECTORIES("/usr/local/lib")
+  set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
+
+endif (${RF_BOARD} STREQUAL "OAI_USRP")
+
+pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
+if(NOT ${OPENPGM_FOUND})
+  message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
+else()
+  include_directories(${OPENPGM_INCLUDE_DIRS})
+endif()
+
+pkg_search_module(NETTLE nettle)
+if(NOT ${NETTLE_FOUND})
+  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
+else()
+  include_directories(${NETTLE_INCLUDE_DIRS})
+endif()
+
+message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
+
+string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
+string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
+message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
+message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
+
+if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
+  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
+endif()
+
+add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
+add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
+
+pkg_search_module(XPM xpm)
+if(NOT ${XPM_FOUND})
+  message("PACKAGE xpm not found: some targets will fail")
+else()
+  include_directories(${XPM_INCLUDE_DIRS})
+endif()
+
+# Atlas is required by some packages, but not found in pkg-config
+# So, here are some hacks here. Hope this gets fixed in future!
+if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
+  include_directories("/usr/include/atlas")
+  LINK_DIRECTORIES("/usr/lib/lapack")
+  LINK_DIRECTORIES("/usr/lib64")
+  LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
+
+  if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
+    list(APPEND ATLAS_LIBRARIES blas)
+
+  else() # Case for Ubuntu
+    list(APPEND ATLAS_LIBRARIES cblas)
+  endif()
+
+  if(EXISTS "/usr/lib/atlas/libtatlas.so" OR EXISTS "/usr/lib64/atlas/libtatlas.so") #Case for CentOS7
+    list(APPEND ATLAS_LIBRARIES tatlas)
+  else()
+    list(APPEND ATLAS_LIBRARIES atlas) #Case for Ubuntu
+  endif()
+
+  list(APPEND ATLAS_LIBRARIES lapack)
+
+  # for ubuntu 17.10, directories are different
+elseif(EXISTS "/usr/include/x86_64-linux-gnu/cblas.h")
+
+  include_directories("/usr/include/x86_64-linux-gnu")
+  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  list(APPEND ATLAS_LIBRARIES cblas)
+  list(APPEND ATLAS_LIBRARIES atlas)
+  list(APPEND ATLAS_LIBRARIES lapack)
+
+else()
+  message("No Blas/Atlas libs found, some targets will fail")
+endif()

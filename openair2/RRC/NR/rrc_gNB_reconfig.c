@@ -89,7 +89,9 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
   coreset0->frequencyDomainResources.size = 6;
   coreset0->frequencyDomainResources.bits_unused = 3;
   coreset0->duration = 1;
+  coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
   coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved));
+  coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
   coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
   coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = servingcellconfigcommon->physCellId;
   coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;

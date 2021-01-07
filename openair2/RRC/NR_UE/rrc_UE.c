@@ -1500,7 +1500,7 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
     }
     sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
     if (*(int64_t*)sib1 != 1) {
-       printf("%lx\n", *(int64_t*)sib1);
+       LOG_D(RRC, "SIB1 address: %lx\n", *(int64_t*)sib1);
        xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
     }
     else

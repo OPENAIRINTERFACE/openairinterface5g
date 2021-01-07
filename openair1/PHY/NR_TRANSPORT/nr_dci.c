@@ -193,7 +193,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       
       for (int m=0; m<NR_NB_SC_PER_RB; m++) {
 	if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
-	  if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
+	  //if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
 	    ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
 	    ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
@@ -201,7 +201,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 		   ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
 	    dmrs_idx++;
-	  }
+	  //}
 	  
 	  k_prime++;
 	} else { // DCI payload
