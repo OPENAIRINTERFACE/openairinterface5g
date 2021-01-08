@@ -60,16 +60,16 @@ int nbDlProcessing =0;
 static  tpool_t pool_dl;
 
 //extern double cpuf;
-void init_dlsch_tpool(uint8_t nun_dlsch_threads)
+void init_dlsch_tpool(uint8_t num_dlsch_threads)
 {
-    if( nun_dlsch_threads==0)
+    if( num_dlsch_threads==0)
     	return;
 
-  char *params=calloc(1,(nun_dlsch_threads*2)+1);
-  for (int i=0; i<nun_dlsch_threads; i++) {
-    memcpy(params+(i*2),"-1",2);
+  char *params=calloc(1,(num_dlsch_threads*3)+1);
+  for (int i=0; i<num_dlsch_threads; i++) {
+    memcpy(params+(i*3),"-1,",3);
   }
-  initTpool(params, &pool_dl, false);
+  initNamedTpool(params, &pool_dl, false,"dlsch");
   free(params);
 }
 

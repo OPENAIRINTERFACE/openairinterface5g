@@ -294,6 +294,6 @@ static inline int abortTpool(tpool_t *t, uint64_t key) {
   mutexunlock(nf->lockF);
   return nbRemoved;
 }
-void initTpool(char *params,tpool_t *pool, bool performanceMeas);
-
+void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name);
+#define  initTpool(PARAMPTR,TPOOLPTR, MEASURFLAG) initNamedTpool(PARAMPTR,TPOOLPTR, MEASURFLAG, NULL)
 #endif
