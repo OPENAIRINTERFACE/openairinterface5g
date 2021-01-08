@@ -185,4 +185,10 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
                         uint8_t *nERatio,uint8_t *reOffset,
                         uint8_t NrOfSymbols);
+
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols);
 #endif

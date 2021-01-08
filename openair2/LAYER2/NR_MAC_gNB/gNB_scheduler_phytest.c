@@ -486,6 +486,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
   int bwp_id=1;
   int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   int UE_id = 0;
+  bool valid_ptrs_setup = false;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
@@ -693,18 +694,15 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     // ------- PTRS -------
     // --------------------
     if (NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
-      // TODO to be fixed from RRC config
-      uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
-      pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
-      pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
-      pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
-
-      pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      valid_ptrs_setup = set_ul_ptrs_values(NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup,
+                                            pusch_pdu->rb_size, pusch_pdu->mcs_index, pusch_pdu->mcs_table,
+                                            &pusch_pdu->pusch_ptrs.ptrs_freq_density,&pusch_pdu->pusch_ptrs.ptrs_time_density,
+                                            &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_pdu->pusch_ptrs.num_ptrs_ports,
+                                            &pusch_pdu->pusch_ptrs.ul_ptrs_power, pusch_pdu->nr_of_symbols);
+      if(valid_ptrs_setup==true) {
+        pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      }
     }
     else{
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
