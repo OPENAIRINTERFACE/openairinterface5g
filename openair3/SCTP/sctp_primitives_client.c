@@ -241,10 +241,16 @@ int sctp_connect_to_remote_host(char *local_ip_addr[],
   }
 
   /* Subscribe to all events */
-  memset((void *)&events, 1, sizeof(struct sctp_event_subscribe));
+  events.sctp_data_io_event = 1;
+  events.sctp_association_event = 1;
+  events.sctp_address_event = 1;
+  events.sctp_send_failure_event = 1;
+  events.sctp_peer_error_event = 1;
+  events.sctp_shutdown_event = 1;
+  events.sctp_partial_delivery_event = 1;
 
   if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &events,
-                 sizeof(struct sctp_event_subscribe)) < 0) {
+                 8) < 0) {
     SCTP_ERROR("Setsockopt IPPROTO_SCTP_EVENTS failed: %s\n",
                strerror(errno));
     return -1;

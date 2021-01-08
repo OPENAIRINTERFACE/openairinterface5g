@@ -27,7 +27,7 @@ void
 phy_adjust_gain_nr (PHY_VARS_NR_UE *ue, uint32_t rx_power_fil_dB, uint8_t eNB_id)
 {
 
-  LOG_I(PHY,"Gain control: rssi %d (%d,%d)\n",
+  LOG_D(PHY,"Gain control: rssi %d (%d,%d)\n",
 	rx_power_fil_dB,
 	ue->measurements.rssi,
 	ue->measurements.rx_power_avg_dB[eNB_id]
@@ -61,7 +61,7 @@ phy_adjust_gain_nr (PHY_VARS_NR_UE *ue, uint32_t rx_power_fil_dB, uint8_t eNB_id
     ue->rx_total_gain_dB = MIN_RF_GAIN;
   }
 
-  LOG_I(PHY,"Gain control: rx_total_gain_dB = %d TARGET_RX_POWER %d (max %d,rxpf %d)\n",ue->rx_total_gain_dB,TARGET_RX_POWER,MAX_RF_GAIN,rx_power_fil_dB);
+  LOG_D(PHY,"Gain control: rx_total_gain_dB = %d TARGET_RX_POWER %d (max %d,rxpf %d)\n",ue->rx_total_gain_dB,TARGET_RX_POWER,MAX_RF_GAIN,rx_power_fil_dB);
 
 #ifdef DEBUG_PHY
   /*  if ((ue->frame%100==0) || (ue->frame < 10))
