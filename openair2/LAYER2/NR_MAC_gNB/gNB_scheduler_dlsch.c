@@ -638,19 +638,15 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   sub_frame_t slot) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
-  AssertFatal(UE_info->num_UEs <= 1,
-              "%s() cannot handle more than one UE, but found %d\n",
-              __func__,
-              UE_info->num_UEs);
   if (UE_info->num_UEs == 0)
     return;
 
-  const int UE_id = 0;
   const int CC_id = 0;
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  /* Calculate num of RBG and RBG size from UE_id=0 */
+  /* Get bwpSize from the first UE */
+  int UE_id = UE_info->list.head;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
