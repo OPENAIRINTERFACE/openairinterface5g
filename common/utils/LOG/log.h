@@ -425,6 +425,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 /* bitmask dependent macros, to generate debug file such as matlab file or message dump */
 #    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
+/* define variable only used in LOG macro's */
+#    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
 #    define LOG_I(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)/* */
 #    define LOG_W(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ; } while(0)/* */
@@ -438,6 +440,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_DEBUGFLAG(D)  ( 0 )
 #    define LOG_DUMPFLAG(D) ( 0 )
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
+#    define LOG_VAR(A,B)
 #  endif /* T_TRACER */
 #endif // LOG_MINIMAL
 

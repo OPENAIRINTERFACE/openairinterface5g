@@ -84,7 +84,6 @@
       #define MAX_eNB                      2
       #define MAX_gNB                      2
     #else
-    // TODO: Change after gaining stability on 20 UES or less
       #define MAX_MOBILES_PER_ENB         40
       #define MAX_MOBILES_PER_ENB_NB_IoT  40
       #define MAX_MOBILES_PER_GNB         2//16

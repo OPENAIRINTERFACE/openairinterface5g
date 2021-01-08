@@ -94,6 +94,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   pdu->rx_indication_rel9.tl.tag = NFAPI_RX_INDICATION_REL9_TAG;
   pdu->rx_indication_rel9.timing_advance_r9 = 0;
 
+  // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
   LOG_I(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
@@ -396,12 +397,6 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       pdu->harq_indication_fdd_rel13.harq_tb_n[0] =
           1; // Assuming always an ACK (No NACK or DTX)
 
-      // TODO: Fix ack/dtx -- needed for 5G
-      // 1.) if received dl_config_req (with c-rnti) store this info and corresponding subframe.
-      // 2.) if receiving ul_config_req for uci ack/nack or ulsch ack/nak in subframe n
-      //     go look to see if dl_config_req (with c-rnti) was received in subframe (n - 4)
-      // 3.) if the answer to #2 is yes then send ACK IF NOT send DTX
-
     } else if ((harq_information->harq_information_rel9_fdd.ack_nack_mode == 0)
                && (harq_information->harq_information_rel9_fdd.harq_size
                    == 2)) {
@@ -501,7 +496,9 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ul_config_req);
       }
     }
-  } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
+  }
+
+  else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
     // AssertFatal((UE_id =
     // find_ulsch(ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
     //            "No available UE ULSCH for rnti
@@ -784,7 +781,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
   if (rnti_type == 1) { // C-RNTI (Normal DLSCH case)
     for (int ue_id = 0; ue_id < num_ue; ue_id++) {
       if (UE_mac_inst[ue_id].crnti == rnti) {
-        LOG_I(MAC,
+        LOG_D(MAC,
               "%s() Received data: sfn/sf:%d.%d "
               "size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n",
               __func__,
@@ -1526,30 +1523,6 @@ void enqueue_dl_config_req_tx_req(nfapi_dl_config_request_t *dl_config_req, nfap
   }
 }
 
-const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len)
-{
-    char *p = out;
-    char *endp = out + out_len;
-    const uint8_t *q = data;
-    snprintf(p, endp - p, "[%zu]", data_len);
-    p += strlen(p);
-    for (size_t i = 0; i < data_len; ++i)
-    {
-        if (p >= endp)
-        {
-            static const char ellipses[] = "...";
-            char *s = endp - sizeof(ellipses);
-            if (s >= p)
-            {
-                strcpy(s, ellipses);
-            }
-            break;
-        }
-        snprintf(p, endp - p, " %02X", *q++);
-        p += strlen(p);
-    }
-    return out;
-}
 
 __attribute__((unused))
 static void print_rx_ind(nfapi_rx_indication_t *p)

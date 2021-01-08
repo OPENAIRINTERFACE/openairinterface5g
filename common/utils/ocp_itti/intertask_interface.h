@@ -569,7 +569,6 @@ int signal_handle(int *end);
 int signal_mask(void);
 
 void log_scheduler(const char *label);
-
 #ifdef __cplusplus
 }
 #endif

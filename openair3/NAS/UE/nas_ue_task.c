@@ -105,7 +105,7 @@ void *nas_ue_task(void *args_p)
       nas_user_t *user = &users->item[i];
       user->ueid = i;
 
-      /* Get USIM data application filename */ //
+      /* Get USIM data application filename */
       user->usim_data_store = memory_get_path_from_ueid(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME, user->ueid);
       if (user->usim_data_store == NULL)
       {

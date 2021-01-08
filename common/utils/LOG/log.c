@@ -523,12 +523,12 @@ void logMinimal(int comp, int level, const char *format, ...)
 #endif // LOG_MINIMAL
 
 static int log_header(char *log_buffer,
-                      int buffsize,
-                      int comp,
-                      int level,
-                      const char *format)
+		              int buffsize,
+					  int comp,
+					  int level,
+					  const char *format)
 {
-    char threadname[PR_SET_NAME];
+  char threadname[PR_SET_NAME];
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
         abort();
@@ -545,24 +545,24 @@ static int log_header(char *log_buffer,
 }
 
 void logRecord_mt(const char *file,
-                  const char *func,
-                  int line,
-                  int comp,
-                  int level,
-                  const char *format,
-                  ... )
+		          const char *func,
+				  int line,
+				  int comp,
+				  int level,
+				  const char *format,
+				  ... )
 {
-    char log_buffer[MAX_LOG_TOTAL]= {0};
-    va_list args;
-    va_start(args,format);
-    if (log_mem_flag == 1) {
-        log_output_memory(file,func,line,comp,level,format,args);
-    } else {
-        log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
-        g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
-        fflush(g_log->log_component[comp].stream);
-    }
-    va_end(args);
+  char log_buffer[MAX_LOG_TOTAL]= {0};
+  va_list args;
+  va_start(args,format);
+  if (log_mem_flag == 1) {
+    log_output_memory(file,func,line,comp,level,format,args);
+  } else {
+  log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
+  g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
+  fflush(g_log->log_component[comp].stream);
+  }
+  va_end(args);
 }
 
 void vlogRecord_mt(const char *file,

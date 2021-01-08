@@ -1388,7 +1388,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
 static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 {
-#if 0 // TODO: doesn't currently compile
+#if 0 // TODO: doesn't currently compile, obviated by multi-ue proxy
   thread_top_init("UE_phy_stub_thread_rxn_txnp4",1,870000L,1000000L,1000000L);
   // for multipule UE's L2-emulator
   //module_id_t Mod_id = 0;
