@@ -365,6 +365,76 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   }
 }
 
+bool find_free_CCE(module_id_t module_id,
+                   sub_frame_t slot,
+                   int UE_id){
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
+  uint8_t nr_of_candidates;
+  find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid][slot];
+  const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];
+  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                           sched_ctrl->active_bwp,
+                                           sched_ctrl->coreset,
+                                           sched_ctrl->aggregation_level,
+                                           Y,
+                                           m,
+                                           nr_of_candidates);
+  if (sched_ctrl->cce_index < 0)
+    return false;
+
+  RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid]++;
+  return true;
+}
+
+bool allocate_retransmission(module_id_t module_id,
+                             uint8_t *rballoc_mask,
+                             int *n_rb_sched,
+                             int UE_id,
+                             int current_harq_pid){
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
+  NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
+
+  /* ensure that there is a free place for RB allocation */
+  int rbSize = 0;
+  while (rbSize < retInfo->rbSize) {
+    rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
+    rbSize = 0;
+    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+    if (rbStart >= bwpSize) {
+      LOG_E(MAC,
+            "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
+            UE_id,
+            RC.nrmac[module_id]->UE_info.rnti[UE_id]);
+      return false;
+    }
+    while (rbStart + rbSize < bwpSize
+           && rballoc_mask[rbStart + rbSize]
+           && rbSize < retInfo->rbSize)
+      rbSize++;
+  }
+  sched_ctrl->rbSize = retInfo->rbSize;
+  sched_ctrl->rbStart = rbStart;
+
+  /* MCS etc: just reuse from previous scheduling opportunity */
+  sched_ctrl->mcsTableIdx = retInfo->mcsTableIdx;
+  sched_ctrl->mcs = retInfo->mcs;
+  sched_ctrl->numDmrsCdmGrpsNoData = retInfo->numDmrsCdmGrpsNoData;
+
+  /* retransmissions: directly allocate */
+  *n_rb_sched -= sched_ctrl->rbSize;
+  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
+    rballoc_mask[rb+sched_ctrl->rbStart] = 0;
+  return true;
+}
+
 void pf_dl(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -379,6 +449,8 @@ void pf_dl(module_id_t module_id,
   /* Loop UE_info->list to check retransmission */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
+    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
     const rnti_t rnti = UE_info->rnti[UE_id];
@@ -388,31 +460,12 @@ void pf_dl(module_id_t module_id,
 
     /* retransmission */
     if (sched_ctrl->dl_harq_pid >= 0) {
-
       /* Find a free CCE */
-      const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-      sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
-      uint8_t nr_of_candidates;
-      find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                  &nr_of_candidates,
-                                  sched_ctrl->search_space);
-      sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-      int cid = sched_ctrl->coreset->controlResourceSetId;
-      const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-      const int m = UE_info->num_pdcch_cand[UE_id][cid];
-      sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                               sched_ctrl->active_bwp,
-                                               sched_ctrl->coreset,
-                                               sched_ctrl->aggregation_level,
-                                               Y,
-                                               m,
-                                               nr_of_candidates);
-      if (sched_ctrl->cce_index < 0) {
-          LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
-          return;
+      bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+      if (!freeCCE){
+        LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+        continue;
       }
-      UE_info->num_pdcch_cand[UE_id][cid]++;
-
       /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
        * allocation after CCE alloc fail would be more complex) */
       const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
@@ -424,44 +477,22 @@ void pf_dl(module_id_t module_id,
               rnti,
               frame,
               slot);
+        int cid = sched_ctrl->coreset->controlResourceSetId;
         UE_info->num_pdcch_cand[UE_id][cid]--;
         int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
         for (int i = 0; i < sched_ctrl->aggregation_level; i++)
           cce_list[sched_ctrl->cce_index + i] = 0;
         return;
       }
-
       /* Allocate retransmission */
-      NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[sched_ctrl->dl_harq_pid];
-      sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
-
-      /* ensure that there is a free place for RB allocation */
-      int rbSize = 0;
-      const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
-      int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
-      while (rbSize < retInfo->rbSize) {
-            rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
-          rbSize = 0;
-          while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
-          if (rbStart >= bwpSize) {
-             LOG_E(MAC,
-                      "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
-                      UE_id,
-                      rnti);
-              return;
-          }
-          while (rbStart + rbSize < bwpSize
-                   && rballoc_mask[rbStart + rbSize]
-                   && rbSize < retInfo->rbSize)
-              rbSize++;
+      bool r = allocate_retransmission(module_id, rballoc_mask, &n_rb_sched, UE_id, sched_ctrl->dl_harq_pid);
+      if (!r) {
+        LOG_E(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
+        continue;
       }
-      sched_ctrl->rbSize = retInfo->rbSize;
-      sched_ctrl->rbStart = rbStart;
-
-      /* MCS etc: just reuse from previous scheduling opportunity */
-      sched_ctrl->mcsTableIdx = retInfo->mcsTableIdx;
-      sched_ctrl->mcs = retInfo->mcs;
-      sched_ctrl->numDmrsCdmGrpsNoData = retInfo->numDmrsCdmGrpsNoData;
+      /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+      max_num_ue--;
+      if (max_num_ue < 0) return;
     } else {
       /* Check DL buffer */
 
@@ -484,28 +515,14 @@ void pf_dl(module_id_t module_id,
     /* Find max coeff from UE_sched*/
 
     /* Find a free CCE */
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
-    uint8_t nr_of_candidates;
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space);
-    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-    int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-    const int m = UE_info->num_pdcch_cand[UE_id][cid];
-    sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                             sched_ctrl->active_bwp,
-                                             sched_ctrl->coreset,
-                                             sched_ctrl->aggregation_level,
-                                             Y,
-                                             m,
-                                             nr_of_candidates);
-    if (sched_ctrl->cce_index < 0) {
-        LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
-        return;
+    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+    if (!freeCCE) {
+      LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+      return;
     }
-    UE_info->num_pdcch_cand[UE_id][cid]++;
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+    max_num_ue--;
+    if (max_num_ue < 0) return;
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
@@ -518,6 +535,7 @@ void pf_dl(module_id_t module_id,
             rnti,
             frame,
             slot);
+      int cid = sched_ctrl->coreset->controlResourceSetId;
       UE_info->num_pdcch_cand[UE_id][cid]--;
       int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
       for (int i = 0; i < sched_ctrl->aggregation_level; i++)
