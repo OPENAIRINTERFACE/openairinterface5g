@@ -289,12 +289,12 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
   AssertFatal( (dlsch_id>=0) && (dlsch_id<NUMBER_OF_NR_DLSCH_MAX),
               "illegal or no dlsch_id found!!! rnti %04x dlsch_id %d\n",rel15->rnti,dlsch_id);
   NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
-  NR_DL_gNB_HARQ_t **harq  = dlsch->harq_processes;
+  NR_DL_gNB_HARQ_t *harq  = &dlsch->harq_process;
   /// DLSCH struct
-  memcpy((void*)&harq[0/*dlsch->harq_ids[frame%2][slot]*/]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
+  memcpy((void*)&harq->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
   gNB->num_pdsch_rnti[slot]++;
   AssertFatal(sdu!=NULL,"sdu is null\n");
-  harq[0/*dlsch->harq_ids[frame%2][slot]*/]->pdu = sdu;
+  harq->pdu = sdu;
 
 
 }

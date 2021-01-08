@@ -666,6 +666,9 @@ int main(int argc, char **argv)
   rrc_mac_config_req_gNB(0,0,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
+  NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
+  UE_info->num_UEs=1;
+
   // stub to configure frame_parms
   //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
@@ -831,9 +834,9 @@ int main(int argc, char **argv)
   scheduled_response.thread_id = UE_proc.thread_id;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
-  NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
   snrRun = 0;
+
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
@@ -880,7 +883,7 @@ int main(int argc, char **argv)
       NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
 
       NR_gNB_DLSCH_t *gNB_dlsch = gNB->dlsch[0][0];
-      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_processes[slot]->pdsch_pdu.pdsch_pdu_rel15;
+      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
       
       UE_harq_process->harq_ack.ack = 0;
       round = 0;
@@ -896,7 +899,6 @@ int main(int argc, char **argv)
 
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
-        gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
       
@@ -1045,8 +1047,8 @@ int main(int argc, char **argv)
       
       for (i = 0; i < available_bits; i++) {
 	
-	if(((gNB_dlsch->harq_processes[harq_pid]->f[i] == 0) && (UE_llr[i] <= 0)) || 
-	   ((gNB_dlsch->harq_processes[harq_pid]->f[i] == 1) && (UE_llr[i] >= 0)))
+	if(((gNB_dlsch->harq_process.f[i] == 0) && (UE_llr[i] <= 0)) || 
+	   ((gNB_dlsch->harq_process.f[i] == 1) && (UE_llr[i] >= 0)))
 	  {
 	    if(errors_scrambling == 0) {
 	      LOG_D(PHY,"\n");
@@ -1059,7 +1061,7 @@ int main(int argc, char **argv)
       for (i = 0; i < TBS; i++) {
 
 	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
-	test_input_bit[i]       = (gNB_dlsch->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
+	test_input_bit[i]       = (gNB_dlsch->harq_process.b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 	
 	if (estimated_output_bit[i] != test_input_bit[i]) {
 	  if(errors_bit == 0)
@@ -1099,9 +1101,9 @@ int main(int argc, char **argv)
     if (print_perf==1) {
       printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",
 	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
-	     gNB->dlsch[0][0]->harq_processes[0]->pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
-	     gNB->dlsch[0][0]->harq_processes[0]->K,
-	     gNB->dlsch[0][0]->harq_processes[0]->K/((gNB->dlsch[0][0]->harq_processes[0]->pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
+	     gNB->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
+	     gNB->dlsch[0][0]->harq_process.K,
+	     gNB->dlsch[0][0]->harq_process.K/((gNB->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
       printDistribution(&gNB->phy_proc_tx,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
