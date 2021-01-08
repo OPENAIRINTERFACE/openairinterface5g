@@ -232,8 +232,8 @@ typedef struct {
   uint8_t RA_SCALING_FACTOR_BI;
   /// Indicating whether it is 2-step or 4-step RA
   uint8_t RA_TYPE;
-  ///
-  uint8_t RA_PCMAX;
+  /// UE configured maximum output power
+  int RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant
   uint16_t ra_RNTI;
   /// Pointer to Msg3 payload for UL-grant

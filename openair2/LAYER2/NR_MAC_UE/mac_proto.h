@@ -189,6 +189,11 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
 */
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format);
 
+/** \brief Function to compute configured maximum output power according to clause 6.2.4 of 3GPP TS 38.101-1 version 16.5.0 Release 16
+    @param Mod_id Module id of UE
+*/
+long nr_get_Pcmax(module_id_t mod_id);
+
 /* Random Access */
 
 /* \brief This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211 tables 6.3.3.2.x

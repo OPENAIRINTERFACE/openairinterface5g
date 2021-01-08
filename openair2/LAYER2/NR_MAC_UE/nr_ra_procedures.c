@@ -68,13 +68,14 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 // to Random Access type as specified in clause 5.1.1a (3GPP TS 38.321 version 16.2.1 Release 16)
 // todo:
 // - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX (currently hardcoded to 0)
-void init_RA(NR_PRACH_RESOURCES_t *prach_resources,
+void init_RA(module_id_t mod_id,
+             NR_PRACH_RESOURCES_t *prach_resources,
              NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon,
              NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
              NR_RACH_ConfigDedicated_t *rach_ConfigDedicated) {
 
   prach_resources->RA_PREAMBLE_BACKOFF = 0;
-  prach_resources->RA_PCMAX = 0;
+  prach_resources->RA_PCMAX = nr_get_Pcmax(mod_id);
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
   prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
   prach_resources->POWER_OFFSET_2STEP_RA = 0;
@@ -252,7 +253,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   if (prach_resources->RA_TYPE == RA_4STEP){
 
     if (scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble){
-      deltaPreamble_Msg3 = *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
+      deltaPreamble_Msg3 = (*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble) * 2; // dB
       LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
     }
 
@@ -543,7 +544,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         RA_backoff_cnt = 0;
         Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
 
-        init_RA(prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
+        init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         prach_resources->Msg3 = payload;
         nr_get_RA_window(mac);
 
@@ -614,7 +615,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
 
           prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
-          prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP << 1; // 2 dB increment
+          prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
           prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
         } else {

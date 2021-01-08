@@ -126,7 +126,7 @@
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
-/// Context data structure for eNB subframe processing
+/// Context data structure for gNB subframe processing
 typedef struct {
   /// Component Carrier index
   uint8_t              CC_id;
@@ -171,59 +171,59 @@ typedef struct {
 
   // UE measurements
   //! estimated received spatial signal power (linear)
-  int            rx_spatial_power[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
+  int            rx_spatial_power[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][2][2];
+  unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
 
   /// estimated received signal power (sum over all TX antennas)
-  int            rx_power[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  int            rx_power[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX];
   /// estimated received signal power (sum over all TX antennas)
-  unsigned short rx_power_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  unsigned short rx_power_dB[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX];
 
   /// estimated received signal power (sum over all TX/RX antennas)
-  int            rx_power_tot[NUMBER_OF_CONNECTED_eNB_MAX]; //NEW
+  int            rx_power_tot[NUMBER_OF_CONNECTED_gNB_MAX]; //NEW
   /// estimated received signal power (sum over all TX/RX antennas)
-  unsigned short rx_power_tot_dB[NUMBER_OF_CONNECTED_eNB_MAX]; //NEW
+  unsigned short rx_power_tot_dB[NUMBER_OF_CONNECTED_gNB_MAX]; //NEW
 
   //! estimated received signal power (sum of all TX/RX antennas, time average)
-  int            rx_power_avg[NUMBER_OF_CONNECTED_eNB_MAX];
+  int            rx_power_avg[NUMBER_OF_CONNECTED_gNB_MAX];
   //! estimated received signal power (sum of all TX/RX antennas, time average, in dB)
-  unsigned short rx_power_avg_dB[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned short rx_power_avg_dB[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// SINR (sum of all TX/RX antennas, in dB)
-  int            wideband_cqi_tot[NUMBER_OF_CONNECTED_eNB_MAX];
+  int            wideband_cqi_tot[NUMBER_OF_CONNECTED_gNB_MAX];
   /// SINR (sum of all TX/RX antennas, time average, in dB)
-  int            wideband_cqi_avg[NUMBER_OF_CONNECTED_eNB_MAX];
+  int            wideband_cqi_avg[NUMBER_OF_CONNECTED_gNB_MAX];
 
   //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_CONNECTED_eNB_MAX];
+  short          rx_rssi_dBm[NUMBER_OF_CONNECTED_gNB_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][2];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  int            rx_correlation_dB[NUMBER_OF_CONNECTED_gNB_MAX][2];
 
   /// Wideband CQI (sum of all RX antennas, in dB, for precoded transmission modes (3,4,5,6), up to 4 spatial streams)
-  int            precoded_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX+1][4];
+  int            precoded_cqi_dB[NUMBER_OF_CONNECTED_gNB_MAX+1][4];
   /// Subband CQI per RX antenna (= SINR)
-  int            subband_cqi[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS_MAX];
+  int            subband_cqi[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS_MAX];
   /// Total Subband CQI  (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX];
+  int            subband_cqi_tot[NUMBER_OF_CONNECTED_gNB_MAX][NUMBER_OF_SUBBANDS_MAX];
   /// Subband CQI in dB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS_MAX];
+  int            subband_cqi_dB[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS_MAX];
   /// Total Subband CQI
-  int            subband_cqi_tot_dB[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX];
+  int            subband_cqi_tot_dB[NUMBER_OF_CONNECTED_gNB_MAX][NUMBER_OF_SUBBANDS_MAX];
   /// Wideband PMI for each RX antenna
-  int            wideband_pmi_re[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  int            wideband_pmi_re[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX];
   /// Wideband PMI for each RX antenna
-  int            wideband_pmi_im[NUMBER_OF_CONNECTED_eNB_MAX][NB_ANTENNAS_RX];
+  int            wideband_pmi_im[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX];
   ///Subband PMI for each RX antenna
-  int            subband_pmi_re[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX][NB_ANTENNAS_RX];
+  int            subband_pmi_re[NUMBER_OF_CONNECTED_gNB_MAX][NUMBER_OF_SUBBANDS_MAX][NB_ANTENNAS_RX];
   ///Subband PMI for each RX antenna
-  int            subband_pmi_im[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX][NB_ANTENNAS_RX];
+  int            subband_pmi_im[NUMBER_OF_CONNECTED_gNB_MAX][NUMBER_OF_SUBBANDS_MAX][NB_ANTENNAS_RX];
   /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
-  unsigned char           selected_rx_antennas[NUMBER_OF_CONNECTED_eNB_MAX][NUMBER_OF_SUBBANDS_MAX];
+  unsigned char           selected_rx_antennas[NUMBER_OF_CONNECTED_gNB_MAX][NUMBER_OF_SUBBANDS_MAX];
   /// Wideband Rank indication
-  unsigned char  rank[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char  rank[NUMBER_OF_CONNECTED_gNB_MAX];
   /// Number of RX Antennas
   unsigned char  nb_antennas_rx;
   /// DLSCH error counter
@@ -343,7 +343,7 @@ typedef struct {
   int32_t **dl_ch_magb1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
   int32_t **dl_ch_magr0;
-  /// \brief Cross-correlation of two eNB signals.
+  /// \brief Cross-correlation of two gNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
   int32_t **rho;
@@ -611,11 +611,11 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
-  /// \brief Pointers to channel cross-correlation vectors for multi-eNB detection.
+  /// \brief Pointers to channel cross-correlation vectors for multi-gNB detection.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_rho_ext;
-  /// \brief Pointers to channel cross-correlation vectors for multi-eNB detection.
+  /// \brief Pointers to channel cross-correlation vectors for multi-gNB detection.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..]
   int32_t **rho;
@@ -813,19 +813,17 @@ typedef struct {
   fapi_nr_config_request_t nrUE_config;
 
   t_nrPolar_params *polarList;
-  NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
-  NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads
-  NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][NR_MAX_NB_CODEWORDS]; // two code words
-  NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_eNB_MAX];
-  NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
-  // This is for SIC in the UE, to store the reencoded data
-  LTE_eNB_DLSCH_t  *dlsch_eNB[NUMBER_OF_CONNECTED_eNB_MAX];
+  NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX+1]; // two RxTx Threads
+  NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads
+  NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two code words
+  NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
 
   //Paging parameters
   uint32_t              IMSImod1024;
@@ -866,49 +864,49 @@ typedef struct {
   uint32_t high_speed_flag;
   uint32_t perfect_ce;
   int16_t ch_est_alpha;
-  int generate_ul_signal[NUMBER_OF_CONNECTED_eNB_MAX];
+  int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
 
-  char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
+  char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_gNB_MAX];
 
   unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_gNB_MAX];
 
   NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t total_TBS[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// - first index: gNB [0..NUMBER_OF_CONNECTED_gNB_MAX[ (hard coded)
+  uint32_t total_TBS[NUMBER_OF_CONNECTED_gNB_MAX];
   /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t total_TBS_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// - first index: gNB [0..NUMBER_OF_CONNECTED_gNB_MAX[ (hard coded)
+  uint32_t total_TBS_last[NUMBER_OF_CONNECTED_gNB_MAX];
   /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t bitrate[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// - first index: gNB [0..NUMBER_OF_CONNECTED_gNB_MAX[ (hard coded)
+  uint32_t bitrate[NUMBER_OF_CONNECTED_gNB_MAX];
   /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t total_received_bits[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_errors_last[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_received_last[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_fer[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_SI_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_p_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_p_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mch_received_sf[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mch_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// - first index: gNB [0..NUMBER_OF_CONNECTED_gNB_MAX[ (hard coded)
+  uint32_t total_received_bits[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_errors[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_errors_last[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_received[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_received_last[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_fer[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_SI_received[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_SI_errors[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_ra_received[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_ra_errors[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_p_received[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_p_errors[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mch_received_sf[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mch_received[NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mcch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mtch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mcch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mtch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mcch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
+  int current_dlsch_cqi[NUMBER_OF_CONNECTED_gNB_MAX];
+  unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_gNB_MAX];
   uint8_t               prach_cnt;
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;
@@ -930,9 +928,9 @@ typedef struct {
 
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue;
-  /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
+  /// Flag to tell if secondary gNB has channel estimates to create NULL-beams from.
   unsigned char    has_valid_precoder;
-  /// hold the precoder for NULL beam to the primary eNB
+  /// hold the precoder for NULL beam to the primary gNB
   int              **ul_precoder_S_UE;
   /// holds the maximum channel/precoder coefficient
   char             log2_maxp;
@@ -958,17 +956,17 @@ typedef struct {
   double N0;
 
   /// PDSCH Varaibles
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// PUSCH contention-based access vars
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
   /// PUCCH variables
 
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
@@ -979,8 +977,8 @@ typedef struct {
   PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
   PDSCH_Config_t             PDSCH_Config;
 
-  PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_eNB_MAX];
-  PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+  PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_gNB_MAX];
+  PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_gNB_MAX];
 
   PUSCH_Config_t             pusch_config;
   SRS_NR                     srs;
@@ -996,29 +994,29 @@ typedef struct {
   uint8_t ncs_cell[20][7];
 
   /// UL-POWER-Control
-  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_CONNECTED_eNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_CONNECTED_gNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_CONNECTED_eNB_MAX];
+  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
   /// Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_gNB_MAX];
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
-  scheduling_request_config_t scheduling_request_config_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+  scheduling_request_config_t scheduling_request_config_nr[NUMBER_OF_CONNECTED_gNB_MAX];
 
 #endif
 
-  /// Transmission mode per eNB
-  uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// Transmission mode per gNB
+  uint8_t transmission_mode[NUMBER_OF_CONNECTED_gNB_MAX];
 
   time_stats_t phy_proc[RX_NB_TH];
   time_stats_t phy_proc_tx;

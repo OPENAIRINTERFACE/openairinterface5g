@@ -1754,9 +1754,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
     }
 
-    //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){
-    nr_ue_rsrp_measurements(ue,proc,nr_slot_rx,0);
-    //}
+    nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
 
@@ -2139,7 +2137,8 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
-  uint16_t pathloss;
+  int16_t pathloss;
+  int16_t ra_preamble_rx_power;
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
@@ -2165,17 +2164,14 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
 
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
-
-    ue->tx_power_dBm[nr_slot_tx] = prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
-
-    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_slot_tx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x\n",
+    ra_preamble_rx_power = (int16_t)(10*log10(pow(10, (double)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER)/10) + pow(10, (double)(pathloss)/10)));
+    ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(ue->Mod_id), ra_preamble_rx_power);
+    LOG_I(PHY,"[UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble index %d, TX power PRACH %d dBm, RA-RNTI %x)\n",
       ue->Mod_id,
       frame_tx,
       nr_slot_tx,
       prach_resources->ra_PreambleIndex,
-      pathloss,
       ue->tx_power_dBm[nr_slot_tx],
-      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER,
       prach_resources->ra_RNTI);
 
     //ue->tx_total_RE[nr_slot_tx] = 96; // todo
@@ -2195,27 +2191,19 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
 
-    LOG_D(PHY, "[UE %d][RAPROC][%d.%d]: PRACH PL %d dB, TX power %d dBm, digital power %d dB (amp %d)\n",
+    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generated PRACH Msg1 (PL %d dBm, ra_PREAMBLE_RECEIVED_TARGET_POWER %d dBm, TX power PRACH %d dBm, digital power %d dBW (amp %d) prach_cnt %d)\n",
+      __FUNCTION__,
       ue->Mod_id,
       proc->frame_rx,
       proc->nr_slot_tx,
       pathloss,
+      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER,
       ue->tx_power_dBm[nr_slot_tx],
       dB_fixed(prach_power),
-      ue->prach_vars[gNB_id]->amp);
+      ue->prach_vars[gNB_id]->amp,
+      ue->prach_cnt);
 
     nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
-
-    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_slot_tx %d: Generated PRACH Msg1 (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
-      ue->Mod_id,
-      frame_tx,
-      nr_slot_tx,
-      gNB_id,
-      prach_resources->ra_PreambleIndex,
-      ue->tx_power_dBm[nr_slot_tx],
-      pathloss);
-
-    LOG_D(PHY,"[UE %d] frame %d nr_slot_tx %d : prach_cnt %d\n", ue->Mod_id, frame_tx, nr_slot_tx, ue->prach_cnt);
 
     ue->prach_cnt++;
 
