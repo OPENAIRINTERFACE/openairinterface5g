@@ -60,16 +60,16 @@ int nbDlProcessing =0;
 static  tpool_t pool_dl;
 
 //extern double cpuf;
-void init_dlsch_tpool(uint8_t nun_dlsch_threads)
+void init_dlsch_tpool(uint8_t num_dlsch_threads)
 {
-    if( nun_dlsch_threads==0)
+    if( num_dlsch_threads==0)
     	return;
 
-  char *params=calloc(1,(nun_dlsch_threads*2)+1);
-  for (int i=0; i<nun_dlsch_threads; i++) {
-    memcpy(params+(i*2),"-1",2);
+  char *params=calloc(1,(num_dlsch_threads*3)+1);
+  for (int i=0; i<num_dlsch_threads; i++) {
+    memcpy(params+(i*3),"-1,",3);
   }
-  initTpool(params, &pool_dl, false);
+  initNamedTpool(params, &pool_dl, false,"dlsch");
   free(params);
 }
 
@@ -1311,7 +1311,7 @@ void nr_dlsch_decoding_process(void *arg)
   uint32_t G;
 
   uint32_t ret;
-  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
+  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bits_F;
 
   uint8_t crc_type;
   uint8_t C,Cprime;
@@ -1435,7 +1435,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
-  K_bytes_F = Kr-harq_process->F;
+  K_bits_F = Kr-harq_process->F;
 
   E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1547,9 +1547,9 @@ void nr_dlsch_decoding_process(void *arg)
         //set first 2*Z_c bits to zeros
         memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
         //set Filler bits
-        memset((&z[0]+K_bytes_F),127,harq_process->F*sizeof(int16_t));
+        memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
         //Move coded bits before filler bits
-        memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bytes_F-2*harq_process->Z)*sizeof(int16_t));
+        memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
         //skip filler bits
         memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
         //Saturate coded bits before decoding into 8 bits values

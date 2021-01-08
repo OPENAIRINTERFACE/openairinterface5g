@@ -214,9 +214,9 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  char *params=calloc(1,(RX_NB_TH*2)+1);
+  char *params=calloc(1,(RX_NB_TH*3)+1);
   for (int i=0; i<RX_NB_TH; i++) {
-    memcpy(params+(i*2),"-1",2);
+    memcpy(params+(i*3),"-1,",3);
   }
   initTpool(params, &(nrUE_params.Tpool), false);
   free(params);
@@ -553,11 +553,6 @@ int main( int argc, char **argv ) {
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
 
-  for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-    PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-    PHY_vars_UE_g[0][CC_id]->timing_advance = UE[CC_id]->timing_advance;
-  }
   
   init_NR_UE_threads(1);
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
