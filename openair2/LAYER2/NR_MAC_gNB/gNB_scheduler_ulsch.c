@@ -520,6 +520,7 @@ void pf_ul(module_id_t module_id,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int min_rb = 5;
+  float coeff_ue[MAX_MOBILES_PER_GNB];
 
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -531,8 +532,6 @@ void pf_ul(module_id_t module_id,
     const float a = 0.0005f; // corresponds to 200ms window
     const uint32_t b = UE_info->mac_stats[UE_id].ulsch_current_bytes;
     ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
-    LOG_D(MAC,"%4d.%2d %s() static TBS %d, ul_thr_ue[%d] %f\n",
-          frame, slot, __func__, b, UE_id, ul_thr_ue[UE_id]);
 
     /* RETRANSMISSION: Check retransmission */
 
@@ -545,10 +544,50 @@ void pf_ul(module_id_t module_id,
 
     /* RETRANSMISSION: Allocate retransmission*/
 
+    /* Save PUSCH field */
+    /* we want to avoid a lengthy deduction of DMRS and other parameters in
+     * every TTI if we can save it, so check whether dci_format, TDA, or
+     * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+    sched_ctrl->sched_pusch.time_domain_allocation = tda;
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
+    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    const uint8_t num_dmrs_cdm_grps_no_data = 1;
+    NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
+    if (ps->time_domain_allocation != tda
+        || ps->dci_format != dci_format
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+      nr_save_pusch_fields(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+
+    /* Calculate TBS from MCS */
+    NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+    const int mcs = 9;
+    sched_pusch->mcs = mcs;
+    sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+    sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+    if (ps->pusch_Config->tp_pi2BPSK
+        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+      sched_pusch->R >>= 1;
+      sched_pusch->Qm <<= 1;
+    }
+
+    uint32_t tbs = nr_compute_tbs(sched_pusch->Qm,
+                                  sched_pusch->R,
+                                  1, // rbSize
+                                  ps->nrOfSymbols,
+                                  ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                  0, // nb_rb_oh
+                                  0,
+                                  1 /* NrOfLayers */)
+                    >> 3;
+
     /* Check BSR */
 
     /* Calculate coefficient*/
-
+    coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
+    LOG_D(MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
+          b, UE_id, ul_thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
   }
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -562,39 +601,7 @@ void pf_ul(module_id_t module_id,
 
     max_num_ue--;
 
-    /* Save PUSCH field */
-    sched_ctrl->sched_pusch.time_domain_allocation = tda;
-    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
-    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-    const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    /* we want to avoid a lengthy deduction of DMRS and other parameters in
-     * every TTI if we can save it, so check whether dci_format, TDA, or
-     * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-    NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
-    if (ps->time_domain_allocation != tda
-        || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_save_pusch_fields(scc,
-                           sched_ctrl->active_ubwp,
-                           dci_format,
-                           tda,
-                           num_dmrs_cdm_grps_no_data,
-                           ps);
-
-    const int mcs = 9;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-    sched_pusch->mcs = mcs;
-
-    /* Calculate TBS from MCS */
-    sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-    sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-    if (ps->pusch_Config->tp_pi2BPSK
-        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
-      sched_pusch->R >>= 1;
-      sched_pusch->Qm <<= 1;
-    }
 
 
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
@@ -614,8 +621,8 @@ void pf_ul(module_id_t module_id,
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
                                             sched_pusch->R,
                                             sched_pusch->rbSize,
-                                            ps->nrOfSymbols,
-                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                            sched_ctrl->pusch_save.nrOfSymbols,
+                                            sched_ctrl->pusch_save.N_PRB_DMRS * sched_ctrl->pusch_save.num_dmrs_symb,
                                             0, // nb_rb_oh
                                             0,
                                             1 /* NrOfLayers */)
