@@ -425,6 +425,9 @@ typedef struct {
   uint16_t rbSize;
   uint16_t rbStart;
 
+  /// estimation of the UL buffer size
+  int estimated_ul_buffer;
+
   // time-domain allocation for scheduled RBs
   int time_domain_allocation;
 

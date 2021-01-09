@@ -78,6 +78,13 @@ void nr_process_mac_pdu(
     uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
 
 
+    NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
+    int UE_id = find_nr_UE_id(module_idP, rnti);
+    if (UE_id == -1) {
+      LOG_E(MAC, "%s() UE_id == -1\n",__func__);
+      return;
+    }
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     //  For both DL/UL-SCH
     //  Except:
     //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -136,8 +143,13 @@ void nr_process_mac_pdu(
         	/* Extract short BSR value */
                ce_ptr = &pdu_ptr[mac_subheader_len];
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
-               LOG_I(MAC, "SHORT BSR, LCG ID %d, BS Index %d, BS value < %d\n",
-                     bsr_s->LcgID, bsr_s->Buffer_size, NR_SHORT_BSR_TABLE[bsr_s->Buffer_size]);
+               sched_ctrl->estimated_ul_buffer = 0;
+               sched_ctrl->estimated_ul_buffer = NR_SHORT_BSR_TABLE[bsr_s->Buffer_size];
+               LOG_D(MAC, "SHORT BSR, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
+                     bsr_s->LcgID,
+                     bsr_s->Buffer_size,
+                     NR_SHORT_BSR_TABLE[bsr_s->Buffer_size],
+                     sched_ctrl->estimated_ul_buffer);
         	break;
 
         case UL_SCH_LCID_L_BSR:
@@ -153,6 +165,7 @@ void nr_process_mac_pdu(
         	/* Extract long BSR value */
                ce_ptr = &pdu_ptr[mac_subheader_len];
                NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
+               sched_ctrl->estimated_ul_buffer = 0;
 
                n_Lcg = bsr_l->LcgID7 + bsr_l->LcgID6 + bsr_l->LcgID5 + bsr_l->LcgID4 +
                        bsr_l->LcgID3 + bsr_l->LcgID2 + bsr_l->LcgID1 + bsr_l->LcgID0;
@@ -165,6 +178,8 @@ void nr_process_mac_pdu(
                  LOG_D(MAC, "LONG BSR, %d/%d (n/n_Lcg), BS Index %d, BS value < %d",
                        n, n_Lcg, pdu_ptr[mac_subheader_len + 1 + n],
                        NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]]);
+                 sched_ctrl->estimated_ul_buffer +=
+                       NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]];
                }
 
         	break;
@@ -262,6 +277,12 @@ void nr_process_mac_pdu(
                                  mac_sdu_len,
                                  1,
                                  NULL);
+
+                /* Updated estimated buffer when receiving data */
+                if (sched_ctrl->estimated_ul_buffer >= mac_sdu_len)
+                  sched_ctrl->estimated_ul_buffer -= mac_sdu_len;
+                else
+                  sched_ctrl->estimated_ul_buffer = 0;
 
             break;
 
