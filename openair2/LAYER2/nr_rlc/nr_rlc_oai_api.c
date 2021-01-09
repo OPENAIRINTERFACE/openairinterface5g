@@ -668,8 +668,8 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
     poll_byte = -1;
     max_retx_threshold = 8;
     sn_field_length = 12;
-    nr_rlc_am = new_nr_rlc_entity_am(100000,
-                                     100000,
+    nr_rlc_am = new_nr_rlc_entity_am(10000000,
+                                     10000000,
                                      deliver_sdu, ue,
                                      successful_delivery, ue,
                                      max_retx_reached, ue,
@@ -751,8 +751,8 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   if (ue->drb[drb_id-1] != NULL) {
     LOG_W(RLC, "%s:%d:%s: DRB %d already exists for UE with RNTI %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    nr_rlc_am = new_nr_rlc_entity_am(100000,
-                                     100000,
+    nr_rlc_am = new_nr_rlc_entity_am(10000000,
+                                     10000000,
                                      deliver_sdu, ue,
                                      successful_delivery, ue,
                                      max_retx_reached, ue,
@@ -823,8 +823,8 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   if (ue->drb[drb_id-1] != NULL) {
     LOG_W(RLC, "DEBUG add_drb_um %s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    nr_rlc_um = new_nr_rlc_entity_um(1000000,
-                                     1000000,
+    nr_rlc_um = new_nr_rlc_entity_um(100000000,
+                                     100000000,
                                      deliver_sdu, ue,
                                      t_reassembly,
                                      sn_field_length);
