@@ -499,8 +499,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
         mac->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
         mac->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
-        mac->msg3_frame = -1; // initialize to an invalid value
-        mac->msg3_slot = -1;
         mac->RA_prachMaskIndex = 0;
         // todo: add the backoff condition here
         mac->RA_backoff_cnt = 0;

@@ -42,7 +42,7 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
       x2 = (1<<11) * (i_ssb2 + 1) * ((Nid>>2) + 1) + (1<<6) * (i_ssb2 + 1) + (Nid&3);
       x2 = x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
-	  for (n=0; n<NR_PBCH_DMRS_LENGTH_DWORD; n++) {
+      for (n=0; n<NR_PBCH_DMRS_LENGTH_DWORD; n++) {
         ue->nr_gold_pbch[n_hf][l][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
