@@ -372,7 +372,8 @@ typedef struct NR_UE_ul_harq {
   uint8_t round;
   uint16_t feedback_slot;
 
-  /* TODO PUSCH of last transmission */
+  /// sched_pusch keeps information on MCS etc used for the initial transmission
+  NR_sched_pusch_t sched_pusch;
 } NR_UE_ul_harq_t;
 
 

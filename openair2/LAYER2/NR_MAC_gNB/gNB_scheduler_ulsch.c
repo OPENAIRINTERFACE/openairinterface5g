@@ -535,16 +535,12 @@ void pf_ul(module_id_t module_id,
     const uint32_t b = UE_info->mac_stats[UE_id].ulsch_current_bytes;
     ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
 
-    /* RETRANSMISSION: Check retransmission */
-
-    /* RETRANSMISSION: Find free CCE */
+    /* Find free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
       LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, UE_info->rnti[UE_id]);
       continue;
     }
-
-    /* RETRANSMISSION: Allocate retransmission*/
 
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
@@ -561,6 +557,39 @@ void pf_ul(module_id_t module_id,
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
       nr_save_pusch_fields(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+
+    /* Check if retransmission is necessary */
+    sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
+    if (sched_ctrl->sched_pusch.ul_harq_pid >= 0) {
+      /* RETRANSMISSION: Allocate retransmission*/
+      /* Save shced_frame and sched_slot before overwrite by previous PUSCH filed */
+      NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[sched_ctrl->sched_pusch.ul_harq_pid];
+      cur_harq->sched_pusch.frame = sched_ctrl->sched_pusch.frame;
+      cur_harq->sched_pusch.slot = sched_ctrl->sched_pusch.slot;
+      /* Get previous PSUCH filed info */
+      sched_ctrl->sched_pusch = cur_harq->sched_pusch;
+      NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+      LOG_D(MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
+            frame, slot, UE_id, UE_info->rnti[UE_id],
+            sched_pusch->frame, sched_pusch->slot,
+            sched_pusch->rbSize);
+
+      while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+      if (rbStart + sched_pusch->rbSize >= bwpSize) {
+        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+              UE_id, UE_info->rnti[UE_id]);
+        return;
+      }
+      sched_pusch->rbStart = rbStart;
+      /* no need to recompute the TBS, it will be the same */
+
+      /* Mark the corresponding RBs as used */
+      n_rb_sched -= sched_pusch->rbSize;
+      for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
+        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+
+      continue;
+    }
 
     /* Calculate TBS from MCS */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -723,8 +752,6 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
 
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
-  /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
-  sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   /* Confirm all the UE have same K2 as the first UE */
   for (int UE_id = UE_info->list.next[UE_id]; UE_id >= 0; UE_id = UE_info->list.next[UE_id]){
@@ -846,6 +873,9 @@ void nr_schedule_ulsch(module_id_t module_id,
     UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
     if (cur_harq->round == 0) {
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
+      /* Save information on MCS, TBS etc for the current initial transmission
+       * so we have access to it when retransmitting */
+      cur_harq->sched_pusch = *sched_pusch;
     } else {
       LOG_D(MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
