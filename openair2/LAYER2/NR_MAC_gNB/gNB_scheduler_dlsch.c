@@ -425,7 +425,6 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
   if (sched_ctrl->dl_harq_pid >= 0) { /* retransmission */
     NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[sched_ctrl->dl_harq_pid];
-    sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
 
     /* ensure that there is a free place for RB allocation */
     int rbSize = 0;
@@ -435,16 +434,27 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
       while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
       if (rbStart >= bwpSize) {
         LOG_E(MAC,
-              "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
+              "%4d.%2d cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
+              frame,
+              slot,
               UE_id,
               rnti);
-        return;
+        /* not enough resources: drop retransmission attempt and make a new
+         * transmission instead */
+        sched_ctrl->dl_harq_pid = -1;
+        break;
       }
       while (rbStart + rbSize < bwpSize
              && !vrb_map[rbStart + rbSize]
              && rbSize < retInfo->rbSize)
         rbSize++;
     }
+  }
+
+  if (sched_ctrl->dl_harq_pid >= 0) {
+    /* this retransmission can be allocated (i.e., enough resources) */
+    NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[sched_ctrl->dl_harq_pid];
+    sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
     sched_ctrl->rbSize = retInfo->rbSize;
     sched_ctrl->rbStart = rbStart;
 
