@@ -634,7 +634,19 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   int16x8_t buff_tmp[2][nsamps2];
 #endif
 
-    if (cc>1) {
+  int rxshift;
+  switch (device->type) {
+     case USRP_B200_DEV:
+        rxshift=4;
+        break;
+     case USRP_X300_DEV:
+     case USRP_N300_DEV:
+        rxshift=2;
+        break;
+     default:
+	AssertFatal(1==0,"Shouldn't be here\n");
+  }	
+  if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
 
@@ -653,7 +665,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         }
       }
       if (samples_received == nsamps) s->wait_for_first_pps=0;
-    } else {
+   } else {
       // receive a single channel (e.g. from connector RF A)
       samples_received=0;
 
@@ -679,17 +691,17 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
         if ((((uintptr_t) buff[i])&0x1F)==0) {
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
         } else {
-          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],4);
-          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],4);
+          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
+          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
         }
 
 #else
-        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
+        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
 #endif
 #elif defined(__arm__)
-        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
+        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
       }
     }
