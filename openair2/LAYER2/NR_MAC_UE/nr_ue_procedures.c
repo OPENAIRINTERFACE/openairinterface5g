@@ -1368,7 +1368,72 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     module_id_t mod_id    = ul_info->module_id;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
-    if (mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
+    if (mac->ra_state == WAIT_RAR){
+
+      if (mac->RA_active && ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
+
+        uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
+        nr_scheduled_response_t scheduled_response;
+        fapi_nr_tx_request_t tx_req;
+        //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
+        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
+        fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
+        uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
+
+        //if (IS_SOFTMODEM_NOS1){
+        //  // Getting IP traffic to be transmitted
+        //  data_existing = nr_ue_get_sdu(mod_id,
+        //                                cc_id,
+        //                                frame_tx,
+        //                                slot_tx,
+        //                                0,
+        //                                ulsch_input_buffer,
+        //                                TBS_bytes,
+        //                                &access_mode);
+        //}
+
+        //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+        //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+          //and block this traffic from being forwarded to the upper layers at the gNB
+          LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
+          //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+          //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+          //have a valid LCID (nr_process_mac_pdu function)
+          ulsch_input_buffer[0] = 0x31;
+          for (int i = 1; i < TBS_bytes; i++) {
+            ulsch_input_buffer[i] = (unsigned char) rand();
+            //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+          }
+        //}
+
+        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
+          ul_info->module_id,
+          ul_info->frame_tx,
+          ul_info->slot_tx,
+          mac->t_crnti);
+
+        // Config UL TX PDU
+        tx_req.slot = ul_info->slot_tx;
+        tx_req.sfn = ul_info->frame_tx;
+        tx_req.number_of_pdus = 1;
+        tx_req.tx_request_body[0].pdu_length = TBS_bytes;
+        tx_req.tx_request_body[0].pdu_index = 0;
+        tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
+        ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+        ul_config->number_pdus++;
+        // scheduled_response
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx, ul_info->thread_id);
+        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
+          mac->if_module->scheduled_response(&scheduled_response);
+        }
+
+        if (!mac->cfra){
+          nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
+        }
+
+      }
+    } else if (mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
@@ -1509,75 +1574,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
 
         fill_scheduled_response(&scheduled_response, NULL, ul_config_req, &tx_req, mod_id, cc_id, rx_frame, rx_slot, ul_info->thread_id);
-        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
-          mac->if_module->scheduled_response(&scheduled_response);
-        }
-
-        // TODO: expand
-        // Note: Contention resolution is currently not active
-        if (mac->RA_contention_resolution_timer_active == 1)
-          ue_contention_resolution(mod_id, gNB_index, cc_id, ul_info->frame_tx);
-
-      }
-
-    } else if (get_softmodem_params()->do_ra){
-
-      NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
-
-      if (mac->RA_active && ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
-
-        uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
-        nr_scheduled_response_t scheduled_response;
-        fapi_nr_tx_request_t tx_req;
-        //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
-        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
-        fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
-        uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
-
-        //if (IS_SOFTMODEM_NOS1){
-        //  // Getting IP traffic to be transmitted
-        //  data_existing = nr_ue_get_sdu(mod_id,
-        //                                cc_id,
-        //                                frame_tx,
-        //                                slot_tx,
-        //                                0,
-        //                                ulsch_input_buffer,
-        //                                TBS_bytes,
-        //                                &access_mode);
-        //}
-
-        //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-        //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-          //and block this traffic from being forwarded to the upper layers at the gNB
-          LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
-          //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-          //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-          //have a valid LCID (nr_process_mac_pdu function)
-          ulsch_input_buffer[0] = 0x31;
-          for (int i = 1; i < TBS_bytes; i++) {
-            ulsch_input_buffer[i] = (unsigned char) rand();
-            //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-          }
-        //}
-
-        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
-          ul_info->module_id,
-          ul_info->frame_tx,
-          ul_info->slot_tx,
-          mac->t_crnti);
-
-        // Config UL TX PDU
-        tx_req.slot = ul_info->slot_tx;
-        tx_req.sfn = ul_info->frame_tx;
-        tx_req.number_of_pdus = 1;
-        tx_req.tx_request_body[0].pdu_length = TBS_bytes;
-        tx_req.tx_request_body[0].pdu_index = 0;
-        tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
-        ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-        ul_config->number_pdus++;
-        // scheduled_response
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx, ul_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -1764,40 +1760,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   } // if is_nr_UL_slot
-}
-
-////////////////////////////////////////////////////////////////////////////
-/////////* Random Access Contention Resolution (5.1.35 TS 38.321) */////////
-////////////////////////////////////////////////////////////////////////////
-// Handling contention resolution timer
-// WIP todo:
-// - beam failure recovery
-// - RA completed
-
-void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame){
-  
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-
-  if (mac->RA_contention_resolution_timer_active == 1) {
-    if (nr_rach_ConfigCommon){
-      LOG_I(MAC, "Frame %d: Contention resolution timer %d/%ld\n",
-        tx_frame,
-        mac->RA_contention_resolution_cnt,
-        ((1 + nr_rach_ConfigCommon->ra_ContentionResolutionTimer) << 3));
-        mac->RA_contention_resolution_cnt++;
-
-      if (mac->RA_contention_resolution_cnt == ((1 + nr_rach_ConfigCommon->ra_ContentionResolutionTimer) << 3)) {
-        mac->t_crnti = 0;
-        mac->RA_active = 0;
-        mac->RA_contention_resolution_timer_active = 0;
-        // Signal PHY to quit RA procedure
-        LOG_E(MAC, "[UE %u] [RAPROC] Contention resolution timer expired, RA failed, discarded TC-RNTI\n", module_id);
-        nr_ra_failed(module_id, cc_id, gNB_index);
-      }
-    }
-  }
 }
 
 /*
@@ -2505,6 +2467,18 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_0,NULL,dci->time_domain_assignment.val) < 0)
       return -1;
+
+    LOG_D(MAC, "In %s: received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) \n",
+      __FUNCTION__,
+      pusch_config_pdu_0_0->rb_start,
+      pusch_config_pdu_0_0->rb_size,
+      pusch_config_pdu_0_0->start_symbol_index,
+      pusch_config_pdu_0_0->nr_of_symbols);
+
+    if (mac->RA_active && mac->crnti){
+      nr_ra_succeeded(module_id, frame, slot);
+    }
+
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -2627,6 +2601,18 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_1,NULL,dci->time_domain_assignment.val) < 0)
       return -1;
+
+    LOG_D(MAC, "In %s: received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) \n",
+      __FUNCTION__,
+      pusch_config_pdu_0_1->rb_start,
+      pusch_config_pdu_0_1->rb_size,
+      pusch_config_pdu_0_1->start_symbol_index,
+      pusch_config_pdu_0_1->nr_of_symbols);
+
+    if (mac->RA_active && mac->crnti){
+      nr_ra_succeeded(module_id, frame, slot);
+    }
+
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -4164,35 +4150,16 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
                 break;
             case DL_SCH_LCID_CON_RES_ID:
-                //  38.321 Ch6.1.3.3
+                //  Clause 5.1.5 and 6.1.3.3 of 3GPP TS 38.321 version 16.2.1 Release 16
                 // WIP todo: handle CCCH_pdu
                 mac_ce_len = 6;
                 
                 LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, pduP[0], pduP[1], pduP[2], pduP[3], pduP[4], pduP[5]);
 
                 if (mac->RA_active == 1) {
-                  LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n", module_idP, frameP);
-                  mac->RA_active = 0;
-                   // // check if RA procedure has finished completely (no contention)
-                   // tx_sdu = &mac->CCCH_pdu.payload[3];
-                   // //Note: 3 assumes sizeof(SCH_SUBHEADER_SHORT) + PADDING CE, which is when UL-Grant has TBS >= 9 (64 bits)
-                   // // (other possibility is 1 for TBS=7 (SCH_SUBHEADER_FIXED), or 2 for TBS=8 (SCH_SUBHEADER_FIXED+PADDING or //  SCH_SUBHEADER_SHORT)
-                   // for (i = 0; i < 6; i++)
-                   //   if (tx_sdu[i] != payload_ptr[i]) {
-                   //     LOG_E(MAC, "[UE %d][RAPROC] Contention detected, RA failed\n", module_idP);
-                   //     nr_ra_failed(module_idP, CC_id, eNB_index);
-                   //     mac->RA_contention_resolution_timer_active = 0;
-                   //     return;
-                   //   }
-                  LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Cleared contention resolution timer. Set C-RNTI to TC-RNTI\n",
-                    module_idP,
-                    frameP);
-                  mac->RA_contention_resolution_timer_active = 0;
-                  nr_ra_succeeded(module_idP, CC_id, gNB_index);
-                  mac->crnti = mac->t_crnti;
-                  mac->t_crnti = 0;
-                  mac->ra_state = RA_SUCCEEDED;
+                  nr_ra_succeeded(module_idP, frameP, slot);
                 }
+
                 break;
             case DL_SCH_LCID_PADDING:
                 done = 1;

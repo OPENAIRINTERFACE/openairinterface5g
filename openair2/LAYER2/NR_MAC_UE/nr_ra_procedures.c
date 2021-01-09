@@ -49,9 +49,6 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
-extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-
-//extern uint8_t  nfapi_mode;
 static uint8_t first_Msg3 = 0;
 static int starting_preamble_nb = 0;
 static long cb_preambles_per_ssb; // Nb of preambles per SSB
@@ -74,6 +71,10 @@ void init_RA(module_id_t mod_id,
              NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
              NR_RACH_ConfigDedicated_t *rach_ConfigDedicated) {
 
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  mac->RA_active = 1;
+  mac->RA_RAPID_found = 0;
+
   prach_resources->RA_PREAMBLE_BACKOFF = 0;
   prach_resources->RA_PCMAX = nr_get_Pcmax(mod_id);
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
@@ -85,6 +86,7 @@ void init_RA(module_id_t mod_id,
     if (rach_ConfigDedicated->cfra){
       LOG_I(MAC, "Initialization of 4-step contention-free random access procedure\n");
       prach_resources->RA_TYPE = RA_4STEP;
+      mac->cfra = 1;
     }
   } else if (rach_ConfigDedicated->ext1){
     if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
@@ -449,11 +451,16 @@ void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 }
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
-  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Starting contention resolution timer\n", mod_id, frameP);
+
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+
+  LOG_D(MAC,"In %s: [UE %d] Frame %d, CB-RA: starting contention resolution timer\n", __FUNCTION__, mod_id, frameP);
+
   // start contention resolution timer
-  mac->RA_contention_resolution_cnt = 0;
+  mac->RA_contention_resolution_cnt = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1) * 8;
   mac->RA_contention_resolution_timer_active = 1;
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -476,7 +483,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
-                       UE_MODE_t UE_mode,
                        frame_t frame,
                        uint8_t gNB_id,
                        int nr_slot_tx){
@@ -538,9 +544,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
-        mac->RA_active = 1;
-        mac->RA_RAPID_found = 0;
-        first_Msg3 = 0;
+        first_Msg3 = 1;
         RA_backoff_cnt = 0;
         Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
 
@@ -584,46 +588,15 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
         // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
-        if (rach_ConfigDedicated) {
-          if (rach_ConfigDedicated->cfra){
 
-            // CFRA
-            mac->RA_active = 0;
-            mac->RA_window_cnt = -1;
-            mac->ra_state = RA_SUCCEEDED;
-            mac->generate_nr_prach = 2;
+        nr_ra_succeeded(mod_id, frame, nr_slot_tx);
 
-            LOG_I(MAC, "[UE %d][%d.%d] RAR successfully received\n", mod_id, frame, nr_slot_tx);
-
-          }
-        } else {
-
-          LOG_E(MAC, "[%s:%d][UE %d] todo: handling of received contention-based RA praemble...\n", __FUNCTION__, __LINE__, mod_id);
-
-        }
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
         LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
 
-        mac->ra_state = RA_UE_IDLE;
-        prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
+        nr_ra_failed(mod_id, CC_id, prach_resources, frame, nr_slot_tx);
 
-        if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax + 1){
-
-          LOG_D(MAC, "[UE %d] Frame %d: Maximum number of RACH attempts (%d)\n", mod_id, frame, preambleTransMax);
-
-          RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
-
-          prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
-          prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
-          prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
-
-        } else {
-
-          // Resetting RA window
-          nr_get_RA_window(mac);
-
-        }
       } else if (mac->RA_window_cnt > 0) {
 
         LOG_D(MAC, "[UE %d][%d.%d]: RAR not received yet (RA window count %d) \n", mod_id, frame, nr_slot_tx, mac->RA_window_cnt);
@@ -644,10 +617,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       }
     }
-  } else if (UE_mode == PUSCH) {
+  }
 
-    AssertFatal(1 == 0, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet...", mod_id);
-
+  if (mac->RA_contention_resolution_timer_active){
+    nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
 
   return mac->generate_nr_prach;
@@ -697,4 +670,108 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
       mac->RA_window_cnt += 80;
       break;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////
+/////////* Random Access Contention Resolution (5.1.35 TS 38.321) */////////
+////////////////////////////////////////////////////////////////////////////
+// Handling contention resolution timer
+// WIP todo:
+// - beam failure recovery
+// - RA completed
+void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame, int slot, NR_PRACH_RESOURCES_t *prach_resources){
+  
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
+  if (mac->RA_contention_resolution_timer_active == 1) {
+
+      mac->RA_contention_resolution_cnt--;
+
+      LOG_D(MAC, "In %s: [%d.%d] RA contention resolution timer %d\n", __FUNCTION__, frame, slot, mac->RA_contention_resolution_cnt);
+
+      if (mac->RA_contention_resolution_cnt == 0) {
+        mac->t_crnti = 0;
+        mac->RA_active = 0;
+        mac->RA_contention_resolution_timer_active = 0;
+        // Signal PHY to quit RA procedure
+        LOG_E(MAC, "[UE %d] CB-RA: Contention resolution timer has expired, RA procedure has failed...\n", module_id);
+        nr_ra_failed(module_id, cc_id, prach_resources, frame, slot);
+      }
+    
+  }
+}
+
+// Handlig successful RA completion @ MAC layer
+// according to section 5 of 3GPP TS 38.321 version 16.2.1 Release 16
+// todo:
+// - complete handling of received contention-based RA preamble
+void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+
+  if (mac->cfra) {
+
+    LOG_I(MAC, "[UE %d][%d.%d] CF-RA: RAR successfully received, RA procedure is completed\n", mod_id, frame, slot);
+
+    mac->RA_window_cnt = -1;
+
+  } else {
+
+    LOG_I(MAC, "[UE %d][%d.%d] CB-RA: Contention Resolution is successful, RA is completed\n", mod_id, frame, slot);
+
+    mac->RA_contention_resolution_cnt = -1;
+    mac->RA_contention_resolution_timer_active = 0;
+    mac->t_crnti = 0;
+
+    LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
+
+  }
+
+  LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
+  ra->RA_active = 0;
+  ra->generate_nr_prach = 2;
+  ra->ra_state = RA_SUCCEEDED;
+
+}
+
+// Handlig failure of RA procedure @ MAC layer
+// according to section 5 of 3GPP TS 38.321 version 16.2.1 Release 16
+// todo:
+// - complete handling of received contention-based RA preamble
+// - 2-step RA implementation
+void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot) {
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+
+  first_Msg3 = 0;
+  mac->generate_nr_prach = 3;
+  mac->ra_state = RA_UE_IDLE;
+
+  prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
+
+  if(prach_resources->RA_TYPE == RA_4STEP){
+
+    if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax + 1){
+
+      LOG_D(MAC, "In %s: [UE %d][%d.%d] Maximum number of RACH attempts (%d) reached, selecting backoff time...\n", __FUNCTION__, mod_id, frame, slot, preambleTransMax);
+
+      RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
+
+      prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
+      prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
+      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
+
+    } else {
+
+      // Resetting RA window
+      nr_get_RA_window(mac);
+
+    }
+
+  } else if (prach_resources->RA_TYPE == RA_2STEP){
+
+    LOG_E(MAC, "Missing implementation of RA failure handling for 2-step RA...\n");
+
+  }
+
 }

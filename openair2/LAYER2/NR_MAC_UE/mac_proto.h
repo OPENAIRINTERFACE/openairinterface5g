@@ -233,11 +233,11 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
 
 void nr_process_rar(nr_downlink_indication_t *dl_info);
 
-void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame);
+void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame, int slot, NR_PRACH_RESOURCES_t *prach_resources);
 
-void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot);
 
-void nr_ra_succeeded(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.
 If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC
@@ -254,7 +254,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
-                       UE_MODE_t UE_mode,
                        frame_t frame,
                        uint8_t gNB_id,
                        int nr_slot_tx);

@@ -899,27 +899,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
   return 0;
 }
 
-// if contention resolution fails, go back to UE mode PRACH
-void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index) {
-
-  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
-  ue->UE_mode[gNB_index] = PRACH;
-
-  for (int i=0; i <RX_NB_TH_MAX; i++ ) {
-    ue->pdcch_vars[i][gNB_index]->pdcch_config[0].rnti = 0;
-  }
-  LOG_E(PHY,"[UE %d] [RAPROC] Random-access procedure fails, going back to PRACH\n", Mod_id);
-}
-
-void nr_ra_succeeded(uint8_t Mod_id,
-                     uint8_t CC_id,
-                     uint8_t gNB_index){
-  LOG_I(PHY,"[UE %d][RAPROC] RA procedure succeeded. UE set to PUSCH mode\n", Mod_id);
-  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
-  ue->ulsch_Msg3_active[gNB_index] = 0;
-  ue->UE_mode[gNB_index] = PUSCH;
-}
-
 void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        UE_nr_rxtx_proc_t *proc,
        int eNB_id,
@@ -2159,7 +2138,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     }
   }
 
-  nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_slot_tx);
+  nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
 
   if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
 
@@ -2210,8 +2189,20 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     if (ue->prach_cnt == 3)
       ue->prach_cnt = 0;
   } else if (nr_prach == 2) {
-    nr_ra_succeeded(mod_id, ue->CC_id, gNB_id);
+
+    LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
+
+    ue->ulsch_Msg3_active[gNB_id] = 0;
+    ue->UE_mode[gNB_id] = PUSCH;
+
+  } else if(nr_prach == 3){
+
+    LOG_D(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
+
+    ue->UE_mode[gNB_id] = PRACH;
+
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);
+
 }

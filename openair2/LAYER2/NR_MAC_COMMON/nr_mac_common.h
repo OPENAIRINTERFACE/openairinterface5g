@@ -36,7 +36,6 @@
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
 
-
 // ===============================================
 // SSB to RO mapping public defines and structures
 // ===============================================
@@ -46,6 +45,8 @@
 
 // Definitions for MAC control and data
 #define MAX_BWP_SIZE    275
+
+extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 
 typedef enum frequency_range_e {
     FR1 = 0, 
