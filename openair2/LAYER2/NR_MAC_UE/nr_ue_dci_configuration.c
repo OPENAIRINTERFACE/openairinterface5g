@@ -56,6 +56,7 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
   LOG_D(MAC,"Filling search candidates for DCI\n");
 
   if(ss->searchSpaceId == 0) {
+    // TODO: Update the maximum number of PDCCH candidates accordingly with Aggregation Level
     rel15->number_of_candidates=1;
     rel15->CCE[0]=0;
     rel15->L[0]=6;

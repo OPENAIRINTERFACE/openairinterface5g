@@ -417,6 +417,8 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
   mac->search_space_zero->monitoringSymbolsWithinSlot->size = 2;
   mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
+
+  // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
   mac->search_space_zero->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   mac->search_space_zero->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
   mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
@@ -440,7 +442,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   mac->coreset0->duration = 1;
   mac->coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*mac->coreset0->cce_REG_MappingType.choice.interleaved));
   mac->coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
-  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = 0; // FIXME: mac->scc->physCellId;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = NULL;
   mac->coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
   if(mac->coreset0->tci_StatesPDCCH_ToAddList == NULL) mac->coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*mac->coreset0->tci_StatesPDCCH_ToAddList));
   NR_TCI_StateId_t *tci[8];
