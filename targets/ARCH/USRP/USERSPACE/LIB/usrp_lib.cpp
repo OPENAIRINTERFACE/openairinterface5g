@@ -464,7 +464,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
       write_package[end].buff[i]    = buff[i];
     write_thread->count_write++;
     write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
-    LOG_I(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
+    LOG_D(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
     pthread_cond_signal(&write_thread->cond_write);
     pthread_mutex_unlock(&write_thread->mutex_write);
     return 0;
@@ -638,9 +638,21 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
 
-      for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]);
+     samples_received=0;
 
-      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+      while (samples_received != nsamps) {
+        for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
+        samples_received += s->rx_stream->recv(buff_ptrs,nsamps-samples_received, s->rx_md);
+
+
+         if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
+          break;
+
+        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
+          printf("sleep...\n"); //usleep(100);
+        }
+      }
+      if (samples_received == nsamps) s->wait_for_first_pps=0;
     } else {
       // receive a single channel (e.g. from connector RF A)
       samples_received=0;

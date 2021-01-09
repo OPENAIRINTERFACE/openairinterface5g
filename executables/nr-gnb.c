@@ -588,10 +588,9 @@ int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_t
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_UE,1);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_UE,0);
   // the thread can now be woken up
-  // the thread can now be woken up
+  AssertFatal((ret=pthread_mutex_unlock(&L1_proc_tx->mutex))==0,"mutex_unlock returns %d\n",ret);
   AssertFatal(pthread_cond_signal(&L1_proc_tx->cond) == 0, "ERROR pthread_cond_signal for gNB L1 thread\n");
   
-  AssertFatal((ret=pthread_mutex_unlock(&L1_proc_tx->mutex))==0,"mutex_unlock returns %d\n",ret);
 
   return(0);
 }

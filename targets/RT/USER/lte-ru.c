@@ -648,7 +648,7 @@ void rx_rf(RU_t *ru,
   proc->tti_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
-  if (ru->fh_north_asynch_in == NULL) {
+  if (get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->fh_north_asynch_in == NULL) {
 #ifdef PHY_TX_THREAD
     proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
     proc->subframe_phy_tx  = (proc->tti_rx+(sf_ahead-1))%10;
@@ -676,16 +676,12 @@ void rx_rf(RU_t *ru,
           proc->frame_rx,
           proc->tti_rx);
 
-    // dump VCD output for first RU in list
-    if (ru->idx == 0) {
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
+  }
 
-      if (ru->fh_north_asynch_in == NULL) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
-      }
-    }
+  // dump VCD output for first RU in list
+  if (ru->idx == 0) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
   }
 
   if (proc->first_rx == 0) {
@@ -776,6 +772,7 @@ void tx_rf(RU_t *ru,
 
     /* add fail safe for late command */
     if(late_control!=STATE_BURST_NORMAL) { //stop burst
+      LOG_E(PHY,"%d.%d late_control : %d\n",frame,subframe,late_control);
       switch (late_control) {
         case STATE_BURST_TERMINATE:
           flags=10; // end of burst and no time spec
@@ -804,12 +801,12 @@ void tx_rf(RU_t *ru,
           break;
       }
     }
-
-    /* add fail safe for late command end */
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, subframe);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+ 
+    /* add fail safe for late command end */
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
                                       timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
@@ -827,7 +824,7 @@ void tx_rf(RU_t *ru,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
     //    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
-    if( (txs !=  siglen+sf_extension) && (late_control==STATE_BURST_NORMAL) ) { /* add fail safe for late command */
+    if( usrp_tx_thread == 0 && (txs !=  siglen+sf_extension) && (late_control==STATE_BURST_NORMAL) ) { /* add fail safe for late command */
       late_control=STATE_BURST_TERMINATE;
       LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs, siglen,late_control);
     }
@@ -1510,36 +1507,43 @@ static void *ru_thread_tx( void *param ) {
     LOG_D(PHY,"ru_thread_tx (ru %d): Waiting for TX processing\n",ru->idx);
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    LOG_D(PHY,"ru_thread_tx: TX in %d.%d\n",ru->proc.frame_tx,ru->proc.tti_tx);
+    ret = pthread_mutex_lock(&proc->mutex_eNBs);
+    AssertFatal(ret == 0,"mutex_lock return %d\n",ret);
+    int frame_tx=proc->frame_tx;
+    int tti_tx  =proc->tti_tx;
+    uint64_t timestamp_tx = proc->timestamp_tx;
+    ret = pthread_mutex_unlock(&proc->mutex_eNBs);
+    AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
+
 
     if (oai_exit) break;
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
+    if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
 
     // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,tti_tx);
 
     if(!(ru->emulate_rf)) { //if(!emulate_rf){
       // do outgoing fronthaul (south) if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,tti_tx,timestamp_tx);
 
       if (ru->fh_north_out) ru->fh_north_out(ru);
     } else {
       for (int i=0; i<ru->nb_tx; i++) {
-        if(proc->frame_tx == 2) {
-          sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
+        if(frame_tx == 2) {
+          sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,frame_tx,tti_tx);
           LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
         }
 
-        if(proc->frame_tx == 2 && proc->tti_tx==0) {
-          sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
+        if(frame_tx == 2 && tti_tx==0) {
+          sprintf(filename,"txdata%d_frame%d.m",i,frame_tx);
           LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
         }
       }
     }
 
-    LOG_D(PHY,"ru_thread_tx: releasing RU TX in %d.%d\n", proc->frame_tx, proc->tti_tx);
+    LOG_D(PHY,"ru_thread_tx: releasing RU TX in %d.%d\n", frame_tx, tti_tx);
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
 
     for(int i = 0; i<ru->num_eNB; i++) {
@@ -1571,7 +1575,7 @@ static void *ru_thread_tx( void *param ) {
         AssertFatal((ret=pthread_mutex_unlock(&eNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
         AssertFatal((ret=pthread_mutex_lock( &L1_proc->mutex_RUs))==0,"mutex_lock returns %d\n",ret);
         L1_proc->instance_cnt_RUs = 0;
-        LOG_D(PHY,"ru_thread_tx: Signaling RU TX done in %d.%d\n", proc->frame_tx, proc->tti_tx);
+        LOG_D(PHY,"ru_thread_tx: Signaling RU TX done in %d.%d\n", frame_tx, tti_tx);
         // the thread can now be woken up
         LOG_D(PHY,"ru_thread_tx: clearing mask and Waking up L1 thread\n");
 
