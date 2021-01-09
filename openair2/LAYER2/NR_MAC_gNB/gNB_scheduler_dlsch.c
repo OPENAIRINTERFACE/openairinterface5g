@@ -394,7 +394,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                            m,
                                            nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
-    LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
+    LOG_D(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
     return;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
@@ -403,7 +403,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
    * allocation after CCE alloc fail would be more complex) */
   const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
   if (!alloc) {
-    LOG_W(MAC,
+    LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
           UE_id,
@@ -433,7 +433,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
       rbSize = 0;
       while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
       if (rbStart >= bwpSize) {
-        LOG_E(MAC,
+        LOG_D(MAC,
               "%4d.%2d cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
               frame,
               slot,
@@ -816,7 +816,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
               retInfo->numDmrsCdmGrpsNoData);
       /* we do not have to do anything, since we do not require to get data
        * from RLC or encode MAC CEs. The TX_req structure is filled below */
-      LOG_W(MAC,
+      LOG_D(MAC,
             "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
             frame,
             slot,

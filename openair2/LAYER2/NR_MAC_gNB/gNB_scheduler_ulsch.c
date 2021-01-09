@@ -503,7 +503,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
                                            m,
                                            nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
-    LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
+    LOG_D(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
     return;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
@@ -621,7 +621,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     if (cur_harq->round == 0) {
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
     } else {
-      LOG_W(MAC,
+      LOG_D(MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
