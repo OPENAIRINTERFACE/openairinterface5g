@@ -364,7 +364,7 @@ sctp_handle_new_association_req(
     int                           sd       = 0;
     int32_t                       assoc_id = 0;
 
-    struct sctp_event_subscribe   events;
+    struct sctp_event_subscribe   events={0};
 
     struct sctp_cnx_list_elm_s   *sctp_cnx = NULL;
     enum sctp_connection_type_e   connection_type = SCTP_TYPE_CLIENT;

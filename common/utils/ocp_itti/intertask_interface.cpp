@@ -45,7 +45,7 @@ extern "C" {
     std::vector<MessageDef *> message_queue;
     std::map<long,timer_elm_t> timer_map;
     uint64_t next_timer=UINT64_MAX;
-    struct epoll_event  *events =NULL;
+    struct epoll_event *events =NULL;
     int nb_fd_epoll=0;
     int nb_events=0;
     int epoll_fd=-1;
@@ -53,7 +53,7 @@ extern "C" {
   } task_list_t;
 
   int timer_expired(int fd);
-  task_list_t *tasks;
+  static task_list_t **tasks=NULL;
   static int nb_queues=0;
   static pthread_mutex_t lock_nb_queues;
 
@@ -124,7 +124,7 @@ extern "C" {
   }
 
   static inline int itti_send_msg_to_task_locked(task_id_t destination_task_id, instance_t destinationInstance, MessageDef *message) {
-    task_list_t *t=tasks+destination_task_id;
+    task_list_t *t=tasks[destination_task_id];
     message->ittiMsgHeader.destinationTaskId = destination_task_id;
     message->ittiMsgHeader.destinationInstance = destinationInstance;
     message->ittiMsgHeader.lte_time.frame = 0;
@@ -146,7 +146,7 @@ extern "C" {
   }
 
   int itti_send_msg_to_task(task_id_t destination_task_id, instance_t destinationInstance, MessageDef *message) {
-    task_list_t *t=&tasks[destination_task_id];
+    task_list_t *t=tasks[destination_task_id];
     pthread_mutex_lock (&t->queue_cond_lock);
     int ret=itti_send_msg_to_task_locked(destination_task_id, destinationInstance, message);
 
@@ -165,7 +165,7 @@ extern "C" {
 
   void itti_subscribe_event_fd(task_id_t task_id, int fd) {
     struct epoll_event event;
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
     t->nb_fd_epoll++;
     t->events = (struct epoll_event *)realloc((void *)t->events,
                 t->nb_fd_epoll * sizeof(struct epoll_event));
@@ -178,7 +178,7 @@ extern "C" {
   }
 
   void itti_unsubscribe_event_fd(task_id_t task_id, int fd) {
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
     AssertFatal (epoll_ctl(t->epoll_fd, EPOLL_CTL_DEL, fd, NULL) == 0,
                  "epoll_ctl (EPOLL_CTL_DEL) failed for task %s, fd %d: %s!\n",
                  itti_get_task_name(task_id), fd, strerror(errno));
@@ -186,7 +186,7 @@ extern "C" {
   }
 
   static inline int itti_get_events_locked(task_id_t task_id, struct epoll_event **events) {
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
     uint64_t current_time=0;
 
     do {
@@ -266,13 +266,13 @@ extern "C" {
   }
 
   int itti_get_events(task_id_t task_id, struct epoll_event **events) {
-    pthread_mutex_lock(&tasks[task_id].queue_cond_lock);
+    pthread_mutex_lock(&tasks[task_id]->queue_cond_lock);
     return itti_get_events_locked(task_id, events);
   }
 
   void itti_receive_msg(task_id_t task_id, MessageDef **received_msg) {
     // Reception of one message, blocking caller
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
     pthread_mutex_lock(&t->queue_cond_lock);
 
     // Weird condition to deal with crap legacy itti interface
@@ -304,7 +304,7 @@ extern "C" {
 
   void itti_poll_msg(task_id_t task_id, MessageDef **received_msg) {
     //reception of one message, non-blocking
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
     pthread_mutex_lock(&t->queue_cond_lock);
 
     if (!t->message_queue.empty()) {
@@ -320,7 +320,7 @@ extern "C" {
   int itti_create_task(task_id_t task_id,
                        void *(*start_routine)(void *),
                        void *args_p) {
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
     threadCreate (&t->thread, start_routine, args_p, (char *)itti_get_task_name(task_id),-1,OAI_PRIORITY_RT);
     LOG_I(TMR,"Created Posix thread %s\n",  itti_get_task_name(task_id) );
     return 0;
@@ -338,19 +338,20 @@ extern "C" {
 
   int itti_create_queue(const task_info_t *task_info) {
     pthread_mutex_lock (&lock_nb_queues);
-    int newQueue=nb_queues;
-    nb_queues++;
-    AssertFatal(realloc(tasks, nb_queues* sizeof(*tasks)),"no memory");
+    int newQueue=nb_queues++;
+    AssertFatal(tasks=(task_list_t **) realloc(tasks, nb_queues * sizeof(*tasks)),"");
+    tasks[newQueue]= new task_list_t;
     pthread_mutex_unlock (&lock_nb_queues);
     LOG_I(TMR,"Starting itti queue: %s as task %d\n", tasks_info->name, newQueue);
-    pthread_mutex_init(&tasks[newQueue].queue_cond_lock, NULL);
-    memcpy(&tasks[newQueue].admin, tasks_info, sizeof(task_info_t));
-    AssertFatal( ( tasks[newQueue].epoll_fd = epoll_create1(0) ) >=0, "");
-    AssertFatal( ( tasks[newQueue].sem_fd = eventfd(0, EFD_SEMAPHORE) ) >=0, "");
-    itti_subscribe_event_fd((task_id_t)newQueue, tasks[newQueue].sem_fd);
+    pthread_mutex_init(&tasks[newQueue]->queue_cond_lock, NULL);
+    memcpy(&tasks[newQueue]->admin, tasks_info, sizeof(task_info_t));
+    AssertFatal( ( tasks[newQueue]->epoll_fd = epoll_create1(0) ) >=0, "");
+    AssertFatal( ( tasks[newQueue]->sem_fd = eventfd(0, EFD_SEMAPHORE) ) >=0, "");
+    itti_subscribe_event_fd((task_id_t)newQueue, tasks[newQueue]->sem_fd);
 
-    if (tasks[newQueue].admin.threadFunc != NULL)
-      itti_create_task((task_id_t)newQueue, tasks[newQueue].admin.threadFunc, NULL);
+    if (tasks[newQueue]->admin.threadFunc != NULL)
+      itti_create_task((task_id_t)newQueue, tasks[newQueue]->admin.threadFunc, NULL);
+
     return newQueue;
   }
 
@@ -376,7 +377,7 @@ extern "C" {
     timer_type_t  type,
     void         *timer_arg,
     long         *timer_id) {
-    task_list_t *t=&tasks[task_id];
+    task_list_t *t=tasks[task_id];
 
     do {
       // set the taskid in the timer id to keep compatible with the legacy API
@@ -412,9 +413,9 @@ extern "C" {
   int timer_remove(long timer_id) {
     task_id_t task_id=(task_id_t)(timer_id&0xffff);
     int ret;
-    pthread_mutex_lock (&tasks[task_id].queue_cond_lock);
-    ret=tasks[task_id].timer_map.erase(timer_id);
-    pthread_mutex_unlock (&tasks[task_id].queue_cond_lock);
+    pthread_mutex_lock (&tasks[task_id]->queue_cond_lock);
+    ret=tasks[task_id]->timer_map.erase(timer_id);
+    pthread_mutex_unlock (&tasks[task_id]->queue_cond_lock);
 
     if (ret==1)
       return 0;
@@ -429,7 +430,7 @@ extern "C" {
   }
 
   const char *itti_get_task_name(task_id_t task_id) {
-    return tasks[task_id].admin.name;
+    return tasks[task_id]->admin.name;
   }
 
   // void for compatibility

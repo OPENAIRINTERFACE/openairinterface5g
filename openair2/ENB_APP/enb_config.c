@@ -121,15 +121,14 @@ void RCconfig_L1(void) {
       RC.nb_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
 
       if (RC.eNB[j] == NULL) {
-        RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
+        RC.eNB[j]  = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
         LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
         memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
       }
 
       for (i=0; i<RC.nb_L1_CC[j]; i++) {
         if (RC.eNB[j][i] == NULL) {
-          RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
-          memset((void *)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
+          RC.eNB[j][i] = (PHY_VARS_eNB *)calloc(1, sizeof(PHY_VARS_eNB));
           LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
           RC.eNB[j][i]->Mod_id  = j;
           RC.eNB[j][i]->CC_id   = i;
