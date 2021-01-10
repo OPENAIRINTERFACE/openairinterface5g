@@ -55,6 +55,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
                         uint8_t mcs,
                         uint8_t freq_hopping){
 
+  RA_config_t *ra = &mac->ra;
   int f_alloc, mask, StartSymbolIndex, NrOfSymbols;
   uint8_t nb_dmrs_re_per_rb;
   uint16_t number_dmrs_symbols = 0;
@@ -125,7 +126,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   // Frequency hopping
   pusch_config_pdu->frequency_hopping = freq_hopping;
   // TC-RNTI
-  pusch_config_pdu->rnti = mac->t_crnti;
+  pusch_config_pdu->rnti = ra->t_crnti;
 
   // DM-RS configuration according to 6.2.2 UE DM-RS transmission procedure in 38.214
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
@@ -219,6 +220,7 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
   int cc_id                = dl_info->cc_id;
   uint8_t gNB_id           = dl_info->gNB_index;
   NR_UE_MAC_INST_t *ue_mac = get_mac_inst(mod_id);
+  RA_config_t *ra = &ue_mac->ra;
   uint8_t n_subPDUs        = 0;  // number of RAR payloads
   uint8_t n_subheaders     = 0;  // number of MAC RAR subheaders
   uint8_t *dlsch_buffer    = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.pdu;
@@ -235,14 +237,14 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
       LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
     } else {
       n_subPDUs++;
-      ue_mac->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
-      ue_mac->RA_BI_found = 1;
-      LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ue_mac->RA_backoff_indicator);
+      ra->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
+      ra->RA_BI_found = 1;
+      LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ra->RA_backoff_indicator);
     }
     if (rarh->RAPID == preamble_index) {
       LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
-      ue_mac->RA_RAPID_found = 1;
+      ra->RA_RAPID_found = 1;
       break;
     }
     if (rarh->E == 0) {
@@ -258,7 +260,7 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
   LOG_D(MAC, "[DEBUG_RAR] Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n", *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
   #endif
 
-  if (ue_mac->RA_RAPID_found) {
+  if (ra->RA_RAPID_found) {
 
     uint8_t freq_hopping, mcs, Msg3_t_alloc, Msg3_f_alloc;
     unsigned char tpc_command;
@@ -267,7 +269,7 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
 #endif
 
   // TC-RNTI
-  ue_mac->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+  ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
 
   // TA command
   ul_time_alignment->apply_ta = 1;
@@ -282,28 +284,28 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
   tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
   switch (tpc_command){
     case 0:
-      ue_mac->Msg3_TPC = -6;
+      ra->Msg3_TPC = -6;
       break;
     case 1:
-      ue_mac->Msg3_TPC = -4;
+      ra->Msg3_TPC = -4;
       break;
     case 2:
-      ue_mac->Msg3_TPC = -2;
+      ra->Msg3_TPC = -2;
       break;
     case 3:
-      ue_mac->Msg3_TPC = 0;
+      ra->Msg3_TPC = 0;
       break;
     case 4:
-      ue_mac->Msg3_TPC = 2;
+      ra->Msg3_TPC = 2;
       break;
     case 5:
-      ue_mac->Msg3_TPC = 4;
+      ra->Msg3_TPC = 4;
       break;
     case 6:
-      ue_mac->Msg3_TPC = 6;
+      ra->Msg3_TPC = 6;
       break;
     case 7:
-      ue_mac->Msg3_TPC = 8;
+      ra->Msg3_TPC = 8;
       break;
   }
   // MCS
@@ -328,7 +330,7 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
     freq_hopping,
     tpc_command,
     csi_req,
-    ue_mac->t_crnti);
+    ra->t_crnti);
   #endif
 
   // Config Msg3 PDU
@@ -337,7 +339,7 @@ void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t
   nr_ue_msg3_scheduler(ue_mac, frame, slot, Msg3_t_alloc);
 
   } else {
-    ue_mac->t_crnti = 0;
+    ra->t_crnti = 0;
     ul_time_alignment->ta_command = (0xffff);
   }
 

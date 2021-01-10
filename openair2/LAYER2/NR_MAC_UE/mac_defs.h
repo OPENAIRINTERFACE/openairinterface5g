@@ -245,12 +245,71 @@ typedef enum {
   RA_SUCCEEDED = 3
 } RA_state_t;
 
+typedef struct {
+
+  // pointer to RACH config dedicated
+  NR_RACH_ConfigDedicated_t *rach_ConfigDedicated;
+  /// state of RA procedure
+  RA_state_t ra_state;
+  /// RA contention type
+  uint8_t cfra;
+  /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
+  uint8_t RA_offset;
+  /// RA-rnti
+  uint16_t ra_rnti;
+  /// Temporary CRNTI
+  uint16_t t_crnti;
+  /// number of attempt for rach
+  uint8_t RA_attempt_number;
+  /// Random-access procedure flag
+  uint8_t RA_active;
+  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
+  uint8_t generate_nr_prach;
+
+  /// Random-access window counter
+  int16_t RA_window_cnt;
+  /// Flag to monitor if matching RAPID was received in RAR
+  uint8_t RA_RAPID_found;
+  /// Flag to monitor if BI was received in RAR
+  uint8_t RA_BI_found;
+  /// Random-access backoff counter
+  int16_t RA_backoff_indicator;
+  /// Flag to indicate whether preambles Group A was used
+  uint8_t RA_usedGroupA;
+  /// RA backoff counter
+  int16_t RA_backoff_cnt;
+  /// RA max number of preamble transmissions
+  int preambleTransMax;
+  /// Nb of preambles per SSB
+  long cb_preambles_per_ssb;
+  int starting_preamble_nb;
+
+  /// Scheduled TX frame for RA Msg3
+  frame_t msg3_frame;
+  /// Scheduled TX slot for RA Msg3
+  slot_t msg3_slot;
+  /// Received TPC command (in dB) from RAR
+  int8_t Msg3_TPC;
+  /// Flag to indicate whether it is the first Msg3 to be transmitted
+  uint8_t first_Msg3;
+  /// RA Msg3 size in bytes
+  uint8_t Msg3_size;
+
+  /// Random-access Contention Resolution Timer active flag
+  uint8_t RA_contention_resolution_timer_active;
+  /// Random-access Contention Resolution Timer count value
+  uint8_t RA_contention_resolution_cnt;
+
+  /// BeamfailurerecoveryConfig
+  NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
+
+} RA_config_t;
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
   NR_CellGroupConfig_t            *scg;
-  NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
   int                             servCellIndex;
   NR_CSI_ReportConfig_t           *csirc;
   ////  MAC config
@@ -285,45 +344,11 @@ typedef struct {
   CCCH_PDU CCCH_pdu;
   ULSCH_PDU ulsch_pdu;
 
-  /* Random Access parameters */
-  /// state of RA procedure
-  RA_state_t ra_state;
-  /// RA contention type
-  uint8_t cfra;
-  /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
-  uint8_t RA_offset;
-  /// RA-rnti
-  uint16_t ra_rnti;
-  /// Temporary CRNTI
-  uint16_t t_crnti;
+  /* Random Access */
   /// CRNTI
   uint16_t crnti;
-  /// number of attempt for rach
-  uint8_t RA_attempt_number;
-  /// Random-access procedure flag
-  uint8_t RA_active;
-  /// Random-access window counter
-  int16_t RA_window_cnt;
-  /// BeamfailurerecoveryConfig
-  NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
-  /// Random-access backoff counter
-  int16_t RA_backoff_indicator;
-  /// Scheduled TX frame for RA Msg3
-  frame_t msg3_frame;
-  /// Scheduled TX slot for RA Msg3
-  slot_t msg3_slot;
-  /// Random-access Contention Resolution Timer active flag
-  uint8_t RA_contention_resolution_timer_active;
-  /// Random-access Contention Resolution Timer count value
-  uint8_t RA_contention_resolution_cnt;
-  /// Received TPC command (in dB) from RAR
-  int8_t Msg3_TPC;
-  /// Flag to monitor if matching RAPID was received in RAR
-  uint8_t RA_RAPID_found;
-  /// Flag to monitor if BI was received in RAR
-  uint8_t RA_BI_found;
-  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  uint8_t generate_nr_prach;
+  /// RA configuration
+  RA_config_t ra;
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;

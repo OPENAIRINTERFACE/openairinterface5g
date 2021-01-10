@@ -1275,10 +1275,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
     module_id_t mod_id    = ul_info->module_id;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+    RA_config_t *ra = &mac->ra;
 
-    if (mac->ra_state == WAIT_RAR){
+    if (ra->ra_state == WAIT_RAR){
 
-      if (mac->RA_active && ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
+      if (ra->RA_active && ul_info->slot_tx == ra->msg3_slot && ul_info->frame_tx == ra->msg3_frame){
 
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
@@ -1319,7 +1320,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           ul_info->module_id,
           ul_info->frame_tx,
           ul_info->slot_tx,
-          mac->t_crnti);
+          ra->t_crnti);
 
         // Config UL TX PDU
         tx_req.slot = ul_info->slot_tx;
@@ -1336,12 +1337,12 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           mac->if_module->scheduled_response(&scheduled_response);
         }
 
-        if (!mac->cfra){
+        if (!ra->cfra){
           nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
         }
 
       }
-    } else if (mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
+    } else if (ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
@@ -1499,6 +1500,7 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           uint8_t Msg3_tda_id){
 
   int delta = 0;
+  RA_config_t *ra = &mac->ra;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
   int mu = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
   struct NR_PUSCH_TimeDomainResourceAllocationList *pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -1521,14 +1523,14 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
       break;
   }
 
-  mac->msg3_slot = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
+  ra->msg3_slot = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
   if (current_slot + k2 + delta > nr_slots_per_frame[mu])
-    mac->msg3_frame = (current_frame + 1) % 1024;
+    ra->msg3_frame = (current_frame + 1) % 1024;
   else
-    mac->msg3_frame = current_frame;
+    ra->msg3_frame = current_frame;
 
   #ifdef DEBUG_MSG3
-  LOG_D(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d mac->msg3_frame %d mac->msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, mac->msg3_frame, mac->msg3_slot);
+  LOG_D(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d msg3_frame %d msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, ra->msg3_frame, ra->msg3_slot);
   #endif
 }
 
@@ -1543,6 +1545,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   prach_occasion_info_t *prach_occasion_info_p;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  RA_config_t *ra = &mac->ra;
 
   //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
@@ -1555,8 +1558,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
-  mac->RA_offset = 2; // to compensate the rx frame offset at the gNB
-  mac->generate_nr_prach = 0; // Reset flag for PRACH generation
+  ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
+  ra->generate_nr_prach = 0; // Reset flag for PRACH generation
 
   if (is_nr_UL_slot(scc, slotP)) {
 
@@ -1570,10 +1573,10 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                        (int)slotP,
                                                         &prach_occasion_info_p);
 
-    if (is_nr_prach_slot && mac->ra_state == RA_UE_IDLE) {
+    if (is_nr_prach_slot && ra->ra_state == RA_UE_IDLE) {
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
-      mac->generate_nr_prach = 1;
+      ra->generate_nr_prach = 1;
 
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
@@ -1951,6 +1954,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   uint16_t frame_tx = 0, slot_tx = 0;
   bool valid_ptrs_setup = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  RA_config_t *ra = &mac->ra;
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = NULL;
@@ -1960,7 +1964,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
   AssertFatal(mac->ULbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
 
-  const uint16_t n_RB_DLBWP = (mac->ra_state == WAIT_RAR) ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) : NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t n_RB_DLBWP = (ra->ra_state == WAIT_RAR) ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) : NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   const uint16_t n_RB_ULBWP = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   LOG_D(MAC,"nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
@@ -2024,7 +2028,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       pusch_config_pdu_0_0->start_symbol_index,
       pusch_config_pdu_0_0->nr_of_symbols);
 
-    if (mac->RA_active && mac->crnti){
+    if (ra->RA_active && mac->crnti){
       nr_ra_succeeded(module_id, frame, slot);
     }
 
@@ -2158,7 +2162,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       pusch_config_pdu_0_1->start_symbol_index,
       pusch_config_pdu_0_1->nr_of_symbols);
 
-    if (mac->RA_active && mac->crnti){
+    if (ra->RA_active && mac->crnti){
       nr_ra_succeeded(module_id, frame, slot);
     }
 
@@ -2612,7 +2616,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	  dlsch_config_pdu_1_0->pucch_resource_id,
 	  dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
 
-    if (mac->RA_window_cnt >= 0 && rnti == mac->ra_rnti){
+    if (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti){
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
     } else {
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
@@ -2958,9 +2962,11 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 			 dci_pdu_rel15_t *dci_pdu_rel15) {
   int rnti_type=-1;
 
-  if       (rnti == mac->ra_rnti) rnti_type = NR_RNTI_RA;
+  RA_config_t *ra = &mac->ra;
+
+  if      (rnti == ra->ra_rnti)   rnti_type = NR_RNTI_RA;
   else if (rnti == mac->crnti)    rnti_type = NR_RNTI_C;
-  else if (rnti == mac->t_crnti)  rnti_type = NR_RNTI_TC;
+  else if (rnti == ra->t_crnti)   rnti_type = NR_RNTI_TC;
   else if (rnti == 0xFFFE)        rnti_type = NR_RNTI_P;
   else if (rnti == 0xFFFF)        rnti_type = NR_RNTI_SI;
 
@@ -3562,6 +3568,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
   uint8_t CC_id          = dl_info->cc_id;
   uint8_t done           = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  RA_config_t *ra = &mac->ra;
 
   if (!pduP){
     return;
@@ -3705,7 +3712,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 
                 LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, pduP[0], pduP[1], pduP[2], pduP[3], pduP[4], pduP[5]);
 
-                if (mac->RA_active == 1) {
+                if (ra->RA_active == 1) {
                   nr_ra_succeeded(module_idP, frameP, slot);
                 }
 

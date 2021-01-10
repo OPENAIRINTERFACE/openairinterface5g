@@ -457,6 +457,7 @@ int nr_rrc_mac_config_req_ue(
     NR_CellGroupConfig_t            *cell_group_config ){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+    RA_config_t *ra = &mac->ra;
 
     //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
@@ -469,7 +470,7 @@ int nr_rrc_mac_config_req_ue(
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
       config_control_ue(mac);
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
-        mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+        ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
 	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
 	config_common_ue(mac,module_id,cc_idP);
 	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
