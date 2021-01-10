@@ -34,10 +34,8 @@
 #define __LAYER2_MAC_UE_PROTO_H__
 
 #include "mac_defs.h"
-#include "mac.h"
 #include "PHY/defs_nr_UE.h"
 #include "RRC/NR_UE/rrc_defs.h"
-
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id

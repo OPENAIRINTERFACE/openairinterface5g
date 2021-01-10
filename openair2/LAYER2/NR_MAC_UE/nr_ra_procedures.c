@@ -30,8 +30,6 @@
  * \warning
  */
 
-#include "mac.h"
-
 /* Tools */
 #include "SIMULATION/TOOLS/sim.h"	// for taus
 

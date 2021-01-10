@@ -20,7 +20,7 @@
  */
 
 /* \file       nr_mac.h
- * \brief      common MAC data structures, constant, and function prototype
+ * \brief      common MAC data structures and constants
  * \author     R. Knopp, K.H. HSU, G. Casati
  * \date       2019
  * \version    0.1
@@ -37,13 +37,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Definitions for MAC control and data
 #define NR_BCCH_DL_SCH 3 // SI
-
 #define NR_BCCH_BCH 5    // MIB
-
 #define CCCH_PAYLOAD_SIZE_MAX 128
-
 #define RAR_PAYLOAD_SIZE_MAX  128
+#define MAX_BWP_SIZE          275
+
+typedef enum frequency_range_e {
+    FR1 = 0,
+    FR2
+} frequency_range_t;
 
 //  For both DL/UL-SCH
 //  Except:
@@ -338,6 +342,68 @@ typedef struct {
 #define NR_MAX_NUM_LCID                32
 #define NR_MAX_NUM_LCGID              8
 #define MAX_RLC_SDU_SUBHEADER_SIZE          3
+
+//===========
+// PRACH defs
+//===========
+
+// ===============================================
+// SSB to RO mapping public defines and structures
+// ===============================================
+#define MAX_SSB_PER_RO (16) // Maximum number of SSBs that can be mapped to a single RO
+#define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
+#define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
+
+// PRACH occasion details
+typedef struct prach_occasion_info {
+  uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
+  uint8_t fdm; // 0-7 (possible values of msg1-FDM: 1, 2, 4 or 8)
+  uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
+  uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
+  uint8_t mapped_ssb_idx[MAX_SSB_PER_RO]; // List of mapped SSBs
+  uint8_t nb_mapped_ssb;
+  uint16_t format; // RO preamble format
+} prach_occasion_info_t;
+
+// PRACH occasion slot details
+// A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
+typedef struct prach_occasion_slot {
+  prach_occasion_info_t prach_occasion[MAX_TDM][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot
+  uint8_t nb_of_prach_occasion_in_time;
+  uint8_t nb_of_prach_occasion_in_freq;
+} prach_occasion_slot_t;
+
+//=========
+// DCI defs
+//=========
+
+typedef enum {
+  NR_DL_DCI_FORMAT_1_0 = 0,
+  NR_DL_DCI_FORMAT_1_1,
+  NR_DL_DCI_FORMAT_2_0,
+  NR_DL_DCI_FORMAT_2_1,
+  NR_DL_DCI_FORMAT_2_2,
+  NR_DL_DCI_FORMAT_2_3,
+  NR_UL_DCI_FORMAT_0_0,
+  NR_UL_DCI_FORMAT_0_1
+} nr_dci_format_t;
+
+typedef enum {
+  NR_RNTI_new = 0,
+  NR_RNTI_C,
+  NR_RNTI_RA,
+  NR_RNTI_P,
+  NR_RNTI_CS,
+  NR_RNTI_TC,
+  NR_RNTI_SP_CSI,
+  NR_RNTI_SI,
+  NR_RNTI_SFI,
+  NR_RNTI_INT,
+  NR_RNTI_TPC_PUSCH,
+  NR_RNTI_TPC_PUCCH,
+  NR_RNTI_TPC_SRS,
+  NR_RNTI_MCS_C,
+} nr_rnti_type_t;
 
 
 #endif /*__LAYER2_MAC_H__ */

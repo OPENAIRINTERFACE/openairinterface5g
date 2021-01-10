@@ -20,6 +20,7 @@
  */
 
 /*
+  \brief NR UE PHY functions prototypes
   \author R. Knopp, F. Kaltenberger
   \company EURECOM
   \email knopp@eurecom.fr

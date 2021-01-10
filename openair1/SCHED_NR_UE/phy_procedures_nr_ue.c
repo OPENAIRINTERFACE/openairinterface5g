@@ -75,16 +75,9 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "intertask_interface.h"
 #include "T.h"
 
-#define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
-#define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
-
-#define NS_PER_SLOT 500000
-
 char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 const uint8_t nr_rv_round_map_ue[4] = {0, 2, 1, 3};
-
-extern double cpuf;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];

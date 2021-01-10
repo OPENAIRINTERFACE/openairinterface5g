@@ -41,31 +41,13 @@
 #include "common/ran_context.h"
 
 /* MAC */
-#include "NR_MAC_UE/mac.h"
 #include "NR_MAC_UE/mac_proto.h"
+#include "NR_MAC_UE/mac_extern.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include <common/utils/nr/nr_common.h>
 
 // #define DEBUG_RAR
 // #define DEBUG_MSG3
-
-// table 7.2-1 TS 38.321
-uint16_t table_7_2_1[16] = {
-  5,    // row index 0
-  10,   // row index 1
-  20,   // row index 2
-  30,   // row index 3
-  40,   // row index 4
-  60,   // row index 5
-  80,   // row index 6
-  120,  // row index 7
-  160,  // row index 8
-  240,  // row index 9
-  320,  // row index 10
-  480,  // row index 11
-  960,  // row index 12
-  1920, // row index 13
-};
 
 void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
                         int Msg3_f_alloc,

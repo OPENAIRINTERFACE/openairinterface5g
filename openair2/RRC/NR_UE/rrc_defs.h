@@ -39,7 +39,6 @@
 
 #include "platform_types.h"
 
-#include "NR_MAC_UE/mac.h"
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "rrc_list.h"
 #include "NR_asn_constant.h"
