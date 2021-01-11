@@ -1247,7 +1247,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             ulcfg_pdu->pusch_config_pdu.dmrs_config_type = dmrs_config_type;
             ulcfg_pdu->pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
             ulcfg_pdu->pusch_config_pdu.nrOfLayers = 1;
-            ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator = 0;
             ulcfg_pdu->pusch_config_pdu.pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
             ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
             ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
@@ -1312,8 +1311,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             TBS_bytes = TBS/8;
             ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size = TBS_bytes;
 
-            if (IS_SOFTMODEM_NOS1){
-              // Getting IP traffic to be transmitted
+            // Push data from MAC to PHY only when NDI toggles
+            if (IS_SOFTMODEM_NOS1 && (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator)) {
+            // Getting IP traffic to be transmitted
               data_existing = nr_ue_get_sdu(mod_id,
                                             cc_id,
                                             frame_tx,
@@ -1323,6 +1323,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                                             TBS_bytes,
                                             &access_mode);
             }
+            mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
 
             //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
             if (!IS_SOFTMODEM_NOS1 || !data_existing) {
