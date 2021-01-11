@@ -59,24 +59,31 @@ void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
 
-void dump_mac_stats(gNB_MAC_INST *gNB) {
-
+void dump_mac_stats(gNB_MAC_INST *gNB)
+{
   NR_UE_info_t *UE_info = &gNB->UE_info;
-  NR_mac_stats_t *stats;
-  int lc_id;
-
-  for (int UE_id=0;UE_id<MAX_MOBILES_PER_GNB;UE_id++) {
-    if (UE_info->active[UE_id]) {
-      LOG_I(MAC, "UE %x\n", UE_info->rnti[UE_id]);
-      stats = &UE_info->mac_stats[UE_id];
-      LOG_I(MAC,"dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",stats->dlsch_rounds[0],stats->dlsch_rounds[1],stats->dlsch_rounds[2],stats->dlsch_rounds[3],stats->dlsch_errors);
-      LOG_I(MAC,"dlsch_total_bytes %d\n",stats->dlsch_total_bytes);
-      LOG_I(MAC,"ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",stats->ulsch_rounds[0],stats->ulsch_rounds[1],stats->ulsch_rounds[2],stats->ulsch_rounds[3],stats->ulsch_errors);
-      LOG_I(MAC,"ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",stats->ulsch_total_bytes_scheduled,stats->ulsch_total_bytes_rx);
-      for (lc_id=0;lc_id<63;lc_id++) {
-	if (stats->lc_bytes_tx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes TX\n",lc_id,stats->lc_bytes_tx[lc_id]);
-	if (stats->lc_bytes_rx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes RX\n",lc_id,stats->lc_bytes_rx[lc_id]);
-      }
+  int num = 1;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
+    const NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+    LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",
+          UE_id,
+          stats->dlsch_rounds[0], stats->dlsch_rounds[1],
+          stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors);
+    LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
+    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
+          UE_id,
+          stats->ulsch_rounds[0], stats->ulsch_rounds[1],
+          stats->ulsch_rounds[2], stats->ulsch_rounds[3], stats->ulsch_errors);
+    LOG_I(MAC,
+          "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
+          UE_id,
+          stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
+    for (int lc_id = 0; lc_id < 63; lc_id++) {
+      if (stats->lc_bytes_tx[lc_id] > 0)
+        LOG_I(MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+      if (stats->lc_bytes_rx[lc_id] > 0)
+        LOG_I(MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
 }
