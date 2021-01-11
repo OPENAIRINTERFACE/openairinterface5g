@@ -123,6 +123,10 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
 		     uint16_t N_RB,
                      int bwp_id);
 
+void find_aggregation_candidates(uint8_t *aggregation_level,
+                                 uint8_t *nr_of_candidates,
+                                 NR_SearchSpace_t *ss);
+
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
                                                uint16_t *offset);

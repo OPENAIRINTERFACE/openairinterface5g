@@ -421,6 +421,8 @@ int nr_rrc_mac_config_req_ue(
       mac->scg = cell_group_config;
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
       config_control_ue(mac);
+      mac->msg3_frame = -1; // initialize to an invalid value
+      mac->msg3_slot = -1;
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
         mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
 	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;

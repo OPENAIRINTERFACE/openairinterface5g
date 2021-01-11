@@ -395,8 +395,12 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
     return;
 
-  const uint16_t rbStart = 0;
-  const uint16_t rbSize = 50; /* due to OAI UE limitations */
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  uint16_t rbStart = 0;
+  uint16_t rbSize = 50; /* due to OAI UE limitations */
+  if (rbSize>bw)
+    rbSize = bw;
+
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
   for (int i = rbStart; i < rbStart + rbSize; ++i) {

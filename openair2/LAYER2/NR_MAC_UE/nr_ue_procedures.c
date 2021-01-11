@@ -993,7 +993,10 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
   LOG_D(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_D(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+
+  //storing ssb index in the mac structure
+  mac->mib_ssb = ssb_index;
 
   subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
   //const uint32_t scs_index = 0;
@@ -1661,7 +1664,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
       NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
 
-      if (mac->RA_active && ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
+      if (ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
 
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
@@ -1698,7 +1701,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           }
         //}
 
-        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
+        LOG_I(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
           ul_info->module_id,
           ul_info->frame_tx,
           ul_info->slot_tx,
@@ -1718,6 +1721,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
+        mac->msg3_frame = -1; // re-initialize to an invalid value after scheduling
+        mac->msg3_slot = -1;
       }
     }
   }
@@ -1760,9 +1765,7 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
   else
     mac->msg3_frame = current_frame;
 
-  #ifdef DEBUG_MSG3
   LOG_D(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d mac->msg3_frame %d mac->msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, mac->msg3_frame, mac->msg3_slot);
-  #endif
 }
 
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
@@ -1793,9 +1796,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   if (is_nr_UL_slot(scc, slotP)) {
 
-    // WIP Need to get the proper selected ssb_idx
-    //     Initial beam selection functionality is not available yet
-    uint8_t selected_gnb_ssb_idx = 0;
+    uint8_t selected_gnb_ssb_idx = mac->mib_ssb;
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index
     is_nr_prach_slot = get_nr_prach_info_from_ssb_index(selected_gnb_ssb_idx,
