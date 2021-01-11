@@ -566,6 +566,7 @@ int main(int argc, char **argv)
   rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
 
   NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
   prepare_scc(rrc.carrier.servingcellconfigcommon);
   uint64_t ssb_bitmap;
@@ -573,7 +574,10 @@ int main(int argc, char **argv)
 
   fix_scc(scc,ssb_bitmap);
 
+  prepare_scd(scd);
+
   fill_default_secondaryCellGroup(scc,
+          scd,
 				  secondaryCellGroup,
 				  0,
 				  1,
