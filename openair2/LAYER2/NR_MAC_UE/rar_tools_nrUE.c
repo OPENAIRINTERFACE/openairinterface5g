@@ -40,6 +40,9 @@
 /* Common */
 #include "common/ran_context.h"
 
+/* PHY */
+#include "openair1/SCHED_NR_UE/defs.h"
+
 /* MAC */
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC_UE/mac_extern.h"

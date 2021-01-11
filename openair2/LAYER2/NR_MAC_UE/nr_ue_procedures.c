@@ -1351,7 +1351,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint32_t TBS;
       int i, N_PRB_oh;
 
-      uint32_t gNB_index    = ul_info->gNB_index;
       int cc_id             = ul_info->cc_id;
       frame_t rx_frame      = ul_info->frame_rx;
       slot_t rx_slot        = ul_info->slot_rx;
@@ -1958,7 +1957,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = NULL;
-  long O_carrier_dl = mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
 
   //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");

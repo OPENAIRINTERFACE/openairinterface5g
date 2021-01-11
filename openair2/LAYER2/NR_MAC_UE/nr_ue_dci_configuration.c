@@ -79,7 +79,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_BWP_DownlinkCommon_t *bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
   NR_SearchSpace_t *ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
-  long O_carrier_dl = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
 
   // CORESET configuration
   NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
