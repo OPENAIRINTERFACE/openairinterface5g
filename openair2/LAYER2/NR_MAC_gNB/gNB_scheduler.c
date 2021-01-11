@@ -363,7 +363,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 #define BIT(x) (1 << (x))
   const uint64_t dlsch_in_slot_bitmap = BIT( 1) | BIT( 2) | BIT( 3) | BIT( 4) | BIT( 5) | BIT( 6)
                                       | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
-  const uint64_t ulsch_in_slot_bitmap = BIT(8);
+  const uint64_t ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
@@ -425,7 +425,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
-  if (slot < 10) {
+  {
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }
 

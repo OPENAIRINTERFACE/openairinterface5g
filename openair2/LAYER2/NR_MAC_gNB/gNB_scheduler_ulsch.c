@@ -781,8 +781,8 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
               tdaList->list.count);
 
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
-  const int sched_slot = (slot + K2) % num_slots_per_tdd;
+  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
+  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   if (!is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot))
     return false;
 
