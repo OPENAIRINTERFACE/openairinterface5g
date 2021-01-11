@@ -653,6 +653,7 @@ void nr_schedule_ulsch(module_id_t module_id,
                   "no free HARQ process available for UE %d\n",
                   UE_id);
       remove_front_nr_list(&sched_ctrl->available_ul_harq);
+      sched_pusch->ul_harq_pid = harq_id;
     } else {
       /* PP selected a specific HARQ process. Check whether it will be a new
        * transmission or a retransmission, and remove from the corresponding
