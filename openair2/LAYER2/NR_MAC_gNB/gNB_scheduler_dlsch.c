@@ -384,7 +384,7 @@ bool allocate_retransmission(module_id_t module_id,
     rbSize = 0;
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
     if (rbStart >= bwpSize) {
-      LOG_E(MAC,
+      LOG_D(MAC,
             "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
             UE_id,
             RC.nrmac[module_id]->UE_info.rnti[UE_id]);
@@ -445,7 +445,7 @@ void pf_dl(module_id_t module_id,
       /* Find a free CCE */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE){
-        LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+        LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
         continue;
       }
       /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
@@ -469,7 +469,7 @@ void pf_dl(module_id_t module_id,
       /* Allocate retransmission */
       bool r = allocate_retransmission(module_id, rballoc_mask, &n_rb_sched, UE_id, sched_ctrl->dl_harq_pid);
       if (!r) {
-        LOG_E(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
+        LOG_D(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         continue;
       }
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -534,7 +534,7 @@ void pf_dl(module_id_t module_id,
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
-      LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+      LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
     /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */

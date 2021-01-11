@@ -572,7 +572,7 @@ void pf_ul(module_id_t module_id,
       /* Find free CCE */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE) {
-        LOG_E(MAC, "%4d.%2d no free CCE for retransmission UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+        LOG_D(MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
         continue;
       }
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -629,7 +629,7 @@ void pf_ul(module_id_t module_id,
       /* if no data, pre-allocate 5RB */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE) {
-        LOG_E(MAC, "%4d.%2d no free CCE for UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+        LOG_D(MAC, "%4d.%2d no free CCE for UL DCI UE %04x (BSR 0)\n", frame, slot, UE_info->rnti[UE_id]);
         continue;
       }
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -703,7 +703,7 @@ void pf_ul(module_id_t module_id,
 
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
-      LOG_E(MAC, "%4d.%2d no free CCE for UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+      LOG_D(MAC, "%4d.%2d no free CCE for UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
       continue;
     }
 
