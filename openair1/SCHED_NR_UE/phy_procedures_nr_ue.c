@@ -50,6 +50,7 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 #include "executables/softmodem-common.h"
+#include "executables/nr-uesoftmodem.h"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define DEBUG_PHY_PROC
@@ -921,7 +922,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        NR_UE_DLSCH_t *dlsch0,
        NR_UE_DLSCH_t *dlsch1,
        int *dlsch_errors,
-       runmode_t mode) {
+       runmode_t mode,
+       uint8_t dlsch_parallel) {
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -1052,8 +1054,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #endif
 
-#ifdef UE_DLSCH_PARALLELISATION
-		 ret = nr_dlsch_decoding_mthread(ue,
+  if( dlsch_parallel)
+    {
+    ret = nr_dlsch_decoding_mthread(ue,
 			   proc,
 			   eNB_id,
 			   pdsch_vars->llr[0],
@@ -1066,9 +1069,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-		 LOG_T(PHY,"UE_DLSCH_PARALLELISATION is defined, ret = %d\n", ret);
-#else
-      ret = nr_dlsch_decoding(ue,
+    LOG_T(PHY,"dlsch decoding is parallelized, ret = %d\n", ret);
+    }
+  else
+    {
+    ret = nr_dlsch_decoding(ue,
 			   proc,
 			   eNB_id,
 			   pdsch_vars->llr[0],
@@ -1081,9 +1086,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-      LOG_T(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret = %d\n", ret);
-      //printf("start cW0 dlsch decoding\n");
-#endif
+      LOG_T(PHY,"Sequential dlsch decoding , ret = %d\n", ret);
+     }
+
 
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
@@ -1135,38 +1140,40 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #endif
 
-#ifdef UE_DLSCH_PARALLELISATION
-          ret1 = nr_dlsch_decoding_mthread(ue,
-                                           proc,
-                                           eNB_id,
-                                           pdsch_vars->llr[1],
-                                           &ue->frame_parms,
-                                           dlsch1,
-                                           dlsch1->harq_processes[harq_pid],
-                                           frame_rx,
-                                           nb_symb_sch,
-                                           nr_slot_rx,
-                                           harq_pid,
-                                           pdsch==PDSCH?1:0,
-                                           dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
-          LOG_T(PHY,"UE_DLSCH_PARALLELISATION is defined, ret1 = %d\n", ret1);
-#else
-          ret1 = nr_dlsch_decoding(ue,
-                                   proc,
-                                   eNB_id,
-                                   pdsch_vars->llr[1],
-                                   &ue->frame_parms,
-                                   dlsch1,
-                                   dlsch1->harq_processes[harq_pid],
-                                   frame_rx,
-                                   nb_symb_sch,
-                                   nr_slot_rx,
-                                   harq_pid,
-                                   pdsch==PDSCH?1:0,//proc->decoder_switch,
-                                   dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
-          LOG_T(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret1 = %d\n", ret1);
-          printf("start cw1 dlsch decoding\n");
-#endif
+  if(dlsch_parallel)
+    {
+    ret1 = nr_dlsch_decoding_mthread(ue,
+                                     proc,
+                                     eNB_id,
+                                     pdsch_vars->llr[1],
+                                     &ue->frame_parms,
+                                     dlsch1,
+                                     dlsch1->harq_processes[harq_pid],
+                                     frame_rx,
+                                     nb_symb_sch,
+				     nr_slot_rx,
+                                     harq_pid,
+                                     pdsch==PDSCH?1:0,
+                                     dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+          LOG_T(PHY,"CW dlsch decoding is parallelized, ret1 = %d\n", ret1);
+    }
+    else
+    {
+    ret1 = nr_dlsch_decoding(ue,
+			     proc,
+			     eNB_id,
+                             pdsch_vars->llr[1],
+                             &ue->frame_parms,
+                             dlsch1,
+                             dlsch1->harq_processes[harq_pid],
+                             frame_rx,
+                             nb_symb_sch,
+                             nr_slot_rx,
+                             harq_pid,
+                             pdsch==PDSCH?1:0,//proc->decoder_switch,
+                             dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+    LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
+    }
 
 #if UE_TIMING_TRACE
           stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
@@ -1700,8 +1707,10 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           runmode_t mode)
-{
+                           runmode_t mode,
+                           uint8_t dlsch_parallel
+                           )
+{                                         
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   int slot_pbch;
@@ -1899,7 +1908,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            ue->dlsch_SI[gNB_id],
                            NULL,
                            &ue->dlsch_SI_errors[gNB_id],
-                           mode);
+                           mode,
+                           dlsch_parallel);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
@@ -1924,7 +1934,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            ue->dlsch_p[gNB_id],
                            NULL,
                            &ue->dlsch_p_errors[gNB_id],
-                           mode);
+                           mode,
+                           dlsch_parallel);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_p[gNB_id]->active = 0;
@@ -1949,7 +1960,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            ue->dlsch_ra[gNB_id],
                            NULL,
                            &ue->dlsch_ra_errors[gNB_id],
-                           mode);
+                           mode,
+                           dlsch_parallel);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_ra[gNB_id]->active = 0;
@@ -1975,7 +1987,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   ue->dlsch[proc->thread_id][gNB_id][1],
 			   &ue->dlsch_errors[gNB_id],
-			   mode);
+			   mode,
+			   dlsch_parallel);
 
 
 #if UE_TIMING_TRACE

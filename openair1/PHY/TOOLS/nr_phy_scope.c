@@ -25,8 +25,8 @@
 
 #include <stdlib.h>
 #include "nr_phy_scope.h"
-#include "executables/nr-softmodem-common.h"
 #include "executables/softmodem-common.h"
+#include "executables/nr-softmodem-common.h"
 #include <forms.h>
 
 #define TPUT_WINDOW_LENGTH 100
