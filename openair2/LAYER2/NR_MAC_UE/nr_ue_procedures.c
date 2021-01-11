@@ -1941,11 +1941,11 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
-  int dci_format = nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,def_dci_pdu_rel15);
+  uint32_t dci_format = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
   return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
 }
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format){
 
   int mu = 0;
   long k2 = 0;
@@ -2952,8 +2952,8 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 
 }
 
-int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-			 int dci_format,
+uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+			 uint8_t dci_format,
 			 uint8_t dci_size,
 			 uint16_t rnti,
 			 uint64_t *dci_pdu,

@@ -324,7 +324,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
     @returns void
     */
-void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, int *dci_format){
+void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format){
 
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
 
