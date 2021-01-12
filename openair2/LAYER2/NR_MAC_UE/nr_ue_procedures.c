@@ -82,6 +82,25 @@ static ssb_list_info_t ssb_list;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 //#define DEBUG_EXTRACT_DCI
 
+int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
+
+    RA_config_t *ra = &mac->ra;
+
+    if (rnti == ra->ra_rnti) {
+      return NR_RNTI_RA;
+    } else if (rnti == mac->crnti) {
+     return NR_RNTI_C;
+    } else if (rnti == ra->t_crnti) {
+     return NR_RNTI_TC;
+    } else if (rnti == 0xFFFE) {
+     return NR_RNTI_P;
+    } else if (rnti == 0xFFFF) {
+     return NR_RNTI_SI;
+    } else {
+      AssertFatal(1 == 0, "In %s: No identified/handled rnti\n", __FUNCTION__);
+    }
+
+}
 // Build the list of all the valid RACH occasions in the maximum association pattern period according to the PRACH config
 static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
 
@@ -2961,17 +2980,9 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 			 uint16_t rnti,
 			 uint64_t *dci_pdu,
 			 dci_pdu_rel15_t *dci_pdu_rel15) {
-  int rnti_type=-1;
 
-  RA_config_t *ra = &mac->ra;
+  int rnti_type = get_rnti_type(mac, rnti);
 
-  if      (rnti == ra->ra_rnti)   rnti_type = NR_RNTI_RA;
-  else if (rnti == mac->crnti)    rnti_type = NR_RNTI_C;
-  else if (rnti == ra->t_crnti)   rnti_type = NR_RNTI_TC;
-  else if (rnti == 0xFFFE)        rnti_type = NR_RNTI_P;
-  else if (rnti == 0xFFFF)        rnti_type = NR_RNTI_SI;
-
-  AssertFatal(rnti_type!=-1,"no identified/handled rnti\n");
   AssertFatal(mac->DLbwp[0] != NULL, "DLbwp[0] shouldn't be null here!\n");
   AssertFatal(mac->ULbwp[0] != NULL, "ULbwp[0] shouldn't be null here!\n");
   int N_RB = get_n_rb(mac, rnti_type);
