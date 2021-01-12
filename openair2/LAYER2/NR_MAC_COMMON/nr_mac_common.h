@@ -130,4 +130,18 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
 
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
+/* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
+@param    *pusch_config,   pointer to pusch config
+@param    *ubwp            pointer to uplink bwp
+@param    *dci_format      pointer to dci format
+@param    rnti_type        rnti type
+@param    configuredGrant  indicates whether a configured grant was received or not
+@returns                   transformPrecoding value */
+uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
+                               NR_PUSCH_Config_t *pusch_config,
+                               NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant);
+
 #endif

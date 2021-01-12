@@ -153,10 +153,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   pusch_config_pdu->scid = 0;
 
   // Transform precoding according to 6.1.3 UE procedure for applying transform precoding on PUSCH in 38.214
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-    pusch_config_pdu->transform_precoding = 1;
-  else
-    pusch_config_pdu->transform_precoding = 0;
+  pusch_config_pdu->transform_precoding = get_transformPrecoding(scc, pusch_Config, NULL, NULL, NR_RNTI_RA, 0);
 
   // Resource allocation in frequency domain according to 6.1.2.2 in TS 38.214
   pusch_config_pdu->resource_alloc = pusch_Config->resourceAllocation;

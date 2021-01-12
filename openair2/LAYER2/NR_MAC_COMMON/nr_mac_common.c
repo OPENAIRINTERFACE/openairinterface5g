@@ -2284,6 +2284,46 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 4;
 }
 
+// Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
+// - "UE procedure for applying transform precoding on PUSCH"
+uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
+                               NR_PUSCH_Config_t *pusch_config,
+                               NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant){
+
+  uint8_t cg_transformPrecoder = 0;
+
+  if (configuredGrant) {
+    if (ubwp->bwp_Dedicated->configuredGrantConfig){
+      if (ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder){
+        return *ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder;
+      } else {
+        cg_transformPrecoder = 1;
+      }
+    }
+  }
+
+  if (rnti_type == NR_RNTI_RA || *dci_format == NR_UL_DCI_FORMAT_0_0 || cg_transformPrecoder){
+
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+      return 1;
+    } else {
+      return 0;
+    }
+
+  } else if (*dci_format != NR_UL_DCI_FORMAT_0_0 && pusch_config->transformPrecoder != NULL) {
+
+    return *pusch_config->transformPrecoder;
+
+  }
+
+  LOG_E(MAC, "In %s: could not fetch transform precoder status...\n", __FUNCTION__);
+  return -1;
+
+}
+
 uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
                      NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
@@ -2413,16 +2453,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         }
       }
       // Precoding info and number of layers
-      long transformPrecoder;
-      if (pusch_Config->transformPrecoder == NULL){
-        // if transform precoder is null, apply the values from msg3
-        if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-          transformPrecoder = 1;
-        else
-          transformPrecoder = 0;
-      }
-      else
-        transformPrecoder = *pusch_Config->transformPrecoder;
+      long transformPrecoder = get_transformPrecoding(scc, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
+
       if (pusch_Config->txConfig != NULL){
         if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
           if (pusch_antenna_ports > 1) {

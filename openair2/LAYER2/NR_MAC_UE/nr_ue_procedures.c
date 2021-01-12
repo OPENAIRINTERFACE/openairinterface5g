@@ -1979,6 +1979,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = NULL;
+  int rnti_type = get_rnti_type(mac, rnti);
 
   //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
@@ -2061,10 +2062,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     pusch_config_pdu_0_0->mcs_index = dci->mcs;
 
     /* MCS TABLE */
-    if (mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-      pusch_config_pdu_0_0->transform_precoding = 1;
-    else
-      pusch_config_pdu_0_0->transform_precoding = 0;
+    if (rnti_type != NR_RNTI_CS || (rnti_type == NR_RNTI_CS && dci->ndi == 1)) {
+      pusch_config_pdu_0_0->transform_precoding = get_transformPrecoding(mac->scc, pusch_config, NULL, &dci_format, rnti_type, 0);
+    }
       
     if (pusch_config_pdu_0_0->transform_precoding == transform_precoder_disabled) 
       pusch_config_pdu_0_0->mcs_table = get_pusch_mcs_table(pusch_config->mcs_Table, 0,
@@ -2193,15 +2193,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* MCS */
     pusch_config_pdu_0_1->mcs_index = dci->mcs;
     /* MCS TABLE */
-    if (pusch_config->transformPrecoder == NULL) {
-      if (mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-        pusch_config_pdu_0_1->transform_precoding = 1;
-      else
-        pusch_config_pdu_0_1->transform_precoding = 0;
+
+    if (rnti_type != NR_RNTI_CS || (rnti_type == NR_RNTI_CS && dci->ndi == 1)) {
+      pusch_config_pdu_0_1->transform_precoding = get_transformPrecoding(mac->scc, pusch_config, NULL, &dci_format, rnti_type, 0);
     }
-    else
-      pusch_config_pdu_0_1->transform_precoding = *pusch_config->transformPrecoder;
-      
+
     if (pusch_config_pdu_0_1->transform_precoding == transform_precoder_disabled) 
       pusch_config_pdu_0_1->mcs_table = get_pusch_mcs_table(pusch_config->mcs_Table, 0,
                                                  dci_format, NR_RNTI_C, NR_SearchSpace__searchSpaceType_PR_ue_Specific, false);
