@@ -520,8 +520,8 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
 
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNB,int frame, int subframe, uint8_t UE_id,int round);
 
-void dump_ulsch_stats(PHY_VARS_eNB *eNB,int frame);
-void dump_uci_stats(PHY_VARS_eNB *eNB,int frame);
+void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
+void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
 
 
 

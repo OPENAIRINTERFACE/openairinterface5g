@@ -2182,12 +2182,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     LOG_I (PHY, "max_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", max_I0, amax, min_I0, amin, eNB->measurements.n0_subband_power_avg_dB);
   }
 
-  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame&127) == 0 && subframe==3) {
-       dump_ulsch_stats(eNB,frame);
-       dump_uci_stats(eNB,frame);
-  }
-
   // clear unused statistics after 2 seconds
   for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++) {
      if (eNB->ulsch_stats[i].frame <= frame) {

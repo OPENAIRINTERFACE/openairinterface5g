@@ -846,6 +846,20 @@ static void *process_stats_thread(void *param) {
   return(NULL);
 }
 
+void *L1_stats_thread(void *param) {
+  PHY_VARS_eNB     *eNB      = (PHY_VARS_eNB *)param;
+  wait_sync("L1_stats_thread");
+  FILE *fd;
+  while (!oai_exit) {
+    sleep(1);
+    fd=fopen("L1_stats.log","w");
+    AssertFatal(fd!=NULL,"Cannot open L1_stats.log\n");
+    dump_ulsch_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
+    dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
+    fclose(fd);
+  }
+  return(NULL);
+}
 
 void init_eNB_proc(int inst) {
   /*int i=0;*/
@@ -940,6 +954,7 @@ void init_eNB_proc(int inst) {
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
     if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
+    pthread_create(&proc->L1_stats_thread,NULL,L1_stats_thread,(void*)eNB);
   }
 
   //for multiple CCs: setup master and slaves

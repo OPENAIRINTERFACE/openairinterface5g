@@ -1116,16 +1116,18 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   return(ret);
 }
 
+#define STATSTRLEN 16384
+void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
 
-void dump_ulsch_stats(PHY_VARS_eNB *eNB,int frame) {
-
+  char output[16384];
+  int stroff=0;
   for (int i=0;i<NUMBER_OF_ULSCH_MAX;i++)
     if (eNB->ulsch_stats[i].rnti>0) { 
-      for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++)
-        LOG_I(PHY,"ULSCH RNTI %x: ulsch_power[%d] %d, ulsch_noise_power[%d] %d\n", 
+      for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) 
+        stroff+=sprintf(output+stroff,"ULSCH RNTI %x: ulsch_power[%d] %d, ulsch_noise_power[%d] %d\n", 
               eNB->ulsch_stats[i].rnti, aa,eNB->ulsch_stats[i].ulsch_power[aa],aa,eNB->ulsch_stats[i].ulsch_noise_power[aa]);
-
-      LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d\n",
+      AssertFatal(stroff<(STATSTRLEN-1000),"Increase STATSTRLEN\n");
+      stroff+=sprintf(output+stroff,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d\n",
             eNB->ulsch_stats[i].rnti,
             eNB->ulsch_stats[i].round_trials[0],
             (double)eNB->ulsch_stats[i].round_trials[1]/eNB->ulsch_stats[i].round_trials[0],
@@ -1134,7 +1136,7 @@ void dump_ulsch_stats(PHY_VARS_eNB *eNB,int frame) {
             eNB->ulsch_stats[i].round_trials[2],
            (double)eNB->ulsch_stats[i].round_trials[3]/eNB->ulsch_stats[i].round_trials[0],
             eNB->ulsch_stats[i].round_trials[3]);
-      LOG_I(PHY,"ULSCH RNTI %x:  current_Qm %d, current_G %d, current_TBS %d, current_rate %f,current_RI %d, timing_offset %d, total_bytes RX/SCHED %d/%d\n",
+      stroff+=sprintf(output+stroff,"ULSCH RNTI %x:  current_Qm %d, current_G %d, current_TBS %d, current_rate %f,current_RI %d, timing_offset %d, total_bytes RX/SCHED %d/%d\n",
             eNB->ulsch_stats[i].rnti,
             eNB->ulsch_stats[i].current_Qm,
 	    eNB->ulsch_stats[i].current_G,
@@ -1145,7 +1147,8 @@ void dump_ulsch_stats(PHY_VARS_eNB *eNB,int frame) {
             eNB->ulsch_stats[i].total_bytes_rx,
             eNB->ulsch_stats[i].total_bytes_tx);
     }
-  
+  if (fd) fprintf(fd,"%s",output);
+  else    printf("%s",output);  
 }
 
 void clear_ulsch_stats(PHY_VARS_eNB *eNB) {

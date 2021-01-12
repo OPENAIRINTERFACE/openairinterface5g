@@ -40,8 +40,51 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "common/ran_context.h"
 #include "intertask_interface.h"
+#include <pthread.h>
 
 extern RAN_CONTEXT_t RC;
+extern int oai_exit;
+
+void *mac_stats_thread(void *param) {
+  eNB_MAC_INST     *mac      = (eNB_MAC_INST *)param;
+  FILE *fd;
+  UE_info_t        *UE_info  = &(mac->UE_info);
+
+  while (!oai_exit) {
+    sleep(1);
+    fd=fopen("MAC_stats.log","w+");
+    AssertFatal(fd!=NULL,"Cannot open MAC_stats.log\n");
+
+    for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+      if (UE_info->active[UE_id]) {
+        int rnti = UE_RNTI(mac->Mod_id, UE_id);
+        int CC_id = UE_PCCID(mac->Mod_id, UE_id);
+        UE_sched_ctrl_t *UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
+
+      fprintf(fd,"UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d (TPC accum %d)  PUCCH SNR %d (TPC accum %d)\n",
+              rnti,
+              UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
+              UE_info->UE_template[CC_id][UE_id].phr_info,
+              UE_scheduling_control->dl_cqi[CC_id],
+              (5 * UE_scheduling_control->pusch_snr[CC_id] - 640) / 10, UE_scheduling_control->pucch_tpc_accumulated[CC_id],
+              (5 * UE_scheduling_control->pucch1_snr[CC_id] - 640) / 10, UE_scheduling_control->pusch_tpc_accumulated[CC_id]);
+      fprintf(fd,"              ULSCH rounds %d/%d/%d/%d, DLSCH rounds %d/%d/%d/%d, ULSCH errors %d, DLSCH errors %d\n",
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[1],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[2],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[3],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[0],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[1],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[2],
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[3],
+              UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_errors,
+              UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_errors);
+      }
+    }
+    fclose(fd);
+  }
+  return(NULL);
+}
 
 void init_UE_info(UE_info_t *UE_info)
 {
@@ -128,6 +171,9 @@ void mac_top_init_eNB(void)
   pdcp_layer_init();
 
   rrc_init_global_param();
+
+  for (i=0;i<RC.nb_macrlc_inst; i++) pthread_create(&mac[i]->mac_stats_thread,NULL,mac_stats_thread,(void*)mac[i]);
+
 }
 
 void mac_init_cell_params(int Mod_idP, int CC_idP)

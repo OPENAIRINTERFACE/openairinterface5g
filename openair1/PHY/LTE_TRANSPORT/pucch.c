@@ -65,21 +65,24 @@ int16_t cfo_pucch_ep[24*6] = {24278,-22005,29621,-14010,32412,-4808,32412,4807,2
 
 
 
-void dump_uci_stats(PHY_VARS_eNB *eNB,int frame) {
+void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
 
-  for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++)
+  int strpos=0;
+  char output[16384];
+
+  for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++){
     if (eNB->uci_stats[i].rnti>0) {
       eNB_UCI_STATS_t *uci_stats = &eNB->uci_stats[i];
-      LOG_I(PHY,"UCI RNTI %x: pucch1_trials %d, pucch1_thres %d dB, current pucch1_stat %d dB,positive SR count %d\n",
+      strpos+=sprintf(output+strpos,"UCI RNTI %x: pucch1_trials %d, pucch1_thres %d dB, current pucch1_stat %d dB,positive SR count %d\n",
 	uci_stats->rnti,uci_stats->pucch1_trials,uci_stats->pucch1_thres,dB_fixed(uci_stats->current_pucch1_stat),uci_stats->pucch1_positive_SR);
-      LOG_I(PHY,"UCI RNTI %x: pucch1_low (%d,%d)dB pucch1_high (%d,%d)dB\n",
+      strpos+=sprintf(output+strpos,"UCI RNTI %x: pucch1_low (%d,%d)dB pucch1_high (%d,%d)dB\n",
 	    uci_stats->rnti,
             dB_fixed(uci_stats->pucch1_low_stat[0]),
             dB_fixed(uci_stats->pucch1_low_stat[1]),
             dB_fixed(uci_stats->pucch1_high_stat[0]),
             dB_fixed(uci_stats->pucch1_high_stat[1]));
       
-      LOG_I(PHY,"UCI RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d), pucch1b_trials %d, pucch1b_stat (%d,%d) pucch1ab_DTX %d\n",
+      strpos+=sprintf(output+strpos,"UCI RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d), pucch1b_trials %d, pucch1b_stat (%d,%d) pucch1ab_DTX %d\n",
             uci_stats->rnti,
             uci_stats->pucch1a_trials,
             uci_stats->current_pucch1a_stat_re,
@@ -89,7 +92,9 @@ void dump_uci_stats(PHY_VARS_eNB *eNB,int frame) {
 	    uci_stats->current_pucch1b_stat_im,
             uci_stats->pucch1ab_DTX);
     }
-
+  }
+  if (fd) fprintf(fd,"%s",output);
+  else    printf("%s",output);  
 }
 /* PUCCH format3 >> */
 /* SubCarrier Demap */

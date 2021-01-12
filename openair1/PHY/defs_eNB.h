@@ -362,6 +362,8 @@ typedef struct L1_proc_t_s {
   L1_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
+  /// L1 stats pthread descriptor
+  pthread_t L1_stats_thread;
   /// for waking up tx procedure
   RU_proc_t *ru_proc;
   struct PHY_VARS_eNB_s *eNB;

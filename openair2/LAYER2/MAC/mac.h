@@ -1433,6 +1433,8 @@ typedef struct eNB_MAC_INST_s {
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;
+
+  pthread_t mac_stats_thread;
 } eNB_MAC_INST;
 
 /*
