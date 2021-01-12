@@ -53,6 +53,7 @@
 
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "executables/nr-softmodem.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
