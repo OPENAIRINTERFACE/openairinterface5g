@@ -512,7 +512,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
               }
             }
           } else { // ctxt.enb_flag => UE
-            if (NFAPI_MODE == NFAPI_UE_STUB_PNF) {
+            if (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
 #ifdef UESIM_EXPANSION
               ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
 #else
@@ -568,8 +568,8 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                   pdcp_read_header_g.data_size,
                   (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                   PDCP_TRANSMISSION_MODE_DATA,
-                  (NFAPI_MODE == NFAPI_UE_STUB_PNF)?NULL:&pdcp_read_header_g.sourceL2Id,
-                  (NFAPI_MODE == NFAPI_UE_STUB_PNF)?NULL:&pdcp_read_header_g.destinationL2Id
+                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?NULL:&pdcp_read_header_g.sourceL2Id,
+                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?NULL:&pdcp_read_header_g.destinationL2Id
                 );
               } else { /* else of h_rc == HASH_TABLE_OK */
                 MSC_LOG_RX_DISCARDED_MESSAGE(
@@ -613,8 +613,8 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                 pdcp_read_header_g.data_size,
                 (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                 PDCP_TRANSMISSION_MODE_DATA,
-                (NFAPI_MODE == NFAPI_UE_STUB_PNF) ? NULL :&pdcp_read_header_g.sourceL2Id,
-                (NFAPI_MODE == NFAPI_UE_STUB_PNF) ? NULL :&pdcp_read_header_g.destinationL2Id
+                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL :&pdcp_read_header_g.sourceL2Id,
+                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL :&pdcp_read_header_g.destinationL2Id
               );
             } /* rab_id == 0 */
           } /*pdcp_read_state_g != 0 */

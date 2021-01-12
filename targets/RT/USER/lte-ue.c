@@ -193,7 +193,7 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
   ue->mac_enabled = 1;
 
   // In phy_stub_UE (MAC-to-MAC) mode these init functions don't need to get called. Is this correct?
-  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     // initialize all signal buffers
     init_lte_ue_signal(ue,1,abstraction_flag);
     // intialize transport
@@ -466,7 +466,7 @@ void init_UE_stub(int nb_inst,
   printf("UE threads created \n");
   LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF)
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF)
     multicast_link_start(ue_stub_rx_handler,0,emul_iface);
 }
 
@@ -2399,7 +2399,7 @@ void init_UE_single_thread_stub(int nb_inst)
     AssertFatal(PHY_vars_UE_g[i]!=NULL,"PHY_vars_UE_g[inst] is NULL\n");
     AssertFatal(PHY_vars_UE_g[i][0]!=NULL,"PHY_vars_UE_g[inst][0] is NULL\n");
 
-    if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE_STANDALONE_PNF) {
+    if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
 #ifdef NAS_UE
       MessageDef *message_p;
       message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
