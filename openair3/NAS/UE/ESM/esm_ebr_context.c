@@ -267,7 +267,7 @@ int esm_ebr_context_create(
                 strcpy(broadcast, ipv4_addr);
               }
 
-              if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+              if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
                 // this is for L2 FAPI simulator.
                 // change for multiple UE's like 256UEs.
                 // if it's made too many tables , OS may crush so we use one table.

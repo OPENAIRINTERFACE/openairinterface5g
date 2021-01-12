@@ -1507,8 +1507,8 @@ void enqueue_dl_config_req_tx_req(nfapi_dl_config_request_t *dl_config_req, nfap
 
   nfapi_dl_config_request_t *dl_config_req_temp = memcpy_dl_config_req_standalone(dl_config_req);
   nfapi_tx_req_pdu_list_t *tx_req_temp = memcpy_tx_req_standalone(tx_req);
-  LOG_E(MAC, "This is the num_pdus for tx_req: %d\n", tx_req_temp->num_pdus);
-  LOG_E(MAC, "This is the num_pdus for dl_config_req and the sfn_sf: %d, %d:%d\n", dl_config_req_temp->dl_config_request_body.number_pdu,
+  LOG_I(MAC, "This is the num_pdus for tx_req: %d\n", tx_req_temp->num_pdus);
+  LOG_I(MAC, "This is the num_pdus for dl_config_req and the sfn_sf: %d, %d:%d\n", dl_config_req_temp->dl_config_request_body.number_pdu,
         NFAPI_SFNSF2SFN(dl_config_req_temp->sfn_sf), NFAPI_SFNSF2SF(dl_config_req_temp->sfn_sf));
 
   nfapi_dl_config_req_tx_req_t *req = malloc(sizeof(nfapi_dl_config_req_tx_req_t));

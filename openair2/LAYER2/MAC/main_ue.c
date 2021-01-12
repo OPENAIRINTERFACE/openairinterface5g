@@ -91,7 +91,7 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
   }
 
   // mutex below are used for multiple UE's L2 FAPI simulation.
-  if (NFAPI_MODE == NFAPI_UE_STUB_PNF) {
+  if (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
     pthread_mutex_init(&fill_ul_mutex.rx_mutex,NULL);
     pthread_mutex_init(&fill_ul_mutex.crc_mutex,NULL);
     pthread_mutex_init(&fill_ul_mutex.sr_mutex,NULL);

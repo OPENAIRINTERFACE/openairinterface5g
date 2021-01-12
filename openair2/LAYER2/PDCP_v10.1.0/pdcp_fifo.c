@@ -99,7 +99,7 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 
 extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
-
+uint16_t ue_id_g;// global variable to identify ue id for each ue. Change happens only in main function of lte-uesoftmodem.c 
 
 void debug_pdcp_pc5s_sdu(sidelink_pc5s_element *sl_pc5s_msg, char *title) {
   LOG_I(PDCP,"%s: \nPC5S message, header traffic_type: %d)\n", title, sl_pc5s_msg->pc5s_header.traffic_type);
@@ -145,7 +145,14 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     		}
     		printf("\n");
     	#endif
-    	ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+        if (ue_id_g == 0)
+        {
+          ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+        }
+        else
+        {
+          ret = write(nas_sock_fd[ue_id_g], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+        }
        //LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
        }
     } else if (ENB_NAS_USE_TUN) {
@@ -232,8 +239,15 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
   do {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
-    len = read(UE_NAS_USE_TUN?nas_sock_fd[ctxt_pP->module_id]:nas_sock_fd[0], &nl_rx_buf, NL_MAX_PAYLOAD);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
+    if (ue_id_g == 0)
+    {
+      len = read(UE_NAS_USE_TUN?nas_sock_fd[ctxt_pP->module_id]:nas_sock_fd[0], &nl_rx_buf, NL_MAX_PAYLOAD);
+    }
+    else
+    {
+      len = read(UE_NAS_USE_TUN?nas_sock_fd[ue_id_g]:nas_sock_fd[0], &nl_rx_buf, NL_MAX_PAYLOAD);
+    }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 ); 
 
     if (len<=0) continue;
 
@@ -512,7 +526,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
               }
             }
           } else { // ctxt.enb_flag => UE
-            if (NFAPI_MODE == NFAPI_UE_STUB_PNF) {
+            if (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
 #ifdef UESIM_EXPANSION
               ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
 #else
@@ -568,8 +582,8 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                   pdcp_read_header_g.data_size,
                   (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                   PDCP_TRANSMISSION_MODE_DATA,
-                  (NFAPI_MODE == NFAPI_UE_STUB_PNF)?NULL:&pdcp_read_header_g.sourceL2Id,
-                  (NFAPI_MODE == NFAPI_UE_STUB_PNF)?NULL:&pdcp_read_header_g.destinationL2Id
+                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?NULL:&pdcp_read_header_g.sourceL2Id,
+                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?NULL:&pdcp_read_header_g.destinationL2Id
                 );
               } else { /* else of h_rc == HASH_TABLE_OK */
                 MSC_LOG_RX_DISCARDED_MESSAGE(
@@ -613,8 +627,8 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                 pdcp_read_header_g.data_size,
                 (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                 PDCP_TRANSMISSION_MODE_DATA,
-                (NFAPI_MODE == NFAPI_UE_STUB_PNF) ? NULL :&pdcp_read_header_g.sourceL2Id,
-                (NFAPI_MODE == NFAPI_UE_STUB_PNF) ? NULL :&pdcp_read_header_g.destinationL2Id
+                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL :&pdcp_read_header_g.sourceL2Id,
+                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL :&pdcp_read_header_g.destinationL2Id
               );
             } /* rab_id == 0 */
           } /*pdcp_read_state_g != 0 */

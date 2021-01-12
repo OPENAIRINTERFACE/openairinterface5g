@@ -95,11 +95,16 @@ static int tun_alloc(char *dev) {
 }
 
 
-int netlink_init_mbms_tun(char *ifprefix) {
+int netlink_init_mbms_tun(char *ifprefix, int id) {//for UE, id = 1, 2, ...,
   int ret;
   char ifname[64];
 
-    sprintf(ifname, "oaitun_%.3s1",ifprefix); // added "1": for historical reasons
+    if ( id > 0 ){
+      sprintf(ifname, "oaitun_%.3s%d",ifprefix, id-1); 
+    }
+    else{
+      sprintf(ifname, "oaitun_%.3s1",ifprefix); // added "1": for historical reasons
+    }
     nas_sock_mbms_fd = tun_alloc(ifname);
 
     if (nas_sock_mbms_fd == -1) {
@@ -151,11 +156,13 @@ int netlink_init_mbms_tun(char *ifprefix) {
   return 1;
 }
 
-int netlink_init_tun(char *ifprefix, int num_if) {
+int netlink_init_tun(char *ifprefix, int num_if, int id) {//for UE, id = 1, 2, ...,
   int ret;
   char ifname[64];
 
-  for (int i = 0; i < num_if; i++) {
+  int begx = (id == 0) ? 0 : id - 1;
+  int endx = (id == 0) ? num_if : id;
+  for (int i = begx; i < endx; i++) {
     sprintf(ifname, "oaitun_%.3s%d",ifprefix,i+1);
     nas_sock_fd[i] = tun_alloc(ifname);
 
