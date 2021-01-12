@@ -285,9 +285,9 @@ typedef struct {
   int starting_preamble_nb;
 
   /// Scheduled TX frame for RA Msg3
-  frame_t msg3_frame;
+  int msg3_frame;
   /// Scheduled TX slot for RA Msg3
-  slot_t msg3_slot;
+  int msg3_slot;
   /// Received TPC command (in dB) from RAR
   int8_t Msg3_TPC;
   /// Flag to indicate whether it is the first Msg3 to be transmitted

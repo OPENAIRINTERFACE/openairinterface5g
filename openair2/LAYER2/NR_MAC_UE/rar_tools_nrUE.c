@@ -52,6 +52,14 @@
 // #define DEBUG_RAR
 // #define DEBUG_MSG3
 
+// Configuration of Msg3 PDU according to clauses:
+// - 8.3 of 3GPP TS 38.213 version 16.3.0 Release 16
+// - 6.1.2.2 of TS 38.214
+// - 6.1.3 of TS 38.214
+// - 6.2.2 of TS 38.214
+// - 6.1.4.2 of TS 38.214
+// - 6.4.1.1.1 of TS 38.211
+// - 6.3.1.7 of 38.211
 void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
                         int Msg3_f_alloc,
                         uint8_t Msg3_t_alloc,
@@ -75,11 +83,8 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   printf("[DEBUG_MSG3] Configuring 1 Msg3 PDU of %d UL pdus \n", ul_config->number_pdus);
   #endif
 
-  // Num PRB Overhead from PUSCH-ServingCellConfig
-  if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead == NULL)
-    N_PRB_oh = 0;
-  else
-    N_PRB_oh = *mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
+  // For Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
+  N_PRB_oh = 0;
 
   // active BWP start
   int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -129,7 +134,11 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   // Frequency hopping
   pusch_config_pdu->frequency_hopping = freq_hopping;
   // TC-RNTI
-  pusch_config_pdu->rnti = ra->t_crnti;
+  if (ra->t_crnti) {
+    pusch_config_pdu->rnti = ra->t_crnti;
+  } else {
+    pusch_config_pdu->rnti = mac->crnti;
+  }
 
   // DM-RS configuration according to 6.2.2 UE DM-RS transmission procedure in 38.214
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;

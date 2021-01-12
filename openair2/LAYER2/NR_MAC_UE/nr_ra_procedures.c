@@ -482,6 +482,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 // - fix rrc data req logic
 // - retrieve TBS
 // - add mac_rrc_nr_data_req_ue, etc ...
+// - Msg3 Retransmissions to be scheduled by DCI 0_0
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
@@ -591,7 +592,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1) {
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-        // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
 
         nr_ra_succeeded(mod_id, frame, nr_slot_tx);
 

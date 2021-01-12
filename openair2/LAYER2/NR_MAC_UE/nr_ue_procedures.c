@@ -1277,72 +1277,75 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
     RA_config_t *ra = &mac->ra;
 
-    if (ra->ra_state == WAIT_RAR){
+    if (ul_info->slot_tx == ra->msg3_slot && ul_info->frame_tx == ra->msg3_frame){
 
-      if (ra->RA_active && ul_info->slot_tx == ra->msg3_slot && ul_info->frame_tx == ra->msg3_frame){
+      uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
+      nr_scheduled_response_t scheduled_response;
+      fapi_nr_tx_request_t tx_req;
+      //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
+      fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
+      fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
+      uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
 
-        uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
-        nr_scheduled_response_t scheduled_response;
-        fapi_nr_tx_request_t tx_req;
-        //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
-        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
-        fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
-        uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
+      //if (IS_SOFTMODEM_NOS1){
+      //  // Getting IP traffic to be transmitted
+      //  data_existing = nr_ue_get_sdu(mod_id,
+      //                                cc_id,
+      //                                frame_tx,
+      //                                slot_tx,
+      //                                0,
+      //                                ulsch_input_buffer,
+      //                                TBS_bytes,
+      //                                &access_mode);
+      //}
 
-        //if (IS_SOFTMODEM_NOS1){
-        //  // Getting IP traffic to be transmitted
-        //  data_existing = nr_ue_get_sdu(mod_id,
-        //                                cc_id,
-        //                                frame_tx,
-        //                                slot_tx,
-        //                                0,
-        //                                ulsch_input_buffer,
-        //                                TBS_bytes,
-        //                                &access_mode);
-        //}
-
-        //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-        //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-          //and block this traffic from being forwarded to the upper layers at the gNB
-          LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
-          //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-          //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-          //have a valid LCID (nr_process_mac_pdu function)
-          ulsch_input_buffer[0] = 0x31;
-          for (int i = 1; i < TBS_bytes; i++) {
-            ulsch_input_buffer[i] = (unsigned char) rand();
-            //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-          }
-        //}
-
-        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
-          ul_info->module_id,
-          ul_info->frame_tx,
-          ul_info->slot_tx,
-          ra->t_crnti);
-
-        // Config UL TX PDU
-        tx_req.slot = ul_info->slot_tx;
-        tx_req.sfn = ul_info->frame_tx;
-        tx_req.number_of_pdus = 1;
-        tx_req.tx_request_body[0].pdu_length = TBS_bytes;
-        tx_req.tx_request_body[0].pdu_index = 0;
-        tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
-        ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-        ul_config->number_pdus++;
-        // scheduled_response
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx, ul_info->thread_id);
-        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
-          mac->if_module->scheduled_response(&scheduled_response);
+      //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+      //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+        //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+        //and block this traffic from being forwarded to the upper layers at the gNB
+        LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
+        //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+        //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+        //have a valid LCID (nr_process_mac_pdu function)
+        ulsch_input_buffer[0] = 0x31;
+        for (int i = 1; i < TBS_bytes; i++) {
+          ulsch_input_buffer[i] = (unsigned char) rand();
+          //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
         }
+      //}
 
-        if (!ra->cfra){
-          nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
-        }
+      LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
+        ul_info->module_id,
+        ul_info->frame_tx,
+        ul_info->slot_tx,
+        ra->t_crnti);
 
+      // Config UL TX PDU
+      tx_req.slot = ul_info->slot_tx;
+      tx_req.sfn = ul_info->frame_tx;
+      tx_req.number_of_pdus = 1;
+      tx_req.tx_request_body[0].pdu_length = TBS_bytes;
+      tx_req.tx_request_body[0].pdu_index = 0;
+      tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
+      ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+      ul_config->number_pdus++;
+      // scheduled_response
+      fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx, ul_info->thread_id);
+      if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
+        mac->if_module->scheduled_response(&scheduled_response);
       }
-    } else if (ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
+
+      if (!ra->cfra){
+        nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
+      }
+
+      // disable future transmissions of Msg3 at the next (frame, slot) occasion
+      ra->msg3_slot = -1;
+      ra->msg3_frame = -1;
+
+    }
+
+    if (ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
