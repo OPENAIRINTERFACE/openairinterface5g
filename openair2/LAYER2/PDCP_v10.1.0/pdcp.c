@@ -2278,7 +2278,7 @@ void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind) {
   pdcp_params.pdcp_data_ind_func = pdcp_data_ind;
 }
 
-uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
+uint64_t pdcp_module_init( uint64_t pdcp_optmask, int id) {
   /* temporary enforce netlink when UE_NAS_USE_TUN is set,
      this is while switching from noS1 as build option
      to noS1 as config option                               */
@@ -2296,17 +2296,17 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
 
     if(UE_NAS_USE_TUN) {
       int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?MAX_NUMBER_NETIF:1;
-      netlink_init_tun("ue",num_if);
+      netlink_init_tun("ue",num_if, id);
       if (IS_SOFTMODEM_NOS1)
-    	  nas_config(1, 1, 2, "ue");
-      netlink_init_mbms_tun("uem");
+        nas_config(1, 1, 2, "ue");
+      netlink_init_mbms_tun("uem", id);
       nas_config_mbms(1, 2, 2, "uem");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
     } else if(ENB_NAS_USE_TUN) {
-      netlink_init_tun("enb",1);
+      netlink_init_tun("enb", 1, 0);
       nas_config(1, 1, 1, "enb");
       if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
-        netlink_init_mbms_tun("enm");
+        netlink_init_mbms_tun("enm", 0);
       	nas_config_mbms(1, 2, 1, "enm"); 
       	LOG_I(PDCP, "ENB pdcp will use mbms tun interface\n");
       }
@@ -2318,8 +2318,8 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
   }else{
          if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
              LOG_W(PDCP, "ENB pdcp will use tun interface for MBMS\n");
-            netlink_init_mbms_tun("enm");
-             nas_config_mbms_s1(1, 2, 1, "enm"); 
+             netlink_init_mbms_tun("enm", 1);
+             nas_config_mbms_s1(1, 2, 1, "enm");
          }else
              LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
    }
