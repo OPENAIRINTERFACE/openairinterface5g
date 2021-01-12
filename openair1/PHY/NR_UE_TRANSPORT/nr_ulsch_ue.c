@@ -157,7 +157,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     ///////////
     ////////////////////////////////////////////////////////////////////
-
+    log_dump(PHY, harq_process_ul_ue->a, 16, LOG_DUMP_CHAR,"nrue pusch tx frame %d %d: ", frame, slot);
+  
     /////////////////////////ULSCH scrambling/////////////////////////
     ///////////
 

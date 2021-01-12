@@ -391,6 +391,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
       LOG_D(PHY,"%02x\n",a[i]);
     LOG_D(PHY,"\n");
   */
+  log_dump(PHY, a, 16, LOG_DUMP_CHAR,"gNB pdsch tx frame %d %d: ", frame, slot);
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload

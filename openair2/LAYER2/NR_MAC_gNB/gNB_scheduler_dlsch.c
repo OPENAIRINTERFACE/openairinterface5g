@@ -55,7 +55,7 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
-
+static boolean_t loop_dcch_dtch = TRUE;
 int nr_generate_dlsch_pdu(module_id_t module_idP,
                           NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *sdus_payload,
@@ -392,8 +392,9 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
   /* Retrieve amount of data to send for this UE */
   sched_ctrl->num_total_bytes = 0;
-  const int lcid = DL_SCH_LCID_DTCH;
-  const rnti_t rnti = UE_info->rnti[UE_id];
+  loop_dcch_dtch = BOOL_NOT(loop_dcch_dtch);
+  const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
+  const uint16_t rnti = UE_info->rnti[UE_id];
   sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                     rnti,
                                                     module_id,
@@ -405,6 +406,13 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                                     0,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+  LOG_I(MAC,
+        "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
+        frame,
+        slot,
+        lcid,
+        sched_ctrl->num_total_bytes);  
+
   if (sched_ctrl->num_total_bytes == 0
       && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
     return;
@@ -671,13 +679,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
       uint16_t sdu_lengths[NB_RB_MAX] = {0};
       uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
       unsigned char sdu_lcids[NB_RB_MAX] = {0};
-      const int lcid = DL_SCH_LCID_DTCH;
+      const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
       if (sched_ctrl->num_total_bytes > 0) {
         /* this is the data from the RLC we would like to request (e.g., only
          * some bytes for first LC and some more from a second one */
         const rlc_buffer_occupancy_t ndata = sched_ctrl->rlc_status[lcid].bytes_in_buffer;
         /* this is the maximum data we can transport based on TBS minus headers */
         const int mindata = min(ndata, TBS - ta_len - header_length_total - sdu_length_total -  2 - (ndata >= 256));
+#if 1        
         LOG_D(MAC,
               "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
               "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
@@ -689,7 +698,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
               TBS);
 
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_id,
-            rnti,
+            0x1234,
             module_id,
             frame,
             ENB_FLAG_YES,
@@ -711,6 +720,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
         header_length_total += header_length_last;
         num_sdus++;
+#else
+        LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
+        for (int i = 0; i < TBS; i++)
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        sdu_lcids[0] = 0x3f; // DRB
+        sdu_lengths[0] = TBS - ta_len - 3;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        sdu_length_total += sdu_lengths[0];
+        num_sdus +=1;
+
+#endif
       }
       else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
         LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);

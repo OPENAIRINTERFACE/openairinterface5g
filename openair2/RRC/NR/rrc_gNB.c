@@ -410,7 +410,12 @@ rrc_gNB_generate_RRCSetup(
     case ngran_gNB:
     {
       // rrc_mac_config_req_gNB
+
 #ifdef ITTI_SIM
+      LOG_I(NR_RRC,
+            PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
+            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+            ue_p->Srb0.Tx_buffer.payload_size);
       uint8_t *message_buffer;
       message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,
                 ue_p->Srb0.Tx_buffer.payload_size);
@@ -419,7 +424,7 @@ rrc_gNB_generate_RRCSetup(
       GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
       GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
       itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#endif
+#else
       LOG_D(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
@@ -442,6 +447,15 @@ rrc_gNB_generate_RRCSetup(
       ue_context_pP->ue_context.ue_release_timer_thres = 1000;
       /* init timers */
       //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+
+      nr_rrc_data_req(ctxt_pP,
+            DCCH,
+            rrc_gNB_mui++,
+            SDU_CONFIRM_NO,
+            ue_p->Srb0.Tx_buffer.payload_size,
+            ue_p->Srb0.Tx_buffer.Payload,
+            PDCP_TRANSMISSION_MODE_CONTROL);
+#endif
     }
       break;
 
@@ -1890,7 +1904,7 @@ rrc_gNB_decode_dcch(
                   sdu_sizeP,
                   0,
                   0);
-  // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+  xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
 
   {
     for (i = 0; i < sdu_sizeP; i++) {
@@ -2502,13 +2516,14 @@ void *rrc_gnb_task(void *args_p) {
 
       /* Messages from MAC */
       case NR_RRC_MAC_CCCH_DATA_IND:
-      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                     NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index,
                                     GNB_FLAG_YES,
                                     NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
                                     msg_p->ittiMsgHeader.lte_time.frame,
                                     msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_I(NR_RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+        LOG_I(NR_RRC,"Decoding CCCH : ue %d, inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+                ctxt.rnti,
                 instance,
                 NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
                 &ctxt,
@@ -2534,6 +2549,11 @@ void *rrc_gnb_task(void *args_p) {
                                       NR_RRC_DCCH_DATA_IND(msg_p).rnti,
                                       msg_p->ittiMsgHeader.lte_time.frame,
                                       msg_p->ittiMsgHeader.lte_time.slot);
+        LOG_I(NR_RRC,"Decoding DCCH : ue %d, inst %d, ctxt %p, size %d\n",
+                ctxt.rnti,
+                instance,
+                &ctxt,
+                NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
         LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),
                 NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,

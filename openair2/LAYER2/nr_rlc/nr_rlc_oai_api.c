@@ -766,6 +766,78 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
+static void srb_add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_t *rlc_BearerConfig)
+{
+  nr_rlc_entity_t            *nr_rlc_am;
+  nr_rlc_ue_t                *ue;
+
+  struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
+  struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
+  int srb_id = 1;
+  int channel_id = 1;//rlc_BearerConfig->logicalChannelIdentity;
+  int logical_channel_group;
+
+  int t_status_prohibit;
+  int t_poll_retransmit;
+  int poll_pdu;
+  int poll_byte;
+  int max_retx_threshold;
+  int t_reassembly;
+  int sn_field_length;
+
+
+  logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
+
+  /* TODO: accept other values? */
+  if (logical_channel_group != 1) {
+    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  switch (r->present) {
+  case NR_RLC_Config_PR_am: {
+    struct NR_RLC_Config__am *am;
+    am = r->choice.am;
+    t_reassembly       = decode_t_reassembly(am->dl_AM_RLC.t_Reassembly);
+    t_status_prohibit  = decode_t_status_prohibit(am->dl_AM_RLC.t_StatusProhibit);
+    t_poll_retransmit  = decode_t_poll_retransmit(am->ul_AM_RLC.t_PollRetransmit);
+    poll_pdu           = decode_poll_pdu(am->ul_AM_RLC.pollPDU);
+    poll_byte          = decode_poll_byte(am->ul_AM_RLC.pollByte);
+    max_retx_threshold = decode_max_retx_threshold(am->ul_AM_RLC.maxRetxThreshold);
+    if (*am->dl_AM_RLC.sn_FieldLength != *am->ul_AM_RLC.sn_FieldLength) {
+      LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+      exit(1);
+    }
+    sn_field_length    = decode_sn_field_length_am(*am->dl_AM_RLC.sn_FieldLength);
+    break;
+  }
+  default:
+    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+  if (ue->srb[srb_id-1] != NULL) {
+    LOG_W(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+  } else {
+    nr_rlc_am = new_nr_rlc_entity_am(100000,
+                                     100000,
+                                     deliver_sdu, ue,
+                                     successful_delivery, ue,
+                                     max_retx_reached, ue,
+                                     t_poll_retransmit,
+                                     t_reassembly, t_status_prohibit,
+                                     poll_pdu, poll_byte, max_retx_threshold,
+                                     sn_field_length);
+    //nr_rlc_ue_add_drb_rlc_entity(ue, srb_id, nr_rlc_am);
+    ue->srb[srb_id-1] = nr_rlc_am;
+    LOG_I(RLC, "%s:%d:%s: added srb %d to ue %d\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+  }
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
 
 static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
@@ -834,6 +906,75 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
+static void srb_add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_t *rlc_BearerConfig)
+{
+  nr_rlc_entity_t            *nr_rlc_um;
+  nr_rlc_ue_t                *ue;
+
+  struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
+  struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
+  int srb_id = 1;
+  int channel_id = rlc_BearerConfig->logicalChannelIdentity;
+  int logical_channel_group;
+
+  int sn_field_length;
+  int t_reassembly;
+
+  // if (!(drb_id >= 1 && drb_id <= 5)) {
+  //   LOG_E(RLC, "%s:%d:%s: fatal, bad srb id %d\n",
+  //         __FILE__, __LINE__, __FUNCTION__, drb_id);
+  //   exit(1);
+  // }
+
+  // if (channel_id != drb_id + 3) {
+  //   LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
+  //         __FILE__, __LINE__, __FUNCTION__);
+  //   exit(1);
+  // }
+
+  logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
+
+  /* TODO: accept other values? */
+  if (logical_channel_group != 1) {
+    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  switch (r->present) {
+  case NR_RLC_Config_PR_um_Bi_Directional: {
+    struct NR_RLC_Config__um_Bi_Directional *um;
+    um = r->choice.um_Bi_Directional;
+    t_reassembly = decode_t_reassembly(um->dl_UM_RLC.t_Reassembly);
+    if (*um->dl_UM_RLC.sn_FieldLength != *um->ul_UM_RLC.sn_FieldLength) {
+      LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+      exit(1);
+    }
+    sn_field_length = decode_sn_field_length_um(*um->dl_UM_RLC.sn_FieldLength);
+    break;
+  }
+  default:
+    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+  if (ue->srb[srb_id-1] != NULL) {
+    LOG_W(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+  } else {
+    nr_rlc_um = new_nr_rlc_entity_um(1000000,
+                                     1000000,
+                                     deliver_sdu, ue,
+                                     t_reassembly,
+                                     sn_field_length);
+  //  nr_rlc_ue_add_drb_rlc_entity(ue, srb_id, nr_rlc_um);
+    ue->srb[srb_id-1] = nr_rlc_um;
+    LOG_I(RLC, "%s:%d:%s: added srb %d to ue %d\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+  }
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
 
 static void add_drb(int rnti, struct NR_DRB_ToAddMod *s, struct NR_RLC_BearerConfig *rlc_BearerConfig)
 {
@@ -895,7 +1036,8 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
 
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
-      add_srb(rnti, srb2add_listP->list.array[i]);
+//      add_srb(rnti, srb2add_listP->list.array[i]);
+      srb_add_drb_am(rnti, drb2add_listP->list.array[0], rlc_bearer2add_list->list.array[0]);
     }
   }
 

@@ -22,6 +22,7 @@
 #include "nr_pdcp_entity.h"
 
 #include "nr_pdcp_entity_drb_am.h"
+#include "nr_pdcp_entity_srb.h"
 
 #include "LOG/log.h"
 
@@ -34,7 +35,32 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_srb(
                         char *buf, int size, int sdu_id),
     void *deliver_pdu_data)
 {
-  abort();
+
+  nr_pdcp_entity_srb_t *ret;
+
+  ret = calloc(1, sizeof(nr_pdcp_entity_srb_t));
+  if (ret == NULL) {
+    LOG_E(PDCP, "%s:%d:%s: out of memory\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  ret->common.recv_pdu          = nr_pdcp_entity_srb_recv_pdu;
+  ret->common.recv_sdu          = nr_pdcp_entity_srb_recv_sdu;
+  ret->common.set_integrity_key = nr_pdcp_entity_srb_set_integrity_key;
+
+  ret->common.delete = nr_pdcp_entity_srb_delete;
+
+  ret->common.deliver_sdu = deliver_sdu;
+  ret->common.deliver_sdu_data = deliver_sdu_data;
+
+  ret->common.deliver_pdu = deliver_pdu;
+  ret->common.deliver_pdu_data = deliver_pdu_data;
+
+  ret->srb_id = rb_id;
+
+  ret->common.maximum_nr_pdcp_sn = 4095;
+
+  return (nr_pdcp_entity_t *)ret;
 }
 
 nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(

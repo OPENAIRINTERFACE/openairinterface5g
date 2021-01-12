@@ -129,7 +129,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   *secondaryCellGroup->spCellConfig->servCellIndex = servCellIndex;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->reconfigurationWithSync));
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon=servingcellconfigcommon;
-  secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity=(get_softmodem_params()->phy_test==1) ? 0x1234 : (taus()&0xffff);
+  secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity=0x1234;//(get_softmodem_params()->phy_test==1) ? 0x1234 : (taus()&0xffff);
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->t304=NR_ReconfigurationWithSync__t304_ms2000;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated = NULL;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->ext1                 = NULL;

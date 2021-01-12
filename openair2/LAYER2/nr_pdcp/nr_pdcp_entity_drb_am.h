@@ -23,6 +23,7 @@
 #define _NR_PDCP_ENTITY_DRB_AM_H_
 
 #include "nr_pdcp_entity.h"
+#include "platform_types.h"
 
 typedef struct {
   nr_pdcp_entity_t common;
@@ -32,7 +33,7 @@ typedef struct {
   int discard_timer;         /* unit: ms, -1 means infinity */
 } nr_pdcp_entity_drb_am_t;
 
-void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *entity, char *buffer, int size);
+void nr_pdcp_entity_drb_am_recv_pdu(protocol_ctxt_t *ctxt_pP,nr_pdcp_entity_t *entity, char *buffer, int size);
 void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *entity, char *buffer, int size,
                                     int sdu_id);
 void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *entity, char *key);

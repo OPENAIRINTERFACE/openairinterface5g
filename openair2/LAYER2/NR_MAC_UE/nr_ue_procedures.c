@@ -958,7 +958,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         void *pduP,
                         uint16_t cell_id)
 {
-  LOG_I(MAC,"[L2][MAC] decode mib\n");
+  LOG_D(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -1505,7 +1505,13 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     module_id_t mod_id    = ul_info->module_id;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
-    if (mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) {
+    if (((get_softmodem_params()->phy_test) || ((mac->ra_state == RA_SUCCEEDED)) ) && ul_info->slot_tx == 8) { // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
+      static int skip_the_first = 0;
+      if (skip_the_first == 0)
+      {
+        skip_the_first = 1;
+        return UE_CONNECTION_OK;
+      }
 
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
@@ -1538,6 +1544,17 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &ul_config_req->ul_config_list[j];
 
           if (ulcfg_pdu->pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH) {
+            uint32_t rb_size            = ulcfg_pdu->pusch_config_pdu.rb_size;
+            uint32_t rb_start           = ulcfg_pdu->pusch_config_pdu.rb_start;
+            uint8_t  nr_of_symbols      = ulcfg_pdu->pusch_config_pdu.nr_of_symbols;
+            uint8_t  start_symbol_index = ulcfg_pdu->pusch_config_pdu.start_symbol_index;
+            uint8_t  mcs_index          = ulcfg_pdu->pusch_config_pdu.mcs_index;
+
+            rb_size = 106;
+            rb_start = 0;
+            nr_of_symbols = 11;
+            start_symbol_index = 0;
+            mcs_index = 9;
 
             // These should come from RRC config!!!
             uint8_t  ptrs_mcs1          = 2;
@@ -1545,10 +1562,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             uint8_t  ptrs_mcs3          = 10;
             uint16_t n_rb0              = 25;
             uint16_t n_rb1              = 75;
-            uint8_t  ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, ulcfg_pdu->pusch_config_pdu.mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
-            uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, ulcfg_pdu->pusch_config_pdu.rb_size);
-            uint16_t l_prime_mask       = get_l_prime(ulcfg_pdu->pusch_config_pdu.nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
-            uint16_t ul_dmrs_symb_pos   = l_prime_mask << ulcfg_pdu->pusch_config_pdu.start_symbol_index;
+            uint8_t  ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
+            uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, rb_size);
+            uint16_t l_prime_mask       = get_l_prime(nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+            uint16_t ul_dmrs_symb_pos   = l_prime_mask << start_symbol_index;
 
             uint8_t  dmrs_config_type   = 0;
             uint16_t number_dmrs_symbols = 0;
@@ -1575,7 +1592,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             //ulcfg_pdu->pusch_config_pdu.target_code_rate = nr_get_code_rate_ul(ulcfg_pdu->pusch_config_pdu.mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
             //ulcfg_pdu->pusch_config_pdu.qam_mod_order = nr_get_Qm_ul(ulcfg_pdu->pusch_config_pdu.mcs_index, ulcfg_pdu->pusch_config_pdu.mcs_table);
 
-            if (1 << ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_time_density >= ulcfg_pdu->pusch_config_pdu.nr_of_symbols) {
+            if (1 << ulcfg_pdu->pusch_config_pdu.pusch_ptrs.ptrs_time_density >= nr_of_symbols) {
               ulcfg_pdu->pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
             }
 
@@ -1585,8 +1602,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
             TBS = nr_compute_tbs(ulcfg_pdu->pusch_config_pdu.qam_mod_order,
                                 ulcfg_pdu->pusch_config_pdu.target_code_rate,
-                                ulcfg_pdu->pusch_config_pdu.rb_size,
-                                ulcfg_pdu->pusch_config_pdu.nr_of_symbols,
+                                rb_size,
+                                nr_of_symbols,
                                 nb_dmrs_re_per_rb*number_dmrs_symbols,
                                 N_PRB_oh,
                                 0,
@@ -4932,8 +4949,8 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                     LOG_T(MAC, "\n");
                 #endif
 
-                if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
+//                if (IS_SOFTMODEM_NOS1){
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
 
                     mac_rlc_data_ind(module_idP,
                                      mac->crnti,
@@ -4949,7 +4966,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                   } else {
                     LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
                   }
-                }
+//                }
 
             break;
         }
@@ -5242,6 +5259,8 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   	  for (int j = payload_offset; j < buflen; j++)
   		  ulsch_buffer[j] = 0;
   }
+
+//  log_dump(MAC, ulsch_buffer, 16, LOG_DUMP_CHAR, "UE ULSCH payload : ");
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
   LOG_I(MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);

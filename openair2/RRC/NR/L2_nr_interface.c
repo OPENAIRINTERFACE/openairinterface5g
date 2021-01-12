@@ -108,8 +108,8 @@ nr_rrc_data_req(
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
-  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
-    pdcp_run(ctxt_pP);
+  // if (ctxt_pP->enb_flag && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
+  //   pdcp_run(ctxt_pP);
 
   return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }

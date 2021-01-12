@@ -415,6 +415,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = mac->rach_ConfigDedicated;
 
+  int prach_genarate = 0;
   // int32_t frame_diff = 0;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -509,8 +510,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
+        {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
-
+          prach_genarate = 1;
+        }
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
                                        num_sdus,                          // num sdus
@@ -555,7 +558,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
         // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
-        mac->RA_active = 0;
+        //mac->RA_active = 0;
         mac->RA_window_cnt = -1;
         mac->ra_state = RA_SUCCEEDED;
         mac->generate_nr_prach = 2;
@@ -636,8 +639,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
+        {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
-
+          prach_genarate = 1;
+        }
       } else {
 
         mac->RA_window_cnt--;
@@ -650,7 +655,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         if (mac->generate_nr_prach == 1)
+        {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_slot_tx, prach_resources, prach_pdu, rach_ConfigDedicated);
+          prach_genarate = 1;
+        }
 
       }
     }
@@ -658,7 +666,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     LOG_D(MAC, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...", mod_id);
     AssertFatal(1 == 0, "");
   }
- return mac->generate_nr_prach;
+ //return mac->generate_nr_prach;
+ return prach_genarate;
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
