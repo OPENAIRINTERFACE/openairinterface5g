@@ -220,7 +220,7 @@ static void *enb_tun_read_thread(void *_)
       exit(1);
     }
 
-printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
+    LOG_D(PDCP, "%s(): nas_sock_fd read returns len %d\n", __func__, len);
 
     nr_pdcp_manager_lock(nr_pdcp_ue_manager);
     rnti = nr_pdcp_get_first_rnti(nr_pdcp_ue_manager);
@@ -264,7 +264,7 @@ static void *ue_tun_read_thread(void *_)
       exit(1);
     }
 
-printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
+    LOG_D(PDCP, "%s(): nas_sock_fd read returns len %d\n", __func__, len);
 
     nr_pdcp_manager_lock(nr_pdcp_ue_manager);
     rnti = nr_pdcp_get_first_rnti(nr_pdcp_ue_manager);

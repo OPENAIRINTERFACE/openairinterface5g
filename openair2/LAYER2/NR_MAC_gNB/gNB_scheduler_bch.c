@@ -126,7 +126,12 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
               mib_sdu_length);
 
         if ((frameP & 1023) < 80){
-          LOG_I(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);
+          LOG_D(MAC,
+                "[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
+                module_idP,
+                frameP,
+                CC_id,
+                mib_sdu_length);
         }
 
         dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
