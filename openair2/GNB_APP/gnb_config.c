@@ -52,6 +52,7 @@
 #include "nfapi_pnf.h"
 
 #include "L1_paramdef.h"
+#include "L1_nr_paramdef.h"
 #include "MACRLC_paramdef.h"
 #include "common/config/config_userapi.h"
 //#include "RRC_config_tools.h"
@@ -376,6 +377,7 @@ void RCconfig_nr_flexran()
 
 void RCconfig_NR_L1(void) {
   int j;
+  uint8_t pusch_proc_threads;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
@@ -398,6 +400,8 @@ void RCconfig_NR_L1(void) {
         memset(RC.gNB[j],0,sizeof(PHY_VARS_gNB));
 	RC.gNB[j]->Mod_id  = j;
       }
+
+      RC.gNB[j]->pusch_proc_threads = *(L1_ParamList.paramarray[j][L1_PUSCH_PROC_THREADS].uptr);
 
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
         //sf_ahead = 2; // Need 4 subframe gap between RX and TX

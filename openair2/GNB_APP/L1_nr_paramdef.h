@@ -46,6 +46,7 @@
 #define CONFIG_STRING_L1_LOCAL_N_PORTD                     "local_n_portd"
 #define CONFIG_STRING_L1_REMOTE_N_PORTD                    "remote_n_portd"
 #define CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE            "tr_n_preference"
+#define CONFIG_STRING_L1_PUSCH_PROC_THREADS                "pusch_proc_threads"
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            L1 configuration parameters                                                                             */
@@ -61,6 +62,7 @@
 {CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:&pusch_proc_threads,           defintval:1,               TYPE_UINT,     0} \
 }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -71,6 +73,7 @@
 #define L1_REMOTE_N_PORTC_IDX                              6
 #define L1_LOCAL_N_PORTD_IDX                               7
 #define L1_REMOTE_N_PORTD_IDX                              8
+#define L1_PUSCH_PROC_THREADS                              9
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif
