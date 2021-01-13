@@ -909,7 +909,7 @@ typedef struct {
 
 typedef struct {
   uint16_t PDUType;
-  uint16_t PDUSize;
+  uint32_t PDUSize;
 
   union {
   nfapi_nr_dl_tti_pdcch_pdu      pdcch_pdu;
