@@ -108,6 +108,7 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i);
 void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
+void nr_read_config_and_init(void);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */

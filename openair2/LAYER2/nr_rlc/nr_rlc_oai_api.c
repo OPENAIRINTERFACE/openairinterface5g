@@ -35,6 +35,8 @@
 #include "NR_DRB-ToReleaseList.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_RLC-Config.h"
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
 
@@ -460,6 +462,20 @@ rb_found:
     T(T_ENB_RLC_UL,
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
+
+    const ngran_node_t type = RC.nrrrc[0 /*ctxt_pP->module_id*/]->node_type;
+    AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+                "Can't be CU, bad node type %d\n", type);
+
+    if (NODE_IS_DU(type) && is_srb == 1) {
+      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
+      F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
+      itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
+      return;
+    }
   }
 
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {

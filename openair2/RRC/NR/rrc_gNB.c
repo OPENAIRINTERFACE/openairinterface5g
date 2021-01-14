@@ -218,6 +218,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   if (!NODE_IS_CU(RC.nrrrc[0]->node_type)){
+    printf("################ init_NR_SI rrc_mac_config_req_gNB \n");
     rrc_mac_config_req_gNB(rrc->module_id,
                           rrc->carrier.ssb_SubcarrierOffset,
                           rrc->carrier.pdsch_AntennaPorts,
@@ -276,7 +277,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     } else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
-      rrc_add_nsa_user(rrc,ue_context_p,NULL);
+      // rrc_add_nsa_user(rrc,ue_context_p,NULL);
     }
   }
 }
@@ -2442,8 +2443,10 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         itti_send_msg_to_task (TASK_CU_F1, GNB_MODULE_ID_TO_INSTANCE(j), msg_p);
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
-        LOG_W(NR_RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d \n",
-              j, rrc->configuration.mcc[0], f1_setup_req->mcc[i],rrc->configuration.mnc[0], f1_setup_req->mnc[i]);
+        LOG_W(NR_RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d rrc->nr_cellid/f1_setup_req->nr_cellid %d/%d \n",
+              j, rrc->configuration.mcc[0], f1_setup_req->mcc[i],
+                 rrc->configuration.mnc[0], f1_setup_req->mnc[i],
+                 rrc->nr_cellid, f1_setup_req->nr_cellid[i]);
       }
     }// for (int j=0;j<RC.nb_inst;j++)
 

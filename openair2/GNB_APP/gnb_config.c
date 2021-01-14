@@ -76,8 +76,11 @@
 #include "NR_ControlResourceSet.h"
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
+#include "RRC/NR/MESSAGES/asn1_msg.h"
+
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
+ngran_node_t node_type = ngran_gNB;
 
 extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
@@ -1424,6 +1427,22 @@ int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t
   return (1);
 }
 
+void configure_gnb_du_mac(int inst) {
+  gNB_RRC_INST *rrc = RC.nrrrc[inst];
+  // LOG_I(GNB_APP,"Configuring MAC/L1 %d, carrier->sib2 %p\n", inst, &carrier->sib2->radioResourceConfigCommon);
+  LOG_I(GNB_APP,"Configuring gNB DU MAC/L1 %d \n", inst);
+  rrc_mac_config_req_gNB(rrc->module_id,
+                        rrc->configuration.ssb_SubcarrierOffset,
+                        rrc->configuration.pdsch_AntennaPorts,
+                        rrc->configuration.pusch_TargetSNRx10,
+                        rrc->configuration.pucch_TargetSNRx10,
+                        rrc->configuration.scc,
+                        0,
+                        0, // rnti
+                        (NR_CellGroupConfig_t *)NULL
+                        );
+}
+
 void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
   int i, j, si_ind;
   LOG_I(GNB_APP, "cells_to_activated %d, RRC instances %d\n",
@@ -1448,10 +1467,87 @@ void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
         }
 
         // perform MAC/L1 common configuration
-        // configure_du_mac(i);
+        configure_gnb_du_mac(i);
       } else {
         LOG_E(GNB_APP, "F1 Setup Response not matching\n");
       }
     }
+  }
+}
+
+void set_node_type(void) {
+  int               j;
+  // ngran_node_t      node_type;
+  paramdef_t        MacRLC_Params[] = MACRLCPARAMS_DESC;
+  paramlist_def_t   MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
+  paramdef_t        GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t   GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+
+  config_getlist( &MacRLC_ParamList,MacRLC_Params,sizeof(MacRLC_Params)/sizeof(paramdef_t), NULL);   
+  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);  
+
+  if ( MacRLC_ParamList.numelt > 0) {
+    RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt; 
+    for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
+      if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
+        macrlc_has_f1 = 1;
+      }
+    }
+  }
+
+  if (strcmp(*(GNBParamList.paramarray[0][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+      node_type = ngran_gNB_CU;
+    } else {
+      if (macrlc_has_f1 == 0) {
+        node_type = ngran_gNB;
+        LOG_I(NR_RRC,"Setting node_type to ngran_gNB\n");
+      } else {
+        node_type = ngran_gNB_DU;
+        LOG_I(NR_RRC,"Setting node_type to ngran_gNB_DU\n");
+      }
+    }
+}
+
+void nr_read_config_and_init(void) {
+  MessageDef *msg_p = NULL;
+  uint32_t    gnb_id;
+  uint32_t    gnb_nb = RC.nb_nr_inst;
+
+  RCconfig_NR_L1();
+  set_node_type();
+  RCconfig_nr_macrlc();
+
+  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
+
+  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
+
+  AssertFatal (gnb_nb <= RC.nb_nr_inst,
+               "Number of gNB is greater than gNB defined in configuration file (%d/%d)!",
+               gnb_nb, RC.nb_nr_inst);
+
+  LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
+
+  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
+
+  for (gnb_id = 0; gnb_id < RC.nb_nr_inst ; gnb_id++) {
+    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, RC.nb_nr_inst);
+    memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
+    msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
+    RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
+  }
+
+  if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+    RC.nrrrc[0]->carrier.servingcellconfigcommon = RC.nrrrc[0]->configuration.scc;
+    RC.nrrrc[0]->carrier.MIB             = (uint8_t *) malloc16(4);
+    RC.nrrrc[0]->carrier.sizeof_MIB      = do_MIB_NR(RC.nrrrc[0], 0);
+    RC.nrrrc[0]->carrier.sizeof_SIB1     = do_SIB1_NR(&RC.nrrrc[0]->carrier, &RC.nrrrc[0]->configuration);
+  }
+
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    pdcp_layer_init();
+    nr_DRB_preconfiguration(0x1234);
+    rrc_init_nr_global_param();
   }
 }
