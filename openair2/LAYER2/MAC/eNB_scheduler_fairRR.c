@@ -1893,7 +1893,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
           //#ifdef DEBUG_eNB_SCHEDULER
           if (ta_update != 31) {
-            LOG_I(MAC,
+            LOG_D(MAC,
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP, frameP, UE_id, CC_id,
                   sdu_length_total, num_sdus, sdu_lengths[0],

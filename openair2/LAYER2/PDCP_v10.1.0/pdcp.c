@@ -115,6 +115,8 @@ void *pdcp_stats_thread(void *param) {
            fprintf(fd,"                              rx_bytes %d, UL Throughput %e\n",             
                    Pdcp_stats_rx_bytes[0][UE_id][drb_id],
                    (double)((Pdcp_stats_rx_bytes[0][UE_id][drb_id]-old_byte_cnt_rx[UE_id][drb_id])<<3));
+           old_byte_cnt[UE_id][drb_id]=Pdcp_stats_tx_bytes[0][UE_id][drb_id];
+           old_byte_cnt_rx[UE_id][drb_id]=Pdcp_stats_rx_bytes[0][UE_id][drb_id];
         }
      }
      fclose(fd);
