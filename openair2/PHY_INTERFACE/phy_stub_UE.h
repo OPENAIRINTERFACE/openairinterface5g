@@ -21,6 +21,10 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 #include "queue.h"
 
+#define NUM_MCS 28
+#define NUM_SINR 100
+#define NUM_BLER_COL 13
+
 // this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
 FILL_UL_INFO_MUTEX_t fill_ul_mutex;
 //below 2 difinitions move to phy_stub_UE.c to add initialization when difinition.
@@ -34,6 +38,30 @@ extern UL_IND_t *UL_INFO;
 //module_id_t next_Mod_id;
 eth_params_t         stub_eth_params;
 
+typedef struct
+{
+    uint16_t sfn_sf;
+    float sinr;
+    // Incomplete, need all channel parameters
+} channel_info;
+
+typedef struct 
+{   
+    uint8_t sf;
+    uint16_t rnti[256];
+    uint8_t mcs[256];
+    float sinr;
+    uint16_t pdu_size;
+
+} sf_rnti_mcs_s;
+
+typedef struct
+{
+    uint16_t length;
+    float bler_table[NUM_SINR][NUM_BLER_COL];
+} bler_struct;
+
+extern bler_struct bler_data[NUM_MCS];
 
 
 
@@ -170,6 +198,9 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req);
 // Returned memory is statically allocated.
 const char *dl_pdu_type_to_string(uint8_t pdu_type);
 const char *ul_pdu_type_to_string(uint8_t pdu_type);
+
+void read_channel_param(nfapi_dl_config_request_t * dl_config, int sf);
+int drop_tb(int sf, uint16_t rnti);
 
 extern queue_t dl_config_req_tx_req_queue;
 extern queue_t ul_config_req_queue;

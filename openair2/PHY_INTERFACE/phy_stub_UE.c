@@ -50,6 +50,8 @@ queue_t hi_dci0_req_queue;
 int current_sfn_sf;
 sem_t sfn_semaphore;
 
+static sf_rnti_mcs_s sf_rnti_mcs[10];
+
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
 
@@ -293,7 +295,7 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   pdu->ul_cqi_information.channel = 1;
 
   // eNB_scheduler_primitives.c:4839: the upper four bits seem to be the CQI
-  const int cqi = 15;
+  const int cqi = 15; // Need to map EMANE SINR to CQI!
   raw_pdu->pdu[0] = cqi << 4;
 
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis++;
@@ -373,7 +375,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
 
-  int SNRtimes10 = 640;
+  int SNRtimes10 = 640;  // TODO: Replace with EpiSci SNR * 10
 
   if (SNRtimes10 < -640)
     pdu->ul_cqi_information.ul_cqi = 0;
@@ -401,6 +403,12 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       // 2.) if receiving ul_config_req for uci ack/nack or ulsch ack/nak in subframe n
       //     go look to see if dl_config_req (with c-rnti) was received in subframe (n - 4)
       // 3.) if the answer to #2 is yes then send ACK IF NOT send DTX
+
+      if (drop_tb((subframe+6) % 10, rnti))  // TODO:  Handle DTX.  Also discuss handling PDCCH
+      {
+        pdu->harq_indication_fdd_rel13.harq_tb_n[0] = 2;
+        LOG_I(PHY, "Setting HARQ No ACK - Channel Model\n");
+      }
 
     } else if ((harq_information->harq_information_rel9_fdd.ack_nack_mode == 0)
                && (harq_information->harq_information_rel9_fdd.harq_size
@@ -791,10 +799,18 @@ void dl_config_req_UE_MAC_dci(int sfn,
               sfn, sf, dci->pdu_size,
               dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
               tx_req_pdu_list->num_pdus);
-        ue_send_sdu(ue_id, 0, sfn, sf,
-            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length,
-            0);
+        
+        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        {
+          ue_send_sdu(ue_id, 0, sfn, sf,
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length,
+              0);
+        }
+        else
+        {
+          LOG_I(MAC, "Transport Block discarded - ue_send_sdu not called. sf: %d", sf);
+        }
         return;
       }
     }
@@ -804,17 +820,33 @@ void dl_config_req_UE_MAC_dci(int sfn,
         if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
           continue;
 
-        ue_decode_si(ue_id, 0, sfn, 0,
-            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
+        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        {
+          ue_decode_si(ue_id, 0, sfn, 0,
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
+        }
+        else
+        {
+          LOG_I(MAC, "Transport Block discarded - ue_decode_si not called. sf: %d", sf);
+        }
       }
     } else if (rnti == 0xFFFE) { /* PI-RNTI */
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
-        ue_decode_p(ue_id, 0, sfn, 0,
-                    tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-                    tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
+
+
+        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        {
+          ue_decode_p(ue_id, 0, sfn, 0,
+                      tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+                      tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
+        }
+        else
+        {
+          LOG_I(MAC, "Transport Block discarded - ue_decode_p not called. sf: %d", sf);
+        }
       }
     } else if (rnti == 0x0002) { /* RA-RNTI */
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
@@ -834,12 +866,21 @@ void dl_config_req_UE_MAC_dci(int sfn,
           LOG_E(MAC,
                 "%s(): Received RAR, PreambleIndex: %d\n",
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
-          ue_process_rar(ue_id, 0, sfn,
-              ra_rnti, //RA-RNTI
-              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-              &UE_mac_inst[ue_id].crnti, //t-crnti
-              UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
-              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data);
+
+          
+          if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+          {
+            ue_process_rar(ue_id, 0, sfn,
+                ra_rnti, //RA-RNTI
+                tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+                &UE_mac_inst[ue_id].crnti, //t-crnti
+                UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
+                tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data);
+          }
+          else
+          {
+            LOG_I(MAC, "Transport Block discarded - RAR Not Processed. sf: %d, ra_rnti: %d", sf, ra_rnti);
+          }
           // UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
           LOG_I(MAC, "setting UE_MODE now: %d\n", UE_mac_inst[ue_id].UE_mode[0]);
           // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
@@ -1251,7 +1292,6 @@ void *ue_standalone_pnf_task(void *context)
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[1024];
-
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
 
@@ -1279,6 +1319,26 @@ void *ue_standalone_pnf_task(void *context)
         LOG_E(MAC, "sem_post() error\n");
         abort();
       }
+    }
+    else if (len == sizeof(channel_info))
+    {
+      LOG_I(MAC, "Entered Channel Info Loop");
+      channel_info * ch_info = malloc(sizeof(channel_info));
+
+      memcpy(ch_info, buffer, sizeof(channel_info));
+      current_sfn_sf = ch_info->sfn_sf;
+      if (sem_post(&sfn_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
+        uint16_t sf = ch_info->sfn_sf & 15;
+        if(sf > 10 && sf < 0)
+        {
+          LOG_E(MAC, "sf out of bounds, sfn: %d\n", sf);
+          abort();
+        }
+        sf_rnti_mcs[sf].sinr = ch_info->sinr;
     }
     else
     {
@@ -1318,6 +1378,7 @@ void *ue_standalone_pnf_task(void *context)
               tx_req_valid = false;
               break;
           }
+          read_channel_param(&dl_config_req, (dl_config_req.sfn_sf & 15));
           enqueue_dl_config_req_tx_req(&dl_config_req, &tx_req);
           dl_config_req_valid = false;
           tx_req_valid = false;
@@ -1864,4 +1925,113 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
   void init_eNB_afterRU(void)
   {
+  }
+
+  void read_channel_param(nfapi_dl_config_request_t * dl_config, int sf)
+  {
+    if (dl_config == NULL)
+    {
+      LOG_E(MAC,"DL_CONFIG NULL\n");
+      abort();
+    }
+
+    // Store all rnti and mcs for all pdus
+    sf_rnti_mcs[sf].pdu_size = dl_config->dl_config_request_body.number_pdu;
+    for (int n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
+    {
+      sf_rnti_mcs[sf].rnti[n] = dl_config->dl_config_request_body.dl_config_pdu_list[n].dci_dl_pdu.dci_dl_pdu_rel8.rnti;
+      sf_rnti_mcs[sf].mcs[n] = dl_config->dl_config_request_body.dl_config_pdu_list[n].dci_dl_pdu.dci_dl_pdu_rel8.mcs_1;
+    }
+  }
+
+  int drop_tb(int sf, uint16_t rnti)
+  {
+    int sinr_index = 0;
+    bool lin_interp = false;
+    bool skip_search = false;
+
+    assert(sf < 10 && sf >= 0);
+
+    uint8_t mcs = 99;
+    for (int n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
+    {
+      if (sf_rnti_mcs[sf].rnti[n] == rnti)
+      {
+        mcs = sf_rnti_mcs[sf].mcs[n];
+        break;
+      }
+    }
+
+    if (mcs == 99)
+    {
+      LOG_E(MAC, "NO MCS Found\n");
+      abort();
+    }
+
+    // Loop through bler table to find sinr_index - What if EMANE SINR doesn't match any of the table SINR values??
+    //float epsilon = 0.0001;
+    int temp_bler = 0;
+    int temp_sinr = ((int)(sf_rnti_mcs[sf].sinr * 10));
+    int i;
+    float bler_val = 0.0;
+
+    if (temp_sinr < (int)(bler_data[mcs].bler_table[0][0] * 10))
+    {
+      skip_search = true;
+      bler_val = 0.0;
+    }
+    else if (temp_sinr > (int)(bler_data[mcs].bler_table[bler_data[mcs].length - 1][0] * 10))
+    {
+      skip_search = true;
+      bler_val = 1.0;
+    }
+
+
+    for (i = 0; i < bler_data[mcs].length; i++)
+    {
+      if(skip_search)
+        break;
+
+      temp_bler = (int)(bler_data[mcs].bler_table[i][0] * 10);
+      if (temp_bler == temp_sinr)
+      {
+        sinr_index = i;
+        break;
+      }
+      // Linear interpolation when SINR is between indices
+      else if (temp_bler > temp_sinr)
+      {
+        sinr_index = i;
+        lin_interp = true;
+        break; 
+      }
+      
+    }
+    if (i >= (bler_data[mcs].length - 1))
+    {
+      LOG_E(MAC, "NO SINR INDEX FOUND! - mcs: %d, temp_sinr: %d, temp_bler: %d, sinr_index: %d\n", mcs, temp_sinr, temp_bler, sinr_index);
+      abort();
+    }
+
+    if (lin_interp)
+    {
+      bler_val = ((bler_data[mcs].bler_table[sinr_index - 1][3] + bler_data[mcs].bler_table[sinr_index][3]) / 2);
+    }
+    else
+    {
+      if (skip_search == false)
+        bler_val = bler_data[mcs].bler_table[sinr_index][3];  // 3 is the rate, or bler rate column
+    }
+
+    double drop_cutoff = ((double) rand() / (RAND_MAX));
+    assert(drop_cutoff < 1);
+
+    if (bler_val <= drop_cutoff)
+    {
+      return 1;
+    }
+    else
+    {
+      return 0;
+    }
   }

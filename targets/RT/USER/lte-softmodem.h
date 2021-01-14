@@ -212,4 +212,6 @@ extern void init_UE_standalone_thread(int ue_idx);
 
 extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 
+extern void init_bler_table(void);
+
 #endif
