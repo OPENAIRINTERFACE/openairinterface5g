@@ -32,6 +32,30 @@
 int32_t rx_power_avg_eNB[3];
 
 
+void dump_I0_stats(FILE *fd,PHY_VARS_eNB *eNB) {
+
+
+    int min_I0=1000,max_I0=0;
+    int amin=0,amax=0;
+    for (int i=0; i<eNB->frame_parms.N_RB_UL; i++) {
+      if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
+
+      if (eNB->measurements.n0_subband_power_tot_dB[i]<min_I0) {min_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amin=i;}
+
+      if (eNB->measurements.n0_subband_power_tot_dB[i]>max_I0) {max_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amax=i;}
+    }
+
+    for (int i=0; i<eNB->frame_parms.N_RB_UL; i++) {
+     fprintf(fd,"%2d.",eNB->measurements.n0_subband_power_tot_dB[i]-eNB->measurements.n0_subband_power_avg_dB);
+     if (i%25 == 24) fprintf(fd,"\n");
+    }
+
+    fprintf(fd,"\nmax_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", max_I0, amax, min_I0, amin, eNB->measurements.n0_subband_power_avg_dB);
+
+    fprintf(fd,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
+
+
+}
 void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 			     int subframe,
                              module_id_t eNB_id,
@@ -87,7 +111,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
       nb_rb++;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
         measurements->n0_subband_power[aarx][rb] = 0;
-        for (int s=0;s<14-(frame_parms->Ncp<<1);s++) {
+        for (int s=0;s<(14-(frame_parms->Ncp<<1));s++) {
       // select the 7th symbol in an uplink subframe
 	  offset = offset0 + (s*frame_parms->ofdm_symbol_size);
 	  ul_ch  = &common_vars->rxdataF[aarx][offset];

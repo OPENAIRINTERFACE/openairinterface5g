@@ -53,12 +53,11 @@
 //#undef LOG_D
 //#define LOG_D(A,B...) printf(B)
 
-int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
-  uint16_t i;
-  int16_t first_free_index=-1;
+int find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
+  int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
@@ -78,12 +77,11 @@ int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
 }
 
 
-int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
-  uint16_t i;
-  int16_t first_free_index=-1;
+int find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
+  int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     AssertFatal(eNB->ulsch[i]!=NULL,"eNB->ulsch[%d] is null\n",i);
 
     if ((eNB->ulsch[i]->harq_mask >0) &&
@@ -1955,7 +1953,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
   if(frame_parms->frame_type == TDD) {
     UE_id = find_ulsch(pdu->dci_pdu_rel8.rnti, eNB,SEARCH_EXIST_OR_FREE);
 
-    if(UE_id != -1) {
+    if(UE_id >=0 -1 || UE_id < NUMBER_OF_ULSCH_MAX) {
       eNB->ulsch[UE_id]->harq_processes[pdu->dci_pdu_rel8.harq_pid]->V_UL_DAI = dai +1;
     }
   }

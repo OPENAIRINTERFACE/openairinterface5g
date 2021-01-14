@@ -57,7 +57,7 @@
 #include "openair2/RRC/NAS/nas_config.h"
 #include "intertask_interface.h"
 #include "openair3/S1AP/s1ap_eNB.h"
-
+#include <pthread.h>
 
 #  include "gtpv1u_eNB_task.h"
 #  include "gtpv1u.h"
@@ -86,6 +86,51 @@ hash_table_t  *pdcp_coll_p = NULL;
 
 /* pdcp module parameters and related functions*/
 static pdcp_params_t pdcp_params= {0,NULL};
+
+extern volatile int oai_exit;
+
+pthread_t pdcp_stats_thread_desc;
+
+void *pdcp_stats_thread(void *param) {
+
+   FILE *fd;
+
+   while (!oai_exit) {
+     sleep(1);
+
+     fd=fopen("PDCP_stats.log","w+");
+     AssertFatal(fd!=NULL,"Cannot open MAC_stats.log\n");
+     int drb_id=3;
+     for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+        if (pdcp_enb[0].rnti[UE_id]>0) {
+           fprintf(fd,"UE CRNTI %x: tx_window %dms, tx_bytes %d, tx_bytes_w %d, tx_bytes_tmp_w %d\n",
+                   pdcp_enb[0].rnti[UE_id],
+                   Pdcp_stats_tx_window_ms[0][UE_id],
+                   Pdcp_stats_tx_bytes[0][UE_id][drb_id],
+                   Pdcp_stats_tx_bytes_w[0][UE_id][drb_id],
+                   Pdcp_stats_tx_bytes_tmp_w[0][UE_id][drb_id]);
+           fprintf(fd,"             tx %d, tx_w %d, tx_tmp_w %d, tx_sn %d, tx throughput %d\n", 
+                   Pdcp_stats_tx[0][UE_id][drb_id],
+                   Pdcp_stats_tx_w[0][UE_id][drb_id],
+                   Pdcp_stats_tx_tmp_w[0][UE_id][drb_id],
+                   Pdcp_stats_tx_sn[0][UE_id][drb_id],
+                   Pdcp_stats_tx_throughput_w[0][UE_id][drb_id]);
+           fprintf(fd,"             rx_window %dms, rx_bytes %d, rx_bytes_w %d, rx_bytes_tmp_w %d\n",             
+                   Pdcp_stats_rx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB],
+                   Pdcp_stats_rx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX],
+                   Pdcp_stats_rx_bytes_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX],
+                   Pdcp_stats_rx_bytes_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+           fprintf(fd,"             rx %d, rx_w %d, rx_tmp_w %d, rx_sn %d, rx goodput %d\n",
+                   Pdcp_stats_rx[0][UE_id][drb_id],
+                   Pdcp_stats_rx_w[0][UE_id][drb_id],
+                   Pdcp_stats_rx_tmp_w[0][UE_id][drb_id],
+                   Pdcp_stats_rx_sn[0][UE_id][drb_id],
+                   Pdcp_stats_rx_goodput_w[0][UE_id][drb_id]);
+
+    }
+   }
+ }
+}
 
 uint64_t get_pdcp_optmask(void) {
   return pdcp_params.optmask;

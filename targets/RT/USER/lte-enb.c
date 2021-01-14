@@ -854,6 +854,7 @@ void *L1_stats_thread(void *param) {
     sleep(1);
     fd=fopen("L1_stats.log","w");
     AssertFatal(fd!=NULL,"Cannot open L1_stats.log\n");
+    dump_I0_stats(fd,eNB);
     dump_ulsch_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
     dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
     fclose(fd);

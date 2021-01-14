@@ -186,7 +186,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     else {
       eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((avg_preamble_energy[0]*124)>>10);
 
-      if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
+      if (frame==0) LOG_D(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
 
       if (eNB->prach_energy_counter < 100) eNB->prach_energy_counter++;
     }

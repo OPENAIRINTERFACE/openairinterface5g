@@ -4641,7 +4641,6 @@ rrc_eNB_process_MeasurementReport(
 
       case 7:
         LOG_D(RRC, "NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
-        printf("NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
         break;
 
       default:

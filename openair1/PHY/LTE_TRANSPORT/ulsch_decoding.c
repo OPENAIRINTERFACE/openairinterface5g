@@ -1147,8 +1147,7 @@ void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
             eNB->ulsch_stats[i].total_bytes_rx,
             eNB->ulsch_stats[i].total_bytes_tx);
     }
-  if (fd) fprintf(fd,"%s",output);
-  else    printf("%s",output);  
+  fprintf(fd,"%s",output);
 }
 
 void clear_ulsch_stats(PHY_VARS_eNB *eNB) {

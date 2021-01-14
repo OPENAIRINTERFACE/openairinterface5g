@@ -1416,6 +1416,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
   for (i = 0; i < NUMBER_OF_ULSCH_MAX; i++) {
     ulsch = eNB->ulsch[i];
+    if (!ulsch) continue; 
 
     if (ulsch->ue_type > 0) harq_pid = 0;
     else harq_pid=harq_pid0;
@@ -1424,10 +1425,9 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
     if (ulsch->rnti>0) LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
                                i, harq_pid, frame,subframe,i,ulsch->rnti,
-                               ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
+                              ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
 
-    if ((ulsch) &&
-        (ulsch->rnti>0) &&
+    if ((ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
         ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
         ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
@@ -2168,19 +2168,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   }
 
   lte_eNB_I0_measurements (eNB, subframe, 0, eNB->first_run_I0_measurements);
-  int min_I0=1000,max_I0=0;
-  int amin=0,amax=0;
-  if ((frame==0) && (subframe==3)) {
-    for (int i=0; i<eNB->frame_parms.N_RB_UL; i++) {
-      if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
-
-      if (eNB->measurements.n0_subband_power_tot_dB[i]<min_I0) {min_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amin=i;}
-
-      if (eNB->measurements.n0_subband_power_tot_dB[i]>max_I0) {max_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amax=i;}
-    }
-
-    LOG_I (PHY, "max_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", max_I0, amax, min_I0, amin, eNB->measurements.n0_subband_power_avg_dB);
-  }
 
   // clear unused statistics after 2 seconds
   for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++) {
@@ -2215,13 +2202,7 @@ void release_rnti_of_phy(module_id_t mod_id) {
       eNB_PHY = RC.eNB[mod_id][CC_id];
       rnti = release_rntis.ue_release_request_TLVs_list[i].rnti;
 
-      for (j=0; j<NUMBER_OF_ULSCH_MAX; j++) {
-        ulsch = eNB_PHY->ulsch[j];
-
-        if((ulsch != NULL) && (ulsch->rnti == rnti)) {
-          LOG_I(PHY, "clean_eNb_ulsch ulsch[%d] UE %x\n", j, rnti);
-          clean_eNb_ulsch(ulsch);
-        }
+      for (j=0; j<NUMBER_OF_DLSCH_MAX; j++) {
 
         dlsch = eNB_PHY->dlsch[j][0];
 
@@ -2231,13 +2212,15 @@ void release_rnti_of_phy(module_id_t mod_id) {
         }
       }
 
-      ulsch = eNB_PHY->ulsch[j];
+      for (j=0;j<NUMBER_OF_ULSCH_MAX; j++) {
+        ulsch = eNB_PHY->ulsch[j];
 
-      if((ulsch != NULL) && (ulsch->rnti == rnti)) {
-        LOG_I(PHY, "clean_eNb_ulsch ulsch[%d] UE %x\n", j, rnti);
-        clean_eNb_ulsch(ulsch);
-        for (j=0;j<NUMBER_OF_ULSCH_MAX;j++)
-           if (eNB_PHY->ulsch_stats[j].rnti == rnti) {eNB_PHY->ulsch_stats[j].rnti=0; break;}
+        if((ulsch != NULL) && (ulsch->rnti == rnti)) {
+          LOG_I(PHY, "clean_eNb_ulsch ulsch[%d] UE %x\n", j, rnti);
+          clean_eNb_ulsch(ulsch);
+          for (j=0;j<NUMBER_OF_ULSCH_MAX;j++)
+             if (eNB_PHY->ulsch_stats[j].rnti == rnti) {eNB_PHY->ulsch_stats[j].rnti=0; break;}
+        }
       }
 
       for(j=0; j<NUMBER_OF_UCI_MAX; j++) {
