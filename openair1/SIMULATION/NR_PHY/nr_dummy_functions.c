@@ -10,3 +10,7 @@ int32_t get_uldl_offset(int nr_bandP)                                       { re
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id)                               {return(NULL);}
 // int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info)            { return(0);  }
 // int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
+nfapi_mode_t nfapi_mod;
+nfapi_mode_t nfapi_getmode(void) {
+  return nfapi_mod;
+}

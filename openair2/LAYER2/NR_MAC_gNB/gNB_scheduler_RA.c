@@ -669,6 +669,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
   nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
+  //pusch_pdu = (nfapi_nr_pusch_pdu_t *) malloc(sizeof(nfapi_nr_pusch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
   AssertFatal(ra->secondaryCellGroup,

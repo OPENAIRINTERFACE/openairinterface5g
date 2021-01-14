@@ -259,13 +259,7 @@ static uint8_t pack_nr_pnf_param_response(void *msg, uint8_t **ppWritePackedMsg,
 	return (push32(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
 			pack_tlv(NFAPI_PNF_PARAM_GENERAL_TAG, &pNfapiMsg->pnf_param_general, ppWritePackedMsg, end, &pack_pnf_param_general_value) &&
 			pack_tlv(NFAPI_PNF_PHY_TAG, &pNfapiMsg->pnf_phy, ppWritePackedMsg, end, &pack_pnf_phy_value) &&
-			// pack_tlv(NFAPI_PNF_RF_TAG, &pNfapiMsg->pnf_rf, ppWritePackedMsg, end, &pack_pnf_rf_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL10_TAG, &pNfapiMsg->pnf_phy_rel10, ppWritePackedMsg, end, &pack_pnf_phy_rel10_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL11_TAG, &pNfapiMsg->pnf_phy_rel11, ppWritePackedMsg, end, &pack_pnf_phy_rel11_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL12_TAG, &pNfapiMsg->pnf_phy_rel12, ppWritePackedMsg, end, &pack_pnf_phy_rel12_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL13_TAG, &pNfapiMsg->pnf_phy_rel13, ppWritePackedMsg, end, &pack_pnf_phy_rel13_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL13_NB_IOT_TAG, &pNfapiMsg->pnf_phy_rel13_nb_iot, ppWritePackedMsg, end, &pack_pnf_phy_rel13_nb_iot_value) &&
-			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
+			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
 }
 
 
@@ -276,13 +270,13 @@ static uint8_t pack_pnf_param_response(void *msg, uint8_t **ppWritePackedMsg, ui
 	return (push32(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
 			pack_tlv(NFAPI_PNF_PARAM_GENERAL_TAG, &pNfapiMsg->pnf_param_general, ppWritePackedMsg, end, &pack_pnf_param_general_value) &&
 			pack_tlv(NFAPI_PNF_PHY_TAG, &pNfapiMsg->pnf_phy, ppWritePackedMsg, end, &pack_pnf_phy_value) &&
-			// pack_tlv(NFAPI_PNF_RF_TAG, &pNfapiMsg->pnf_rf, ppWritePackedMsg, end, &pack_pnf_rf_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL10_TAG, &pNfapiMsg->pnf_phy_rel10, ppWritePackedMsg, end, &pack_pnf_phy_rel10_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL11_TAG, &pNfapiMsg->pnf_phy_rel11, ppWritePackedMsg, end, &pack_pnf_phy_rel11_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL12_TAG, &pNfapiMsg->pnf_phy_rel12, ppWritePackedMsg, end, &pack_pnf_phy_rel12_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL13_TAG, &pNfapiMsg->pnf_phy_rel13, ppWritePackedMsg, end, &pack_pnf_phy_rel13_value) &&
-			// pack_tlv(NFAPI_PNF_PHY_REL13_NB_IOT_TAG, &pNfapiMsg->pnf_phy_rel13_nb_iot, ppWritePackedMsg, end, &pack_pnf_phy_rel13_nb_iot_value) &&
-			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
+			pack_tlv(NFAPI_PNF_RF_TAG, &pNfapiMsg->pnf_rf, ppWritePackedMsg, end, &pack_pnf_rf_value) &&
+			pack_tlv(NFAPI_PNF_PHY_REL10_TAG, &pNfapiMsg->pnf_phy_rel10, ppWritePackedMsg, end, &pack_pnf_phy_rel10_value) &&
+			pack_tlv(NFAPI_PNF_PHY_REL11_TAG, &pNfapiMsg->pnf_phy_rel11, ppWritePackedMsg, end, &pack_pnf_phy_rel11_value) &&
+			pack_tlv(NFAPI_PNF_PHY_REL12_TAG, &pNfapiMsg->pnf_phy_rel12, ppWritePackedMsg, end, &pack_pnf_phy_rel12_value) &&
+			pack_tlv(NFAPI_PNF_PHY_REL13_TAG, &pNfapiMsg->pnf_phy_rel13, ppWritePackedMsg, end, &pack_pnf_phy_rel13_value) &&
+			pack_tlv(NFAPI_PNF_PHY_REL13_NB_IOT_TAG, &pNfapiMsg->pnf_phy_rel13_nb_iot, ppWritePackedMsg, end, &pack_pnf_phy_rel13_nb_iot_value) &&
+			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
 }
 
 
@@ -424,18 +418,6 @@ static uint8_t unpack_uint32_tlv_value(void* tlv, uint8_t **ppReadPackedMsg, uin
 {
 	nfapi_uint32_tlv_t* value = (nfapi_uint32_tlv_t*)tlv;
 	return pull32(ppReadPackedMsg, &value->value, end);
-}
-
-static uint8_t pack_int32_tlv_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
-{
-	nfapi_int32_tlv_t* value = (nfapi_int32_tlv_t*)tlv;
-	return pushs32(value->value, ppWritePackedMsg, end);
-}
-
-static uint8_t unpack_int32_tlv_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-{
-	nfapi_int32_tlv_t* value = (nfapi_int32_tlv_t*)tlv;
-	return pulls32(ppReadPackedMsg, &value->value, end);
 }
 
 
@@ -882,8 +864,7 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
 	nfapi_nr_config_request_scf_t *pNfapiMsg = (nfapi_nr_config_request_scf_t*)msg;
 
 
-	return (push8(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
-			push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
+	return (push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
 		    pack_tlv(NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG, &(pNfapiMsg->carrier_config.dl_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_DL_FREQUENCY_TAG, &(pNfapiMsg->carrier_config.dl_frequency), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_DL_GRID_SIZE_TAG, &(pNfapiMsg->carrier_config.dl_grid_size[1]), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
@@ -1088,7 +1069,7 @@ static uint8_t pack_nr_p5_message_body(nfapi_p4_p5_message_header_t *header, uin
 			result = pack_nr_start_request(header, ppWritePackedMsg, end, config);
 			break;
 
-		case NFAPI_START_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE:
 			result = pack_nr_start_response(header, ppWritePackedMsg, end, config);
 			break;
 
@@ -1096,18 +1077,9 @@ static uint8_t pack_nr_p5_message_body(nfapi_p4_p5_message_header_t *header, uin
 			result = pack_stop_request(header, ppWritePackedMsg, end, config);
 			break;
 
-		case NFAPI_STOP_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE:
 			result = pack_stop_response(header, ppWritePackedMsg, end, config);
 			break;
-
-		case NFAPI_MEASUREMENT_REQUEST:
-			result = pack_measurement_request(header, ppWritePackedMsg, end, config);
-			break;
-
-		case NFAPI_MEASUREMENT_RESPONSE:
-			result = pack_measurement_response(header, ppWritePackedMsg, end, config);
-			break;
-
 		default:
 			{
 				if(header->message_id >= NFAPI_VENDOR_EXT_MSG_MIN &&
@@ -1580,14 +1552,6 @@ static uint8_t unpack_nr_pnf_param_response(uint8_t **ppReadPackedMsg, uint8_t *
 	{
 		{ NFAPI_PNF_PARAM_GENERAL_TAG, &pNfapiMsg->pnf_param_general, &unpack_pnf_param_general_value},
 		{ NFAPI_PNF_PHY_TAG, &pNfapiMsg->pnf_phy, &unpack_pnf_phy_value},
-		/*
-		{ NFAPI_PNF_RF_TAG, &pNfapiMsg->pnf_rf, &unpack_pnf_rf_value},
-		{ NFAPI_PNF_PHY_REL10_TAG, &pNfapiMsg->pnf_phy_rel10, &unpack_pnf_phy_rel10_value},
-		{ NFAPI_PNF_PHY_REL11_TAG, &pNfapiMsg->pnf_phy_rel11, &unpack_pnf_phy_rel11_value},
-		{ NFAPI_PNF_PHY_REL12_TAG, &pNfapiMsg->pnf_phy_rel12, &unpack_pnf_phy_rel12_value},
-		{ NFAPI_PNF_PHY_REL13_TAG, &pNfapiMsg->pnf_phy_rel13, &unpack_pnf_phy_rel13_value},
-		{ NFAPI_PNF_PHY_REL13_NB_IOT_TAG, &pNfapiMsg->pnf_phy_rel13_nb_iot, &unpack_pnf_phy_rel13_nb_iot_value},
-	*/
 	};
 
 	return ( pull32(ppReadPackedMsg, &pNfapiMsg->error_code, end) &&
@@ -1604,14 +1568,13 @@ static uint8_t unpack_pnf_param_response(uint8_t **ppReadPackedMsg, uint8_t *end
 	{
 		{ NFAPI_PNF_PARAM_GENERAL_TAG, &pNfapiMsg->pnf_param_general, &unpack_pnf_param_general_value},
 		{ NFAPI_PNF_PHY_TAG, &pNfapiMsg->pnf_phy, &unpack_pnf_phy_value},
-		/*
 		{ NFAPI_PNF_RF_TAG, &pNfapiMsg->pnf_rf, &unpack_pnf_rf_value},
 		{ NFAPI_PNF_PHY_REL10_TAG, &pNfapiMsg->pnf_phy_rel10, &unpack_pnf_phy_rel10_value},
 		{ NFAPI_PNF_PHY_REL11_TAG, &pNfapiMsg->pnf_phy_rel11, &unpack_pnf_phy_rel11_value},
 		{ NFAPI_PNF_PHY_REL12_TAG, &pNfapiMsg->pnf_phy_rel12, &unpack_pnf_phy_rel12_value},
 		{ NFAPI_PNF_PHY_REL13_TAG, &pNfapiMsg->pnf_phy_rel13, &unpack_pnf_phy_rel13_value},
 		{ NFAPI_PNF_PHY_REL13_NB_IOT_TAG, &pNfapiMsg->pnf_phy_rel13_nb_iot, &unpack_pnf_phy_rel13_nb_iot_value},
-	*/
+	
 	};
 
 	return ( pull32(ppReadPackedMsg, &pNfapiMsg->error_code, end) &&
@@ -2149,23 +2112,17 @@ static uint8_t unpack_nr_config_request(uint8_t **ppReadPackedMsg, uint8_t *end,
 		{ NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG,  &(pNfapiMsg->ssb_table.ssb_subcarrier_offset),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_TDD_PERIOD_TAG,  &(pNfapiMsg->tdd_table.tdd_period),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SLOT_CONFIG_TAG,  &(pNfapiMsg->tdd_table.max_tdd_periodicity_list[0].max_num_of_symbol_per_slot_list[0].slot_config),  &unpack_uint8_tlv_value},
-	    //{ NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG,  &(pNfapiMsg->nfapi_config.dl_ue_per_sf),  &unpack_uint8_tlv_value},
-		//{ NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG,  &(pNfapiMsg->nfapi_config.max_transmit_power),  &unpack_uint16_tlv_value},
-		//{ NFAPI_NR_NFAPI_NRARFCN_TAG,  &(pNfapiMsg->nfapi_config.nrarfcn),  &unpack_uint32_tlv_value},
 		{ NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG,  &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv4),  &unpack_ipv4_address_value},
 		{ NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV6_TAG,  &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv6),  &unpack_ipv6_address_value},
 		{ NFAPI_NR_NFAPI_P7_PNF_PORT_TAG,  &(pNfapiMsg->nfapi_config.p7_pnf_port),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG,  &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv4),  &unpack_ipv4_address_value},
 		{ NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG,  &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv6),  &unpack_ipv6_address_value},
 		{ NFAPI_NR_NFAPI_P7_VNF_PORT_TAG,  &(pNfapiMsg->nfapi_config.p7_vnf_port),  &unpack_uint16_tlv_value},
-		//{ NFAPI_NR_NFAPI_RF_BANDS_TAG,  &(pNfapiMsg->nfapi_config.rf_bands),  &unpack_rf_bands_value},
 		{ NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG,  &(pNfapiMsg->nfapi_config.timing_info_mode),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG,  &(pNfapiMsg->nfapi_config.timing_info_period),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_NFAPI_TIMING_WINDOW_TAG,  &(pNfapiMsg->nfapi_config.timing_window),  &unpack_uint8_tlv_value},
-		//{ NFAPI_NR_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG,  &(pNfapiMsg->nfapi_config.ul_ue_per_sf),  &unpack_uint8_tlv_value},
 	};
-	return ( pull8(ppReadPackedMsg, &pNfapiMsg->error_code, end) && 
-			 pull8(ppReadPackedMsg, &pNfapiMsg->num_tlv, end) &&
+	return ( pull8(ppReadPackedMsg, &pNfapiMsg->num_tlv, end) &&
 			 unpack_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
 
 }
@@ -2378,17 +2335,17 @@ static int check_nr_unpack_length(nfapi_nr_phy_msg_type_e msgId, uint32_t unpack
 				retLen = sizeof( nfapi_nr_start_request_scf_t);
 			break;
 
-		case NFAPI_START_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE:
 			if (unpackedBufLen >= sizeof(nfapi_nr_start_response_scf_t))
 				retLen = sizeof(nfapi_nr_start_response_scf_t);
 			break;
 
-		case NFAPI_STOP_REQUEST:
+		case NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST:
 			if (unpackedBufLen >= sizeof(nfapi_stop_request_t))
 				retLen = sizeof(nfapi_stop_request_t);
 			break;
 
-		case NFAPI_STOP_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE:
 			if (unpackedBufLen >= sizeof(nfapi_stop_response_t))
 				retLen = sizeof(nfapi_stop_response_t);
 			break;
@@ -2637,15 +2594,15 @@ int nfapi_nr_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 			result = unpack_nr_start_request(&pReadPackedMessage, end, pMessageHeader, config);
 			break;
 
-		case NFAPI_START_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE:
 			result = unpack_nr_start_response(&pReadPackedMessage, end, pMessageHeader, config);
 			break;
 
-		case NFAPI_STOP_REQUEST:
+		case NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST:
 			result = unpack_stop_request(&pReadPackedMessage, end, pMessageHeader, config);
 			break;
 
-		case NFAPI_STOP_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE:
 			result = unpack_stop_response(&pReadPackedMessage, end, pMessageHeader, config);
 			break;
 

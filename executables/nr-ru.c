@@ -1565,7 +1565,7 @@ void *ru_thread( void *param ) {
     if((slot_start.tv_sec > curr_time.tv_sec) || (slot_start.tv_sec == curr_time.tv_sec && slot_start.tv_nsec > curr_time.tv_nsec)){
       sleep_time = timespec_sub(slot_start,curr_time);
       
-      usleep(sleep_time.tv_nsec * 1e-3);
+      usleep(sleep_time.tv_nsec * 1e-3); 
     }
     else{//continue
     }

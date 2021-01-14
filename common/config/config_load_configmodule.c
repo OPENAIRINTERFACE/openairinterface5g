@@ -45,7 +45,7 @@
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
 #include "nfapi/oai_integration/vendor_ext.h"
 
-uint8_t nfapi_mode=0;
+extern uint8_t nfapi_mode;
 
 int load_config_sharedlib(configmodule_interface_t *cfgptr) {
   void *lib_handle;
@@ -215,15 +215,15 @@ configmodule_interface_t *load_configmodule(int argc,
       tmpflags = CONFIG_HELP;
     }
 
-    if( strcmp(argv[i], "--vnf") == 0 ){
-      printf("\nVNF ENABLED\n");
-      nfapi_mode = NFAPI_MODE_VNF;
-    }
+    // if( strcmp(argv[i], "--vnf") == 0 ){
+    //   printf("\nVNF ENABLED\n");
+    //   nfapi_mode = NFAPI_MODE_VNF;
+    // }
 
-     if( strcmp(argv[i], "--pnf") == 0 ){
-      printf("\nPNF ENABLED\n");
-      nfapi_mode = NFAPI_MODE_PNF;
-    }
+    //  if( strcmp(argv[i], "--pnf") == 0 ){
+    //   printf("\nPNF ENABLED\n");
+    //   nfapi_mode = NFAPI_MODE_PNF;
+    // }
 
   }
 

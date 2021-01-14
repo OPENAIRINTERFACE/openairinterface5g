@@ -308,6 +308,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       LOG_E(MAC,"TDD configuration can not be done\n");
     else 
       LOG_I(MAC,"TDD has been properly configurated\n");
+    
   }
 
 }

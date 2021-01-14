@@ -59,6 +59,8 @@ typedef enum {
   NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST=   0X05,
   NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION=0X06,
   NFAPI_NR_PHY_MSG_TYPE_ERROR_INDICATION=0X07,
+  NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE=0X010D,
+  NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE=0X010F,
   //RESERVED 0X08 ~ 0X7F
   NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST= 0X80,
   NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST= 0X81,
@@ -523,7 +525,7 @@ typedef struct {
 /* PARAM.RESPONSE */
 typedef struct {
   nfapi_p4_p5_message_header_t  header;
-  nfapi_nr_param_errors_e       error_code;
+  uint8_t       error_code;
   
   uint8_t                       num_tlv;
   nfapi_vendor_extension_tlv_t  vendor_extension;
@@ -545,7 +547,6 @@ typedef struct {
 /* CONFIG.REQUEST */
 typedef struct {
   nfapi_p4_p5_message_header_t  header;
-  nfapi_nr_param_errors_e       error_code; // TODO: check if needed
 
   uint8_t                       num_tlv;
   nfapi_vendor_extension_tlv_t  vendor_extension;
@@ -564,7 +565,7 @@ typedef struct {
 /* CONFIG.RESPONSE */
 typedef struct {
   nfapi_p4_p5_message_header_t  header;
-  nfapi_nr_config_errors_e error_code;
+  uint8_t error_code;
   //uint8_t num_invalid_tlvs;
   // TODO: add list of invalid/unsupported TLVs (see Table 3.18)
    nfapi_vendor_extension_tlv_t  vendor_extension;

@@ -829,7 +829,7 @@ void pnf_nr_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 					{
 						nfapi_nr_start_response_scf_t resp;
 						memset(&resp, 0, sizeof(resp));
-						resp.header.message_id = NFAPI_START_RESPONSE;
+						resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
 						resp.header.phy_id = req.header.phy_id;
 						resp.error_code = NFAPI_MSG_INVALID_STATE;
 						nfapi_nr_pnf_start_resp(config, &resp);
@@ -839,7 +839,7 @@ void pnf_nr_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 				{
 					nfapi_nr_start_response_scf_t resp;
 					memset(&resp, 0, sizeof(resp));
-					resp.header.message_id = NFAPI_START_RESPONSE;
+					resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
 					resp.header.phy_id = req.header.phy_id;
 					resp.error_code = NFAPI_MSG_INVALID_CONFIG;
 					nfapi_nr_pnf_start_resp(config, &resp);
@@ -849,7 +849,7 @@ void pnf_nr_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 			{
 				nfapi_nr_start_response_scf_t resp;
 				memset(&resp, 0, sizeof(resp));
-				resp.header.message_id = NFAPI_START_RESPONSE;
+				resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
 				resp.header.phy_id = req.header.phy_id;
 				resp.error_code = NFAPI_MSG_INVALID_STATE;
 				nfapi_nr_pnf_start_resp(config, &resp);
@@ -962,16 +962,16 @@ void pnf_nr_handle_stop_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 				{
 					if(phy->state != NFAPI_PNF_PHY_RUNNING)
 					{
-						if(config->stop_req)
+						if(config->nr_stop_req)
 						{
-							(config->stop_req)(config, phy, &req);
+							(config->nr_stop_req)(config, phy, &req);
 						}
 					}
 					else
 					{
 						nfapi_stop_response_t resp;
 						memset(&resp, 0, sizeof(resp));
-						resp.header.message_id = NFAPI_STOP_RESPONSE;
+						resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE;
 						resp.header.phy_id = req.header.phy_id;
 						resp.error_code = NFAPI_MSG_INVALID_STATE;
 						nfapi_pnf_stop_resp(config, &resp);
@@ -981,7 +981,7 @@ void pnf_nr_handle_stop_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 				{
 					nfapi_stop_response_t resp;
 					memset(&resp, 0, sizeof(resp));
-					resp.header.message_id = NFAPI_STOP_RESPONSE;
+					resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE;
 					resp.header.phy_id = req.header.phy_id;
 					resp.error_code = NFAPI_MSG_INVALID_CONFIG;
 					nfapi_pnf_stop_resp(config, &resp);
@@ -991,7 +991,7 @@ void pnf_nr_handle_stop_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 			{
 				nfapi_stop_response_t resp;
 				memset(&resp, 0, sizeof(resp));
-				resp.header.message_id = NFAPI_STOP_RESPONSE;
+				resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE;
 				resp.header.phy_id = req.header.phy_id;
 				resp.error_code = NFAPI_MSG_INVALID_STATE;
 				nfapi_pnf_stop_resp(config, &resp);

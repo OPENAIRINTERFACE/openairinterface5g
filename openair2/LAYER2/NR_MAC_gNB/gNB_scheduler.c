@@ -97,7 +97,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   gNB->pdu_index[CC_idP] = 0;
 
-  if (nfapi_mode == NFAPI_MONOLITHIC || nfapi_mode == NFAPI_MODE_PNF) { // monolithic or PNF
+  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;
@@ -291,10 +291,11 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   return (bitmap >> slot) & 0x01;
 }
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
+void 
+gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
-
+  
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
@@ -308,7 +309,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-
+  
   switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
     case 0:
       nb_periods_per_frame = 20; // 10ms/0p5ms
@@ -360,7 +361,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
-
+  
   const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
   //const uint64_t dlsch_in_slot_bitmap = (1 << 2);
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
@@ -371,7 +372,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     RC.nrmac[module_idP]->UE_info.num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
-
     // clear vrb_maps
     memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
     // clear last scheduled slot's content (only)!
@@ -382,14 +382,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
-
-
+  
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
-
 
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
-
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0) {
     /* we need to make sure that resources for PRACH are free. To avoid that
@@ -402,6 +399,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     const frame_t f = (frame + (slot + n_slots_ahead) / nr_slots_per_frame[*scc->ssbSubcarrierSpacing]) % 1024;
     const sub_frame_t s = (slot + n_slots_ahead) % nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     schedule_nr_prach(module_idP, f, s);
+    
   }
 
   // This schedule SR
@@ -416,23 +414,20 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
   }
-
   // This schedules the DCI for Uplink and subsequently PUSCH
   if (slot < 10) {
+     if(NFAPI_MODE == NFAPI_MODE_VNF){
+    gNB->UL_tti_req_ahead[0][8].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode
+    }
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }
-
   // This schedules the DCI for Downlink and PDSCH
   if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd)
       && slot < 10) {
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
   }
-
-
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
-
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 }

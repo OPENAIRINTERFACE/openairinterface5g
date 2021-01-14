@@ -915,7 +915,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   usleep(1000);
 
-  if (nfapi_mode) {
+  if (NFAPI_MODE) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
@@ -923,7 +923,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   const char *nfapi_mode_str = "<UNKNOWN>";
 
-  switch(nfapi_mode) {
+  switch(NFAPI_MODE) {
     case 0:
       nfapi_mode_str = "MONOLITHIC";
       break;
@@ -943,7 +943,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==NFAPI_MODE_VNF) // VNF
+  if (NFAPI_MODE==NFAPI_MODE_VNF) // VNF
     wait_nfapi_init("main?");
 
   printf("START MAIN THREADS\n");
@@ -972,7 +972,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   config_sync_var=0;
 
-  if (nfapi_mode==NFAPI_MODE_PNF) { // PNF
+  if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
     wait_nfapi_init("main?");
   }
 
@@ -992,7 +992,7 @@ if(!IS_SOFTMODEM_NOS1)
     load_softscope("nr",&p);
   }
 
-  if (nfapi_mode != NFAPI_MODE_PNF && nfapi_mode != NFAPI_MODE_VNF) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
     init_eNB_afterRU();
   } else {

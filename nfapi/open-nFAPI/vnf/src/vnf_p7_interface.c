@@ -176,7 +176,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	slot_start = timespec_add(slot_start, slot_duration);
 
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "next slot will start at %d.%d\n", slot_start.tv_sec, slot_start.tv_nsec);
-    //printf("next slot will start at %d.%d\n",slot_start.tv_sec, slot_start.tv_nsec);
+    
 	while(vnf_p7->terminate == 0)
 	{
 		fd_set rfds;
@@ -380,7 +380,7 @@ NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d]
 		else
 		{
 			// we have overrun the subframe advance to go and collect $200 
-			// CHANGE - gokul
+
 			if((millisecond - last_millisecond) > 3)
 				NFAPI_TRACE(NFAPI_TRACE_WARN, "subframe overrun %ld %ld (%ld)\n", millisecond, last_millisecond, millisecond - last_millisecond + 1);
 
@@ -411,11 +411,8 @@ struct timespec current_time;
 				curr->slot++;
 				}
 				vnf_nr_sync(vnf_p7, curr);	
-				//printf("\nsfn:%d, slot:%d\n current time:%d.%d",curr->sfn,curr->slot,current_time.tv_sec, current_time.tv_nsec); //remove later - gokul
-				//printf("next slot will start at %d.%d\n",current_time.tv_sec, current_time.tv_nsec);
 				curr = curr->next;	
 			}
-			//send_mac_subframe_indications(vnf_p7);
 			send_mac_slot_indications(vnf_p7);
 		}
 		else if(selectRetval > 0)

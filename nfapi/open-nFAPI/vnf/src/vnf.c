@@ -1100,60 +1100,12 @@ void vnf_nr_handle_p4_p5_message(void *pRecvMsg, int recvMsgLen, int p5_idx, nfa
 			vnf_nr_handle_config_response(pRecvMsg, recvMsgLen, config, p5_idx);
 			break;
 
-		case NFAPI_START_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE:
 			vnf_nr_handle_start_response(pRecvMsg, recvMsgLen, config, p5_idx);
 			break;
 
-		case NFAPI_STOP_RESPONSE:
+		case NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE:
 			vnf_handle_stop_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_MEASUREMENT_RESPONSE:
-			vnf_handle_measurement_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_RSSI_RESPONSE:
-			vnf_handle_rssi_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_RSSI_INDICATION:
-			vnf_handle_rssi_indication(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_CELL_SEARCH_RESPONSE:
-			vnf_handle_cell_search_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_CELL_SEARCH_INDICATION:
-			vnf_handle_cell_search_indication(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_BROADCAST_DETECT_RESPONSE:
-			vnf_handle_broadcast_detect_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_BROADCAST_DETECT_INDICATION:
-			vnf_handle_broadcast_detect_indication(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_SYSTEM_INFORMATION_SCHEDULE_RESPONSE:
-			vnf_handle_system_information_schedule_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_SYSTEM_INFORMATION_SCHEDULE_INDICATION:
-			vnf_handle_system_information_schedule_indication(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_SYSTEM_INFORMATION_RESPONSE:
-			vnf_handle_system_information_response(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_SYSTEM_INFORMATION_INDICATION:
-			vnf_handle_system_information_indication(pRecvMsg, recvMsgLen, config, p5_idx);
-			break;
-
-		case NFAPI_NMM_STOP_RESPONSE:
-			vnf_handle_nmm_stop_response(pRecvMsg, recvMsgLen, config, p5_idx);
 			break;
 
 		default:
@@ -1387,11 +1339,11 @@ int vnf_nr_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_
 					// handle now if complete message in one or more segments
 					if ((flags & 0x80) == 0x80)
 					{
-						printf("\nVNF RECEIVES:\n");
-						for(int i=0; i<message_size; i++){
-							printf("%d", read_buffer[i]);
-						}
-						printf("\n");
+						// printf("\nVNF RECEIVES:\n");
+						// for(int i=0; i<message_size; i++){
+						// 	printf("%d", read_buffer[i]);
+						// }
+						// printf("\n");
 
 						vnf_nr_handle_p4_p5_message(read_buffer, message_size, pnf->p5_idx, config);
 					}
@@ -1516,11 +1468,11 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 					// handle now if complete message in one or more segments
 					if ((flags & 0x80) == 0x80)
 					{
-						printf("\nVNF RECEIVES:\n");
-						for(int i=0; i<message_size; i++){
-							printf("%d", read_buffer[i]);
-						}
-						printf("\n");
+						// printf("\nVNF RECEIVES:\n");
+						// for(int i=0; i<message_size; i++){
+						// 	printf("%d", read_buffer[i]);
+						// }
+						// printf("\n");
 
 						vnf_handle_p4_p5_message(read_buffer, message_size, pnf->p5_idx, config);
 					}
@@ -1549,11 +1501,11 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 
 static int vnf_send_p5_msg(nfapi_vnf_pnf_info_t* pnf, const void *msg, int len, uint8_t stream)
 {
-	printf("\n MESSAGE SENT: \n");
-	for(int i=0; i<len; i++){
-		printf("%d", *(uint8_t *)(msg + i));
-	}
-	printf("\n");
+	// printf("\n MESSAGE SENT: \n");
+	// for(int i=0; i<len; i++){
+	// 	printf("%d", *(uint8_t *)(msg + i));
+	// }
+	// printf("\n");
 
 	//NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s len:%d stream:%d\n", __FUNCTION__, len, stream);
 

@@ -146,9 +146,6 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
 struct timespec current;
 clock_gettime(CLOCK_MONOTONIC, &current);
-//LOG_I(PHY,"%sCurrent time %d.%d,frame_rx %d,slot_rx %d,frame_tx %d,slot_tx %d\n", __FUNCTION__, current.tv_sec,current.tv_nsec,frame_rx,slot_rx,frame_tx,slot_tx);
-  // if(nfapi_mode!=0)
-  // sf_ahead = (uint16_t) ceil((float)6/(0x01<<gNB->frame_parms.numerology_index)); 
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -157,7 +154,7 @@ clock_gettime(CLOCK_MONOTONIC, &current);
 
   // *******************************************************************
   // NFAPI not yet supported for NR - this code has to be revised
-  if (nfapi_mode == NFAPI_MODE_PNF) {
+  if (NFAPI_MODE == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     //add_subframe(&frame, &subframe, 4);
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
@@ -187,7 +184,6 @@ clock_gettime(CLOCK_MONOTONIC, &current);
   // ****************************************
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
-
   /* hack to remove UEs */
   extern int rnti_to_remove[10];
   extern volatile int rnti_to_remove_count;
@@ -248,16 +244,15 @@ clock_gettime(CLOCK_MONOTONIC, &current);
   }
   */
   // Call the scheduler
-
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
+
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-  
-  // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
@@ -408,7 +403,6 @@ static void *gNB_L1_thread( void *param ) {
   while (!oai_exit) {
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC,&t);
-    //printf("\nbefore time %d.%d\n",t.tv_sec,t.tv_nsec);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
@@ -419,8 +413,6 @@ static void *gNB_L1_thread( void *param ) {
     int frame_tx          = L1_proc->frame_tx;
     int slot_tx           = L1_proc->slot_tx;
     uint64_t timestamp_tx = L1_proc->timestamp_tx;
-    
-    //printf("\nframe %d slot %d after wait time %d.%d\n",frame_rx,slot_rx,t.tv_sec,t.tv_nsec);
 
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,slot_tx);
