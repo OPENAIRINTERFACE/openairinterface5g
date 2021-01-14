@@ -18,6 +18,7 @@
 #define DEFAULT_LIVE_PORT 2021
 
 #define NO_PREAMBLE -1
+#define NO_SR_RNTI -1
 
 typedef struct {
   int socket;
@@ -48,6 +49,10 @@ typedef struct {
   int rar_frame;
   int rar_subframe;
   int rar_data;
+  /* SR */
+  int sr_rnti;
+  int sr_frame;
+  int sr_subframe;
 
   /* NR traces */
   /* NR ul */
@@ -87,7 +92,8 @@ typedef struct {
 /****************************************************************************/
 
 void trace_lte(ev_data *d, int direction, int rnti_type, int rnti,
-        int frame, int subframe, void *buf, int bufsize, int preamble)
+        int frame, int subframe, void *buf, int bufsize, int preamble,
+        int sr_rnti)
 {
   ssize_t ret;
   int fsf;
@@ -118,6 +124,16 @@ void trace_lte(ev_data *d, int direction, int rnti_type, int rnti,
     PUTC(&d->buf, 0); /* rach attempt - always 0 for us (not sure of this) */
   }
 
+  if (sr_rnti != NO_SR_RNTI) {
+    PUTC(&d->buf, MAC_LTE_SR_TAG);
+    PUTC(&d->buf, 0); /* number of items byte 1 */
+    PUTC(&d->buf, 1); /* number of items byte 2 */
+    PUTC(&d->buf, 0); /* ueid byte 1 (not used, let's put 0) */
+    PUTC(&d->buf, 0); /* ueid byte 2 (not used, let's put 0) */
+    PUTC(&d->buf, (sr_rnti>>8) & 255);
+    PUTC(&d->buf, sr_rnti & 255);
+  }
+
   PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
 
   for (i = 0; i < bufsize; i++)
@@ -135,7 +151,7 @@ void ul(void *_d, event e)
   trace_lte(d, DIRECTION_UPLINK, C_RNTI, e.e[d->ul_rnti].i,
             e.e[d->ul_frame].i, e.e[d->ul_subframe].i,
             e.e[d->ul_data].b, e.e[d->ul_data].bsize,
-            NO_PREAMBLE);
+            NO_PREAMBLE, NO_SR_RNTI);
 }
 
 void dl(void *_d, event e)
@@ -154,7 +170,7 @@ void dl(void *_d, event e)
             e.e[d->dl_rnti].i != 0xffff ? C_RNTI : SI_RNTI, e.e[d->dl_rnti].i,
             e.e[d->dl_frame].i, e.e[d->dl_subframe].i,
             e.e[d->dl_data].b, e.e[d->dl_data].bsize,
-            NO_PREAMBLE);
+            NO_PREAMBLE, NO_SR_RNTI);
 }
 
 void mib(void *_d, event e)
@@ -169,7 +185,7 @@ void mib(void *_d, event e)
   trace_lte(d, DIRECTION_DOWNLINK, NO_RNTI, 0,
             e.e[d->mib_frame].i, e.e[d->mib_subframe].i,
             e.e[d->mib_data].b, e.e[d->mib_data].bsize,
-            NO_PREAMBLE);
+            NO_PREAMBLE, NO_SR_RNTI);
 }
 
 void preamble(void *_d, event e)
@@ -178,7 +194,7 @@ void preamble(void *_d, event e)
   trace_lte(d, DIRECTION_UPLINK, NO_RNTI, 0,
             e.e[d->preamble_frame].i, e.e[d->preamble_subframe].i,
             NULL, 0,
-            e.e[d->preamble_preamble].i);
+            e.e[d->preamble_preamble].i, NO_SR_RNTI);
 }
 
 void rar(void *_d, event e)
@@ -187,7 +203,16 @@ void rar(void *_d, event e)
   trace_lte(d, DIRECTION_DOWNLINK, RA_RNTI, e.e[d->rar_rnti].i,
             e.e[d->rar_frame].i, e.e[d->rar_subframe].i,
             e.e[d->rar_data].b, e.e[d->rar_data].bsize,
-            NO_PREAMBLE);
+            NO_PREAMBLE, NO_SR_RNTI);
+}
+
+void sr(void *_d, event e)
+{
+  ev_data *d = _d;
+  trace_lte(d, DIRECTION_UPLINK, NO_RNTI, 0,
+            e.e[d->sr_frame].i, e.e[d->sr_subframe].i,
+            NULL, 0,
+            NO_PREAMBLE, e.e[d->sr_rnti].i);
 }
 
 /****************************************************************************/
@@ -298,7 +323,7 @@ void nr_rar(void *_d, event e)
 /****************************************************************************/
 
 void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
-                int preamble_id, int rar_id,
+                int preamble_id, int rar_id, int sr_id,
                 int nr_ul_id, int nr_dl_id, int nr_mib_id, int nr_rar_id)
 {
   database_event_format f;
@@ -321,6 +346,9 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
   d->rar_frame         = -1;
   d->rar_subframe      = -1;
   d->rar_data          = -1;
+  d->sr_rnti           = -1;
+  d->sr_frame          = -1;
+  d->sr_subframe       = -1;
 
   d->nr_ul_rnti        = -1;
   d->nr_ul_frame       = -1;
@@ -406,6 +434,18 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
 
   if (d->rar_rnti == -1 || d->rar_frame == -1 || d->rar_subframe == -1 ||
       d->rar_data == -1) goto error;
+
+  /* sr: rnti, frame, subframe */
+  f = get_format(database, sr_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->sr_rnti);
+    G("frame",    "int",    d->sr_frame);
+    G("subframe", "int",    d->sr_subframe);
+  }
+
+  if (d->sr_rnti == -1 || d->sr_frame == -1 || d->sr_subframe == -1)
+    goto error;
 
   /* NR ul: rnti, frame, slot, data */
   f = get_format(database, nr_ul_id);
@@ -530,6 +570,7 @@ int main(int n, char **v)
   int i;
   int ul_id, dl_id, mib_id, preamble_id, rar_id;
   int nr_ul_id, nr_dl_id, nr_mib_id, nr_rar_id;
+  int sr_id;
   ev_data d;
   char *ip = DEFAULT_IP;
   int port = DEFAULT_PORT;
@@ -599,6 +640,7 @@ int main(int n, char **v)
     on_off(database, "ENB_PHY_MIB", is_on, 1);
     on_off(database, "ENB_PHY_INITIATE_RA_PROCEDURE", is_on, 1);
     on_off(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "ENB_MAC_SCHEDULING_REQUEST", is_on, 1);
 
     on_off(database, "GNB_MAC_UL_PDU_WITH_DATA", is_on, 1);
     on_off(database, "GNB_MAC_DL_PDU_WITH_DATA", is_on, 1);
@@ -621,13 +663,14 @@ int main(int n, char **v)
   mib_id = event_id_from_name(database, "ENB_PHY_MIB");
   preamble_id = event_id_from_name(database, "ENB_PHY_INITIATE_RA_PROCEDURE");
   rar_id = event_id_from_name(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA");
+  sr_id = event_id_from_name(database, "ENB_MAC_SCHEDULING_REQUEST");
 
   nr_ul_id = event_id_from_name(database, "GNB_MAC_UL_PDU_WITH_DATA");
   nr_dl_id = event_id_from_name(database, "GNB_MAC_DL_PDU_WITH_DATA");
   nr_mib_id = event_id_from_name(database, "GNB_PHY_MIB");
   nr_rar_id = event_id_from_name(database, "GNB_MAC_DL_RAR_PDU_WITH_DATA");
 
-  setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id,
+  setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id, sr_id,
              nr_ul_id, nr_dl_id, nr_mib_id, nr_rar_id);
 
   register_handler_function(h, ul_id, ul, &d);
@@ -635,6 +678,7 @@ int main(int n, char **v)
   register_handler_function(h, mib_id, mib, &d);
   register_handler_function(h, preamble_id, preamble, &d);
   register_handler_function(h, rar_id, rar, &d);
+  register_handler_function(h, sr_id, sr, &d);
 
   register_handler_function(h, nr_ul_id, nr_ul, &d);
   register_handler_function(h, nr_dl_id, nr_dl, &d);
@@ -662,7 +706,7 @@ int main(int n, char **v)
     if (e.type == -1) break;
 
     if (!(e.type == ul_id       || e.type == dl_id    || e.type == mib_id ||
-          e.type == preamble_id || e.type == rar_id   ||
+          e.type == preamble_id || e.type == rar_id   || e.type == sr_id  ||
           e.type == nr_ul_id    || e.type == nr_dl_id ||
           e.type == nr_mib_id   || e.type == nr_rar_id)) continue;
 
