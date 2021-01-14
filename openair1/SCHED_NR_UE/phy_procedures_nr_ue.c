@@ -32,6 +32,7 @@
 
 #define _GNU_SOURCE
 
+#include "nr/nr_common.h"
 #include "assertions.h"
 #include "defs.h"
 #include "PHY/defs_nr_UE.h"
@@ -729,12 +730,12 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 
   if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
-    uint16_t BWPStart       = dlsch0->harq_processes[harq_pid]->BWPStart;
-    //    uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
-    uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
-    uint16_t pdsch_nb_rb    = dlsch0->harq_processes[harq_pid]->nb_rb;
-    uint16_t s0             = dlsch0->harq_processes[harq_pid]->start_symbol;
-    uint16_t s1             = dlsch0->harq_processes[harq_pid]->nb_symbols;
+    NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
+    uint16_t BWPStart       = dlsch0_harq->BWPStart;
+    uint16_t pdsch_start_rb = dlsch0_harq->start_rb;
+    uint16_t pdsch_nb_rb    = dlsch0_harq->nb_rb;
+    uint16_t s0             = dlsch0_harq->start_symbol;
+    uint16_t s1             = dlsch0_harq->nb_symbols;
 
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
@@ -747,6 +748,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                                       nr_slot_rx,
                                       aatx /*p*/,
                                       m,
+                                      BWPStart,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb);
           LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_slot_rx,m);
@@ -765,16 +767,29 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
           break;
       }
     }
+
+    uint16_t first_symbol_with_data = s0;
+    uint32_t dmrs_data_re;
+
+    if (ue->dmrs_DownlinkConfig.pdsch_dmrs_type == pdsch_dmrs_type1)
+      dmrs_data_re = 12 - 6 * dlsch0_harq->n_dmrs_cdm_groups;
+    else
+      dmrs_data_re = 12 - 4 * dlsch0_harq->n_dmrs_cdm_groups;
+
+    while ((dmrs_data_re == 0) && (dlsch0_harq->dlDmrsSymbPos & (1 << first_symbol_with_data))) {
+      first_symbol_with_data++;
+    }
+
     for (m = s0; m < (s1 + s0); m++) {
  
       dual_stream_UE = 0;
       eNB_id_i = eNB_id+1;
       i_mod = 0;
-
-      if ((m==s0) && (m<3))
-	first_symbol_flag = 1;
+      if (( m==first_symbol_with_data ) && (m<4))
+        first_symbol_flag = 1;
       else
-	first_symbol_flag = 0;
+        first_symbol_flag = 0;
+
 #if UE_TIMING_TRACE
       uint8_t slot = 0;
       if(m >= ue->frame_parms.symbols_per_slot>>1)
@@ -784,7 +799,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
       // process DLSCH received in first slot
       // skip DMRS symbols (will have to check later if PDSCH/DMRS are multiplexed
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) == 0) { 
-	if (nr_rx_pdsch(ue,
+        if (nr_rx_pdsch(ue,
                     proc,
                     pdsch,
                     eNB_id,
@@ -797,10 +812,10 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     i_mod,
                     dlsch0->current_harq_pid) < 0)
                       return -1;
-      }
+        }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
-	else if (pdsch == PDSCH) {
+        if (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
+        else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
           if (nr_rx_pdsch(ue,
                     proc,
                     pdsch,
@@ -815,7 +830,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     dlsch0->current_harq_pid) < 0)
                       return -1;
         }
-	else AssertFatal(1==0,"not RA_PDSCH or PDSCH\n");
+        else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
       }
       if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]);
 #if UE_TIMING_TRACE
@@ -1219,6 +1234,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           case PDSCH:
           rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
           break;
+          case SI_PDSCH:
+            rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
           default:
           break;
         }
@@ -1809,29 +1827,30 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 0,
                 0);
 
+    dci_cnt = 0;
+    for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+
     // note: this only works if RBs for PDCCH are contigous!
-    LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-	  fp->first_carrier_offset,pdcch_vars->pdcch_config[0].BWPStart,coreset_start_rb);
+    LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
+          fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
+
     if (coreset_nb_rb > 0)
       nr_pdcch_channel_estimation(ue,
                                   proc,
                                   0,
                                   nr_slot_rx,
                                   l,
-                                  fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12,
+                                  fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                   coreset_nb_rb);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
 #endif
-    
-    //printf("phy procedure pdcch start measurement l =%d\n",l);
-    //nr_ue_measurement_procedures(l,ue,proc,gNB_id,(nr_slot_rx),mode);
-      
-  }
 
-  dci_cnt = nr_ue_pdcch_procedures(gNB_id, ue, proc);
+      dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
+    }
+  }
 
   if (dci_cnt > 0) {
 
@@ -1840,6 +1859,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[proc->thread_id][gNB_id][0]->active == 1){
       dlsch = ue->dlsch[proc->thread_id][gNB_id][0];
+    } else if (ue->dlsch_SI[0]->active == 1){
+      dlsch = ue->dlsch_SI[0];
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }

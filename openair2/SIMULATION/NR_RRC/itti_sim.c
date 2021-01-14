@@ -284,7 +284,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0 && get_softmodem_params()->sa==0)) {
     if (gnb_nb > 0) {
       if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
         LOG_E(S1AP, "Create task for NGAP failed\n");

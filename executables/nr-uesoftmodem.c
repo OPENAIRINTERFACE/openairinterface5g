@@ -513,6 +513,9 @@ int main( int argc, char **argv ) {
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
+  if (get_softmodem_params()->sa)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
 

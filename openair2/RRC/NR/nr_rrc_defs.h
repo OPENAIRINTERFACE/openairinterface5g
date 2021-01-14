@@ -403,6 +403,7 @@ typedef struct {
   int pucch_TargetSNRx10;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
+  NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;

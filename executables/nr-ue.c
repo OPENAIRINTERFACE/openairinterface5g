@@ -745,14 +745,13 @@ void *UE_thread(void *arg) {
 
       if (tmp->proc.decoded_frame_rx != -1)
         decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
-        //decoded_frame_rx=tmp->proc.decoded_frame_rx;
+      else 
+         decoded_frame_rx=-1;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
 
-    if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
-          (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
-          (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
+    if (  decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
@@ -781,7 +780,7 @@ void *UE_thread(void *arg) {
     msgToPush->key=slot_nr;
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
-    if (IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
+    if ( IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done
@@ -791,6 +790,8 @@ void *UE_thread(void *arg) {
 
       if (tmp->proc.decoded_frame_rx != -1)
         decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+      else 
+        decoded_frame_rx=-1;
         //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
