@@ -194,6 +194,8 @@ int oaisim_flag=0;
  */
 uint8_t abstraction_flag=0;
 
+bler_struct bler_data[NUM_MCS];
+
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
@@ -749,6 +751,8 @@ int main( int argc, char **argv ) {
     init_queue(&hi_dci0_req_queue);
     init_queue(&ul_config_req_queue);
 
+    init_bler_table();
+
     config_sync_var=0;
     if (sem_init(&sfn_semaphore, 0, 0) != 0)
     {
@@ -836,4 +840,65 @@ int main( int argc, char **argv ) {
   logClean();
   printf("Bye.\n");
   return 0;
+}
+
+
+// Read in each MCS file and build BLER-SINR-TB table
+void init_bler_table(void)
+{
+  size_t bufSize = 128;
+  char fName[bufSize];
+  char * line = NULL;
+  char * token;
+  char * temp = NULL;
+  FILE *pFile;
+  char * home = getenv("HOME");
+
+  // Maybe not needed... and may not work.
+  memset(bler_data, 0, sizeof(bler_data));
+
+  for (unsigned int i = 0; i < NUM_MCS; i++)
+  {
+    // Filename needs to be changed to dynamic name
+    snprintf(fName, sizeof(fName), "%s/openairinterface5g/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv", home, i);
+    pFile = fopen(fName, "r");
+    if(!pFile)
+    {
+      LOG_E(MAC, "Bler File ERROR! - fopen(), file: %s\n", fName);
+      abort();
+    }
+    int nlines = 0;
+    while(getline(&line, &bufSize, pFile) > 0)
+    {
+      if (!strncmp(line,"SNR",3))
+      {
+        continue;
+      }
+
+      if (nlines > NUM_SINR)
+      {
+        LOG_E(MAC, "BLER FILE ERROR - num lines greater than expected - file: %s\n", fName);
+        abort();
+      }
+
+      token = strtok_r(line, ";", &temp);
+      int ncols = 0;
+      while (token != NULL)
+      {
+        if (ncols > NUM_BLER_COL)
+        {
+          LOG_E(MAC, "BLER FILE ERROR - num of cols greater than expected\n");
+          abort();
+        }
+
+        bler_data[i].bler_table[nlines][ncols] = strtof(token, NULL);
+        ncols++;
+
+        token = strtok_r(NULL, ";", &temp);
+      }
+      nlines++;        
+    }
+    bler_data[i].length = nlines;
+    fclose(pFile);
+  }
 }
