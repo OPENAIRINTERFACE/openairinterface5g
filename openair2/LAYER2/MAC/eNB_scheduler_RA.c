@@ -1295,7 +1295,7 @@ initiate_ra_proc(module_id_t module_idP,
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
   }
 
-  LOG_I(MAC,
+  LOG_D(MAC,
         "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d, timing offset %d\n",
         module_idP, CC_id, frameP, subframeP, preamble_index, timing_offset);
   LOG_D(MAC,

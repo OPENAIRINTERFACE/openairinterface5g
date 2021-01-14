@@ -1122,7 +1122,7 @@ void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
   char output[16384];
   int stroff=0;
   for (int i=0;i<NUMBER_OF_ULSCH_MAX;i++)
-    if (eNB->ulsch_stats[i].rnti>0) { 
+    if (eNB->ulsch_stats[i].rnti>0 && eNB->ulsch_stats[i].round_trials[0]>100) { 
       for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) 
         stroff+=sprintf(output+stroff,"ULSCH RNTI %x: ulsch_power[%d] %d, ulsch_noise_power[%d] %d\n", 
               eNB->ulsch_stats[i].rnti, aa,eNB->ulsch_stats[i].ulsch_power[aa],aa,eNB->ulsch_stats[i].ulsch_noise_power[aa]);

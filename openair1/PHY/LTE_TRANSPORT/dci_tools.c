@@ -533,7 +533,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 
       dlsch0->harq_mask |= (1 << rel8->harq_process);
 
-      if (rel8->rnti != SI_RNTI) LOG_I(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,
+      if (rel8->rnti != SI_RNTI) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,
                                         rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
 
       break;

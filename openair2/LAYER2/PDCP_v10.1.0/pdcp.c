@@ -94,7 +94,12 @@ pthread_t pdcp_stats_thread_desc;
 void *pdcp_stats_thread(void *param) {
 
    FILE *fd;
-
+   int old_byte_cnt[MAX_MOBILES_PER_ENB][NB_RB_MAX],old_byte_cnt_rx[MAX_MOBILES_PER_ENB][NB_RB_MAX];
+   for (int i=0;i<MAX_MOBILES_PER_ENB;i++)
+     for (int j=0;j<NB_RB_MAX;j++) {
+	old_byte_cnt[i][j]=0;
+	old_byte_cnt_rx[i][j]=0;
+     }
    while (!oai_exit) {
      sleep(1);
 
@@ -103,33 +108,18 @@ void *pdcp_stats_thread(void *param) {
      int drb_id=3;
      for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
         if (pdcp_enb[0].rnti[UE_id]>0) {
-           fprintf(fd,"UE CRNTI %x: tx_window %dms, tx_bytes %d, tx_bytes_w %d, tx_bytes_tmp_w %d\n",
-                   pdcp_enb[0].rnti[UE_id],
-                   Pdcp_stats_tx_window_ms[0][UE_id],
+           fprintf(fd,"PDCP: CRNTI %x, DRB %d: tx_bytes %d, DL Throughput %e\n",
+                   pdcp_enb[0].rnti[UE_id],drb_id,
                    Pdcp_stats_tx_bytes[0][UE_id][drb_id],
-                   Pdcp_stats_tx_bytes_w[0][UE_id][drb_id],
-                   Pdcp_stats_tx_bytes_tmp_w[0][UE_id][drb_id]);
-           fprintf(fd,"             tx %d, tx_w %d, tx_tmp_w %d, tx_sn %d, tx throughput %d\n", 
-                   Pdcp_stats_tx[0][UE_id][drb_id],
-                   Pdcp_stats_tx_w[0][UE_id][drb_id],
-                   Pdcp_stats_tx_tmp_w[0][UE_id][drb_id],
-                   Pdcp_stats_tx_sn[0][UE_id][drb_id],
-                   Pdcp_stats_tx_throughput_w[0][UE_id][drb_id]);
-           fprintf(fd,"             rx_window %dms, rx_bytes %d, rx_bytes_w %d, rx_bytes_tmp_w %d\n",             
-                   Pdcp_stats_rx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB],
-                   Pdcp_stats_rx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX],
-                   Pdcp_stats_rx_bytes_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX],
-                   Pdcp_stats_rx_bytes_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
-           fprintf(fd,"             rx %d, rx_w %d, rx_tmp_w %d, rx_sn %d, rx goodput %d\n",
-                   Pdcp_stats_rx[0][UE_id][drb_id],
-                   Pdcp_stats_rx_w[0][UE_id][drb_id],
-                   Pdcp_stats_rx_tmp_w[0][UE_id][drb_id],
-                   Pdcp_stats_rx_sn[0][UE_id][drb_id],
-                   Pdcp_stats_rx_goodput_w[0][UE_id][drb_id]);
-
-    }
+                   (double)((Pdcp_stats_tx_bytes[0][UE_id][drb_id]-old_byte_cnt[UE_id][drb_id])<<3));
+           fprintf(fd,"                              rx_bytes %d, UL Throughput %e\n",             
+                   Pdcp_stats_rx_bytes[0][UE_id][drb_id],
+                   (double)((Pdcp_stats_rx_bytes[0][UE_id][drb_id]-old_byte_cnt_rx[UE_id][drb_id])<<3));
+        }
+     }
+     fclose(fd);
    }
- }
+   return(NULL);
 }
 
 uint64_t get_pdcp_optmask(void) {
@@ -512,7 +502,7 @@ boolean_t pdcp_data_req(
       break;
   }
 
-  //LOG_I(PDCP,"ueid %d lcid %d tx seq num %d\n", pdcp_uid, rb_idP+rb_offset, current_sn);
+  LOG_D(PDCP,"ueid %d lcid %d tx seq num %d\n", pdcp_uid, (int)(rb_idP+rb_offset), current_sn);
   Pdcp_stats_tx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_tx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
@@ -2341,6 +2331,8 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
          }else
              LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
    }
+
+  pthread_create(&pdcp_stats_thread_desc,NULL,pdcp_stats_thread,NULL);
 
   return pdcp_params.optmask ;
 }

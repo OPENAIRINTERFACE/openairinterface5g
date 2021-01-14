@@ -273,7 +273,7 @@ rx_sdu(const module_id_t enb_mod_idP,
     AssertFatal(mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx > 1,
                 "maxHARQ %d should be greater than 1\n",
                 (int) mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
-    LOG_I(MAC, "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu (%s) round %d from PHY (rnti %x, RA_id %d) ul_cqi %d, timing advance %d\n",
+    LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu (%s) round %d from PHY (rnti %x, RA_id %d) ul_cqi %d, timing advance %d\n",
           enb_mod_idP,
           harq_pid,
           CC_idP,
@@ -1430,10 +1430,10 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       UE_template_ptr->pusch_tpc_tx_frame = frameP;
       UE_template_ptr->pusch_tpc_tx_subframe = subframeP;
 
-      if (snr > target_snr + 4) {
+      if (snr > target_snr + PUSCH_PCHYST) {
         tpc = 0; // -1
         UE_sched_ctrl_ptr->pusch_tpc_accumulated[CC_id]--;
-      } else if (snr < target_snr - 4) {
+      } else if (snr < target_snr - PUSCH_PCHYST) {
         tpc = 2; // +1
         UE_sched_ctrl_ptr->pusch_tpc_accumulated[CC_id]++;
       }
@@ -1501,6 +1501,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       const uint8_t ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
       const uint8_t mcs = UE_template_ptr->pre_assigned_mcs_ul;
       UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
+      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0]++;
       UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
       UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
       UE_template_ptr->mcs_UL[harq_pid] = mcs;
@@ -1522,8 +1523,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
       UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = mcs;
 
-      while (rb_table[rb_table_index] > 45 && rb_table_index > 0)
-        rb_table_index--;
 
       UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(mcs, rb_table[rb_table_index]);
       UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
