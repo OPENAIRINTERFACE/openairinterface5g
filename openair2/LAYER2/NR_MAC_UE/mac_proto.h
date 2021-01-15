@@ -164,6 +164,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint64_t *dci_pdu,
                             dci_pdu_rel15_t *nr_pdci_info_extracted);
 
+int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
+                                                      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      uint8_t time_domain_ind);
 
 uint8_t
 nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
@@ -227,7 +231,7 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-void nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id);
+int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id);
 
 void nr_process_rar(nr_downlink_indication_t *dl_info);
 
@@ -289,5 +293,33 @@ void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
 
 void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format);
 
+fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
+
+void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
+
+// PUSCH scheduler:
+// - Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,
+// - where K2 is the offset between the slot in which UL DCI is received and the slot
+// - in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
+// PUSCH Msg3 scheduler:
+// - scheduled by RAR UL grant according to 8.3 of TS 38.213
+int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, uint8_t tda_id);
+
+int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
+
+// Configuration of Msg3 PDU according to clauses:
+// - 8.3 of 3GPP TS 38.213 version 16.3.0 Release 16
+// - 6.1.2.2 of TS 38.214
+// - 6.1.3 of TS 38.214
+// - 6.2.2 of TS 38.214
+// - 6.1.4.2 of TS 38.214
+// - 6.4.1.1.1 of TS 38.211
+// - 6.3.1.7 of 38.211
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+                        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                        dci_pdu_rel15_t *dci,
+                        RAR_grant_t *rar_grant,
+                        uint16_t rnti,
+                        uint8_t *dci_format);
 #endif
 /** @}*/

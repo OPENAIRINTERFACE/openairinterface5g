@@ -284,10 +284,6 @@ typedef struct {
   long cb_preambles_per_ssb;
   int starting_preamble_nb;
 
-  /// Scheduled TX frame for RA Msg3
-  int msg3_frame;
-  /// Scheduled TX slot for RA Msg3
-  int msg3_slot;
   /// Received TPC command (in dB) from RAR
   int8_t Msg3_TPC;
   /// Flag to indicate whether it is the first Msg3 to be transmitted
@@ -304,6 +300,15 @@ typedef struct {
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
 } RA_config_t;
+
+typedef struct {
+
+  uint8_t freq_hopping;
+  uint8_t Msg3_t_alloc;
+  uint8_t Msg3_f_alloc;
+  uint8_t mcs;
+
+} RAR_grant_t;
 
 /*!\brief Top level UE MAC structure */
 typedef struct {

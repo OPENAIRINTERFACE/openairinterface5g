@@ -34,6 +34,9 @@
 
 #define reserved 0xffff
 
+const char *rnti_types[]={"RNTI_new", "RNTI_C", "RNTI_RA", "NR_RNTI_P", "NR_RNTI_CS", "NR_RNTI_TC"};
+const char *dci_formats[]={"1_0", "1_1", "2_0", "2_1", "2_2", "2_3", "0_0", "0_1"};
+
 //	specification mapping talbe, table_38$x_$y_$z_c$a
 //	- $x: specification
 //	- $y: subclause-major
