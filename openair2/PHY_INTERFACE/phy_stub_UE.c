@@ -50,12 +50,12 @@ queue_t hi_dci0_req_queue;
 int current_sfn_sf;
 sem_t sfn_semaphore;
 
-static sf_rnti_mcs_s sf_rnti_mcs[NUM_NFPAI_SUBFRAME];
+static sf_rnti_mcs_s sf_rnti_mcs[NUM_NFAPI_SUBFRAME];
 
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
 
-extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFPAI_SUBFRAME][10]; //TODO Melissa check these values
+extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFAPI_SUBFRAME][10]; //TODO: NFAPI_TX_MAX_PDU for last dim? Check nfapi_pnf.c ln. 81
 //extern int timer_subframe;
 //extern int timer_frame;
 
@@ -798,7 +798,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
               sfn, sf, dci->pdu_size,
               dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
               tx_req_pdu_list->num_pdus);
-        if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_send_sdu(ue_id, 0, sfn, sf,
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -817,7 +817,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
           continue;
-        if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_decode_si(ue_id, 0, sfn, 0,
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -833,7 +833,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
 
-        if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_decode_p(ue_id, 0, sfn, 0,
                       tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -863,7 +863,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
                 "%s(): Received RAR, PreambleIndex: %d\n",
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
 
-          if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+          if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
           {
             ue_process_rar(ue_id, 0, sfn,
                 ra_rnti, //RA-RNTI
@@ -1940,7 +1940,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
     }
   }
 
-  int check_drop_tb(int sf, uint16_t rnti)
+  bool check_drop_tb(int sf, uint16_t rnti)
   {
     if (sf_rnti_mcs[sf].pdu_size <= 0)
     {
@@ -1956,10 +1956,10 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
       }
     }
     LOG_I(MAC, "No matching rnti in sf_rnti_mcs.\n");
-    return 0;
+    return false;
   }
 
-  void drop_tb(int sf, uint16_t rnti)
+  bool drop_tb(int sf, uint16_t rnti)
   {
     assert(sf < 10 && sf >= 0);
 
@@ -1975,7 +1975,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
       if (sf_rnti_mcs[sf].rnti[n] == rnti)
       {
         mcs = sf_rnti_mcs[sf].mcs[n];
-        sf_rnti_mcs[sf].drop_flag[n] = 0;
+        sf_rnti_mcs[sf].drop_flag[n] = false;
         break;
       }
     }
@@ -2048,7 +2048,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
     if (bler_val <= drop_cutoff)
     {
-      sf_rnti_mcs[sf].drop_flag[n] = 1;
+      sf_rnti_mcs[sf].drop_flag[n] = true;
     }
-    return;
+    return sf_rnti_mcs[sf].drop_flag[n];
   }

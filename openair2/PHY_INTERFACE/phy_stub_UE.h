@@ -52,7 +52,7 @@ typedef struct
     uint8_t mcs[256];
     float sinr;
     uint16_t pdu_size;
-    int drop_flag[256];
+    bool drop_flag[256];
 
 } sf_rnti_mcs_s;
 
@@ -201,8 +201,8 @@ const char *dl_pdu_type_to_string(uint8_t pdu_type);
 const char *ul_pdu_type_to_string(uint8_t pdu_type);
 
 void read_channel_param(nfapi_dl_config_request_t * dl_config, int sf);
-void drop_tb(int sf, uint16_t rnti);
-int check_drop_tb(int sf, uint16_t rnti);
+bool drop_tb(int sf, uint16_t rnti);
+bool check_drop_tb(int sf, uint16_t rnti);
 
 extern queue_t dl_config_req_tx_req_queue;
 extern queue_t ul_config_req_queue;
