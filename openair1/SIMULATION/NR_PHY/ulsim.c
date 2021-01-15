@@ -757,10 +757,10 @@ int main(int argc, char **argv)
   unsigned int TBS             = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
   
-  printf("[ULSIM]: length_dmrs: %d, l_prime_mask: %d	number_dmrs_symbols: %d, mapping_type: %d add_pos: %d \n", length_dmrs, l_prime_mask, number_dmrs_symbols, mapping_type,add_pos);  
-  printf("[ULSIM]: CDM groups: %d, dmrs_config_type: %d, num_rbs: %d, nb_symb_sch: %d\n", num_dmrs_cdm_grps_no_data, dmrs_config_type, nb_rb, nb_symb_sch);
-  printf("[ULSIM]: MCS: %d, mod order: %d, code_rate: %d\n", Imcs, mod_order, code_rate);
-  printf("[ULSIM]: VALUE OF G: %d, TBS: %d\n", available_bits, TBS);
+  printf("[ULSIM]: length_dmrs: %u, l_prime_mask: %u	number_dmrs_symbols: %u, mapping_type: %u add_pos: %d \n", length_dmrs, l_prime_mask, number_dmrs_symbols, mapping_type, add_pos);
+  printf("[ULSIM]: CDM groups: %u, dmrs_config_type: %d, num_rbs: %u, nb_symb_sch: %u\n", num_dmrs_cdm_grps_no_data, dmrs_config_type, nb_rb, nb_symb_sch);
+  printf("[ULSIM]: MCS: %d, mod order: %u, code_rate: %u\n", Imcs, mod_order, code_rate);
+  printf("[ULSIM]: VALUE OF G: %u, TBS: %u\n", available_bits, TBS);
   
 
   
