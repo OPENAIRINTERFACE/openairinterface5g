@@ -846,13 +846,16 @@ int main( int argc, char **argv ) {
 // Read in each MCS file and build BLER-SINR-TB table
 void init_bler_table(void)
 {
-  size_t bufSize = 128;
-  char fName[bufSize];
+  size_t bufSize = 1024;
   char * line = NULL;
   char * token;
   char * temp = NULL;
-  FILE *pFile;
   const char *openair_dir = getenv("OPENAIR_DIR");
+  if (!openair_dir)
+  {
+    LOG_E(MAC, "No $OPENAIR_DIR\n");
+    abort();
+  }
 
   // Maybe not needed... and may not work.
   memset(bler_data, 0, sizeof(bler_data));
@@ -860,15 +863,16 @@ void init_bler_table(void)
   for (unsigned int i = 0; i < NUM_MCS; i++)
   {
     // Filename needs to be changed to dynamic name
+    char fName[1024];
     snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv", openair_dir, i);
-    pFile = fopen(fName, "r");
-    if(!pFile)
+    FILE *pFile = fopen(fName, "r");
+    if (!pFile)
     {
       LOG_E(MAC, "Bler File ERROR! - fopen(), file: %s\n", fName);
       abort();
     }
     int nlines = 0;
-    while(getline(&line, &bufSize, pFile) > 0)
+    while (getline(&line, &bufSize, pFile) > 0)
     {
       if (!strncmp(line,"SNR",3))
       {
