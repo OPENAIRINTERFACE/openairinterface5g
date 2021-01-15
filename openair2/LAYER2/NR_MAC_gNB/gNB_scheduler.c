@@ -357,7 +357,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
-    nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
+    // nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
   const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);

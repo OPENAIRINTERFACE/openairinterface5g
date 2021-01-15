@@ -44,6 +44,9 @@ static nr_pdcp_ue_manager_t *nr_pdcp_ue_manager;
 /* necessary globals for OAI, not used internally */
 hash_table_t  *pdcp_coll_p;
 static uint64_t pdcp_optmask;
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+extern ngran_node_t node_type;
 
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
@@ -397,7 +400,24 @@ void pdcp_layer_init(void)
   if (pthread_mutex_unlock(&m) != 0) abort();
 
   nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
+
   init_nr_rlc_data_req_queue();
+}
+
+void pdcp_layer_init_for_CU(void)
+{
+  /* hack: be sure to initialize only once */
+  static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+  static int initialized = 0;
+  if (pthread_mutex_lock(&m) != 0) abort();
+  if (initialized) {
+    if (pthread_mutex_unlock(&m) != 0) abort();
+    return;
+  }
+  initialized = 1;
+  if (pthread_mutex_unlock(&m) != 0) abort();
+
+  nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
 }
 
 #include "nfapi/oai_integration/vendor_ext.h"
@@ -980,7 +1000,8 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, crnti, 0, 0,0);
   }
 
-  nr_rrc_pdcp_config_asn1_req(
+  if (!NODE_IS_DU(node_type)) {
+    nr_rrc_pdcp_config_asn1_req(
     &ctxt,
     rbconfig->srb_ToAddModList,
     rbconfig->drb_ToAddModList ,
@@ -992,13 +1013,16 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     NULL,
     NULL,
     Rlc_Bearer_ToAdd_list);
+  }
 
-  nr_rrc_rlc_config_asn1_req (&ctxt,
+  if (!NODE_IS_CU(node_type)) {
+    nr_rrc_rlc_config_asn1_req (&ctxt,
       rbconfig->srb_ToAddModList,
       rbconfig->drb_ToAddModList,
       rbconfig->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
       Rlc_Bearer_ToAdd_list);
+  }
 
   LOG_D(PDCP, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 

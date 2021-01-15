@@ -159,30 +159,6 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
-  RCconfig_NR_L1();
-
-  RCconfig_nr_macrlc();
-
-  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
-
-  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
-
-  AssertFatal (gnb_nb <= RC.nb_nr_inst,
-               "Number of gNB is greater than gNB defined in configuration file (%d/%d)!",
-               gnb_nb, RC.nb_nr_inst);
-
-  LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
-
-  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
-
-  for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
-    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
-    memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
-    configure_nr_rrc(gnb_id);
-  }
-
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
