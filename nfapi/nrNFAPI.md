@@ -14,12 +14,12 @@ sudo ./build_oai --gNB --UE
 
 ### VNF command
 ```
-sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band78.tm1.106PRB.nfapi.conf --vnf --noS1 --phy-test
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band78.tm1.106PRB.nfapi.conf --nfapi 2 --noS1 --phy-test
 
 ```
 ### PNF command
 ```
-sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/oaiL1.nfapi.usrpx300.conf --pnf --rfsim --phy-test --rfsimulator.serveraddr server
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/oaiL1.nfapi.usrpx300.conf --nfapi 1 --rfsim --phy-test --rfsimulator.serveraddr server
 
 ```
 ### UE command

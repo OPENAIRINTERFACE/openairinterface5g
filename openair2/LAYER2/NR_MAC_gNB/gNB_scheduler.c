@@ -361,14 +361,8 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
-<<<<<<< HEAD
-  
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
-  //const uint64_t dlsch_in_slot_bitmap = (1 << 2);
-=======
 
   const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 3);
->>>>>>> develop
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
