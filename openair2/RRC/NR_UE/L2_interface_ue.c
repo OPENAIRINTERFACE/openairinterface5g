@@ -46,16 +46,17 @@ nr_mac_rrc_data_ind_ue(
     const sdu_size_t      pdu_len){
 
     switch(channel){
-        case NR_BCCH_BCH:
-            AssertFatal( nr_rrc_ue_decode_NR_BCCH_BCH_Message( module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
-            break;
-        default:
-            break;
+      case NR_BCCH_BCH:
+        AssertFatal( nr_rrc_ue_decode_NR_BCCH_BCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
+        break;
+      case NR_BCCH_DL_SCH:
+        AssertFatal( nr_rrc_ue_decode_NR_SIB1_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-DLSCH error!\n");
+        break;
+      default:
+        break;
     }
 
-
     return(0);
-
 }
 
 int8_t mac_rrc_nr_data_req_ue(const module_id_t Mod_idP,

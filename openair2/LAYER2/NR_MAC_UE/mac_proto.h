@@ -58,6 +58,19 @@ int8_t nr_ue_decode_mib(
     void *pduP, 
     uint16_t cell_id );
 
+/**\brief decode sib1 pdu in NR_UE, from if_module dl_ind
+   \param module_id      module id
+   \param cc_id          component carrier id
+   \param gNB_index      gNB index
+   \param sibs_mask      sibs mask
+   \param pduP           pointer to pdu
+   \param pdu_length     length of pdu */
+int8_t nr_ue_decode_sib1(module_id_t module_id,
+                         int cc_id,
+                         unsigned int gNB_index,
+                         uint32_t sibs_mask,
+                         uint8_t *pduP,
+                         uint32_t pdu_len);
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
@@ -125,8 +138,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
-uint32_t get_ssb_slot(uint32_t ssb_index);
-
 
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 

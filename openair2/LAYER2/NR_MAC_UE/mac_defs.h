@@ -76,13 +76,6 @@
 /*!\brief value for indicating BSR Timer is not running */
 #define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
-
-typedef enum {
-    SFN_C_MOD_2_EQ_0, 
-    SFN_C_MOD_2_EQ_1,
-    SFN_C_IMPOSSIBLE
-} SFN_C_TYPE;
-
 // LTE structure, might need to be adapted for NR
 typedef struct {
   /// buffer status for each lcgid
@@ -227,9 +220,9 @@ typedef struct {
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
   /// Scheduled TX frame for RA Msg3
-  frame_t msg3_frame;
+  int16_t msg3_frame;
   /// Scheduled TX slot for RA Msg3
-  slot_t msg3_slot;
+  int16_t msg3_slot;
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
   /// Random-access variable for backoff (subframe of last change in backoff counter)
@@ -250,6 +243,8 @@ typedef struct {
   uint8_t RA_BI_found;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
   uint8_t generate_nr_prach;
+  /// SSB index from MIB decoding
+  uint8_t mib_ssb;
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
@@ -265,6 +260,11 @@ typedef struct {
 
   /// PHR
   uint8_t PHR_reporting_active;
+
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  NR_SearchSpace_t *search_space_zero;
+  NR_ControlResourceSet_t *coreset0;
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {
@@ -274,24 +274,6 @@ typedef enum seach_space_mask_e {
     type2_pdcch  = 0x8,
     type3_pdcch  = 0x10
 } search_space_mask_t;
-
-typedef enum subcarrier_spacing_e {
-    scs_15kHz  = 0x1,
-    scs_30kHz  = 0x2,
-    scs_60kHz  = 0x4,
-    scs_120kHz = 0x8,
-    scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
-typedef enum channel_bandwidth_e {
-    bw_5MHz   = 0x1,
-    bw_10MHz  = 0x2,
-    bw_20MHz  = 0x4,
-    bw_40MHz  = 0x8,
-    bw_80MHz  = 0x16,
-    bw_100MHz = 0x32
-} channel_bandwidth_t;
-
 
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:

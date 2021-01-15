@@ -62,6 +62,8 @@
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
 /* MAC */
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_TAG.h"
@@ -552,6 +554,11 @@ typedef struct gNB_MAC_INST_s {
   nr_pp_impl_dl pre_processor_dl;
   /// UL preprocessor for differentiated scheduling
   nr_pp_impl_ul pre_processor_ul;
+
+  NR_UE_sched_ctrl_t *sched_ctrlCommon;
+  NR_CellGroupConfig_t *secondaryCellGroupCommon;
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
