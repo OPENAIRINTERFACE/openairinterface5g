@@ -50,12 +50,12 @@ queue_t hi_dci0_req_queue;
 int current_sfn_sf;
 sem_t sfn_semaphore;
 
-static sf_rnti_mcs_s sf_rnti_mcs[10];
+static sf_rnti_mcs_s sf_rnti_mcs[NUM_NFPAI_SUBFRAME];
 
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
 
-extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
+extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFPAI_SUBFRAME][10]; //TODO Melissa check these values
 //extern int timer_subframe;
 //extern int timer_frame;
 
@@ -403,8 +403,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       // 2.) if receiving ul_config_req for uci ack/nack or ulsch ack/nak in subframe n
       //     go look to see if dl_config_req (with c-rnti) was received in subframe (n - 4)
       // 3.) if the answer to #2 is yes then send ACK IF NOT send DTX
-
-      if (drop_tb((subframe+6) % 10, rnti))  // TODO:  Handle DTX.  Also discuss handling PDCCH
+      if (check_drop_tb(((subframe+6) % 10), rnti))  // TODO:  Handle DTX.  Also discuss handling PDCCH
       {
         pdu->harq_indication_fdd_rel13.harq_tb_n[0] = 2;
         LOG_I(PHY, "Setting HARQ No ACK - Channel Model\n");
@@ -799,8 +798,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
               sfn, sf, dci->pdu_size,
               dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
               tx_req_pdu_list->num_pdus);
-        
-        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_send_sdu(ue_id, 0, sfn, sf,
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -819,8 +817,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
           continue;
-
-        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_decode_si(ue_id, 0, sfn, 0,
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -836,8 +833,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
 
-
-        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_decode_p(ue_id, 0, sfn, 0,
                       tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -867,8 +863,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
                 "%s(): Received RAR, PreambleIndex: %d\n",
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
 
-          
-          if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+          if (!check_drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
           {
             ue_process_rar(ue_id, 0, sfn,
                 ra_rnti, //RA-RNTI
@@ -1368,6 +1363,7 @@ void *ue_standalone_pnf_task(void *context)
               dl_config_req.sfn_sf & 15);
 
         dl_config_req_valid = true;
+        read_channel_param(&dl_config_req, (dl_config_req.sfn_sf & 15));
         if (tx_req_valid)
         {
           if (dl_config_req.sfn_sf != tx_req.sfn_sf)
@@ -1378,7 +1374,6 @@ void *ue_standalone_pnf_task(void *context)
               tx_req_valid = false;
               break;
           }
-          read_channel_param(&dl_config_req, (dl_config_req.sfn_sf & 15));
           enqueue_dl_config_req_tx_req(&dl_config_req, &tx_req);
           dl_config_req_valid = false;
           tx_req_valid = false;
@@ -1936,6 +1931,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
     }
 
     // Store all rnti and mcs for all pdus
+    LOG_I(MAC, "Adding MCS and RNTI for sf_rnti_mcs[%d]\n", sf);
     sf_rnti_mcs[sf].pdu_size = dl_config->dl_config_request_body.number_pdu;
     for (int n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
     {
@@ -1944,32 +1940,56 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
     }
   }
 
-  int drop_tb(int sf, uint16_t rnti)
+  int check_drop_tb(int sf, uint16_t rnti)
   {
-    int sinr_index = 0;
-    bool lin_interp = false;
-    bool skip_search = false;
+    if (sf_rnti_mcs[sf].pdu_size <= 0)
+    {
+      LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
+      abort();
+    }
 
-    assert(sf < 10 && sf >= 0);
-
-    uint8_t mcs = 99;
     for (int n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
     {
       if (sf_rnti_mcs[sf].rnti[n] == rnti)
       {
+        return sf_rnti_mcs[sf].drop_flag[n];
+      }
+    }
+    LOG_I(MAC, "No matching rnti in sf_rnti_mcs.\n");
+    return 0;
+  }
+
+  void drop_tb(int sf, uint16_t rnti)
+  {
+    assert(sf < 10 && sf >= 0);
+
+    if (sf_rnti_mcs[sf].pdu_size <= 0)
+    {
+      LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
+    }
+
+    uint8_t mcs = 99;
+    int n = 0;
+    for (n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
+    {
+      if (sf_rnti_mcs[sf].rnti[n] == rnti)
+      {
         mcs = sf_rnti_mcs[sf].mcs[n];
+        sf_rnti_mcs[sf].drop_flag[n] = 0;
         break;
       }
     }
 
     if (mcs == 99)
     {
-      LOG_E(MAC, "NO MCS Found\n");
+      LOG_E(MAC, "NO MCS Found. %d = sf_rnti_mcs[%d].mcs[%d] \n", mcs, sf, n);
       abort();
     }
 
-    // Loop through bler table to find sinr_index - What if EMANE SINR doesn't match any of the table SINR values??
-    //float epsilon = 0.0001;
+    // Loop through bler table to find sinr_index
+    int sinr_index = 0;
+    bool lin_interp = false;
+    bool skip_search = false;
     int temp_bler = 0;
     int temp_sinr = ((int)(sf_rnti_mcs[sf].sinr * 10));
     int i;
@@ -2003,9 +2023,9 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
       {
         sinr_index = i;
         lin_interp = true;
-        break; 
+        break;
       }
-      
+
     }
     if (i >= (bler_data[mcs].length - 1))
     {
@@ -2028,10 +2048,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
     if (bler_val <= drop_cutoff)
     {
-      return 1;
+      sf_rnti_mcs[sf].drop_flag[n] = 1;
     }
-    else
-    {
-      return 0;
-    }
+    return;
   }
