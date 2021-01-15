@@ -12,7 +12,7 @@
 //#define DEBUG_RB_EXT
 //#define DEBUG_CH_MAG
 
-void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
+void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -38,7 +38,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
   }
 
   for (i=0,ip=0; i<Msc_PUSCH; i++, ip+=4) {
-    ((uint32_t*)idft_in0)[ip+0] = z[i];
+    ((int32_t*)idft_in0)[ip+0] = z[i];
   }
 
 
@@ -203,7 +203,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 
 
   for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = ((uint32_t*)idft_out0)[ip];
+    z[i] = ((int32_t*)idft_out0)[ip];
   }
 
   // conjugate output
@@ -1232,7 +1232,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       #endif      
       
       // perform IDFT operation on the compensated rxdata if transform precoding is enabled
-      nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_comp[0])[symbol * nb_re_pusch2], nb_re_pusch);      
+      nr_idft(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][symbol * nb_re_pusch2], nb_re_pusch);
       LOG_D(PHY,"Transform precoding being done on data- symbol: %d, nb_re_pusch: %d\n", symbol, nb_re_pusch);      
     }
 

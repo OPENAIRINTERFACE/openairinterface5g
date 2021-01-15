@@ -286,7 +286,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     }
 
     #ifdef DEBUG_DFT_IDFT
-      uint32_t debug_symbols[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
+      int32_t debug_symbols[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
       int offset = 0;
       printf("NR_ULSCH_UE: available_bits: %d, mod_order: %d", available_bits,mod_order);
 
@@ -303,7 +303,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
       }
       LOG_M("preDFT_all_symbols.m","UE_preDFT", tx_layers[0],number_of_symbols*nb_re_pusch,1,1);
-      LOG_M("postDFT_all_symbols.m","UE_postDFT", &(ulsch_ue->y[0]),number_of_symbols*nb_re_pusch,1,1);
+      LOG_M("postDFT_all_symbols.m","UE_postDFT", ulsch_ue->y,number_of_symbols*nb_re_pusch,1,1);
       LOG_M("DEBUG_IDFT_SYMBOLS.m","UE_Debug_IDFT", debug_symbols,number_of_symbols*nb_re_pusch,1,1);
       LOG_M("UE_DMRS_SEQ.m","UE_DMRS_SEQ", dmrs_seq,nb_re_pusch,1,1);
     #endif
