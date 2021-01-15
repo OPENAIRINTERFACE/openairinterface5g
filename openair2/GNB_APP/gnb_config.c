@@ -574,6 +574,17 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
 
+    // pdcch_ConfigSIB1
+    rrc->carrier.pdcch_ConfigSIB1 = calloc(1,sizeof(NR_PDCCH_ConfigSIB1_t));
+    paramdef_t pdcch_ConfigSIB1[] = PDCCH_CONFIGSIB1PARAMS_DESC(rrc->carrier.pdcch_ConfigSIB1);
+    paramlist_def_t pdcch_ConfigSIB1ParamList = {GNB_CONFIG_STRING_PDCCH_CONFIGSIB1, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
+    config_getlist(&pdcch_ConfigSIB1ParamList, NULL, 0, aprefix);
+    if (pdcch_ConfigSIB1ParamList.numelt > 0) {
+        sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_PDCCH_CONFIGSIB1, 0);
+        config_get(pdcch_ConfigSIB1,sizeof(pdcch_ConfigSIB1)/sizeof(paramdef_t),aprefix);
+    }
+
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);
@@ -1009,7 +1020,7 @@ void NRRCConfig(void) {
   paramdef_t GNBSParams[]         = GNBSPARAMS_DESC;
   
 /* get global parameters, defined outside any section in the config file */
- 
+
   LOG_I(GNB_APP, "Getting GNBSParams\n");
  
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
