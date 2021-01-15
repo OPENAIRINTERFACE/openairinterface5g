@@ -458,7 +458,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }
 
-    if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
+    if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->sa == 1) {
       // read in files for RRCReconfiguration and RBconfig
       FILE *fd;
       char filename[1024];
@@ -1475,6 +1475,39 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
   return rval;
+}
+
+/*brief decode SIB1 message*/
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+
+  NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
+
+  asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                  &asn_DEF_NR_BCCH_DL_SCH_Message,
+                                                  (void **)&bcch_message,
+                                                  (const void *)bufferP,
+                                                  buffer_len);
+
+  if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+    LOG_D(RRC,"NR_BCCH_DL_SCH decode error\n");
+    SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
+    return -1;
+  }
+  else {
+    NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+    if(sib1 != NULL){
+      SEQUENCE_free(&asn_DEF_NR_BCCH_BCH_Message, (void *)sib1, 1 );
+    }
+    sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+    if (*(int64_t*)sib1 != 1) {
+       LOG_D(RRC, "SIB1 address: %lx\n", *(int64_t*)sib1);
+       xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
+    }
+    else
+       LOG_E(PHY, "sib1 is starting by 8 times 0\n");
+  }
+
+  return 0;
 }
 
 

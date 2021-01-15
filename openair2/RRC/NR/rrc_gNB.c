@@ -225,7 +225,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                          (NR_CellGroupConfig_t *)NULL
                         );
 
-  if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
+  if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0 || get_softmodem_params()->sa > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     FILE *fd;
     fd = fopen("uecap.raw","r");
