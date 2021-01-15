@@ -852,7 +852,7 @@ void init_bler_table(void)
   char * token;
   char * temp = NULL;
   FILE *pFile;
-  char * home = getenv("HOME");
+  const char *openair_dir = getenv("OPENAIR_DIR");
 
   // Maybe not needed... and may not work.
   memset(bler_data, 0, sizeof(bler_data));
@@ -860,7 +860,7 @@ void init_bler_table(void)
   for (unsigned int i = 0; i < NUM_MCS; i++)
   {
     // Filename needs to be changed to dynamic name
-    snprintf(fName, sizeof(fName), "%s/openairinterface5g/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv", home, i);
+    snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv", openair_dir, i);
     pFile = fopen(fName, "r");
     if(!pFile)
     {
