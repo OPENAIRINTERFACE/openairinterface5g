@@ -2206,14 +2206,14 @@ rrc_ue_process_rrcReconfiguration(
                 uint8_t msg_type = 0;
                 if((pdu_buffer + 1) != NULL){
                   if (*(pdu_buffer + 1) > 0 ) {
-                    if(pdu_buffer + 9){
+                    if((pdu_buffer + 9) != NULL){
                        msg_type = *(pdu_buffer + 9);
                     } else {
                       LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
                       return;
                     }
                   } else {
-                    if(pdu_buffer + 2){
+                    if((pdu_buffer + 2) != NULL){
                       msg_type = *(pdu_buffer + 2);
                     } else {
                         LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
@@ -2796,6 +2796,8 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
     uint32_t length;
     uint8_t buffer[100];
     length = do_RRCReestablishmentComplete(buffer, rrcReestablishment->rrc_TransactionIdentifier);
+    LOG_I(NR_RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCReestablishmentComplete (bytes%d, gNB %d)\n",
+          ctxt_pP->module_id,ctxt_pP->frame, length, gNB_index);
 #ifdef ITTI_SIM
     MessageDef *message_p;
     uint8_t *message_buffer;

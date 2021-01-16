@@ -1226,7 +1226,7 @@ do_NR_DLInformationTransfer(
         criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->size = pdu_length;
 
     encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
-    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
+    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
                 "DLInformationTransfer", encoded);
     LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
     return encoded;
@@ -1248,7 +1248,7 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8
     ulInformationTransfer->dedicatedNAS_Message->size = pdu_length;
     ulInformationTransfer->lateNonCriticalExtension = NULL;
     encoded = uper_encode_to_new_buffer (&asn_DEF_NR_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, (void **) buffer);
-    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
+    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
                 "ULInformationTransfer",encoded);
     LOG_D(NR_RRC,"ULInformationTransfer Encoded %zd bytes\n",encoded);
 
