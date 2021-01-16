@@ -133,7 +133,7 @@ task_list_t tasks[TASK_MAX];
       LOG_E(TMR,"Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s );
 
     if ( s > 50 )
-      LOG_I(TMR,"Queue for %s task size: %ld from %s task\n",itti_get_task_name(destination_task_id), s+1, itti_get_task_name(message->ittiMsgHeader.originTaskId));
+      LOG_I(TMR,"Queue for %s task size: %ld\n",itti_get_task_name(destination_task_id), s+1);
 
     t->message_queue.insert(t->message_queue.begin(), message);
     eventfd_t sem_counter = 1;

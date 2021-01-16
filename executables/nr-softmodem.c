@@ -816,7 +816,7 @@ static  void wait_nfapi_init(char *thread_name) {
 void init_pdcp(void) {
   if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
     // pdcp_layer_init();
-    pdcp_layer_init_for_CU();
+    // pdcp_layer_init_for_CU();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
     if (IS_SOFTMODEM_NOS1) {

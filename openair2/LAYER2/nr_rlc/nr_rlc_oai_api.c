@@ -36,11 +36,17 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_RLC-Config.h"
 #include "common/ran_context.h"
+#include "NR_UL-CCCH-Message.h"
+
+#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
+#include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
+
 extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
 
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
+uint8_t ccch_flag = 1;
 
 /* TODO: handle time a bit more properly */
 static uint64_t nr_rlc_current_time;
@@ -468,6 +474,33 @@ rb_found:
                 "Can't be CU, bad node type %d\n", type);
 
     if (NODE_IS_DU(type) && is_srb == 1) {
+      if (ccch_flag) {
+        /* for rfsim, because UE send RRCSetupRequest in SRB1 */
+        asn_dec_rval_t dec_rval;
+        NR_UL_CCCH_Message_t *ul_ccch_msg;
+        dec_rval = uper_decode(NULL,
+          &asn_DEF_NR_UL_CCCH_Message,
+          (void**)&ul_ccch_msg,
+          &buf[1], // buf[0] includes the pdcp header
+          size, 0, 0);
+        if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+          LOG_E(RLC, " Failed to decode UL-CCCH (%zu bytes)\n",dec_rval.consumed);
+        } else {
+          LOG_I(RLC, "decode UL-CCCH success \n");
+          LOG_I(RLC, "Received message: present %d and c1 present %d\n",
+              ul_ccch_msg->message.present, ul_ccch_msg->message.choice.c1->present);
+
+          if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
+            if (ul_ccch_msg->message.choice.c1->present == NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest) {
+              LOG_I(RLC, "[MSG] RRC Setup Request\n");
+              DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,ue->rnti,(uint8_t *)buf,size);
+              ccch_flag = 0;
+              return;
+            }
+          }
+        }
+      }
+
       MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;

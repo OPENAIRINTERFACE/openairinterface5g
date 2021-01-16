@@ -67,13 +67,25 @@ extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
 
+uint8_t du_ccch_flag = 1;
 
+int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
+                                         uint32_t         assoc_id,
+                                         uint32_t         stream,
+                                         F1AP_F1AP_PDU_t *pdu);
 
 /*  DL RRC Message Transfer */
 int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
+
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+    LOG_I(F1AP, "node is gNB DU, call DU_handle_DL_NR_RRC_MESSAGE_TRANSFER \n");
+    DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
+    return 0;
+  }
+
   LOG_D(F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
   
   F1AP_DLRRCMessageTransfer_t    *container;
@@ -981,8 +993,30 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
          &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
          msg->rrc_container_length, 0, 0);
     
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) 
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
+      /* for rfsim, because UE send RRCSetupRequest in SRB1 */
+      // NR_UL_CCCH_Message_t *ul_ccch_msg;
+      // dec_rval = uper_decode(NULL,
+      //    &asn_DEF_NR_UL_CCCH_Message,
+      //    (void**)&ul_ccch_msg,
+      //    &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
+      //    msg->rrc_container_length, 0, 0);
+      // if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      //   LOG_E(F1AP, " Failed to decode UL-CCCH (%zu bytes)\n",dec_rval.consumed);
+      // } else {
+      //   LOG_I(F1AP, "decode UL-CCCH success \n");
+      //   LOG_I(F1AP, "Received message: present %d and c1 present %d\n",
+      //       ul_ccch_msg->message.present, ul_ccch_msg->message.choice.c1->present);
+
+      //   if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
+      //     if (ul_ccch_msg->message.choice.c1->present == NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest) {
+      //       LOG_I(F1AP, "[MSG] RRC Setup Request\n");
+
+      //     }
+      //   }
+      // }
+    }
     else
       LOG_I(F1AP, "Received message: present %d and c1 present %d\n",
             ul_dcch_msg->message.present, ul_dcch_msg->message.choice.c1->present);
@@ -1209,14 +1243,31 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                                 RC.nrrrc[ctxt.module_id],
                                                 ctxt.rnti);
 
-  if (srb_id == 0) {
-    NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
-    asn_dec_rval_t dec_rval;
+  NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
+  asn_dec_rval_t dec_rval;
+  if (du_ccch_flag) {
+    /* for rfsim */
     dec_rval = uper_decode(NULL,
-         &asn_DEF_NR_DL_CCCH_Message,
-         (void**)&dl_ccch_msg,
-         ie->value.choice.RRCContainer.buf,
-         rrc_dl_sdu_len,0,0);
+          &asn_DEF_NR_DL_CCCH_Message,
+          (void**)&dl_ccch_msg,
+          &ie->value.choice.RRCContainer.buf[2],
+          rrc_dl_sdu_len-6,0,0);
+    if (dec_rval.code == RC_OK) {
+      srb_id = 0;
+      du_ccch_flag = 0;
+    } else {
+      srb_id = 1;
+    }
+  }
+  
+  if (srb_id == 0) {
+    // NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
+    // asn_dec_rval_t dec_rval;
+    // dec_rval = uper_decode(NULL,
+    //      &asn_DEF_NR_DL_CCCH_Message,
+    //      (void**)&dl_ccch_msg,
+    //      ie->value.choice.RRCContainer.buf,
+    //      rrc_dl_sdu_len,0,0);
     AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
     switch (dl_ccch_msg->message.choice.c1->present) {
 
@@ -1298,6 +1349,12 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         "Unknown message\n");
         break;
     }// switch case
+
+    /* for rfsim */
+    mem_block_t *memblock;
+    memblock = get_free_mem_block(rrc_dl_sdu_len, __FUNCTION__);
+    memcpy(memblock->data, ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
+    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, rrc_dl_sdu_len, memblock);
     return(0);
   } else if (srb_id == 1) { 
 

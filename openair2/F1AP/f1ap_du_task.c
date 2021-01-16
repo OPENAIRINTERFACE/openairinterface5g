@@ -177,8 +177,13 @@ void *F1AP_DU_task(void *arg) {
 
      case F1AP_UL_RRC_MESSAGE: // to rrc
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                        &F1AP_UL_RRC_MESSAGE(received_msg));
+        if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+          DU_send_UL_NR_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                             &F1AP_UL_RRC_MESSAGE(received_msg));
+        } else {
+          DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                          &F1AP_UL_RRC_MESSAGE(received_msg));
+        }
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC

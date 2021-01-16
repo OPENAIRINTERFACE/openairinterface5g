@@ -1543,10 +1543,14 @@ void nr_read_config_and_init(void) {
     RC.nrrrc[0]->carrier.MIB             = (uint8_t *) malloc16(4);
     RC.nrrrc[0]->carrier.sizeof_MIB      = do_MIB_NR(RC.nrrrc[0], 0);
     RC.nrrrc[0]->carrier.sizeof_SIB1     = do_SIB1_NR(&RC.nrrrc[0]->carrier, &RC.nrrrc[0]->configuration);
+
+    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[0]);
+    LOG_I(GNB_APP, "Adding new user (%p)\n",ue_context_p);
+    rrc_add_nsa_user(RC.nrrrc[0], ue_context_p,NULL);
   }
 
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-    pdcp_layer_init();
+    pdcp_layer_init_for_CU();
     nr_DRB_preconfiguration(0x1234);
     rrc_init_nr_global_param();
   }

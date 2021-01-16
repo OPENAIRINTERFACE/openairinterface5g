@@ -241,6 +241,26 @@ static void enqueue_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
   if (pthread_mutex_unlock(&q.m) != 0) abort();
 }
 
+void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
+                     const srb_flag_t   srb_flagP,
+                     const MBMS_flag_t  MBMS_flagP,
+                     const rb_id_t      rb_idP,
+                     const mui_t        muiP,
+                     confirm_t    confirmP,
+                     sdu_size_t   sdu_sizeP,
+                     mem_block_t *sdu_pP)
+{
+  enqueue_rlc_data_req(ctxt_pP,
+                       srb_flagP,
+                       MBMS_flagP,
+                       rb_idP, muiP,
+                       confirmP,
+                       sdu_sizeP,
+                       sdu_pP,
+                       NULL,
+                       NULL);
+}
+
 /****************************************************************************/
 /* rlc_data_req queue - end                                                 */
 /****************************************************************************/
@@ -600,18 +620,18 @@ static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_
   uint8_t     *gtpu_buffer_p;
   int srb_id;
   int i;
-  
-  if (ccch_or_dcch == 0)
-  {
-    nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
-    ccch_or_dcch = 1;
-  }
-  else 
-  {
+
+  if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     nr_rrc_data_ind( ctxt_pP, 1, size, buf);
+  } else {
+    if (ccch_or_dcch == 0) {
+      nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
+      ccch_or_dcch = 1;
+    } else {
+      nr_rrc_data_ind( ctxt_pP, 1, size, buf);
+    }
   }
-  
-  
+
   return;
 }
 
@@ -655,7 +675,22 @@ rb_found:
 printf("!!!!!!! deliver_pdu_srb (srb %d) calling rlc_data_req size %d: ", srb_id, size);
 //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
 printf("\n");
-  enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    MessageDef                            *message_p;
+    message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+    F1AP_DL_RRC_MESSAGE (message_p).rrc_container = buf;
+    F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
+    F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
+    F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
+    F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
+    F1AP_DL_RRC_MESSAGE (message_p).rnti = ue->rnti;
+    F1AP_DL_RRC_MESSAGE (message_p).srb_id = srb_id;
+    F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+    F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0;
+    itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+  } else {
+    enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
+  }
 }
 
 boolean_t pdcp_data_ind(
@@ -726,6 +761,7 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
       break;
     switch (ITTI_MSG_ID(msg_p)) {
     case RRC_DCCH_DATA_REQ:
+      LOG_I(PDCP, "Received message %s\n", ITTI_MSG_NAME(msg_p));
       PROTOCOL_CTXT_SET_BY_MODULE_ID(
           &ctxt,
           RRC_DCCH_DATA_REQ(msg_p).module_id,
@@ -766,7 +802,7 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
   printf("\n\n################# rnti %d add srb %d\n\n\n", rnti, srb_id);
 
   if (srb_id > 3) {
-    LOG_E(PDCP, "%s:%d:%s: fatal, bad drb id %d\n",
+    LOG_E(PDCP, "%s:%d:%s: fatal, bad srb id %d\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id);
     exit(1);
   }
@@ -774,13 +810,13 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
   if (ue->srb[srb_id-1] != NULL) {
-    LOG_W(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+    LOG_W(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
     pdcp_srb = new_nr_pdcp_entity_srb(srb_id, deliver_sdu_srb, ue, deliver_pdu_srb, ue);
     nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
 
-    LOG_I(PDCP, "%s:%d:%s: added drb %d to ue %d\n",
+    LOG_I(PDCP, "%s:%d:%s: added srb %d to ue %d\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
@@ -1112,7 +1148,7 @@ static boolean_t pdcp_data_req_srb(
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
 
-  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, 0x1234);
 
   if (rb_id < 1 || rb_id > 3)
     rb = NULL;
@@ -1165,7 +1201,7 @@ static boolean_t pdcp_data_req_drb(
     rb = ue->drb[rb_id - 1];
 
   if (rb == NULL) {
-    LOG_E(PDCP, "%s:%d:%s: no DRB found (rnti %d, rb_id %ld)\n",
+    LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
     return 0;
   }

@@ -116,13 +116,14 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
 
   // create an ITTI message and copy SDU
-  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
   if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+    message_p = itti_alloc_new_message (TASK_CU_F1, NR_RRC_MAC_CCCH_DATA_IND);
     memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
     ccch_sdu_len = ie->value.choice.RRCContainer.size;
     memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
            ccch_sdu_len);
   } else {
+    message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
     memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
     ccch_sdu_len = ie->value.choice.RRCContainer.size;
     memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
@@ -376,20 +377,20 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   // create an ITTI message and copy SDU
 
-  message_p = itti_alloc_new_message (TASK_CU_F1, NR_RRC_DCCH_DATA_IND);
+//   message_p = itti_alloc_new_message (TASK_CU_F1, NR_RRC_DCCH_DATA_IND);
 
-  NR_RRC_DCCH_DATA_IND (message_p).sdu_p = malloc(ie->value.choice.RRCContainer.size);
+//   NR_RRC_DCCH_DATA_IND (message_p).sdu_p = malloc(ie->value.choice.RRCContainer.size);
 
-  NR_RRC_DCCH_DATA_IND (message_p).sdu_size = ie->value.choice.RRCContainer.size;
-  memcpy(NR_RRC_DCCH_DATA_IND (message_p).sdu_p, ie->value.choice.RRCContainer.buf,
-         ie->value.choice.RRCContainer.size);
+//   NR_RRC_DCCH_DATA_IND (message_p).sdu_size = ie->value.choice.RRCContainer.size;
+//   memcpy(NR_RRC_DCCH_DATA_IND (message_p).sdu_p, ie->value.choice.RRCContainer.buf,
+//          ie->value.choice.RRCContainer.size);
 
-  NR_RRC_DCCH_DATA_IND (message_p).dcch_index = srb_id;
-  NR_RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], cu_ue_f1ap_id);
-  NR_RRC_DCCH_DATA_IND (message_p).module_id = instance;
-  NR_RRC_DCCH_DATA_IND (message_p).gNB_index = instance; // not needed for CU
+//   NR_RRC_DCCH_DATA_IND (message_p).dcch_index = srb_id;
+//   NR_RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], cu_ue_f1ap_id);
+//   NR_RRC_DCCH_DATA_IND (message_p).module_id = instance;
+//   NR_RRC_DCCH_DATA_IND (message_p).gNB_index = instance; // not needed for CU
 
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
+//   itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
 
   /*
   
@@ -408,12 +409,13 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);
   */
-#if(0)
   protocol_ctxt_t ctxt;
   ctxt.module_id = instance;
   ctxt.instance = instance;
   ctxt.rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], cu_ue_f1ap_id);
   ctxt.enb_flag = 1;
+  ctxt.eNB_index = 0;
+  ctxt.configured = 1;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
   LOG_I(F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %ld (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);
@@ -429,6 +431,5 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
      srb_id,
      ie->value.choice.RRCContainer.size,
      mb);
-#endif
   return 0;
 }
