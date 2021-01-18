@@ -362,7 +362,7 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 3);
+  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 3);//In nFAPI mode dlsch needs to be scheduled in even slots
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
@@ -378,7 +378,8 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     const int last_slot = (slot + num_slots - 1) % num_slots;
     uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
     memset(&vrb_map_UL[last_slot * 275], 0, sizeof(uint16_t) * 275);
-
+    if(NFAPI_MODE == NFAPI_MODE_VNF)
+    memset(&vrb_map_UL[8 * 275],0,sizeof(uint16_t) * 275);// vrb_map_UL is not getting cleared for even slots in nFAPI mode
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
   
@@ -423,6 +424,7 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (slot < 10) {
      if(NFAPI_MODE == NFAPI_MODE_VNF){
     gNB->UL_tti_req_ahead[0][8].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode
+    gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
     }
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }

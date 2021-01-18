@@ -955,7 +955,7 @@ int main( int argc, char **argv ) {
   AssertFatal(nfapi_mode < 3,"");
   printf("NFAPI MODE:%s\n", nfapi_mode_str[nfapi_mode]);
 
-  if (nfapi_mode==2) // VNF
+  if (nfapi_mode==NFAPI_MODE_VNF) // VNF
     wait_nfapi_init("main?");
 
   for (int i=0; i<RC.nb_nr_L1_inst; i++)
@@ -964,7 +964,7 @@ int main( int argc, char **argv ) {
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
   config_sync_var=0;
 
-  if (nfapi_mode==1) { // PNF
+  if (nfapi_mode==NFAPI_MODE_PNF) { // PNF
     wait_nfapi_init("main?");
   }
 

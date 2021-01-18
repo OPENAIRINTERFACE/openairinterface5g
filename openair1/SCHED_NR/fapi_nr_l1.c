@@ -242,7 +242,7 @@ if(NFAPI_MODE != NFAPI_MODE_VNF)
 //  if (NFAPI_MODE != NFAPI_MONOLITHIC && Sched_INFO->UL_dci_req->numPdus!=0)
 //   {
 //     oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
-//   }//Only DL
+//   }//Only DL in nFAPI mode
  
   if (NFAPI_MODE != NFAPI_MONOLITHIC) 
   { if(Sched_INFO->DL_req->dl_tti_request_body.nPDUs>0)

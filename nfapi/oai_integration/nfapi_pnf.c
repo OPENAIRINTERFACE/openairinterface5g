@@ -2305,10 +2305,7 @@ void *pnf_nr_start_thread(void *ptr) {
 
 void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) {
   printf("%s() PNF\n\n\n\n\n\n", __FUNCTION__);
-
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     nfapi_setmode(NFAPI_MODE_PNF);  // PNF!
-  }
 
   nfapi_pnf_config_t *config = nfapi_pnf_config_create();
   config->vnf_ip_addr = vnf_ip_addr;
