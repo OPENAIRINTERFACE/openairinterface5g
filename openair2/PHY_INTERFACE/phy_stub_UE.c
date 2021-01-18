@@ -1949,7 +1949,6 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
       abort();
     }
 
-    int pdu_size = sf_rnti_mcs[sf].pdu_size;
     CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
     CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
     for (int n = 0; n < pdu_size; n++)
