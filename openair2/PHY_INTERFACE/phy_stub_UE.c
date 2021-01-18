@@ -1948,8 +1948,10 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
       abort();
     }
 
-    for (int n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
+    int pdu_size = sf_rnti_mcs[sf].pdu_size;
+    for (int n = 0; n < pdu_size; n++)
     {
+      assert(n < sizeof(sf_rnti_mcs[sf].drop_flag));
       if (sf_rnti_mcs[sf].rnti[n] == rnti)
       {
         return sf_rnti_mcs[sf].drop_flag[n];
@@ -1970,8 +1972,10 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
     uint8_t mcs = 99;
     int n = 0;
-    for (n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
+    int pdu_size = sf_rnti_mcs[sf].pdu_size;
+    for (n = 0; n < pdu_size; n++)
     {
+      assert(n < sizeof(sf_rnti_mcs[sf].drop_flag) && n < sizeof(sf_rnti_mcs[sf].mcs) && n < sizeof(sf_rnti_mcs[sf].rnti));
       if (sf_rnti_mcs[sf].rnti[n] == rnti)
       {
         mcs = sf_rnti_mcs[sf].mcs[n];
@@ -2045,10 +2049,12 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
     double drop_cutoff = ((double) rand() / (RAND_MAX));
     assert(drop_cutoff < 1);
+    bler_val = 0.6;
 
-    if (bler_val <= drop_cutoff)
+    if (bler_val >= drop_cutoff)
     {
       sf_rnti_mcs[sf].drop_flag[n] = true;
+      LOG_D(MAC, "We are dropping this packet. Bler_val = %f, MCS = %"PRIu8", sf = %d\n", bler_val, sf_rnti_mcs[sf].mcs[n], sf);
     }
     return sf_rnti_mcs[sf].drop_flag[n];
   }
