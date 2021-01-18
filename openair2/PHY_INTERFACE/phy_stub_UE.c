@@ -1942,7 +1942,8 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
   bool check_drop_tb(int sf, uint16_t rnti)
   {
-    if (sf_rnti_mcs[sf].pdu_size <= 0)
+    int pdu_size = sf_rnti_mcs[sf].pdu_size;
+    if (pdu_size <= 0)
     {
       LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
       abort();
@@ -1964,16 +1965,16 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
   bool drop_tb(int sf, uint16_t rnti)
   {
+    int pdu_size = sf_rnti_mcs[sf].pdu_size;
     assert(sf < 10 && sf >= 0);
 
-    if (sf_rnti_mcs[sf].pdu_size <= 0)
+    if (pdu_size <= 0)
     {
       LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
     }
 
     uint8_t mcs = 99;
     int n = 0;
-    int pdu_size = sf_rnti_mcs[sf].pdu_size;
     CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
     CHECK_INDEX(sf_rnti_mcs[sf].mcs, pdu_size);
     CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
