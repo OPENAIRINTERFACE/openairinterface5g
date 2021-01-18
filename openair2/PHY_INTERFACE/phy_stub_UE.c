@@ -1949,9 +1949,10 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
     }
 
     int pdu_size = sf_rnti_mcs[sf].pdu_size;
+    CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
+    CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
     for (int n = 0; n < pdu_size; n++)
     {
-      assert(n < sizeof(sf_rnti_mcs[sf].drop_flag));
       if (sf_rnti_mcs[sf].rnti[n] == rnti)
       {
         return sf_rnti_mcs[sf].drop_flag[n];
@@ -1973,9 +1974,11 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
     uint8_t mcs = 99;
     int n = 0;
     int pdu_size = sf_rnti_mcs[sf].pdu_size;
+    CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
+    CHECK_INDEX(sf_rnti_mcs[sf].mcs, pdu_size);
+    CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
     for (n = 0; n < pdu_size; n++)
     {
-      assert(n < sizeof(sf_rnti_mcs[sf].drop_flag) && n < sizeof(sf_rnti_mcs[sf].mcs) && n < sizeof(sf_rnti_mcs[sf].rnti));
       if (sf_rnti_mcs[sf].rnti[n] == rnti)
       {
         mcs = sf_rnti_mcs[sf].mcs[n];
@@ -2049,7 +2052,7 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
 
     double drop_cutoff = ((double) rand() / (RAND_MAX));
     assert(drop_cutoff < 1);
-    bler_val = 0.6;
+    bler_val = 0.4;
 
     if (bler_val >= drop_cutoff)
     {
