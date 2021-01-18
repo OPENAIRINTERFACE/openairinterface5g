@@ -98,7 +98,7 @@ void handle_sr(UL_IND_t *UL_info) {
       oai_nfapi_sr_indication(&UL_info->sr_ind);
     }
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
+    for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs > 0) {
         for (i=0; i<UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs; i++) {
           SR_indication(UL_info->module_id,
@@ -139,7 +139,7 @@ void handle_cqi(UL_IND_t *UL_info) {
       UL_info->cqi_ind.cqi_indication_body.number_of_cqis=0;
     }
   } else if (NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
+    for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis > 0) {
         for (i=0; i<UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis; i++) {
           cqi_indication(UL_info->module_id,
@@ -184,7 +184,7 @@ void handle_harq(UL_IND_t *UL_info) {
 
     UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
+    for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs > 0) {
         for (int i=0; i<UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs; i++) {
           harq_indication(UL_info->module_id,
@@ -227,7 +227,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
       UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
     }
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t k = 0; k < NUM_NFPAI_SUBFRAME; k++) {
+    for(uint8_t k = 0; k < NUM_NFAPI_SUBFRAME; k++) {
       if((UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus>0) && (UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs>0)) {
         for (i=0; i<UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus; i++) {
           for (j=0; j<UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs; j++) {

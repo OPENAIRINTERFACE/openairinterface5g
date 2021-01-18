@@ -54,6 +54,12 @@
 #include "T.h"
 #include <common/utils/utils.h>
 /*----------------------------------------------------------------------------*/
+#include <assert.h>
+#ifdef NDEBUG
+#warning assert is disabled
+#endif
+#define NUM_ELEMENTS(ARRAY) (sizeof(ARRAY) / sizeof(ARRAY[0]))
+#define CHECK_INDEX(ARRAY, INDEX) assert((INDEX) < NUM_ELEMENTS(ARRAY))
 
 #ifdef __cplusplus
 extern "C" {

@@ -88,25 +88,25 @@ typedef struct {
 } UL_IND_t;
 
 // Downlink subframe P7
-#define NUM_NFPAI_SUBFRAME 10
+#define NUM_NFAPI_SUBFRAME 10
 typedef struct {
   /// harq indication list
-  nfapi_harq_indication_t harq_ind[NUM_NFPAI_SUBFRAME];
+  nfapi_harq_indication_t harq_ind[NUM_NFAPI_SUBFRAME];
 
   /// crc indication list
-  nfapi_crc_indication_t crc_ind[NUM_NFPAI_SUBFRAME];
+  nfapi_crc_indication_t crc_ind[NUM_NFAPI_SUBFRAME];
 
   /// SR indication list
-  nfapi_sr_indication_t sr_ind[NUM_NFPAI_SUBFRAME];
+  nfapi_sr_indication_t sr_ind[NUM_NFAPI_SUBFRAME];
 
   /// CQI indication list
-  nfapi_cqi_indication_t cqi_ind[NUM_NFPAI_SUBFRAME];
+  nfapi_cqi_indication_t cqi_ind[NUM_NFAPI_SUBFRAME];
 
   /// RACH indication list
-  nfapi_rach_indication_t rach_ind[NUM_NFPAI_SUBFRAME];
+  nfapi_rach_indication_t rach_ind[NUM_NFAPI_SUBFRAME];
 
   /// RX indication
-  nfapi_rx_indication_t rx_ind[NUM_NFPAI_SUBFRAME];
+  nfapi_rx_indication_t rx_ind[NUM_NFAPI_SUBFRAME];
 
 } UL_RCC_IND_t;
 
