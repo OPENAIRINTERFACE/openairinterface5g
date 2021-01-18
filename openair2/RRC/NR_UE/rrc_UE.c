@@ -404,6 +404,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
       NR_UE_rrc_inst[nr_ue].selected_plmn_identity = 1;
 
+      // TODO: Put the appropriate list of SIBs
       NR_UE_rrc_inst[nr_ue].requested_SI_List.buf = CALLOC(1,4);
       NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[0] = SIB2 | SIB3 | SIB5;  // SIB2 - SIB9
       NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[1] = 0;                   // SIB10 - SIB17
@@ -411,6 +412,8 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[3] = 0;                   // SIB26 - SIB32
       NR_UE_rrc_inst[nr_ue].requested_SI_List.size= 4;
       NR_UE_rrc_inst[nr_ue].requested_SI_List.bits_unused= 0;
+
+      NR_UE_rrc_inst[nr_ue].do_ra = RA_NOT_RUNNING;
 
       //  init RRC lists
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RLC_Bearer_Config_list, NR_maxLC_ID);
@@ -1486,66 +1489,60 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   return rval;
 }
 
-int8_t check_requested_SI_List(BIT_STRING_t requested_SI_List, NR_SIB1_t sib1) {
-
-  printf("\n\n");
+int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_List, NR_SIB1_t sib1) {
 
   if(sib1.si_SchedulingInfo) {
-    if(sib1.si_SchedulingInfo->schedulingInfoList.list.array) {
 
-      bool SIB_to_request[32] = {};
+    bool SIB_to_request[32] = {};
 
-      LOG_I(RRC, "SIBs broadcasting: ");
-      for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
-        printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
-      }
-      printf("\n");
+    LOG_I(RRC, "SIBs broadcasting: ");
+    for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
+      printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
+    }
+    printf("\n");
 
-      LOG_I(RRC, "SIBs needed by UE: ");
-      for(int j = 0; j < 8*requested_SI_List.size; j++) {
-        if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
+    LOG_I(RRC, "SIBs needed by UE: ");
+    for(int j = 0; j < 8*requested_SI_List.size; j++) {
+      if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
 
-          printf("SIB%i  ", j + 2);
+        printf("SIB%i  ", j + 2);
 
-          SIB_to_request[j] = true;
-          for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
-            if(sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type == j) {
-              SIB_to_request[j] = false;
-              break;
-            }
+        SIB_to_request[j] = true;
+        for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
+          if(sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type == j) {
+            SIB_to_request[j] = false;
+            break;
           }
-
         }
+
       }
-      printf("\n");
+    }
+    printf("\n");
 
-      LOG_I(RRC, "SIBs to request by UE: ");
-      bool do_ra = false;
-      for(int j = 0; j < 8*requested_SI_List.size; j++) {
-        if(SIB_to_request[j]) {
-          printf("SIB%i  ", j + 2);
-          do_ra = true;
-        }
+    LOG_I(RRC, "SIBs to request by UE: ");
+    bool do_ra = false;
+    for(int j = 0; j < 8*requested_SI_List.size; j++) {
+      if(SIB_to_request[j]) {
+        printf("SIB%i  ", j + 2);
+        do_ra = true;
       }
-      printf("\n");
+    }
+    printf("\n");
 
-      if(do_ra) {
+    if(do_ra) {
 
-        if(sib1.si_SchedulingInfo->si_RequestConfig) {
-          LOG_I(RRC, "Starting contention-free RA procedure\n");
-        } else {
-          LOG_I(RRC, "Starting contention-based RA procedure\n");
-          get_softmodem_params()->do_ra = 1;
-        }
+      NR_UE_rrc_inst[module_id].do_ra = REQUEST_FOR_OTHER_SI;
+      get_softmodem_params()->do_ra = 1;
 
+      if(sib1.si_SchedulingInfo->si_RequestConfig) {
+        LOG_I(RRC, "Trigger contention-free RA procedure (do_ra = %i)\n", NR_UE_rrc_inst[module_id].do_ra);
+      } else {
+        LOG_I(RRC, "Trigger contention-based RA procedure (do_ra = %i)\n", NR_UE_rrc_inst[module_id].do_ra);
       }
 
     }
 
   }
-
-
-  printf("\n\n");
 
   return 0;
 }
@@ -1578,7 +1575,7 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
       if( g_log->log_component[RRC].level >= OAILOG_DEBUG  )
         xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
 
-      check_requested_SI_List(NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
+      check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
     }
     else
        LOG_E(PHY, "sib1 is starting by 8 times 0\n");
