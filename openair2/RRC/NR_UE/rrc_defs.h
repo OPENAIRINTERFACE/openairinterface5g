@@ -89,18 +89,6 @@ typedef enum requested_SI_List_e {
   SIB9  = 0x128
 } requested_SI_List_t;
 
-typedef enum trigger_RA_List_e {
-  RA_NOT_RUNNING,
-  INITIAL_ACCESS_FROM_RRC_IDLE,
-  RRC_CONNECTION_REESTABLISHMENT,
-  DURING_HANDOVER,
-  NON_SYNCHRONISED,
-  TRANSITION_FROM_RRC_INACTIVE,
-  TO_ESTABLISH_TA,
-  REQUEST_FOR_OTHER_SI,
-  BEAM_FAILURE_RECOVERY,
-} trigger_RA_List_t;
-
 typedef struct NR_UE_RRC_INST_s {
 
     NR_MeasConfig_t        *meas_config;
@@ -123,11 +111,10 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     uint8_t                        MBMS_flag;
-	OAI_NR_UECapability_t          *UECap;
-    uint8_t 					   *UECapability;
+	  OAI_NR_UECapability_t          *UECap;
+    uint8_t 					             *UECapability;
     uint8_t                        UECapability_size;
 
-    trigger_RA_List_t              do_ra;
     BIT_STRING_t                   requested_SI_List;
 
     NR_SystemInformation_t         *si[NB_CNX_UE];

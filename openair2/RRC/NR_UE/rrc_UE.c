@@ -413,8 +413,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       NR_UE_rrc_inst[nr_ue].requested_SI_List.size= 4;
       NR_UE_rrc_inst[nr_ue].requested_SI_List.bits_unused= 0;
 
-      NR_UE_rrc_inst[nr_ue].do_ra = RA_NOT_RUNNING;
-
       //  init RRC lists
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RLC_Bearer_Config_list, NR_maxLC_ID);
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SchedulingRequest_list, NR_maxNrofSR_ConfigPerCellGroup);
@@ -1531,13 +1529,14 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
 
     if(do_ra) {
 
-      NR_UE_rrc_inst[module_id].do_ra = REQUEST_FOR_OTHER_SI;
+      NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+      mac->ra_trigger = REQUEST_FOR_OTHER_SI;
       get_softmodem_params()->do_ra = 1;
 
       if(sib1.si_SchedulingInfo->si_RequestConfig) {
-        LOG_I(RRC, "Trigger contention-free RA procedure (do_ra = %i)\n", NR_UE_rrc_inst[module_id].do_ra);
+        LOG_I(RRC, "Trigger contention-free RA procedure (ra_trigger = %i)\n", mac->ra_trigger);
       } else {
-        LOG_I(RRC, "Trigger contention-based RA procedure (do_ra = %i)\n", NR_UE_rrc_inst[module_id].do_ra);
+        LOG_I(RRC, "Trigger contention-based RA procedure (ra_trigger = %i)\n", mac->ra_trigger);
       }
 
     }

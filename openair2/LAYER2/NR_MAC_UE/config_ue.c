@@ -272,8 +272,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   }
 
   // PRACH configuration
-
   uint8_t nb_preambles = 64;
+  mac->ra_trigger = RA_NOT_RUNNING;
+
   if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
      nb_preambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
 
