@@ -9085,7 +9085,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 
   // check for UL failure or for UE to be released
-  FILE *fd;
+  FILE *fd=NULL;
   if ((ctxt_pP->frame&127) == 0 && ctxt_pP->subframe ==0) 
     fd=fopen("RRC_stats.log","w+");
 
