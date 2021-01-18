@@ -385,28 +385,26 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
-  dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-  memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
+  dci_pdu_rel15_t dci_pdu_rel15;
+  memset(&dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t));
 
-  dci_pdu_rel15[0].bwp_indicator.val = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id;
+  dci_pdu_rel15.bwp_indicator.val = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id;
 
   // frequency domain assignment
-  dci_pdu_rel15[0].frequency_domain_assignment.val =
-      PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
-                                        pdsch_pdu_rel15->rbStart,
-                                        gNB_mac->type0_PDCCH_CSS_config.num_rbs);
+  dci_pdu_rel15.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(
+      pdsch_pdu_rel15->rbSize, pdsch_pdu_rel15->rbStart, gNB_mac->type0_PDCCH_CSS_config.num_rbs);
 
-  dci_pdu_rel15[0].time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
-  dci_pdu_rel15[0].mcs = gNB_mac->sched_ctrlCommon->mcs;
-  dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
-  dci_pdu_rel15[0].harq_pid = 0;
-  dci_pdu_rel15[0].ndi = 0;
-  dci_pdu_rel15[0].dai[0].val = 0;
-  dci_pdu_rel15[0].tpc = 0; // table 7.2.1-1 in 38.213
-  dci_pdu_rel15[0].pucch_resource_indicator = 0;
-  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = 0;
-  dci_pdu_rel15[0].antenna_ports.val = 0;
-  dci_pdu_rel15[0].dmrs_sequence_initialization.val = pdsch_pdu_rel15->SCID;
+  dci_pdu_rel15.time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
+  dci_pdu_rel15.mcs = gNB_mac->sched_ctrlCommon->mcs;
+  dci_pdu_rel15.rv = pdsch_pdu_rel15->rvIndex[0];
+  dci_pdu_rel15.harq_pid = 0;
+  dci_pdu_rel15.ndi = 0;
+  dci_pdu_rel15.dai[0].val = 0;
+  dci_pdu_rel15.tpc = 0; // table 7.2.1-1 in 38.213
+  dci_pdu_rel15.pucch_resource_indicator = 0;
+  dci_pdu_rel15.pdsch_to_harq_feedback_timing_indicator.val = 0;
+  dci_pdu_rel15.antenna_ports.val = 0;
+  dci_pdu_rel15.dmrs_sequence_initialization.val = pdsch_pdu_rel15->SCID;
 
   nr_configure_pdcch(gNB_mac,
                      pdcch_pdu_rel15,
@@ -424,7 +422,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   fill_dci_pdu_rel15(scc,
                      secondaryCellGroup,
                      &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
-                     dci_pdu_rel15,
+                     &dci_pdu_rel15,
                      dci_format,
                      rnti_type,
                      pdsch_pdu_rel15->BWPSize,
