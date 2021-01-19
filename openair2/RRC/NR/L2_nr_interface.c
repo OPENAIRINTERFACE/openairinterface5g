@@ -103,7 +103,7 @@ nr_rrc_data_req(
     ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
     ctxt_pP->instance,
     message_p);
-  LOG_I(NR_RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
+  LOG_I(NR_RRC,"send RRC_DCCH_DATA_REQ to PDCP\n");
 
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI

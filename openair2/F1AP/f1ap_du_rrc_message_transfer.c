@@ -1350,12 +1350,6 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         break;
     }// switch case
 
-    /* for rfsim */
-    mem_block_t *memblock;
-    memblock = get_free_mem_block(rrc_dl_sdu_len, __FUNCTION__);
-    memcpy(memblock->data, ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
-    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, rrc_dl_sdu_len, memblock);
-    return(0);
   } else if (srb_id == 1) { 
 
     NR_DL_DCCH_Message_t* dl_dcch_msg=NULL;
@@ -1363,8 +1357,8 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     dec_rval = uper_decode(NULL,
          &asn_DEF_NR_DL_DCCH_Message,
          (void**)&dl_dcch_msg,
-         &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
-         rrc_dl_sdu_len,0,0);
+         &ie->value.choice.RRCContainer.buf[2], // buf[0] includes the pdcp header
+         rrc_dl_sdu_len-6,0,0);
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) 
       LOG_E(F1AP," Failed to decode DL-DCCH (%zu bytes)\n",dec_rval.consumed);
@@ -1490,7 +1484,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   }
 
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
-#if(0)
+
   rlc_op_status_t    rlc_status;
   boolean_t          ret             = TRUE;
   mem_block_t       *pdcp_pdu_p      = NULL; 
@@ -1508,45 +1502,47 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
     memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
 
-      rlc_status = rlc_data_req(&ctxt
-                                , 1
-                                , MBMS_FLAG_NO
-                                , srb_id
-                                , 0
-                                , 0
-                                , rrc_dl_sdu_len
-                                , pdcp_pdu_p
-                                ,NULL
-                                ,NULL
-                                );
-      switch (rlc_status) {
-        case RLC_OP_STATUS_OK:
-          //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
-          ret=TRUE;
-          break;
+    /* for rfsim */
+    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, rrc_dl_sdu_len, pdcp_pdu_p);
+    //   rlc_status = rlc_data_req(&ctxt
+    //                             , 1
+    //                             , MBMS_FLAG_NO
+    //                             , srb_id
+    //                             , 0
+    //                             , 0
+    //                             , rrc_dl_sdu_len
+    //                             , pdcp_pdu_p
+    //                             ,NULL
+    //                             ,NULL
+    //                             );
+    //   switch (rlc_status) {
+    //     case RLC_OP_STATUS_OK:
+    //       //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
+    //       ret=TRUE;
+    //       break;
 
-        case RLC_OP_STATUS_BAD_PARAMETER:
-          LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-          ret= FALSE;
-          break;
+    //     case RLC_OP_STATUS_BAD_PARAMETER:
+    //       LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+    //       ret= FALSE;
+    //       break;
 
-        case RLC_OP_STATUS_INTERNAL_ERROR:
-          LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-          ret= FALSE;
-          break;
+    //     case RLC_OP_STATUS_INTERNAL_ERROR:
+    //       LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+    //       ret= FALSE;
+    //       break;
 
-        case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-          LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-          ret= FALSE;
-          break;
+    //     case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+    //       LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+    //       ret= FALSE;
+    //       break;
 
-        default:
-          LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-          ret= FALSE;
-          break;
-      } // switch case
-      return ret; 
+    //     default:
+    //       LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+    //       ret= FALSE;
+    //       break;
+    //   } // switch case
+    //   return ret; 
     } // if pdcp_pdu_p
-#endif
+
   return 0;
 }

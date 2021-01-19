@@ -199,6 +199,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
                                     f1ap_dl_rrc_message_t    *f1ap_dl_rrc)
                                     {
 
+  LOG_D(F1AP, "CU send DL_RRC_MESSAGE_TRANSFER \n");
   F1AP_F1AP_PDU_t                 pdu; 
   F1AP_DLRRCMessageTransfer_t    *out;
   F1AP_DLRRCMessageTransferIEs_t *ie;
@@ -280,10 +281,10 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_dl_rrc->rrc_container, f1ap_dl_rrc->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
-  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-  //  printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
-  //printf("\n");
+  LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
+  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+   printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
+  printf("\n");
 
   /* optional */
   /* c7. RAT_FrequencyPriorityInformation */

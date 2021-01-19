@@ -28,6 +28,7 @@
 #include "NR_RLC-BearerConfig.h"
 #include "NR_RLC-Config.h"
 #include "NR_CellGroupConfig.h"
+#include "NR_DL-DCCH-Message.h"
 #include "openair2/RRC/NR/nr_rrc_proto.h"
 
 /* from OAI */
@@ -47,6 +48,7 @@ static uint64_t pdcp_optmask;
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 extern ngran_node_t node_type;
+uint8_t first_dcch = 0;
 
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
@@ -676,18 +678,74 @@ printf("!!!!!!! deliver_pdu_srb (srb %d) calling rlc_data_req size %d: ", srb_id
 //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
 printf("\n");
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-    MessageDef                            *message_p;
-    message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container = buf;
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-    F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
-    F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
-    F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
-    F1AP_DL_RRC_MESSAGE (message_p).rnti = ue->rnti;
-    F1AP_DL_RRC_MESSAGE (message_p).srb_id = srb_id;
-    F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
-    F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0;
-    itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+
+    NR_DL_DCCH_Message_t* dl_dcch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_PDCP_ENB, TASK_CU_F1, size);
+    memcpy (message_buffer, buf, size);
+
+    if (first_dcch == 1) {
+      dec_rval = uper_decode(NULL,
+                            &asn_DEF_NR_DL_DCCH_Message,
+                            (void**)&dl_dcch_msg,
+                            &buf[2],
+                            size-6,0,0);
+      if (dec_rval.code == RC_OK) {
+        if (dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_securityModeCommand) {
+          LOG_I(PDCP, "CU send securityModeCommand by F1AP_UE_CONTEXT_SETUP_REQ\n");
+          message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_UE_CONTEXT_SETUP_REQ);
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container = message_buffer;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = size;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id     = 0;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti             = ue->rnti;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).mcc              = RC.nrrrc[0]->configuration.mcc[0];
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).mnc              = RC.nrrrc[0]->configuration.mnc[0];
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).mnc_digit_length = RC.nrrrc[0]->configuration.mnc_digit_length[0];
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).nr_cellid        = RC.nrrrc[0]->nr_cellid;
+          // for rfsim
+          f1ap_drb_to_be_setup_t drb;
+          drb.drb_id = 1;
+          drb.up_ul_tnl[0].tl_address = inet_addr("127.0.0.3");
+          drb.up_ul_tnl[0].gtp_teid = 0;
+          drb.up_ul_tnl_length = sizeof(drb.up_ul_tnl);
+          drb.rlc_mode = RLC_MODE_AM;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = 1;
+          F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = &drb;
+          itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+        } else {
+          LOG_I(PDCP, "other NR_DL_DCCH_Message \n");
+          message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+          F1AP_DL_RRC_MESSAGE (message_p).rrc_container = message_buffer;
+          F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
+          F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
+          F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
+          F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
+          F1AP_DL_RRC_MESSAGE (message_p).rnti = ue->rnti;
+          F1AP_DL_RRC_MESSAGE (message_p).srb_id = srb_id;
+          F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+          F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+          itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+        }
+      } else {
+        LOG_E(PDCP, "error NR_DL_DCCH_Message \n");
+      }
+    } else {
+      first_dcch = 1;
+      message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container = message_buffer;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
+      F1AP_DL_RRC_MESSAGE (message_p).rnti = ue->rnti;
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id = srb_id;
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+    }
   } else {
     enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
   }
@@ -922,7 +980,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
     }
   }
 
-  if (drb2add_list != NULL) {
+  if ((drb2add_list != NULL) && (rlc_bearer2add_list != NULL)) {
     for (i = 0; i < drb2add_list->list.count; i++) {
       add_drb(rnti, drb2add_list->list.array[i], rlc_bearer2add_list->list.array[i]->rlc_Config);
     }

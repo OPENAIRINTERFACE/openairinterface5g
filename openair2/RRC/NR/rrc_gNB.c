@@ -1012,12 +1012,14 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               NULL,
                               NULL);
   /* Refresh SRBs/DRBs */
-  nr_rrc_rlc_config_asn1_req(ctxt_pP,
+  if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_rrc_rlc_config_asn1_req(ctxt_pP,
                           SRB_configList, // NULL,
                           DRB_configList,
                           DRB_Release_configList2,
                           NULL,
                           NULL);
+  }
 #endif
 
   /* Set the SRB active in UE context */

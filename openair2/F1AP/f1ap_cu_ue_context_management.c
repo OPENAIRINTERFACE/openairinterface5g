@@ -45,6 +45,7 @@
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 extern f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
 extern RAN_CONTEXT_t RC;
+extern uint32_t f1ap_assoc_id;
 
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                                      f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
@@ -150,7 +151,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-
+if (0) {
   /* mandatory */
   /* c7. Candidate_SpCell_List */
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
@@ -696,7 +697,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
+}
   /* OPTIONAL */
   /* InactivityMonitoringRequest */
   if (0) {
@@ -753,6 +754,22 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT SETUP REQUEST\n");
     return -1;
   }
+
+  // xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, (void *)pdu);
+
+  // asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
+  // res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+  // buffer = res.buffer;
+  // len = res.result.encoded;
+
+  // if (res.result.encoded <= 0) {
+  //   LOG_E(F1AP, "ASN1 message encoding failed (%s, %lu)!\n", res.result.failed_type->name, res.result.encoded);
+  //   return -1;
+  // }
+
+  LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %zd bits\n", len);
+
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
 
   return 0;
 }
