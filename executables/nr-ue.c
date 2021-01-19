@@ -781,13 +781,16 @@ void *UE_thread(void *arg) {
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
     int flags = 0;
-    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX;
-    if (slot_tx_usrp%10==7)
+    uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+    uint8_t num_UL_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots +
+                           (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
+    uint8_t first_tx_slot = tdd_period - num_UL_slots;
+    if (curMsg->proc.nr_slot_tx%tdd_period==first_tx_slot)
       flags=2;
-    else     if (slot_tx_usrp%10==8)
-      flags = 1;
-    else     if (slot_tx_usrp%10==9)
+    else     if (curMsg->proc.nr_slot_tx%tdd_period==first_tx_slot+num_UL_slots-1)
       flags = 3;
+    else     if (curMsg->proc.nr_slot_tx%tdd_period>first_tx_slot)
+      flags = 1;
 
     if (flags || IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1)
       AssertFatal( writeBlockSize ==
