@@ -107,6 +107,10 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
 int main(int argc, char **argv){
 
   char c;

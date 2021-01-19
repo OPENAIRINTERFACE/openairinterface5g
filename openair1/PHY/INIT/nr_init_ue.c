@@ -474,6 +474,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->total_TBS_last[eNB_id] = 0;
     ue->bitrate[eNB_id] = 0;
     ue->total_received_bits[eNB_id] = 0;
+
+    ue->ul_time_alignment[eNB_id].apply_ta = 0;
+    ue->ul_time_alignment[eNB_id].ta_frame = -1;
+    ue->ul_time_alignment[eNB_id].ta_slot  = -1;
   }
   // init NR modulation lookup tables
   nr_generate_modulation_table();

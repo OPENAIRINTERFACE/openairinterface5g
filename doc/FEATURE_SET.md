@@ -295,6 +295,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 - NR RRC (38.331) Rel 15 messages using new asn1c 
 - LTE RRC (36.331) also updated to Rel 15 
 - Generation of CellGroupConfig (for eNB) and MIB
+- Generation of system information block 1 (SIB1)
 - Application to read configuration file and program gNB RRC
 - RRC can configure PDCP, RLC, MAC
 
@@ -305,7 +306,8 @@ The following features are valid for the gNB and the 5G-NR UE.
 **gNB MAC**
 - MAC -> PHY configuration using NR FAPI P5 interface
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
-- Scheduler for RA procedreat gNB
+- Scheduler procedures for SIB1
+- Scheduler procedures for RA
 - MAC downlink scheduler (fixed allocations)
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
@@ -350,11 +352,13 @@ The following features are valid for the gNB and the 5G-NR UE.
 
 ## UE Higher Layers ##
 
-**gNB MAC**
-- Initial sync and MIB detection
-- MAC -> PHY configuration of PHY via UE FAPI P5 interface
-- Basic MAC to control PHY via UE FAPI P7 interface
-- Random access procedure
+**UE MAC**
+*  Minimum system information (MSI)
+    - Initial sync and MIB detection
+    - System information block 1 (SIB1) reception
+*  MAC -> PHY configuration of PHY via UE FAPI P5 interface
+*  Basic MAC to control PHY via UE FAPI P7 interface
+*  Random access procedure
 
 
 **RLC**

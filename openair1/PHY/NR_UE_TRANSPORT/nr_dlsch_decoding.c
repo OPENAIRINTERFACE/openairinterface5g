@@ -44,7 +44,7 @@
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-//#define DEBUG_DLSCH_DECODING
+
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
 //#define OAI_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX
@@ -56,7 +56,23 @@ notifiedFIFO_t freeBlocks_dl;
 notifiedFIFO_elt_t *msgToPush_dl;
 int nbDlProcessing =0;
 
+
+static  tpool_t pool_dl;
+
 //extern double cpuf;
+void init_dlsch_tpool(uint8_t num_dlsch_threads)
+{
+    if( num_dlsch_threads==0)
+    	return;
+
+  char *params=calloc(1,(num_dlsch_threads*3)+1);
+  for (int i=0; i<num_dlsch_threads; i++) {
+    memcpy(params+(i*3),"-1,",3);
+  }
+  initNamedTpool(params, &pool_dl, false,"dlsch");
+  free(params);
+}
+
 
 void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
 {
@@ -140,7 +156,6 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
  
     for (i=0; i<Mdlharq; i++) {
-      //      printf("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (NR_DL_UE_HARQ_t *)malloc16(sizeof(NR_DL_UE_HARQ_t));
 
       if (dlsch->harq_processes[i]) {
@@ -188,7 +203,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
       return(dlsch);
   }
 
-  printf("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(NR_DL_UE_HARQ_t), exit_flag);
+  LOG_I(PHY,"new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(NR_DL_UE_HARQ_t), exit_flag);
   free_nr_ue_dlsch(&dlsch,N_RB_DL);
 
   return(NULL);
@@ -241,7 +256,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t G;
   uint32_t ret,offset;
   int32_t no_iteration_ldpc, length_dec;
-  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
+  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bits_F,err_flag=0;
   uint8_t crc_type;
   int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   t_nrLDPC_dec_params decParams;
@@ -250,7 +265,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_time_stats* p_procTime =&procTime ;
   
   if (!harq_process) {
-    printf("dlsch_decoding.c: NULL harq_process pointer\n");
+    LOG_E(PHY,"dlsch_decoding.c: NULL harq_process pointer\n");
     return(dlsch->max_ldpc_iterations + 1);
   }
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
@@ -290,12 +305,12 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
 
   if (!dlsch_llr) {
-    printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
+    LOG_E(PHY,"dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(dlsch->max_ldpc_iterations + 1);
   }
 
   if (!frame_parms) {
-    printf("dlsch_decoding.c: NULL frame_parms pointer\n");
+    LOG_E(PHY,"dlsch_decoding.c: NULL frame_parms pointer\n");
     return(dlsch->max_ldpc_iterations + 1);
   }
 
@@ -349,32 +364,28 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333){
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667){
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   }
   else{
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667){
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889){
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }
 
@@ -395,12 +406,10 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                     &harq_process->F,
                     p_decParams->BG);
 
-#ifdef DEBUG_DLSCH_DECODING
-    if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
-#endif
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD) && (!frame%100))
+       LOG_I(PHY,"K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
   }
-
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
 
   p_decParams->Z = harq_process->Z;
@@ -426,16 +435,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     return((1+dlsch->max_ldpc_iterations));
   }
 
-#ifdef DEBUG_DLSCH_DECODING
-  printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
-#endif
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+    LOG_I(PHY,"Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
+
 
   opp_enabled=1;
 
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
-
-  K_bytes_F = Kr_bytes-(harq_process->F>>3);
+  K_bits_F = Kr-harq_process->F;
 
   for (r=0; r<harq_process->C; r++) {
 
@@ -456,8 +464,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_OUT);
 
-    //for (int i =0; i<16; i++)
-    //          printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -511,29 +517,19 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
     }
 
-
-    //for (int i =0; i<16; i++)
-    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
-
     r_offset += E;
 
-#ifdef DEBUG_DLSCH_DECODING
-    if (r==0) {
-      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-      write_output("decoder_in.m","dec",&harq_process->d[0][0],E,1,0);
-    }
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+  {
+    LOG_I(PHY,"decoder input(segment %u) :",r);
+    for (int i=0;i<E;i++)
+     LOG_D(PHY,"%d : %d\n",i,harq_process->d[r][i]);
+    LOG_D(PHY,"\n");
+  }
 
-    printf("decoder input(segment %u) :",r);
-    int i;
-    for (i=0;i<E;i++)
-      printf("%d : %d\n",i,harq_process->d[r][i]);
-    printf("\n");
-#endif
-
-    //    printf("Clearing c, %p\n",harq_process->c[r]);
     memset(harq_process->c[r],0,Kr_bytes);
 
-    //    printf("done\n");
+
     if (harq_process->C == 1){
     	if (A > 3824) 
     		crc_type = CRC24_A;
@@ -554,28 +550,17 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       start_meas(dlsch_turbo_decoding_stats);
 #endif
 
-      //LOG_E(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d A %d ",frame%1024,nr_slot_rx,r,harq_process->C-1, A);
 
-      //printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
-
-      memset(pv,0,2*harq_process->Z*sizeof(int16_t));
-      //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-      memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
-
-
-      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-      // Kbytes_F = Kr_bytes - F>>3
-      j+=(harq_process->F>>3);
-      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-
-      for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+      //set first 2*Z_c bits to zeros
+      memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+      //set Filler bits
+      memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+      //Move coded bits before filler bits
+      memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+      //skip filler bits
+      memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+      //Saturate coded bits before decoding into 8 bits values
+      for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
       {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
       }
@@ -592,16 +577,17 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
-	if (r==0)
-	  for (int i=0;i<10;i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t*)llrProcBuf)[i]);
+        LOG_I(PHY,"Segment %u CRC OK\n\033[0m",r);
+        if (r==0) {
+          for (int i=0;i<10;i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t*)llrProcBuf)[i]);
+        }
 
         //Temporary hack
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
       }
       else {
-        LOG_D(PHY,"CRC NOK\n\033[0m");
+        LOG_D(PHY,"CRC NOT OK\n\033[0m");
         ret = 1 + dlsch->max_ldpc_iterations;
       }
 
@@ -611,24 +597,17 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
         nb_error_decod++;
       }
 
-      //if (!nb_total_decod%10000){
-      //printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
-      //}
-      //else
-      //printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
-
       for (int m=0; m < Kr>>3; m ++)
       {
         harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
       }
 
-#ifdef DEBUG_DLSCH_DECODING
-      //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
-      for (int k=0;k<A>>3;k++)
-        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-      printf("no_iterations_ldpc %d (ret %u)\n",no_iteration_ldpc,ret);
-      //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
-#endif
+      if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+      	{
+        for (int k=0;k<A>>3;k++)
+          LOG_D(PHY,"output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+        LOG_D(PHY,"no_iterations_ldpc %d (ret %u)\n",no_iteration_ldpc,ret);
+        }
 
 
 #if UE_TIMING_TRACE
@@ -636,33 +615,22 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
     }
     
-    
-
-    /*printf("Segmentation: C %d r %d, dlsch_rate_unmatching_stats %5.3f dlsch_deinterleaving_stats %5.3f  dlsch_turbo_decoding_stats %5.3f \n",
-                  harq_process->C,
-                  r,
-                  dlsch_rate_unmatching_stats->p_time/(cpuf*1000.0),
-                  dlsch_deinterleaving_stats->p_time/(cpuf*1000.0),
-                  dlsch_turbo_decoding_stats->p_time/(cpuf*1000.0));*/
-
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_ldpc_iterations))) {// a Code segment is in error so break;
-      LOG_D(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_slot_rx,r,harq_process->C-1);
+      LOG_I(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_slot_rx,r,harq_process->C-1);
       err_flag = 1;
     }
   }
 
   if (err_flag == 1) {
-//#if UE_DEBUG_TRACE
-    LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
+    LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
         phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
-//#endif
+
     harq_process->harq_ack.ack = 0;
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
     harq_process->errors[harq_process->round]++;
 
-    //    printf("Rate: [UE %d] DLSCH: Setting NACK for slot %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,nr_slot_rx,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
@@ -671,16 +639,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     if(is_crnti)
     {
-    LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for nr_slot_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
+    LOG_I(PHY,"[UE %d] DLSCH: Setting NACK for nr_slot_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
                phy_vars_ue->Mod_id,nr_slot_rx,harq_pid,harq_process->status,harq_process->round,dlsch->Mdlharq,harq_process->TBS);
     }
 
     return((1 + dlsch->max_ldpc_iterations));
   } else {
-//#if UE_DEBUG_TRACE
+
     LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
 	  phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
-//#endif
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
@@ -704,11 +671,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
 
-  /*
-  printf("harq_pid %d\n",harq_pid);
-  printf("F %d, Fbytes %d\n",harq_process->F,harq_process->F>>3);
-  printf("C %d\n",harq_process->C);
-  */
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_IN);
 
@@ -719,30 +681,22 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 	   Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
-#ifdef DEBUG_DLSCH_DECODING
-    printf("Segment %u : Kr= %u bytes\n",r,Kr_bytes);
-    printf("copied %d bytes to b sequence (harq_pid %d)\n",
-              (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
-              printf("b[0] = %x,c[%d] = %x\n",
-              harq_process->b[offset],
+    if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+      {
+      LOG_D(PHY,"Segment %u : Kr= %u bytes\n",r,Kr_bytes);
+      LOG_D(PHY,"copied %d bytes to b sequence (harq_pid %d)\n",
+             (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
+      LOG_D(PHY,"b[0] = %p,c[%d] = %p\n",
+              (void *)(uint64_t)(harq_process->b[offset]),
               harq_process->F>>3,
-              harq_process->c[r]);
-
-              /*printf ("Printing payload bytes:");
-                for (int i = 0; i < Kr_bytes; i++){
-                printf("%d : %d \n", i, harq_process->b[i]);
-                }*/
-#endif
-
-#if defined(ENABLE_PHY_PAYLOAD_DEBUG)
-           if (frame%100 == 0){
-              LOG_I (PHY, "Printing 10 first payload bytes at frame: %d ", frame);
-              for (int i = 0; i <10 ; i++){ //Kr_bytes
-            	  LOG_I(PHY, "[%d] : %x ", i, harq_process->b[i]);
-              }
+              (void *)(uint64_t)(harq_process->c[r]) );
+      if (frame%100 == 0){
+          LOG_D (PHY, "Printing 10 first payload bytes at frame: %d ", frame);
+          for (int i = 0; i <10 ; i++){ //Kr_bytes
+            LOG_D(PHY, "[%d] : %x ", i, harq_process->b[i]);
           }
-#endif
-
+        }
+      }
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_OUT);
@@ -752,7 +706,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   return(ret);
 }
 
-#ifdef UE_DLSCH_PARALLELISATION
+
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                                     UE_nr_rxtx_proc_t *proc,
                                     int eNB_id,
@@ -776,7 +730,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,err_flag=0,K_bytes_F;
+  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,err_flag=0,K_bits_F;
   uint8_t crc_type;
   //UE_rxtx_proc_t *proc = &phy_vars_ue->proc;
   int32_t no_iteration_ldpc,length_dec;
@@ -790,35 +744,29 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_time_stats* p_procTime =&procTime ;
   int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
     if (!harq_process) {
-    printf("dlsch_decoding.c: NULL harq_process pointer\n");
+    LOG_E(PHY,"dlsch_decoding.c: NULL harq_process pointer\n");
     return(dlsch->max_ldpc_iterations);
   }
   t_nrLDPC_procBuf* p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[0];
   uint8_t Nl=4;
   int16_t z [68*384];
   int8_t l [68*384];
-  //__m128i l;
-  //int16_t inv_d [68*384];
-  //int16_t *p_invd =&inv_d;
-  uint8_t kb, kc;
+  uint8_t kc;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
   uint8_t dmrs_type = harq_process->dmrsConfigType;
-  //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
-  //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
 
   uint8_t nb_re_dmrs;
-  if (dmrs_Type == NFAPI_NR_DMRS_TYPE1)
+  if (dmrs_type == NFAPI_NR_DMRS_TYPE1)
     nb_re_dmrs = 6*harq_process->n_dmrs_cdm_groups;
   else
     nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
 
-  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
-
+  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
+  
   uint32_t i,j;
-//  int nbDlProcessing =0;
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
@@ -828,14 +776,14 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
 
   if (!dlsch_llr) {
-    printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
+    LOG_E(PHY,"dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(dlsch->max_ldpc_iterations);
   }
 
 
 
   if (!frame_parms) {
-    printf("dlsch_decoding.c: NULL frame_parms pointer\n");
+    LOG_E(PHY,"dlsch_decoding.c: NULL frame_parms pointer\n");
     return(dlsch->max_ldpc_iterations);
   }
 
@@ -878,14 +826,12 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   G = harq_process->G;
 
-  LOG_D(PHY,"DLSCH Decoding main, harq_pid %d TBS %d G %d, nb_re_dmrs %d, length_dmrs %d  mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nb_re_dmrs, length_dmrs, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
+  LOG_I(PHY,"DLSCH Decoding main, harq_pid %d TBS %d G %d, nb_re_dmrs %d, length_dmrs %d  mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nb_re_dmrs, length_dmrs, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
   proc->decoder_main_available = 1;
   proc->decoder_thread_available = 0;
   proc->decoder_thread_available1 = 0;
-  //get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
-  //  printf("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
 
   if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
@@ -895,32 +841,28 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333){
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667){
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   }
   else{
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667){
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889){
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }
 
@@ -945,7 +887,6 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     
     p_decParams->Z = harq_process->Z;
 
-  //printf("coderate %f kc %d \n", Coderate, kc);
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
 
@@ -963,15 +904,15 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
     return((1+dlsch->max_ldpc_iterations));
   }
-#ifdef DEBUG_DLSCH_DECODING
-  printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
-#endif
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+    LOG_I(PHY,"Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
+
 
   notifiedFIFO_elt_t *res_dl;
   opp_enabled=1;
   if (harq_process->C>1) {
 	for (int nb_seg =1 ; nb_seg<harq_process->C; nb_seg++){
-	  if ( (res_dl=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
+	  if ( (res_dl=tryPullTpool(&nf, &pool_dl)) != NULL ) {
 	          pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res_dl);
 	        }
 
@@ -993,7 +934,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 	  curMsg->proc.llr8_flag = llr8_flag;
 
 	  msgToPush_dl->key= (nr_slot_rx%2) ? (nb_seg+30): nb_seg;
-	  pushTpool(Tpool_dl, msgToPush_dl);
+	  pushTpool(&pool_dl, msgToPush_dl);
 
   /*Qm= harq_process->Qm;
     Nl=harq_process->Nl;
@@ -1020,7 +961,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
     Kr = harq_process->K;
     Kr_bytes = Kr>>3;
-    K_bytes_F = Kr_bytes-(harq_process->F>>3);
+    K_bits_F = Kr-harq_process->F;
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1037,10 +978,9 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                            harq_process->w[r],
                            dlsch_llr+r_offset);
 
-#ifdef DEBUG_DLSCH_DECODING
+    if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
         for (int i =0; i<16; i++)
-              printf("rx output deinterleaving w[%d]= %d r_offset %u\n", i,harq_process->w[r][i], r_offset);
-#endif
+              LOG_D(PHY,"rx output deinterleaving w[%d]= %d r_offset %u\n", i,harq_process->w[r][i], r_offset);
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -1050,8 +990,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     start_meas(dlsch_rate_unmatching_stats);
 #endif
 
-#ifdef DEBUG_DLSCH_DECODING
-    LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+    LOG_I(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
           harq_pid,r, G,
           Kr*3,
           harq_process->TBS,
@@ -1060,7 +1000,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
           harq_process->Nl,
           harq_process->rvidx,
           harq_process->round);
-#endif
+ 
 
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
     if (harq_process->Nl < Nl)
@@ -1092,35 +1032,28 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
     }
 
-    //for (int i =0; i<16; i++)
-    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
-
-    //r_offset += E;
-    //printf("main thread r_offset %d\n",r_offset);
  
-#ifdef DEBUG_DLSCH_DECODING   
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))   
     for (int i =0; i<16; i++)
-      printf("rx output ratematching d[%d]= %d r_offset %u\n", i,harq_process->d[r][i], r_offset);
-#endif
+      LOG_I(PHY,"rx output ratematching d[%d]= %d r_offset %u\n", i,harq_process->d[r][i], r_offset);
 
-#ifdef DEBUG_DLSCH_DECODING
+
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD)) 
+    {
 
     if (r==0) {
-      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-      write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
+      LOG_M("decoder_llr.m","decllr",dlsch_llr,G,1,0);
+      LOG_M("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
 
-    printf("decoder input(segment %u) :",r);
+    LOG_D(PHY,"decoder input(segment %u) :",r);
     for (int i=0;i<(3*8*Kr_bytes);i++)
-      printf("%d : %d\n",i,harq_process->d[r][i]);
-    printf("\n");
-#endif
+      LOG_D(PHY,"%d : %d\n",i,harq_process->d[r][i]);
+    LOG_D(PHY,"\n");
+   }
 
-
-    //    printf("Clearing c, %p\n",harq_process->c[r]);
     memset(harq_process->c[r],0,Kr_bytes);
 
-    //    printf("done\n");
     if (harq_process->C == 1){
       if (A > 3824)
     	crc_type = CRC24_A;
@@ -1146,30 +1079,22 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 #if UE_TIMING_TRACE
       start_meas(dlsch_turbo_decoding_stats);
 #endif
-      LOG_D(PHY,"mthread AbsSubframe %d.%d Start LDPC segment %d/%d \n",frame%1024,nr_slot_rx,r,harq_process->C-1);
+      LOG_I(PHY,"mthread AbsSubframe %d.%d Start LDPC segment %d/%d \n",frame%1024,nr_slot_rx,r,harq_process->C-1);
 
       /*for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
         inv_d[cnt] = (1)*harq_process->d[r][cnt];
       }*/
 
-      memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
-      //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-      memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
-
-
-      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-
-      j+=(harq_process->F>>3);
-      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
-      {
-        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      }
-      
-      for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+      //set first 2*Z_c bits to zeros
+      memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+      //set Filler bits
+      memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+      //Move coded bits before filler bits
+      memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+      //skip filler bits
+      memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+      //Saturate coded bits before decoding into 8 bits values
+      for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
       {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
       }
@@ -1190,20 +1115,17 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       }
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        printf("Segment %u CRC OK\n",r);
+        LOG_D(PHY,"Segment %u CRC OK\n",r);
         ret = 2;
       }
       else {
-        printf("CRC NOK\n");
+        LOG_I(PHY,"CRC NOK\n");
         ret = 1+dlsch->max_ldpc_iterations;
       }
 
     if (!nb_total_decod%10000){
         printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
     }
-
-    //else
-      //printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
 
       for (int m=0; m < Kr>>3; m ++)
       {
@@ -1226,10 +1148,10 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     //printf("output channel decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
 
     //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
-#ifdef DEBUG_DLSCH_DECODING
-      for (int k=0;k<32;k++)
-        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-#endif
+     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+       for (int k=0;k<32;k++)
+         LOG_D(PHY,"output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+
 
 #if UE_TIMING_TRACE
       stop_meas(dlsch_turbo_decoding_stats);
@@ -1238,40 +1160,36 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_ldpc_iterations))) {// a Code segment is in error so break;
-      LOG_D(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_slot_rx,r,harq_process->C-1);
+      LOG_I(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_slot_rx,r,harq_process->C-1);
       err_flag = 1;
     }
   //} //loop r
 
   if (err_flag == 1) {
-#if UE_DEBUG_TRACE
-    LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
+    if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+      LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
         phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
-#endif
     harq_process->harq_ack.ack = 0;
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
     harq_process->errors[harq_process->round]++;
     harq_process->round++;
 
-
-    //    printf("Rate: [UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
     }
     if(is_crnti)
     {
-    LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for nr_slot_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
+    LOG_I(PHY,"[UE %d] DLSCH: Setting NACK for nr_slot_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
                phy_vars_ue->Mod_id,nr_slot_rx,harq_pid,harq_process->status,harq_process->round,dlsch->Mlimit,harq_process->TBS);
     }
 
     return((1+dlsch->max_ldpc_iterations));
   } else {
-#if UE_DEBUG_TRACE
-      LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d\n",
+   if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+      LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d\n",
            phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb);
-#endif
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
@@ -1325,15 +1243,16 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
       offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
-#ifdef DEBUG_DLSCH_DECODING
-      printf("Segment %u : Kr= %u bytes\n",r,Kr_bytes);
-      printf("copied %d bytes to b sequence (harq_pid %d)\n",
-                (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
-                printf("b[0] = %x,c[%d] = %x\n",
-                harq_process->b[offset],
-                harq_process->F>>3,
-                harq_process->c[r]);
-#endif
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+    {
+    LOG_I(PHY,"Segment %u : Kr= %u bytes\n",r,Kr_bytes);
+    LOG_I(PHY,"copied %d bytes to b sequence (harq_pid %d)\n",
+              (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
+     LOG_I(PHY,"b[0] = %p,c[%d] = %p\n",
+              (void *)(uint64_t)(harq_process->b[offset]),
+              harq_process->F>>3,
+               (void *)(uint64_t)(harq_process->c[r]));
+    }
   }
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
@@ -1344,15 +1263,14 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   return(ret);
 }
-#endif
 
-#ifdef UE_DLSCH_PARALLELISATION
+
+
 void nr_dlsch_decoding_process(void *arg)
 {
 	nr_rxtx_thread_data_t *rxtxD= (nr_rxtx_thread_data_t *)arg;
     UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
     PHY_VARS_NR_UE    *phy_vars_ue   = rxtxD->UE;
-    NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
     int llr8_flag1;
     int32_t no_iteration_ldpc,length_dec;
     t_nrLDPC_dec_params decParams;
@@ -1366,7 +1284,7 @@ void nr_dlsch_decoding_process(void *arg)
     //__m128i l;
     //int16_t inv_d [68*384];
     //int16_t *p_invd =&inv_d;
-    uint8_t kb, kc;
+    uint8_t  kc;
     uint8_t Ilbrm = 1;
     uint32_t Tbslbrm = 950984;
     uint16_t nb_rb = 30; //to update
@@ -1376,8 +1294,6 @@ void nr_dlsch_decoding_process(void *arg)
     uint16_t length_dmrs = 1;
 
     uint32_t i,j;
-    uint32_t k;
-
     __m128i *pv = (__m128i*)&z;
     __m128i *pl = (__m128i*)&l;
 
@@ -1394,8 +1310,10 @@ void nr_dlsch_decoding_process(void *arg)
 #endif
   uint32_t A,E;
   uint32_t G;
-  uint32_t ret,offset;
-  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
+
+  uint32_t ret;
+  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bits_F;
+
   uint8_t crc_type;
   uint8_t C,Cprime;
   uint8_t Qm;
@@ -1406,30 +1324,16 @@ void nr_dlsch_decoding_process(void *arg)
   int harq_pid              = proc->harq_pid;
   llr8_flag1                = proc->llr8_flag;
   int frame                 = proc->frame_rx;
-  int slot                  = proc->nr_slot_rx;
   r               	    = proc->num_seg;
 
   NR_UE_DLSCH_t *dlsch      = phy_vars_ue->dlsch[proc->thread_id][eNB_id][0];
   NR_DL_UE_HARQ_t *harq_process  = dlsch->harq_processes[harq_pid];
   short *dlsch_llr        = phy_vars_ue->pdsch_vars[proc->thread_id][eNB_id]->llr[0];
-  //printf("2thread0 llr flag %d tdp flag %d\n",llr8_flag1, tdp->llr8_flag);
+
   p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[r];
   nb_symb_sch = harq_process->nb_symbols;
-  printf("dlsch decoding process frame %d slot %d segment %d r %u nb symb %d \n", frame, proc->nr_slot_rx, proc->num_seg, r, harq_process->nb_symbols);
+  LOG_I(PHY,"dlsch decoding process frame %d slot %d segment %d r %u nb symb %d \n", frame, proc->nr_slot_rx, proc->num_seg, r, harq_process->nb_symbols);
 
-
-  /*
-  if (nb_rb > frame_parms->N_RB_DL) {
-    printf("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
-    return(max_ldpc_iterations);
-    }*/
-
-  /*harq_pid = dlsch->current_harq_pid[proc->thread_id];
-  if (harq_pid >= 8) {
-    printf("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
-    return(max_ldpc_iterations);
-  }
-  */
 
   nb_rb = harq_process->nb_rb;
 
@@ -1447,7 +1351,7 @@ void nr_dlsch_decoding_process(void *arg)
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  LOG_D(PHY,"DLSCH Decoding process, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
+  LOG_I(PHY,"DLSCH Decoding process, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
   if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
@@ -1457,32 +1361,28 @@ void nr_dlsch_decoding_process(void *arg)
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
   {
     p_decParams->BG = 2;
+    kc = 52;
     if (Coderate < 0.3333){
       p_decParams->R = 15;
-      kc = 52;
     }
     else if (Coderate <0.6667){
       p_decParams->R = 13;
-      kc = 32;
     }
     else {
       p_decParams->R = 23;
-      kc = 17;
     }
   }
   else{
     p_decParams->BG = 1;
+    kc = 68;
     if (Coderate < 0.6667){
       p_decParams->R = 13;
-      kc = 68;
     }
     else if (Coderate <0.8889){
       p_decParams->R = 23;
-      kc = 35;
     }
     else {
       p_decParams->R = 89;
-      kc = 27;
     }
   }    
 
@@ -1507,36 +1407,13 @@ void nr_dlsch_decoding_process(void *arg)
 
    // }
     
-    //printf("round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
+    LOG_D(PHY,"round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
 
 
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
 
-  /*
-  else {
-    printf("dlsch_decoding.c: Ndi>0 not checked yet!!\n");
-    return(max_ldpc_iterations);
-  }
-  */
   err_flag = 0;
-  //r_offset = 0;
-
-  /*
-  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
-
-  if (nb_rb != 273) {
-    a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273 +1;
-  }  
-
-  if (harq_process->C > a_segments) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
-    return((1+dlsch->max_ldpc_iterations));
-  }*/
-#ifdef DEBUG_DLSCH_DECODING
-  printf("Segmentation: C %d, Cminus %d, Kminus %d, Kplus %d\n",harq_process->C,harq_process->Cminus,harq_process->Kminus,harq_process->Kplus);
-#endif
 
   opp_enabled=1;
   
@@ -1551,9 +1428,7 @@ void nr_dlsch_decoding_process(void *arg)
     r_offset = Nl*Qm*(G/(Nl*Qm*Cprime));
   else
     r_offset = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
-
-    //  printf("thread0 r_offset %d\n",r_offset);
-           
+          
   //for (r=(harq_process->C/2); r<harq_process->C; r++) {
      //    r=1; //(harq_process->C/2);
 
@@ -1561,7 +1436,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
-  K_bytes_F = Kr_bytes-(harq_process->F>>3);
+  K_bits_F = Kr-harq_process->F;
 
   E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1573,10 +1448,10 @@ void nr_dlsch_decoding_process(void *arg)
                            harq_process->w[r],
                            dlsch_llr+r_offset);
 
-#ifdef DEBUG_DLSCH_DECODING
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
     for (int i =0; i<16; i++)
-              printf("rx output thread 0 deinterleaving w[%d]= %d r_offset %u\n", i,harq_process->w[r][i], r_offset);
-#endif
+              LOG_D(PHY,"rx output thread 0 deinterleaving w[%d]= %d r_offset %u\n", i,harq_process->w[r][i], r_offset);
+
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -1586,8 +1461,8 @@ void nr_dlsch_decoding_process(void *arg)
     start_meas(dlsch_rate_unmatching_stats);
 #endif
 
-#ifdef DEBUG_DLSCH_DECODING
-    LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
+  if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
+    LOG_I(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
           harq_pid,r, G,
           Kr*3,
           harq_process->TBS,
@@ -1596,7 +1471,7 @@ void nr_dlsch_decoding_process(void *arg)
           harq_process->Nl,
           harq_process->rvidx,
           harq_process->round);
-#endif
+
 
     if (Nl<4)
       Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,Nl);
@@ -1627,25 +1502,14 @@ void nr_dlsch_decoding_process(void *arg)
 #endif
     }
 
-    //for (int i =0; i<16; i++)
-    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
-
-    //r_offset += E;
-
-#ifdef DEBUG_DLSCH_DECODING
-    if (r==0) {
-              write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-              write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
+    if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD)) {
+      LOG_D(PHY,"decoder input(segment %u) :",r);
+      for (int i=0;i<(3*8*Kr_bytes)+12;i++)
+        LOG_D(PHY,"%d : %d\n",i,harq_process->d[r][i]);
+      LOG_D(PHY,"\n");
     }
 
-    printf("decoder input(segment %u) :",r);
-    int i; for (i=0;i<(3*8*Kr_bytes)+12;i++)
-      printf("%d : %d\n",i,harq_process->d[r][i]);
-      printf("\n");
-#endif
 
-
-    //    printf("Clearing c, %p\n",harq_process->c[r]);
     memset(harq_process->c[r],0,Kr_bytes);
 
     if (harq_process->C == 1){
@@ -1663,41 +1527,34 @@ void nr_dlsch_decoding_process(void *arg)
 
     if (err_flag == 0) {
 /*
-        LOG_D(PHY, "turbo algo Kr=%d cb_cnt=%d C=%d nbRB=%d crc_type %d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
+        LOG_D(PHY, "LDPC algo Kr=%d cb_cnt=%d C=%d nbRB=%d crc_type %d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
                             Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
                             harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_ldpc_iterations);
 */
       if (llr8_flag1) {
-        AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+        AssertFatal (Kr >= 256, "LDPC algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
             Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
       }
 #if UE_TIMING_TRACE
         start_meas(dlsch_turbo_decoding_stats);
 #endif
-//      LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
+//      LOG_D(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
 /*
         for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
               inv_d[cnt] = (1)*harq_process->d[r][cnt];
               }
 */
 
-        memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
-        //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-        memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
-
-        for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-        {
-          pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-        }
-
-        j+=(harq_process->F>>3);
-        //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-        for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
-        {
-         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-        }
-
-        for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+        //set first 2*Z_c bits to zeros
+        memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+        //set Filler bits
+        memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+        //Move coded bits before filler bits
+        memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+        //skip filler bits
+        memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+        //Saturate coded bits before decoding into 8 bits values
+        for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
         {
           pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
         }
@@ -1714,39 +1571,23 @@ void nr_dlsch_decoding_process(void *arg)
           ret = 2;
         }
         else {
-          LOG_D(PHY,"Segment %u CRC NOK\n",r);
+          LOG_I(PHY,"Segment %u CRC NOK\n",r);
           ret = 1+dlsch->max_ldpc_iterations;
         }
 
     if (no_iteration_ldpc > 10)
-      LOG_D(PHY,"Error number of iteration LPDC %d\n", no_iteration_ldpc);
-    //else
-      //printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
+      LOG_I(PHY,"Error number of iteration LPDC %d\n", no_iteration_ldpc);
+
 
     for (int m=0; m < Kr>>3; m ++)
                     {
                   harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
                     }
 
-            /*for (int u=0; u < Kr>>3; u ++)
-                            {
-                      ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
-                            }
+    if ( LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))       
+      for (int k=0;k<2;k++)
+        LOG_D(PHY,"segment 1 output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
 
-
-            printf("output unsigned ullrProcBuf \n");
-
-            for (int j=0; j < Kr>>3; j ++)
-                                    {
-
-                              printf(" %d \n", ullrProcBuf[j]);
-
-                                    }
-          printf(" \n");*/
-#ifdef DEBUG_DLSCH_DECODING       
-  for (int k=0;k<2;k++)
-      printf("segment 1 output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-#endif 
     
 #if UE_TIMING_TRACE
       stop_meas(dlsch_turbo_decoding_stats);
@@ -1765,13 +1606,12 @@ void nr_dlsch_decoding_process(void *arg)
 
 void *dlsch_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
-  PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
   notifiedFIFO_elt_t *res_dl;
   initNotifiedFIFO_nothreadSafe(&freeBlocks_dl);
 
-  for (int i=0; i<RX_NB_TH_DL+1; i++){
+  for (int i=0; i<tpool_nbthreads(pool_dl)+1; i++){
     pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,
                                   newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&nf,nr_dlsch_decoding_process));}
 
@@ -1779,9 +1619,8 @@ void *dlsch_thread(void *arg) {
 
     notifiedFIFO_elt_t *res;
 
-    while (nbDlProcessing >= RX_NB_TH_DL) {
-      if ( (res=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
-        nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
+    while (nbDlProcessing >= tpool_nbthreads(pool_dl)) {
+      if ( (res=tryPullTpool(&nf, &pool_dl)) != NULL ) {
         //nbDlProcessing--;
         pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res);
       }
@@ -1789,7 +1628,7 @@ void *dlsch_thread(void *arg) {
       usleep(200);
     }
     
-    res_dl=pullTpool(&nf, Tpool_dl);
+    res_dl=pullTpool(&nf, &pool_dl);
     nbDlProcessing--;
 	pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res_dl);
     
@@ -1802,4 +1641,4 @@ void *dlsch_thread(void *arg) {
   return NULL;
 }
 
-#endif
+

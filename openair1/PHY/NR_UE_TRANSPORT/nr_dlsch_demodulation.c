@@ -404,7 +404,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 					symbol,
 					pilots,
 					config_type,
-					start_rb,
+					start_rb + dlsch0_harq->BWPStart,
 					nb_rb_pdsch,
 					nr_slot_rx,
 					ue->high_speed_flag,
@@ -422,7 +422,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   len = (pilots==1)? ((config_type==pdsch_dmrs_type1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
-  
+
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 #if DISABLE_LOG_X
@@ -1620,6 +1620,8 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   //x = (x>4) ? 4 : x;
   int16_t y = (len)>>x;
   //printf("len = %d = %d * 2^(%d)\n",len,y,x);
+
+  AssertFatal(y!=0,"Cannot divide by zero: in function %s of file %s\n", __func__, __FILE__);
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

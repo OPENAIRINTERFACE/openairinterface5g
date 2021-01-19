@@ -43,6 +43,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 //#include "../../SIMU/USER/init_lte.h"
 
 #include "LAYER2/MAC/mac_vars.h"
@@ -81,6 +82,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
+#define NRUE_MAIN
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -96,33 +98,23 @@ pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
-tpool_t *Tpool;
-#ifdef UE_DLSCH_PARALLELISATION
-  tpool_t *Tpool_dl;
-#endif
+
+
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-// Command line options
 
 extern int16_t  nr_dlsch_demod_shift;
 static int      tx_max_power[MAX_NUM_CCs] = {0};
 
 int      single_thread_flag = 1;
-int         threequarter_fs = 0;
-int         UE_scan_carrier = 0;
-int      UE_fo_compensation = 0;
-int UE_no_timing_correction = 0;
-int                 N_RB_DL = 0;
 int                 tddflag = 0;
 int                 vcdflag = 0;
-uint8_t       nb_antenna_tx = 1;
-uint8_t       nb_antenna_rx = 1;
+
 double          rx_gain_off = 0.0;
-uint32_t     timing_advance = 0;
 char             *usrp_args = NULL;
 char       *rrc_config_path = NULL;
 int               dumpframe = 0;
@@ -148,9 +140,9 @@ int16_t           node_synch_ref[MAX_NUM_CCs];
 int               otg_enabled;
 double            cpuf;
 
-runmode_t            mode = normal_txrx;
-int               UE_scan = 0;
+
 int          chain_offset = 0;
+int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
 int            numerology = 0;
@@ -208,74 +200,35 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
-
-  do {
-    // Wait for a message
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case TERMINATE_MESSAGE:
-        oai_exit=1;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  } while(!oai_exit);
-
-  return NULL;
+uint64_t get_nrUE_optmask(void) {
+  return nrUE_params.optmask;
 }
 
+uint64_t set_nrUE_optmask(uint64_t bitmask) {
+  nrUE_params.optmask = nrUE_params.optmask | bitmask;
+  return nrUE_params.optmask;
+}
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+/* initialie thread pools used for NRUE processing paralleliation */ 
+void init_tpools(uint8_t nun_dlsch_threads) {
+  char *params=calloc(1,(RX_NB_TH*3)+1);
+  for (int i=0; i<RX_NB_TH; i++) {
+    memcpy(params+(i*3),"-1,",3);
+  }
+  initTpool(params, &(nrUE_params.Tpool), false);
+  free(params);
+  init_dlsch_tpool( nun_dlsch_threads);
+}
 static void get_options(void) {
 
-  char *loopfile=NULL;
+  paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
+  int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
+  config_process_cmdline( cmdline_params,numparams,NULL);
 
-  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
-  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-  paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
-  paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
-  config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
-  config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
 
-  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
-
-  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
-
-  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
-
-  if (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr)
-    if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
-
-  if (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr)
-    if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
-
-  if (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr)
-    if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx;
-
-  if ((cmdline_uemodeparams[CMDLINE_DUMPMEMORY_IDX].paramflags & PARAMFLAG_PARAMSET) != 0)
-    mode = rx_dump_frame;
 
   if (vcdflag > 0)
     ouput_vcd = 1;
@@ -287,10 +240,43 @@ static void get_options(void) {
     printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
+    init_tpools(nrUE_params.nr_dlsch_parallel);
 }
 
 // set PHY vars from command line
 void set_options(int CC_id, PHY_VARS_NR_UE *UE){
+  NR_DL_FRAME_PARMS *fp       = &UE->frame_parms;
+  paramdef_t cmdline_params[] = CMDLINE_NRUE_PHYPARAMS_DESC ;
+  int numparams               = sizeof(cmdline_params)/sizeof(paramdef_t);
+
+  UE->mode = normal_txrx;
+
+  config_process_cmdline( cmdline_params,numparams,NULL);
+
+  int pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRX_OPT);
+  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue;
+  
+  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXMED_OPT);
+  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_med;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXBYP_OPT);              
+  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_byp;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams, DBGPRACH_OPT); 
+  if (cmdline_params[pindex].uptr)
+    if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = debug_prach;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams,NOL2CONNECT_OPT ); 
+  if (cmdline_params[pindex].uptr)
+    if ( *(cmdline_params[pindex].uptr) > 0)  UE->mode = no_L2_connect;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams,CALIBPRACH_OPT );
+  if (cmdline_params[pindex].uptr)
+    if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = calib_prach_tx;
+
+  pindex = config_paramidx_fromname(cmdline_params,numparams,DUMPFRAME_OPT );
+  if ((cmdline_params[pindex].paramflags & PARAMFLAG_PARAMSET) != 0)
+    UE->mode = rx_dump_frame;
 
   // Init power variables
   tx_max_power[CC_id] = tx_max_power[0];
@@ -298,32 +284,29 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   tx_gain[0][CC_id]   = tx_gain[0][0];
 
   // Set UE variables
-  UE->UE_scan              = UE_scan;
-  UE->UE_scan_carrier      = UE_scan_carrier;
-  UE->UE_fo_compensation   = UE_fo_compensation;
-  UE->no_timing_correction = UE_no_timing_correction;
-  UE->mode                 = mode;
+
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
+  UE->rf_map.card          = card_offset;
+  UE->rf_map.chain         = CC_id + chain_offset;
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", mode, UE_fo_compensation, UE_scan, UE_scan_carrier, UE_no_timing_correction);
+
+  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", 
+  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction);
 
   // Set FP variables
-  NR_DL_FRAME_PARMS *fp = &UE->frame_parms;
-  fp->nb_antennas_tx    = nb_antenna_tx;
-  fp->nb_antennas_rx    = nb_antenna_rx;
-  fp->threequarter_fs   = threequarter_fs;
+
+
+  
   if (tddflag){
     fp->frame_type = TDD;
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
-  if (N_RB_DL){
-    fp->N_RB_DL = N_RB_DL;
-    LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
-  }
 
-  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", nb_antenna_rx, nb_antenna_tx, threequarter_fs);
+  LOG_I(PHY, "Set UE N_RB_DL %d\n", fp->N_RB_DL);
+
+  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
 
@@ -492,23 +475,17 @@ int main( int argc, char **argv ) {
   // initialize logging
   logInit();
   // get options and fill parameters from configuration file
-  get_options(); //Command-line options
+
+  get_options (); //Command-line options specific for NRUE
+
   get_common_options(SOFTMODEM_5GUE_BIT );
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();
 #endif
   //randominit (0);
   set_taus_seed (0);
-  tpool_t pool;
-  Tpool = &pool;
-  char params[]="-1,-1";
-  initTpool(params, Tpool, false);
-#ifdef UE_DLSCH_PARALLELISATION
-  tpool_t pool_dl;
-  Tpool_dl = &pool_dl;
-  char params_dl[]="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1";
-  initTpool(params_dl, Tpool_dl, false);
-#endif
+
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
@@ -536,7 +513,11 @@ int main( int argc, char **argv ) {
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
+  if (get_softmodem_params()->sa)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+
 
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
@@ -575,13 +556,9 @@ int main( int argc, char **argv ) {
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
 
-  for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-    PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-    PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
-  }
-
+  
   init_NR_UE_threads(1);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program

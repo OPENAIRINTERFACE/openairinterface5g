@@ -660,6 +660,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                unsigned short BWPStart,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch)
 {
@@ -693,7 +694,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
 
   // generate pilot for gNB port number 1000+p
-  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12;
+  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12 - BWPStart;
   uint8_t config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   int8_t delta = get_delta(p, config_type);
 

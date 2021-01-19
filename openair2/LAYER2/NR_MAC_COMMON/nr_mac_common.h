@@ -32,9 +32,24 @@
 #ifndef __LAYER2_NR_MAC_COMMON_H__
 #define __LAYER2_NR_MAC_COMMON_H__
 
+#include "NR_MIB.h"
 #include "NR_PDSCH-Config.h"
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
+#include "openair1/PHY/impl_defs_nr.h"
+
+#define TABLE_38213_13_1_NUM_INDEXES 15
+#define TABLE_38213_13_2_NUM_INDEXES 14
+#define TABLE_38213_13_3_NUM_INDEXES 9
+#define TABLE_38213_13_4_NUM_INDEXES 16
+#define TABLE_38213_13_5_NUM_INDEXES 9
+#define TABLE_38213_13_6_NUM_INDEXES 10
+#define TABLE_38213_13_7_NUM_INDEXES 12
+#define TABLE_38213_13_8_NUM_INDEXES 8
+#define TABLE_38213_13_9_NUM_INDEXES 4
+#define TABLE_38213_13_10_NUM_INDEXES 8
+#define TABLE_38213_13_11_NUM_INDEXES 16
+#define TABLE_38213_13_12_NUM_INDEXES 14
 
 
 // ===============================================
@@ -45,8 +60,8 @@
 #define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
 
 typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
+  FR1 = 0,
+  FR2
 } frequency_range_t;
 
 // PRACH occasion details
@@ -98,6 +113,52 @@ typedef enum {
   NR_RNTI_TPC_SRS,
   NR_RNTI_MCS_C,
 } nr_rnti_type_t;
+
+typedef enum subcarrier_spacing_e {
+  scs_15kHz  = 0x1,
+  scs_30kHz  = 0x2,
+  scs_60kHz  = 0x4,
+  scs_120kHz = 0x8,
+  scs_240kHz = 0x16
+} subcarrier_spacing_t;
+
+typedef enum channel_bandwidth_e {
+  bw_5MHz   = 0x1,
+  bw_10MHz  = 0x2,
+  bw_20MHz  = 0x4,
+  bw_40MHz  = 0x8,
+  bw_80MHz  = 0x16,
+  bw_100MHz = 0x32
+} channel_bandwidth_t;
+
+typedef enum nr_ssb_and_cset_mux_pattern_type_e {
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+} nr_ssb_and_cset_mux_pattern_type_t;
+
+typedef enum {
+  SFN_C_MOD_2_EQ_0,
+  SFN_C_MOD_2_EQ_1,
+  SFN_C_IMPOSSIBLE
+} SFN_C_TYPE;
+
+typedef struct Type0_PDCCH_CSS_config_s {
+  int32_t num_rbs;
+  int32_t num_symbols;
+  int32_t rb_offset; // Offset from SSB RB0
+  uint32_t type0_pdcch_ss_mux_pattern;
+  uint16_t frame;
+  SFN_C_TYPE sfn_c;
+  uint32_t n_c;
+  uint32_t n_0;
+  uint32_t number_of_search_space_per_slot;
+  uint32_t first_symbol_index;
+  uint32_t search_space_duration;
+  uint32_t ssb_length;
+  uint32_t ssb_index;
+  uint32_t cset_start_rb;
+} NR_Type0_PDCCH_CSS_config_t;
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
@@ -188,6 +249,13 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
+int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                          NR_MIB_t *mib,
+                                          uint8_t extra_bits,
+                                          uint32_t ssb_length,
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a);
+
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
 bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
@@ -195,4 +263,7 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
                         uint8_t *nERatio,uint8_t *reOffset,
                         uint8_t NrOfSymbols);
+
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
 #endif
