@@ -245,7 +245,6 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     }
     
     dlsch = gNB->dlsch[dlsch_id][0];
-    int num_slots_tdd = (gNB->frame_parms.slots_per_frame)>>(7-gNB->gNB_config.tdd_table.tdd_period.value);
     int harq_pid = 0;//slot % num_slots_tdd;
 
     dlsch->slot_tx[slot]             = 1;
