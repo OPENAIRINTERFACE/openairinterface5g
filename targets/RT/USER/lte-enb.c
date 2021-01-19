@@ -548,12 +548,11 @@ int wakeup_tx(PHY_VARS_eNB *eNB,
               int frame_tx,
               int subframe_tx,
               uint64_t timestamp_tx) {
-  L1_rxtx_proc_t *L1_proc = &eNB->proc.L1_proc;
   L1_rxtx_proc_t *L1_proc_tx = &eNB->proc.L1_proc_tx;
   int ret;
   LOG_D(PHY,"ENTERED wakeup_tx (IC %d)\n",L1_proc_tx->instance_cnt);
   AssertFatal((ret = pthread_mutex_lock(&L1_proc_tx->mutex))==0,"mutex_lock returns %d\n",ret);
-  LOG_D(PHY,"L1 RX %d.%d Waiting to wake up L1 TX %d.%d (IC L1TX %d)\n",L1_proc->frame_rx,L1_proc->subframe_rx,L1_proc->frame_tx,L1_proc->subframe_tx,L1_proc_tx->instance_cnt);
+  LOG_D(PHY,"L1 RX %d.%d Waiting to wake up L1 TX %d.%d (IC L1TX %d)\n",frame_rx,subframe_rx,frame_tx,subframe_tx,L1_proc_tx->instance_cnt);
 
   while(L1_proc_tx->instance_cnt == 0) {
     pthread_cond_wait(&L1_proc_tx->cond,&L1_proc_tx->mutex);
@@ -568,7 +567,7 @@ int wakeup_tx(PHY_VARS_eNB *eNB,
   L1_proc_tx->frame_tx      = frame_tx;
   L1_proc_tx->timestamp_tx  = timestamp_tx;
   // the thread can now be woken up
-  LOG_D(PHY,"L1 RX Waking up L1 TX %d.%d\n",L1_proc->frame_tx,L1_proc->subframe_tx);
+  LOG_D(PHY,"L1 RX Waking up L1 TX %d.%d\n",frame_tx,subframe_tx);
   AssertFatal((ret=pthread_mutex_unlock(&L1_proc_tx->mutex))==0,"mutex_unlock returns %d\n",ret);
 
   AssertFatal(pthread_cond_signal(&L1_proc_tx->cond) == 0, "ERROR pthread_cond_signal for eNB L1 thread tx\n");

@@ -61,7 +61,7 @@ void *mac_stats_thread(void *param) {
         int CC_id = UE_PCCID(mac->Mod_id, UE_id);
         UE_sched_ctrl_t *UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
-      fprintf(fd,"UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d (TPC accum %d)  PUCCH SNR %d (TPC accum %d)\n",
+      fprintf(fd,"\nMAC UE rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d (TPC accum %d)  PUCCH SNR %d (TPC accum %d)\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,

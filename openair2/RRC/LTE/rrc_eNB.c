@@ -7749,7 +7749,7 @@ get_ue_Category(
                                                                  if (c143 != NULL) { // v14.3
                                                                     if (c143->ue_CategoryDL_v1430 && *c143->ue_CategoryDL_v1430 == LTE_UE_EUTRA_Capability_v1430_IEs__ue_CategoryDL_v1430_m2) *catDL=-2;
                                                                     if (c143->ue_CategoryUL_v1430 && *c143->ue_CategoryUL_v1430 == LTE_UE_EUTRA_Capability_v1430_IEs__ue_CategoryDL_v1430_m2) *catUL=-2;
-                                                                    if (c143->ue_CategoryUL_v1430) *catUL=16+*c143->ue_CategoryDL_v1430;
+                                                                    if (c143->ue_CategoryUL_v1430) *catUL=16+*c143->ue_CategoryUL_v1430;
                                                                     if (c143->ue_CategoryUL_v1430b)*catUL=21;
                                                                     struct LTE_UE_EUTRA_Capability_v1440_IEs *c144=c143->NCE;
                                                                     if (c144 != NULL) { // v14.4
@@ -9115,18 +9115,20 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                 is_ul_256QAM_supported(ue_context_p->ue_context.UE_Capability) == 1 ? "yes" : "no",
                 is_en_dc_supported(ue_context_p->ue_context.UE_Capability) == 1 ? "yes" : "no");
         }
-        fprintf(fd, "RRC PCell RSRP %ld, RSRQ %ld\n", ue_context_p->ue_context.measResults->measResultPCell.rsrpResult-140,
-                                                      ue_context_p->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
-        if (ue_context_p->ue_context.measResults->measResultNeighCells && 
-            ue_context_p->ue_context.measResults->measResultNeighCells->present == LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15) { 
+        if (ue_context_p->ue_context.measResults) {
+           fprintf(fd, "RRC PCell RSRP %ld, RSRQ %ld\n", ue_context_p->ue_context.measResults->measResultPCell.rsrpResult-140,
+                                                         ue_context_p->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
+          if (ue_context_p->ue_context.measResults->measResultNeighCells && 
+              ue_context_p->ue_context.measResults->measResultNeighCells->present == LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15) { 
 
-          fprintf(fd,"NR_pci %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15);
-          if(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
-            fprintf(fd,"NR_rsrp %ld\n",*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15-140);
-          if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15) 
-            fprintf(fd,"NR_rsrq %ld\n",*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15/2 - 20);
-          if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) 
-            fprintf(fd,"NR_ssb_index %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15);
+            fprintf(fd,"NR_pci %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15);
+            if(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
+              fprintf(fd,"NR_rsrp %ld\n",*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15-140);
+            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15) 
+              fprintf(fd,"NR_rsrq %ld\n",*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15/2 - 20);
+            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) 
+              fprintf(fd,"NR_ssb_index %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15);
+           }
         }
       }
     }
@@ -9320,6 +9322,9 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       ue_to_be_removed[cur_ue]->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
     }
   }
+
+  if (fd!=NULL) fclose(fd);
+
 
   (void)ts; /* remove gcc warning "unused variable" */
   (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */

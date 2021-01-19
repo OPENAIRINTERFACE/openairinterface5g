@@ -2172,16 +2172,16 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   // clear unused statistics after 2 seconds
   for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++) {
      if (eNB->ulsch_stats[i].frame <= frame) {
-         if ((eNB->ulsch_stats[i].frame + 200) < frame) eNB->ulsch_stats[i].rnti = 0;
+         if ((eNB->ulsch_stats[i].frame + 200) < frame) memset(&eNB->ulsch_stats[i],0,sizeof(eNB->ulsch_stats[i]));
      }
      else {
-         if (eNB->ulsch_stats[i].frame + 200 < (frame+1024)) eNB->ulsch_stats[i].rnti = 0;
+         if (eNB->ulsch_stats[i].frame + 200 < (frame+1024)) memset(&eNB->ulsch_stats[i],0,sizeof(eNB->ulsch_stats[i]));
      }
      if (eNB->uci_stats[i].frame <= frame) {
-         if ((eNB->uci_stats[i].frame + 200) < frame) eNB->uci_stats[i].rnti = 0;
+         if ((eNB->uci_stats[i].frame + 200) < frame) memset(&eNB->uci_stats[i],0,sizeof(eNB->uci_stats[i]));
      }
      else {
-         if (eNB->uci_stats[i].frame + 200 < (frame+1024)) eNB->uci_stats[i].rnti = 0;
+         if (eNB->uci_stats[i].frame + 200 < (frame+1024)) memset(&eNB->uci_stats[i],0,sizeof(eNB->uci_stats[i]));
      }
   }
 
