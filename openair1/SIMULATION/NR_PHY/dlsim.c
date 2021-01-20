@@ -172,6 +172,10 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
@@ -296,7 +300,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t rbSize = 106;
   uint8_t  mcsIndex = 9;
-
+  uint8_t  dlsch_threads = 0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
@@ -307,7 +311,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w:T:U:q")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:q")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -474,7 +478,9 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
-
+    case 'd':
+      dlsch_threads = atoi(optarg);
+      break;    
     case 'e':
       g_mcsIndex = atoi(optarg);
       break;
@@ -545,11 +551,12 @@ int main(int argc, char **argv)
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2}, e.g. -U 2 0 2 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
+      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
       exit (-1);
       break;
     }
   }
-  
+
   logInit();
   set_glog(loglvl);
   T_stdout = 1;
@@ -560,6 +567,7 @@ int main(int argc, char **argv)
   
   if (snr1set==0)
     snr1 = snr0+10;
+  init_dlsch_tpool(dlsch_threads);
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -778,16 +786,16 @@ int main(int argc, char **argv)
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
-  
+
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
-  
+
 
   UE_mac->if_module = nr_ue_if_module_init(0);
-  
+
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
@@ -845,7 +853,7 @@ int main(int argc, char **argv)
     reset_meas(&gNB->tinput);
     reset_meas(&gNB->tprep);
     reset_meas(&gNB->tparity);
-    reset_meas(&gNB->toutput);  
+    reset_meas(&gNB->toutput);
 
     clear_pdsch_stats(gNB);
 
@@ -944,7 +952,7 @@ int main(int argc, char **argv)
         }
         int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
         if (n_trials==1) printf("tx_offset %d, txdataF_offset %d \n", tx_offset,txdataF_offset);
-        
+
         //TODO: loop over slots
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     
@@ -1006,19 +1014,20 @@ int main(int argc, char **argv)
             }
           }
         }
-        
+
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
         
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               normal_txrx);
+                               normal_txrx,
+                               dlsch_threads);
         
         //printf("dlsim round %d ends\n",round);
         round++;
       } // round
-      
+
       //----------------------------------------------------------
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
@@ -1057,7 +1066,7 @@ int main(int argc, char **argv)
 	
       }
       for (i = 0; i < TBS; i++) {
-	
+
 	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
 	test_input_bit[i]       = (gNB_dlsch->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 	

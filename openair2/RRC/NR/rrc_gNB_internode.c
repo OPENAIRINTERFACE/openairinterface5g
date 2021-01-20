@@ -98,7 +98,7 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
   total_size = (enc_rval.encoded+7)>>3;
 
   FILE *fd; // file to be generated for nr-ue
-  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra > 0) {
+  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra > 0 || get_softmodem_params()->sa == 1) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     LOG_I(RRC,"Dumping NR_RRCReconfiguration message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
     for (int i=0; i<(enc_rval.encoded+7)>>3; i++) {
@@ -123,7 +123,7 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 
 
   
-  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra > 0) {  
+  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra > 0 || get_softmodem_params()->sa == 1) {
 
     LOG_I(RRC,"Dumping scg_RB_Config message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
     for (int i=0; i<(enc_rval.encoded+7)>>3; i++) {

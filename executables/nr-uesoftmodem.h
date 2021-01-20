@@ -5,71 +5,76 @@
 #include "PHY/defs_nr_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
+
+
+
+#define  CONFIG_HLP_DLSCH_PARA             "number of threads for dlsch processing 0 for no parallelization"
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
    when calling config_get or config_getlist functions                                                                                 */
+
+#define CALIBRX_OPT       "calib-ue-rx"
+#define CALIBRXMED_OPT    "calib-ue-rx-med"
+#define CALIBRXBYP_OPT    "calib-ue-rx-byp"
+#define DBGPRACH_OPT      "debug-ue-prach"
+#define NOL2CONNECT_OPT   "no-L2-connect"
+#define CALIBPRACH_OPT    "calib-prach-tx"
+#define DUMPFRAME_OPT     "ue-dump-frame"
+
+/*------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters defining UE running mode                                              */
+/*   optname                     helpstr                paramflags                      XXXptr        defXXXval         type       numelt   */
+/*------------------------------------------------------------------------------------------------------------------------------------------*/
+#define CMDLINE_NRUEPARAMS_DESC {  \
+    {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0},    \
+    {"single-thread-disable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,  iptr:&single_thread_flag,           defintval:1,           TYPE_INT,    0}, \
+    {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               iptr:(int32_t *)&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
+    {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
+    {"V" ,                       CONFIG_HLP_VCD,         PARAMFLAG_BOOL,  iptr:&vcdflag,                            defintval:0,     TYPE_INT,    0}, \
+    {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,0,               strptr:(char **)&rrc_config_path,         defstrval:"./",  TYPE_STRING, 0} \
+}
 
 
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters defining UE running mode                                              */
 /*   optname                     helpstr                paramflags                      XXXptr        defXXXval         type       numelt   */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_UEMODEPARAMS_DESC {  \
-    {"calib-ue-rx",              CONFIG_HLP_CALUER,     0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
-    {"calib-ue-rx-med",          CONFIG_HLP_CALUERM,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
-    {"calib-ue-rx-byp",          CONFIG_HLP_CALUERB,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
-    {"debug-ue-prach",           CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"no-L2-connect",            CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"calib-prach-tx",           CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"loop-memory",              CONFIG_HLP_UELOOP,     0,                strptr:&loopfile,           defstrval:"iqs.in", TYPE_STRING,0},    \
-    {"ue-dump-frame",            CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,            defintval:0,        TYPE_INT,   0},    \
-  }
-#define CMDLINE_CALIBUERX_IDX                   0
-#define CMDLINE_CALIBUERXMED_IDX                1
-#define CMDLINE_CALIBUERXBYP_IDX                2
-#define CMDLINE_DEBUGUEPRACH_IDX                3
-#define CMDLINE_NOL2CONNECT_IDX                 4
-#define CMDLINE_CALIBPRACHTX_IDX                5
-#define CMDLINE_MEMLOOP_IDX                     6
-#define CMDLINE_DUMPMEMORY_IDX                  7
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-
-
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters specific to UE                                                                       */
-/*   optname                     helpstr             paramflags                  XXXptr                      defXXXval              type          numelt   */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_NRUEPARAMS_DESC {  \
-    {"ue-rxgain",                CONFIG_HLP_UERXG,       0,              dblptr:&(rx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
-    {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,              dblptr:&rx_gain_off,                defdblval:0,           TYPE_DOUBLE,   0},     \
-    {"ue-txgain",                CONFIG_HLP_UETXG,       0,              dblptr:&(tx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
-    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,     0,              u8ptr:&nb_antenna_rx,               defuintval:1,          TYPE_UINT8,    0},     \
-    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,     0,              u8ptr:&nb_antenna_tx,               defuintval:1,          TYPE_UINT8,    0},     \
-    {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL, iptr:&UE_scan_carrier,              defintval:0,           TYPE_INT,      0},     \
-    {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL, iptr:&UE_fo_compensation,           defintval:0,           TYPE_INT,      0},     \
-    {"ue-max-power",             NULL,                   0,              iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,      0},     \
-    {"r"  ,                      CONFIG_HLP_PRB,         0,              iptr:&(N_RB_DL),                    defintval:25,          TYPE_UINT,     0},     \
-    {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,              strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0}      \
-  }
-
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters common to gNB and UE                                                            */
-/*   optname                helpstr                 paramflags      XXXptr                                 defXXXval              type         numelt */
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_PARAMS_DESC_UE {  \
-  {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,              defintval:1,           TYPE_INT,    0}, \
-  {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
-  {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \
-  {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, iptr:&threequarter_fs,                 defintval:0,           TYPE_INT,    0}, \
-  {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}, \
-  {"rrc_config_path",       CONFIG_HLP_RRC_CFG_PATH,0,              strptr:(char **)&rrc_config_path,      defstrval:"./",        TYPE_STRING, 0} \
+#define CMDLINE_NRUE_PHYPARAMS_DESC {  \
+    { CALIBRX_OPT,               CONFIG_HLP_CALUER,     0,                iptr:&rx_input_level_dBm,           defintval:0,           TYPE_INT,   0},    \
+    { CALIBRXMED_OPT,            CONFIG_HLP_CALUERM,    0,                iptr:&rx_input_level_dBm,           defintval:0,           TYPE_INT,   0},    \
+    { CALIBRXBYP_OPT,            CONFIG_HLP_CALUERB,    0,                iptr:&rx_input_level_dBm,           defintval:0,           TYPE_INT,   0},    \
+    { DBGPRACH_OPT,              CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0},    \
+    { NOL2CONNECT_OPT,           CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0},    \
+    {CALIBPRACH_OPT,             CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0},    \
+    { DUMPFRAME_OPT,             CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,                    defintval:0,           TYPE_INT,   0},    \
+    {"ue-rxgain",                CONFIG_HLP_UERXG,       0,               dblptr:&(rx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
+    {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,               dblptr:&rx_gain_off,                defdblval:0,           TYPE_DOUBLE,   0},     \
+    {"ue-txgain",                CONFIG_HLP_UETXG,       0,               dblptr:&(tx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
+    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,     0,               u8ptr:&(fp->nb_antennas_rx),         defuintval:1,          TYPE_UINT8,    0},     \
+    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,     0,               u8ptr:&(fp->nb_antennas_tx),         defuintval:1,          TYPE_UINT8,    0},     \
+    {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  iptr:&(UE->UE_scan_carrier),        defintval:0,           TYPE_INT,      0},     \
+    {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL,  iptr:&(UE->UE_fo_compensation),     defintval:0,           TYPE_INT,      0},     \
+    {"ue-max-power",             NULL,                   0,               iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,      0},     \
+    {"r"  ,                      CONFIG_HLP_PRB,         0,               iptr:&(fp->N_RB_DL),                defintval:25,          TYPE_UINT,     0},     \
+    {"A" ,                       CONFIG_HLP_TADV,        0,               iptr:&(UE->timing_advance),         defintval:0,           TYPE_INT,   0}, \
+    {"E" ,                       CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,  u8ptr:&(fp->threequarter_fs),       defintval:0,           TYPE_UINT8,    0}, \
+    {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                            defintval:0,     TYPE_INT,    0}, \
+    {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&(UE->no_timing_correction), defintval:0,         TYPE_INT,    0}, \
 }
 
-extern int T_port;
-extern int T_nowait;
-extern int T_dont_fork;
+
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
+} nrUE_params_t;
+extern uint64_t get_nrUE_optmask(void);
+extern uint64_t set_nrUE_optmask(uint64_t bitmask);
+extern nrUE_params_t *get_nrUE_params(void);
+
+#ifdef NRUE_MAIN
+nrUE_params_t nrUE_params;
+#endif
 
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
@@ -80,6 +85,5 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue, uint8_t UE_id, uint8_t abstraction_flag);
-extern tpool_t *Tpool;
-extern tpool_t *Tpool_dl;
+
 #endif

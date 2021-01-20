@@ -5,9 +5,6 @@
  *   [1..600] is received but ACK/NACK not
  *   eNB retx with still smaller PDUs [1..400] [401..600] [601..900]
  *   all is received, ACKs/NACKs go through
- *
- * this test will fail if NACK mechanism uses SOstart/SOend
- * (not implemented for the moment)
  */
 TIME, 1,
     ENB_AM, 100000, 100000, 35, 0, 45, -1, -1, 4,

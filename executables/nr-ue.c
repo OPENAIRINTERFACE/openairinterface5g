@@ -411,7 +411,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, UE->mode);
+    phy_procedures_nrUE_RX( UE, proc, 0, UE->mode,get_nrUE_params()->nr_dlsch_parallel);
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_slot_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
@@ -603,7 +603,7 @@ void *UE_thread(void *arg) {
 
   while (!oai_exit) {
     if (syncRunning) {
-      notifiedFIFO_elt_t *res=tryPullTpool(&nf, Tpool);
+      notifiedFIFO_elt_t *res=tryPullTpool(&nf,&(get_nrUE_params()->Tpool));
 
       if (res) {
         syncRunning=false;
@@ -629,7 +629,7 @@ void *UE_thread(void *arg) {
       syncData_t *syncMsg=(syncData_t *)NotifiedFifoData(Msg);
       syncMsg->UE=UE;
       memset(&syncMsg->proc, 0, sizeof(syncMsg->proc));
-      pushTpool(Tpool, Msg);
+      pushTpool(&(get_nrUE_params()->Tpool), Msg);
       trashed_frames=0;
       syncRunning=true;
       continue;
@@ -739,20 +739,19 @@ void *UE_thread(void *arg) {
     notifiedFIFO_elt_t *res;
 
     while (nbSlotProcessing >= RX_NB_TH) {
-      res=pullTpool(&nf, Tpool);
+      res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
       nbSlotProcessing--;
       processingData_t *tmp=(processingData_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
         decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
-        //decoded_frame_rx=tmp->proc.decoded_frame_rx;
+      else 
+         decoded_frame_rx=-1;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
 
-    if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
-          (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
-          (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
+    if (  decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
@@ -779,18 +778,20 @@ void *UE_thread(void *arg) {
 
     nbSlotProcessing++;
     msgToPush->key=slot_nr;
-    pushTpool(Tpool, msgToPush);
+    pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
-    if (IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
+    if ( IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done
-      res=pullTpool(&nf, Tpool);
+      res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
       nbSlotProcessing--;
       processingData_t *tmp=(processingData_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
         decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+      else 
+        decoded_frame_rx=-1;
         //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
@@ -841,11 +842,11 @@ void init_NR_UE_threads(int nb_inst) {
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
 
-#ifdef UE_DLSCH_PARALLELISATION
-    pthread_t dlsch0_threads;
-    threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
-#endif
-
+     if(get_nrUE_params()->nr_dlsch_parallel)
+     {
+       pthread_t dlsch0_threads;
+       threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
+     }
   }
 }
 

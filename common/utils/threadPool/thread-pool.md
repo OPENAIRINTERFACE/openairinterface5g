@@ -112,13 +112,13 @@ No delete() call, same principle as not thread safe queues
 # Thread pools
 
 ## initialization
-The clients can create one or more thread pools with init_tpool()
+The clients can create one or more thread pools with `initTpool(char *params,tpool_t *pool, bool performanceMeas  )` or `initNamedTpool(char *params,tpool_t *pool, bool performanceMeas , char *name)`
 
 the params string structure: describes a list of cores, separated by "," that run a worker thread
 
 If the core exists on the CPU, the thread pool initialization sets the affinity between this thread and the related code (use negative values is allowed, so the thread will never be mapped on a specific core).
 
-The threads are all Linux real time scheduler, their name is set automatically is "Tpool_<core id>"
+The threads are all Linux real time scheduler, their name is set automatically to `Tpool<thread index>_<core id>` if initTpool is used or to `<name><thread index>_<core id>` when initNamedTpool is used.
 
 ## adding jobs
 The client create their jobs messages as a notifiedFIFO_elt_t, then they push it with pushTpool() (that internally calls push_notifiedFIFO())
@@ -132,11 +132,13 @@ A abort service abortTpool() allows to abort all jobs that match a key (see jobs
 Nevertheless, jobs already performed before the return of abortTpool() are pushed in the response Fifo queue.
 
 ## API details
-Each thread pool (there can be several in the same process) should be initialized
+Each thread pool (there can be several in the same process) should be initialized once using one of the two API's:
 
-### initTpool(char *params,tpool_t *pool, bool performanceMeas) is to be called oncepool
+### initNamedTpool(char *params,tpool_t *pool, bool performanceMeas,char *name)
 
-the configuration parameter is a string, elements separated by ",":
+### initTpool(char *params,tpool_t *pool, bool performanceMeas)
+
+`params`: the configuration parameter is a string, elements separator is a comma ",". An element can be:
 
 * N: if a N is in the parameter list, no threads are created
     The purpose is to keep the same API in any case
@@ -151,9 +153,11 @@ example: "-1,-1,-1"
 as there is no core number -1, the thread pool is made of 3 floating threads
 be careful with fix allocation: it is hard to be more clever than Linux kernel
 
-pool is the memory you allocated before to store the thread pool internal state (same concept as above queues)
+`pool` is the memory you allocated before to store the thread pool internal state (same concept as above queues)
 
-performanceMeas is a flag to enable measurements (well described in documentation)
+`performanceMeas` is a flag to enable measurements (well described in documentation)
+
+`name` is used to build the thread names. 
 
 ### pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg)
 
