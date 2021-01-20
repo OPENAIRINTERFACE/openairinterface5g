@@ -116,6 +116,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
     mask = (1 << ((int) ceil(log2((ibwp_size*(ibwp_size+1))>>1)))) - 1;
   else
     mask = (1 << (28 - (int)(ceil(log2((ibwp_size*(ibwp_size+1))>>1))))) - 1;
+
   f_alloc = Msg3_f_alloc & mask;
   nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, ibwp_size, 0, f_alloc);
 
@@ -273,7 +274,8 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
 
     if (ue_mac->RA_RAPID_found) {
 
-      uint8_t freq_hopping, mcs, Msg3_t_alloc, Msg3_f_alloc;
+      uint8_t freq_hopping, mcs, Msg3_t_alloc;
+      uint16_t Msg3_f_alloc;
       unsigned char tpc_command;
 #ifdef DEBUG_RAR
       unsigned char csi_req;

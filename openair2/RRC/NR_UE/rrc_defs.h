@@ -51,6 +51,7 @@
 #include "NR_asn_constant.h"
 #include "NR_SchedulingRequestToAddMod.h"
 #include "NR_MIB.h"
+#include "NR_SIB1.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
 #include "../NR/nr_rrc_defs.h"
