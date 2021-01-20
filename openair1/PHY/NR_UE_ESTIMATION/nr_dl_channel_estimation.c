@@ -690,7 +690,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12 - BWPStart;
   uint8_t config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   int8_t delta = get_delta(p, config_type);
-  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol][0], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
+  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol][0], &pilot[0],1000+p,0,nb_rb_pdsch+rb_offset);
 
   if (config_type == pdsch_dmrs_type1){
     nushift = (p>>1)&1;
