@@ -578,7 +578,7 @@ void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
-  openair0_timestamp timestamp;
+  openair0_timestamp timestamp, writeTimestamp;
   void *rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
   int start_rx_stream = 0;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
@@ -694,19 +694,18 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
-               ((slot_nr + DURATION_RX_TO_TX)%nb_slot_frame),&UE->frame_parms,0)];
+               ((slot_nr + DURATION_RX_TO_TX - RX_NB_TH)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX) % nb_slot_frame, &UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - RX_NB_TH) % nb_slot_frame, &UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX) % nb_slot_frame, &UE->frame_parms)-
-                     UE->rx_offset_diff;
+      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - RX_NB_TH) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;
     }
 
     AssertFatal(readBlockSize ==
@@ -732,10 +731,9 @@ void *UE_thread(void *arg) {
         LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
     }
 
-    // use previous timing_advance value to compute writeTimestamp
     curMsg->proc.timestamp_tx = timestamp+
       UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX) 
-      - firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - UE->timing_advance;
+      - firstSymSamp;
 
     notifiedFIFO_elt_t *res;
 
@@ -756,6 +754,12 @@ void *UE_thread(void *arg) {
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
+    // use previous timing_advance value to compute writeTimestamp
+    writeTimestamp = timestamp+
+      UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX
+      - RX_NB_TH) - firstSymSamp - openair0_cfg[0].tx_sample_advance -
+      UE->N_TA_offset - timing_advance;
+
     // but use current UE->timing_advance value to compute writeBlockSize
     if (UE->timing_advance != timing_advance) {
       writeBlockSize -= UE->timing_advance - timing_advance;
@@ -763,21 +767,22 @@ void *UE_thread(void *arg) {
     }
 
     int flags = 0;
+    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
     uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
     uint8_t num_UL_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots +
                            (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
     uint8_t first_tx_slot = tdd_period - num_UL_slots;
-    if (curMsg->proc.nr_slot_tx%tdd_period==first_tx_slot)
+    if (slot_tx_usrp%tdd_period==first_tx_slot)
       flags=2;
-    else     if (curMsg->proc.nr_slot_tx%tdd_period==first_tx_slot+num_UL_slots-1)
+    else     if (slot_tx_usrp%tdd_period==first_tx_slot+num_UL_slots-1)
       flags = 3;
-    else     if (curMsg->proc.nr_slot_tx%tdd_period>first_tx_slot)
+    else     if (slot_tx_usrp%tdd_period>first_tx_slot)
       flags = 1;
 
     if (flags || IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1)
       AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
-					       curMsg->proc.timestamp_tx,
+					       writeTimestamp,
 					       txp,
 					       writeBlockSize,
 					       UE->frame_parms.nb_antennas_tx,
