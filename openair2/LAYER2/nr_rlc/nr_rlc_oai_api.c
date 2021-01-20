@@ -474,6 +474,7 @@ rb_found:
                 "Can't be CU, bad node type %d\n", type);
 
     if (NODE_IS_DU(type) && is_srb == 1) {
+      MessageDef *msg;
       if (ccch_flag) {
         /* for rfsim, because UE send RRCSetupRequest in SRB1 */
         asn_dec_rval_t dec_rval;
@@ -493,7 +494,17 @@ rb_found:
           if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
             if (ul_ccch_msg->message.choice.c1->present == NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest) {
               LOG_I(RLC, "[MSG] RRC Setup Request\n");
-              DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,ue->rnti,(uint8_t *)buf,size);
+              // DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,ue->rnti,(uint8_t *)buf,size);
+              msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_INITIAL_UL_RRC_MESSAGE);
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc                  = RC.nrrrc[0]->configuration.mnc[0];
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc_digit_length     = RC.nrrrc[0]->configuration.mnc_digit_length[0];
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).nr_cellid            = RC.nrrrc[0]->nr_cellid;
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).crnti                = ue->rnti;
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
+              F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container_length = size;
+              itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0), msg);
               ccch_flag = 0;
               return;
             }
@@ -501,7 +512,7 @@ rb_found:
         }
       }
 
-      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
       F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;

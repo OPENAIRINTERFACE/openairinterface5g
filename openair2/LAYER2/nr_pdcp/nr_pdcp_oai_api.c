@@ -47,7 +47,7 @@ hash_table_t  *pdcp_coll_p;
 static uint64_t pdcp_optmask;
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
-extern ngran_node_t node_type;
+ngran_node_t node_type = ngran_gNB;
 uint8_t first_dcch = 0;
 
 /****************************************************************************/
@@ -623,15 +623,11 @@ static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_
   int srb_id;
   int i;
 
-  if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-    nr_rrc_data_ind( ctxt_pP, 1, size, buf);
+  if (ccch_or_dcch == 0) {
+    nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
+    ccch_or_dcch = 1;
   } else {
-    if (ccch_or_dcch == 0) {
-      nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
-      ccch_or_dcch = 1;
-    } else {
-      nr_rrc_data_ind( ctxt_pP, 1, size, buf);
-    }
+    nr_rrc_data_ind( ctxt_pP, 1, size, buf);
   }
 
   return;

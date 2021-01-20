@@ -80,7 +80,7 @@
 
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
-ngran_node_t node_type = ngran_gNB;
+extern ngran_node_t node_type;
 
 extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
@@ -1477,7 +1477,6 @@ void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
 void set_node_type(void) {
   int               j;
-  // ngran_node_t      node_type;
   paramdef_t        MacRLC_Params[] = MACRLCPARAMS_DESC;
   paramlist_def_t   MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
   paramdef_t        GNBParams[]  = GNBPARAMS_DESC;

@@ -601,6 +601,9 @@ int main( int argc, char **argv ) {
   protocol_ctxt_t ctxt_pP = {0};
   ctxt_pP.enb_flag = ENB_FLAG_NO;
   ctxt_pP.rnti = 0x1234;
+  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
+  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+  RC.nrrrc[0]->node_type = ngran_gNB;
   rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");
