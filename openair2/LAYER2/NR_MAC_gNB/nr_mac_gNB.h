@@ -561,6 +561,8 @@ typedef struct {
   int pucch_snrx10;
 
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
+  bool SR;
+
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free

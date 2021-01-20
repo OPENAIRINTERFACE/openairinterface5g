@@ -874,7 +874,6 @@ void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static
 
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
 uint32_t ul_pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
-int bsr0ue = -1;
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -893,12 +892,6 @@ void pf_ul(module_id_t module_id,
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
-
-  /* Hack: currently, we do not have SR, and need to schedule UEs continuously.
-   * To keep the wasted resources low, we switch UEs to be scheduled in a
-   * round-robin fashion below, and only schedule a UE with BSR=0 if it is the
-   * selected one */
-  bsr0ue = next_list_entry_looped(UE_list, bsr0ue);
 
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -931,11 +924,12 @@ void pf_ul(module_id_t module_id,
       continue;
     }
 
-    /* Check BSR and schedule UE if it is zero to avoid starvation, since we do
-     * not have SR (yet) */
-    if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
-      if (UE_id != bsr0ue)
-        continue;
+    if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0 && !sched_ctrl->SR)
+      continue;
+
+    /* Schedule UE if there is a SR and no data (otherwise, will be scheduled
+     * baded on data to transmit) */
+    if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0 && sched_ctrl->SR) {
       /* if no data, pre-allocate 5RB */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE) {
@@ -1225,6 +1219,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
+    sched_ctrl->SR = false;
 
     int8_t harq_id = sched_pusch->ul_harq_pid;
     if (harq_id < 0) {
