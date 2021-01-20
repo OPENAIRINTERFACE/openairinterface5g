@@ -160,19 +160,6 @@ typedef struct Type0_PDCCH_CSS_config_s {
   uint32_t cset_start_rb;
 } NR_Type0_PDCCH_CSS_config_t;
 
-// 3GPP TS 38.300 Section 9.2.6
-typedef enum RA_trigger_e {
-  RA_NOT_RUNNING,
-  INITIAL_ACCESS_FROM_RRC_IDLE,
-  RRC_CONNECTION_REESTABLISHMENT,
-  DURING_HANDOVER,
-  NON_SYNCHRONISED,
-  TRANSITION_FROM_RRC_INACTIVE,
-  TO_ESTABLISH_TA,
-  REQUEST_FOR_OTHER_SI,
-  BEAM_FAILURE_RECOVERY,
-} RA_trigger_t;
-
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
 void get_frame_type(uint16_t nr_bandP, uint8_t scs_index, lte_frame_type_t *current_type);

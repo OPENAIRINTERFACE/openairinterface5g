@@ -185,8 +185,6 @@ typedef struct {
   /* Random Access parameters */
   /// state of RA procedure
   RA_state_t ra_state;
-  /// trigger of RA procedure
-  RA_trigger_t ra_trigger;
   /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
   uint8_t RA_offset;
   /// RA-rnti

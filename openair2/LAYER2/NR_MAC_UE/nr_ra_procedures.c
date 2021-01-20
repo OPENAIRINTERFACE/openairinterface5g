@@ -50,6 +50,7 @@
 
 /* RRC */
 #include "NR_RACH-ConfigCommon.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 /* PHY */
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
@@ -456,36 +457,20 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       prach_resources->RA_SCALING_FACTOR_BI = 1;
       prach_resources->RA_PCMAX = 0; // currently hardcoded to 0
 
-      payload = (uint8_t*) &mac->CCCH_pdu.payload;
+      payload = (uint8_t*) mac->CCCH_pdu.payload;
 
       mac_ce_len = 0;
       num_sdus = 1;
       post_padding = 1;
+      sdu_lcids[0] = lcid;
 
-      if (0){
-        // initialisation by RRC
-        // CCCH PDU
-        // size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
-        //                                           CC_id,
-        //                                           frame,
-        //                                           CCCH,
-        //                                           1,
-        //                                           mac_sdus,
-        //                                           gNB_id,
-        //                                           0);
-        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
-      } else {
-        // fill ulsch_buffer with random data
-        for (int i = 0; i < TBS_bytes; i++){
-          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
-        }
-        //Sending SDUs with size 1
-        //Initialize elements of sdu_lcids and sdu_lengths
-        sdu_lcids[0] = lcid;
-        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
-        header_length_total += 2 + (sdu_lengths[0] >= 128);
-        size_sdu += sdu_lengths[0];
-      }
+      // initialisation by RRC
+      // CCCH PDU
+      size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
+
+      sdu_lengths[0] = size_sdu;
+
+      LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
 
       //mac->RA_tx_frame = frame;
       //mac->RA_tx_slot  = nr_slot_tx;
@@ -529,7 +514,14 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           for (int j = 0; j < (TBS_bytes - offset); j++)
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
         }
-      } 
+      }
+
+      LOG_I(MAC,"size_sdu = %i\n", size_sdu);
+      LOG_I(MAC,"offset = %i\n", offset);
+      for(int k = 0; k<offset; k++) {
+        LOG_I(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+      }
+
     } else if (mac->RA_window_cnt != -1) { // RACH is active
 
       ////////////////////////////////////////////////////////////////

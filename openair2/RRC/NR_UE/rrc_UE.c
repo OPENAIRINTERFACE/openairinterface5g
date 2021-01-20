@@ -413,6 +413,8 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       NR_UE_rrc_inst[nr_ue].requested_SI_List.size= 4;
       NR_UE_rrc_inst[nr_ue].requested_SI_List.bits_unused= 0;
 
+      NR_UE_rrc_inst[nr_ue].ra_trigger = RA_NOT_RUNNING;
+
       //  init RRC lists
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RLC_Bearer_Config_list, NR_maxLC_ID);
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SchedulingRequest_list, NR_maxNrofSR_ConfigPerCellGroup);
@@ -834,7 +836,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
           // After SI is received, prepare RRCConnectionRequest
           if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
             if (AMF_MODE_ENABLED) {
-              rrc_ue_generate_RRCSetupRequest( ctxt_pP, gNB_index );
+              nr_rrc_ue_generate_RRCSetupRequest( ctxt_pP->module_id, gNB_index );
             }
 
           if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_IDLE) {
@@ -1287,7 +1289,7 @@ int nr_decode_BCCH_DLSCH_Message(
 
   if (nr_rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
     //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!AMF_MODE_ENABLED)) {
-      rrc_ue_generate_RRCSetupRequest(ctxt_pP, 0);
+      nr_rrc_ue_generate_RRCSetupRequest(ctxt_pP->module_id, 0);
       nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
     //}
   }
@@ -1493,13 +1495,13 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
 
     bool SIB_to_request[32] = {};
 
-    LOG_I(RRC, "SIBs broadcasting: ");
+    LOG_D(RRC, "SIBs broadcasting: ");
     for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
       printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
     }
     printf("\n");
 
-    LOG_I(RRC, "SIBs needed by UE: ");
+    LOG_D(RRC, "SIBs needed by UE: ");
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
 
@@ -1517,7 +1519,7 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
     }
     printf("\n");
 
-    LOG_I(RRC, "SIBs to request by UE: ");
+    LOG_D(RRC, "SIBs to request by UE: ");
     bool do_ra = false;
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if(SIB_to_request[j]) {
@@ -1529,14 +1531,13 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
 
     if(do_ra) {
 
-      NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-      mac->ra_trigger = REQUEST_FOR_OTHER_SI;
+      NR_UE_rrc_inst[module_id].ra_trigger = REQUEST_FOR_OTHER_SI;
       get_softmodem_params()->do_ra = 1;
 
       if(sib1.si_SchedulingInfo->si_RequestConfig) {
-        LOG_I(RRC, "Trigger contention-free RA procedure (ra_trigger = %i)\n", mac->ra_trigger);
+        LOG_D(RRC, "Trigger contention-free RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
       } else {
-        LOG_I(RRC, "Trigger contention-based RA procedure (ra_trigger = %i)\n", mac->ra_trigger);
+        LOG_D(RRC, "Trigger contention-based RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
       }
 
     }
@@ -1545,6 +1546,41 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
 
   return 0;
 }
+
+int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
+
+  switch(NR_UE_rrc_inst[module_id].ra_trigger){
+    case INITIAL_ACCESS_FROM_RRC_IDLE:
+      nr_rrc_ue_generate_RRCSetupRequest(module_id,gNB_index);
+      break;
+    case RRC_CONNECTION_REESTABLISHMENT:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case DURING_HANDOVER:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case NON_SYNCHRONISED:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case TRANSITION_FROM_RRC_INACTIVE:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case TO_ESTABLISH_TA:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case REQUEST_FOR_OTHER_SI:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case BEAM_FAILURE_RECOVERY:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    default:
+      AssertFatal(1==0, "Invalid ra_trigger value!\n");
+      break;
+  }
+
+}
+
 
 /*brief decode SIB1 message*/
 int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
@@ -1574,7 +1610,15 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
       if( g_log->log_component[RRC].level >= OAILOG_DEBUG  )
         xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
 
-      check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
+      // FIXME: fix condition for the RA trigger
+      if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
+        NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
+        get_softmodem_params()->do_ra = 1;
+      } else {
+        check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
+      }
+
+      nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
     }
     else
        LOG_E(PHY, "sib1 is starting by 8 times 0\n");
@@ -1844,10 +1888,10 @@ nr_rrc_ue_process_securityModeCommand(
 }
 
 //-----------------------------------------------------------------------------
-void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index ) {
   uint8_t i=0,rv[6];
 
-  if(NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
+  if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
     for (i=0; i<6; i++) {
@@ -1861,16 +1905,16 @@ void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, cons
     }
 
     LOG_T(NR_RRC,"\n");
-    // NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
-    //   do_RRCSetupRequest(
-    //     ctxt_pP->module_id,
-    //     (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-    //     rv);
-    LOG_I(NR_RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, eNB %d)\n",
-          ctxt_pP->module_id, ctxt_pP->frame, NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
+    NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size =
+       do_RRCSetupRequest(
+         module_id,
+         (uint8_t *)NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,
+         rv);
+    LOG_I(NR_RRC,"[UE %d] : Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, gNB %d)\n",
+          module_id, NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
 
-    for (i=0; i<NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
-      LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
+    for (i=0; i<NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
+      LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
     }
 
     LOG_T(NR_RRC,"\n");
