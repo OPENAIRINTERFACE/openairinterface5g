@@ -121,12 +121,6 @@
   #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
 #endif
 
-#define FRAME_PERIOD    100000000ULL
-#define DAQ_PERIOD      66667ULL
-#define DLSCH_RB_ALLOC    0x1fbf  // skip DC RB (total 23/25 RBs)
-#define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
-#define NS_PER_SLOT       500000
-
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 /// Context data structure for gNB subframe processing
