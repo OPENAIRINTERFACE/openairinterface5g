@@ -334,6 +334,11 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   uint8_t Nid_cell          = 0;
   int     Ncp               = NORMAL;
 
+  if(fp->nb_antennas_rx == 0)
+    fp->nb_antennas_rx = 1;
+  if(fp->nb_antennas_tx == 0)
+    fp->nb_antennas_tx = 1;
+
   // default values until overwritten by RRCConnectionReconfiguration
   fp->nb_antenna_ports_gNB = nb_ant_ports_gNB;
   fp->tdd_config           = tdd_cfg;

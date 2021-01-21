@@ -77,9 +77,9 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   // generate pilot
   nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
-  int re_offset = ssb_offset;
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
+    int re_offset = ssb_offset;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
 
@@ -277,9 +277,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   // generate pilot
   nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
-  int re_offset = ssb_offset;
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
+    int re_offset = ssb_offset;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
@@ -456,12 +456,12 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       // do ifft of channel estimate
       for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
         for (p=0; p<ue->frame_parms.nb_antenna_ports_gNB; p++) {
-          if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
+          if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p*ue->frame_parms.nb_antennas_rx)+aarx])
           {
             LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, proc->thread_id, symbol, ch_offset);
             idft(idftsizeidx,
-                 (int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][ch_offset],
-                 (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p<<1)+aarx],1);
+                 (int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p*ue->frame_parms.nb_antennas_rx)+aarx][ch_offset],
+                 (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p*ue->frame_parms.nb_antennas_rx)+aarx],1);
           }
         }
     }

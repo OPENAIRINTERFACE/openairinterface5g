@@ -59,16 +59,15 @@ uint16_t nr_pbch_extract(int **rxdataF,
   uint8_t i,j,aarx;
   int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
   int nushiftmod4 = frame_parms->nushift;
-  unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
-
- // if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
- rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
 
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
               symbol);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    unsigned int rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
+    rx_offset = (rx_offset)%(frame_parms->ofdm_symbol_size);
+
     rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
     rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
 #ifdef DEBUG_PBCH
