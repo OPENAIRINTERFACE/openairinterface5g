@@ -557,7 +557,7 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
 

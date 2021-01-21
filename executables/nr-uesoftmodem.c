@@ -514,7 +514,7 @@ int main( int argc, char **argv ) {
   initTpool(params_dl, Tpool_dl, false);
 #endif
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   init_opt() ;
   load_nrLDPClib();

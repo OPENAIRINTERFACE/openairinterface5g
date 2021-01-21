@@ -336,15 +336,15 @@ extern "C" {
     usleep(100*1000); // Allow the tasks to receive the message before going returning to main thread
   }
 
-  int itti_create_queue(const task_info_t *task_info) {
+  int itti_create_queue(const task_info_t *taskInfo) {
     pthread_mutex_lock (&lock_nb_queues);
     int newQueue=nb_queues++;
     AssertFatal(tasks=(task_list_t **) realloc(tasks, nb_queues * sizeof(*tasks)),"");
     tasks[newQueue]= new task_list_t;
     pthread_mutex_unlock (&lock_nb_queues);
-    LOG_I(TMR,"Starting itti queue: %s as task %d\n", tasks_info->name, newQueue);
+    LOG_I(TMR,"Starting itti queue: %s as task %d\n", taskInfo->name, newQueue);
     pthread_mutex_init(&tasks[newQueue]->queue_cond_lock, NULL);
-    memcpy(&tasks[newQueue]->admin, tasks_info, sizeof(task_info_t));
+    memcpy(&tasks[newQueue]->admin, taskInfo, sizeof(task_info_t));
     AssertFatal( ( tasks[newQueue]->epoll_fd = epoll_create1(0) ) >=0, "");
     AssertFatal( ( tasks[newQueue]->sem_fd = eventfd(0, EFD_SEMAPHORE) ) >=0, "");
     itti_subscribe_event_fd((task_id_t)newQueue, tasks[newQueue]->sem_fd);
@@ -356,14 +356,13 @@ extern "C" {
   }
 
   int itti_init(task_id_t task_max,
-                MessagesIds messages_id_max,
-                const task_info_t *tasks_info,
-                const message_info_t *messages_info) {
+                const task_info_t *tasks
+               ) {
     pthread_mutex_init(&lock_nb_queues, NULL);
     nb_queues=0;
 
     for(int i=0; i<task_max; ++i) {
-      itti_create_queue(&tasks_info[i]);
+      itti_create_queue(&tasks[i]);
     }
 
     return 0;

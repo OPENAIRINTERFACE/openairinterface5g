@@ -309,7 +309,7 @@ int main( int argc, char **argv )
   /* Read eNB configuration file */
   enb_properties = enb_config_init(conf_config_file_name);
 
-  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX,  tasks_info);
 
   itti_wait_ready(1);
 

@@ -264,7 +264,7 @@ void *rrc_enb_process_itti_msg(void *);
 #include <openair3/NGAP/ngap_gNB.h>
 
 #ifdef ITTI_SIM
-#include <openair2/COMMON/itti_sim_messages_types.h>
+  #include <openair2/COMMON/itti_sim_messages_types.h>
 #endif
 
 /*
@@ -301,7 +301,7 @@ typedef struct {
 //TASK_DEF(TASK_RRC_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)
 //TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)
 //TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,  1000, NULL, NULL)
-void * rrc_enb_process_msg(void*);
+void *rrc_enb_process_msg(void *);
 #define FOREACH_TASK(TASK_DEF) \
   TASK_DEF(TASK_UNKNOWN,  TASK_PRIORITY_MED, 50, NULL, NULL)  \
   TASK_DEF(TASK_TIMER,    TASK_PRIORITY_MED, 10, NULL, NULL)   \
@@ -403,8 +403,8 @@ typedef struct MessageHeader_s {
   MessagesIds messageId;          /**< Unique message id as referenced in enum MessagesIds */
   task_id_t  originTaskId;        /**< ID of the sender task */
   task_id_t  destinationTaskId;   /**< ID of the destination task */
-  instance_t originInstance;            
-  instance_t destinationInstance;            
+  instance_t originInstance;
+  instance_t destinationInstance;
   itti_lte_time_t lte_time;
   MessageHeaderSize ittiMsgSize;         /**< Message size (not including header size) */
 } MessageHeader;
@@ -566,8 +566,7 @@ void *malloc_or_fail(size_t size);
 int memory_read(const char *datafile, void *data, size_t size);
 int itti_free(task_id_t task_id, void *ptr);
 
-int itti_init(task_id_t task_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
-              const message_info_t *messages_info);
+int itti_init(task_id_t task_max, const task_info_t *tasks_info);
 int timer_setup(
   uint32_t      interval_sec,
   uint32_t      interval_us,

@@ -1141,7 +1141,7 @@ int main ( int argc, char **argv ) {
   if (opp_enabled ==1)
     reset_opp_meas();
 
-  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   init_opt();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"

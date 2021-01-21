@@ -544,7 +544,7 @@ int main ( int argc, char **argv )
 
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
-  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // allows to forward in wireshark L2 protocol for decoding
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {

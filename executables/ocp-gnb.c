@@ -928,7 +928,7 @@ int main( int argc, char **argv ) {
   get_common_options(SOFTMODEM_GNB_BIT );
   AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   set_taus_seed (0);
   init_opt();
   init_pdcp();
