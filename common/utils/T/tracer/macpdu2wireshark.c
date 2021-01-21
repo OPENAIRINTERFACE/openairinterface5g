@@ -149,8 +149,17 @@ void trace_lte(ev_data *d, int direction, int rnti_type, int rnti,
     PUTC(&d->buf, MAC_LTE_SR_TAG);
     PUTC(&d->buf, 0); /* number of items byte 1 */
     PUTC(&d->buf, 1); /* number of items byte 2 */
-    PUTC(&d->buf, 0); /* ueid byte 1 (not used, let's put 0) */
-    PUTC(&d->buf, 0); /* ueid byte 2 (not used, let's put 0) */
+
+    /* put UE id */
+    if (sr_rnti < 0 || sr_rnti > 65535) { printf("bad sr rnti!\n"); exit(1); }
+    /* if no UE id allocated for this rnti then allocate the next one */
+    if (d->lte_rnti_to_ueid[sr_rnti] == -1) {
+      d->lte_rnti_to_ueid[sr_rnti] = d->lte_next_ue_id;
+      d->lte_next_ue_id++;
+    }
+    PUTC(&d->buf, (d->lte_rnti_to_ueid[sr_rnti]>>8) & 255);
+    PUTC(&d->buf, d->lte_rnti_to_ueid[sr_rnti] & 255);
+
     PUTC(&d->buf, (sr_rnti>>8) & 255);
     PUTC(&d->buf, sr_rnti & 255);
   }
