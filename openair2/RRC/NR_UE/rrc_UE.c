@@ -1579,6 +1579,7 @@ int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
       break;
   }
 
+  return 0;
 }
 
 
@@ -1611,11 +1612,10 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
         xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
 
       // FIXME: fix condition for the RA trigger
+      check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
       if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
         NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
         get_softmodem_params()->do_ra = 1;
-      } else {
-        check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
       }
 
       nr_rrc_ue_generate_ra_msg(module_id,gNB_index);

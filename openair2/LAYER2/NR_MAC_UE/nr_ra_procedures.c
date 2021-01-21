@@ -420,7 +420,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, preambleTransMax, mac_ce_len;
+  int num_sdus, offset = 0, preambleTransMax;
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
@@ -457,9 +457,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       prach_resources->RA_SCALING_FACTOR_BI = 1;
       prach_resources->RA_PCMAX = 0; // currently hardcoded to 0
 
+      uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
       payload = (uint8_t*) mac->CCCH_pdu.payload;
 
-      mac_ce_len = 0;
       num_sdus = 1;
       post_padding = 1;
       sdu_lcids[0] = lcid;
@@ -472,22 +472,17 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
 
-      //mac->RA_tx_frame = frame;
-      //mac->RA_tx_slot  = nr_slot_tx;
-      //mac->RA_backoff_frame = frame;
-      //mac->RA_backoff_slot  = nr_slot_tx;
-
       if (size_sdu > 0) {
 
         LOG_I(MAC, "[UE %d] Frame %d: Initialisation Random Access Procedure\n", mod_id, frame);
 
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
         mac->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
-        mac->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
         mac->RA_prachMaskIndex = 0;
         // todo: add the backoff condition here
         mac->RA_backoff_cnt = 0;
         mac->RA_active = 1;
+
         prach_resources->Msg3 = payload;
 
         nr_get_RA_window(mac);
@@ -501,26 +496,34 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                                        num_sdus,                          // num sdus
                                        sdu_lengths,                       // sdu length
                                        sdu_lcids,                         // sdu lcid
-                                       0,                                 // power headroom
-                                       0,                                 // crnti
-                                       0,                                 // truncated bsr
-                                       0,                                 // short bsr
-                                       0,                                 // long_bsr
+                                       0,                   // power headroom
+                                       0,                            // crnti
+                                       0,                      // truncated bsr
+                                       0,                         // short bsr
+                                       0,                          // long_bsr
                                        post_padding,
                                        0);
 
+        AssertFatal(TBS_max > offset, "Frequency resources are not enough for Msg3!\n");
+
         // Padding: fill remainder with 0
         if (post_padding > 0){
-          for (int j = 0; j < (TBS_bytes - offset); j++)
-            payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
+          for (int j = 0; j < (TBS_max - offset); j++)
+            payload[offset + j] = 0;
         }
       }
 
-      LOG_I(MAC,"size_sdu = %i\n", size_sdu);
-      LOG_I(MAC,"offset = %i\n", offset);
-      for(int k = 0; k<offset; k++) {
-        LOG_I(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+      LOG_D(MAC,"size_sdu = %i\n", size_sdu);
+      LOG_D(MAC,"offset = %i\n", offset);
+      for(int k = 0; k < TBS_max; k++) {
+        LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
       }
+
+      // Msg3 was initialized with TBS_max bytes because the mac->RA_Msg3_size will only be known after
+      // receiving Msg2 (which contains the Msg3 resource reserve).
+      // Msg3 will be transmitted with mac->RA_Msg3_size bytes, removing unnecessary 0s.
+      mac->ulsch_pdu.Pdu_size = TBS_max;
+      memcpy(mac->ulsch_pdu.payload, prach_resources->Msg3, TBS_max);
 
     } else if (mac->RA_window_cnt != -1) { // RACH is active
 

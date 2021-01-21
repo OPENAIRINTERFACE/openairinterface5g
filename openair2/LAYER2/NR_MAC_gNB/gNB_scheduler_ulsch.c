@@ -417,6 +417,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             current_rnti,
             UE_id,
             ra->rnti);
+
+      printf("\n");
+      LOG_I(MAC,"[RAPROC] Received Msg3:\n");
+      for (int k = 0; k < sdu_lenP; k++) {
+        LOG_I(MAC,"(%i): 0x%x\n",k,sduP[k]);
+      }
+      printf("\n");
+
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 

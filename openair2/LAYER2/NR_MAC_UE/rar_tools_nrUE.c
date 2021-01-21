@@ -122,6 +122,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
 
   // virtual resource block to physical resource mapping for Msg3 PUSCH (6.3.1.7 in 38.211)
   pusch_config_pdu->rb_start += ibwp_start - abwp_start;
+  mac->RA_Msg3_size = pusch_config_pdu->rb_size;
 
   // Time domain allocation
   SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
