@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "gnb_config.h"
 #include "gnb_paramdef.h"
+#include "enb_paramdef.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "intertask_interface.h"

@@ -647,7 +647,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
               retInfo->numDmrsCdmGrpsNoData);
       /* we do not have to do anything, since we do not require to get data
        * from RLC, encode MAC CEs, or copy data to FAPI structures */
-      LOG_W(MAC,
+      LOG_D(MAC,
             "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
