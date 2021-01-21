@@ -1,13 +1,13 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun May 19 21:39:57 2019
+[*] Wed Jan 20 05:55:49 2021
 [*]
-[dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Sun May 19 21:30:25 2019"
-[dumpfile_size] 11590554
-[savefile] "/home/sphex/raymond/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 7629910000
-[size] 1840 795
+[dumpfile] "/home/eurecom/raymond/openair_eNB_dump.vcd"
+[dumpfile_mtime] "Wed Jan 20 05:52:03 2021"
+[dumpfile_size] 74759060
+[savefile] "/home/eurecom/raymond/openairinterface5g_2/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
+[timestart] 32439070000
+[size] 1892 841
 [pos] -1 -1
 *-21.832302 7639830000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
@@ -22,11 +22,13 @@ variables.trx_ts[63:0]
 variables.trx_tst[63:0]
 @28
 functions.eNB_thread_rxtx0
+@421
+variables.l1_proc_tx_ic[63:0]
+@420
+variables.l1_proc_ic[63:0]
 @24
 variables.frame_number_RX0_RU[63:0]
-@25
 variables.tti_number_RX0_RU[63:0]
-@24
 variables.frame_number_TX0_RU[63:0]
 variables.tti_number_TX0_RU[63:0]
 @28
