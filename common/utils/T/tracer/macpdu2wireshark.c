@@ -85,6 +85,15 @@ typedef struct {
   /* runtime vars */
   int cur_mib;
   int cur_sib;
+
+  /* hack to report UE id:
+   * each time we see a rnti, we allocate the next ue_id
+   * (two separate versions for lte and nr)
+   */
+  int lte_rnti_to_ueid[65536];
+  int lte_next_ue_id;
+  int nr_rnti_to_ueid[65536];
+  int nr_next_ue_id;
 } ev_data;
 
 /****************************************************************************/
@@ -108,6 +117,18 @@ void trace_lte(ev_data *d, int direction, int rnti_type, int rnti,
     PUTC(&d->buf, MAC_LTE_RNTI_TAG);
     PUTC(&d->buf, (rnti>>8) & 255);
     PUTC(&d->buf, rnti & 255);
+
+    /* put UE id */
+    if (rnti < 0 || rnti > 65535) { printf("bad rnti!\n"); exit(1); }
+    /* if no UE id allocated for this rnti then allocate the next one */
+    if (d->lte_rnti_to_ueid[rnti] == -1) {
+      d->lte_rnti_to_ueid[rnti] = d->lte_next_ue_id;
+      d->lte_next_ue_id++;
+    }
+
+    PUTC(&d->buf, MAC_LTE_UEID_TAG);
+    PUTC(&d->buf, (d->lte_rnti_to_ueid[rnti]>>8) & 255);
+    PUTC(&d->buf, d->lte_rnti_to_ueid[rnti] & 255);
   }
 
   /* for newer version of wireshark? */
@@ -223,6 +244,7 @@ void sr(void *_d, event e)
 
 #define MAC_NR_PAYLOAD_TAG    0x01
 #define MAC_NR_RNTI_TAG       0x02
+#define MAC_NR_UEID_TAG       0x03
 #define MAC_NR_FRAME_SLOT_TAG 0x07
 
 #define NR_FDD_RADIO 1
@@ -250,6 +272,18 @@ void trace_nr(ev_data *d, int direction, int rnti_type, int rnti,
     PUTC(&d->buf, MAC_NR_RNTI_TAG);
     PUTC(&d->buf, (rnti>>8) & 255);
     PUTC(&d->buf, rnti & 255);
+
+    /* put UE id */
+    if (rnti < 0 || rnti > 65535) { printf("bad rnti!\n"); exit(1); }
+    /* if no UE id allocated for this rnti then allocate the next one */
+    if (d->nr_rnti_to_ueid[rnti] == -1) {
+      d->nr_rnti_to_ueid[rnti] = d->nr_next_ue_id;
+      d->nr_next_ue_id++;
+    }
+
+    PUTC(&d->buf, MAC_NR_UEID_TAG);
+    PUTC(&d->buf, (d->nr_rnti_to_ueid[rnti]>>8) & 255);
+    PUTC(&d->buf, d->nr_rnti_to_ueid[rnti] & 255);
   }
 
 #if 0
@@ -578,6 +612,11 @@ int main(int n, char **v)
   int live_port = DEFAULT_LIVE_PORT;
   int live = 0;
   memset(&d, 0, sizeof(ev_data));
+
+  for (i = 0; i < 65536; i++) {
+    d.lte_rnti_to_ueid[i] = -1;
+    d.nr_rnti_to_ueid[i] = -1;
+  }
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
