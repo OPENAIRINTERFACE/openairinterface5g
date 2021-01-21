@@ -233,9 +233,10 @@ static void put_bit(rlc_pdu_encoder_t *encoder, int bit)
     exit(1);
   }
 
-  encoder->buffer[encoder->byte] <<= 1;
   if (bit)
-    encoder->buffer[encoder->byte] |= 1;
+    encoder->buffer[encoder->byte] |= 1 << (7 - encoder->bit);
+  else
+    encoder->buffer[encoder->byte] &= ~(1 << (7 - encoder->bit));
 
   encoder->bit++;
   if (encoder->bit == 8) {
