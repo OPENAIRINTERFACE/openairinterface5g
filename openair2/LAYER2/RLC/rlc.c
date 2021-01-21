@@ -52,6 +52,8 @@ extern boolean_t pdcp_data_ind(
 //#define TRACE_RLC_PAYLOAD 1
 #define DEBUG_RLC_DATA_REQ 1
 
+logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, const signed long sizeP)
 //-----------------------------------------------------------------------------

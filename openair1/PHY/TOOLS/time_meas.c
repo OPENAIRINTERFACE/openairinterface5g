@@ -26,6 +26,7 @@
 
 // global var for openair performance profiler
 int opp_enabled = 0;
+double cpu_freq_GHz  __attribute__ ((aligned(32)));
 
 double get_cpu_freq_GHz(void)
 {

@@ -48,11 +48,12 @@
 #include "pdcp_primitives.h"
 
 #include "UTIL/OSA/osa_defs.h"
-#include "msc.h"
+#include <common/utils/msc/msc.h>
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
 
 #include "gtpv1u_eNB_task.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 
 #include "TLVDecoder.h"

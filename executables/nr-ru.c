@@ -118,7 +118,6 @@ uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
-extern int usrp_tx_thread;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */

@@ -70,7 +70,6 @@ uint32_t timing_advance = 0;
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 int config_sync_var=-1;

@@ -148,7 +148,6 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 double cpuf;

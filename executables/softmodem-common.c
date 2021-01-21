@@ -43,6 +43,8 @@
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
+msc_interface_t msc_interface;
+int usrp_tx_thread = 0;
 
 
 static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
