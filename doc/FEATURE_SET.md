@@ -264,6 +264,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short blocks
+*  Support for UL transform precoding (SC-FDMA)
 
 
 ## gNB PHY Layer ##
