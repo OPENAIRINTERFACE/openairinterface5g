@@ -218,7 +218,6 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   if (!NODE_IS_CU(RC.nrrrc[0]->node_type)){
-    printf("################ init_NR_SI rrc_mac_config_req_gNB \n");
     rrc_mac_config_req_gNB(rrc->module_id,
                           rrc->carrier.ssb_SubcarrierOffset,
                           rrc->carrier.pdsch_AntennaPorts,
@@ -277,7 +276,9 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     } else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
-      // rrc_add_nsa_user(rrc,ue_context_p,NULL);
+      if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+        rrc_add_nsa_user(rrc,ue_context_p,NULL);
+      }
     }
   }
 }

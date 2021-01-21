@@ -91,7 +91,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   BIT_STRING_TO_NR_CELL_IDENTITY(&ie->value.choice.NRCGI.nRCellIdentity, f1ap_ue_context_setup_req->nr_cellid);
   /* ServCellIndex */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_ServCellndex, true);
+                             F1AP_ProtocolIE_ID_id_ServCellIndex, true);
   f1ap_ue_context_setup_req->servCellIndex = ie->value.choice.ServCellIndex;
   /* optional */
   /* CellULConfigured */
@@ -256,7 +256,8 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
     ie->id                             = F1AP_ProtocolIE_ID_id_C_RNTI;
     ie->criticality                    = F1AP_Criticality_ignore;
     ie->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_C_RNTI;
-    C_RNTI_TO_BIT_STRING(rntiP, &ie->value.choice.C_RNTI);
+    //C_RNTI_TO_BIT_STRING(rntiP, &ie->value.choice.C_RNTI);
+    ie->value.choice.C_RNTI=rntiP;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -1045,7 +1046,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
     srbs_failedToBeSetupMod_item.sRBID = 50L;
     srbs_failedToBeSetupMod_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
     srbs_failedToBeSetupMod_item.cause->present = F1AP_Cause_PR_radioNetwork;
-    srbs_failedToBeSetupMod_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnd_du_ue_f1ap_id;
+    srbs_failedToBeSetupMod_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
     /* ADD */
     srbs_failedToBeSetupMod_item_ies->value.choice.SRBs_FailedToBeSetupMod_Item = srbs_failedToBeSetupMod_item;
     ASN_SEQUENCE_ADD(&ie->value.choice.SRBs_FailedToBeSetupMod_List.list,
@@ -1076,7 +1077,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
     drbs_failedToBeSetupMod_item.dRBID = 30L;
     drbs_failedToBeSetupMod_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
     drbs_failedToBeSetupMod_item.cause->present = F1AP_Cause_PR_radioNetwork;
-    drbs_failedToBeSetupMod_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnd_du_ue_f1ap_id;
+    drbs_failedToBeSetupMod_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
     /* ADD */
     drbs_failedToBeSetupMod_item_ies->value.choice.DRBs_FailedToBeSetupMod_Item = drbs_failedToBeSetupMod_item;
     ASN_SEQUENCE_ADD(&ie->value.choice.DRBs_FailedToBeSetupMod_List.list,
@@ -1112,7 +1113,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
     scell_failedtoSetupMod_item.sCell_ID = nRCGI;
     scell_failedtoSetupMod_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
     scell_failedtoSetupMod_item.cause->present = F1AP_Cause_PR_radioNetwork;
-    scell_failedtoSetupMod_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnd_du_ue_f1ap_id;
+    scell_failedtoSetupMod_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
     /* ADD */
     scell_failedtoSetupMod_item_ies->value.choice.SCell_FailedtoSetupMod_Item = scell_failedtoSetupMod_item;
     ASN_SEQUENCE_ADD(&ie->value.choice.SCell_FailedtoSetupMod_List.list,
@@ -1143,7 +1144,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
     drbs_failedToBeModified_item.dRBID = 30L;
     drbs_failedToBeModified_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
     drbs_failedToBeModified_item.cause->present = F1AP_Cause_PR_radioNetwork;
-    drbs_failedToBeModified_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnd_du_ue_f1ap_id;
+    drbs_failedToBeModified_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
     /* ADD */
     drbs_failedToBeModified_item_ies->value.choice.DRBs_FailedToBeModified_Item = drbs_failedToBeModified_item;
     ASN_SEQUENCE_ADD(&ie->value.choice.DRBs_FailedToBeModified_List.list,

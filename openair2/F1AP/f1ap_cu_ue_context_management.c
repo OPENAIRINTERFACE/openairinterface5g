@@ -109,7 +109,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   /* mandatory */
   /* c4. ServCellIndex */
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_ServCellndex;
+  ie->id                             = F1AP_ProtocolIE_ID_id_ServCellIndex;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_ServCellIndex;
   ie->value.choice.ServCellIndex = 2;
@@ -380,75 +380,86 @@ if (0) {
       }
 
     } else { 
-      /* 12.1.2 dRB_Information */
-      drbs_toBeSetup_item.qoSInformation.present = F1AP_QoSInformation_PR_dRB_Information;
-      drbs_toBeSetup_item.qoSInformation.choice.dRB_Information = (F1AP_DRB_Information_t *)calloc(1, sizeof(F1AP_DRB_Information_t));
-      
+      /* 12.1.2 DRB_Information */
+      drbs_toBeSetup_item.qoSInformation.present = F1AP_QoSInformation_PR_choice_extension;
+
+      F1AP_QoSInformation_ExtIEs_t *ie;
+      ie = (F1AP_QoSInformation_ExtIEs_t *)calloc(1, sizeof(F1AP_QoS_Characteristics_ExtIEs_t));
+      ie->id                             = F1AP_ProtocolIE_ID_id_DRB_Information;
+      ie->criticality                    = F1AP_Criticality_reject;
+      ie->value.present                  = F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information;
+      F1AP_DRB_Information_t   *DRB_Information = &ie->value.choice.DRB_Information;
+
+      drbs_toBeSetup_item.qoSInformation.choice.choice_extension = (struct F1AP_ProtocolIE_SingleContainer*)ie;
+
+
       /* 12.1.2.1 dRB_QoS */
       {
         /* qoS_Characteristics */
         {
           int some_decide_qoS_characteristics = 1; // BK: Need Check
           if (some_decide_qoS_characteristics) {
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI = (F1AP_NonDynamic5QIDescriptor_t *)calloc(1, sizeof(F1AP_NonDynamic5QIDescriptor_t));
+            DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI = (F1AP_NonDynamic5QIDescriptor_t *)calloc(1, sizeof(F1AP_NonDynamic5QIDescriptor_t));
             
             /* fiveQI */
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->fiveQI = 1L;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->fiveQI = 1L;
 
             /* OPTIONAL */
             /* qoSPriorityLevel */
             if (0) {
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = (long *)calloc(1, sizeof(long));
-              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = 1L;
+              DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = (long *)calloc(1, sizeof(long));
+              *DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = 1L;
             }
 
             /* OPTIONAL */
             /* averagingWindow */
             if (0) {
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
-              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = 1L;
+              DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
+              *DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = 1L;
             }
 
             /* OPTIONAL */
             /* maxDataBurstVolume */
             if (0) {
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
-              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = 1L;
+              DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
+              *DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = 1L;
             }
 
           } else {
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI = (F1AP_Dynamic5QIDescriptor_t *)calloc(1, sizeof(F1AP_Dynamic5QIDescriptor_t));
+            DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI = (F1AP_Dynamic5QIDescriptor_t *)calloc(1, sizeof(F1AP_Dynamic5QIDescriptor_t));
             
             /* qoSPriorityLevel */
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->qoSPriorityLevel = 1L;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->qoSPriorityLevel = 1L;
 
             /* packetDelayBudget */
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetDelayBudget = 1L;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetDelayBudget = 1L;
 
             /* packetErrorRate */
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate = 1L;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Scalar = 1L;
+            DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
+
 
             /* OPTIONAL */
             /* delayCritical */
             if (0) {
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = (long *)calloc(1, sizeof(long));
-              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = 1L;
+              DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = (long *)calloc(1, sizeof(long));
+              *DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = 1L;
             }
 
             /* OPTIONAL */
             /* averagingWindow */
             if (0) {
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
-              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = 1L;
+              DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
+              *DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = 1L;
             }
 
             /* OPTIONAL */
             /* maxDataBurstVolume */
             if (0) {
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
-              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = 1L;
+              DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
+              *DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = 1L;
             }
 
           } // if some_decide_qoS_characteristics
@@ -457,32 +468,32 @@ if (0) {
 
         /* nGRANallocationRetentionPriority */
         {
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
+            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
+            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
+            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
         } // nGRANallocationRetentionPriority
 
         /* OPTIONAL */
         /* gBR_QoS_Flow_Information */
         if (0) {
-          drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information = (F1AP_GBR_QoSFlowInformation_t *)calloc(1, sizeof(F1AP_GBR_QoSFlowInformation_t)); 
-          asn_long2INTEGER(&drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateDownlink, 1L);
-          asn_long2INTEGER(&drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateUplink, 1L);
-          asn_long2INTEGER(&drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->guaranteedFlowBitRateDownlink, 1L);
-          asn_long2INTEGER(&drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->guaranteedFlowBitRateUplink, 1L);
+          DRB_Information->dRB_QoS.gBR_QoS_Flow_Information = (F1AP_GBR_QoSFlowInformation_t *)calloc(1, sizeof(F1AP_GBR_QoSFlowInformation_t)); 
+          asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateDownlink, 1L);
+          asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateUplink, 1L);
+          asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->guaranteedFlowBitRateDownlink, 1L);
+          asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->guaranteedFlowBitRateUplink, 1L);
 
           /* OPTIONAL */
           /* maxPacketLossRateDownlink */
           if (0) {
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
-            *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
+            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
+            *DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
           }
 
           /* OPTIONAL */
           /* maxPacketLossRateUplink */
           if (0) {
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
-            *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
+            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
+            *DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
           }
 
         }
@@ -490,8 +501,8 @@ if (0) {
         /* OPTIONAL */
         /* reflective_QoS_Attribute */
         if (0) {
-          drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long)); 
-          *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.reflective_QoS_Attribute = 1L;
+          DRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long)); 
+          *DRB_Information->dRB_QoS.reflective_QoS_Attribute = 1L;
         }
 
       } // dRB_QoS
@@ -499,21 +510,21 @@ if (0) {
       /* 12.1.2.2 sNSSAI */
       {
         /* sST */
-        OCTET_STRING_fromBuf(&drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->sNSSAI.sST, "asdsa1d32sa1d31asd31as",
+        OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "asdsa1d32sa1d31asd31as",
                            strlen("asdsa1d32sa1d31asd31as"));
         /* OPTIONAL */
         /* sD */
         if (0) {
-          drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->sNSSAI.sD = (OCTET_STRING_t *)calloc(1, sizeof(OCTET_STRING_t));
-          OCTET_STRING_fromBuf(drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->sNSSAI.sD, "asdsa1d32sa1d31asd31as",
+          DRB_Information->sNSSAI.sD = (OCTET_STRING_t *)calloc(1, sizeof(OCTET_STRING_t));
+          OCTET_STRING_fromBuf(DRB_Information->sNSSAI.sD, "asdsa1d32sa1d31asd31as",
                            strlen("asdsa1d32sa1d31asd31as"));
         }
       }
       /* OPTIONAL */
       /* 12.1.2.3 notificationControl */
       if (0) {
-        drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->notificationControl = (F1AP_NotificationControl_t *)calloc(1, sizeof(F1AP_NotificationControl_t));
-        *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->notificationControl = F1AP_NotificationControl_active; // enum
+        DRB_Information->notificationControl = (F1AP_NotificationControl_t *)calloc(1, sizeof(F1AP_NotificationControl_t));
+        *DRB_Information->notificationControl = F1AP_NotificationControl_active; // enum
       }
 
       /* 12.1.2.4 flows_Mapped_To_DRB_List */  // BK: need verifiy
@@ -524,7 +535,7 @@ if (0) {
         memset((void *)&flows_mapped_to_drb_item, 0, sizeof(F1AP_Flows_Mapped_To_DRB_Item_t));
         
         /* qoSFlowIndicator */
-        flows_mapped_to_drb_item.qoSFlowIndicator = 1L;
+        flows_mapped_to_drb_item.qoSFlowIdentifier = 1L;
 
         /* qoSFlowLevelQoSParameters */
         {  
@@ -570,8 +581,8 @@ if (0) {
               flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetDelayBudget = 1L;
 
               /* packetErrorRate */
-              flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate = 1L;
-
+              flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Scalar = 1L;
+	      flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
               /* OPTIONAL */
               /* delayCritical */
               if (0) {
@@ -638,7 +649,7 @@ if (0) {
 
         } // qoSFlowLevelQoSParameters
         // BK: need check
-        ASN_SEQUENCE_ADD(&drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->flows_Mapped_To_DRB_List.list, &flows_mapped_to_drb_item);
+        ASN_SEQUENCE_ADD(&DRB_Information->flows_Mapped_To_DRB_List.list, &flows_mapped_to_drb_item);
       }
 
     } // if some_decide_qos
@@ -673,7 +684,7 @@ if (0) {
         drbs_toBeSetup_item.rLCMode = F1AP_RLCMode_rlc_am;
         break;
       default:
-        drbs_toBeSetup_item.rLCMode = F1AP_RLCMode_rlc_um;
+        drbs_toBeSetup_item.rLCMode = F1AP_RLCMode_rlc_um_bidirectional;
     }
 
     /* OPTIONAL */
@@ -717,13 +728,13 @@ if (0) {
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RAT_FrequencyPriorityInformation;
 
-    int some_decide_rat = 1; // BK: Need Check
-    if (some_decide_rat) {
-      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_subscriberProfileIDforRFP;
-      ie->value.choice.RAT_FrequencyPriorityInformation.choice.subscriberProfileIDforRFP = 11L;
+    int endc = 1; // RK: Get this from somewhere ... 
+    if (endc) {
+      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
+      ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 11L;
     } else {
-      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority;
-      ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 11L;
+      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN;
+      ie->value.choice.RAT_FrequencyPriorityInformation.choice.nGRAN = 11L;
     }
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
@@ -1120,7 +1131,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   /* mandatory */
   /* c4. ServCellIndex */
   ie = (F1AP_UEContextModificationRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextModificationRequestIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_ServCellndex;
+  ie->id                             = F1AP_ProtocolIE_ID_id_ServCellIndex;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_ServCellIndex;
   ie->value.choice.ServCellIndex     = 5L;
@@ -1164,13 +1175,13 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   }
 
   /* optional */
-  /* c6. TransmissionStopIndicator */
+  /* c6. TransmissionActionIndicator */
   if (1) {
     ie = (F1AP_UEContextModificationRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextModificationRequestIEs_t));
-    ie->id                                     = F1AP_ProtocolIE_ID_id_TransmissionStopIndicator;
+    ie->id                                     = F1AP_ProtocolIE_ID_id_TransmissionActionIndicator;
     ie->criticality                            = F1AP_Criticality_ignore;
-    ie->value.present                          = F1AP_UEContextModificationRequestIEs__value_PR_TransmissionStopIndicator;
-    ie->value.choice.TransmissionStopIndicator = F1AP_TransmissionStopIndicator_true;
+    ie->value.present                          = F1AP_UEContextModificationRequestIEs__value_PR_TransmissionActionIndicator;
+    ie->value.choice.TransmissionActionIndicator = F1AP_TransmissionActionIndicator_stop;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -1190,10 +1201,10 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   /* c7. RRCRconfigurationCompleteIndicator */
   if (1) {
     ie = (F1AP_UEContextModificationRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextModificationRequestIEs_t));
-    ie->id                             = F1AP_ProtocolIE_ID_id_RRCRconfigurationCompleteIndicator;
+    ie->id                             = F1AP_ProtocolIE_ID_id_RRCReconfigurationCompleteIndicator;
     ie->criticality                    = F1AP_Criticality_ignore;
-    ie->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_RRCRconfigurationCompleteIndicator;
-    ie->value.choice.RRCRconfigurationCompleteIndicator = F1AP_RRCRconfigurationCompleteIndicator_true;
+    ie->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_RRCReconfigurationCompleteIndicator;
+    ie->value.choice.RRCReconfigurationCompleteIndicator = F1AP_RRCReconfigurationCompleteIndicator_true;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -1375,7 +1386,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
     }
 
     /* rLCMode */
-    drbs_toBeSetupMod_item.rLCMode = F1AP_RLCMode_rlc_um; // enum
+    drbs_toBeSetupMod_item.rLCMode = F1AP_RLCMode_rlc_um_bidirectional; // enum
 
     /* OPTIONAL */
     /* ULConfiguration */
@@ -1416,9 +1427,10 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
     drbs_toBeModified_item.dRBID = 30L;
 
     /* qoSInformation */
-    drbs_toBeModified_item.qoSInformation.present = F1AP_QoSInformation_PR_eUTRANQoS;
-    drbs_toBeModified_item.qoSInformation.choice.eUTRANQoS = (F1AP_EUTRANQoS_t *)calloc(1, sizeof(F1AP_EUTRANQoS_t));
-    drbs_toBeModified_item.qoSInformation.choice.eUTRANQoS->qCI = 254L;
+    drbs_toBeModified_item.qoSInformation =calloc(1,sizeof(*drbs_toBeModified_item.qoSInformation));
+    drbs_toBeModified_item.qoSInformation->present = F1AP_QoSInformation_PR_eUTRANQoS;
+    drbs_toBeModified_item.qoSInformation->choice.eUTRANQoS = (F1AP_EUTRANQoS_t *)calloc(1, sizeof(F1AP_EUTRANQoS_t));
+    drbs_toBeModified_item.qoSInformation->choice.eUTRANQoS->qCI = 254L;
 
     /* ULTunnels_ToBeModified_List */
     int j = 0;

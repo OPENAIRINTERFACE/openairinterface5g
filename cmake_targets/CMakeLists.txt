@@ -788,12 +788,12 @@ add_dependencies(X2AP_ENB X2AP_LIB rrc_flag x2_flag)
 
 # F1AP
 ##############
-add_list1_option(F1AP_RELEASE R15 "F1AP ASN.1 grammar version" R15)
+add_list1_option(F1AP_RELEASE R16 "F1AP ASN.1 grammar version" R16)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
-if (${F1AP_RELEASE} STREQUAL "R15")
-  make_version(F1AP_VERSION 15 2 1)
-  set (ASN1RELDIR R15.2.1)
-endif(${F1AP_RELEASE} STREQUAL "R15")
+if (${F1AP_RELEASE} STREQUAL "R16")
+  make_version(F1AP_VERSION 16 3 1)
+  set (ASN1RELDIR R16.3.1)
+endif(${F1AP_RELEASE} STREQUAL "R16")
 add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
 set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
 set(F1AP_ASN_FILES
