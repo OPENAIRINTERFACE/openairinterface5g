@@ -420,7 +420,51 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon;
 
   sib1->servingCellConfigCommon->n_TimingAdvanceOffset = configuration->scc->n_TimingAdvanceOffset;
-  sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup = configuration->scc->ssb_PositionsInBurst->choice.shortBitmap;
+
+  sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup.buf = calloc(1, sizeof(uint8_t));
+  uint8_t bitmap8,temp_bitmap=0;
+  switch (configuration->scc->ssb_PositionsInBurst->present) {
+    case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap:
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup = configuration->scc->ssb_PositionsInBurst->choice.shortBitmap;
+      break;
+    case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap:
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup = configuration->scc->ssb_PositionsInBurst->choice.mediumBitmap;
+      break;
+    /*
+    groupPresence: This field is present when maximum number of SS/PBCH blocks per half frame equals to 64 as defined in TS 38.213 [13], clause 4.1.
+                   The first/leftmost bit corresponds to the SS/PBCH index 0-7, the second bit corresponds to SS/PBCH block 8-15, and so on.
+                   Value 0 in the bitmap indicates that the SSBs according to inOneGroup are absent. Value 1 indicates that the SS/PBCH blocks are transmitted in accordance with inOneGroup.
+    inOneGroup: When maximum number of SS/PBCH blocks per half frame equals to 64 as defined in TS 38.213 [13], clause 4.1, all 8 bit are valid;
+                The first/ leftmost bit corresponds to the first SS/PBCH block index in the group (i.e., to SSB index 0, 8, and so on); the second bit corresponds to the second SS/PBCH block index in the group
+                (i.e., to SSB index 1, 9, and so on), and so on. Value 0 in the bitmap indicates that the corresponding SS/PBCH block is not transmitted while value 1 indicates that the corresponding SS/PBCH block is transmitted.
+    */
+    case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap:
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup.size = 1;
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup.bits_unused = 0;
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence = calloc(1, sizeof(BIT_STRING_t));
+      memset(sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence, 0, sizeof(BIT_STRING_t));
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence->size = 1;
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence->bits_unused = 0;
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence->buf = calloc(1, sizeof(uint8_t));
+      sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence->buf[0] = 0;
+      for (int i=0; i<8; i++){
+        bitmap8 = configuration->scc->ssb_PositionsInBurst->choice.longBitmap.buf[i];
+        if (bitmap8!=0){
+          if(temp_bitmap==0)
+            temp_bitmap = bitmap8;
+          else
+            AssertFatal(temp_bitmap==bitmap8,"For longBitmap the groups of 8 SSBs containing at least 1 transmitted SSB should be all the same\n");
+
+          sib1->servingCellConfigCommon->ssb_PositionsInBurst.inOneGroup.buf[0] = bitmap8;
+          sib1->servingCellConfigCommon->ssb_PositionsInBurst.groupPresence->buf[0] |= 1<<(7-i);
+        }
+      }
+      break;
+    default:
+      AssertFatal(false,"ssb_PositionsInBurst not present\n");
+      break;
+  }
+
   sib1->servingCellConfigCommon->ssb_PeriodicityServingCell = *configuration->scc->ssb_periodicityServingCell;
   sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
   sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing = configuration->scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
