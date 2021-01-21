@@ -843,7 +843,6 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   if(fmt!=pucch_format3) {  /* PUCCH format3 */
  
     eNB_UCI_STATS_t *first_uci_stats=NULL;
-    LOG_I(PHY,"Getting UCI stats, UCI_id %d\n",UCI_id);
     for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++) 
       if (eNB->uci_stats[i].rnti == eNB->uci_vars[UCI_id].rnti) { 
         uci_stats = &eNB->uci_stats[i];

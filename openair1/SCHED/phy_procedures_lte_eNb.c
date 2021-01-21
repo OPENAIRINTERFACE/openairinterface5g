@@ -854,7 +854,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
           int pucch1_thres = (uci->ue_type == 0) ? eNB->pucch1_DTX_threshold : eNB->pucch1_DTX_threshold_emtc[0];
           metric_SR = rx_pucch(eNB,
                                uci->pucch_fmt,
-                               uci->ue_id,
+                               i,//uci->ue_id,
                                uci->n_pucch_1_0_sr[0],
                                0, // n2_pucch
                                uci->srs_active, // shortened format
