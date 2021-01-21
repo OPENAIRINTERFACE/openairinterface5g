@@ -170,12 +170,6 @@ typedef enum {
     UE_PHY_HO_PRACH
 } NR_UE_L2_STATE_t;
 
-typedef enum {
-    SFN_C_MOD_2_EQ_0, 
-    SFN_C_MOD_2_EQ_1,
-    SFN_C_IMPOSSIBLE
-} SFN_C_TYPE;
-
 // LTE structure, might need to be adapted for NR
 typedef struct {
   /// buffer status for each lcgid
@@ -304,9 +298,9 @@ typedef struct {
 typedef struct {
 
   uint8_t freq_hopping;
-  uint8_t Msg3_t_alloc;
-  uint8_t Msg3_f_alloc;
   uint8_t mcs;
+  uint8_t Msg3_t_alloc;
+  uint16_t Msg3_f_alloc;
 
 } RAR_grant_t;
 
@@ -354,6 +348,8 @@ typedef struct {
   uint16_t crnti;
   /// RA configuration
   RA_config_t ra;
+  /// SSB index from MIB decoding
+  uint8_t mib_ssb;
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
@@ -369,6 +365,11 @@ typedef struct {
 
   /// PHR
   uint8_t PHR_reporting_active;
+
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  NR_SearchSpace_t *search_space_zero;
+  NR_ControlResourceSet_t *coreset0;
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {
@@ -378,24 +379,6 @@ typedef enum seach_space_mask_e {
     type2_pdcch  = 0x8,
     type3_pdcch  = 0x10
 } search_space_mask_t;
-
-typedef enum subcarrier_spacing_e {
-    scs_15kHz  = 0x1,
-    scs_30kHz  = 0x2,
-    scs_60kHz  = 0x4,
-    scs_120kHz = 0x8,
-    scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
-typedef enum channel_bandwidth_e {
-    bw_5MHz   = 0x1,
-    bw_10MHz  = 0x2,
-    bw_20MHz  = 0x4,
-    bw_40MHz  = 0x8,
-    bw_80MHz  = 0x16,
-    bw_100MHz = 0x32
-} channel_bandwidth_t;
-
 
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:

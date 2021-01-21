@@ -834,7 +834,7 @@ typedef struct {
 
   UE_MODE_t           UE_mode[NUMBER_OF_CONNECTED_gNB_MAX];
   /// cell-specific reference symbols
-  uint32_t lte_gold_table[7][20][2][14];
+  //uint32_t lte_gold_table[7][20][2][14];
 
 #if defined(UPGRADE_RAT_NR)
 
@@ -848,10 +848,10 @@ typedef struct {
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
   /// PDSCH DMRS
-  uint32_t nr_gold_pdsch[2][20][14][NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD];
+  uint32_t ****nr_gold_pdsch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// PDCCH DMRS
-  uint32_t nr_gold_pdcch[7][20][3][52];
+  uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;

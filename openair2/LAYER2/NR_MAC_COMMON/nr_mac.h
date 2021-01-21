@@ -37,6 +37,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define TABLE_38213_13_1_NUM_INDEXES 15
+#define TABLE_38213_13_2_NUM_INDEXES 14
+#define TABLE_38213_13_3_NUM_INDEXES 9
+#define TABLE_38213_13_4_NUM_INDEXES 16
+#define TABLE_38213_13_5_NUM_INDEXES 9
+#define TABLE_38213_13_6_NUM_INDEXES 10
+#define TABLE_38213_13_7_NUM_INDEXES 12
+#define TABLE_38213_13_8_NUM_INDEXES 8
+#define TABLE_38213_13_9_NUM_INDEXES 4
+#define TABLE_38213_13_10_NUM_INDEXES 8
+#define TABLE_38213_13_11_NUM_INDEXES 16
+#define TABLE_38213_13_12_NUM_INDEXES 14
+
 // Definitions for MAC control and data
 #define NR_BCCH_DL_SCH 3 // SI
 #define NR_BCCH_BCH 5    // MIB
@@ -45,8 +58,8 @@
 #define MAX_BWP_SIZE          275
 
 typedef enum frequency_range_e {
-    FR1 = 0,
-    FR2
+  FR1 = 0,
+  FR2
 } frequency_range_t;
 
 //  For both DL/UL-SCH
@@ -405,6 +418,51 @@ typedef enum {
   NR_RNTI_MCS_C,
 } nr_rnti_type_t;
 
+typedef enum subcarrier_spacing_e {
+  scs_15kHz  = 0x1,
+  scs_30kHz  = 0x2,
+  scs_60kHz  = 0x4,
+  scs_120kHz = 0x8,
+  scs_240kHz = 0x16
+} subcarrier_spacing_t;
+
+typedef enum channel_bandwidth_e {
+  bw_5MHz   = 0x1,
+  bw_10MHz  = 0x2,
+  bw_20MHz  = 0x4,
+  bw_40MHz  = 0x8,
+  bw_80MHz  = 0x16,
+  bw_100MHz = 0x32
+} channel_bandwidth_t;
+
+typedef enum nr_ssb_and_cset_mux_pattern_type_e {
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+} nr_ssb_and_cset_mux_pattern_type_t;
+
+typedef enum {
+  SFN_C_MOD_2_EQ_0,
+  SFN_C_MOD_2_EQ_1,
+  SFN_C_IMPOSSIBLE
+} SFN_C_TYPE;
+
+typedef struct Type0_PDCCH_CSS_config_s {
+  int32_t num_rbs;
+  int32_t num_symbols;
+  int32_t rb_offset; // Offset from SSB RB0
+  uint32_t type0_pdcch_ss_mux_pattern;
+  uint16_t frame;
+  SFN_C_TYPE sfn_c;
+  uint32_t n_c;
+  uint32_t n_0;
+  uint32_t number_of_search_space_per_slot;
+  uint32_t first_symbol_index;
+  uint32_t search_space_duration;
+  uint32_t ssb_length;
+  uint32_t ssb_index;
+  uint32_t cset_start_rb;
+} NR_Type0_PDCCH_CSS_config_t;
 
 #endif /*__LAYER2_MAC_H__ */
 

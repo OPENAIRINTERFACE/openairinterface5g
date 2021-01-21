@@ -470,6 +470,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       mask = (1 << ((int) ceil(log2((ibwp_size*(ibwp_size+1))>>1)))) - 1;
     else
       mask = (1 << (28 - (int)(ceil(log2((ibwp_size*(ibwp_size+1))>>1))))) - 1;
+
     f_alloc = rar_grant->Msg3_f_alloc & mask;
     nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, ibwp_size, 0, f_alloc);
 
@@ -1580,7 +1581,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
     // WIP Need to get the proper selected ssb_idx
     //     Initial beam selection functionality is not available yet
-    uint8_t selected_gnb_ssb_idx = 0;
+    uint8_t selected_gnb_ssb_idx = mac->mib_ssb;
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index
     is_nr_prach_slot = get_nr_prach_info_from_ssb_index(selected_gnb_ssb_idx,

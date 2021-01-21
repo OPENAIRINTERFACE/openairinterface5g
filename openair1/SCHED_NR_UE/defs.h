@@ -111,13 +111,15 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
-  @param ue       Pointer to UE variables on which to act
-  @param proc     Pointer to proc information
-  @param gNB_id   Local id of eNB on which to act
+  @param ue             Pointer to UE variables on which to act
+  @param proc           Pointer to proc information
+  @param gNB_id         Local id of eNB on which to act
+  @param dlsch_parallel use multithreaded dlsch processing
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           uint8_t gNB_id);
+                           uint8_t gNB_id,
+                           uint8_t dlsch_parallel);
 
 int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
 
