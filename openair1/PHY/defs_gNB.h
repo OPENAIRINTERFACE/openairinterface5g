@@ -797,6 +797,7 @@ typedef struct PHY_VARS_gNB_s {
   int prach_energy_counter;
 
   int pucch0_thres;
+  uint64_t bad_pucch;
   /*
   time_stats_t phy_proc;
   */

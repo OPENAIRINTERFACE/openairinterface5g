@@ -683,7 +683,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     }
   }
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) dump_pusch_stats(gNB);
+  if ((frame_rx&127) == 0 && slot_rx==19) {
+    dump_pusch_stats(gNB);
+    LOG_I(PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
+  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
 }

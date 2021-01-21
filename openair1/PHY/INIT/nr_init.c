@@ -121,6 +121,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
   AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");
 
+  gNB->bad_pucch = 0;
+
   for (int slot=0; slot<fp->slots_per_frame; slot++) {
     pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
     AssertFatal(pdcch_dmrs[slot]!=NULL, "NR init: pdcch_dmrs for slot %d - malloc failed\n", slot);
