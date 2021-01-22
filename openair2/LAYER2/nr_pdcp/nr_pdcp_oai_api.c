@@ -144,8 +144,8 @@ nr_rrc_data_ind_ccch(
 //------------------------------------------------------------------------------
 {
   rb_id_t    DCCH_index = Srb_id;
-  LOG_I(RRC, "[UE %x] Frame %d: received a CCCH %ld message on SRB %d with Size %d from gNB %d\n",
-        ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
+  LOG_I(RRC, "[UE %x] Frame %d: received a CCCH %ld message on SRB %ld with Size %d from gNB %d\n",
+        ctxt_pP->module_id, ctxt_pP->frame, DCCH_index, Srb_id, sdu_sizeP, ctxt_pP->eNB_index);
   {
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
@@ -502,7 +502,7 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
   }
   return pdcp_optmask ;
 }
-static int liuyu=0;
+
 static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
@@ -515,32 +515,10 @@ static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t
   int i;
 
   if (1) { //(IS_SOFTMODEM_NOS1){
-    #if 0
-    log_dump(PDCP,buf,size,LOG_DUMP_CHAR,"   PDCP Received SDU:\n");
-    if (size > 4700)
-    {
-      LOG_I(PDCP,"maybe ip data \n");
-    }
-    else
-    {
-      LOG_I(PDCP,"send to gNB RRC \n");
-      
-      if(liuyu==2)
-          liuyu=1;
-      if(liuyu==0)
-          nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
-      if(liuyu==1)
-          nr_rrc_data_ind( ctxt_pP, 1, size, buf);
-      
-      liuyu++;
-      
-    }
-    #else
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     }
-    #endif
   }
   else{
     for (i = 0; i < 5; i++) {
@@ -628,23 +606,18 @@ static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_
 {
   /* Implementation to be added */
   
-  nr_pdcp_ue_t *ue = _ue;
-  MessageDef  *message_p;
-  uint8_t     *gtpu_buffer_p;
-  int srb_id;
-  int i;
+  // nr_pdcp_ue_t *ue = _ue;
+  // MessageDef  *message_p;
+  // uint8_t     *gtpu_buffer_p;
+  // int srb_id;
 
   if (ccch_or_dcch == 0) {
-    nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
+    nr_rrc_data_ind_ccch( ctxt_pP, 1, size, (uint8_t *)buf);
     ccch_or_dcch = 1;
   } else {
-    nr_rrc_data_ind( ctxt_pP, 1, size, buf);
+    nr_rrc_data_ind( ctxt_pP, 1, size, (uint8_t *)buf);
   }
-
-  return;
 }
-
-
 
 static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size, int sdu_id)
@@ -793,7 +766,7 @@ boolean_t pdcp_data_ind(
   if (NODE_IS_DU(RC.nrrrc[0]->node_type) && (srb_flagP == 0)) {
     LOG_D(RLC, "call proto_agent_send_pdcp_data_ind() \n");
     nr_pdcp_params.pdcp_data_ind_func(ctxt_pP, srb_flagP, 0, rb_id, sdu_buffer_size, sdu_buffer, NULL, NULL);
-    return;
+    return 1;
   }
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);

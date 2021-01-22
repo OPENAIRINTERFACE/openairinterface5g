@@ -822,7 +822,7 @@ static void srb_add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerCon
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
   struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
   int srb_id = 1;
-  int channel_id = 1;//rlc_BearerConfig->logicalChannelIdentity;
+  // int channel_id = 1;//rlc_BearerConfig->logicalChannelIdentity;
   int logical_channel_group;
 
   int t_status_prohibit;
@@ -962,7 +962,7 @@ static void srb_add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerCon
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
   struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
   int srb_id = 1;
-  int channel_id = rlc_BearerConfig->logicalChannelIdentity;
+  // int channel_id = rlc_BearerConfig->logicalChannelIdentity;
   int logical_channel_group;
 
   int sn_field_length;
