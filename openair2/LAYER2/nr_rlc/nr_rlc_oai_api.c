@@ -41,6 +41,8 @@
 #undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
+#include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
+
 extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
@@ -439,7 +441,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
+  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d \n",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
   memblock = get_free_mem_block(size, __func__);
@@ -473,43 +475,29 @@ rb_found:
     AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
                 "Can't be CU, bad node type %d\n", type);
 
+    // if (NODE_IS_DU(type) && is_srb == 0) {
+    //   LOG_D(RLC, "call proto_agent_send_pdcp_data_ind() \n");
+    //   proto_agent_send_pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock);
+    //   return;
+    // }
+
     if (NODE_IS_DU(type) && is_srb == 1) {
       MessageDef *msg;
       if (ccch_flag) {
         /* for rfsim, because UE send RRCSetupRequest in SRB1 */
-        asn_dec_rval_t dec_rval;
-        NR_UL_CCCH_Message_t *ul_ccch_msg;
-        dec_rval = uper_decode(NULL,
-          &asn_DEF_NR_UL_CCCH_Message,
-          (void**)&ul_ccch_msg,
-          &buf[1], // buf[0] includes the pdcp header
-          size, 0, 0);
-        if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-          LOG_E(RLC, " Failed to decode UL-CCCH (%zu bytes)\n",dec_rval.consumed);
-        } else {
-          LOG_I(RLC, "decode UL-CCCH success \n");
-          LOG_I(RLC, "Received message: present %d and c1 present %d\n",
-              ul_ccch_msg->message.present, ul_ccch_msg->message.choice.c1->present);
-
-          if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
-            if (ul_ccch_msg->message.choice.c1->present == NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest) {
-              LOG_I(RLC, "[MSG] RRC Setup Request\n");
-              // DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,ue->rnti,(uint8_t *)buf,size);
-              msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_INITIAL_UL_RRC_MESSAGE);
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc                  = RC.nrrrc[0]->configuration.mnc[0];
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc_digit_length     = RC.nrrrc[0]->configuration.mnc_digit_length[0];
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).nr_cellid            = RC.nrrrc[0]->nr_cellid;
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).crnti                = ue->rnti;
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
-              F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container_length = size;
-              itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0), msg);
-              ccch_flag = 0;
-              return;
-            }
-          }
-        }
+        LOG_I(RLC, "[MSG] RRC Setup Request\n");
+        msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_INITIAL_UL_RRC_MESSAGE);
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc                  = RC.nrrrc[0]->configuration.mnc[0];
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc_digit_length     = RC.nrrrc[0]->configuration.mnc_digit_length[0];
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).nr_cellid            = RC.nrrrc[0]->nr_cellid;
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).crnti                = ue->rnti;
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container_length = size;
+        itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0), msg);
+        ccch_flag = 0;
+        return;
       }
 
       msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);

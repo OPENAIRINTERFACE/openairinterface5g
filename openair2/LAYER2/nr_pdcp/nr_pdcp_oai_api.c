@@ -41,6 +41,7 @@
   } while (0)
 
 static nr_pdcp_ue_manager_t *nr_pdcp_ue_manager;
+static pdcp_params_t nr_pdcp_params = {0,NULL};
 
 /* necessary globals for OAI, not used internally */
 hash_table_t  *pdcp_coll_p;
@@ -49,6 +50,7 @@ static uint64_t pdcp_optmask;
 extern RAN_CONTEXT_t RC;
 ngran_node_t node_type = ngran_gNB;
 uint8_t first_dcch = 0;
+uint8_t proto_agent_falg = 0;
 
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
@@ -323,9 +325,11 @@ printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
 
     ctxt.rnti = rnti;
 
-    pdcp_data_req(&ctxt, SRB_FLAG_NO, lc_id, RLC_MUI_UNDEFINED,
-                  RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
-                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
+    if (proto_agent_falg == 1) {
+      pdcp_data_req(&ctxt, SRB_FLAG_NO, lc_id, RLC_MUI_UNDEFINED,
+                    RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
+                    PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
+    }
   }
 
   return NULL;
@@ -605,6 +609,13 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    LOG_D(PDCP, "call proto_agent_send_rlc_data_req()\n");
+    nr_pdcp_params.send_rlc_data_req_func(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
+    // proto_agent_send_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
+    return;
+  }
+
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
@@ -765,13 +776,25 @@ boolean_t pdcp_data_ind(
       ctxt_pP->eNB_index != 0 ||
       ctxt_pP->configured != 1 ||
       ctxt_pP->brOption != 0) {
-    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_E(PDCP, "%s:%d:%s: fatal, module_id %d, instance %d, eNB_index %d, configured %d, brOption %d\n",
+                  __FILE__, __LINE__, __FUNCTION__,
+                  ctxt_pP->module_id,
+                  ctxt_pP->instance,
+                  ctxt_pP->eNB_index,
+                  ctxt_pP->configured,
+                  ctxt_pP->brOption);
     exit(1);
   }
 
   if (ctxt_pP->enb_flag)
     T(T_ENB_PDCP_UL, T_INT(ctxt_pP->module_id), T_INT(rnti),
       T_INT(rb_id), T_INT(sdu_buffer_size));
+
+  if (NODE_IS_DU(RC.nrrrc[0]->node_type) && (srb_flagP == 0)) {
+    LOG_D(RLC, "call proto_agent_send_pdcp_data_ind() \n");
+    nr_pdcp_params.pdcp_data_ind_func(ctxt_pP, srb_flagP, 0, rb_id, sdu_buffer_size, sdu_buffer, NULL, NULL);
+    return;
+  }
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
@@ -1293,12 +1316,12 @@ boolean_t pdcp_data_req(
 
 void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind)
 {
-  /* nothing to do */
+  nr_pdcp_params.pdcp_data_ind_func = pdcp_data_ind;
 }
 
 void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req)
 {
-  /* nothing to do */
+  nr_pdcp_params.send_rlc_data_req_func = send_rlc_data_req;
 }
 
 //Dummy function needed due to LTE dependencies
