@@ -139,9 +139,9 @@ class Containerize():
 			else:
 				result = re.search('all', self.imageKind)
 				if result is not None:
-				    imageNames.append(('oai-enb', 'eNB'))
+					imageNames.append(('oai-enb', 'eNB'))
 					imageNames.append(('oai-gnb', 'gNB'))
-				 	imageNames.append(('oai-lte-ue', 'lteUE'))
+					imageNames.append(('oai-lte-ue', 'lteUE'))
 					imageNames.append(('oai-nr-ue', 'nrUE'))
 		if len(imageNames) == 0:
 			imageNames.append(('oai-enb', 'eNB'))
@@ -228,16 +228,16 @@ class Containerize():
 				imageSize = imageSize / 1000
 				if imageSize < 1000:
 					logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-					self.allImagesSize['ran-build'] = str(imageSize) + ' kbytes'
+					self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' kbytes'
 				else:
 					imageSize = imageSize / 1000
 					if imageSize < 1000:
 						logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-						self.allImagesSize['ran-build'] = str(imageSize) + ' Mbytes'
+						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Mbytes'
 					else:
 						imageSize = imageSize / 1000
 						logging.debug('\u001B[1m   ran-build size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-						self.allImagesSize['ran-build'] = str(imageSize) + ' Gbytes'
+						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Gbytes'
 			else:
 				logging.debug('ran-build size is unknown')
 		for image,pattern in imageNames:
@@ -252,16 +252,16 @@ class Containerize():
 					imageSize = imageSize / 1000
 					if imageSize < 1000:
 						logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-						self.allImagesSize[image] = str(imageSize) + ' kbytes'
+						self.allImagesSize[image] = str(round(imageSize,1)) + ' kbytes'
 					else:
 						imageSize = imageSize / 1000
 						if imageSize < 1000:
 							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-							self.allImagesSize[image] = str(imageSize) + ' Mbytes'
+							self.allImagesSize[image] = str(round(imageSize,1)) + ' Mbytes'
 						else:
 							imageSize = imageSize / 1000
 							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-							self.allImagesSize[image] = str(imageSize) + ' Gbytes'
+							self.allImagesSize[image] = str(round(imageSize,1)) + ' Gbytes'
 				else:
 					logging.debug('ran-build size is unknown')
 		if not status:
