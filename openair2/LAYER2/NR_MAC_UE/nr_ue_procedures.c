@@ -987,7 +987,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
   LOG_D(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+  LOG_D(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
 
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;
