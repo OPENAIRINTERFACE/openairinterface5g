@@ -238,7 +238,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
       int factor_mu = 1 << numerology;
       uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
 
-      LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d\n", __FUNCTION__, frame_tx, slot_tx);
+      LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d -- UE_mode %d\n", __FUNCTION__, frame_tx, slot_tx, ue->UE_mode[gNB_id]);
 
       if (ue->UE_mode[gNB_id] == RA_RESPONSE){
 
@@ -314,10 +314,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   }
 
-  if (get_softmodem_params()->do_ra==1) {
-    if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && ue->mac_enabled) {
-      nr_ue_prach_procedures(ue, proc, gNB_id);
-    }
+  if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) {
+    nr_ue_prach_procedures(ue, proc, gNB_id);
   }
   LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
@@ -410,9 +408,13 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
     // Switch to PRACH state if it is first PBCH after initial synch and no timing correction is performed
     if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1){
-      ue->UE_mode[gNB_id] = PRACH;
-      ue->prach_resources[gNB_id]->sync_frame = frame_rx;
-      ue->prach_resources[gNB_id]->init_msg1 = 0;
+      if (get_softmodem_params()->do_ra) {
+        ue->UE_mode[gNB_id] = PRACH;
+        ue->prach_resources[gNB_id]->sync_frame = frame_rx;
+        ue->prach_resources[gNB_id]->init_msg1 = 0;
+      } else {
+        ue->UE_mode[gNB_id] = PUSCH;
+      }
     }
 
 #ifdef DEBUG_PHY_PROC
@@ -1196,26 +1198,20 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         switch (pdsch) {
           case RA_PDSCH:
-
-            if(!ue->mac_enabled){
-              return;
-            }
-
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
             nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, eNB_id, ue, dlsch0, number_pdus);
 
             ue->UE_mode[eNB_id] = RA_RESPONSE;
-
-          break;
+            break;
           case PDSCH:
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
             nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, eNB_id, ue, dlsch0, number_pdus);
-          break;
+            break;
           case SI_PDSCH:
             rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
             break;
           default:
-          break;
+            break;
         }
 
         LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch0->harq_processes[harq_pid]->TBS, dlsch0->harq_processes[harq_pid]->TBS / 8);
