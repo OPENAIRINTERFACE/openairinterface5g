@@ -363,12 +363,10 @@ static void *L1_thread_tx(void *param) {
     LOG_D(PHY,"L1 TX signaling done for %d.%d\n",proc->frame_tx,proc->subframe_tx);
     // the thread can now be woken up
     LOG_D(PHY,"L1_thread_tx: signaling completion in %d.%d\n",proc->frame_tx,proc->subframe_tx);
+
+    AssertFatal((ret=pthread_cond_signal(&proc->cond))== 0, "ERROR pthread_cond_signal for eNB TXnp4 thread ret %d\n",ret);
     AssertFatal((ret= pthread_mutex_unlock( &proc->mutex ))==0,"error unlocking L1_proc_tx mutex, return %d\n",ret);
 
-    if (pthread_cond_signal(&proc->cond) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-    }
 
     wakeup_txfh(eNB,proc,frame_tx,subframe_tx,timestamp_tx);
   }
@@ -532,10 +530,11 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,
     ru_proc->tti_tx       = subframe_tx;
     ru_proc->frame_tx     = frame_tx;
     LOG_D(PHY,"L1 TX Waking up TX FH (2) %d.%d\n",frame_tx,subframe_tx);
-    AssertFatal((ret=pthread_mutex_unlock(&ru_proc->mutex_eNBs))==0,"mutex_unlock returned %d\n",ret);
     // the thread can now be woken up
     AssertFatal(pthread_cond_signal(&ru_proc->cond_eNBs) == 0,
                 "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+    AssertFatal((ret=pthread_mutex_unlock(&ru_proc->mutex_eNBs))==0,"mutex_unlock returned %d\n",ret);
+
   }
 
   return(0);
@@ -568,9 +567,10 @@ int wakeup_tx(PHY_VARS_eNB *eNB,
   L1_proc_tx->timestamp_tx  = timestamp_tx;
   // the thread can now be woken up
   LOG_D(PHY,"L1 RX Waking up L1 TX %d.%d\n",frame_tx,subframe_tx);
-  AssertFatal((ret=pthread_mutex_unlock(&L1_proc_tx->mutex))==0,"mutex_unlock returns %d\n",ret);
 
   AssertFatal(pthread_cond_signal(&L1_proc_tx->cond) == 0, "ERROR pthread_cond_signal for eNB L1 thread tx\n");
+  AssertFatal((ret=pthread_mutex_unlock(&L1_proc_tx->mutex))==0,"mutex_unlock returns %d\n",ret);
+
   return(0);
 }
 
@@ -613,14 +613,11 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->frame_tx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->subframe_tx);
 
- AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"mutex_unlock return %d\n",ret);
 
   // the thread can now be woken up
-  if (pthread_cond_signal(&L1_proc->cond) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RXn-TXnp4 thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return(-1);
-  }
+  AssertFatal((ret=pthread_cond_signal(&L1_proc->cond))== 0, "ERROR pthread_cond_signal for eNB RXn-TXnp4 thread, ret %d\n",ret);
+  AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"mutex_unlock return %d\n",ret);
+
 
   return(0);
 }
