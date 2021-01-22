@@ -67,6 +67,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   int **ul_ch_estimates  = gNB->pusch_vars[ul_id]->ul_ch_estimates;
   int **rxdataF = gNB->common_vars.rxdataF;
 
+#if 0
+printf("nr_pusch_channel_estimation rxdataF %p\n", &rxdataF[0][0]);
+#endif
+
   nushift = (p>>1)&1;
   gNB->frame_parms.nushift = nushift;
 

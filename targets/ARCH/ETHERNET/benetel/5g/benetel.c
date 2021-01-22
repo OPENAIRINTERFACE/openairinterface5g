@@ -228,11 +228,15 @@ next:
   fp = ru->nr_frame_parms;
   for (symbol = 0; symbol < 14; symbol++) {
     int i;
-    uint16_t *p = (uint16_t *)(&s->buffers.ul[*slot][symbol*1272*4]);
+    int16_t *p = (int16_t *)(&s->buffers.ul[*slot][symbol*1272*4]);
     for (i = 0; i < 1272*2; i++) {
-      p[i] = htons(p[i]);
+      p[i] = (int16_t)(ntohs(p[i])) / 16;
     }
     rxdata = &ru->common.rxdataF[antenna][symbol * fp->ofdm_symbol_size];
+#if 0
+if (*slot == 0 && symbol == 0)
+printf("rxdata in benetel_fh_if4p5_south_in %p\n", &ru->common.rxdataF[antenna][0]);
+#endif
 #if 1
     memcpy(rxdata + 2048 - 1272/2,
            &s->buffers.ul[*slot][symbol*1272*4],

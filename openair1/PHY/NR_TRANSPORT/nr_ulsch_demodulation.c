@@ -250,6 +250,10 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
   uint8_t is_dmrs_re;
   start_re = (frame_parms->first_carrier_offset + (pusch_pdu->rb_start * NR_NB_SC_PER_RB))%frame_parms->ofdm_symbol_size;
+#if 0
+printf("frame_parms->first_carrier_offset in nr_ulsch_extract_rbs_single %d\n", frame_parms->first_carrier_offset);
+printf("rxdataF in nr_ulsch_extract_rbs_single %p\n", &rxdataF[0][0]);
+#endif
   nb_re_pusch = NR_NB_SC_PER_RB * pusch_pdu->rb_size;
 #ifdef __AVX2__
   int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
