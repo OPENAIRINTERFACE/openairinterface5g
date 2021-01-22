@@ -59,7 +59,6 @@
     {"A" ,                       CONFIG_HLP_TADV,        0,               iptr:&(UE->timing_advance),         defintval:0,           TYPE_INT,      0}, \
     {"E" ,                       CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,  u8ptr:&(fp->threequarter_fs),       defintval:0,           TYPE_UINT8,    0}, \
     {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,           TYPE_INT,      0}, \
-    {"mac-enabled" ,             CONFIG_HLP_MAC,         PARAMFLAG_BOOL,  iptr:&(UE->mac_enabled),            defintval:1,           TYPE_INT,      0}, \
     {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&(UE->no_timing_correction), defintval:0,         TYPE_INT,    0}, \
 }
 
