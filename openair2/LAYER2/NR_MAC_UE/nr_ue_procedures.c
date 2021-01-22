@@ -136,7 +136,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
   LOG_D(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+  LOG_D(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
 
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;
@@ -1856,7 +1856,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 #endif
                 */
 
-                LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n", ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
+                LOG_I(MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d\n", frameP, slot, ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
 
                 break;
             case DL_SCH_LCID_CON_RES_ID:
