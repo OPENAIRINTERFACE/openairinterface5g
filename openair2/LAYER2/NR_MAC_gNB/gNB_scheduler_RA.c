@@ -190,7 +190,6 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
 
   // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
   get_nr_prach_occasion_info_from_index(config_index,
-<<<<<<< HEAD
                                         scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
                                         mu,
                                         cc->frame_type,
@@ -247,7 +246,6 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   if (is_nr_UL_slot(scc,slotP)) {
-<<<<<<< HEAD
     uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
     uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
     uint16_t RA_sfn_index = -1;

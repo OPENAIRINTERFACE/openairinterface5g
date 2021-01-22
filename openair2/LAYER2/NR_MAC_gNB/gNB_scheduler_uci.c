@@ -87,8 +87,8 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 //#define L1_DIFF_RSRP_STEP_SIZE 2
 
 void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
                    NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
 
 int ssb_index_sorted[MAX_NUM_SSB] = {0};
@@ -692,7 +692,6 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     sched_ctrl->sr_req.nr_of_srs = uci_234->sr.sr_bit_len;
   }
   // TODO
-  int max_harq_rounds = 4; // TODO define macro
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
@@ -741,8 +740,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 }
 
 void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
                    NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
 
   // TODO
@@ -1414,7 +1413,7 @@ void reverse_n_bits(uint8_t *value, uint16_t bitlen) {
 }
 
 void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
-                               nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
                                NR_UE_sched_ctrl_t *sched_ctrl,
                                frame_t frame,
                                slot_t slot,
@@ -1424,13 +1423,10 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   uint8_t idx = 0;
   uint8_t payload_size = ceil(((double)uci_pdu->csi_part1.csi_part1_bit_len)/8);
-  uint8_t *payload = calloc (payload_size, sizeof(uint8_t));
+  uint8_t *payload = uci_pdu->csi_part1.csi_part1_payload;
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
   NR_UE_info_t *UE_info = &(RC.nrmac[Mod_idP]->UE_info);
   uint8_t csi_report_id = 0;
-
-  memcpy ( payload, uci_pdu->csi_part1.csi_part1_payload, payload_size);
-  
 
   UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = 0;
   for ( csi_report_id =0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
@@ -1501,8 +1497,6 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
   if ( !(reportQuantity_type)) 
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
 
-  free(payload);
-  payload = NULL;
 #if 0
 
   if ( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||

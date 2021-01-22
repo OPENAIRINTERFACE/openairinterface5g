@@ -310,23 +310,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
 
 }
-
-//! Calculating number of bits set
-uint8_t number_of_bits_set (uint8_t buf,uint8_t * max_ri){
-  uint8_t nb_of_bits_set = 0;
-  uint8_t mask = 0xff;
-  uint8_t index = 0;
-
-  for (index=7; (buf & mask) && (index>=0)  ; index--){
-    if (buf & (1<<index))
-      nb_of_bits_set++;
-
-    mask>>=1;
-  }
-  *max_ri = 8-index;
-  return nb_of_bits_set;
-}
-
+#if 0
 //!TODO : smae function can be written to handle csi_resources
 void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_list, int UE_id, module_id_t Mod_idP) {
   uint8_t csi_report_id = 0;
@@ -341,6 +325,8 @@ void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_li
     csi_ResourceConfigId=csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->resourcesForChannelMeasurement;
     reportQuantity_type = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportQuantity.present;
     UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type = reportQuantity_type;
+    p_and_o = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.present;
+
     switch(p_and_o){
       case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
         period = 4;
@@ -734,11 +720,24 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   
   if (secondaryCellGroup) {
 
-    RC.nrmac[Mod_idP]->secondaryCellGroupCommon = secondaryCellGroup;
-
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
       const int UE_id = add_new_nr_ue(Mod_idP, rnti, secondaryCellGroup);
+      UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      compute_csi_bitlen (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
+      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
+          secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+      AssertFatal(bwpList->list.count == 1,
+                  "downlinkBWP_ToAddModList has %d BWP!\n",
+                  bwpList->list.count);
+      const int bwp_id = 1;
+      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+      struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList =
+          secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
+      AssertFatal(ubwpList->list.count == 1,
+                  "uplinkBWP_ToAddModList has %d BWP!\n",
+                  ubwpList->list.count);
+      UE_info->UE_sched_ctrl[UE_id].active_ubwp = ubwpList->list.array[bwp_id - 1];
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       const int CC_id = 0;

@@ -474,6 +474,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         continue;
       }
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
+      UE_info->secondaryCellGroup[UE_id] = ra->secondaryCellGroup;
+      compute_csi_bitlen (ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, gnb_mod_idP);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
       LOG_I(MAC,
             "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "

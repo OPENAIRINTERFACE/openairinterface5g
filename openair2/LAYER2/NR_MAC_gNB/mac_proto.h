@@ -205,7 +205,7 @@ int get_measured_rsrp(uint8_t index);
 int get_diff_rsrp(uint8_t index, int strongest_rsrp);
 
 void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
-                               nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
                                NR_UE_sched_ctrl_t *sched_ctrl,
                                frame_t frame,
                                slot_t slot,
@@ -346,7 +346,7 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
 
-void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t *UE_info, int UE_id);
+void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
