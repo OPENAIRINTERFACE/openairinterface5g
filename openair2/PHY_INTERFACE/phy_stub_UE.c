@@ -33,6 +33,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,
@@ -54,6 +55,13 @@ static sf_rnti_mcs_s sf_rnti_mcs[NUM_NFAPI_SUBFRAME];
 
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
+static int get_mcs_from_sinr(float sinr);
+static int get_cqi_from_mcs(void);
+static void read_channel_param(const nfapi_dl_config_request_pdu_t * pdu, int sf, int index);
+static bool did_drop_transport_block(int sf, uint16_t rnti);
+static float get_bler_val(uint8_t mcs, int sinr);
+static bool should_drop_transport_block(int sf, uint16_t rnti);
+static void save_dci_pdu_for_crnti(nfapi_dl_config_request_t *dl_config_req);
 
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFAPI_SUBFRAME][10]; //TODO: NFAPI_TX_MAX_PDU for last dim? Check nfapi_pnf.c ln. 81
 //extern int timer_subframe;
@@ -295,7 +303,7 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   pdu->ul_cqi_information.channel = 1;
 
   // eNB_scheduler_primitives.c:4839: the upper four bits seem to be the CQI
-  const int cqi = 15; // Need to map EMANE SINR to CQI!
+  const int cqi = get_cqi_from_mcs();
   raw_pdu->pdu[0] = cqi << 4;
 
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis++;
@@ -403,7 +411,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       // 2.) if receiving ul_config_req for uci ack/nack or ulsch ack/nak in subframe n
       //     go look to see if dl_config_req (with c-rnti) was received in subframe (n - 4)
       // 3.) if the answer to #2 is yes then send ACK IF NOT send DTX
-      if (check_drop_tb(((subframe+6) % 10), rnti))  // TODO:  Handle DTX.  Also discuss handling PDCCH
+      if (did_drop_transport_block(((subframe+6) % 10), rnti))  // TODO:  Handle DTX.  Also discuss handling PDCCH
       {
         pdu->harq_indication_fdd_rel13.harq_tb_n[0] = 2;
         LOG_I(PHY, "Setting HARQ No ACK - Channel Model\n");
@@ -798,7 +806,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
               sfn, sf, dci->pdu_size,
               dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
               tx_req_pdu_list->num_pdus);
-        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (!should_drop_transport_block(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_send_sdu(ue_id, 0, sfn, sf,
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -817,32 +825,18 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
           continue;
-        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
-        {
-          ue_decode_si(ue_id, 0, sfn, 0,
-              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
-        }
-        else
-        {
-          LOG_I(MAC, "Transport Block discarded - ue_decode_si not called. sf: %d", sf);
-        }
+        ue_decode_si(ue_id, 0, sfn, 0,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+            tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
       }
     } else if (rnti == 0xFFFE) { /* PI-RNTI */
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
 
-        if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
-        {
-          ue_decode_p(ue_id, 0, sfn, 0,
-                      tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-                      tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
-        }
-        else
-        {
-          LOG_I(MAC, "Transport Block discarded - ue_decode_p not called. sf: %d", sf);
-        }
+        ue_decode_p(ue_id, 0, sfn, 0,
+                    tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+                    tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
       }
     } else if (rnti == 0x0002) { /* RA-RNTI */
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
@@ -863,19 +857,12 @@ void dl_config_req_UE_MAC_dci(int sfn,
                 "%s(): Received RAR, PreambleIndex: %d\n",
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
 
-          if (!drop_tb(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
-          {
-            ue_process_rar(ue_id, 0, sfn,
-                ra_rnti, //RA-RNTI
-                tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
-                &UE_mac_inst[ue_id].crnti, //t-crnti
-                UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
-                tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data);
-          }
-          else
-          {
-            LOG_I(MAC, "Transport Block discarded - RAR Not Processed. sf: %d, ra_rnti: %d", sf, ra_rnti);
-          }
+          ue_process_rar(ue_id, 0, sfn,
+              ra_rnti, //RA-RNTI
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
+              &UE_mac_inst[ue_id].crnti, //t-crnti
+              UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
+              tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data);
           // UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
           LOG_I(MAC, "setting UE_MODE now: %d\n", UE_mac_inst[ue_id].UE_mode[0]);
           // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
@@ -1334,6 +1321,7 @@ void *ue_standalone_pnf_task(void *context)
           abort();
         }
         sf_rnti_mcs[sf].sinr = ch_info->sinr;
+        LOG_A(MAC, "Received_SINR = %f\n",ch_info->sinr);
     }
     else
     {
@@ -1363,7 +1351,9 @@ void *ue_standalone_pnf_task(void *context)
               dl_config_req.sfn_sf & 15);
 
         dl_config_req_valid = true;
-        read_channel_param(&dl_config_req, (dl_config_req.sfn_sf & 15));
+
+        save_dci_pdu_for_crnti(&dl_config_req);
+
         if (tx_req_valid)
         {
           if (dl_config_req.sfn_sf != tx_req.sfn_sf)
@@ -1456,6 +1446,30 @@ void *ue_standalone_pnf_task(void *context)
   }
 }
 
+static void save_dci_pdu_for_crnti(nfapi_dl_config_request_t *dl_config_req)
+{
+  int count_sent = 0;
+  int number_of_dci = dl_config_req->dl_config_request_body.number_dci;
+  int number_of_pdu = dl_config_req->dl_config_request_body.number_pdu;
+  if (number_of_pdu <= 0)
+  {
+    LOG_E(MAC, "%s: dl_config_req pdu size <= 0\n", __FUNCTION__);
+    abort();
+  }
+  if (number_of_dci > 0)
+  {
+    for (int n = 0; n < number_of_pdu; n++)
+    {
+      const nfapi_dl_config_request_pdu_t *current_pdu_list = &dl_config_req->dl_config_request_body.dl_config_pdu_list[n];
+      int rnti_type = current_pdu_list->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+      if (current_pdu_list->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE && rnti_type == 1 && count_sent < number_of_dci)
+      {
+        read_channel_param(current_pdu_list, (dl_config_req->sfn_sf & 15), count_sent);
+        count_sent++;
+      }
+    }
+  }
+}
 
 void *memcpy_dl_config_req_standalone(nfapi_dl_config_request_t *dl_config_req)
 {
@@ -1922,142 +1936,192 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
   {
   }
 
-  void read_channel_param(nfapi_dl_config_request_t * dl_config, int sf)
+static int get_mcs_from_sinr(float sinr)
+{
+  if (sinr < (bler_data[0].bler_table[0][0]))
   {
-    if (dl_config == NULL)
-    {
-      LOG_E(MAC,"DL_CONFIG NULL\n");
-      abort();
-    }
-
-    // Store all rnti and mcs for all pdus
-    LOG_I(MAC, "Adding MCS and RNTI for sf_rnti_mcs[%d]\n", sf);
-    sf_rnti_mcs[sf].pdu_size = dl_config->dl_config_request_body.number_pdu;
-    for (int n = 0; n < sf_rnti_mcs[sf].pdu_size; n++)
-    {
-      sf_rnti_mcs[sf].rnti[n] = dl_config->dl_config_request_body.dl_config_pdu_list[n].dci_dl_pdu.dci_dl_pdu_rel8.rnti;
-      sf_rnti_mcs[sf].mcs[n] = dl_config->dl_config_request_body.dl_config_pdu_list[n].dci_dl_pdu.dci_dl_pdu_rel8.mcs_1;
-    }
+    LOG_I(MAC, "The SINR was found is smaller than first MCS table\n");
+    return 0;
   }
 
-  bool check_drop_tb(int sf, uint16_t rnti)
+  if (sinr > (bler_data[NUM_MCS-1].bler_table[bler_data[NUM_MCS-1].length - 1][0]))
   {
-    int pdu_size = sf_rnti_mcs[sf].pdu_size;
-    if (pdu_size <= 0)
-    {
-      LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
-      abort();
-    }
-
-    CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
-    CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
-    for (int n = 0; n < pdu_size; n++)
-    {
-      if (sf_rnti_mcs[sf].rnti[n] == rnti)
-      {
-        return sf_rnti_mcs[sf].drop_flag[n];
-      }
-    }
-    LOG_I(MAC, "No matching rnti in sf_rnti_mcs.\n");
-    return false;
+    LOG_I(MAC, "The SINR was found is larger than last MCS table\n");
+    return NUM_MCS-1;
   }
 
-  bool drop_tb(int sf, uint16_t rnti)
+  for (int n = NUM_MCS-1; n >= 0; n--)
   {
-    int pdu_size = sf_rnti_mcs[sf].pdu_size;
-    assert(sf < 10 && sf >= 0);
-
-    if (pdu_size <= 0)
+    CHECK_INDEX(bler_data, n);
+    float largest_sinr = (bler_data[n].bler_table[bler_data[n].length - 1][0]);
+    float smallest_sinr = (bler_data[n].bler_table[0][0]);
+    if (sinr < largest_sinr && sinr > smallest_sinr)
     {
-      LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
+      LOG_I(MAC, "The SINR was found in MCS %d table\n", n);
+      return n;
     }
+  }
+  LOG_E(MAC, "Unable to get an MCS value.\n");
+  abort();
+}
 
-    uint8_t mcs = 99;
-    int n = 0;
-    CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
-    CHECK_INDEX(sf_rnti_mcs[sf].mcs, pdu_size);
-    CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
-    for (n = 0; n < pdu_size; n++)
+static int get_cqi_from_mcs(void)
+{
+  static const int mcs_to_cqi[] = {0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15};
+  assert(NUM_ELEMENTS(mcs_to_cqi) == NUM_MCS);
+  int sf = 0;
+  while(sf < NUM_NFAPI_SUBFRAME)
+  {
+    if (sf_rnti_mcs[sf].latest)
     {
-      if (sf_rnti_mcs[sf].rnti[n] == rnti)
+      int pdu_size = sf_rnti_mcs[sf].pdu_size;
+      if (pdu_size <= 0)
       {
-        mcs = sf_rnti_mcs[sf].mcs[n];
-        sf_rnti_mcs[sf].drop_flag[n] = false;
-        break;
-      }
-    }
-
-    if (mcs == 99)
-    {
-      LOG_E(MAC, "NO MCS Found. %d = sf_rnti_mcs[%d].mcs[%d] \n", mcs, sf, n);
-      abort();
-    }
-
-    // Loop through bler table to find sinr_index
-    int sinr_index = 0;
-    bool lin_interp = false;
-    bool skip_search = false;
-    int temp_bler = 0;
-    int temp_sinr = ((int)(sf_rnti_mcs[sf].sinr * 10));
-    int i;
-    float bler_val = 0.0;
-
-    if (temp_sinr < (int)(bler_data[mcs].bler_table[0][0] * 10))
-    {
-      skip_search = true;
-      bler_val = 0.0;
-    }
-    else if (temp_sinr > (int)(bler_data[mcs].bler_table[bler_data[mcs].length - 1][0] * 10))
-    {
-      skip_search = true;
-      bler_val = 1.0;
-    }
-
-
-    for (i = 0; i < bler_data[mcs].length; i++)
-    {
-      if(skip_search)
-        break;
-
-      temp_bler = (int)(bler_data[mcs].bler_table[i][0] * 10);
-      if (temp_bler == temp_sinr)
-      {
-        sinr_index = i;
-        break;
-      }
-      // Linear interpolation when SINR is between indices
-      else if (temp_bler > temp_sinr)
-      {
-        sinr_index = i;
-        lin_interp = true;
-        break;
+        LOG_E(MAC, "%s: sf_rnti_mcs[%d].pdu_size = 0\n", __FUNCTION__, sf);
+        abort();
       }
 
+      CHECK_INDEX(sf_rnti_mcs[sf].mcs, pdu_size);
+      int mcs = get_mcs_from_sinr(sf_rnti_mcs[sf].sinr);
+      CHECK_INDEX(mcs_to_cqi, mcs);
+      int cqi = mcs_to_cqi[mcs];
+      LOG_A(MAC, "SINR: %f -> MCS: %d -> CQI: %d\n", sf_rnti_mcs[sf].sinr, mcs, cqi);
+      return cqi;
     }
-    if (i >= (bler_data[mcs].length - 1))
-    {
-      LOG_E(MAC, "NO SINR INDEX FOUND! - mcs: %d, temp_sinr: %d, temp_bler: %d, sinr_index: %d\n", mcs, temp_sinr, temp_bler, sinr_index);
-      abort();
-    }
+    sf++;
+  }
+  LOG_E(MAC, "Unable to get CQI value because no MCS found\n");
+  abort();
+}
 
-    if (lin_interp)
+static void read_channel_param(const nfapi_dl_config_request_pdu_t * pdu, int sf, int index)
+{
+  if (pdu == NULL)
+  {
+    LOG_E(MAC,"PDU NULL\n");
+    abort();
+  }
+
+  /* This function is executed for every dci pdu type in a dl_config_req. We save
+     the assocaited MCS and RNTI value for each. The 'index' passed in is a count of
+     how many times we have called this function for a particular dl_config_req. It
+     allows us to save MCS/RNTI data in correct indicies when multiple dci's are received.*/
+  for (int i = 0; i < NUM_NFAPI_SUBFRAME; i++)
+  {
+    if (i == sf)
     {
-      bler_val = ((bler_data[mcs].bler_table[sinr_index - 1][3] + bler_data[mcs].bler_table[sinr_index][3]) / 2);
+      CHECK_INDEX(sf_rnti_mcs[sf].rnti, index);
+      CHECK_INDEX(sf_rnti_mcs[sf].mcs, index);
+      CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, index);
+      sf_rnti_mcs[sf].rnti[index] = pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
+      sf_rnti_mcs[sf].mcs[index] = pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1;
+      sf_rnti_mcs[sf].drop_flag[index] = false;
+      sf_rnti_mcs[sf].pdu_size = index+1; //index starts at 0 so we incrament to get num of pdus
+      sf_rnti_mcs[sf].latest = true;
+      LOG_I(MAC, "Adding MCS %d and RNTI %x for sf_rnti_mcs[%d]\n", sf_rnti_mcs[sf].mcs[index], sf_rnti_mcs[sf].rnti[index], sf);
     }
     else
     {
-      if (skip_search == false)
-        bler_val = bler_data[mcs].bler_table[sinr_index][3];  // 3 is the rate, or bler rate column
+      sf_rnti_mcs[i].latest = false;
     }
-
-    double drop_cutoff = ((double) rand() / (RAND_MAX));
-    assert(drop_cutoff < 1);
-    bler_val = 0.4;
-
-    if (bler_val >= drop_cutoff)
-    {
-      sf_rnti_mcs[sf].drop_flag[n] = true;
-      LOG_D(MAC, "We are dropping this packet. Bler_val = %f, MCS = %"PRIu8", sf = %d\n", bler_val, sf_rnti_mcs[sf].mcs[n], sf);
-    }
-    return sf_rnti_mcs[sf].drop_flag[n];
   }
+  return;
+}
+
+static bool did_drop_transport_block(int sf, uint16_t rnti)
+{
+  int pdu_size = sf_rnti_mcs[sf].pdu_size;
+  if(pdu_size <= 0)
+  {
+    LOG_E(MAC, "Problem, the PDU size is <= 0. We dropped this packet\n");
+    return true;
+  }
+  CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
+  CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
+  for (int n = 0; n < pdu_size; n++)
+  {
+    if (sf_rnti_mcs[sf].rnti[n] == rnti && sf_rnti_mcs[sf].drop_flag[n])
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+static float get_bler_val(uint8_t mcs, int sinr)
+{
+  if (sinr < (int)(bler_data[mcs].bler_table[0][0] * 10))
+  {
+    LOG_I(MAC, "MCS %d table. SINR is smaller than lowest SINR, bler_val is set based on lowest SINR in table\n", mcs);
+    return bler_data[mcs].bler_table[0][3];
+  }
+  if (sinr > (int)(bler_data[mcs].bler_table[bler_data[mcs].length - 1][0] * 10))
+  {
+    LOG_I(MAC, "MCS %d table. SINR is greater than largest SINR. bler_val is set based on largest SINR in table\n", mcs);
+    return bler_data[mcs].bler_table[(bler_data[mcs].length - 1)][3];
+  }
+  // Loop through bler table to find sinr_index
+  for (int i = 0; i < bler_data[mcs].length; i++)
+  {
+    int temp_sinr = (int)(bler_data[mcs].bler_table[i][0] * 10);
+    if (temp_sinr == sinr)
+    {
+      return bler_data[mcs].bler_table[i][3];  // 3rd column containers bler value
+    }
+    // Linear interpolation when SINR is between indices
+    if (temp_sinr > sinr)
+    {
+      return ((bler_data[mcs].bler_table[i - 1][3] + bler_data[mcs].bler_table[i][3]) / 2);
+    }
+  }
+  LOG_E(MAC, "NO SINR INDEX FOUND!\n");
+  abort();
+
+}
+
+static bool should_drop_transport_block(int sf, uint16_t rnti)
+{
+  /* Get block error rate (bler_val) from table based on every saved
+     MCS and SINR to be used as the cutoff rate for dropping packets.
+     Generate random uniform vairable to compare against bler_val. */
+  int pdu_size = sf_rnti_mcs[sf].pdu_size;
+  assert(sf < 10 && sf >= 0);
+  assert(pdu_size > 0);
+  CHECK_INDEX(sf_rnti_mcs[sf].rnti, pdu_size);
+  CHECK_INDEX(sf_rnti_mcs[sf].mcs, pdu_size);
+  CHECK_INDEX(sf_rnti_mcs[sf].drop_flag, pdu_size);
+  int n = 0;
+  uint8_t mcs = 99;
+  for (n = 0; n < pdu_size; n++)
+  {
+    if (sf_rnti_mcs[sf].rnti[n] == rnti)
+    {
+      mcs = sf_rnti_mcs[sf].mcs[n];
+    }
+    if (mcs != 99)
+    {
+      /* Use MCS to get the bler value. Since there can be multiple MCS
+         values for a particular subframe, we verify that all PDUs are not
+         flagged for drop before returning. If even one is flagged for drop
+         we return immediately because we drop the entire packet. */
+      float bler_val = get_bler_val(mcs, ((int)(sf_rnti_mcs[sf].sinr * 10)));
+      double drop_cutoff = ((double) rand() / (RAND_MAX));
+      assert(drop_cutoff <= 1);
+
+      if (drop_cutoff <= bler_val)
+      {
+        sf_rnti_mcs[sf].drop_flag[n] = true;
+        LOG_D(MAC, "We are dropping this packet. Bler_val = %f, MCS = %"PRIu8", sf = %d\n", bler_val, sf_rnti_mcs[sf].mcs[n], sf);
+        return sf_rnti_mcs[sf].drop_flag[n];
+      }
+    }
+
+  }
+
+  if (mcs == 99)
+  {
+    LOG_E(MAC, "NO MCS Found for rnti %x. sf_rnti_mcs[%d].mcs[%d] \n", rnti, sf, n);
+    abort();
+  }
+  return false;
+}
