@@ -1500,8 +1500,9 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
     }
     sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
     if (*(int64_t*)sib1 != 1) {
-       LOG_D(RRC, "SIB1 address: %lx\n", *(int64_t*)sib1);
-       xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
+      LOG_I(RRC, "SIB1 decoded\n");
+      if( g_log->log_component[RRC].level >= OAILOG_DEBUG  )
+        xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
     }
     else
        LOG_E(PHY, "sib1 is starting by 8 times 0\n");

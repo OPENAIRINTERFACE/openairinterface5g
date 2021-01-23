@@ -81,12 +81,14 @@
 
 void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
                                        uint32_t *z,
-                                       NR_DL_FRAME_PARMS *frame_parms,
                                        uint8_t coreset_time_dur,
                                        uint32_t coreset_nbr_rb,
                                        uint8_t reg_bundle_size_L,
                                        uint8_t coreset_interleaver_size_R,
-                                       uint8_t n_shift) {
+                                       uint8_t n_shift,
+                                       uint8_t number_of_candidates,
+                                       uint16_t *CCE,
+                                       uint8_t *L) {
   /*
    * This function will do demapping and deinterleaving from llr containing demodulated symbols
    * Demapping will regroup in REG and bundles
@@ -122,35 +124,61 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
    |   REG 0  (bundle 0)             bundle 0         bundle 0
 
   */
-  int c=0,r=0;
-  uint16_t bundle_j=0, f_bundle_j=0,f_reg=0;
-  uint32_t coreset_C=0;
+  int c = 0, r = 0;
+  uint16_t bundle_j = 0, f_bundle_j = 0, f_reg = 0;
+  uint32_t coreset_C = 0;
   uint16_t index_z, index_llr;
   int coreset_interleaved = 0;
 
-  if (reg_bundle_size_L!=0) { // interleaving will be done only if reg_bundle_size_L != 0
-    coreset_interleaved=1;
-    coreset_C = (uint32_t)((coreset_nbr_rb * coreset_time_dur)/ (coreset_interleaver_size_R*reg_bundle_size_L));
+  if (reg_bundle_size_L != 0) { // interleaving will be done only if reg_bundle_size_L != 0
+    coreset_interleaved = 1;
+    coreset_C = (uint32_t) ((coreset_nbr_rb * coreset_time_dur) / (coreset_interleaver_size_R * reg_bundle_size_L));
   } else {
-    reg_bundle_size_L=6;
+    reg_bundle_size_L = 6;
   }
 
-  for(int reg=0; reg<((coreset_nbr_rb*coreset_time_dur)); reg++) {
-    if ((reg%reg_bundle_size_L) == 0) {
+
+  int f_bundle_j_list[MAX_DCI_CORESET] = {};
+
+  for (int reg = 0; reg < ((coreset_nbr_rb * coreset_time_dur)); reg++) {
+    if ((reg % reg_bundle_size_L) == 0) {
       if (r == coreset_interleaver_size_R) {
-        r=0;
+        r = 0;
         c++;
       }
 
-      bundle_j = (c*coreset_interleaver_size_R)+r;
-      f_bundle_j = ((r*coreset_C)+c+n_shift)%((coreset_nbr_rb*coreset_time_dur)/reg_bundle_size_L);
+      bundle_j = (c * coreset_interleaver_size_R) + r;
+      f_bundle_j = ((r * coreset_C) + c + n_shift) % ((coreset_nbr_rb * coreset_time_dur) / reg_bundle_size_L);
 
-      if (coreset_interleaved==0) f_bundle_j=bundle_j;
+      if (coreset_interleaved == 0) f_bundle_j = bundle_j;
 
-      LOG_DNL("[r=%d,c=%d] bundle_j(%d) interleaved at f_bundle_j(%d)\n",r,c,bundle_j,f_bundle_j);
+      f_bundle_j_list[reg / 6] = f_bundle_j;
+
     }
+    if ((reg % reg_bundle_size_L) == 0) r++;
+  }
 
-    f_reg = (f_bundle_j*reg_bundle_size_L)+(reg%reg_bundle_size_L);
+
+  // Get cce_list indices by reg_idx in ascending order
+  int f_bundle_j_list_id = 0;
+  int f_bundle_j_list_ord[MAX_DCI_CORESET] = {};
+  for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
+    f_bundle_j_list_id = CCE[c_id];
+    for (int p = 0; p < MAX_DCI_CORESET; p++) {
+      for (int p2 = CCE[c_id]; p2 < CCE[c_id] + L[c_id]; p2++) {
+        if (f_bundle_j_list[p2] == p) {
+          f_bundle_j_list_ord[f_bundle_j_list_id] = p;
+          f_bundle_j_list_id++;
+          break;
+        }
+      }
+    }
+  }
+
+
+  for(int reg=0; reg<((coreset_nbr_rb*coreset_time_dur)); reg++) {
+
+    f_reg = (f_bundle_j_list_ord[reg/6]*reg_bundle_size_L)+(reg%reg_bundle_size_L);
     index_z   = 9*reg;
     index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
 
@@ -760,12 +788,14 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     LOG_D(PHY,"we enter nr_pdcch_demapping_deinterleaving()\n");
     nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
                                       (uint32_t *) pdcch_vars->e_rx,
-                                      frame_parms,
                                       rel15->coreset.duration,
                                       n_rb,
                                       rel15->coreset.RegBundleSize,
                                       rel15->coreset.InterleaverSize,
-                                      rel15->coreset.ShiftIndex);
+                                      rel15->coreset.ShiftIndex,
+                                      rel15->number_of_candidates,
+                                      rel15->CCE,
+                                      rel15->L);
     /*
     nr_pdcch_unscrambling(rel15->rnti,
                           frame_parms,
