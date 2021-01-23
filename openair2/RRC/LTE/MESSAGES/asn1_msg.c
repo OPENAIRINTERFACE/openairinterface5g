@@ -3220,8 +3220,6 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat);
-  LTE_RAT_Type_t rat_nr=LTE_RAT_Type_nr;
-  LTE_RAT_Type_t rat_eutra_nr=LTE_RAT_Type_eutra_nr;  
   LTE_UECapabilityEnquiry_r8_IEs_t *r8 = &dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8;
   LTE_UECapabilityEnquiry_v8a0_IEs_t r8_a0;
   LTE_UECapabilityEnquiry_v1180_IEs_t r11_80;

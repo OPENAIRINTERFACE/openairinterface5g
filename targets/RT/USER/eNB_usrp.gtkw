@@ -1,12 +1,12 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed Jan 20 05:55:49 2021
+[*] Thu Jan 21 13:54:47 2021
 [*]
 [dumpfile] "/home/eurecom/raymond/openair_eNB_dump.vcd"
-[dumpfile_mtime] "Wed Jan 20 05:52:03 2021"
-[dumpfile_size] 74759060
+[dumpfile_mtime] "Thu Jan 21 13:51:28 2021"
+[dumpfile_size] 335122
 [savefile] "/home/eurecom/raymond/openairinterface5g_2/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 32439070000
+[timestart] 11468800000
 [size] 1892 841
 [pos] -1 -1
 *-21.832302 7639830000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
@@ -20,11 +20,12 @@ functions.trx_write
 @24
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
+@25
+variables.trx_write_flags[63:0]
 @28
 functions.eNB_thread_rxtx0
-@421
-variables.l1_proc_tx_ic[63:0]
 @420
+variables.l1_proc_tx_ic[63:0]
 variables.l1_proc_ic[63:0]
 @24
 variables.frame_number_RX0_RU[63:0]

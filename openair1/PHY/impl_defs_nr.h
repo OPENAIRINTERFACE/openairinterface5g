@@ -455,6 +455,7 @@ typedef struct {
 */
   maxNrofCodeWordsScheduledByDCI_t maxNrofCodeWordsScheduledByDCI;
 
+
   PDSCH_TimeDomainResourceAllocation_t *pdsch_TimeDomainResourceAllocation[MAX_NR_OF_DL_ALLOCATIONS];
 
 } PDSCH_Config_t;

@@ -28,7 +28,8 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
-#define MAX_NUM_DLSCH_SEGMENTS 16
+#include "openair1/PHY/defs_nr_common.h"
+
 #define MAX_BLOCK_LENGTH 8448
 
 #ifndef malloc16
@@ -118,7 +119,7 @@ int test_ldpc(short No_iteration,
   opp_enabled=1;
   cpu_freq_GHz = get_cpu_freq_GHz();
   //short test_input[block_length];
-  unsigned char *test_input[MAX_NUM_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
+  unsigned char *test_input[MAX_NUM_NR_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
   //short *c; //padded codeword
   unsigned char *estimated_output[MAX_NUM_DLSCH_SEGMENTS];
   unsigned char *estimated_output_bit[MAX_NUM_DLSCH_SEGMENTS];

@@ -1283,7 +1283,7 @@ rrc_eNB_generate_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = 78;//RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -1333,7 +1333,7 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = 78;//RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,

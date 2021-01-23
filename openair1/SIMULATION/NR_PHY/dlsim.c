@@ -84,6 +84,7 @@ int sl_ahead=0;
 uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
+int usrp_tx_thread = 0;
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
