@@ -53,6 +53,7 @@ typedef struct
     float sinr;
     uint16_t pdu_size;
     bool drop_flag[256];
+    bool latest;
 
 } sf_rnti_mcs_s;
 
@@ -199,10 +200,6 @@ char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req);
 // Returned memory is statically allocated.
 const char *dl_pdu_type_to_string(uint8_t pdu_type);
 const char *ul_pdu_type_to_string(uint8_t pdu_type);
-
-void read_channel_param(nfapi_dl_config_request_t * dl_config, int sf);
-bool drop_tb(int sf, uint16_t rnti);
-bool check_drop_tb(int sf, uint16_t rnti);
 
 extern queue_t dl_config_req_tx_req_queue;
 extern queue_t ul_config_req_queue;
