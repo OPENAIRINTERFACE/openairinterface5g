@@ -686,11 +686,8 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
     int32_t **dl_ch_estimates,
     int32_t **rxdataF_ext,
     int32_t **dl_ch_estimates_ext,
-    uint16_t pmi,
-    uint8_t *pmi_ext,
     uint32_t *rb_alloc,
     uint8_t symbol,
-    uint8_t nr_slot_rx,
     NR_DL_FRAME_PARMS *frame_parms)
     \brief This function extracts the received resource blocks, both channel estimates and data symbols,
     for the current allocation and for single antenna eNB transmission.
@@ -698,11 +695,8 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
     @param dl_ch_estimates Channel estimates of current slot
     @param rxdataF_ext FFT output for RBs in this allocation
     @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
-    @param pmi subband Precoding matrix indicator
-    @param pmi_ext Extracted PMI for chosen RBs
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
-    @param nr_slot_rx Slot number
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
@@ -710,55 +704,52 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         int **dl_ch_estimates,
                                         int **rxdataF_ext,
                                         int **dl_ch_estimates_ext,
-                                        unsigned short pmi,
-                                        unsigned char *pmi_ext,
                                         unsigned char symbol,
                                         uint8_t pilots,
                                         uint8_t config_type,
                                         unsigned short start_rb,
-                                        unsigned short nb_pdsch_rb,
-                                        unsigned char nr_slot_rx,
+                                        unsigned short nb_rb_pdsch,
                                         uint32_t high_speed_flag,
                                         NR_DL_FRAME_PARMS *frame_parms,
                                         uint16_t dlDmrsSymbPos);
 
-/** \fn dlsch_extract_rbs_dual(int32_t **rxdataF,
+/** \fn dlsch_extract_rbs_multiple(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
     int32_t **rxdataF_ext,
     int32_t **dl_ch_estimates_ext,
-    uint16_t pmi,
-    uint8_t *pmi_ext,
-    uint32_t *rb_alloc,
-    uint8_t symbol,
-    NR_DL_FRAME_PARMS *frame_parms)
+    unsigned char symbol
+    uint8_t pilots,
+    uint8_t config_type,
+    unsigned short start_rb,
+    unsigned short nb_rb_pdsch,
+    uint32_t high_speed_flag,
+    uint8_t Nl,
+    NR_DL_FRAME_PARMS *frame_parms,
+    uint16_t dlDmrsSymbPos)
     \brief This function extracts the received resource blocks, both channel estimates and data symbols,
-    for the current allocation and for dual antenna eNB transmission.
+    for the current allocation and for multiple layer antenna gNB transmission.
     @param rxdataF Raw FFT output of received signal
     @param dl_ch_estimates Channel estimates of current slot
     @param rxdataF_ext FFT output for RBs in this allocation
     @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
-    @param pmi subband Precoding matrix indicator
-    @param pmi_ext Extracted PMI for chosen RBs
-    @param rb_alloc RB allocation vector
+    @param Nl nb of antenna layers
     @param symbol Symbol to extract
-    @param nr_slot_rx Slot index
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
-unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
-                                      int **dl_ch_estimates,
-                                      int **rxdataF_ext,
-                                      int **dl_ch_estimates_ext,
-                                      unsigned short pmi,
-                                      unsigned char *pmi_ext,
-                                      unsigned char symbol,
-									  uint8_t pilots,
-									  unsigned short start_rb,
-									  unsigned short nb_rb_pdsch,
-                                      unsigned char nr_slot_rx,
-                                      uint32_t high_speed_flag,
-                                      NR_DL_FRAME_PARMS *frame_parms,
-                                      MIMO_mode_t mimo_mode);
+unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
+                                        int **dl_ch_estimates,
+                                        int **rxdataF_ext,
+                                        int **dl_ch_estimates_ext,
+                                        unsigned char symbol,
+                                        uint8_t pilots,
+                                        uint8_t config_type,
+                                        unsigned short start_rb,
+                                        unsigned short nb_rb_pdsch,
+                                        uint32_t high_speed_flag,
+                                        uint8_t Nl,
+                                        NR_DL_FRAME_PARMS *frame_parms,
+                                        uint16_t dlDmrsSymbPos);
 
 /** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
     int32_t **dl_bf_ch_estimates,

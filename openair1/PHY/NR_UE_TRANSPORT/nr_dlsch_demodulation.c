@@ -332,84 +332,38 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   pilots = ((1<<symbol)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
 
-  if (frame_parms->nb_antenna_ports_gNB>1 && beamforming_mode==0) {
-#ifdef DEBUG_DLSCH_MOD
-    LOG_I(PHY,"dlsch: using pmi %x (%p)\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0]);
-#endif
-
+  if (beamforming_mode==0) {//No beamforming
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 #endif
-    nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
+    if (dlsch0_harq->Nl > 1)//More than or equal 2 layers
+    nb_rb = nr_dlsch_extract_rbs_multiple(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
 				      pdsch_vars[eNB_id]->dl_ch_estimates,
 				      pdsch_vars[eNB_id]->rxdataF_ext,
 				      pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				      dlsch0_harq->pmi_alloc,
-				      pdsch_vars[eNB_id]->pmi_ext,
 				      symbol,
 				      pilots,
+				      config_type,
 				      start_rb,
 				      nb_rb_pdsch,
-				      nr_slot_rx,
 				      ue->high_speed_flag,
+				      dlsch0_harq->Nl,
 				      frame_parms,
-				      dlsch0_harq->mimo_mode);
-#ifdef DEBUG_DLSCH_MOD
-      printf("dlsch: using pmi %lx, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
-       for (rb=0;rb<nb_rb;rb++)
-          printf("%d",pdsch_vars[eNB_id]->pmi_ext[rb]);
-       printf("\n");
-#endif
+				      dlsch0_harq->dlDmrsSymbPos);
 
-   if (rx_type >= rx_IC_single_stream) {
-      if (eNB_id_i<ue->n_connected_eNB) // we are in TM5
-      nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
-    		  	  	  	  	  	       pdsch_vars[eNB_id]->dl_ch_estimates,
-                                       pdsch_vars[eNB_id_i]->rxdataF_ext,
-                                       pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                       dlsch0_harq->pmi_alloc,
-                                       pdsch_vars[eNB_id_i]->pmi_ext,
-                                       symbol,
-                                       pilots,
-                                       start_rb,
-                                       nb_rb_pdsch,
-                                       nr_slot_rx,
-                                       ue->high_speed_flag,
-                                       frame_parms,
-                                       dlsch0_harq->mimo_mode);
-      else
-        nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
-        							   pdsch_vars[eNB_id]->dl_ch_estimates,
-                                       pdsch_vars[eNB_id_i]->rxdataF_ext,
-                                       pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                       dlsch0_harq->pmi_alloc,
-                                       pdsch_vars[eNB_id_i]->pmi_ext,
-                                       symbol,
-                                       pilots,
-                                       start_rb,
-                                       nb_rb_pdsch,
-                                       nr_slot_rx,
-                                       ue->high_speed_flag,
-                                       frame_parms,
-                                       dlsch0_harq->mimo_mode);
-    }
-  } else if (beamforming_mode==0) { //else if nb_antennas_ports_gNB==1 && beamforming_mode == 0
-		  //printf("start nr dlsch extract nr_slot_rx %d thread id %d \n", nr_slot_rx, proc->thread_id);
+    else// one layer
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
 					pdsch_vars[eNB_id]->dl_ch_estimates,
 					pdsch_vars[eNB_id]->rxdataF_ext,
 					pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-					dlsch0_harq->pmi_alloc,
-					pdsch_vars[eNB_id]->pmi_ext,
 					symbol,
 					pilots,
 					config_type,
 					start_rb + dlsch0_harq->BWPStart,
 					nb_rb_pdsch,
-					nr_slot_rx,
 					ue->high_speed_flag,
-                                        frame_parms,
-                                        dlsch0_harq->dlDmrsSymbPos);
+                    frame_parms,
+                    dlsch0_harq->dlDmrsSymbPos);
   
   } /*else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation: beamforming mode not supported yet.\n");
@@ -437,7 +391,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 #endif
-  n_tx = frame_parms->nb_antenna_ports_gNB;
+  n_tx = dlsch0_harq->Nl;
   n_rx = frame_parms->nb_antennas_rx;
   
   nr_dlsch_scale_channel(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -2098,22 +2052,17 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 					   int **dl_ch_estimates,
 					   int **rxdataF_ext,
 					   int **dl_ch_estimates_ext,
-					   unsigned short pmi,
-					   unsigned char *pmi_ext,
 					   unsigned char symbol,
 					   uint8_t pilots,
 					   uint8_t config_type,
 					   unsigned short start_rb,
 					   unsigned short nb_rb_pdsch,
-					   unsigned char nr_slot_rx,
 					   uint32_t high_speed_flag,
-                                           NR_DL_FRAME_PARMS *frame_parms,
-                                           uint16_t dlDmrsSymbPos) {
-
-
+                       NR_DL_FRAME_PARMS *frame_parms,
+                       uint16_t dlDmrsSymbPos) {
 
   unsigned short k,rb;
-  unsigned char i,aarx; //,nsymb,sss_symb,pss_symb=0,l;
+  unsigned char i,aarx;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
   int8_t validDmrsEst = 0; //store last DMRS Symbol index
@@ -2146,21 +2095,23 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
         rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
       }
       if (pilots==0) {
-	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
-	memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
-	dl_ch0_ext+=12;
-	rxF_ext+=12;
+          memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
+          memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
+          dl_ch0_ext+=12;
+          rxF_ext+=12;
       } else {//the symbol contains DMRS
-        j=0;
-        if (config_type==pdsch_dmrs_type1){
-          for (i = (1-frame_parms->nushift); i<12; i+=2) {
-            rxF_ext[j]=rxF[i];
-            dl_ch0_ext[j]=dl_ch0[i];
-            j++;
-          }
-          dl_ch0_ext+=6;
-          rxF_ext+=6;
-        } else {
+          j=0;
+          if (config_type==pdsch_dmrs_type1){
+              if (frame_parms->nushift == 0) {//data is multiplexed
+            	  for (i = (1-frame_parms->nushift); i<12; i+=2) {
+            		  rxF_ext[j]=rxF[i];
+            		  dl_ch0_ext[j]=dl_ch0[i];
+            		  j++;
+            	  }
+            	  dl_ch0_ext+=6;
+            	  rxF_ext+=6;
+              }
+        } else {//pdsch_dmrs_type2
           for (i = (2+frame_parms->nushift); i<6; i++) {
             rxF_ext[j]=rxF[i];
             dl_ch0_ext[j]=dl_ch0[i];
@@ -2171,8 +2122,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
             dl_ch0_ext[j]=dl_ch0[i];
             j++;
           }
-          dl_ch0_ext+= 8;
-          rxF_ext+= 8;
+          dl_ch0_ext+= j;
+          rxF_ext+= j;
         }
       }
 
@@ -2186,101 +2137,102 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     }
   }
   
-  
-  return(nb_rb_pdsch/frame_parms->nb_antennas_rx);
+  return(nb_rb_pdsch);
 }
 
-unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
-                                      int **dl_ch_estimates,
-                                      int **rxdataF_ext,
-                                      int **dl_ch_estimates_ext,
-                                      unsigned short pmi,
-                                      unsigned char *pmi_ext,
-                                      unsigned char symbol,
-									  uint8_t pilots,
-									  unsigned short start_rb,
-									  unsigned short nb_rb_pdsch,
-                                      unsigned char nr_slot_rx,
-                                      uint32_t high_speed_flag,
-                                      NR_DL_FRAME_PARMS *frame_parms,
-                                      MIMO_mode_t mimo_mode) {
+unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
+					   int **dl_ch_estimates,
+					   int **rxdataF_ext,
+					   int **dl_ch_estimates_ext,
+					   unsigned char symbol,
+					   uint8_t pilots,
+					   uint8_t config_type,
+					   unsigned short start_rb,
+					   unsigned short nb_rb_pdsch,
+					   uint32_t high_speed_flag,
+					   uint8_t Nl,
+					   NR_DL_FRAME_PARMS *frame_parms,
+					   uint16_t dlDmrsSymbPos) {
 
-  int prb,nb_rb=0;
-  unsigned short k;
-  int i,j,aarx;
-  int32_t *dl_ch0=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
+  unsigned short k,rb;
+  unsigned char j,i,aarx,aatx;
+  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
+  int8_t validDmrsEst = 0; //store last DMRS Symbol index
 
-  k = frame_parms->first_carrier_offset + 516; //0
+  if (config_type==pdsch_dmrs_type1)
+    AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 1,
+                "nushift %d is illegal\n",frame_parms->nushift);
+  else
+    AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 2 || frame_parms->nushift == 4,
+                "nushift %d is illegal\n",frame_parms->nushift);
+
+  validDmrsEst = get_valid_dmrs_idx_for_channel_est(dlDmrsSymbPos,symbol);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-    if (high_speed_flag==1) {
-      dl_ch0     = &dl_ch_estimates[aarx][symbol*(frame_parms->ofdm_symbol_size)];
-      dl_ch1     = &dl_ch_estimates[2+aarx][symbol*(frame_parms->ofdm_symbol_size)];
-    } else {
-      dl_ch0     = &dl_ch_estimates[aarx][0];
-      dl_ch1     = &dl_ch_estimates[2+aarx][0];
-    }
+	k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
+	if (k>frame_parms->ofdm_symbol_size)
+		k = k-frame_parms->ofdm_symbol_size;
 
-    //pmi_loc = pmi_ext;
+	rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
+	rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
 
-    // pointers to extracted RX signals and channel estimates
-    rxF_ext    = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
-    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol*(nb_rb_pdsch*12)];
+    for (aatx=0; aatx<Nl; aatx++) {
 
-    for (prb=0; prb<frame_parms->N_RB_DL; prb++) {
-      //skip_half=0;
+    	dl_ch0     = &dl_ch_estimates[(aatx*frame_parms->nb_antennas_rx)+aarx][(validDmrsEst*(frame_parms->ofdm_symbol_size))];
+    	dl_ch0_ext = &dl_ch_estimates_ext[(aatx*frame_parms->nb_antennas_rx)+aarx][symbol*(nb_rb_pdsch*NR_NB_SC_PER_RB)];
 
-      if ((frame_parms->N_RB_DL&1) == 0) {  // even number of RBs
+    	for (rb = 0; rb < nb_rb_pdsch; rb++) {
 
-        // For second half of RBs skip DC carrier
-        if (k>=frame_parms->ofdm_symbol_size) {
-          rxF = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
-          k=k-(frame_parms->ofdm_symbol_size);
-        }
+    		if (pilots==0) {//data symbol only
+    			if (aatx==0) {//Extract Rx signal only
+    				memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
+    				rxF_ext+=12;
+    			}
+    			memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));//Extract Channel Estimate
+    			dl_ch0_ext+=12;
+    		} else {//the symbol contains DMRS
+                j=0;
+                if (config_type==pdsch_dmrs_type1) {
+                    if (frame_parms->nushift == 0) {//data is multiplexed
+                        for (i = (1-frame_parms->nushift); i<12; i+=2) {
+                            if (aatx==0) rxF_ext[j]=rxF[i];
+                            dl_ch0_ext[j]=dl_ch0[i];
+                            j++;
+                        }
+                        dl_ch0_ext+=6;
+                        if (aatx==0) rxF_ext+=6;
+                    }
+                } else {//pdsch_dmrs_type2
+                    for (i = (2+frame_parms->nushift); i<6; i++) {
+                      if (aatx==0) rxF_ext[j]=rxF[i];
+                      dl_ch0_ext[j]=dl_ch0[i];
+                      j++;
+                    }
+                    for (i = (8+frame_parms->nushift); i<12; i++) {
+                      if (aatx==0) rxF_ext[j]=rxF[i];
+                      dl_ch0_ext[j]=dl_ch0[i];
+                      j++;
+                    }
+                    dl_ch0_ext+= j;
+                    if (aatx==0) rxF_ext+= j;
+                }
+    		}
 
-         /*
-         if (mimo_mode <= PUSCH_PRECODING1)
-          *pmi_loc = (pmi>>((prb>>2)<<1))&3;
-         else
-          *pmi_loc=(pmi>>prb)&1;*/
+    		dl_ch0+=12;
+    		if (aatx==0) {
+    			rxF+=12;
+    			k+=12;
+    			if (k>=frame_parms->ofdm_symbol_size) {
+    				k=k-(frame_parms->ofdm_symbol_size);
+    				rxF       = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
+    			}
+    		}
+    	}//rb
+    }//aatx
+  }//aarx
 
-        // *pmi_loc = get_pmi(frame_parms->N_RB_DL,mimo_mode,pmi,prb);
-        //  pmi_loc++;
-
-
-          if (pilots == 0) {
-
-            memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-            memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
-            memcpy(rxF_ext,rxF,12*sizeof(int));
-            dl_ch0_ext +=12;
-            dl_ch1_ext +=12;
-            rxF_ext    +=12;
-          } else { // pilots==1
-            j=0;
-            for (i=0; i<12; i++) {
-              if ((i&1)!=frame_parms->nushift) {
-                rxF_ext[j]=rxF[i];
-                //        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-                dl_ch0_ext[j]=dl_ch0[i];
-                dl_ch1_ext[j++]=dl_ch1[i];
-              }
-            }
-            dl_ch0_ext+=6;
-            dl_ch1_ext+=6;
-            rxF_ext+=6;
-          } // pilots==1
-
-          dl_ch0+=12;
-          dl_ch1+=12;
-          rxF+=12;
-          k+=12;
-      }
-    } // for prb
-  } // for aarx
-  return(nb_rb/frame_parms->nb_antennas_rx);
+  return(nb_rb_pdsch);
 }
 
 

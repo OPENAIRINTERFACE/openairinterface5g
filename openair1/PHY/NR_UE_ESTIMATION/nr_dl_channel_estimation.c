@@ -672,7 +672,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   if (ue->high_speed_flag == 0)
-    ch_offset     = ue->frame_parms.ofdm_symbol_size ;
+    ch_offset     = ue->frame_parms.ofdm_symbol_size;
   else
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -694,7 +694,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   if (config_type == pdsch_dmrs_type1){
     nushift = (p>>1)&1;
-    ue->frame_parms.nushift = nushift;
+    if (p<4) ue->frame_parms.nushift = nushift;
     switch (delta) {
 
       case 0://port 0,1
@@ -734,7 +734,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     }
   } else {//pdsch_dmrs_type2
     nushift = delta;
-    ue->frame_parms.nushift = nushift;
+    if (p<6) ue->frame_parms.nushift = nushift;
     switch (delta) {
       case 0://port 0,1
         fl = filt8_l2;//left interpolation Filter should be fml
