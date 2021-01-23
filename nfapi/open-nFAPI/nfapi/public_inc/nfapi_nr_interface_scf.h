@@ -626,7 +626,7 @@ typedef struct {
 //table 3-37 
 
 #define DCI_PAYLOAD_BYTE_LEN 8 // 12 ? TS38.212 sec 7.3.1
-#define MAX_DCI_CORESET 8
+#define MAX_DCI_CORESET 16 // 3GPP TS 38.211 v15.8 Section 7.3.2 Table 7.3.2.1-1: Supported PDCCH aggregation levels
 
 typedef struct {
   // The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
