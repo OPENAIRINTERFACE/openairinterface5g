@@ -414,10 +414,10 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
     ///Layer Precoding and Antenna port mapping
     // tx_layers 1-8 are mapped on antenna ports 1000-1007
-    uint8_t pmi = 2;
+    uint8_t pmi = 6;
 
     for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
-      char *W_prec = nr_W_1l_2p[pmi][ap];//nr_W_1l_4p, nr_W_2l_2p, nr_W_2l_4p, nr_W_3l_4p, and nr_W_4l_4p
+      char *W_prec = nr_W_1l_4p[pmi][ap];//nr_W_1l_4p, nr_W_2l_2p, nr_W_2l_4p, nr_W_3l_4p, and nr_W_4l_4p
       for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
         uint16_t k = start_sc;
 
