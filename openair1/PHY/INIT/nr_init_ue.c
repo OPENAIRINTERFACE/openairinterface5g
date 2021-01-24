@@ -642,14 +642,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
         ue->pdsch_vars[th_id][eNB_id]->llr[1]              = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );
         ue->pdsch_vars[th_id][eNB_id]->layer_llr[1]        = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );
         ue->pdsch_vars[th_id][eNB_id]->llr128_2ndstream    = (int16_t **)malloc16_clear( sizeof(int16_t *) );
-        ue->pdsch_vars[th_id][eNB_id]->rho                 = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
+        ue->pdsch_vars[th_id][eNB_id]->rho                 = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
       }
 
-      for (int i=0; i<fp->nb_antennas_rx; i++) {
-        for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-          ue->pdsch_vars[th_id][eNB_id]->rho[i]     = (int32_t *)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
-        }
-      }
 
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         ue->pdsch_vars[th_id][eNB_id]->dl_ch_rho2_ext      = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
@@ -662,6 +657,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
           for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
             ue->pdsch_vars[th_id][eNB_id]->dl_ch_rho2_ext[idx] = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
+            ue->pdsch_vars[th_id][eNB_id]->rho[idx]     = (int32_t *)malloc16_clear( 7*2*sizeof(int32_t)*(fp->N_RB_DL*12) );
           }
         }
 

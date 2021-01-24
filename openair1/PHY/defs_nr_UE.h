@@ -234,7 +234,7 @@ typedef struct {
   //! estimated rssi (dBm)
   short          rx_rssi_dBm[NUMBER_OF_CONNECTED_eNB_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  int            rx_correlation[NUMBER_OF_CONNECTED_eNB_MAX][4][4];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation_dB[NUMBER_OF_CONNECTED_eNB_MAX][2];
 
@@ -379,8 +379,8 @@ typedef struct {
   int32_t **dl_ch_magb1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
   int32_t **dl_ch_magr0;
-  /// \brief Cross-correlation of two eNB signals.
-  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// \brief Cross-correlation Matrix of the gNB Tx channel signals.
+  /// - first index: aatx*n_rx+aarx for all aatx=[0..n_tx[ and aarx=[0..nb_rx[
   /// - second index: symbol [0..]
   int32_t **rho;
   /// never used... always send dl_ch_rho_ext instead...
