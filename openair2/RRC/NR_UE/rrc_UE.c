@@ -1831,7 +1831,7 @@ nr_rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
   return(0);
@@ -1849,7 +1849,7 @@ nr_rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
   return(0);
