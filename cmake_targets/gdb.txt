@@ -152,4 +152,40 @@ files to the local machine first.
   $ scp -C $remote:logs/latest/0001/coredump-6699 .
   $ gdb lte-softmodem coredump-6699
 
+To load the coredump into Vscode, modify launch.json to add "coreDumpPath".
+You may also need to modify the "program" path and delete "miDebuggerPath".
+
+--- .vscode/launch.json
++++ .vscode/launch.json
+@@ -9,7 +9,7 @@
+             "name": "(gdb) Launch",
+             "type": "cppdbg",
+             "request": "launch",
+-            "program": "${workspaceFolder}/cmake_targets/ran_build/build/lte-so
++            "program": "/home/michael/tmp/lte-softmodem",
+             "args": [
+                 "-O", "../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf",
+                 "--noS1"
+@@ -19,14 +19,14 @@
+             "environment": [],
+             "externalConsole": false,
+             "MIMode": "gdb",
+-            "miDebuggerPath": "${workspaceFolder}/cmake_targets/sudo-gdb",
+             "setupCommands": [
+                 {
+                     "description": "Enable pretty-printing for gdb",
+                     "text": "-enable-pretty-printing",
+                     "ignoreFailures": true
+                 }
+-            ]
++            ],
++            "coreDumpPath": "/home/michael/tmp/coredump-6699"
+         }
+     ]
+ }
+
+Then, in Vscode click the debug icon on the left navigation bar, then click
+the green "play" triangle near the upper left corner of the window.  See the
+"CALL STACK" near the lower left of the window.
+
 -------------------------------------------------------------------------------
