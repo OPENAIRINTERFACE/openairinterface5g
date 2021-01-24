@@ -152,6 +152,10 @@ files to the local machine first.
   $ scp -C $remote:logs/latest/0001/coredump-6699 .
   $ gdb lte-softmodem coredump-6699
 
+Note, the local and remote machines should be the same version of Linux (e.g.,
+both Ubuntu 16.04).  Otherwise, gdb will likely have trouble understanding the
+coredump.
+
 To load the coredump into Vscode, modify launch.json to add "coreDumpPath".
 You may also need to modify the "program" path and delete "miDebuggerPath".
 
