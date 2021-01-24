@@ -116,10 +116,15 @@ extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
 
 #if defined(PRE_SCD_THREAD)
+#include "common/ran_context.h"
+#include "nfapi/oai_integration/vendor_ext.h"
+#include "openair2/LAYER2/MAC/mac_extern.h"
   extern uint8_t dlsch_ue_select_tbl_in_use;
   void init_ru_vnf(void);
+  extern RAN_CONTEXT_t RC;
 #endif
 
+RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -2457,15 +2462,15 @@ void kill_RU_proc(RU_t *ru) {
 
 
 void init_precoding_weights(RU_t **rup,int nb_RU,PHY_VARS_eNB *eNB) {
-  int layer,ru_id,aa,re,ue,tb;
+  int layer,ru_id,aa,re,tb;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   RU_t *ru;
   LTE_eNB_DLSCH_t *dlsch;
 
   // init precoding weigths
-  for (ue=0; ue<NUMBER_OF_UE_MAX; ue++) {
+  for (int dlsch_id=0; dlsch_id<NUMBER_OF_DLSCH_MAX; dlsch_id++) {
     for (tb=0; tb<2; tb++) {
-      dlsch = eNB->dlsch[ue][tb];
+      dlsch = eNB->dlsch[dlsch_id][tb];
 
       for (layer=0; layer<4; layer++) {
         int nb_tx=0;
@@ -2807,11 +2812,11 @@ void init_ru_vnf(void) {
   dlsch_ue_select_tbl_in_use = 1;
   // create status mask
   RC.ru_mask = 0;
-  pthread_mutex_init(ru->ru_mutex,NULL);
-  pthread_cond_init(ru->ru_cond,NULL);
+  pthread_mutex_init(&RC.ru_mutex,NULL);
+  pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
   LOG_I(PHY,"configuring RU from file\n");
-  RCconfig_RU();
+  RC.ru = RCconfig_RU(RC.nb_RU,RC.nb_L1_inst,RC.eNB,&RC.ru_mask,&RC.ru_mutex,&RC.ru_cond);
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
   if (RC.nb_CC != 0)
