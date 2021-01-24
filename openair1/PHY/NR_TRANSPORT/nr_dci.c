@@ -171,8 +171,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
     // Get cce_list indices by reg_idx in ascending order
     int reg_list_index = 0;
-    int reg_list_order[MAX_DCI_CORESET] = {};
-    for (int p = 0; p < MAX_DCI_CORESET; p++) {
+    int reg_list_order[NR_MAX_PDCCH_AGG_LEVEL] = {};
+    for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
       for(int p2 = 0; p2 < pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]; p2++) {
         if(gNB->cce_list[d][p2].reg_list[0].reg_idx == p * NR_NB_REG_PER_CCE) {
           reg_list_order[reg_list_index] = p2;

@@ -138,7 +138,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   }
 
 
-  int f_bundle_j_list[MAX_DCI_CORESET] = {};
+  int f_bundle_j_list[NR_MAX_PDCCH_AGG_LEVEL] = {};
 
   for (int reg = 0; reg < ((coreset_nbr_rb * coreset_time_dur)); reg++) {
     if ((reg % reg_bundle_size_L) == 0) {
@@ -161,10 +161,10 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   // Get cce_list indices by reg_idx in ascending order
   int f_bundle_j_list_id = 0;
-  int f_bundle_j_list_ord[MAX_DCI_CORESET] = {};
+  int f_bundle_j_list_ord[NR_MAX_PDCCH_AGG_LEVEL] = {};
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
     f_bundle_j_list_id = CCE[c_id];
-    for (int p = 0; p < MAX_DCI_CORESET; p++) {
+    for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
       for (int p2 = CCE[c_id]; p2 < CCE[c_id] + L[c_id]; p2++) {
         if (f_bundle_j_list[p2] == p) {
           f_bundle_j_list_ord[f_bundle_j_list_id] = p;
