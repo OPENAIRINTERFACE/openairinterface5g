@@ -128,7 +128,7 @@ void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0) {
 
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
   ss0->monitoringSymbolsWithinSlot->size = 2;
   ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
 

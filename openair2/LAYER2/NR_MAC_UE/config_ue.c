@@ -414,7 +414,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   mac->search_space_zero->duration=NULL;
   // should be '1100 0000 0000 00'B (LSB first!), first two symbols in slot, adjust if needed
   mac->search_space_zero->monitoringSymbolsWithinSlot->buf[1] = 0;
-  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
   mac->search_space_zero->monitoringSymbolsWithinSlot->size = 2;
   mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
 
