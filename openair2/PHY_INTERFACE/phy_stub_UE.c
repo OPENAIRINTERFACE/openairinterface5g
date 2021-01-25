@@ -1321,7 +1321,7 @@ void *ue_standalone_pnf_task(void *context)
           abort();
         }
         sf_rnti_mcs[sf].sinr = ch_info->sinr;
-        LOG_A(MAC, "Received_SINR = %f\n",ch_info->sinr);
+        LOG_D(MAC, "Received_SINR = %f\n",ch_info->sinr);
     }
     else
     {
@@ -2050,15 +2050,20 @@ static bool did_drop_transport_block(int sf, uint16_t rnti)
 
 static float get_bler_val(uint8_t mcs, int sinr)
 {
+  // 4th col = dropped packets, 5th col = total packets
+  float bler_val = 0.0;
+  CHECK_INDEX(bler_data, mcs);
   if (sinr < (int)(bler_data[mcs].bler_table[0][0] * 10))
   {
     LOG_I(MAC, "MCS %d table. SINR is smaller than lowest SINR, bler_val is set based on lowest SINR in table\n", mcs);
-    return bler_data[mcs].bler_table[0][3];
+    bler_val = bler_data[mcs].bler_table[0][4] / bler_data[mcs].bler_table[0][5];
+    return bler_val;
   }
   if (sinr > (int)(bler_data[mcs].bler_table[bler_data[mcs].length - 1][0] * 10))
   {
     LOG_I(MAC, "MCS %d table. SINR is greater than largest SINR. bler_val is set based on largest SINR in table\n", mcs);
-    return bler_data[mcs].bler_table[(bler_data[mcs].length - 1)][3];
+    bler_val = bler_data[mcs].bler_table[(bler_data[mcs].length - 1)][4] / bler_data[mcs].bler_table[(bler_data[mcs].length - 1)][5];
+    return bler_val;
   }
   // Loop through bler table to find sinr_index
   for (int i = 0; i < bler_data[mcs].length; i++)
@@ -2066,12 +2071,15 @@ static float get_bler_val(uint8_t mcs, int sinr)
     int temp_sinr = (int)(bler_data[mcs].bler_table[i][0] * 10);
     if (temp_sinr == sinr)
     {
-      return bler_data[mcs].bler_table[i][3];  // 3rd column containers bler value
+      bler_val = bler_data[mcs].bler_table[i][4] / bler_data[mcs].bler_table[i][5];
+      return bler_val;
     }
     // Linear interpolation when SINR is between indices
     if (temp_sinr > sinr)
     {
-      return ((bler_data[mcs].bler_table[i - 1][3] + bler_data[mcs].bler_table[i][3]) / 2);
+      float bler_val1 = bler_data[mcs].bler_table[i - 1][4] / bler_data[mcs].bler_table[i - 1][5];
+      float bler_val2 = bler_data[mcs].bler_table[i][4] / bler_data[mcs].bler_table[i][5];
+      return ((bler_val1 + bler_val2) / 2);
     }
   }
   LOG_E(MAC, "NO SINR INDEX FOUND!\n");
@@ -2107,7 +2115,7 @@ static bool should_drop_transport_block(int sf, uint16_t rnti)
       float bler_val = get_bler_val(mcs, ((int)(sf_rnti_mcs[sf].sinr * 10)));
       double drop_cutoff = ((double) rand() / (RAND_MAX));
       assert(drop_cutoff <= 1);
-
+      LOG_I(MAC, "SINR = %f, Bler_val = %f, MCS = %"PRIu8"\n", sf_rnti_mcs[sf].sinr, bler_val, sf_rnti_mcs[sf].mcs[n]);
       if (drop_cutoff <= bler_val)
       {
         sf_rnti_mcs[sf].drop_flag[n] = true;
