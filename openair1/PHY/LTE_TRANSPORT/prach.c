@@ -85,7 +85,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   uint8_t aa;
   int32_t lev;
   int16_t levdB;
-  int fft_size,log2_ifft_size;
+  int fft_size=0,log2_ifft_size;
   int16_t prach_ifft_tmp[2048*2] __attribute__((aligned(32)));
   int32_t *prach_ifft=(int32_t *)NULL;
   int32_t **prach_ifftp=(int32_t **)NULL;

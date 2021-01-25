@@ -1469,7 +1469,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
         // should detect out of order and act accordingly ....
         AssertFatal(aid==0 || aid==1,"aid %d != 0 or 1\n",aid);
-        LOG_D(PHY,"rxp[%d] %p, dest %p, offset %d (%lld,%lld)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(int)(timestamp[packet_id]-timestamp[0]),timestamp[packet_id],timestamp[0]);
+        LOG_D(PHY,"rxp[%d] %p, dest %p, offset %d (%llu,%llu)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(int)(timestamp[packet_id]-timestamp[0]),(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[0]);
         memcpy((void*)(rxp[aid]+(timestamp[packet_id]-timestamp[0])),
                (void*)temp_rx,
                spp_eth<<2);

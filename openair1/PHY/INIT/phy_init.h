@@ -408,6 +408,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB);
 
 void init_dfts(void);
 
+void fill_subframe_mask(PHY_VARS_eNB *eNB);
 
 /** @} */
 #endif

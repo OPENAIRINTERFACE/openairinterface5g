@@ -70,6 +70,7 @@
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 #include "PHY/phy_extern.h"
 

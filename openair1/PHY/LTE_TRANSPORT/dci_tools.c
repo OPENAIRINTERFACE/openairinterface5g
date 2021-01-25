@@ -474,7 +474,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->harq_pid  = rel8->harq_process;
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->dai       = rel8->downlink_assignment_index;
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->padding   = 0;
-            LOG_D(PHY,"TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,NPRB);
+            //LOG_D(PHY,"TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,NPRB);
           } else {
             dci_alloc->dci_length                         = sizeof_DCI1A_20MHz_FDD_t;
             ((DCI1A_20MHz_FDD_t *)dci_pdu)->type          = 1;
