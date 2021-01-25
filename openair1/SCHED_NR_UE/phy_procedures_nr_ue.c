@@ -2139,10 +2139,9 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
-  int16_t pathloss;
-  int16_t ra_preamble_rx_power;
   uint8_t mod_id = ue->Mod_id;
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
+  AssertFatal(prach_resources != NULL, "ue->prach_resources[%u] == NULL\n", gNB_id);
   uint8_t nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
@@ -2153,27 +2152,40 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     prach_resources->init_msg1 = 1;
   }
 
-  // flush Msg3 Buffer
-  if (prach_resources->Msg3 == NULL){
-    for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-      ue->ulsch_Msg3_active[i] = 0;
+  if (ue->mac_enabled == 0){
+    //    prach_resources->ra_PreambleIndex = preamble_tx;
+    prach_resources->ra_TDD_map_index = 0;
+    prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
+    prach_resources->ra_RNTI = 0x1234;
+    nr_prach = 1;
+  } else {
+    LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
+    // flush Msg3 Buffer
+    if (prach_resources->Msg3 == NULL){
+      for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
+        ue->ulsch_Msg3_active[i] = 0;
+      }
     }
+    nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
   }
 
-  nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
+  if (nr_prach == 1 && prach_resources->init_msg1) {
 
-  if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
+    if (ue->mac_enabled == 1) {
+      int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
+      int16_t ra_preamble_rx_power = (int16_t)(10*log10(pow(10, (double)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER)/10) + pow(10, (double)(pathloss)/10)));
+      ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
-    pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
-    ra_preamble_rx_power = (int16_t)(10*log10(pow(10, (double)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER)/10) + pow(10, (double)(pathloss)/10)));
-    ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(ue->Mod_id), ra_preamble_rx_power);
-    LOG_I(PHY,"[UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble index %d, TX power PRACH %d dBm, RA-RNTI %x)\n",
-      ue->Mod_id,
-      frame_tx,
-      nr_slot_tx,
-      prach_resources->ra_PreambleIndex,
-      ue->tx_power_dBm[nr_slot_tx],
-      prach_resources->ra_RNTI);
+      LOG_I(PHY,"[UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
+        mod_id,
+        frame_tx,
+        nr_slot_tx,
+        prach_resources->ra_PreambleIndex,
+        pathloss,
+        ue->tx_power_dBm[nr_slot_tx],
+        prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+        prach_resources->ra_RNTI);
+    }
 
     //ue->tx_total_RE[nr_slot_tx] = 96; // todo
     ue->prach_vars[gNB_id]->amp = AMP;
@@ -2192,19 +2204,18 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
 
-    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generated PRACH Msg1 (PL %d dBm, ra_PREAMBLE_RECEIVED_TARGET_POWER %d dBm, TX power PRACH %d dBm, digital power %d dBW (amp %d) prach_cnt %d)\n",
+    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generated PRACH Msg1 (TX power PRACH %d dBm, digital power %d dBW (amp %d) prach_cnt %d)\n",
       __FUNCTION__,
-      ue->Mod_id,
-      proc->frame_rx,
-      proc->nr_slot_tx,
-      pathloss,
-      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+      mod_id,
+      frame_tx,
+      nr_slot_tx,
       ue->tx_power_dBm[nr_slot_tx],
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp,
       ue->prach_cnt);
 
-    nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
+    if (ue->mac_enabled == 1)
+      nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
     ue->prach_cnt++;
 
