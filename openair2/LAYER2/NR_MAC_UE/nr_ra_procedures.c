@@ -80,12 +80,19 @@ void init_RA(module_id_t mod_id,
       LOG_I(MAC, "Initialization of 4-step contention-free random access procedure\n");
       prach_resources->RA_TYPE = RA_4STEP;
       ra->cfra = 1;
+    } else if (rach_ConfigDedicated->ext1){
+      if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
+        LOG_I(MAC, "In %s: setting RA type to 2-step...\n", __FUNCTION__);
+        prach_resources->RA_TYPE = RA_2STEP;
+        ra->cfra = 1;
+      } else {
+        LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
+      }
+    } else {
+      LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
     }
-  } else if (rach_ConfigDedicated->ext1){
-    if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
-      LOG_I(MAC, "In %s: setting RA type to 2-step...\n", __FUNCTION__);
-      prach_resources->RA_TYPE = RA_2STEP;
-    }
+  } else {
+    LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
   }
 
   if (prach_resources->RA_TYPE == RA_2STEP){
