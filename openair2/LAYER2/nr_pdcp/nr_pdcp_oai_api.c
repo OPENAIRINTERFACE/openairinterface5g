@@ -511,7 +511,7 @@ static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t
   nr_pdcp_ue_t *ue = _ue;
   MessageDef  *message_p;
   uint8_t     *gtpu_buffer_p;
-  int rb_id;
+  int rb_id = 0;
   int i;
 
   if (1) { //(IS_SOFTMODEM_NOS1){

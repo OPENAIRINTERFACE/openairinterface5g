@@ -709,12 +709,12 @@ int ngap_gNB_initial_ctxt_resp(
   ie->value.choice.RAN_UE_NGAP_ID = initial_ctxt_resp_p->gNB_ue_ngap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   /* optional */
-  ie = (NGAP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(NGAP_InitialContextSetupResponseIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListCxtRes;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_PDUSessionResourceSetupListCxtRes;
-
   if (initial_ctxt_resp_p->nb_of_pdusessions){
+    ie = (NGAP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(NGAP_InitialContextSetupResponseIEs_t));
+    ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListCxtRes;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_PDUSessionResourceSetupListCxtRes;
+
     for (i = 0; i < initial_ctxt_resp_p->nb_of_pdusessions; i++) {
       NGAP_PDUSessionResourceSetupItemCxtRes_t *item;
       NGAP_PDUSessionResourceSetupResponseTransfer_t     *pdusessionTransfer_p = NULL;

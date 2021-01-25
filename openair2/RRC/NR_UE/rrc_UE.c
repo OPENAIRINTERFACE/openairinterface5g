@@ -2222,14 +2222,14 @@ rrc_ue_process_rrcReconfiguration(
                 uint8_t msg_type = 0;
                 if((pdu_buffer + 1) != NULL){
                   if (*(pdu_buffer + 1) > 0 ) {
-                    if(pdu_buffer + 9){
+                    if((pdu_buffer + 9) != NULL){
                        msg_type = *(pdu_buffer + 9);
                     } else {
                       LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
                       return;
                     }
                   } else {
-                    if(pdu_buffer + 2){
+                    if((pdu_buffer + 2) != NULL){
                       msg_type = *(pdu_buffer + 2);
                     } else {
                         LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
