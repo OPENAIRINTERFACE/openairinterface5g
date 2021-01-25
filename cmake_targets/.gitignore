@@ -1,5 +1,5 @@
-/.ue.nvram0
-/.ue_emm.nvram0
-/.usim.nvram0
+/.ue.nvram*
+/.ue_emm.nvram*
+/.usim.nvram*
 /nvram
 /usim
