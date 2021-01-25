@@ -85,6 +85,18 @@
  *
  */
 
+#ifndef NO_RAT_NR
+  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
+#else
+  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
+#endif
+
+typedef enum {
+  pss = 0,
+  pbch = 1,
+  si = 2
+} sync_mode_t;
+
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
@@ -116,6 +128,11 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
  * It performs band scanning and synchonization.
  * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
  */
+
+typedef struct syncData_s {
+  UE_nr_rxtx_proc_t proc;
+  PHY_VARS_NR_UE *UE;
+} syncData_t;
 
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;

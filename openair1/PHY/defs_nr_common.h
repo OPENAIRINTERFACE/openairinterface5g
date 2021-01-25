@@ -232,7 +232,7 @@ typedef struct {
   ///
   uint8_t RA_SCALING_FACTOR_BI;
   /// Indicating whether it is 2-step or 4-step RA
-  uint8_t RA_TYPE;
+  nr_ra_type_e RA_TYPE;
   /// UE configured maximum output power
   int RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant
