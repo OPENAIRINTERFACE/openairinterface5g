@@ -170,6 +170,8 @@ typedef struct gtpv1u_enb_end_marker_ind_s {
 typedef struct {
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
   tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
+  char addrStr[256];
+  char portStr[256];
 } Gtpv1uS1Req;
 
 #endif /* GTPV1_U_MESSAGES_TYPES_H_ */

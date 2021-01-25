@@ -39,6 +39,7 @@
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const protocol_ctxt_t *const  ctxt_pP,
@@ -341,7 +342,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
     ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
   }
 
-  itti_send_msg_to_task(TASK_GTPV1_U, rrc->module_id, msg_delete_tunnels_p);
+  itti_send_msg_to_task(TASK_VARIABLE, rrc->module_id, msg_delete_tunnels_p);
 
   /* remove context */
   rrc_gNB_remove_ue_context(&ctxt, rrc, ue_context);

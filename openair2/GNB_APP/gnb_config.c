@@ -57,6 +57,7 @@
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "NR_MAC_gNB/mac_proto.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "NR_asn_constant.h"
 #include "executables/thread-common.h"
@@ -740,8 +741,9 @@ int RCconfig_nr_gtpu(void ) {
         LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
         GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_NGU;
       }
-
-     itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
+    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", gnb_port_for_NGU);
+     itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
     } else
     LOG_E(GTPU,"invalid address for NGU\n");
 

@@ -57,6 +57,7 @@
 #include "enb_paramdef.h"
 #include "proto_agent.h"
 #include "executables/thread-common.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t bw);
@@ -2055,7 +2056,9 @@ int RCconfig_gtpu(void ) {
     IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
     LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
     GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
-    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
+    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", enb_port_for_S1U);
+    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for S1U\n");
 
