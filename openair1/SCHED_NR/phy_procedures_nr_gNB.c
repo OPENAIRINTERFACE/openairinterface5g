@@ -395,8 +395,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     case 217: timing_advance_update /= 32; break;
     case 245: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
-    case 66:  timing_advance_update /= 12; break;
-    case 32:  timing_advance_update /= 12; break;
+    case 66:  timing_advance_update /= 8; break;
+    case 32:  timing_advance_update /= 4; break;
     default: AssertFatal(0==1,"No case defined for PRB %d to calculate timing_advance_update\n",gNB->frame_parms.N_RB_DL);
   }
 
