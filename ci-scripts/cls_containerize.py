@@ -308,7 +308,7 @@ class Containerize():
 				errorandwarnings = {}
 				warningsNo = 0
 				errorsNo = 0
-				with open(f'build_log_{self.testCase_id}/{image}/{fil}', mode='r') as inputfile:
+				with open('build_log_{}/{}/{}'.format(self.testCase_id,image,fil), mode='r') as inputfile:
 					for line in inputfile:
 						result = re.search(' ERROR ', str(line))
 						if result is not None:
