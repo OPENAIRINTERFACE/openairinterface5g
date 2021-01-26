@@ -426,6 +426,9 @@ typedef struct {
   uint8_t                                   *SIB1;
   uint8_t                                   sizeof_SIB1;
 
+  uint8_t                                   *SIB23;
+  uint8_t                                   sizeof_SIB23;
+
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 

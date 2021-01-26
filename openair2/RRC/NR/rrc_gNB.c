@@ -216,6 +216,13 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   rrc->carrier.MIB             = (uint8_t *) malloc16(4);
   rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
   rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
+  if (!NODE_IS_DU(rrc->node_type)) {
+    rrc->carrier.SIB23 = (uint8_t *) malloc16(100);
+    AssertFatal(rrc->carrier.SIB23 != NULL, "cannot allocate memory for SIB");
+    rrc->carrier.sizeof_SIB23 = do_SIB23_NR(&rrc->carrier, configuration);
+    LOG_I(NR_RRC,"do_SIB23_NR, size %d \n ", rrc->carrier.sizeof_SIB23);
+    AssertFatal(rrc->carrier.sizeof_SIB23 != 255,"FATAL, RC.nrrrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
+  }
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   if (!NODE_IS_CU(RC.nrrrc[0]->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
@@ -2425,11 +2432,11 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
 
-        // if (rrc->carrier.SIB23) {
-        //   F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][num_SI]        = rrc->carrier.SIB23;
-        //   F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][num_SI] = rrc->carrier.sizeof_SIB23;
-        //   num_SI++;
-        // }
+        if (rrc->carrier.SIB23) {
+          F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][2]        = rrc->carrier.SIB23;
+          F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][2] = rrc->carrier.sizeof_SIB23;
+          num_SI++;
+        }
 
         F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
         cu_cell_ind++;

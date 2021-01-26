@@ -353,7 +353,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
     /* optional */
     /* - gNB-CU System Information */
-    if (0) {
+    if (1) {
       /* 3.1.2 gNB-CUSystem Information */
       F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
       cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
@@ -367,20 +367,19 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
       //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
       //printf("\n");
 
-      if (0) {
-        for (int sIBtype=2;sIBtype<33;sIBtype++) {
-          if (f1ap_setup_resp->SI_container[i][sIBtype]!=NULL) {
-            AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
-            F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
-            memset((void*)sib_item,0,sizeof(*sib_item));
-            sib_item->sIBtype = sIBtype;
-            OCTET_STRING_fromBuf(&sib_item->sIBmessage,
-                                (const char*)f1ap_setup_resp->SI_container[i][sIBtype], 
-                                f1ap_setup_resp->SI_container_length[i][sIBtype]);
-          
-            LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->SI_container_length[i][sIBtype]);
-            ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
-          }
+      // for (int sIBtype=2;sIBtype<33;sIBtype++) { //21 ? 33 ?
+      for (int sIBtype=2;sIBtype<21;sIBtype++) {
+        if (f1ap_setup_resp->SI_container[i][sIBtype]!=NULL) {
+          AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
+          F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
+          memset((void*)sib_item,0,sizeof(*sib_item));
+          sib_item->sIBtype = sIBtype;
+          OCTET_STRING_fromBuf(&sib_item->sIBmessage,
+                              (const char*)f1ap_setup_resp->SI_container[i][sIBtype], 
+                              f1ap_setup_resp->SI_container_length[i][sIBtype]);
+        
+          LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->SI_container_length[i][sIBtype]);
+          ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
         }
       }
       cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
