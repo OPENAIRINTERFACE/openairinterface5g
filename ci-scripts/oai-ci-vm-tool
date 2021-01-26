@@ -172,6 +172,7 @@ function setvar_usage {
 function variant__v1__enb_usrp {
     NB_PATTERN_FILES=9
     BUILD_OPTIONS="--eNB -w USRP --mu"
+    VM_MEMORY=3072
 }
     
 function variant__v2__basic_sim {
