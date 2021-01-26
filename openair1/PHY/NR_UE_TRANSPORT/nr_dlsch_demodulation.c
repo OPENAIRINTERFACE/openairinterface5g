@@ -84,8 +84,8 @@ unsigned char offset_mumimo_llr_drange[29][3]={{8,8,8},{7,7,7},{7,7,7},{7,7,7},{
  */
 //unsigned char offset_mumimo_llr_drange[29][3]= {{0, 6, 5},{0, 4, 5},{0, 4, 5},{0, 5, 4},{0, 5, 6},{0, 5, 3},{0, 4, 4},{0, 4, 4},{0, 3, 3},{0, 1, 2},{1, 1, 0},{1, 3, 2},{3, 4, 1},{2, 0, 0},{2, 2, 2},{1, 1, 1},{2, 1, 0},{2, 1, 1},{1, 0, 1},{1, 0, 1},{0, 0, 0},{1, 0, 0},{0, 0, 0},{0, 1, 0},{1, 0, 0},{0, 0, 0},{0, 0, 0},{0, 0, 0},{0, 0, 0}};
 
-
-extern void print_shorts(char *s,int16_t *x);
+#define print_ints(s,x) printf("%s %d %d %d %d\n",s,(x)[0],(x)[1],(x)[2],(x)[3])
+#define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
 
 static void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
 						  int **dl_ch_estimates_ext_i,
@@ -95,6 +95,16 @@ static void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
 						  unsigned char output_shift,
 						  int length,
 						  int start_point);
+
+uint8_t nr_zero_forcing_rx_2layers(int **rxdataF_comp,
+                                   int **dl_ch_mag,
+                                   int **dl_ch_magb,
+                                   int **dl_ch_estimates_ext,
+                                   unsigned short nb_rb,
+                                   unsigned char n_rx,
+                                   unsigned char mod_order,
+                                   int shift,
+                                   unsigned char symbol);
 
 static void nr_dlsch_layer_demapping(int16_t **llr_cw,
 				     uint8_t Nl,
@@ -487,7 +497,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                pdsch_vars[eNB_id]->dl_ch_magb0,
                                pdsch_vars[eNB_id]->dl_ch_magr0,
                                pdsch_vars[eNB_id]->rxdataF_comp0,
-                               (aatx>1) ? pdsch_vars[eNB_id]->rho : NULL,
+                               (n_tx>1) ? pdsch_vars[eNB_id]->rho : NULL,
                                frame_parms,
                                n_tx,
                                symbol,
@@ -565,13 +575,25 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   if (frame_parms->nb_antennas_rx > 1) {
 	  if (dlsch0_harq->mimo_mode<NR_DUALSTREAM) {
 		  nr_dlsch_detection_mrc(pdsch_vars[eNB_id]->rxdataF_comp0,
-    				(n_tx>1) ? pdsch_vars[eNB_id]->rho : NULL,
-    						pdsch_vars[eNB_id]->dl_ch_mag0,
-    						pdsch_vars[eNB_id]->dl_ch_magb0,
-    						n_tx,
-    						n_rx,
-    						symbol,
-    						nb_rb);
+		                         (n_tx>1)? pdsch_vars[eNB_id]->rho : NULL,
+		                             pdsch_vars[eNB_id]->dl_ch_mag0,
+		                             pdsch_vars[eNB_id]->dl_ch_magb0,
+		                             n_tx,
+		                             n_rx,
+		                             symbol,
+		                             nb_rb);
+
+		  if (n_tx == 2)
+		    nr_zero_forcing_rx_2layers(pdsch_vars[eNB_id]->rxdataF_comp0,
+		                               pdsch_vars[eNB_id]->dl_ch_mag0,
+		                               pdsch_vars[eNB_id]->dl_ch_magb0,
+		                               pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+		                               nb_rb,
+		                               n_rx,
+		                               dlsch0_harq->Qm,
+		                               pdsch_vars[eNB_id]->log2_maxh,
+		                               symbol);
+
 	  } else if (dlsch0_harq->mimo_mode == NR_DUALSTREAM){
 		  nr_dlsch_detection_mrc_core(pdsch_vars[eNB_id]->rxdataF_comp0,
                                    NULL,
@@ -2272,6 +2294,629 @@ void nr_dlsch_detection_mrc(int **rxdataF_comp,
     _m_empty();
   }
 #endif
+}
+
+/* Zero Forcing Rx function: nr_det_HhH()
+ *
+ *
+ * */
+void nr_det_HhH(int32_t *after_mf_00,//a
+                int32_t *after_mf_01,//b
+                int32_t *after_mf_10,//c
+                int32_t *after_mf_11,//d
+                int32_t *det_fin,//1/ad-bc
+                unsigned short nb_rb,
+                unsigned char symbol)
+{
+  int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
+  unsigned short rb;
+  __m128i *after_mf_00_128,*after_mf_01_128, *after_mf_10_128, *after_mf_11_128, ad_re_128, bc_re_128; //ad_im_128, bc_im_128;
+  __m128i *det_fin_128, det_re_128; //det_im_128, tmp_det0, tmp_det1;
+
+  after_mf_00_128 = (__m128i *)after_mf_00;
+  after_mf_01_128 = (__m128i *)after_mf_01;
+  after_mf_10_128 = (__m128i *)after_mf_10;
+  after_mf_11_128 = (__m128i *)after_mf_11;
+
+  det_fin_128 = (__m128i *)det_fin;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+  // complex multiplication (I_a+jQ_a)(I_d+jQ_d) = (I_aI_d - Q_aQ_d) + j(Q_aI_d + I_aQ_d)
+  // The imag part is often zero, we compute only the real part
+    ad_re_128 = _mm_sign_epi16(after_mf_00_128[0],*(__m128i*)&nr_conjug2[0]);
+    ad_re_128 = _mm_madd_epi16(ad_re_128,after_mf_11_128[0]); //Re: I_a0*I_d0 - Q_a1*Q_d1
+    //ad_im_128 = _mm_shufflelo_epi16(after_mf_00_128[0],_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+    //ad_im_128 = _mm_shufflehi_epi16(ad_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+    //ad_im_128 = _mm_madd_epi16(ad_im_128,after_mf_11_128[0]);//Im: (Q_aI_d + I_aQ_d)
+
+    // complex multiplication (I_b+jQ_b)(I_c+jQ_c) = (I_bI_c - Q_bQ_c) + j(Q_bI_c + I_bQ_c)
+    // The imag part is often zero, we compute only the real part
+    bc_re_128 = _mm_sign_epi16(after_mf_01_128[0],*(__m128i*)&nr_conjug2[0]);
+    bc_re_128 = _mm_madd_epi16(bc_re_128,after_mf_10_128[0]); //Re: I_b0*I_c0 - Q_b1*Q_c1
+    //bc_im_128 = _mm_shufflelo_epi16(after_mf_01_128[0],_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_b0 Q_b1 I_b2 Q_b3]_64bits to [Q_b1 I_b0 Q_b3 I_b2]_64bits
+    //bc_im_128 = _mm_shufflehi_epi16(bc_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_b0 Q_b1 I_b2 Q_b3]_64bits to [Q_b1 I_b0 Q_b3 I_b2]_64bits
+    //bc_im_128 = _mm_madd_epi16(bc_im_128,after_mf_10_128[0]);//Im: (Q_bI_c + I_bQ_c)
+
+    det_re_128 = _mm_sub_epi32(ad_re_128, bc_re_128);
+    //det_im_128 = _mm_sub_epi32(ad_im_128, bc_im_128);
+
+    //convert back to Q15 before packing
+    det_re_128 = _mm_srai_epi32(det_re_128,8);//(2^15/64*2)
+    //det_im_128 = _mm_srai_epi32(det_im_128,8);
+
+    //tmp_det0  = _mm_unpacklo_epi32(det_re_128,det_im_128);
+    ////print_ints("unpack lo:",&tmp_det0[rb]);
+    //tmp_det1  = _mm_unpackhi_epi32(det_re_128,det_im_128);
+    ////print_ints("unpack hi:",&tmp_det1[rb]);
+    //det_matrix_128[0] = _mm_packs_epi32(tmp_det0,tmp_det1);
+    det_fin_128[0] = _mm_abs_epi32(det_re_128);
+
+    if ((rb==0)&&(symbol==1)) {
+      printf("\n Computing det_HhH_inv \n");
+      print_ints("det_re_128:",(int32_t*)&det_re_128);
+      //print_ints("det_im_128:",(int32_t*)&det_im_128);
+      print_ints("det_fin_128:",(int32_t*)&det_fin_128[0]);
+    }
+
+    det_fin_128+=1;
+    after_mf_00_128+=1;
+    after_mf_01_128+=1;
+    after_mf_10_128+=1;
+    after_mf_11_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+
+/* Zero Forcing Rx function: nr_inv_comp_muli
+ * Complex number multi: z = x*y
+ *                         = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
+ * */
+__m128i nr_inv_comp_muli(__m128i input_x,
+                         __m128i input_y)
+{
+  int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
+
+  __m128i xy_re_128, xy_im_128;
+  __m128i output_z, tmp_z0, tmp_z1;
+
+  // complex multiplication (x_re + jx_im)*(y_re + jy_im) = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
+
+  // the real part
+  xy_re_128 = _mm_sign_epi16(input_x,*(__m128i*)&nr_conjug2[0]);
+  xy_re_128 = _mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
+
+  // the imag part
+  xy_im_128 = _mm_shufflelo_epi16(input_x,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  xy_im_128 = _mm_shufflehi_epi16(xy_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  xy_im_128 = _mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
+
+  //convert back to Q15 before packing
+
+  xy_re_128 = _mm_srai_epi32(xy_re_128,4);//(2^15/64*2*16)
+  xy_im_128 = _mm_srai_epi32(xy_im_128,4);
+
+  tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
+  //print_ints("unpack lo:",&tmp_z0[0]);
+  tmp_z1  = _mm_unpackhi_epi32(xy_re_128,xy_im_128);
+  //print_ints("unpack hi:",&tmp_z1[0]);
+  output_z = _mm_packs_epi32(tmp_z0,tmp_z1);
+  _mm_empty();
+  _m_empty();
+  return(output_z);
+}
+
+/* Zero Forcing Rx function: nr_conjch0_mult_ch1()
+ *
+ *
+ * */
+void nr_conjch0_mult_ch1(int *ch0,
+                         int *ch1,
+                         int32_t *ch0conj_ch1,
+                         unsigned short nb_rb,
+                         unsigned char output_shift0)
+{
+  //This function is used to compute multiplications in H_hermitian * H matrix
+  short nr_conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+  unsigned short rb;
+  __m128i *dl_ch0_128,*dl_ch1_128, *ch0conj_ch1_128, mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
+
+  dl_ch0_128 = (__m128i *)ch0;
+  dl_ch1_128 = (__m128i *)ch1;
+
+  ch0conj_ch1_128 = (__m128i *)ch0conj_ch1;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    mmtmpD0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
+    mmtmpD1 = _mm_shufflelo_epi16(dl_ch0_128[0],_MM_SHUFFLE(2,3,0,1));
+    mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+    mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&nr_conjugate[0]);
+    mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch1_128[0]);
+    mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
+    mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
+    mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+    mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+
+    ch0conj_ch1_128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+
+    /*printf("\n Computing conjugates \n");
+    print_shorts("ch0:",(int16_t*)&dl_ch0_128[0]);
+    print_shorts("ch1:",(int16_t*)&dl_ch1_128[0]);
+    print_shorts("pack:",(int16_t*)&ch0conj_ch1_128[0]);*/
+
+    dl_ch0_128+=1;
+    dl_ch1_128+=1;
+    ch0conj_ch1_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+/* Zero Forcing Rx function: nr_construct_HhH_elements()
+ *
+ *
+ * */
+void nr_construct_HhH_elements(int *conjch00_ch00,
+                            int *conjch01_ch01,
+                            int *conjch11_ch11,
+                            int *conjch10_ch10,//
+                            int *conjch20_ch20,
+                            int *conjch21_ch21,
+                            int *conjch30_ch30,
+                            int *conjch31_ch31,
+                            int *conjch00_ch01,//00_01
+                            int *conjch01_ch00,//01_00
+                            int *conjch10_ch11,//10_11
+                            int *conjch11_ch10,//11_10
+                            int *conjch20_ch21,
+                            int *conjch21_ch20,
+                            int *conjch30_ch31,
+                            int *conjch31_ch30,
+                            int32_t *after_mf_00,
+                            int32_t *after_mf_01,
+                            int32_t *after_mf_10,
+                            int32_t *after_mf_11,
+                            unsigned short nb_rb,
+                            unsigned char symbol)
+{
+  //This function is used to construct the (H_hermitian * H matrix) matrix elements
+  unsigned short rb;
+  __m128i *conjch00_ch00_128, *conjch01_ch01_128, *conjch11_ch11_128, *conjch10_ch10_128;
+  __m128i *conjch20_ch20_128, *conjch21_ch21_128, *conjch30_ch30_128, *conjch31_ch31_128;
+  __m128i *conjch00_ch01_128, *conjch01_ch00_128, *conjch10_ch11_128, *conjch11_ch10_128;
+  __m128i *conjch20_ch21_128, *conjch21_ch20_128, *conjch30_ch31_128, *conjch31_ch30_128;
+  __m128i *after_mf_00_128, *after_mf_01_128, *after_mf_10_128, *after_mf_11_128;
+
+  conjch00_ch00_128 = (__m128i *)conjch00_ch00;
+  conjch01_ch01_128 = (__m128i *)conjch01_ch01;
+  conjch11_ch11_128 = (__m128i *)conjch11_ch11;
+  conjch10_ch10_128 = (__m128i *)conjch10_ch10;
+
+  conjch20_ch20_128 = (__m128i *)conjch20_ch20;
+  conjch21_ch21_128 = (__m128i *)conjch21_ch21;
+  conjch30_ch30_128 = (__m128i *)conjch30_ch30;
+  conjch31_ch31_128 = (__m128i *)conjch31_ch31;
+
+  conjch00_ch01_128 = (__m128i *)conjch00_ch01;
+  conjch01_ch00_128 = (__m128i *)conjch01_ch00;
+  conjch10_ch11_128 = (__m128i *)conjch10_ch11;
+  conjch11_ch10_128 = (__m128i *)conjch11_ch10;
+
+  conjch20_ch21_128 = (__m128i *)conjch20_ch21;
+  conjch21_ch20_128 = (__m128i *)conjch21_ch20;
+  conjch30_ch31_128 = (__m128i *)conjch30_ch31;
+  conjch31_ch30_128 = (__m128i *)conjch31_ch30;
+
+  after_mf_00_128 = (__m128i *)after_mf_00;
+  after_mf_01_128 = (__m128i *)after_mf_01;
+  after_mf_10_128 = (__m128i *)after_mf_10;
+  after_mf_11_128 = (__m128i *)after_mf_11;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    after_mf_00_128[0] =_mm_adds_epi16(conjch00_ch00_128[0],conjch10_ch10_128[0]);//00_00 + 10_10
+    if (conjch20_ch20 != NULL) after_mf_00_128[0] =_mm_adds_epi16(after_mf_00_128[0],conjch20_ch20_128[0]);
+    if (conjch30_ch30 != NULL) after_mf_00_128[0] =_mm_adds_epi16(after_mf_00_128[0],conjch30_ch30_128[0]);
+
+    after_mf_11_128[0] =_mm_adds_epi16(conjch01_ch01_128[0], conjch11_ch11_128[0]); //01_01 + 11_11
+    if (conjch21_ch21 != NULL) after_mf_11_128[0] =_mm_adds_epi16(after_mf_11_128[0],conjch21_ch21_128[0]);
+    if (conjch31_ch31 != NULL) after_mf_11_128[0] =_mm_adds_epi16(after_mf_11_128[0],conjch31_ch31_128[0]);
+
+    after_mf_01_128[0] =_mm_adds_epi16(conjch00_ch01_128[0], conjch10_ch11_128[0]);//00_01 + 10_11
+    if (conjch20_ch21 != NULL) after_mf_01_128[0] =_mm_adds_epi16(after_mf_01_128[0],conjch20_ch21_128[0]);
+    if (conjch30_ch31 != NULL) after_mf_01_128[0] =_mm_adds_epi16(after_mf_01_128[0],conjch30_ch31_128[0]);
+
+    after_mf_10_128[0] =_mm_adds_epi16(conjch01_ch00_128[0], conjch11_ch10_128[0]);//01_00 + 11_10
+    if (conjch21_ch20 != NULL) after_mf_10_128[0] =_mm_adds_epi16(after_mf_10_128[0],conjch21_ch20_128[0]);
+    if (conjch31_ch30 != NULL) after_mf_10_128[0] =_mm_adds_epi16(after_mf_10_128[0],conjch31_ch30_128[0]);
+
+    if ((rb==0)&&(symbol==1))
+    {
+    printf(" \n construct_HhH_elements \n");
+    print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
+    print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
+    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
+    print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
+    }
+
+    conjch00_ch00_128+=1;
+    conjch10_ch10_128+=1;
+    conjch01_ch01_128+=1;
+    conjch11_ch11_128+=1;
+
+    if (conjch20_ch20 != NULL) conjch20_ch20_128+=1;
+    if (conjch21_ch21 != NULL) conjch21_ch21_128+=1;
+    if (conjch30_ch30 != NULL) conjch30_ch30_128+=1;
+    if (conjch31_ch31 != NULL) conjch31_ch31_128+=1;
+
+    conjch00_ch01_128+=1;
+    conjch01_ch00_128+=1;
+    conjch10_ch11_128+=1;
+    conjch11_ch10_128+=1;
+
+    if (conjch20_ch21 != NULL) conjch20_ch21_128+=1;
+    if (conjch21_ch20 != NULL) conjch21_ch20_128+=1;
+    if (conjch30_ch31 != NULL) conjch30_ch31_128+=1;
+    if (conjch31_ch30 != NULL) conjch31_ch30_128+=1;
+
+    after_mf_00_128 += 1;
+    after_mf_01_128 += 1;
+    after_mf_10_128 += 1;
+    after_mf_11_128 += 1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+/* Zero Forcing Rx function: nr_zero_forcing_rx_2layers()
+ *
+ *
+ * */
+uint8_t nr_zero_forcing_rx_2layers(int **rxdataF_comp,
+                                   int **dl_ch_mag,
+                                   int **dl_ch_magb,
+                                   int **dl_ch_estimates_ext,
+                                   unsigned short nb_rb,
+                                   unsigned char n_rx,
+                                   unsigned char mod_order,
+                                   int shift,
+                                   unsigned char symbol)
+{
+  int *ch00, *ch01, *ch10, *ch11;
+  int *ch20, *ch30, *ch21, *ch31;
+
+  /* we need at least alignment to 16 bytes, let's put 32 to be sure
+   * (maybe not necessary but doesn't hurt)
+   */
+  int32_t conjch00_ch01[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch01_ch00[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch10_ch11[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch11_ch10[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch00_ch00[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch01_ch01[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch10_ch10[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch11_ch11[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch20_ch20[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch21_ch21[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch30_ch30[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch31_ch31[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch20_ch21[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch30_ch31[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch21_ch20[12*nb_rb] __attribute__((aligned(32)));
+  int32_t conjch31_ch30[12*nb_rb] __attribute__((aligned(32)));
+
+  int32_t af_mf_00[12*nb_rb] __attribute__((aligned(32)));
+  int32_t af_mf_01[12*nb_rb] __attribute__((aligned(32)));
+  int32_t af_mf_10[12*nb_rb] __attribute__((aligned(32)));
+  int32_t af_mf_11[12*nb_rb] __attribute__((aligned(32)));
+  int32_t determ_fin[12*nb_rb] __attribute__((aligned(32)));
+
+  switch (n_rx) {
+    case 2://
+      ch00 = (int *)&dl_ch_estimates_ext[0][symbol*nb_rb*12];
+      ch01 = (int *)&dl_ch_estimates_ext[2][symbol*nb_rb*12];
+      ch10 = (int *)&dl_ch_estimates_ext[1][symbol*nb_rb*12];
+      ch11 = (int *)&dl_ch_estimates_ext[3][symbol*nb_rb*12];
+      ch20 = NULL;
+      ch21 = NULL;
+      ch30 = NULL;
+      ch31 = NULL;
+      break;
+
+    case 4://
+      ch00 = (int *)&dl_ch_estimates_ext[0][symbol*nb_rb*12];
+      ch01 = (int *)&dl_ch_estimates_ext[4][symbol*nb_rb*12];
+      ch10 = (int *)&dl_ch_estimates_ext[1][symbol*nb_rb*12];
+      ch11 = (int *)&dl_ch_estimates_ext[5][symbol*nb_rb*12];
+      ch20 = (int *)&dl_ch_estimates_ext[2][symbol*nb_rb*12];
+      ch21 = (int *)&dl_ch_estimates_ext[6][symbol*nb_rb*12];
+      ch30 = (int *)&dl_ch_estimates_ext[3][symbol*nb_rb*12];
+      ch31 = (int *)&dl_ch_estimates_ext[7][symbol*nb_rb*12];
+      break;
+
+    default:
+      return -1;
+      break;
+  }
+
+  /* 1- Compute the rx channel matrix after compensation: (1/2^log2_max)x(H_herm x H)
+   * for n_rx = 2
+   * |conj_H_00       conj_H_10|    | H_00         H_01|   |(conj_H_00xH_00+conj_H_10xH_10)   (conj_H_00xH_01+conj_H_10xH_11)|
+   * |                         |  x |                  | = |                                                                 |
+   * |conj_H_01       conj_H_11|    | H_10         H_11|   |(conj_H_01xH_00+conj_H_11xH_10)   (conj_H_01xH_01+conj_H_11xH_11)|
+   *
+   */
+
+  if (n_rx>=2){
+    // (1/2^log2_maxh)*conj_H_00xH_00: (1/(64*2))conjH_00*H_00*2^15
+    nr_conjch0_mult_ch1(ch00,
+                        ch00,
+                        conjch00_ch00,
+                        nb_rb,
+                        shift);
+    // (1/2^log2_maxh)*conj_H_10xH_10: (1/(64*2))conjH_10*H_10*2^15
+    nr_conjch0_mult_ch1(ch10,
+                        ch10,
+                        conjch10_ch10,
+                        nb_rb,
+                        shift);
+    // conj_H_00xH_01
+    nr_conjch0_mult_ch1(ch00,
+                        ch01,
+                        conjch00_ch01,
+                        nb_rb,
+                        shift); // this shift is equal to the channel level log2_maxh
+    // conj_H_10xH_11
+    nr_conjch0_mult_ch1(ch10,
+                        ch11,
+                        conjch10_ch11,
+                        nb_rb,
+                        shift);
+    // conj_H_01xH_01
+    nr_conjch0_mult_ch1(ch01,
+                        ch01,
+                        conjch01_ch01,
+                        nb_rb,
+                        shift);
+    // conj_H_11xH_11
+    nr_conjch0_mult_ch1(ch11,
+                        ch11,
+                        conjch11_ch11,
+                        nb_rb,
+                        shift);
+    // conj_H_01xH_00
+    nr_conjch0_mult_ch1(ch01,
+                        ch00,
+                        conjch01_ch00,
+                        nb_rb,
+                        shift);
+    // conj_H_11xH_10
+    nr_conjch0_mult_ch1(ch11,
+                        ch10,
+                        conjch11_ch10,
+                        nb_rb,
+                        shift);
+  }
+  if (n_rx==4){
+    // (1/2^log2_maxh)*conj_H_20xH_20: (1/(64*2*16))conjH_20*H_20*2^15
+    nr_conjch0_mult_ch1(ch20,
+                        ch20,
+                        conjch20_ch20,
+                        nb_rb,
+                        shift);
+
+    // (1/2^log2_maxh)*conj_H_30xH_30: (1/(64*2*4))conjH_30*H_30*2^15
+    nr_conjch0_mult_ch1(ch30,
+                        ch30,
+                        conjch30_ch30,
+                        nb_rb,
+                        shift);
+
+    // (1/2^log2_maxh)*conj_H_20xH_20: (1/(64*2))conjH_20*H_20*2^15
+    nr_conjch0_mult_ch1(ch20,
+                        ch21,
+                        conjch20_ch21,
+                        nb_rb,
+                        shift);
+
+    nr_conjch0_mult_ch1(ch30,
+                        ch31,
+                        conjch30_ch31,
+                        nb_rb,
+                        shift);
+
+    nr_conjch0_mult_ch1(ch21,
+                        ch21,
+                        conjch21_ch21,
+                        nb_rb,
+                        shift);
+
+    nr_conjch0_mult_ch1(ch31,
+                        ch31,
+                        conjch31_ch31,
+                        nb_rb,
+                        shift);
+
+    // (1/2^log2_maxh)*conj_H_20xH_20: (1/(64*2))conjH_20*H_20*2^15
+    nr_conjch0_mult_ch1(ch21,
+                        ch20,
+                        conjch21_ch20,
+                        nb_rb,
+                        shift);
+
+    nr_conjch0_mult_ch1(ch31,
+                        ch30,
+                        conjch31_ch30,
+                        nb_rb,
+                        shift);
+
+    nr_construct_HhH_elements(conjch00_ch00,
+                              conjch01_ch01,
+                              conjch11_ch11,
+                              conjch10_ch10,//
+                              conjch20_ch20,
+                              conjch21_ch21,
+                              conjch30_ch30,
+                              conjch31_ch31,
+                              conjch00_ch01,
+                              conjch01_ch00,
+                              conjch10_ch11,
+                              conjch11_ch10,//
+                              conjch20_ch21,
+                              conjch21_ch20,
+                              conjch30_ch31,
+                              conjch31_ch30,
+                              af_mf_00,
+                              af_mf_01,
+                              af_mf_10,
+                              af_mf_11,
+                              nb_rb,
+                              symbol);
+  }
+  if (n_rx==2){
+    nr_construct_HhH_elements(conjch00_ch00,
+                              conjch01_ch01,
+                              conjch11_ch11,
+                              conjch10_ch10,//
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL,
+                              conjch00_ch01,
+                              conjch01_ch00,
+                              conjch10_ch11,
+                              conjch11_ch10,//
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL,
+                              af_mf_00,
+                              af_mf_01,
+                              af_mf_10,
+                              af_mf_11,
+                              nb_rb,
+                              symbol);
+  }
+  //det_HhH = ad -bc
+  nr_det_HhH(af_mf_00,//a
+             af_mf_01,//b
+             af_mf_10,//c
+             af_mf_11,//d
+             determ_fin,
+             nb_rb,
+             symbol);
+  /* 2- Compute the channel matrix inversion **********************************
+   *
+     *    |(conj_H_00xH_00+conj_H_10xH_10)   (conj_H_00xH_01+conj_H_10xH_11)|
+     * A= |                                                                 |
+     *    |(conj_H_01xH_00+conj_H_11xH_10)   (conj_H_01xH_01+conj_H_11xH_11)|
+     *
+     *
+     *
+     *inv(A) =(1/det)*[d  -b
+     *                 -c  a]
+     *
+     *
+     **************************************************************************/
+  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*dl_ch_mag128_0,*dl_ch_mag128b_0,*dl_ch_mag128_1,*dl_ch_mag128b_1,*determ_fin_128;
+  __m128i mmtmpD2,mmtmpD3,mmtmpD0,mmtmpD1,QAM_amp128,QAM_amp128b;
+  __m128i *after_mf_a_128,*after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
+
+  determ_fin_128      = (__m128i *)&determ_fin[0];
+
+  rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*nb_rb*12];//aatx=0 @ aarx =0
+  rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[n_rx][symbol*nb_rb*12];//aatx=1 @ aarx =0
+
+  dl_ch_mag128_0      = (__m128i *)&dl_ch_mag[0][symbol*nb_rb*12];
+  dl_ch_mag128_1      = (__m128i *)&dl_ch_mag[n_rx][symbol*nb_rb*12];
+  dl_ch_mag128b_0     = (__m128i *)&dl_ch_magb[0][symbol*nb_rb*12];
+  dl_ch_mag128b_1     = (__m128i *)&dl_ch_magb[n_rx][symbol*nb_rb*12];
+
+  after_mf_a_128 = (__m128i *)af_mf_00;
+  after_mf_b_128 = (__m128i *)af_mf_01;
+  after_mf_c_128 = (__m128i *)af_mf_10;
+  after_mf_d_128 = (__m128i *)af_mf_11;
+
+  QAM_amp128b = _mm_setzero_si128();
+
+  if (mod_order == 4) {
+    QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
+    QAM_amp128b = _mm_setzero_si128();
+  } else if (mod_order == 6) {
+    QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
+    QAM_amp128b = _mm_set1_epi16(QAM64_n2);
+  }
+
+  for (int rb=0; rb<3*nb_rb; rb++) {
+    if (mod_order>2) {
+      // get channel determ (da -bc) if not QPSK
+      mmtmpD0 = _mm_packs_epi32(determ_fin_128[0],determ_fin_128[0]);//convert 32 bits to 16 bits
+
+      dl_ch_mag128_0[0] = _mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
+      dl_ch_mag128b_0[0] = dl_ch_mag128_0[0];
+
+      dl_ch_mag128_0[0] = _mm_mulhi_epi16(dl_ch_mag128_0[0],QAM_amp128);
+      dl_ch_mag128_0[0] = _mm_slli_epi16(dl_ch_mag128_0[0],1);//aatx=0 @ aarx =0
+      dl_ch_mag128_1[0] = dl_ch_mag128_0[0];//aatx=1 @ aarx =0
+
+      dl_ch_mag128b_0[0] = _mm_mulhi_epi16(dl_ch_mag128b_0[0],QAM_amp128b);
+      dl_ch_mag128b_0[0] = _mm_slli_epi16(dl_ch_mag128b_0[0],1);//aatx=0 @ aarx =
+      dl_ch_mag128b_1[0] = dl_ch_mag128b_0[0];//aatx=1 @ aarx =0
+
+      if ((rb==0)&&(symbol==1)) {
+        printf("\n Signal mag after ZF \n");
+        print_shorts("mag layer 1:",(int16_t*)&dl_ch_mag128_0[0]);
+        print_shorts("mag layer 2:",(int16_t*)&dl_ch_mag128_1[0]);
+        print_shorts("magb layer 1:",(int16_t*)&dl_ch_mag128b_0[0]);
+        print_shorts("magb layer 2:",(int16_t*)&dl_ch_mag128b_1[0]);
+       }
+    }
+    // multiply by channel Inv
+    //rxdataF_zf128_0 = rxdataF_comp128_0*d - b*rxdataF_comp128_1
+    //rxdataF_zf128_1 = rxdataF_comp128_1*a - c*rxdataF_comp128_0
+    mmtmpD2 = nr_inv_comp_muli(rxdataF_comp128_0[0],//x
+                               after_mf_d_128[0]);//y
+    mmtmpD3 = nr_inv_comp_muli(rxdataF_comp128_1[0],//x
+                               after_mf_b_128[0]);//y
+    //mmtmpD2[0] - mmtmpD3[0]
+    //rxdataF_zf128_0
+    mmtmpD0 = _mm_sub_epi16(mmtmpD2, mmtmpD3);
+
+    mmtmpD2 = nr_inv_comp_muli(rxdataF_comp128_1[0],//x
+                               after_mf_a_128[0]);//y
+    mmtmpD3 = nr_inv_comp_muli(rxdataF_comp128_0[0],//x
+                               after_mf_c_128[0]);//y
+    //mmtmpD2[0] - mmtmpD3[0]
+    //rxdataF_zf128_1
+    mmtmpD1 = _mm_sub_epi16(mmtmpD2, mmtmpD3);
+
+    rxdataF_comp128_0[0] = mmtmpD0;
+    rxdataF_comp128_1[0] = mmtmpD1;
+
+    if ((rb==0)&&(symbol==1)) {
+            printf("\n Rx signal after ZF \n");
+            print_shorts("Rx layer 1:",(int16_t*)&rxdataF_comp128_0[0]);
+            print_shorts("Rx layer 2:",(int16_t*)&rxdataF_comp128_1[0]);
+    }
+
+    determ_fin_128 += 1;
+    dl_ch_mag128_0 += 1;
+    dl_ch_mag128b_0 += 1;
+    dl_ch_mag128_1 += 1;
+    dl_ch_mag128b_1 += 1;
+    rxdataF_comp128_0 += 1;
+    rxdataF_comp128_1 += 1;
+    after_mf_a_128 += 1;
+    after_mf_b_128 += 1;
+    after_mf_c_128 += 1;
+    after_mf_d_128 += 1;
+  }
+  _mm_empty();
+  _m_empty();
+   return(0);
 }
 
 static void nr_dlsch_layer_demapping(int16_t **llr_cw,
