@@ -1082,13 +1082,12 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
 					  dl_ch128_2+=3;
 					  rho128+=3;
 				  }
-				  if (first_symbol_flag==1) {
-					 //measurements->rx_correlation[0][0][aarx] = signal_energy(&rho[aarx][symbol*nb_rb*12],rb*12);
-					  avg_rho_re[aatx][aarx] = 16*avg_rho_re[aatx][aarx]/(nb_rb*12);
-					  avg_rho_im[aatx][aarx] = 16*avg_rho_im[aatx][aarx]/(nb_rb*12);
-
-					 printf("rho_rx%d tx%d= Re: %d Im: %d\n",aarx, aatx, avg_rho_re[aatx][aarx], avg_rho_im[aatx][aarx]);
-					}
+				  /*if (first_symbol_flag==1) {
+				    //measurements->rx_correlation[0][0][aarx] = signal_energy(&rho[aarx][symbol*nb_rb*12],rb*12);
+				    avg_rho_re[aatx][aarx] = 16*avg_rho_re[aatx][aarx]/(nb_rb*12);
+				    avg_rho_im[aatx][aarx] = 16*avg_rho_im[aatx][aarx]/(nb_rb*12);
+				    printf("rho_rx%d tx%d= Re: %d Im: %d\n",aarx, aatx, avg_rho_re[aatx][aarx], avg_rho_im[aatx][aarx]);
+					}*/
 	    	}
 	    }
 	  }
@@ -2352,12 +2351,12 @@ void nr_det_HhH(int32_t *after_mf_00,//a
     //det_matrix_128[0] = _mm_packs_epi32(tmp_det0,tmp_det1);
     det_fin_128[0] = _mm_abs_epi32(det_re_128);
 
-    if ((rb==0)&&(symbol==1)) {
+    /*if ((rb==0)&&(symbol==1)) {
       printf("\n Computing det_HhH_inv \n");
       print_ints("det_re_128:",(int32_t*)&det_re_128);
       //print_ints("det_im_128:",(int32_t*)&det_im_128);
       print_ints("det_fin_128:",(int32_t*)&det_fin_128[0]);
-    }
+    }*/
 
     det_fin_128+=1;
     after_mf_00_128+=1;
@@ -2533,14 +2532,14 @@ void nr_construct_HhH_elements(int *conjch00_ch00,
     if (conjch21_ch20 != NULL) after_mf_10_128[0] =_mm_adds_epi16(after_mf_10_128[0],conjch21_ch20_128[0]);
     if (conjch31_ch30 != NULL) after_mf_10_128[0] =_mm_adds_epi16(after_mf_10_128[0],conjch31_ch30_128[0]);
 
-    if ((rb==0)&&(symbol==1))
+    /*if ((rb==0)&&(symbol==1))
     {
-    printf(" \n construct_HhH_elements \n");
-    print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
-    print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
-    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
-    print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
-    }
+      printf(" \n construct_HhH_elements \n");
+      print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
+      print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
+      print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
+      print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
+    }*/
 
     conjch00_ch00_128+=1;
     conjch10_ch10_128+=1;
@@ -2896,11 +2895,11 @@ uint8_t nr_zero_forcing_rx_2layers(int **rxdataF_comp,
     rxdataF_comp128_0[0] = mmtmpD0;
     rxdataF_comp128_1[0] = mmtmpD1;
 
-    if ((rb==0)&&(symbol==1)) {
-            printf("\n Rx signal after ZF \n");
-            print_shorts("Rx layer 1:",(int16_t*)&rxdataF_comp128_0[0]);
-            print_shorts("Rx layer 2:",(int16_t*)&rxdataF_comp128_1[0]);
-    }
+    /*if ((rb==0)&&(symbol==1)) {
+      printf("\n Rx signal after ZF \n");
+      print_shorts("Rx layer 1:",(int16_t*)&rxdataF_comp128_0[0]);
+      print_shorts("Rx layer 2:",(int16_t*)&rxdataF_comp128_1[0]);
+    }*/
 
     determ_fin_128 += 1;
     dl_ch_mag128_0 += 1;
