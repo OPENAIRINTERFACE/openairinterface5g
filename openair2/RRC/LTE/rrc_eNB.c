@@ -4679,29 +4679,6 @@ rrc_eNB_process_MeasurementReport(
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
-        if (ue_context_pP->ue_context.measResults->measResultNeighCells==NULL)
-          ue_context_pP->ue_context.measResults->measResultNeighCells = calloc(1,sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
-        ue_context_pP->ue_context.measResults->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
-        ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15
-          = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
-        if (!ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15) 
-	  ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15=calloc(1,sizeof(LTE_RSRP_RangeNR_r15_t));
-        if (!ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
-          ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15=calloc(1,sizeof(LTE_RSRQ_RangeNR_r15_t));
-        *ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15 = *measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15;
-        *ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15 = *measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15;
-        if (measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) {
-           if (!ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) {
-              ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15 = calloc(1,sizeof(struct LTE_MeasResultSSB_IndexList_r15));
-              memset(&ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15,0,sizeof(struct LTE_MeasResultSSB_IndexList_r15));
-              ASN_SEQUENCE_ADD(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15,
-                               measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]);
-           }     
-           else {
-              ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15 = 
-               measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15;
-           }
-        }
 
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
@@ -4722,6 +4699,32 @@ rrc_eNB_process_MeasurementReport(
         itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
         return;
       }
+    }
+
+    if (!ue_context_pP->ue_context.measResults->measResultNeighCells) {
+      ue_context_pP->ue_context.measResults->measResultNeighCells = calloc(1,sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array = calloc(1, sizeof(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0] = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.count = 1;
+    }
+    struct LTE_MeasResultCellNR_r15 *ueCtxtMeasResultCellNR_r15 = ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0];
+    const struct LTE_MeasResultCellNR_r15 *measNeighCellNR0 = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0];
+    ueCtxtMeasResultCellNR_r15->pci_r15 = measNeighCellNR0->pci_r15;
+    if (!ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15)
+      ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15 = calloc(1, sizeof(*ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15));
+    if (!ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15)
+      ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15 = calloc(1, sizeof(*ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15));
+    *ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15 = *measNeighCellNR0->measResultCell_r15.rsrpResult_r15;
+    *ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15 = *measNeighCellNR0->measResultCell_r15.rsrqResult_r15;
+    if (measNeighCellNR0->measResultRS_IndexList_r15) {
+       if (!ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15) {
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15 = calloc(1,sizeof(*ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15));
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array = calloc(1, sizeof(ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array));
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array[0] = calloc(1, sizeof(*ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array));
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.count = 1;
+       }
+      ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15 = measNeighCellNR0->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15;
     }
   }
 
