@@ -4679,6 +4679,8 @@ rrc_eNB_process_MeasurementReport(
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
+        if (ue_context_pP->ue_context.measResults->measResultNeighCells==NULL)
+          ue_context_pP->ue_context.measResults->measResultNeighCells = calloc(1,sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
         ue_context_pP->ue_context.measResults->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
         ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15
           = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
