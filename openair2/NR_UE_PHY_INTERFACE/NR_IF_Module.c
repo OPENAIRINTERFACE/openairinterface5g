@@ -148,14 +148,15 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
       for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
 
-        switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
-
         LOG_D(MAC, "In %s sending DL indication to MAC. 1 PDU type %s of %d total number of PDUs \n",
           __FUNCTION__,
           dl_indication_type[dl_info->rx_ind->rx_indication_body[i].pdu_type - 1],
           dl_info->rx_ind->number_pdus);
 
+        switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
+
         case FAPI_NR_RX_PDU_TYPE_MIB:
+
           ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
                       (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
                       (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
@@ -188,7 +189,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           break;
 
         default:
-        break;
+          break;
         }
       }
     }
