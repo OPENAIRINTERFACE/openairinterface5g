@@ -69,7 +69,7 @@ void nr_schedule_pucch(int Mod_idP,
       
       //future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
 
-      /*For some reason, seems to cause a segmentation fault in the VNF while running nFAPI. If size of pucch pdu is needed, 
+      /*Seems to cause a segmentation fault in the VNF while running nFAPI. If size of pucch pdu is needed, 
       use the size function on the pdu structure directly. */
 
       future_ul_tti_req->n_pdus += 1;
