@@ -393,7 +393,7 @@ int main(int argc, char **argv)
     case 'y':
       n_tx=atoi(optarg);
 
-      if ((n_tx==0) || (n_tx>2)) {
+      if ((n_tx==0) || (n_tx>4)) {//extend gNB to support n_tx = 4
         printf("Unsupported number of tx antennas %d\n",n_tx);
         exit(-1);
       }
@@ -403,7 +403,7 @@ int main(int argc, char **argv)
     case 'z':
       n_rx=atoi(optarg);
 
-      if ((n_rx==0) || (n_rx>2)) {
+      if ((n_rx==0) || (n_rx>4)) {//extend UE to support n_tx = 4
         printf("Unsupported number of rx antennas %d\n",n_rx);
         exit(-1);
       }
@@ -921,9 +921,9 @@ int main(int argc, char **argv)
         int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
         
         if (n_trials==1) {
-          LOG_M("txsigF0.m","txsF0", &gNB->common_vars.txdataF[0][txdataF_offset],frame_parms->samples_per_slot_wCP,1,1);
+          LOG_M("txsigF0.m","txsF0=", &gNB->common_vars.txdataF[0][txdataF_offset+2*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
           if (gNB->frame_parms.nb_antennas_tx>1)
-          LOG_M("txsigF1.m","txsF1", &gNB->common_vars.txdataF[1][txdataF_offset],frame_parms->samples_per_slot_wCP,1,1);
+            LOG_M("txsigF1.m","txsF1=", &gNB->common_vars.txdataF[1][txdataF_offset+2*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
         }
         int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
         if (n_trials==1) printf("tx_offset %d, txdataF_offset %d \n", tx_offset,txdataF_offset);
@@ -947,9 +947,11 @@ int main(int argc, char **argv)
         }
        
         if (n_trials==1) {
-          LOG_M("txsig0.m","txs0", &txdata[0][tx_offset],frame_parms->get_samples_slot_timestamp(slot,frame_parms,0),1,1);
-          if (gNB->frame_parms.nb_antennas_tx>1)
-            LOG_M("txsig1.m","txs1", &txdata[1][tx_offset],frame_parms->get_samples_slot_timestamp(slot,frame_parms,0),1,1);
+          char filename[100];//LOG_M
+          for (aa=0;aa<n_tx;aa++) {
+            sprintf(filename,"txsig%d.m", aa);//LOG_M
+            LOG_M(filename,"txs", &txdata[aa][tx_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],6*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples),1,1);
+          }
         }
         if (output_fd) {
           printf("writing txdata to binary file\n");
@@ -966,7 +968,6 @@ int main(int argc, char **argv)
           if (n_trials==1) printf("txlev[%d] = %d (%f dB) txlev_sum %d\n",aa,txlev[aa],10*log10((double)txlev[aa]),txlev_sum);
         }
         
-        //  if (n_trials==1) printf("txlev %d (%f)\n",txlev,10*log10((double)txlev));
         
         for (i=(frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)); 
              i<(frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0)); 
