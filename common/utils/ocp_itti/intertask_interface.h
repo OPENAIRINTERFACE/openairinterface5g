@@ -472,6 +472,9 @@ void itti_subscribe_event_fd(task_id_t task_id, int fd);
 void itti_unsubscribe_event_fd(task_id_t task_id, int fd);
 
 /** \brief Return the list of events excluding the fd associated with itti
+    \the fd associated with itti can return, but it is marked events[i].events &= ~EPOLLIN
+    \as it is not EPOLLIN, the reader should ignore this fd
+    \or it can manage the list of fd's in his interest, so ignore the other ones
     \param task_id Task ID of the task
     \param events events list
     @returns number of events to handle

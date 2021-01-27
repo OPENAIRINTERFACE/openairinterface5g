@@ -72,7 +72,7 @@ extern UL_IND_t *UL_INFO;
 extern int next_ra_frame;
 extern module_id_t next_Mod_id;
 
-int mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
+rb_id_t mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
 static int mbms_mch_i=0;
 //static int num_msi_per_CSA[28];
 

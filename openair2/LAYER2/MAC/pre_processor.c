@@ -734,7 +734,8 @@ void calculate_max_mcs_min_rb(module_id_t mod_id,
 
   /* find maximum MCS */
   while ((phr - *tx_power < 0 || tbs > bytes) && *mcs > 3) {
-    mcs--;
+    *mcs=*mcs-1;
+    AssertFatal(*rb_index < 34, "");
     tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
     *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
   }
