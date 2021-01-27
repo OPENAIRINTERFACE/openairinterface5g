@@ -112,34 +112,33 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
         measurements->n0_subband_power[aarx][rb] = 0;
         for (int s=0;s<(14-(frame_parms->Ncp<<1));s++) {
-      // select the 7th symbol in an uplink subframe
-	  offset = offset0 + (s*frame_parms->ofdm_symbol_size);
-	  ul_ch  = &common_vars->rxdataF[aarx][offset];
-	  len = 12;
+	        offset = offset0 + (s*frame_parms->ofdm_symbol_size);
+	        ul_ch  = &common_vars->rxdataF[aarx][offset];
+	        len = 12;
 	// just do first half of middle PRB for odd number of PRBs
-	  if (((frame_parms->N_RB_UL&1) == 1) && 
-	      (rb==(frame_parms->N_RB_UL>>1))) {
-	    len=6;
-	  }
+	        if (((frame_parms->N_RB_UL&1) == 1) && 
+	            (rb==(frame_parms->N_RB_UL>>1))) {
+	           len=6;
+	        }
 
-	  AssertFatal(ul_ch, "RX signal buffer (freq) problem");
+	        AssertFatal(ul_ch, "RX signal buffer (freq) problem");
 
 
-	  measurements->n0_subband_power[aarx][rb] += signal_energy_nodc(ul_ch,len);
+	        measurements->n0_subband_power[aarx][rb] += signal_energy_nodc(ul_ch,len);
 	  
-        }
+        } // symbol
         measurements->n0_subband_power[aarx][rb]/=(14-(frame_parms->Ncp<<1));
         measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(measurements->n0_subband_power[aarx][rb]);
         n0_power_tot += measurements->n0_subband_power[aarx][rb];
 
-      }
+      } //antenna
       n0_power_tot/=frame_parms->nb_antennas_rx;
       n0_power_tot2 += n0_power_tot;
-      measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot/frame_parms->nb_antennas_rx);
+      measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot);
       measurements->n0_subband_power_tot_dBm[rb] = measurements->n0_subband_power_tot_dB[rb] - eNB->rx_total_gain_dB - dB_fixed(frame_parms->N_RB_UL);
       
-    }
-  }
+    } //rb not used in subframe
+  } //rb
   if (nb_rb>0) measurements->n0_subband_power_avg_dB = dB_fixed(n0_power_tot2/nb_rb);
 }
 
