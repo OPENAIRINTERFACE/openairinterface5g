@@ -135,7 +135,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
       }
       n0_power_tot/=frame_parms->nb_antennas_rx;
       n0_power_tot2 += n0_power_tot;
-      measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot/frame_parms->nb_antennas_rx);
+      measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot);
       measurements->n0_subband_power_tot_dBm[rb] = measurements->n0_subband_power_tot_dB[rb] - eNB->rx_total_gain_dB - dB_fixed(frame_parms->N_RB_UL);
       
     }

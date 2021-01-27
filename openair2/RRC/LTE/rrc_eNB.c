@@ -1283,7 +1283,7 @@ rrc_eNB_generate_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = 78;//RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -3441,6 +3441,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
 
   if (ue_context_pP->ue_context.does_nr) {
+    LOG_I(RRC,"Configuring measurement for NR cell\n");
     ReportConfig_NR->reportConfigId = 7;
     ReportConfig_NR->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
@@ -7927,6 +7928,45 @@ is_en_dc_supported(
 #undef NCE
 }
 
+int to_nr_rsrpq(long rsrpq_result,int nr_band) {
+
+    switch(nr_band) {
+      case 1:  // A
+      case 70:
+      case 74:
+      case 34:
+      case 38:
+      case 39:
+      case 40:
+      case 50:
+      case 51:
+       return((rsrpq_result*10)-1180);
+      case 66:  // B
+       return((rsrpq_result*10)-1175);
+      case 77:  // C
+      case 78:
+      case 79: 
+       return((rsrpq_result*10)-1170);
+      case 28:  // D
+       return((rsrpq_result*10)-1165);
+      case 2:
+      case 5:
+      case 7:
+      case 41:  // E
+       return((rsrpq_result*10)-1160);
+      case 3:   // G
+      case 8:
+      case 12:
+      case 20:
+      case 71:
+       return((rsrpq_result*10)-1150);
+      case 25:  // H
+       return((rsrpq_result*10)-1145);
+      default:
+       AssertFatal(1==0,"Illegal NR band %d\n",nr_band);
+    }
+}
+
 //-----------------------------------------------------------------------------
 int
 rrc_eNB_decode_dcch(
@@ -9129,9 +9169,9 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
             fprintf(fd,"NR_pci %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15);
             if(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
-              fprintf(fd,"NR_rsrp %ld\n",*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15-140);
+              fprintf(fd,"NR_rsrp %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15,RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0])/10.0);
             if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15) 
-              fprintf(fd,"NR_rsrq %ld\n",*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15/2 - 20);
+              fprintf(fd,"NR_rsrq %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15,RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0])/10.0);
             if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) 
               fprintf(fd,"NR_ssb_index %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15);
            }
