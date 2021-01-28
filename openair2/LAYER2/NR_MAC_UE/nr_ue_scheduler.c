@@ -472,7 +472,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       mask = (1 << (28 - (int)(ceil(log2((ibwp_size*(ibwp_size+1))>>1))))) - 1;
 
     f_alloc = rar_grant->Msg3_f_alloc & mask;
-    nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, ibwp_size, 0, f_alloc);
+    if (nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, ibwp_size, 0, f_alloc) < 0)
+      return -1;
 
     // virtual resource block to physical resource mapping for Msg3 PUSCH (6.3.1.7 in 38.211)
     pusch_config_pdu->rb_start += ibwp_start - abwp_start;
@@ -549,6 +550,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
 
       /* BANDWIDTH_PART_IND */
+      if (dci->bwp_indicator.val == 0)
+        return -1;
       config_bwp_ue(mac, &dci->bwp_indicator.val, dci_format);
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci);

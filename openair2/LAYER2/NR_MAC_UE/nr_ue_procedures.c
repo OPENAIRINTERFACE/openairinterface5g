@@ -462,7 +462,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   bool valid_ptrs_setup = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   RA_config_t *ra = &mac->ra;
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   uint8_t is_Msg3 = 0;
 
@@ -474,10 +473,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
   LOG_D(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
 
-  NR_PDSCH_Config_t *pdsch_config=mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
-
   switch(dci_format){
-  case NR_UL_DCI_FORMAT_0_0:
+  case NR_UL_DCI_FORMAT_0_0: {
     /*
      *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI
      *    0  IDENTIFIER_DCI_FORMATS:
@@ -525,8 +522,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     
     break;
+  }
 
-  case NR_UL_DCI_FORMAT_0_1:
+  case NR_UL_DCI_FORMAT_0_1: {
     /*
      *  with CRC scrambled by C-RNTI or CS-RNTI or SP-CSI-RNTI or new-RNTI
      *    0  IDENTIFIER_DCI_FORMATS:
@@ -587,8 +585,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
 
     break;
+  }
 
-  case NR_DL_DCI_FORMAT_1_0:
+  case NR_DL_DCI_FORMAT_1_0: {
     /*
      *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI
      *    0  IDENTIFIER_DCI_FORMATS:
@@ -642,6 +641,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+    NR_PDSCH_Config_t *pdsch_config=mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
     uint16_t BWPSize = 0;
 
     if(rnti == SI_RNTI) {
@@ -767,8 +767,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
             
     dl_config->number_pdus = dl_config->number_pdus + 1;
     break;
+  }
 
-  case NR_DL_DCI_FORMAT_1_1:        
+  case NR_DL_DCI_FORMAT_1_1: {
     /*
      *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI
      *    0  IDENTIFIER_DCI_FORMATS:
@@ -798,6 +799,13 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
      *    44 CBGFI:
      *    47 DMRS_SEQ_INI:
      */
+
+    if (dci->bwp_indicator.val == 0)
+      return -1;
+    config_bwp_ue(mac, &dci->bwp_indicator.val, &dci_format);
+    NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+    NR_PDSCH_Config_t *pdsch_config=mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
+
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_1 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
@@ -815,7 +823,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
 							 dlsch_config_pdu_1_1->number_symbols);
-    dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+    dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
     /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
              using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */
     dlsch_config_pdu_1_1->n_dmrs_cdm_groups = 1;
@@ -878,7 +886,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
     // according to TS 38.213 Table 9.2.3-1
-    dlsch_config_pdu_1_1->pdsch_to_harq_feedback_time_ind = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
+    NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+    dlsch_config_pdu_1_1->pdsch_to_harq_feedback_time_ind = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
     /* ANTENNA_PORTS */
     uint8_t n_codewords = 1; // FIXME!!!
     if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 1) &&
@@ -983,8 +992,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* TODO same calculation for MCS table as done in UL */
     dlsch_config_pdu_1_1->mcs_table = (pdsch_config->mcs_Table) ? (*pdsch_config->mcs_Table + 1) : 0;
     /*PTRS configuration */
-    if(mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
-      valid_ptrs_setup = set_dl_ptrs_values(mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
+    if(mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
+      valid_ptrs_setup = set_dl_ptrs_values(mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
                                             dlsch_config_pdu_1_1->number_rbs, dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table,
                                             &dlsch_config_pdu_1_1->PTRSFreqDensity,&dlsch_config_pdu_1_1->PTRSTimeDensity,
                                             &dlsch_config_pdu_1_1->PTRSPortIndex,&dlsch_config_pdu_1_1->nEpreRatioOfPDSCHToPTRS,
@@ -995,6 +1004,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
 
     break;
+  }
 
   case NR_DL_DCI_FORMAT_2_0:
     break;
@@ -1076,16 +1086,17 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
   switch(rnti_type) {
     case NR_RNTI_RA:
     case NR_RNTI_TC:
-    case NR_RNTI_P:
-      if (mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) {
-        NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
+    case NR_RNTI_P: {
+      NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+      if (mac->DLbwp[dl_bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) {
         uint8_t coreset_id = 0; // assuming controlResourceSetId is 0 for controlResourceSetZero
-        NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id];
+        NR_ControlResourceSet_t *coreset = mac->coreset[dl_bwp_id-1][coreset_id];
         get_coreset_rballoc(coreset->frequencyDomainResources.buf,&N_RB,&start_RB);
       } else {
         N_RB = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       }
       break;
+    }
     case NR_RNTI_SI:
       N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
       break;
@@ -1483,7 +1494,6 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         // BWP Indicator
         pos+=dci_pdu_rel15->bwp_indicator.nbits;
         dci_pdu_rel15->bwp_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->bwp_indicator.nbits)-1);
-        config_bwp_ue(mac, &dci_pdu_rel15->bwp_indicator.val, &dci_format);
         // Frequency domain resource assignment
         pos+=dci_pdu_rel15->frequency_domain_assignment.nbits;
         dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->frequency_domain_assignment.nbits)-1);
@@ -1574,7 +1584,6 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         // BWP Indicator
         pos+=dci_pdu_rel15->bwp_indicator.nbits;
         dci_pdu_rel15->bwp_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->bwp_indicator.nbits)-1);
-        config_bwp_ue(mac, &dci_pdu_rel15->bwp_indicator.val, &dci_format);
 
         // Freq domain assignment  max 16 bit
         fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );

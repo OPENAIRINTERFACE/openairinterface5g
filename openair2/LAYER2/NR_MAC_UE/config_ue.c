@@ -350,13 +350,11 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     else
       mac->DL_BWP_Id = 1;
 
-    if (scd->uplinkConfig){
-      if (scd->uplinkConfig->firstActiveUplinkBWP_Id)
-        mac->UL_BWP_Id = *scd->uplinkConfig->firstActiveUplinkBWP_Id;
-      else
-        mac->UL_BWP_Id = 1;
+    if (scd->uplinkConfig && scd->uplinkConfig->firstActiveUplinkBWP_Id)
+      mac->UL_BWP_Id = *scd->uplinkConfig->firstActiveUplinkBWP_Id;
+    else
+      mac->UL_BWP_Id = 1;
 
-    }
   }
 
   LOG_D(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
@@ -371,14 +369,14 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
   uint8_t coreset_id = 1, ss_id;
-  NR_BWP_Id_t dl_bwp_id;
 
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
   AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
   config_bwp_ue(mac, NULL, NULL);
-  dl_bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  AssertFatal(dl_bwp_id != 0, "DL_BWP_Id is 0!");
 
   NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
