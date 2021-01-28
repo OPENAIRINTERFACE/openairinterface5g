@@ -213,9 +213,13 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 
 static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration) {
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
-  rrc->carrier.MIB             = (uint8_t *) malloc16(4);
-  rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
-  rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    rrc->carrier.MIB             = (uint8_t *) malloc16(4);
+    rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
+    rrc->carrier.sizeof_SIB1     = do_SIB1_NR(&rrc->carrier,configuration);
+  }
+  
+  
   if (!NODE_IS_DU(rrc->node_type)) {
     rrc->carrier.SIB23 = (uint8_t *) malloc16(100);
     AssertFatal(rrc->carrier.SIB23 != NULL, "cannot allocate memory for SIB");
@@ -224,7 +228,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     AssertFatal(rrc->carrier.sizeof_SIB23 != 255,"FATAL, RC.nrrrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
   }
   LOG_I(NR_RRC,"Done init_NR_SI\n");
-  if (!NODE_IS_CU(RC.nrrrc[0]->node_type)){
+  if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
                           rrc->carrier.ssb_SubcarrierOffset,
                           rrc->carrier.pdsch_AntennaPorts,
@@ -236,6 +240,12 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                           (NR_CellGroupConfig_t *)NULL
                           );
   }
+
+  /* set flag to indicate that cell information is configured. This is required
+   * in DU to trigger F1AP_SETUP procedure */
+  pthread_mutex_lock(&rrc->cell_info_mutex);
+  rrc->cell_info_configured=1;
+  pthread_mutex_unlock(&rrc->cell_info_mutex);
 
   if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
@@ -316,6 +326,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.pusch_TargetSNRx10 = configuration->pusch_TargetSNRx10;
   rrc->carrier.pucch_TargetSNRx10 = configuration->pucch_TargetSNRx10;
   /// System Information INIT
+  pthread_mutex_init(&rrc->cell_info_mutex,NULL);
+  rrc->cell_info_configured = 0;
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
   init_NR_SI(rrc, configuration);
   rrc_init_nr_global_param();
@@ -2380,44 +2392,43 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         LOG_W(NR_RRC, "instance %d mib length %d\n", i, f1_setup_req->mib_length[i]);
         LOG_W(NR_RRC, "instance %d sib1 length %d\n", i, f1_setup_req->sib1_length[i]);
         memcpy((void *)rrc->carrier.MIB,f1_setup_req->mib[i],f1_setup_req->mib_length[i]);
-        if(0) {
-          asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                                    &asn_DEF_NR_BCCH_BCH_Message,
-                                    (void **)&rrc->carrier.mib_DU,
-                                    f1_setup_req->mib[i],
-                                    f1_setup_req->mib_length[i]);
-          AssertFatal(dec_rval.code == RC_OK,
-                      "[gNB_DU %"PRIu8"] Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n",
-                      j,
-                      dec_rval.consumed );
-          NR_BCCH_BCH_Message_t *mib = &rrc->carrier.mib;
-          NR_BCCH_BCH_Message_t *mib_DU = rrc->carrier.mib_DU;
-          mib->message.present = NR_BCCH_BCH_MessageType_PR_mib;
-          // mib->message.choice.mib = calloc(1, sizeof(NR_MIB_t));
-          mib->message.choice.mib = mib_DU->message.choice.mib;
+        asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                  &asn_DEF_NR_BCCH_BCH_Message,
+                                  (void **)&rrc->carrier.mib_DU,
+                                  f1_setup_req->mib[i],
+                                  f1_setup_req->mib_length[i]);
+        AssertFatal(dec_rval.code == RC_OK,
+                    "[gNB_DU %"PRIu8"] Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n",
+                    j,
+                    dec_rval.consumed );
+        NR_BCCH_BCH_Message_t *mib = &rrc->carrier.mib;
+        NR_BCCH_BCH_Message_t *mib_DU = rrc->carrier.mib_DU;
+        mib->message.present = NR_BCCH_BCH_MessageType_PR_mib;
+        mib->message.choice.mib = CALLOC(1,sizeof(struct NR_MIB));
+        memset(mib->message.choice.mib,0,sizeof(struct NR_MIB));
+        memcpy(mib->message.choice.mib, mib_DU->message.choice.mib, sizeof(struct NR_MIB));
 
-          rrc->carrier.SIB1 = malloc(f1_setup_req->sib1_length[i]);
-          rrc->carrier.sizeof_SIB1 = f1_setup_req->sib1_length[i];
-          memcpy((void *)rrc->carrier.SIB1,f1_setup_req->sib1[i],f1_setup_req->sib1_length[i]);
-          dec_rval = uper_decode_complete(NULL,
-                                          &asn_DEF_NR_BCCH_DL_SCH_Message,
-                                          (void **)&rrc->carrier.siblock1_DU,
-                                          f1_setup_req->sib1[i],
-                                          f1_setup_req->sib1_length[i]);
-          AssertFatal(dec_rval.code == RC_OK,
-                      "[gNB_DU %"PRIu8"] Failed to decode NR_BCCH_DLSCH_MESSAGE (%zu bits)\n",
-                      j,
-                      dec_rval.consumed );
+        rrc->carrier.SIB1 = malloc(f1_setup_req->sib1_length[i]);
+        rrc->carrier.sizeof_SIB1 = f1_setup_req->sib1_length[i];
+        memcpy((void *)rrc->carrier.SIB1,f1_setup_req->sib1[i],f1_setup_req->sib1_length[i]);
+        dec_rval = uper_decode_complete(NULL,
+                                        &asn_DEF_NR_BCCH_DL_SCH_Message,
+                                        (void **)&rrc->carrier.siblock1_DU,
+                                        f1_setup_req->sib1[i],
+                                        f1_setup_req->sib1_length[i]);
+        AssertFatal(dec_rval.code == RC_OK,
+                    "[gNB_DU %"PRIu8"] Failed to decode NR_BCCH_DLSCH_MESSAGE (%zu bits)\n",
+                    j,
+                    dec_rval.consumed );
 
-          // Parse message and extract SystemInformationBlockType1 field
-          NR_BCCH_DL_SCH_Message_t *bcch_message = rrc->carrier.siblock1_DU;
-          AssertFatal(bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1,
-                      "bcch_message->message.present != NR_BCCH_DL_SCH_MessageType_PR_c1\n");
-          AssertFatal(bcch_message->message.choice.c1->present == NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
-                      "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
-          rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-          rrc->carrier.physCellId = f1_setup_req->nr_pci[i];
-        }
+        // Parse message and extract SystemInformationBlockType1 field
+        NR_BCCH_DL_SCH_Message_t *bcch_message = rrc->carrier.siblock1_DU;
+        AssertFatal(bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1,
+                    "bcch_message->message.present != NR_BCCH_DL_SCH_MessageType_PR_c1\n");
+        AssertFatal(bcch_message->message.choice.c1->present == NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
+                    "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
+        rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+        rrc->carrier.physCellId = f1_setup_req->nr_pci[i];
 
         // prepare F1_SETUP_RESPONSE
         if (msg_p == NULL) {

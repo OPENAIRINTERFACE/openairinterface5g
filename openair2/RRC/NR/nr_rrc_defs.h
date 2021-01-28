@@ -438,6 +438,9 @@ typedef struct {
   NR_BCCH_BCH_Message_t                    *mib_DU;
   NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
   NR_SIB1_t                                *sib1;
+  NR_SIB2_t                                *sib2;
+  NR_SIB3_t                                *sib3;
+  NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
   int pusch_TargetSNRx10;
@@ -496,6 +499,8 @@ typedef struct gNB_RRC_INST_s {
   int srs_enable[MAX_NUM_CCs];
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
+  int cell_info_configured;
+  pthread_mutex_t cell_info_mutex;
 
 } gNB_RRC_INST;
 

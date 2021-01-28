@@ -460,24 +460,24 @@ int create_gNB_tasks(uint32_t gnb_nb) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");
       return -1;
     }
+
+    LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
+    if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
+      return -1;
+    }
   }
 
   if(gnb_nb > 0) {
-    if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-      LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
-      if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
-        LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
+    if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+      printf("####### node is CU \n");
+      if (itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL) < 0) {
+        LOG_E(F1AP, "Create task for F1AP CU failed\n");
         return -1;
       }
+    }
 
-      if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-        printf("####### node is CU \n");
-        if (itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL) < 0) {
-          LOG_E(F1AP, "Create task for F1AP CU failed\n");
-          return -1;
-        }
-      }
-    } else {
+    if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
       printf("####### node is DU \n");
       if (itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL) < 0) {
         LOG_E(F1AP, "Create task for F1AP DU failed\n");

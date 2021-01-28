@@ -301,9 +301,9 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   // TODO : Add support for more than one PLMN
   //int num_plmn = configuration->num_plmn;
   int num_plmn = 1;
-  struct NR_PLMN_Identity nr_plmn[num_plmn];
-  NR_MCC_MNC_Digit_t nr_mcc_digit[num_plmn][3];
-  NR_MCC_MNC_Digit_t nr_mnc_digit[num_plmn][3];
+  struct NR_PLMN_Identity *nr_plmn = CALLOC(1, sizeof(struct NR_PLMN_Identity) * num_plmn);
+  NR_MCC_MNC_Digit_t (*nr_mcc_digit)[3] = (NR_MCC_MNC_Digit_t(*)[3])CALLOC(1, sizeof(NR_MCC_MNC_Digit_t)*num_plmn*3);
+  NR_MCC_MNC_Digit_t (*nr_mnc_digit)[3] = (NR_MCC_MNC_Digit_t(*)[3])CALLOC(1, sizeof(NR_MCC_MNC_Digit_t)*num_plmn*3);;
   memset(nr_plmn,0,sizeof(nr_plmn));
   memset(nr_mcc_digit,0,sizeof(nr_mcc_digit));
   memset(nr_mnc_digit,0,sizeof(nr_mnc_digit));
@@ -336,9 +336,14 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     nr_mnc_digit[i][2] = (configuration->mnc[i])%10;
     nr_plmn[i].mnc.list.size=0;
     nr_plmn[i].mnc.list.count=0;
-    ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][0]);
-    ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][1]);
-    ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][2]);
+    if (nr_mnc_digit[i][0] == 0) {
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][1]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][2]);
+    } else {
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][0]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][1]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][2]);
+    }
     ASN_SEQUENCE_ADD(&nr_plmn_info->plmn_IdentityList.list, &nr_plmn[i]);
   }//end plmn loop
 
@@ -362,6 +367,8 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.bits_unused = 1;
   ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, &nr_uac_BarringInfoSet);
 #endif
+
+  xer_fprint(stdout, &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)sib1_message);
   //encode SIB1 to data
   carrier->SIB1=(uint8_t *) malloc16(128);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
