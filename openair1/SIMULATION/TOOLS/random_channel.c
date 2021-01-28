@@ -1961,7 +1961,7 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
   display_channelmodel(defined_channels[cd_id],debug,prnt);  
   free(param);   
   free(value);
-  random_channel(defined_channels[cd_id],false);                 
+  random_channel(defined_channels[cd_id],0);                 
   }
   return CMDSTATUS_FOUND;           
 }

@@ -472,7 +472,6 @@ uint16_t LUTSin[ResolSinCos+1];
 void InitSinLUT( void );
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 
-#include "targets/RT/USER/rfsim.h"
 
 void do_DL_sig(sim_t *sim,
                uint16_t subframe,

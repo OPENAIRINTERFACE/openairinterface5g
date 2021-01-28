@@ -2986,6 +2986,7 @@ add_executable(oairu
   ${CONFIG_SOURCES}
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${SHLIB_LOADER_SOURCES}
 )
 target_link_libraries (oairu
