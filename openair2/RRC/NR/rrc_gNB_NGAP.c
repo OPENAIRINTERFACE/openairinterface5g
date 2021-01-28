@@ -1392,3 +1392,13 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
 
   return 0;
 }
+
+void nr_rrc_rx_tx(void) {
+  // check timers
+
+  // check if UEs are lost, to remove them from upper layers
+
+  //
+
+}
+
