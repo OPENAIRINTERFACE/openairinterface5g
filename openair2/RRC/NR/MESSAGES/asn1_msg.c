@@ -324,7 +324,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
 
   // cellSelectionInfo
   sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
-  sib1->cellSelectionInfo->q_RxLevMin = -65;
+  sib1->cellSelectionInfo->q_RxLevMin = -50;
 
   // cellAccessRelatedInfo
   struct NR_PLMN_IdentityInfo *nr_plmn_info=CALLOC(1,sizeof(struct NR_PLMN_IdentityInfo));
@@ -373,7 +373,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   // TODO: add connEstFailureControl
 
   //si-SchedulingInfo
-  sib1->si_SchedulingInfo = CALLOC(1,sizeof(struct NR_SI_SchedulingInfo));
+  /*sib1->si_SchedulingInfo = CALLOC(1,sizeof(struct NR_SI_SchedulingInfo));
   asn_set_empty(&sib1->si_SchedulingInfo->schedulingInfoList.list);
   sib1->si_SchedulingInfo->si_WindowLength = NR_SI_SchedulingInfo__si_WindowLength_s40;
   struct NR_SchedulingInfo *schedulingInfo = CALLOC(1,sizeof(struct NR_SchedulingInfo));
@@ -401,7 +401,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   sib_type2->valueTag = CALLOC(1,sizeof(sib_type2->valueTag));
   ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type2);
 
-  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);
+  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);*/
 
   // servingCellConfigCommon
   sib1->servingCellConfigCommon = CALLOC(1,sizeof(struct NR_ServingCellConfigCommonSIB));
