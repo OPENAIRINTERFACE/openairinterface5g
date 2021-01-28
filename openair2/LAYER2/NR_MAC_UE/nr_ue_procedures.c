@@ -665,11 +665,15 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,BWPSize,dci->frequency_domain_assignment.val) < 0)
+    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,BWPSize,dci->frequency_domain_assignment.val) < 0) {
+      LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
+    }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0)
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0) {
+      LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
+    }
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
@@ -688,7 +692,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_0->mcs = dci->mcs;
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dlsch_config_pdu_1_0->mcs > 28) {
-      LOG_W(MAC, "MCS value % d out of bounds! Possibly due to false DCI. Ignoring DCI!!\n", dlsch_config_pdu_1_0->mcs);
+      LOG_W(MAC, "[%d.%d] MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_0->mcs);
       return -1;
     }
     /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -731,7 +735,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       }
     }
     if (!valid) {
-      LOG_W(MAC, "pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", dlsch_config_pdu_1_0->pucch_resource_id);
+      LOG_W(MAC, "[%d.%d] pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_0->pucch_resource_id);
       return -1;
     }
 
@@ -800,8 +804,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
      *    47 DMRS_SEQ_INI:
      */
 
-    if (dci->bwp_indicator.val == 0)
+    if (dci->bwp_indicator.val == 0) {
+      LOG_W(MAC, "[%d.%d] bwp_indicator == 0! Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
+    }
     config_bwp_ue(mac, &dci->bwp_indicator.val, &dci_format);
     NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
     NR_PDSCH_Config_t *pdsch_config=mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
@@ -814,11 +820,15 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* BANDWIDTH_PART_IND */
     //    dlsch_config_pdu_1_1->bandwidth_part_ind = dci->bandwidth_part_ind;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val) < 0)
+    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val) < 0) {
+      LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
+    }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val) < 0)
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val) < 0) {
+      LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
+    }
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
@@ -840,7 +850,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_1->mcs = dci->mcs;
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dlsch_config_pdu_1_1->mcs > 28) {
-      LOG_W(MAC, "MCS value % d out of bounds! Possibly due to false DCI. Ignoring DCI!!\n", dlsch_config_pdu_1_1->mcs);
+      LOG_W(MAC, "[%d.%d] MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_1->mcs);
       return -1;
     }
     /* NDI (for transport block 1)*/
@@ -851,7 +861,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_1->tb2_mcs = dci->mcs2.val;
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dlsch_config_pdu_1_1->tb2_mcs > 28) {
-      LOG_W(MAC, "MCS value % d out of bounds! Possibly due to false DCI. Ignoring DCI!!\n", dlsch_config_pdu_1_1->tb2_mcs);
+      LOG_W(MAC, "[%d.%d] MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_1->tb2_mcs);
       return -1;
     }
     /* NDI (for transport block 2)*/
@@ -880,7 +890,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       }
     }
     if (!valid) {
-      LOG_W(MAC, "pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", dlsch_config_pdu_1_1->pucch_resource_id);
+      LOG_W(MAC, "[%d.%d] pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_1->pucch_resource_id);
       return -1;
     }
 
