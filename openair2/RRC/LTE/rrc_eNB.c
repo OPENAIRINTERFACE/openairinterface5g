@@ -6711,22 +6711,10 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                                   );
           }
         } else {        // remove LCHAN from MAC/PHY
-          if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
-            // DRB has just been removed so remove RLC + PDCP for DRB
-            /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
-               (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
-             */
-            if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-              rrc_rlc_config_req(ctxt_pP,
-                                 SRB_FLAG_NO,
-                                 MBMS_FLAG_NO,
-                                 CONFIG_ACTION_REMOVE,
-                                 DRB2LCHAN[i],
-                                 Rlc_info_um);
-            }
+          if (DRB_configList->list.array[i]->logicalChannelIdentity) {
+            DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
           }
 
-          ue_context_pP->ue_context.DRB_active[drb_id] = 0;
           LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 

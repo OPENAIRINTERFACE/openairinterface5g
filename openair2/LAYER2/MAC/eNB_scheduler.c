@@ -596,13 +596,41 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
       if (((frameP & 127) == 0) && (subframeP == 0)) {
-        LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
+        double total_bler;
+        if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
+          total_bler = 0;
+        }
+        else {
+          total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
+        }
+        LOG_I(MAC,"UE %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf mcsoff %d bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
               UE_scheduling_control->dl_cqi[CC_id],
-              (5 * UE_scheduling_control->pusch_snr[CC_id] - 640) / 10,
-              (5 * UE_scheduling_control->pucch1_snr[CC_id] - 640) / 10);
+              UE_scheduling_control->pusch_snr_avg[CC_id],
+              UE_scheduling_control->pucch1_snr[CC_id],
+              UE_scheduling_control->rlc_out_of_resources_cnt,
+              UE_scheduling_control->pusch_rx_num[CC_id],
+              UE_scheduling_control->pusch_rx_error_num[CC_id],
+              total_bler,
+              UE_scheduling_control->mcs_offset[CC_id],
+              UE_info->UE_template[CC_id][UE_id].estimated_ul_buffer,
+              UE_info->UE_template[CC_id][UE_id].scheduled_ul_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
+#if defined(PRE_SCD_THREAD)
+              UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
+#else
+              0,
+#endif
+              UE_scheduling_control->first_cnt[CC_id],
+              UE_scheduling_control->ret_cnt[CC_id],
+              UE_scheduling_control->aperiodic_ri_received[CC_id]
+        );
       }
 
       RC.eNB[module_idP][CC_id]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = -63;
