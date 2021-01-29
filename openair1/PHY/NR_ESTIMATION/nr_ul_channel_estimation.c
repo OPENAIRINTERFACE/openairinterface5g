@@ -30,6 +30,9 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
+#include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+
+
 //#define DEBUG_CH
 //#define DEBUG_PUSCH
 
@@ -119,15 +122,36 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
      break;
    }
 
-
   //------------------generate DMRS------------------//
 
-  if (pusch_pdu->transform_precoding==1) // if transform precoding is disabled
+  if (pusch_pdu->transform_precoding == transform_precoder_disabled) 
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
-  else
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, 0, pusch_pdu->dmrs_config_type);
+  
+  else {  // if transform precoding or SC-FDMA is enabled in Uplink
 
+    // NR_SC_FDMA supports type1 DMRS so only 6 DMRS REs per RB possible
+    uint16_t index = get_index_for_dmrs_lowpapr_seq(nb_rb_pusch * (NR_NB_SC_PER_RB/2));
+    uint8_t u = pusch_pdu->dfts_ofdm.low_papr_group_number; 
+    uint8_t v = pusch_pdu->dfts_ofdm.low_papr_sequence_number;
+    int16_t *dmrs_seq = gNB_dmrs_lowpaprtype1_sequence[u][v][index];
+
+    AssertFatal(index >= 0, "Num RBs not configured according to 3GPP 38.211 section 6.3.1.4. For PUSCH with transform precoding, num RBs cannot be multiple of any other primenumber other than 2,3,5\n");
+    AssertFatal(dmrs_seq != NULL, "DMRS low PAPR seq not found, check if DMRS sequences are generated");
+
+    LOG_D(PHY,"Transform Precoding params. u: %d, v: %d, index for dmrsseq: %d\n", u, v, index);
+    
+    nr_pusch_lowpaprtype1_dmrs_rx(gNB, Ns, dmrs_seq, &pilot[0], 1000, 0, nb_rb_pusch, 0, pusch_pdu->dmrs_config_type);    
+
+    #ifdef DEBUG_PUSCH
+      printf ("NR_UL_CHANNEL_EST: index %d, u %d,v %d\n", index, u, v);
+      LOG_M("gNb_DMRS_SEQ.m","gNb_DMRS_SEQ", dmrs_seq,6*nb_rb_pusch,1,1);
+    #endif
+
+  }
   //------------------------------------------------//
+
+
+
 #ifdef DEBUG_PUSCH
   for (int i=0;i<(6*nb_rb_pusch);i++)
     printf("%d+j*(%d)\n",((int16_t*)pilot)[2*i],((int16_t*)pilot)[1+(2*i)]);
