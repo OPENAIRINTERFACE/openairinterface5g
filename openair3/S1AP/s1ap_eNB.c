@@ -127,6 +127,7 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
     memcpy(&s1ap_mme_data_p->mme_s1_ip,
     	   mme_ip_address,
     	   sizeof(*mme_ip_address));
+    s1ap_mme_data_p->mme_port = mme_port;
     for (int i = 0; i < broadcast_plmn_num; ++i)
       s1ap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
 

@@ -3491,22 +3491,22 @@ int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
     S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_num[n] = mme->broadcast_plmn_num;
     for (int i = 0; i < mme->broadcast_plmn_num; ++i)
       S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_index[n][i] = mme->broadcast_plmn_index[i];
+    S1AP_REGISTER_ENB_REQ(m).mme_port[n] = mme->mme_port;
     S1AP_REGISTER_ENB_REQ(m).nb_mme += 1;
   }
 
   if (S1AP_REGISTER_ENB_REQ(m).nb_mme + n_mme > S1AP_MAX_NB_MME_IP_ADDRESS)
     return -1;
 
-  for (int i = 0; i < n_mme; ++i) {
-    const int n = S1AP_REGISTER_ENB_REQ(m).nb_mme;
-    strcpy(S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4_address, mme_ipv4[0]);
-    S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4 = 1;
-    S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv6 = 0;
-    S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_num[n] = S1AP_REGISTER_ENB_REQ(m).num_plmn;
-    for (int i = 0; i < S1AP_REGISTER_ENB_REQ(m).num_plmn; ++i)
-      S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_index[n][i] = i;
-    S1AP_REGISTER_ENB_REQ(m).nb_mme += 1;
-  }
+  const int n = S1AP_REGISTER_ENB_REQ(m).nb_mme;
+  strcpy(S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4_address, mme_ipv4[0]);
+  S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4 = 1;
+  S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv6 = 0;
+  S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_num[n] = S1AP_REGISTER_ENB_REQ(m).num_plmn;
+  for (int i = 0; i < S1AP_REGISTER_ENB_REQ(m).num_plmn; ++i)
+    S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_index[n][i] = i;
+  S1AP_REGISTER_ENB_REQ(m).mme_port[n] = S1AP_PORT_NUMBER;
+  S1AP_REGISTER_ENB_REQ(m).nb_mme += 1;
 
   itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(mod_id), m);
 
