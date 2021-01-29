@@ -2134,7 +2134,6 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 }
 
 // todo:
-// - set tx_total_RE
 // - power control as per 38.213 ch 7.4
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
 
@@ -2146,30 +2145,22 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
-  if (!prach_resources->init_msg1 && ((MAX_FRAME_NUMBER+frame_tx-ue->prach_resources[gNB_id]->sync_frame)% MAX_FRAME_NUMBER)>150){
-    ue->prach_cnt = 0;
-    prach_resources->init_msg1 = 1;
-  }
-
   if (ue->mac_enabled == 0){
-    //    prach_resources->ra_PreambleIndex = preamble_tx;
+
     prach_resources->ra_TDD_map_index = 0;
     prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
     prach_resources->ra_RNTI = 0x1234;
     nr_prach = 1;
+    prach_resources->init_msg1 = 1;
+
   } else {
-    LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_slot_tx);
-    // flush Msg3 Buffer
-    if (prach_resources->Msg3 == NULL){
-      for(int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-        ue->ulsch_Msg3_active[i] = 0;
-      }
-    }
+
+    LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
     nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
+
   }
 
-  if (nr_prach == 1 && prach_resources->init_msg1) {
+  if (nr_prach == 1) {
 
     if (ue->mac_enabled == 1) {
       int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
@@ -2187,7 +2178,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
         prach_resources->ra_RNTI);
     }
 
-    //ue->tx_total_RE[nr_slot_tx] = 96; // todo
     ue->prach_vars[gNB_id]->amp = AMP;
 
     /* #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
@@ -2204,28 +2194,22 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
 
-    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generated PRACH Msg1 (TX power PRACH %d dBm, digital power %d dBW (amp %d) prach_cnt %d)\n",
+    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generated PRACH Msg1 (TX power PRACH %d dBm, digital power %d dBW (amp %d)\n",
       __FUNCTION__,
       mod_id,
       frame_tx,
       nr_slot_tx,
       ue->tx_power_dBm[nr_slot_tx],
       dB_fixed(prach_power),
-      ue->prach_vars[gNB_id]->amp,
-      ue->prach_cnt);
+      ue->prach_vars[gNB_id]->amp);
 
     if (ue->mac_enabled == 1)
       nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
-    ue->prach_cnt++;
-
-    if (ue->prach_cnt == 3)
-      ue->prach_cnt = 0;
   } else if (nr_prach == 2) {
 
     LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
 
-    ue->ulsch_Msg3_active[gNB_id] = 0;
     ue->UE_mode[gNB_id] = PUSCH;
 
   } else if(nr_prach == 3){

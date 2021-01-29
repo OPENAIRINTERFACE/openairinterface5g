@@ -130,7 +130,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   // Scrambling RNTI
   if (coreset->pdcch_DMRS_ScramblingID) {
     rel15->coreset.pdcch_dmrs_scrambling_id = *coreset->pdcch_DMRS_ScramblingID;
-    rel15->coreset.scrambling_rnti = ra->t_crnti;
+    rel15->coreset.scrambling_rnti = mac->crnti;
   } else {
     rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
     rel15->coreset.scrambling_rnti = 0;
@@ -269,7 +269,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
               fill_dci_search_candidates(ss, rel15);
               break;
               case WAIT_CONTENTION_RESOLUTION:
-              rel15->rnti = ra->t_crnti;
+              LOG_E(MAC, "In %s: CB-RA not implemented yet. Should not have fallen in this case.\n", __FUNCTION__);
               break;
               default:
               break;

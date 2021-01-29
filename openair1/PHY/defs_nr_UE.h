@@ -859,8 +859,6 @@ typedef struct {
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_gNB_MAX];
 
-  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_gNB_MAX];
-
   NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   /// \brief ?.
@@ -896,9 +894,6 @@ typedef struct {
   int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_gNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_gNB_MAX];
-  uint8_t               prach_cnt;
-  uint8_t               prach_PreambleIndex;
-  //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
   uint8_t               init_sync_frame;

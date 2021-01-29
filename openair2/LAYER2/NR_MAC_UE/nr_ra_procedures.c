@@ -64,9 +64,10 @@ void init_RA(module_id_t mod_id,
   RA_config_t *ra          = &mac->ra;
   ra->RA_active            = 1;
   ra->RA_RAPID_found       = 0;
-  ra->preambleTransMax     = -1;
-  ra->first_Msg3           = 0;
+  ra->preambleTransMax     = 0;
+  ra->first_Msg3           = 1;
   ra->starting_preamble_nb = 0;
+  ra->RA_backoff_cnt       = 0;
 
   prach_resources->RA_PREAMBLE_BACKOFF = 0;
   prach_resources->RA_PCMAX = nr_get_Pcmax(mod_id);
@@ -515,6 +516,15 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   int TBS_bytes = 848, header_length_total=0, num_sdus, offset, mac_ce_len;
 
+  // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
+  if (!prach_resources->init_msg1) {
+    if (((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150){
+      prach_resources->init_msg1 = 1;
+    } else {
+      return 0;
+    }
+  }
+
   if (prach_resources->init_msg1) {
 
     if (ra->RA_active == 0) {
@@ -556,8 +566,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
-        ra->first_Msg3 = 1;
-        ra->RA_backoff_cnt = 0;
         ra->Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
 
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
