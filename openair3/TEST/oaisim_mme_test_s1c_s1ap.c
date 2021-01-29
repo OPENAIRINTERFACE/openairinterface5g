@@ -260,13 +260,13 @@ void *s1ap_eNB_task(void *arg)
          * Each eNB has to send an S1AP_REGISTER_ENB message with its
          * own parameters.
          */
-        s1ap_eNB_handle_register_eNB(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        s1ap_eNB_handle_register_eNB(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &S1AP_REGISTER_ENB_REQ(received_msg));
       }
       break;
 
       case SCTP_NEW_ASSOCIATION_RESP: {
-        s1ap_eNB_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        s1ap_eNB_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                               &received_msg->ittiMsg.sctp_new_association_resp);
       }
       break;

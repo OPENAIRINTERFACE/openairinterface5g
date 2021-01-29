@@ -74,7 +74,7 @@ int MCE_handle_MBMS_SESSION_START_REQUEST(instance_t instance,
 //
 //  container = &pdu->choice.initiatingMessage.value.choice.SessionStartRequest;
 
-    message_p = itti_alloc_new_message(TASK_M3AP_MCE, M3AP_MBMS_SESSION_START_REQ);
+    message_p = itti_alloc_new_message(TASK_M3AP_MCE, 0, M3AP_MBMS_SESSION_START_REQ);
 
 //
 //  /* M3 Setup Request == Non UE-related procedure -> stream 0 */
@@ -248,7 +248,7 @@ int MCE_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance,
 	//MCE_send_MBMS_SESSION_STOP_RESPONSE(instance,assoc_id);
   //}else
 	//MCE_send_MBMS_SESSION_STOP_FAILURE(instance,assoc_id);
-    message_p = itti_alloc_new_message(TASK_M3AP_MCE, M3AP_MBMS_SESSION_STOP_REQ);
+    message_p = itti_alloc_new_message(TASK_M3AP_MCE, 0, M3AP_MBMS_SESSION_STOP_REQ);
 
 //
 //  /* M3 Setup Request == Non UE-related procedure -> stream 0 */
@@ -361,7 +361,7 @@ int MCE_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance,
 	//MCE_send_MBMS_SESSION_STOP_RESPONSE(instance,assoc_id);
   //}else
 	//MCE_send_MBMS_SESSION_STOP_FAILURE(instance,assoc_id);
-    message_p = itti_alloc_new_message(TASK_M3AP_MCE, M3AP_MBMS_SESSION_UPDATE_REQ);
+    message_p = itti_alloc_new_message(TASK_M3AP_MCE, 0, M3AP_MBMS_SESSION_UPDATE_REQ);
 
 //
 //  /* M3 Setup Request == Non UE-related procedure -> stream 0 */
@@ -711,7 +711,7 @@ int MCE_handle_M3_SETUP_RESPONSE(instance_t instance,
    //int num_cells_to_activate = 0;
    //M3AP_Cells_to_be_Activated_List_Item_t *cell;
 
-   MessageDef *msg_p = itti_alloc_new_message (TASK_M3AP_MCE, M3AP_SETUP_RESP);
+   MessageDef *msg_p = itti_alloc_new_message (TASK_M3AP_MCE, 0, M3AP_SETUP_RESP);
 
   // LOG_D(M3AP, "M3AP: M3Setup-Resp: protocolIEs.list.count %d\n",
   //       in->protocolIEs.list.count);

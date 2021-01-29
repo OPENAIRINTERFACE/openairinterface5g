@@ -1596,7 +1596,7 @@ void *UE_thread(void *arg)
   wait_sync("UE thread");
 #ifdef NAS_UE
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, INITIALIZE_MESSAGE);
   itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
   int sub_frame=-1;
@@ -1976,7 +1976,7 @@ void init_UE_single_thread_stub(int nb_inst)
     if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
 #ifdef NAS_UE
       MessageDef *message_p;
-      message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+      message_p = itti_alloc_new_message(TASK_NAS_UE, 0, INITIALIZE_MESSAGE);
       itti_send_msg_to_task (TASK_NAS_UE, i + NB_eNB_INST, message_p);
 #endif
     }

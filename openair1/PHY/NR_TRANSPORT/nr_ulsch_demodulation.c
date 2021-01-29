@@ -12,7 +12,7 @@
 //#define DEBUG_RB_EXT
 //#define DEBUG_CH_MAG
 
-void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
+void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -38,7 +38,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
   }
 
   for (i=0,ip=0; i<Msc_PUSCH; i++, ip+=4) {
-    ((uint32_t*)idft_in0)[ip+0] = z[i];
+    ((int32_t*)idft_in0)[ip+0] = z[i];
   }
 
 
@@ -203,7 +203,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 
 
   for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = ((uint32_t*)idft_out0)[ip];
+    z[i] = ((int32_t*)idft_out0)[ip];
   }
 
   // conjugate output
@@ -1118,6 +1118,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     }
     LOG_D(PHY,"dmrs_symbol: nb_re_pusch %d\n",nb_re_pusch);
     gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
+
   } else {
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
   }
@@ -1219,9 +1220,21 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 			   symbol,
 			   rel15_ul->rb_size);
     stop_meas(&gNB->ulsch_mrc_stats);
-#ifdef NR_SC_FDMA
-    nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
-#endif
+
+
+    if (rel15_ul->transform_precoding == transform_precoder_enabled) { 
+      
+      #ifdef __AVX2__
+        // For odd number of resource blocks need byte alignment to multiple of 8
+        int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
+      #else
+        int nb_re_pusch2 = nb_re_pusch;
+      #endif      
+      
+      // perform IDFT operation on the compensated rxdata if transform precoding is enabled
+      nr_idft(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][symbol * nb_re_pusch2], nb_re_pusch);
+      LOG_D(PHY,"Transform precoding being done on data- symbol: %d, nb_re_pusch: %d\n", symbol, nb_re_pusch);      
+    }
 
 
     //----------------------------------------------------------
@@ -1245,32 +1258,33 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       /*  Subtract total PTRS RE's in the symbol from PUSCH RE's */
       gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] -= gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
     }
-
-    /*---------------------------------------------------------------------------------------------------- */
-    /*--------------------  LLRs computation  -------------------------------------------------------------*/
-    /*-----------------------------------------------------------------------------------------------------*/
-    if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1))
-    {
-#ifdef __AVX2__
-      int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
-#else
-      int off = 0;
-#endif
-      uint32_t rxdataF_ext_offset = 0;
-      for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++) {
-        start_meas(&gNB->ulsch_llr_stats);
-        nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][i * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                             gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
-                             gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
-                             &gNB->pusch_vars[ulsch_id]->llr[rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                             rel15_ul->rb_size,
-                             gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i],
-                             i,
-                             rel15_ul->qam_mod_order);
-        stop_meas(&gNB->ulsch_llr_stats);
-        rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i];
-      }// symbol loop
-    }// last symbol check
   }
+
+  /*---------------------------------------------------------------------------------------------------- */
+  /*--------------------  LLRs computation  -------------------------------------------------------------*/
+  /*-----------------------------------------------------------------------------------------------------*/
+  if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1)) {
+  
+#ifdef __AVX2__
+    int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
+#else
+    int off = 0;
+#endif
+    uint32_t rxdataF_ext_offset = 0;
+    for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++) {
+      start_meas(&gNB->ulsch_llr_stats);
+      nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][i * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                          gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                          gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
+                          &gNB->pusch_vars[ulsch_id]->llr[rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                          rel15_ul->rb_size,
+                          gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i],
+                          i,
+                          rel15_ul->qam_mod_order);
+      stop_meas(&gNB->ulsch_llr_stats);
+      rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i];
+    }// symbol loop
+  }// last symbol check
+  
   return (0);
 }

@@ -145,6 +145,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
   fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
+  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
 
   /* PRECOD_NBR_LAYERS */
   if ((pusch_config_dedicated->tx_config == tx_config_nonCodebook));
@@ -235,6 +236,42 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
       }
     }
+  }
+
+  /*-------------------- Changed to enable Transform precoding in RF SIM------------------------------------------------*/
+
+  if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
+
+    pusch_config_dedicated->transform_precoder = transform_precoder_enabled;
+
+    if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL) {
+
+      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
+
+      if (NR_DMRS_ulconfig->dmrs_Type == NULL)
+        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type = 1;
+      if (NR_DMRS_ulconfig->maxLength == NULL)
+        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length = 1;
+
+    } else if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL) {
+
+      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+
+      if (NR_DMRS_ulconfig->dmrs_Type == NULL)
+        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.dmrs_type = 1;
+      if (NR_DMRS_ulconfig->maxLength == NULL)
+        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.max_length = 1;
+
+    }
+  } else
+    pusch_config_dedicated->transform_precoder = transform_precoder_disabled;
+
+  // mapping type b configured from RRC. TBD: Mapping type b is not handled in this function.
+  if ((pusch_config_dedicated->transform_precoder == transform_precoder_enabled) &&
+      (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.dmrs_type == 1) &&
+      (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.max_length == 1)) { // tables 7.3.1.1.2-6
+    pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+    pusch_config_pdu->dmrs_ports = dci->antenna_ports.val;
   }
 }
 
@@ -563,6 +600,40 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       return -1;
 
     }
+
+    /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
+
+    if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
+
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+
+      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;
+      if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+        NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
+      else
+        NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+
+      uint32_t n_RS_Id = 0;
+      if (NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+        n_RS_Id = *NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity;
+      else
+        n_RS_Id = *mac->scc->physCellId;
+
+      // U as specified in section 6.4.1.1.1.2 in 38.211, if sequence hopping and group hopping are disabled
+      pusch_config_pdu->dfts_ofdm.low_papr_group_number = n_RS_Id % 30;
+
+      // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
+      if ((NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
+            (NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceHopping == NULL))
+          pusch_config_pdu->dfts_ofdm.low_papr_sequence_number = 0;
+      else
+        AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
+
+      LOG_D(MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d \n", pusch_config_pdu->num_dmrs_cdm_grps_no_data,
+                pusch_config_pdu->dfts_ofdm.low_papr_group_number);
+    }
+
+    /* TRANSFORM PRECODING --------------------------------------------------------------------------------------------------------*/
 
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
