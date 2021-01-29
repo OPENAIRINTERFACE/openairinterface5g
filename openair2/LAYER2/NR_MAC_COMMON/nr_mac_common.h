@@ -174,7 +174,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 
 int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slotP, lte_frame_type_t frame_type);
 
 uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
                      NR_CellGroupConfig_t *secondaryCellGroup,

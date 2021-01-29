@@ -2808,11 +2808,15 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
   else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type_t frame_type) {
 
   int period,period1,period2=0;
 
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+  // Note: condition on frame_type
+  // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
+  if (scc->tdd_UL_DL_ConfigurationCommon == NULL || frame_type == FDD) {
+    return(1);
+  }
 
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
       scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)

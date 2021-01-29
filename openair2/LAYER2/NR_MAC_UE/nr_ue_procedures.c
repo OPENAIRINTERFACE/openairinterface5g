@@ -1054,8 +1054,9 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
  * from MAC instance .
  */
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot) {
+
   //Check if request to access ul_config is for a UL slot
-  if (is_nr_UL_slot(mac->scc, slot) == 0) {
+  if (is_nr_UL_slot(mac->scc, slot, mac->phy_config.config_req.cell_config.frame_duplex_type) == 0) {
     LOG_W(MAC, "Slot %d is not a UL slot. get_ul_config_request() called for wrong slot!!!\n", slot);
     return NULL;
   }
@@ -1509,7 +1510,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   mac->RA_offset = 2; // to compensate the rx frame offset at the gNB
   mac->generate_nr_prach = 0; // Reset flag for PRACH generation
 
-  if (is_nr_UL_slot(scc, slotP)) {
+  if (is_nr_UL_slot(scc, slotP, mac->phy_config.config_req.cell_config.frame_duplex_type)) {
 
     uint8_t selected_gnb_ssb_idx = mac->mib_ssb;
 
