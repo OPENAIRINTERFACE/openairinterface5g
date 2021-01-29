@@ -116,7 +116,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
 
   // create an ITTI message and copy SDU
-  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
+  message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_MAC_CCCH_DATA_IND);
   memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
   ccch_sdu_len = ie->value.choice.RRCContainer.size;
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
@@ -197,7 +197,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
   ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_inst[instance], f1ap_dl_rrc->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  LOG_I(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %d)\n",
+  LOG_I(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %ld)\n",
         (unsigned long long int)ie->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
 
 
@@ -350,7 +350,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   // create an ITTI message and copy SDU
   /*
   
-  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_DCCH_DATA_IND);
+  message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_DCCH_DATA_IND);
 
   RRC_DCCH_DATA_IND (message_p).sdu_p = malloc(ie->value.choice.RRCContainer.size);
 

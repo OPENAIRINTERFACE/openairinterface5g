@@ -193,7 +193,7 @@ static void *eNB_app_task(void *args_p)
     itti_receive_msg (TASK_ENB_APP, &msg_p);
 
     msg_name = ITTI_MSG_NAME (msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -309,7 +309,7 @@ int main( int argc, char **argv )
   /* Read eNB configuration file */
   enb_properties = enb_config_init(conf_config_file_name);
 
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX,  tasks_info);
 
   itti_wait_ready(1);
 
