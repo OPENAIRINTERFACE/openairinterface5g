@@ -191,7 +191,7 @@ void ngap_handle_ng_setup_message(ngap_gNB_amf_data_t *amf_desc_p, int sctp_shut
       /* If there are no more associated AMF, inform gNB app */
       if (amf_desc_p->ngap_gNB_instance->ngap_amf_associated_nb == 0) {
         MessageDef                 *message_p;
-        message_p = itti_alloc_new_message(TASK_NGAP, NGAP_DEREGISTERED_GNB_IND);
+        message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_DEREGISTERED_GNB_IND);
         NGAP_DEREGISTERED_GNB_IND(message_p).nb_amf = 0;
         itti_send_msg_to_task(TASK_GNB_APP, amf_desc_p->ngap_gNB_instance->instance, message_p);
       }
@@ -209,7 +209,7 @@ void ngap_handle_ng_setup_message(ngap_gNB_amf_data_t *amf_desc_p, int sctp_shut
     /* If there are no more pending messages, inform gNB app */
     if (amf_desc_p->ngap_gNB_instance->ngap_amf_pending_nb == 0) {
       MessageDef                 *message_p;
-      message_p = itti_alloc_new_message(TASK_NGAP, NGAP_REGISTER_GNB_CNF);
+      message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_REGISTER_GNB_CNF);
       NGAP_REGISTER_GNB_CNF(message_p).nb_amf = amf_desc_p->ngap_gNB_instance->ngap_amf_associated_nb;
       itti_send_msg_to_task(TASK_GNB_APP, amf_desc_p->ngap_gNB_instance->instance, message_p);
     }
@@ -891,7 +891,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   ue_desc_p->rx_stream = stream;
   ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
   
-  message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_INITIAL_CONTEXT_SETUP_REQ);
+  message_p        = itti_alloc_new_message(TASK_NGAP, 0, NGAP_INITIAL_CONTEXT_SETUP_REQ);
   NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
   NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
@@ -1203,7 +1203,7 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
             NULL,0,
             "0 NGAP_UE_CONTEXT_RELEASE_COMMAND/%d gNB_ue_ngap_id "NGAP_UE_ID_FMT" ",
             gnb_ue_ngap_id);
-          message_p    = itti_alloc_new_message(TASK_NGAP, NGAP_UE_CONTEXT_RELEASE_COMMAND);
+          message_p    = itti_alloc_new_message(TASK_NGAP, 0, NGAP_UE_CONTEXT_RELEASE_COMMAND);
 
           if (ue_desc_p->amf_ue_ngap_id == 0) { // case of Detach Request and switch off from RRC_IDLE mode
             ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
@@ -1302,7 +1302,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
               (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
   }
 
-  message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_SETUP_REQ);
+  message_p        = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_SETUP_REQ);
   NGAP_PDUSESSION_SETUP_REQ(message_p).ue_initial_id   = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
   NGAP_PDUSESSION_SETUP_REQ(message_p).gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
@@ -1474,7 +1474,7 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
     return -1;
   }
 
-  message_p = itti_alloc_new_message(TASK_NGAP, NGAP_PAGING_IND);
+  message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PAGING_IND);
   /* convert NGAP_PagingIEs_t to ngap_paging_ind_t */
   /* id-UEIdentityIndexValue : convert UE Identity Index value */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
@@ -1608,7 +1608,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
     NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%ld != %ld)",
               (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
-    message_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_PDUSESSION_MODIFY_RESP);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_PDUSESSION_MODIFY_RESP);
     NGAP_PDUSESSION_MODIFY_RESP (message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_PDUSessionResourceModifyListModReq, true);
@@ -1634,7 +1634,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
     return -1;
   }
 
-  message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_MODIFY_REQ);
+  message_p        = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_MODIFY_REQ);
   NGAP_PDUSESSION_MODIFY_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   NGAP_PDUSESSION_MODIFY_REQ(message_p).amf_ue_ngap_id  = amf_ue_ngap_id;
   NGAP_PDUSESSION_MODIFY_REQ(message_p).gNB_ue_ngap_id  = gnb_ue_ngap_id;
@@ -1814,7 +1814,7 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
 
   NGAP_DEBUG("[SCTP %d] Received E-RAB release command for gNB_UE_NGAP_ID %lu amf_ue_ngap_id %lu\n",
              assoc_id, gnb_ue_ngap_id, amf_ue_ngap_id);
-  message_p = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_RELEASE_COMMAND);
+  message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_RELEASE_COMMAND);
   NGAP_PDUSESSION_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
   NGAP_PDUSESSION_RELEASE_COMMAND(message_p).amf_ue_ngap_id = amf_ue_ngap_id;
   /* id-NAS-PDU */
