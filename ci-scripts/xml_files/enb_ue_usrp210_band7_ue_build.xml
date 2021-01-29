@@ -32,7 +32,7 @@
 	<testCase id="090101">
 		<class>Build_OAI_UE</class>
 		<desc>Build OAI UE</desc>
-		<Build_OAI_UE_args>-w USRP --UE</Build_OAI_UE_args>
+		<Build_OAI_UE_args>-w USRP --UE --ninja</Build_OAI_UE_args>
 	</testCase>
 
 </testCaseList>

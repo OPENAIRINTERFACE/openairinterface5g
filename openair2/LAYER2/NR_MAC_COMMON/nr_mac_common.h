@@ -32,9 +32,24 @@
 #ifndef __LAYER2_NR_MAC_COMMON_H__
 #define __LAYER2_NR_MAC_COMMON_H__
 
+#include "NR_MIB.h"
 #include "NR_PDSCH-Config.h"
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
+#include "openair1/PHY/impl_defs_nr.h"
+
+#define TABLE_38213_13_1_NUM_INDEXES 15
+#define TABLE_38213_13_2_NUM_INDEXES 14
+#define TABLE_38213_13_3_NUM_INDEXES 9
+#define TABLE_38213_13_4_NUM_INDEXES 16
+#define TABLE_38213_13_5_NUM_INDEXES 9
+#define TABLE_38213_13_6_NUM_INDEXES 10
+#define TABLE_38213_13_7_NUM_INDEXES 12
+#define TABLE_38213_13_8_NUM_INDEXES 8
+#define TABLE_38213_13_9_NUM_INDEXES 4
+#define TABLE_38213_13_10_NUM_INDEXES 8
+#define TABLE_38213_13_11_NUM_INDEXES 16
+#define TABLE_38213_13_12_NUM_INDEXES 14
 
 
 // ===============================================
@@ -43,6 +58,11 @@
 #define MAX_SSB_PER_RO (16) // Maximum number of SSBs that can be mapped to a single RO
 #define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
 #define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
+
+typedef enum frequency_range_e {
+  FR1 = 0,
+  FR2
+} frequency_range_t;
 
 // PRACH occasion details
 typedef struct prach_occasion_info {
@@ -94,6 +114,52 @@ typedef enum {
   NR_RNTI_MCS_C,
 } nr_rnti_type_t;
 
+typedef enum subcarrier_spacing_e {
+  scs_15kHz  = 0x1,
+  scs_30kHz  = 0x2,
+  scs_60kHz  = 0x4,
+  scs_120kHz = 0x8,
+  scs_240kHz = 0x16
+} subcarrier_spacing_t;
+
+typedef enum channel_bandwidth_e {
+  bw_5MHz   = 0x1,
+  bw_10MHz  = 0x2,
+  bw_20MHz  = 0x4,
+  bw_40MHz  = 0x8,
+  bw_80MHz  = 0x16,
+  bw_100MHz = 0x32
+} channel_bandwidth_t;
+
+typedef enum nr_ssb_and_cset_mux_pattern_type_e {
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+} nr_ssb_and_cset_mux_pattern_type_t;
+
+typedef enum {
+  SFN_C_MOD_2_EQ_0,
+  SFN_C_MOD_2_EQ_1,
+  SFN_C_IMPOSSIBLE
+} SFN_C_TYPE;
+
+typedef struct Type0_PDCCH_CSS_config_s {
+  int32_t num_rbs;
+  int32_t num_symbols;
+  int32_t rb_offset; // Offset from SSB RB0
+  uint32_t type0_pdcch_ss_mux_pattern;
+  uint16_t frame;
+  SFN_C_TYPE sfn_c;
+  uint32_t n_c;
+  uint32_t n_0;
+  uint32_t number_of_search_space_per_slot;
+  uint32_t first_symbol_index;
+  uint32_t search_space_duration;
+  uint32_t ssb_length;
+  uint32_t ssb_index;
+  uint32_t cset_start_rb;
+} NR_Type0_PDCCH_CSS_config_t;
+
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
 void get_frame_type(uint16_t nr_bandP, uint8_t scs_index, lte_frame_type_t *current_type);
@@ -117,6 +183,10 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
 		     nr_rnti_type_t rnti_type,
 		     uint16_t N_RB,
                      int bwp_id);
+
+void find_aggregation_candidates(uint8_t *aggregation_level,
+                                 uint8_t *nr_of_candidates,
+                                 NR_SearchSpace_t *ss);
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
@@ -159,11 +229,12 @@ uint8_t get_pusch_mcs_table(long *mcs_Table,
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired);
+                            uint8_t unpaired,
+			    frequency_range_t);
 
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
 
-int get_format0(uint8_t index, uint8_t unpaired);
+int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
 int64_t *get_prach_config_info(uint32_t pointa,
                                uint8_t index,
@@ -178,5 +249,21 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
+int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                          NR_MIB_t *mib,
+                                          uint8_t extra_bits,
+                                          uint32_t ssb_length,
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a);
+
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
+
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
+                        uint8_t *nERatio,uint8_t *reOffset,
+                        uint8_t NrOfSymbols);
+
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
 #endif

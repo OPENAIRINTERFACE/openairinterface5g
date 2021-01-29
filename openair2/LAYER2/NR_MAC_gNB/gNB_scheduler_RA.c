@@ -43,6 +43,7 @@
 
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
+extern uint16_t sl_ahead;
 
 uint8_t DELTA[4]= {2,3,4,6};
 
@@ -62,19 +63,19 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-	uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
+  uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   
-	uint8_t total_RApreambles = 64;
-	if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
+  uint8_t total_RApreambles = 64;
+  if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
     total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
   
-	float  num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
+  float  num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
   uint16_t start_symbol_index = 0;
   uint8_t mu,N_dur=0,N_t_slot=0,start_symbol = 0, temp_start_symbol = 0, N_RA_slot=0;
   uint16_t format,RA_sfn_index = -1;
-	uint8_t config_period = 1;
+  uint8_t config_period = 1;
   uint16_t prach_occasion_id = -1;
-	uint8_t num_active_ssb = cc->num_active_ssb;
+  uint8_t num_active_ssb = cc->num_active_ssb;
 
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
     mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
@@ -95,45 +96,51 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 			       &N_RA_slot,
 			       &config_period);
   uint8_t index = 0,slot_index = 0;
-	for (slot_index = 0;slot_index < N_RA_slot; slot_index++) {
+  for (slot_index = 0;slot_index < N_RA_slot; slot_index++) {
     if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
        if((mu == 1) || (mu == 3))
          slot_index = 1;  //For scs = 30khz and 120khz
     }
     for (int i=0; i< N_t_slot; i++) {
       temp_start_symbol = (start_symbol + i * N_dur + 14 * slot_index) % 14;
-		  if(symbol == temp_start_symbol) {
-			  start_symbol_index = i;
-		    break;
-		  }
-	  }
-	}
+      if(symbol == temp_start_symbol) {
+        start_symbol_index = i;
+        break;
+      }
+    }
+  }
   if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
     if((mu == 1) || (mu == 3))
       slot_index = 0;  //For scs = 30khz and 120khz
   }
-  
-//  prach_occasion_id = subframe_index * N_t_slot * N_RA_slot * fdm + N_RA_slot_index * N_t_slot * fdm + freq_index + fdm * start_symbol_index; 
- prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period)*cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + start_symbol_index * fdm + freq_index; 
-//one RO is shared by one or more SSB
- if(num_ssb_per_RO <= 1 )
-   index = (int) (prach_occasion_id / (int)(1/num_ssb_per_RO)) % num_active_ssb;
-//one SSB have more than one continuous RO
- else if ( num_ssb_per_RO > 1) {
-	 index = (prach_occasion_id * (int)num_ssb_per_RO)% num_active_ssb ;
-   for(int j = 0;j < num_ssb_per_RO;j++) {
-     if(preamble_index <  (((j+1) * total_RApreambles) / num_ssb_per_RO))
-      index = index + j;
-	  }		
-	}
 
-  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u total_RApreambles %u\n", frameP, slotP, prach_occasion_id, num_ssb_per_RO, num_active_ssb, index, fdm, start_symbol_index, freq_index, total_RApreambles);
+  //  prach_occasion_id = subframe_index * N_t_slot * N_RA_slot * fdm + N_RA_slot_index * N_t_slot * fdm + freq_index + fdm * start_symbol_index; 
+  prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period)*cc->total_prach_occasions_per_config_period) +
+                      (RA_sfn_index + slot_index) * N_t_slot * fdm + start_symbol_index * fdm + freq_index; 
+
+  //one RO is shared by one or more SSB
+  if(num_ssb_per_RO <= 1 )
+    index = (int) (prach_occasion_id / (int)(1/num_ssb_per_RO)) % num_active_ssb;
+  //one SSB have more than one continuous RO
+  else if ( num_ssb_per_RO > 1) {
+    index = (prach_occasion_id * (int)num_ssb_per_RO)% num_active_ssb ;
+    for(int j = 0;j < num_ssb_per_RO;j++) {
+      if(preamble_index <  (((j+1) * total_RApreambles) / num_ssb_per_RO))
+        index = index + j;
+    }
+  }
+
+  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u total_RApreambles %u\n", 
+        frameP, slotP, prach_occasion_id, num_ssb_per_RO, num_active_ssb, index, fdm, start_symbol_index, freq_index, total_RApreambles);
+
   return index;
 }
+
+
 //Compute Total active SSBs and RO available
 void find_SSB_and_RO_available(module_id_t module_idP) {
 
-	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &gNB->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
@@ -141,7 +148,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t mu,N_dur=0,N_t_slot=0,start_symbol=0,N_RA_slot = 0;
   uint16_t format,N_RA_sfn = 0,unused_RA_occasion,repetition = 0;
-	uint8_t num_active_ssb = 0;
+  uint8_t num_active_ssb = 0;
   uint8_t max_association_period = 1;
 
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
@@ -151,190 +158,190 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
 
   // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
   get_nr_prach_occasion_info_from_index(config_index,
-                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-                                    mu,
-                                    cc->frame_type,
-                                    &format,
-                                    &start_symbol,
-                                    &N_t_slot,
-                                    &N_dur,
-                                    &N_RA_slot,
-	                                 &N_RA_sfn,
-                                   &max_association_period);
+                                        scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                        mu,
+                                        cc->frame_type,
+                                        &format,
+                                        &start_symbol,
+                                        &N_t_slot,
+                                        &N_dur,
+                                        &N_RA_slot,
+                                        &N_RA_sfn,
+                                        &max_association_period);
 
   float num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
-	uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
+  uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   uint64_t L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
-	uint32_t total_RA_occasions = N_RA_sfn * N_t_slot * N_RA_slot * fdm;
+  uint32_t total_RA_occasions = N_RA_sfn * N_t_slot * N_RA_slot * fdm;
 
-	for(int i = 0;i < 64;i++) {
+  for(int i = 0;i < 64;i++) {
     if ((L_ssb >> (63-i)) & 0x01) { // only if the bit of L_ssb at current ssb index is 1
       cc->ssb_index[num_active_ssb] = i; 
-		  num_active_ssb++;
+      num_active_ssb++;
     }
-	}	
+  }
 
-	for(int i = 1; (1 << (i-1)) <= max_association_period;i++) {
+  for(int i = 1; (1 << (i-1)) <= max_association_period;i++) {
     if(total_RA_occasions >= (int) (num_active_ssb/num_ssb_per_RO)) {
-		  repetition = (uint16_t)((total_RA_occasions * num_ssb_per_RO )/num_active_ssb);
-		  break;
-		} 
-		else { 
-		  total_RA_occasions = total_RA_occasions * i;
-		  cc->max_association_period = i;
-		} 
-	}
+      repetition = (uint16_t)((total_RA_occasions * num_ssb_per_RO )/num_active_ssb);
+      break;
+    }
+    else {
+      total_RA_occasions = total_RA_occasions * i;
+      cc->max_association_period = i;
+    }
+  }
   if(cc->max_association_period == 0)
-			cc->max_association_period = 1;
+    cc->max_association_period = 1;
 
- unused_RA_occasion = total_RA_occasions - (int)((num_active_ssb * repetition)/num_ssb_per_RO);
- cc->total_prach_occasions = total_RA_occasions - unused_RA_occasion;
- cc->num_active_ssb = num_active_ssb;
+  unused_RA_occasion = total_RA_occasions - (int)((num_active_ssb * repetition)/num_ssb_per_RO);
+  cc->total_prach_occasions = total_RA_occasions - unused_RA_occasion;
+  cc->num_active_ssb = num_active_ssb;
 
-  LOG_I(MAC, "Total available RO %d, num of active SSB %d: unused RO = %d max_association_period %u N_RA_sfn %u \n", cc->total_prach_occasions, cc->num_active_ssb, unused_RA_occasion, max_association_period, N_RA_sfn);
-
+  LOG_I(MAC, "Total available RO %d, num of active SSB %d: unused RO = %d max_association_period %u N_RA_sfn %u \n",
+        cc->total_prach_occasions, cc->num_active_ssb, unused_RA_occasion, max_association_period, N_RA_sfn);
 }		
 		
-void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
-
+void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+{
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[0][slotP];
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   if (is_nr_UL_slot(scc,slotP)) {
-  uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
-  uint16_t RA_sfn_index = -1;
-	uint8_t config_period = 1;
-  uint16_t format;
-  int slot_index = 0;
-  uint16_t prach_occasion_id = -1;
+    uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+    uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
+    uint16_t RA_sfn_index = -1;
+    uint8_t config_period = 1;
+    uint16_t format;
+    int slot_index = 0;
+    uint16_t prach_occasion_id = -1;
 
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
-    mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
-  else
-    mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+      mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+    else
+      mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
-  uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
-  // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
-  if ( get_nr_prach_info_from_index(config_index,
-                                    (int)frameP,
-                                    (int)slotP,
-                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-                                    mu,
-                                    cc->frame_type,
-                                    &format,
-                                    &start_symbol,
-                                    &N_t_slot,
-                                    &N_dur,
-                                    &RA_sfn_index,
-                                    &N_RA_slot,
-																		&config_period) ) {
-    uint16_t format0 = format&0xff;      // first column of format from table
-    uint16_t format1 = (format>>8)&0xff; // second column of format from table
+    uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
+    // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
+    if ( get_nr_prach_info_from_index(config_index,
+                                      (int)frameP,
+                                      (int)slotP,
+                                      scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                      mu,
+                                      cc->frame_type,
+                                      &format,
+                                      &start_symbol,
+                                      &N_t_slot,
+                                      &N_dur,
+                                      &RA_sfn_index,
+                                      &N_RA_slot,
+                                      &config_period) ) {
 
-    if (N_RA_slot > 1) { //more than 1 PRACH slot in a subframe
-      if (slotP%2 == 1){
-	      slot_index = 1;
-      }	
-      else {
-	      slot_index = 0;
-			}	
-    }else if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
-       slot_index = 0;
-    }
+      uint16_t format0 = format&0xff;      // first column of format from table
+      uint16_t format1 = (format>>8)&0xff; // second column of format from table
 
+      if (N_RA_slot > 1) { //more than 1 PRACH slot in a subframe
+        if (slotP%2 == 1)
+          slot_index = 1;
+        else
+          slot_index = 0;
+      }else if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
+        slot_index = 0;
+      }
 
-    UL_tti_req->SFN = frameP;
-    UL_tti_req->Slot = slotP;
-    for (int fdm_index=0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
-    for (int td_index=0; td_index<N_t_slot; td_index++) {
+      UL_tti_req->SFN = frameP;
+      UL_tti_req->Slot = slotP;
+      for (int fdm_index=0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
+        for (int td_index=0; td_index<N_t_slot; td_index++) {
 
-      prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period) * cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + td_index * fdm + fdm_index;
-			if((prach_occasion_id < cc->total_prach_occasions) && (td_index == 0)){  
+          prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period) * cc->total_prach_occasions_per_config_period) +
+                              (RA_sfn_index + slot_index) * N_t_slot * fdm + td_index * fdm + fdm_index;
 
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
-      nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
-      memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
-      UL_tti_req->n_pdus+=1;
+          if((prach_occasion_id < cc->total_prach_occasions) && (td_index == 0)){
 
-      // filling the prach fapi structure
-      prach_pdu->phys_cell_id = *scc->physCellId;
-      prach_pdu->num_prach_ocas = N_t_slot;
-      prach_pdu->prach_start_symbol = start_symbol;
-      prach_pdu->num_ra = fdm_index;
-      prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
-                                  format0,
-                                  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
-      
-      LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
-	    frameP, slotP,
-	    prach_occasion_id, prach_pdu->num_ra,
-	    prach_pdu->prach_start_symbol,
-	    slot_index, RA_sfn_index);
-      // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
-      // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
-      if (format1!=0xff) {
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 11;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 12;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 13;
-            break;
-        default:
-          AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
+            UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
+            UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
+            nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
+            memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
+            UL_tti_req->n_pdus+=1;
+
+            // filling the prach fapi structure
+            prach_pdu->phys_cell_id = *scc->physCellId;
+            prach_pdu->num_prach_ocas = N_t_slot;
+            prach_pdu->prach_start_symbol = start_symbol;
+            prach_pdu->num_ra = fdm_index;
+            prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
+                                        format0,
+                                        scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
+
+            LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
+                  frameP, slotP,
+                  prach_occasion_id, prach_pdu->num_ra,
+                  prach_pdu->prach_start_symbol,
+                  slot_index, RA_sfn_index);
+            // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
+            // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
+            if (format1!=0xff) {
+              switch(format0) {
+                case 0xa1:
+                  prach_pdu->prach_format = 11;
+                  break;
+                case 0xa2:
+                  prach_pdu->prach_format = 12;
+                  break;
+                case 0xa3:
+                  prach_pdu->prach_format = 13;
+                  break;
+              default:
+                AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
+              }
+            }
+            else{
+              switch(format0) {
+                case 0:
+                  prach_pdu->prach_format = 0;
+                  break;
+                case 1:
+                  prach_pdu->prach_format = 1;
+                  break;
+                case 2:
+                  prach_pdu->prach_format = 2;
+                  break;
+                case 3:
+                  prach_pdu->prach_format = 3;
+                  break;
+                case 0xa1:
+                  prach_pdu->prach_format = 4;
+                  break;
+                case 0xa2:
+                  prach_pdu->prach_format = 5;
+                  break;
+                case 0xa3:
+                  prach_pdu->prach_format = 6;
+                  break;
+                case 0xb1:
+                  prach_pdu->prach_format = 7;
+                  break;
+                case 0xb4:
+                  prach_pdu->prach_format = 8;
+                  break;
+                case 0xc0:
+                  prach_pdu->prach_format = 9;
+                  break;
+                case 0xc2:
+                  prach_pdu->prach_format = 10;
+                  break;
+              default:
+                AssertFatal(1==0,"Invalid PRACH format");
+              }
+            }
+          }
         }
       }
-      else{
-        switch(format0) {
-          case 0:
-            prach_pdu->prach_format = 0;
-            break;
-          case 1:
-            prach_pdu->prach_format = 1;
-            break;
-          case 2:
-            prach_pdu->prach_format = 2;
-            break;
-          case 3:
-            prach_pdu->prach_format = 3;
-            break;
-          case 0xa1:
-            prach_pdu->prach_format = 4;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 5;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 6;
-            break;
-          case 0xb1:
-            prach_pdu->prach_format = 7;
-            break;
-          case 0xb4:
-            prach_pdu->prach_format = 8;
-            break;
-          case 0xc0:
-            prach_pdu->prach_format = 9;
-            break;
-          case 0xc2:
-            prach_pdu->prach_format = 10;
-            break;
-        default:
-          AssertFatal(1==0,"Invalid PRACH format");
-        }
-      }		
-     }
     }
-   }
-  }
   }
 }
 
@@ -363,7 +370,14 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
   *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
- 
+
+  // we can't schedule msg2 before sl_ahead since prach
+  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
+  if ((eff_slot-rach_slot)<=sl_ahead) {
+    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  }
+
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
       slot_window = 1;
@@ -396,12 +410,11 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
-  //uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
-
+  uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
-  while ((*msg2_slot>slot_limit) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
+  while (((*msg2_slot>slot_limit)&&(*msg2_frame>frame_limit)) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
     if((*msg2_slot%tdd_period_slot) > 0)
       (*msg2_slot)--;
     else
@@ -421,7 +434,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
   NR_SearchSpace_t *ss;
-  int UE_id = 0;
 
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
@@ -563,7 +575,9 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   stop_meas(&mac->schedule_ra);
 }
 
-void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
+void nr_get_Msg3alloc(module_id_t module_id,
+                      int CC_id,
+                      NR_ServingCellConfigCommon_t *scc,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
@@ -597,27 +611,25 @@ void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
     ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
 
   LOG_I(MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
-  ra->msg3_nb_rb = 18;
-  ra->msg3_first_rb = 0;
-}
-
-
-void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
-  gNB_MAC_INST                                *mac = RC.nrmac[module_idP];
-  nfapi_nr_ul_tti_request_t                   *ul_req = &mac->UL_tti_req[0];
-  NR_COMMON_channels_t                        *cc = &mac->common_channels[CC_id];
-  NR_RA_t                                     *ra = &cc->ra[0];
-
-  if (ra->state == WAIT_Msg3) {
-    if ((frameP == ra->Msg3_frame) && (slotP == ra->Msg3_slot) ){
-      ul_req->SFN = ra->Msg3_frame;
-      ul_req->Slot = ra->Msg3_slot;
-      ul_req->pdus_list[ul_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-      ul_req->pdus_list[ul_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
-      ul_req->pdus_list[ul_req->n_pdus].pusch_pdu = ra->pusch_pdu;
-      ul_req->n_pdus+=1;
-    }
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * 275];
+  const uint16_t bwpSize = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  /* search 18 free RBs */
+  int rbSize = 0;
+  int rbStart = 0;
+  while (rbSize < 18) {
+    rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
+    rbSize = 0;
+    while (rbStart < bwpSize && vrb_map_UL[rbStart])
+      rbStart++;
+    AssertFatal(rbStart < bwpSize - 18, "no space to allocate Msg 3 for RA!\n");
+    while (rbStart + rbSize < bwpSize
+           && !vrb_map_UL[rbStart + rbSize]
+           && rbSize < 18)
+      rbSize++;
   }
+  ra->msg3_nb_rb = 18;
+  ra->msg3_first_rb = rbStart;
 }
 
 void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
@@ -632,10 +644,32 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     return;
   }
 
+  uint16_t *vrb_map_UL =
+      &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * 275];
+  for (int i = 0; i < ra->msg3_nb_rb; ++i) {
+    AssertFatal(!vrb_map_UL[i + ra->msg3_first_rb],
+                "RB %d in %4d.%2d is already taken, cannot allocate Msg3!\n",
+                i + ra->msg3_first_rb,
+                ra->Msg3_frame,
+                ra->Msg3_slot);
+    vrb_map_UL[i + ra->msg3_first_rb] = 1;
+  }
+
   LOG_I(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &ra->pusch_pdu;
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[CC_id][ra->Msg3_slot];
+  AssertFatal(future_ul_tti_req->SFN == ra->Msg3_frame
+              && future_ul_tti_req->Slot == ra->Msg3_slot,
+              "future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",
+              future_ul_tti_req->SFN,
+              future_ul_tti_req->Slot,
+              ra->Msg3_frame,
+              ra->Msg3_slot);
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+  nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
+  future_ul_tti_req->n_pdus += 1;
 
   AssertFatal(ra->secondaryCellGroup,
               "no secondaryCellGroup for RNTI %04x\n",
@@ -914,7 +948,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dl_req->nPDUs+=2;
 
     // Program UL processing for Msg3
-    nr_get_Msg3alloc(scc, ubwp, slotP, frameP, ra);
+    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
     LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
     nr_add_msg3(module_idP, CC_id, frameP, slotP);
     ra->state = WAIT_Msg3;
@@ -991,7 +1025,7 @@ void nr_fill_rar(uint8_t Mod_idP,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
-  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index);
+  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u\n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index);
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;

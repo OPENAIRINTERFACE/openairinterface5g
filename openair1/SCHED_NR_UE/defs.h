@@ -103,25 +103,24 @@ void phy_procedures_UE_lte(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, relaying_type_t r_type);
 
 /*! \brief Scheduling for UE TX procedures in normal subframes.
-  @param phy_vars_ue Pointer to UE variables on which to act
+  @param ue Pointer to UE variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
   @param eNB_id Local id of eNB on which to act
-  @param abstraction_flag Indicator of PHY abstraction
-  @param mode calib/normal mode
-  @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id, uint8_t thread_id);
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
-  @param ue       Pointer to UE variables on which to act
-  @param proc     Pointer to proc information
-  @param gNB_id   Local id of eNB on which to act
-  @param mode     calibration/debug mode
+  @param ue             Pointer to UE variables on which to act
+  @param proc           Pointer to proc information
+  @param gNB_id         Local id of eNB on which to act
+  @param mode           calibration/debug mode
+  @param dlsch_parallel use multithreaded dlsch processing
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           runmode_t mode);
+                           runmode_t mode,
+                           uint8_t dlsch_parallel);
 
 int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
 
@@ -299,6 +298,13 @@ uint16_t nr_get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
 
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
+/*! \brief UL time alignment procedures for TA application
+  @param PHY_VARS_NR_UE ue
+  @param int slot_tx
+  @param int frame_tx
+*/
+void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx);
+
 /*! \brief Compute the timing adjustment at UE side from the old TA offset and the new received TA command
   @param Mod_id Local UE index on which to act
   @param CC_id Component Carrier Index
@@ -306,7 +312,7 @@ int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
   @param mu numerology index (0,1,2..)
 */
 void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB);
-void nr_process_timing_advance_rar(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint16_t timing_advance);
+void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, int frame_rx, int nr_slot_rx, uint16_t ta_command);
 
 unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
 

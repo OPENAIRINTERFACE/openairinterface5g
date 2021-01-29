@@ -30,6 +30,7 @@
 * \warning
 */
 
+#include <LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
 #include "nr_dci.h"
 #include "nr_dlsch.h"
 #include "nr_sch_dmrs.h"
@@ -81,17 +82,13 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   int rb_offset;
   int n_rb;
 
-  nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
-
-  get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
-
   // compute rb_offset and n_prb based on frequency allocation
-
+  nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
+  get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
+  cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
   if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-    cset_start_sc = frame_parms.first_carrier_offset + 
-      (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + rb_offset)*NR_NB_SC_PER_RB;
-  } else
-    cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
+    cset_start_sc = cset_start_sc + RC.nrmac[gNB->Mod_id]->type0_PDCCH_CSS_config.cset_start_rb*NR_NB_SC_PER_RB;
+  }
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
     /*The coreset is initialised
@@ -105,8 +102,6 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     LOG_D(PHY, "Coreset rb_offset %d, nb_rb %d\n",rb_offset,n_rb);
     LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
     // DMRS length is per OFDM symbol
-    AssertFatal(pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED,
-		"Interleaved CCE REG MAPPING not supported\n");
     uint32_t dmrs_length = (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED)?
       (n_rb*6) : (pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]*108; //2(QPSK)*9(per RB)*6(REG per CCE)
@@ -198,7 +193,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       
       for (int m=0; m<NR_NB_SC_PER_RB; m++) {
 	if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
-	  if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
+	  //if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
 	    ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
 	    ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
@@ -206,7 +201,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 		   ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
 	    dmrs_idx++;
-	  }
+	  //}
 	  
 	  k_prime++;
 	} else { // DCI payload
@@ -225,7 +220,10 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 	  k -= frame_parms.ofdm_symbol_size;
       } // m
     } // reg_idx
-    
+
+    LOG_I(PHY, "DCI: payloadSize = %d | payload = %llx\n",
+           *pdcch_pdu_rel15->dci_pdu.PayloadSizeBits,*(unsigned long long*)pdcch_pdu_rel15->dci_pdu.Payload);
+
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
 }
 

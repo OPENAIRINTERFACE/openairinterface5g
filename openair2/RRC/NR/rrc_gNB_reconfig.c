@@ -43,10 +43,104 @@
 #include "common/utils/nr/nr_common.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/softmodem-common.h"
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 #define false 0
 #define true 1
 
+void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
+
+  bwp->bwp_Id = 0;
+
+  bwp->bwp_Common=calloc(1,sizeof(*bwp->bwp_Common));
+  memcpy((void*)&bwp->bwp_Common,
+         &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP,
+         sizeof(bwp->bwp_Common));
+
+  bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
+  bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
+  bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID0=NULL;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=NULL;
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
+  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
+}
+
+void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
+
+  coreset0->controlResourceSetId = 0;
+
+  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
+  if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
+  coreset0->frequencyDomainResources.buf[0] = 0xff;
+  coreset0->frequencyDomainResources.buf[1] = 0;
+  coreset0->frequencyDomainResources.buf[2] = 0;
+  coreset0->frequencyDomainResources.buf[3] = 0;
+  coreset0->frequencyDomainResources.buf[4] = 0;
+  coreset0->frequencyDomainResources.buf[5] = 0;
+  coreset0->frequencyDomainResources.size = 6;
+  coreset0->frequencyDomainResources.bits_unused = 3;
+  coreset0->duration = 1;
+  coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
+  coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved));
+  coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+  coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = servingcellconfigcommon->physCellId;
+  coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+
+  if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
+
+  NR_TCI_StateId_t *tci[8];
+  for (int i=0;i<8;i++) {
+    tci[i]=calloc(1,sizeof(*tci[i]));
+    *tci[i] = i;
+    ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  }
+  coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
+  coreset0->tci_PresentInDCI = NULL;
+  coreset0->pdcch_DMRS_ScramblingID = NULL;
+
+}
+
+void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0) {
+
+  if(ss0->controlResourceSetId == NULL) ss0->controlResourceSetId=calloc(1,sizeof(*ss0->controlResourceSetId));
+  if(ss0->monitoringSymbolsWithinSlot == NULL) ss0->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss0->monitoringSymbolsWithinSlot));
+  if(ss0->monitoringSymbolsWithinSlot->buf == NULL) ss0->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  if(ss0->nrofCandidates == NULL) ss0->nrofCandidates = calloc(1,sizeof(*ss0->nrofCandidates));
+  if(ss0->searchSpaceType == NULL) ss0->searchSpaceType = calloc(1,sizeof(*ss0->searchSpaceType));
+  if(ss0->searchSpaceType->choice.common == NULL) ss0->searchSpaceType->choice.common=calloc(1,sizeof(*ss0->searchSpaceType->choice.common));
+  if(ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL) ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+
+  ss0->searchSpaceId = 0;
+  *ss0->controlResourceSetId = 0;
+  ss0->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss0->monitoringSlotPeriodicityAndOffset));
+  ss0->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+  ss0->duration=NULL;
+
+  // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
+  ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
+  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  ss0->monitoringSymbolsWithinSlot->size = 2;
+  ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
+
+  // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
+  ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
+  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  ss0->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+
+  ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
+}
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                      NR_CellGroupConfig_t *secondaryCellGroup,
@@ -57,66 +151,33 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
-  if(servingcellconfigcommon->ssb_PositionsInBurst->present !=2)
-    AssertFatal(1==0,"Currenrly implemented only for medium size SSB bitmap\n");
-  uint8_t bitmap = servingcellconfigcommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
+  uint64_t bitmap=0;
+  switch (servingcellconfigcommon->ssb_PositionsInBurst->present) {
+    case 1 :
+      bitmap = ((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.shortBitmap.buf[0])<<56;
+      break;
+    case 2 :
+      bitmap = ((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])<<56;
+      break;
+    case 3 :
+      for (int i=0; i<8; i++) {
+        bitmap |= (((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.longBitmap.buf[i])<<((7-i)*8));
+      }
+      break;
+    default:
+      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", servingcellconfigcommon->ssb_PositionsInBurst->present);
+  }
 
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-  RLC_BearerConfig->logicalChannelIdentity = 4;
-  RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
-  RLC_BearerConfig->servedRadioBearer->present =  NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
-  RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=1;
-  RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
-  *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
-  RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
+  nr_rlc_bearer_init(RLC_BearerConfig);
+  if (get_softmodem_params()->do_ra)
+    nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
+  else
+    nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_am);
+  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig->mac_LogicalChannelConfig);
 
-#if 0
-
-  // RLC UM Bi-directional Bearer configuration 
-  RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional));
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
-
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
-
-#else
-
-  // RLC AM Bearer configuration
-  RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
-  RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =  NR_SN_FieldLengthAM_size18;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
-
-#endif
-
-  RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedServingCells = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
-  *RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
@@ -222,7 +283,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n310 = NR_RLF_TimersAndConstants__n310_n10;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n311 = NR_RLF_TimersAndConstants__n311_n1;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1 = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1));
-  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1->t311_v1530 = NR_RLF_TimersAndConstants__ext1__t311_v1530_ms30000;
+  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1->t311 = NR_RLF_TimersAndConstants__ext1__t311_ms30000;
   secondaryCellGroup->spCellConfig->rlmInSyncOutOfSyncThreshold                   = NULL;
   secondaryCellGroup->spCellConfig->spCellConfigDedicated = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->tdd_UL_DL_ConfigurationDedicated = NULL;
@@ -251,9 +312,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
  int n_ssb = 0;
- NR_TCI_State_t *tcic[8];
- for (int i=0;i<8;i++) {
-   if ((bitmap>>(7-i))&0x01){
+ NR_TCI_State_t *tcic[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
      tcic[i]=calloc(1,sizeof(*tcic[i]));
      tcic[i]->tci_StateId=n_ssb;
      tcic[i]->qcl_Type1.cell=NULL;
@@ -362,7 +423,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rateMatchPatternGroup1=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table=NULL;
+ if (!get_softmodem_params()->use_256qam_table) {
+   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table=NULL;
+ } else {
+   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table));
+   *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+ }
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
@@ -438,9 +504,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
  coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
- NR_TCI_StateId_t *tci[8];
- for (int i=0;i<8;i++) {
-   if ((bitmap>>(7-i))&0x01){
+ NR_TCI_StateId_t *tci[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
      tci[i]=calloc(1,sizeof(*tci[i]));
      *tci[i] = i;
      ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
@@ -484,7 +550,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,ss);
  
 
- bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=NULL;
+ bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
+ *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=0;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->pagingSearchSpace=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace));
@@ -667,9 +734,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
 
  n_ssb = 0;
- NR_TCI_State_t *tcid[8];
- for (int i=0;i<8;i++) {
-   if ((bitmap>>(7-i))&0x01){
+ NR_TCI_State_t *tcid[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
      tcid[i]=calloc(1,sizeof(*tcid[i]));
      tcid[i]->tci_StateId=n_ssb;
      tcid[i]->qcl_Type1.cell=NULL;
@@ -694,7 +761,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup1=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table=NULL;
+ if (!get_softmodem_params()->use_256qam_table) {
+   bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table=NULL;
+ } else {
+   bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
+   *bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+ }
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
@@ -720,7 +792,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup1=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table=NULL;
+ if (!get_softmodem_params()->use_256qam_table) {
+   bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table=NULL;
+ } else {
+   bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
+   *bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+ }
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
@@ -908,7 +985,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
  *pucchresset0id1=2;
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id1);
- pucchresset0->maxPayloadMinus1=NULL;
+ pucchresset0->maxPayloadSize=NULL;
 
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
 
@@ -919,7 +996,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
  *pucchresset1id1=4;
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id1);
- pucchresset1->maxPayloadMinus1=NULL;
+ pucchresset1->maxPayloadSize=NULL;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
 
  pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
@@ -956,7 +1033,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres2->secondHopPRB=NULL;
  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
  pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
- pucchres2->format.choice.format2->nrofPRBs=4;
+ pucchres2->format.choice.format2->nrofPRBs=8;
  pucchres2->format.choice.format2->nrofSymbols=1;
  pucchres2->format.choice.format2->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
@@ -967,7 +1044,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres3->secondHopPRB=NULL;
  pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;
  pucchres3->format.choice.format2=calloc(1,sizeof(*pucchres3->format.choice.format2));
- pucchres3->format.choice.format2->nrofPRBs=4;
+ pucchres3->format.choice.format2->nrofPRBs=8;
  pucchres3->format.choice.format2->nrofSymbols=1;
  pucchres3->format.choice.format2->startingSymbolIndex=12;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres3);
@@ -1090,45 +1167,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
  ssbresset0->csi_SSB_ResourceSetId=0;
- if ((bitmap>>7)&0x01){
-   NR_SSB_Index_t *ssbresset00=calloc(1,sizeof(*ssbresset00));
-   *ssbresset00=0;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset00);
- }
- if ((bitmap>>6)&0x01) {
-   NR_SSB_Index_t *ssbresset01=calloc(1,sizeof(*ssbresset01));
-   *ssbresset01=1;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset01);
- }
- if ((bitmap>>5)&0x01) {
-   NR_SSB_Index_t *ssbresset02=calloc(1,sizeof(*ssbresset02));
-   *ssbresset02=2;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset02);
- }
- if ((bitmap>>4)&0x01) {
-   NR_SSB_Index_t *ssbresset03=calloc(1,sizeof(*ssbresset03));
-   *ssbresset03=3;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset03);
- }
- if ((bitmap>>3)&0x01) {
-   NR_SSB_Index_t *ssbresset04=calloc(1,sizeof(*ssbresset04));
-   *ssbresset04=4;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset04);
- }
- if ((bitmap>>2)&0x01) {
-   NR_SSB_Index_t *ssbresset05=calloc(1,sizeof(*ssbresset05));
-   *ssbresset05=5;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset05);
- }
- if ((bitmap>>1)&0x01) {
-   NR_SSB_Index_t *ssbresset06=calloc(1,sizeof(*ssbresset06));
-   *ssbresset06=6;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset06);
- }
- if ((bitmap)&0x01) {
-   NR_SSB_Index_t *ssbresset07=calloc(1,sizeof(*ssbresset07));
-   *ssbresset07=7;
-   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset07);
+
+ NR_SSB_Index_t *ssbresset[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
+     ssbresset[i]=calloc(1,sizeof(*ssbresset[i]));
+     *ssbresset[i] = i;
+     ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset[i]);
+   }
  }
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 
@@ -1290,5 +1336,37 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
 
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 }
+/* Function to set or overwrite PTRS DL RRC parameters */
+void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset)
+{
+  int i=0;
+  /* check for memory allocation  */
+  if(bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS == NULL) {
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup= calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->epre_Ratio = calloc(1,sizeof(long));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->resourceElementOffset = calloc(1,sizeof(long));
+    /* Fill the given values */
+    for(i = 0; i < 2; i++) {
+      ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list,&ptrsNrb[i]);
+    }
+    for(i = 0; i < 3; i++) {
+      ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity->list,&ptrsMcs[i]);
+    }
+  }// if memory exist then over write the old values
+  else {
+    for(i = 0; i < 2; i++) {
+      *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[i] = ptrsNrb[i];
+    }
+    for(i = 0; i < 3; i++) {
+      *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity->list.array[i] = ptrsMcs[i];
+    }
+  }
 
+  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->epre_Ratio = *epre_Ratio;
+  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->resourceElementOffset = *reOffset;
+}
 #endif

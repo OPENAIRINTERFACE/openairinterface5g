@@ -42,6 +42,7 @@ import xml.etree.ElementTree as ET
 import logging
 import datetime
 import signal
+import statistics as stat
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
@@ -52,6 +53,52 @@ logging.basicConfig(
 import helpreadme as HELP
 import constants as CONST
 import sshconnection
+
+
+
+
+#-----------------------------------------------------------
+# Utility functions
+#-----------------------------------------------------------
+
+def GetPingTimeAnalysis(ping_log_file):
+	#ping time values read from file
+	t_ping=[]
+	#ping stats (dictionary) to be returned by the function
+	ping_stat={}
+	if (os.path.isfile(ping_log_file)):
+		with open(ping_log_file,"r") as f:
+			for line in f:
+				#looking for time=xxx ms field
+				result=re.match('^.+time=(?P<ping_time>[0-9\.]+)',line)
+				if result != None:
+					t_ping.append(float(result.group('ping_time')))
+
+		#initial stats
+		ping_stat['min_0']=min(t_ping)
+		ping_stat['mean_0']=stat.mean(t_ping)
+		ping_stat['median_0']=stat.median(t_ping)
+		ping_stat['max_0']=max(t_ping)
+
+		#get index of max value
+		
+		max_loc=t_ping.index(max(t_ping))
+		ping_stat['max_loc']=max_loc
+		#remove it
+		t_ping.pop(max_loc)
+		#new stats after removing max value
+		ping_stat['min_1']=min(t_ping)
+		ping_stat['mean_1']=stat.mean(t_ping)
+		ping_stat['median_1']=stat.median(t_ping)
+		ping_stat['max_1']=max(t_ping)
+
+		return ping_stat
+
+	else:
+		logging.error("Ping log file does not exist")
+		return -1
+
+	
 
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
@@ -185,7 +232,7 @@ class OaiCiTest():
 		SSH.command('mkdir -p log', '\$', 5)
 		SSH.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 900)
+		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 1200)
 		SSH.command('ls ran_build/build', '\$', 3)
 		SSH.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
@@ -216,7 +263,7 @@ class OaiCiTest():
 			HTML.CreateHtmlTabFooter(False)
 			self.ConditionalExit()
 
-	def CheckFlexranCtrlInstallation(self,RAN,EPC):
+	def CheckFlexranCtrlInstallation(self,RAN,EPC,CONTAINERS):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			return
 		SSH = sshconnection.SSHConnection()
@@ -225,7 +272,18 @@ class OaiCiTest():
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
 			RAN.flexranCtrlInstalled=True
+			RAN.flexranCtrlIpAddress=EPC.IPAddress
 			logging.debug('Flexran Controller is installed')
+		else:
+			# Maybe flexran-rtc is deployed into a container
+			SSH.command('docker inspect --format="FLEX_RTC_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-flexran-rtc', '\$', 5)
+			result = re.search('FLEX_RTC_IP_ADDR = (?P<flex_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				RAN.flexranCtrlDeployed=True
+				RAN.flexranCtrlIpAddress=result.group('flex_ip_addr')
+				CONTAINERS.flexranCtrlDeployed=True
+				CONTAINERS.flexranCtrlIpAddress=result.group('flex_ip_addr')
+				logging.debug('Flexran Controller is deployed: ' + RAN.flexranCtrlIpAddress)
 		SSH.close()
 
 	def InitializeFlexranCtrl(self, HTML,RAN,EPC):
@@ -547,7 +605,7 @@ class OaiCiTest():
 				HTML.htmlUEFailureMsg='nr-uesoftmodem did NOT synced'
 				HTML.CreateHtmlTestRow(self.air_interface + ' ' +  self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def checkDevTTYisUnlocked(self):
 		SSH = sshconnection.SSHConnection()
@@ -625,7 +683,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
-	def AttachCatM(self,HTML,RAN,COTS_UE):
+	def AttachCatM(self,HTML,RAN,COTS_UE,EPC):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -698,7 +756,7 @@ class OaiCiTest():
 			html_cell = '<pre style="background-color:white">CAT-M module Attachment Failed</pre>'
 			html_queue.put(html_cell)
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def PingCatM(self,HTML,RAN,EPC,COTS_UE):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
@@ -709,7 +767,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		try:
 			statusQueue = SimpleQueue()
@@ -730,7 +788,7 @@ class OaiCiTest():
 					moduleIPAddr = result.group('ipaddr')
 				else:
 					HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 					return
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			device_id = 'catm'
@@ -794,7 +852,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', 1, statusQueue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', 1, statusQueue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -895,7 +953,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		multi_jobs = []
 		status_queue = SimpleQueue()
@@ -914,7 +972,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		else:
 			attach_status = True
@@ -943,7 +1001,7 @@ class OaiCiTest():
 					time.sleep(5)
 			else:
 				HTML.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def DetachUE_common(self, device_id, idx,COTS_UE):
 		try:
@@ -976,7 +1034,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		multi_jobs = []
 		cnt = 0
@@ -1227,6 +1285,8 @@ class OaiCiTest():
 				if lDataConnectionState == 3:
 					dataConnectionState = 'Data State:    SUSPENDED'
 			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', SSH.getBefore())
+			time.sleep(1)
+			SSH.close()
 			dataConnectionReason = 'Data Reason:   UNKNOWN'
 			if result is not None:
 				dataConnectionReason = 'Data Reason:   ' + result.group('dataConnectionReason')
@@ -1240,7 +1300,6 @@ class OaiCiTest():
 			qMsg = serviceState + '\n' + dataConnectionState + '\n' + dataConnectionReason
 			statusQueue.put(qMsg)
 			lock.release()
-			SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -1267,12 +1326,12 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
+		if (RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted) or RAN.flexranCtrlDeployed:
 			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('cd /opt/flexran_rtc', '\$', 5)
-			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
-			SSH.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
+			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
+			SSH.command('curl http://' + RAN.flexranCtrlIpAddress + ':9999/stats | jq \'.\' > check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
+			SSH.command('cat check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
 			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', SSH.getBefore())
 			passStatus = True
 			if result is not None:
@@ -1291,7 +1350,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		else:
 			check_status = True
 			html_queue = SimpleQueue()
@@ -1307,7 +1366,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def GetAllUEIPAddresses(self):
 		SSH = sshconnection.SSHConnection()
@@ -1397,17 +1456,26 @@ class OaiCiTest():
 				if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
 					launchFromTrfContainer = True
 				if launchFromTrfContainer:
-					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)				
 				else:
 					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				#copy the ping log file to have it locally for analysis (ping stats)
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')				
 			else:
+				#ping log file is on the python executor
 				cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 > ping_' + self.testCase_id + '_' + device_id + '.log' 
 				message = cmd + '\n'
 				logging.debug(cmd)
 				ret = subprocess.run(cmd, shell=True)
 				ping_status = ret.returncode
+				#copy the ping log file to an other folder for log collection (source and destination are EPC)
 				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
+                #copy the ping log file to have it locally for analysis (ping stats)
+				logging.debug(EPC.SourceCodePath + 'ping_' + self.testCase_id + '_' + device_id + '.log')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath  +'/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')
+
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				#cat is executed on EPC
 				SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 			# TIMEOUT CASE
 			if ping_status < 0:
@@ -1416,6 +1484,7 @@ class OaiCiTest():
 				SSH.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
+			#search is done on cat result
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', SSH.getBefore())
 			if result is None:
 				message = 'Packet Loss Not Found!'
@@ -1450,7 +1519,27 @@ class OaiCiTest():
 			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
-			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+
+			#adding extra ping stats from local file
+			ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
+			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
+			ping_stat=GetPingTimeAnalysis(ping_log_file)
+			ping_stat_msg=''
+			if (ping_stat!=-1) and (len(ping_stat)!=0):
+				ping_stat_msg+='Ping stats before removing largest value : \n'
+				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
+				ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
+				ping_stat_msg+='Ping stats after removing largest value : \n'
+				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
+
+			#building html message
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n' + ping_stat_msg
 			packetLossOK = True
 			if packetloss is not None:
 				if float(packetloss) > float(self.ping_packetloss_threshold):
@@ -1485,7 +1574,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
@@ -1587,12 +1676,12 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		multi_jobs = []
 		i = 0
@@ -1610,7 +1699,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		else:
 			ping_status = True
 			html_queue = SimpleQueue()
@@ -1627,7 +1716,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
@@ -1934,15 +2023,34 @@ class OaiCiTest():
 			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 			if ret.stdout is not None:
 				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
+		# When using a docker-based deployment, IPERF client shall be launched from trf container
+		launchFromTrfContainer = False
+		if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+			launchFromTrfContainer = True
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			SSH.command('docker inspect --format="TRF_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-trf-gen', '\$', 5)
+			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				EPC_Iperf_UE_IPAddress = result.group('trf_ip_addr')
+			SSH.close()
 		port = 5001 + idx
+		udpOptions = ''
+		if udpIperf:
+			udpOptions = '-u '
 		if launchFromEpc:
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			if udpIperf:
-				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
+			if launchFromTrfContainer:
+				if self.ueIperfVersion == self.dummyIperfVersion:
+					prefix = ''
+				else:
+					prefix = ''
+					if self.ueIperfVersion == '2.0.5':
+						prefix = '/iperf-2.0.5/bin/'
+				SSH.command('docker exec -d prod-trf-gen /bin/bash -c "nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &"', '\$', 5)
 			else:
-				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
+				SSH.command('echo $USER; nohup iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
 			SSH.close()
 		else:
 			if self.ueIperfVersion == self.dummyIperfVersion:
@@ -1951,10 +2059,7 @@ class OaiCiTest():
 				prefix = ''
 				if self.ueIperfVersion == '2.0.5':
 					prefix = '/opt/iperf-2.0.5/bin/'
-			if udpIperf:
-				cmd = 'nohup ' + prefix + 'iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
-			else:
-				cmd = 'nohup ' + prefix + 'iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			cmd = 'nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 		time.sleep(0.5)
@@ -2000,13 +2105,16 @@ class OaiCiTest():
 		# Kill iperf server on EPC side
 		if launchFromEpc:
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
+			if launchFromTrfContainer:
+				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
+			else:
+				SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
 			SSH.close()
 		else:
 			cmd = 'killall --signal SIGKILL iperf'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True)
-			time.sleep(1)			
+			time.sleep(1)
 			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1) or (clientStatus == -2):
@@ -2014,6 +2122,10 @@ class OaiCiTest():
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
+				if launchFromTrfContainer:
+					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+					SSH.command('docker cp prod-trf-gen:/iperf-2.0.5/iperf_server_' + self.testCase_id + '_' + device_id + '.log ' + EPC.SourceCodePath + '/scripts', '\$', 5)
+					SSH.close()
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
@@ -2212,8 +2324,16 @@ class OaiCiTest():
 				else:
 					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				# fromdos has to be called on the python executor not on ADB server
-				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log'
-				subprocess.run(cmd, shell=True)
+				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				try:
+					subprocess.run(cmd, shell=True)
+				except:
+					pass
+				cmd = 'dos2unix -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				try:
+					subprocess.run(cmd, shell=True)
+				except:
+					pass
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 			# in case of OAI UE: 
@@ -2237,7 +2357,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
@@ -2335,7 +2455,7 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 		else:
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def Iperf(self,HTML,RAN,EPC,COTS_UE):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
@@ -2353,13 +2473,13 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			logging.debug('going here')
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
 
 		self.dummyIperfVersion = '2.0.10'
@@ -2390,7 +2510,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 		else:
 			iperf_status = True
 			iperf_noperf = False
@@ -2412,7 +2532,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 
 	def CheckProcessExist(self, check_eNB, check_OAI_UE,RAN,EPC):
 		multi_jobs = []
@@ -2832,7 +2952,7 @@ class OaiCiTest():
 			job.join()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def TerminateOAIUE(self,HTML,RAN,COTS_UE):
+	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC):
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
@@ -2873,11 +2993,11 @@ class OaiCiTest():
 					# Not an error then
 					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				else:
 					if (logStatus == CONST.OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Completed</b>\n' + HTML.htmlUEFailureMsg
@@ -2886,7 +3006,7 @@ class OaiCiTest():
 		else:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE):
+	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC):
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id=self.testCase_id
@@ -2900,15 +3020,19 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of OAI-UE'
 			HTML.desc='Automatic Termination of OAI-UE'
 			self.ShowTestID()
-			self.TerminateOAIUE(HTML,RAN,COTS_UE)
+			self.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
 		if (RAN.Initialize_eNB_args != ''):
-			self.testCase_id = 'AUTO-KILL-eNB'
+			self.testCase_id = 'AUTO-KILL-RAN'
 			HTML.testCase_id=self.testCase_id
-			self.desc = 'Automatic Termination of eNB'
-			HTML.desc='Automatic Termination of eNB'
+			self.desc = 'Automatic Termination of all RAN nodes'
+			HTML.desc='Automatic Termination of RAN nodes'
 			self.ShowTestID()
-			RAN.eNB_instance=0
-			RAN.TerminateeNB()
+			#terminate all RAN nodes eNB/gNB/OCP
+			for instance in range(0, len(RAN.air_interface)):
+				if RAN.air_interface[instance]!='':
+					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					RAN.eNB_instance=instance
+					RAN.TerminateeNB(HTML,EPC)
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.testCase_id=self.testCase_id
@@ -3050,7 +3174,7 @@ class OaiCiTest():
 		SSH.command('cd ' + SourceCodePath, '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('rm -f build.log.zip', '\$', 5)
-		SSH.command('zip build.log.zip build_log_*/*', '\$', 60)
+		SSH.command('zip -r build.log.zip build_log_*/*', '\$', 60)
 		SSH.close()
 
 	def LogCollectPing(self,EPC):

@@ -53,10 +53,6 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      uint8_t dmrs_type);
 
 void init_scrambling_luts(void);
-void nr_gen_ref_conj_symbols(uint32_t *in, uint32_t length, int16_t *output, uint16_t offset, int mod_order);
-uint8_t get_next_dmrs_symbol_in_slot(uint16_t  ul_dmrs_symb_pos, uint8_t counter, uint8_t end_symbol);
-uint8_t get_dmrs_symbols_in_slot(uint16_t l_prime_mask,  uint16_t nb_symb);
-
 void nr_generate_modulation_table(void);
 
 extern __m64 byte2m64_re[256];

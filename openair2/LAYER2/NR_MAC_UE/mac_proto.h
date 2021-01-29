@@ -58,6 +58,19 @@ int8_t nr_ue_decode_mib(
     void *pduP, 
     uint16_t cell_id );
 
+/**\brief decode sib1 pdu in NR_UE, from if_module dl_ind
+   \param module_id      module id
+   \param cc_id          component carrier id
+   \param gNB_index      gNB index
+   \param sibs_mask      sibs mask
+   \param pduP           pointer to pdu
+   \param pdu_length     length of pdu */
+int8_t nr_ue_decode_sib1(module_id_t module_id,
+                         int cc_id,
+                         unsigned int gNB_index,
+                         uint32_t sibs_mask,
+                         uint8_t *pduP,
+                         uint32_t pdu_len);
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
@@ -96,7 +109,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
    @param module_id_t mod_id           module ID
    @param int cc_id                    CC ID
    @param frame_t frame                frame number
-   @param int slot                     reference number */
+   @param int slot                     reference number
+   @param UE_nr_rxtx_proc_t *proc      pointer to process context */
 void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              fapi_nr_dl_config_request_t *dl_config,
                              fapi_nr_ul_config_request_t *ul_config,
@@ -104,7 +118,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              module_id_t mod_id,
                              int cc_id,
                              frame_t frame,
-                             int slot);
+                             int slot,
+                             int thread_id);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
@@ -123,8 +138,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
-uint32_t get_ssb_slot(uint32_t ssb_index);
-
 
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
@@ -211,9 +224,10 @@ and fills the PRACH PDU per each FD occasion.
 @param module_idP Index of UE instance
 @param frameP Frame index
 @param slotP Slot index
+@param thread_id RX/TX Thread ID
 @returns void
 */
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
 
 /* \brief This function schedules the Msg3 transmission
 @param
@@ -264,7 +278,7 @@ andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 
 @param CC_id Component Carrier Index
 @param frame
 @param gNB_id gNB index
-@param nr_tti_tx slot for PRACH transmission
+@param nr_slot_tx slot for PRACH transmission
 @returns indication to generate PRACH to phy */
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        fapi_nr_ul_config_prach_pdu *prach_pdu,
@@ -273,7 +287,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        UE_MODE_t UE_mode,
                        frame_t frame,
                        uint8_t gNB_id,
-                       int nr_tti_tx);
+                       int nr_slot_tx);
 
 /* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
 @param module_idP Index of UE instance

@@ -83,6 +83,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 #include "NB_IoT_interface.h"
 #include "x2ap_eNB.h"
+#include "ngap_gNB.h"
+#include "gnb_paramdef.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -298,87 +300,11 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
-  /* Wait for the initialize message */
-  printf("Wait for the ITTI initialize message\n");
-
-  do {
-    if (message_p != NULL) {
-      result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    }
-
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case INITIALIZE_MESSAGE:
-        /* Start gNB thread */
-        LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
-        start_gNB = 1;
-        break;
-
-      case TERMINATE_MESSAGE:
-        printf("received terminate message\n");
-        oai_exit=1;
-        start_gNB = 0;
-        itti_exit_task ();
-        break;
-
-      default:
-        LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-  } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
-
-  result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-  AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  /* ???? no else but seems to be UE only ???
-    do {
-      // Wait for a message
-      itti_receive_msg (TASK_L2L1, &message_p);
-
-      switch (ITTI_MSG_ID(message_p)) {
-      case TERMINATE_MESSAGE:
-        oai_exit=1;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-      }
-
-      result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    } while(!oai_exit);
-  */
-  return NULL;
-}
 
 int create_gNB_tasks(uint32_t gnb_nb) {
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
 
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  }
 
   if (gnb_nb > 0) {
     /* Last task to create, others task must be ready before its start */
@@ -387,30 +313,52 @@ int create_gNB_tasks(uint32_t gnb_nb) {
       return -1;
     }*/
     if(itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0){
-    	LOG_E(SCTP, "Create task for SCTP failed\n");
-    	return -1;
+      LOG_E(SCTP, "Create task for SCTP failed\n");
+      return -1;
     }
     if (is_x2ap_enabled()) {
-    	if(itti_create_task(TASK_X2AP, x2ap_task, NULL) < 0){
-    		LOG_E(X2AP, "Create task for X2AP failed\n");
-    	}
+    if(itti_create_task(TASK_X2AP, x2ap_task, NULL) < 0){
+      LOG_E(X2AP, "Create task for X2AP failed\n");
+    }
     }
     else {
-    	LOG_I(X2AP, "X2AP is disabled.\n");
+      LOG_I(X2AP, "X2AP is disabled.\n");
     }
   }
+  
+  paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+  config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix); 
 
-  if (EPC_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+  for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++){
+    if( NETParams[i].strptr == NULL){
+      LOG_E(NGAP, "No configuration in the file.\n");
+	  NGAP_CONF_MODE = 0;
+	}
+    else {
+      LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
+    }
+  
+  }
+
+
+  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0 && get_softmodem_params()->sa==0)) {
     if (gnb_nb > 0) {
-      /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+      /*
+      if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
         LOG_E(SCTP, "Create task for SCTP failed\n");
         return -1;
       }
-
-      if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
-        LOG_E(S1AP, "Create task for S1AP failed\n");
-        return -1;
-      }*/
+      */
+      if(NGAP_CONF_MODE){
+        if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
+          LOG_E(NGAP, "Create task for NGAP failed\n");
+          return -1;
+        }
+      } else {
+          LOG_E(NGAP, "Ngap task not created\n");
+      }
 
 
       if(!emulate_rf){
@@ -430,9 +378,9 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
   if (gnb_nb > 0) {
     if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
-		  LOG_E(GNB_APP, "Create task for gNB APP failed\n");
-		  return -1;
-	}
+      LOG_E(GNB_APP, "Create task for gNB APP failed\n");
+      return -1;
+    }
     LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
 
     if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
@@ -693,7 +641,6 @@ int stop_L1L2(module_id_t gnb_id) {
 
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, gnb_id);
-  terminate_task(TASK_L2L1, gnb_id);
   LOG_I(GNB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
   LOG_I(GNB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
@@ -728,13 +675,6 @@ int restart_L1L2(module_id_t gnb_id) {
   // No more rrc thread, as many race conditions are hidden behind
   rrc_enb_init();
   itti_mark_task_ready(TASK_RRC_ENB);
-
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  } else {
-    LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
-  }
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
@@ -821,10 +761,14 @@ int main( int argc, char **argv )
   }
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
-  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+  AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+  NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
+
+  if (get_softmodem_params()->sa)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
 
 #if T_TRACER
   T_Config_Init();

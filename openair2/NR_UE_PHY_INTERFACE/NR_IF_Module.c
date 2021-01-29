@@ -60,9 +60,9 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
 
 //  L2 Abstraction Layer
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
-
-  return 0;
+  return nr_ue_decode_sib1(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
 }
+
 //  L2 Abstraction Layer
 int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci){
 
@@ -110,7 +110,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   ret = nr_ue_scheduler(NULL, ul_info);
 
   if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
-    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
+    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -157,7 +157,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
           AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot);
+          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
       }

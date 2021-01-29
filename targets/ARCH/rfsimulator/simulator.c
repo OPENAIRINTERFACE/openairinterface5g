@@ -91,13 +91,13 @@ extern RAN_CONTEXT_t RC;
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
-  {"setmodel","<model name>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},  
+  {"setmodel","<model name>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
   {"","",NULL},
 };
 
 static telnetshell_vardef_t rfsimu_vardef[] = {
   {"",0,NULL}
-};  
+};
 pthread_mutex_t Sockmutex;
 
 typedef struct complex16 sample_t; // 2*16 bits complex number
@@ -170,11 +170,13 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     static bool init_done=false;
 
     if (!init_done) {
-	  uint64_t rand;
-	  FILE *h=fopen("/dev/random","r");
+      uint64_t rand;
+      FILE *h=fopen("/dev/random","r");
+
       if ( 1 != fread(&rand,sizeof(rand),1,h) )
         LOG_W(HW, "Simulator can't read /dev/random\n");
-	  fclose(h);
+
+      fclose(h);
       randominit(rand);
       tableNor(rand);
       init_done=true;
@@ -189,7 +191,6 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->chan_offset, // maybe used for TA
                                             bridge->chan_pathloss); // path_loss in dB
     set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
-
     random_channel(ptr->channel_model,false);
   }
 }
@@ -317,25 +318,29 @@ void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
 }
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg) {
-  char *modelname=NULL; 
+  char *modelname=NULL;
   int s = sscanf(buff,"%ms\n",&modelname);
+
   if (s == 1) {
     int channelmod=modelid_fromname(modelname);
+
     if (channelmod<0)
       prnt("ERROR: model %s unknown\n",modelname);
     else {
-  	  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
-  	  for (int i=0; i<FD_SETSIZE; i++) {
+      rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+
+      for (int i=0; i<FD_SETSIZE; i++) {
         buffer_t *b=&t->buf[i];
+
         if (b->conn_sock >= 0 ) {
           channel_desc_t *newmodel=new_channel_desc_scm(t->tx_num_channels,t->rx_num_channels,
-                                                channelmod,
-                                                t->sample_rate,
-                                                t->tx_bw,
-                                                30e-9,  // TDL delay-spread parameter
-                                                t->chan_forgetfact, // forgetting_factor
-                                                t->chan_offset, // maybe used for TA
-                                                t->chan_pathloss); // path_loss in dB
+                                   channelmod,
+                                   t->sample_rate,
+                                   t->tx_bw,
+                                   30e-9,  // TDL delay-spread parameter
+                                   t->chan_forgetfact, // forgetting_factor
+                                   t->chan_offset, // maybe used for TA
+                                   t->chan_pathloss); // path_loss in dB
           set_channeldesc_owner(newmodel, RFSIMU_MODULEID);
           random_channel(newmodel,false);
           channel_desc_t *oldmodel=b->channel_model;
@@ -346,8 +351,9 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
       }
     }
   } else {
-  	  prnt("ERROR: no model specified\n");  
+    prnt("ERROR: no model specified\n");
   }
+
   free(modelname);
   return CMDSTATUS_FOUND;
 }
@@ -368,7 +374,7 @@ sin_addr:
   };
   bind(t->listen_sock, (struct sockaddr *)&addr, sizeof(addr));
   AssertFatal(listen(t->listen_sock, 5) == 0, "");
-  struct epoll_event ev={0};
+  struct epoll_event ev= {0};
   ev.events = EPOLLIN;
   ev.data.fd = t->listen_sock;
   AssertFatal(epoll_ctl(t->epollfd, EPOLL_CTL_ADD,  t->listen_sock, &ev) != -1, "");
@@ -440,7 +446,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
 
   if (t->lastWroteTS > timestamp+nsamps)
     LOG_E(HW,"Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
-              t->lastWroteTS, timestamp);
+          t->lastWroteTS, timestamp);
 
   t->lastWroteTS=timestamp+nsamps;
 
@@ -505,9 +511,9 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       if ( b->headerMode)
         blockSz=b->remainToTransfer;
       else
-        blockSz= b->transferPtr+b->remainToTransfer < b->circularBufEnd ?
+        blockSz= b->transferPtr + b->remainToTransfer <= b->circularBufEnd ?
                  b->remainToTransfer :
-                 b->circularBufEnd - 1 - b->transferPtr ;
+                 b->circularBufEnd - b->transferPtr ;
 
       ssize_t sz=recv(fd, b->transferPtr, blockSz, MSG_DONTWAIT);
 
@@ -523,7 +529,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       AssertFatal((b->remainToTransfer-=sz) >= 0, "");
       b->transferPtr+=sz;
 
-      if (b->transferPtr==b->circularBufEnd - 1)
+      if (b->transferPtr==b->circularBufEnd )
         b->transferPtr=(char *)b->circularBuf;
 
       // check the header and start block transfer
@@ -552,14 +558,13 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
               }
             }
           } else {
-	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
-	  }
+            memset(b->circularBuf, 0, sampleToByte(CirSize,1));
+          }
 
-          if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
+          if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS < 1000)
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
 
           b->lastReceivedTS=b->th.timestamp;
-	  
         } else if ( b->lastReceivedTS > b->th.timestamp && b->th.size == 1 ) {
           LOG_W(HW,"Received Rx/Tx synchro out of order\n");
           b->trashingPacket=true;
@@ -628,7 +633,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       t->nextTimestamp+=nsamps;
 
       if ( ((t->nextTimestamp/nsamps)%100) == 0)
-        LOG_W(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextTimestamp);
+        LOG_D(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextTimestamp);
 
       *ptimestamp = t->nextTimestamp-nsamps;
       return nsamps;
@@ -650,15 +655,15 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         // assuming this should have been done earlier if a Tx would exist
         pthread_mutex_unlock(&Sockmutex);
         struct complex16 v= {0};
-        void *samplesVoid[t->tx_num_channels];
+        void *dummyS[t->tx_num_channels];
 
         for ( int i=0; i < t->tx_num_channels; i++)
-          samplesVoid[i]=(void *)&v;
+          dummyS[i]=(void *)&v;
 
         LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
               t->lastWroteTS, t->nextTimestamp);
         rfsimulator_write_internal(t, t->nextTimestamp,
-                                   samplesVoid, 1,
+                                   dummyS, 1,
                                    t->tx_num_channels, 1, true);
       } else {
         pthread_mutex_unlock(&Sockmutex);
@@ -706,8 +711,9 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       // it seems legacy behavior is: never in UL, each frame in DL
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
+
       if (t->poll_telnetcmdq)
-      	  t->poll_telnetcmdq(t->telnetcmd_qid,t);
+        t->poll_telnetcmdq(t->telnetcmd_qid,t);
 
       for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
         if ( ptr->channel_model != NULL ) // apply a channel model
@@ -721,12 +727,13 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
+
           //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
           for (int i=0; i < nsamps; i++) {//loop over nsamps
-        	  for (int a_tx=0; a_tx<nbAnt_tx; a_tx++){//sum up signals from nbAnt_tx antennas
-        		  out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
-        		  out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
-        	  } // end for a_tx
+            for (int a_tx=0; a_tx<nbAnt_tx; a_tx++) { //sum up signals from nbAnt_tx antennas
+              out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
+              out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
+            } // end for a_tx
           } // end for i (number of samps)
         } // end of no channel modeling
       } // end for a (number of rx antennas)
@@ -804,18 +811,20 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->tx_bw=openair0_cfg->tx_bw;
   //randominit(0);
   set_taus_seed(0);
-   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
+  /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
- 
+
   if (addcmd != NULL) {
-    rfsimulator->poll_telnetcmdq =  (poll_telnetcmdq_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_POLLCMDQ_FNAME);  
+    rfsimulator->poll_telnetcmdq =  (poll_telnetcmdq_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_POLLCMDQ_FNAME);
     addcmd("rfsimu",rfsimu_vardef,rfsimu_cmdarray);
+
     for(int i=0; rfsimu_cmdarray[i].cmdfunc != NULL; i++) {
-      if (	rfsimu_cmdarray[i].qptr != NULL) {
+      if (  rfsimu_cmdarray[i].qptr != NULL) {
         rfsimulator->telnetcmd_qid = rfsimu_cmdarray[i].qptr;
         break;
       }
-    }    
-  } 
+    }
+  }
+
   return 0;
 }

@@ -148,6 +148,7 @@ extern "C" {
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
 #define DEBUG_RLC          (1<<13)
+#define DEBUG_DLSCH_DECOD  (1<<14)
 #define UE_TIMING          (1<<20)
 
 
@@ -166,6 +167,7 @@ extern "C" {
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
     {"RLC",         DEBUG_RLC},\
+    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -226,6 +228,7 @@ typedef enum {
   X2AP,
   M2AP,
   M3AP,
+  NGAP,
   GNB_APP,
   NR_RRC,
   NR_MAC,

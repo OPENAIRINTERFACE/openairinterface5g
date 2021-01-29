@@ -13,6 +13,3 @@ RLC AM
 - 36.322 5.1.3.2.3 Actions when a RLC data PDU is placed in the reception
   buffer
   [...] and in-sequence byte segments of the AMD PDU with SN = VR(R) [...]
-
-- use SOstart/SOend in NACK reporting, do not NACK full PDU if
-  parts of it have been received
