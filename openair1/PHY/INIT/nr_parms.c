@@ -335,7 +335,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   int     Ncp               = NORMAL;
 
   if(fp->nb_antennas_rx == 0)
-    fp->nb_antennas_rx = 4;
+    fp->nb_antennas_rx = 1;
   if(fp->nb_antennas_tx == 0)
     fp->nb_antennas_tx = 1;
 
