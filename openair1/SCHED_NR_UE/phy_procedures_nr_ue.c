@@ -796,43 +796,24 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
         slot = 1;
       start_meas(&ue->dlsch_llr_stats_parallelization[proc->thread_id][slot]);
 #endif
-      // process DLSCH received in first slot
-      // skip DMRS symbols (will have to check later if PDSCH/DMRS are multiplexed
-      if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) == 0) { 
+      // process DLSCH received symbols in the slot
+      // symbol by symbol processing (if data/DMRS are multiplexed is checked inside the function)
+      if (pdsch == PDSCH || pdsch == SI_PDSCH || pdsch == RA_PDSCH) {
         if (nr_rx_pdsch(ue,
-                    proc,
-                    pdsch,
-                    eNB_id,
-                    eNB_id_i,
-                    frame_rx,
-                    nr_slot_rx,
-                    m,
-                    first_symbol_flag,
-                    dual_stream_UE,
-                    i_mod,
-                    dlsch0->current_harq_pid) < 0)
-                      return -1;
-        }
-      else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-        if (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
-        else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
-          if (nr_rx_pdsch(ue,
-                    proc,
-                    pdsch,
-                    eNB_id,
-                    eNB_id_i,
-                    frame_rx,
-                    nr_slot_rx,
-                    m,
-                    first_symbol_flag,
-                    dual_stream_UE,
-                    i_mod,
-                    dlsch0->current_harq_pid) < 0)
-                      return -1;
-        }
-        else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
-      }
-      if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]);
+                        proc,
+                        pdsch,
+                        eNB_id,
+                        eNB_id_i,
+                        frame_rx,
+                        nr_slot_rx,
+                        m,
+                        first_symbol_flag,
+                        dual_stream_UE,
+                        i_mod,
+                        dlsch0->current_harq_pid) < 0)
+          return -1;
+      } else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
+
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_llr_stats_parallelization[proc->thread_id][slot]);
 #if DISABLE_LOG_X
@@ -842,10 +823,9 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 #endif
 #endif
 
-      if(first_symbol_flag)
-	{
-          proc->first_symbol_available = 1;
-	}
+      if(first_symbol_flag) {
+        proc->first_symbol_available = 1;
+      }
     } // CRNTI active
   }
   return 0;

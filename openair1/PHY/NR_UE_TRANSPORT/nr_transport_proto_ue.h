@@ -697,7 +697,7 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
     @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
-    @param high_speed_flag
+    @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
 unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
@@ -709,7 +709,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         uint8_t config_type,
                                         unsigned short start_rb,
                                         unsigned short nb_rb_pdsch,
-                                        uint32_t high_speed_flag,
+                                        uint8_t n_dmrs_cdm_groups,
                                         NR_DL_FRAME_PARMS *frame_parms,
                                         uint16_t dlDmrsSymbPos);
 
@@ -722,7 +722,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     uint8_t config_type,
     unsigned short start_rb,
     unsigned short nb_rb_pdsch,
-    uint32_t high_speed_flag,
+    uint8_t n_dmrs_cdm_groups,
     uint8_t Nl,
     NR_DL_FRAME_PARMS *frame_parms,
     uint16_t dlDmrsSymbPos)
@@ -734,7 +734,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
     @param Nl nb of antenna layers
     @param symbol Symbol to extract
-    @param high_speed_flag
+    @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
 unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
@@ -746,7 +746,7 @@ unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
                                         uint8_t config_type,
                                         unsigned short start_rb,
                                         unsigned short nb_rb_pdsch,
-                                        uint32_t high_speed_flag,
+                                        uint8_t n_dmrs_cdm_groups,
                                         uint8_t Nl,
                                         NR_DL_FRAME_PARMS *frame_parms,
                                         uint16_t dlDmrsSymbPos);
