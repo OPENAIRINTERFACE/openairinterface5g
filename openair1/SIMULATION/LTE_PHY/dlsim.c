@@ -60,7 +60,7 @@
 #include "dummy_functions.c"
 #include "executables/thread-common.h"
 #include "executables/split_headers.h"
-
+#include "common/ran_context.h"
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
 

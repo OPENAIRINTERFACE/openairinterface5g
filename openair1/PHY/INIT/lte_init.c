@@ -46,6 +46,7 @@ uint8_t         dmrs1_tab[8] = { 0, 2, 3, 4, 6, 8, 9, 10 };
 
 int             N_RB_DL_array[6] = { 6, 15, 25, 50, 75, 100 };
 
+#include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,

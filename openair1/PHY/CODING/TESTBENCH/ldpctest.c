@@ -26,9 +26,10 @@
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_extern.h"
-#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+//#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
 #include "openair1/PHY/defs_nr_common.h"
+#include "coding_unitary_defs.h"
 
 #define MAX_BLOCK_LENGTH 8448
 
@@ -82,9 +83,6 @@ typedef struct {
   int n_iter_max;
 } n_iter_stats_t;
 
-RAN_CONTEXT_t RC;
-PHY_VARS_UE ***PHY_vars_UE_g;
-uint16_t NB_UE_INST = 1;
 nrLDPC_encoderfunc_t encoder_orig;
 
 short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};

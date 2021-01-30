@@ -41,6 +41,7 @@
 #include "UTIL/OPT/opt.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#include <executables/softmodem-common.h>
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
 extern uint16_t sl_ahead;

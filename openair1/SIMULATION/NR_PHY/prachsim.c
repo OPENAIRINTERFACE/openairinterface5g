@@ -47,7 +47,7 @@
 #include "OCG_vars.h"
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
-
+#include <executables/softmodem-common.h>
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
