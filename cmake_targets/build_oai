@@ -246,6 +246,7 @@ function main() {
             shift;;
        --eNBocp)
             eNBocp=1
+            RU=0
             echo_info "Will compile OCP eNB"
             shift;;
       --gNB)
