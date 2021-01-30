@@ -364,7 +364,7 @@ sctp_handle_new_association_req(
     int                           sd       = 0;
     int32_t                       assoc_id = 0;
 
-    struct sctp_event_subscribe   events;
+    struct sctp_event_subscribe   events={0};
 
     struct sctp_cnx_list_elm_s   *sctp_cnx = NULL;
     enum sctp_connection_type_e   connection_type = SCTP_TYPE_CLIENT;
@@ -413,10 +413,16 @@ sctp_handle_new_association_req(
     }
 
     /* Subscribe to all events */
-    memset((void *)&events, 1, sizeof(struct sctp_event_subscribe));
+    events.sctp_data_io_event = 1;
+    events.sctp_association_event = 1;
+    events.sctp_address_event = 1;
+    events.sctp_send_failure_event = 1;
+    events.sctp_peer_error_event = 1;
+    events.sctp_shutdown_event = 1;
+    events.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &events,
-                   sizeof(struct sctp_event_subscribe)) < 0) {
+                   8) < 0) {
         SCTP_ERROR("Setsockopt IPPROTO_SCTP_EVENTS failed: %s\n",
                    strerror(errno));
         close(sd);
@@ -759,10 +765,16 @@ static int sctp_create_new_listener(
         }
     }
 
-    memset((void *)&event, 1, sizeof(struct sctp_event_subscribe));
+    event.sctp_data_io_event = 1;
+    event.sctp_association_event = 1;
+    event.sctp_address_event = 1;
+    event.sctp_send_failure_event = 1;
+    event.sctp_peer_error_event = 1;
+    event.sctp_shutdown_event = 1;
+    event.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &event,
-                   sizeof(struct sctp_event_subscribe)) < 0) {
+                   8) < 0) {
         SCTP_ERROR("setsockopt: %s:%d\n", strerror(errno), errno);
         if (sd != -1) {
             close(sd);
@@ -1104,7 +1116,7 @@ void *sctp_eNB_process_itti_msg(void *notUsed)
 
             /* We received a new connection request */
             if (sctp_create_new_listener(
-                        ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                        ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                         ITTI_MSG_ORIGIN_ID(received_msg),
                         &received_msg->ittiMsg.sctp_init,0) < 0) {
                 /* SCTP socket creation or bind failed... */
@@ -1119,7 +1131,7 @@ void *sctp_eNB_process_itti_msg(void *notUsed)
             SCTP_DEBUG("Received SCTP_INIT_MSG_MULTI_REQ\n");
 
             multi_sd = sctp_create_new_listener(
-                           ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                           ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                            ITTI_MSG_ORIGIN_ID(received_msg),
                            &received_msg->ittiMsg.sctp_init_multi,1);
             /* We received a new connection request */
@@ -1129,27 +1141,27 @@ void *sctp_eNB_process_itti_msg(void *notUsed)
             }
             sctp_itti_send_init_msg_multi_cnf(
                 ITTI_MSG_ORIGIN_ID(received_msg),
-                ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                 multi_sd);
         }
         break;
 
         case SCTP_NEW_ASSOCIATION_REQ: {
-            sctp_handle_new_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+            sctp_handle_new_association_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                             ITTI_MSG_ORIGIN_ID(received_msg),
                                             &received_msg->ittiMsg.sctp_new_association_req);
         }
         break;
 
         case SCTP_NEW_ASSOCIATION_REQ_MULTI: {
-            sctp_handle_new_association_req_multi(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+            sctp_handle_new_association_req_multi(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                                   ITTI_MSG_ORIGIN_ID(received_msg),
                                                   &received_msg->ittiMsg.sctp_new_association_req_multi);
         }
         break;
 
         case SCTP_CLOSE_ASSOCIATION:
-            sctp_close_association(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+            sctp_close_association(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                    ITTI_MSG_ORIGIN_ID(received_msg),
                                    &received_msg->ittiMsg.sctp_close_association);
             break;
@@ -1160,7 +1172,7 @@ void *sctp_eNB_process_itti_msg(void *notUsed)
             break;
 
         case SCTP_DATA_REQ: {
-            sctp_send_data(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+            sctp_send_data(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                            ITTI_MSG_ORIGIN_ID(received_msg),
                            &received_msg->ittiMsg.sctp_data_req);
         }

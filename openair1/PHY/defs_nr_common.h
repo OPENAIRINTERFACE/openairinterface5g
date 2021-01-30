@@ -42,11 +42,6 @@
 #define nr_subframe_t lte_subframe_t
 #define nr_slot_t lte_subframe_t
 
-// [hna] This enables SC-FDMA transmission in Uplink. If disabled, then OFDMA is used in UPLINK.
-#ifndef NR_SC_FDMA
-// #define NR_SC_FDMA
-#endif
-
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
 #define NR_MAX_NB_RB 275
@@ -104,6 +99,7 @@
 #define NR_MAX_PDSCH_ENCODED_LENGTH NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS // 8 is the maximum modulation order (it was 950984 before !!) 
 #define NR_MAX_PUSCH_ENCODED_LENGTH NR_MAX_PDSCH_ENCODED_LENGTH
 #define NR_MAX_PDSCH_TBS 3824
+#define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
 
 #define MAX_NUM_NR_DLSCH_SEGMENTS 34
 #define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)
@@ -228,7 +224,7 @@ typedef struct {
   /// Pointer to Msg3 payload for UL-grant
   uint8_t *Msg3;
   /// Frame of last completed synch
-  uint8_t sync_frame;
+  uint16_t sync_frame;
   /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
   uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;

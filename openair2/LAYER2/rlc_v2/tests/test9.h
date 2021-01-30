@@ -11,9 +11,6 @@
  * In the current RLC implementation, this is impossible. If we send [12..21]
  * it means [1..21] has been split and so we won't sent it later on.
  * Maybe with HARQ retransmissions in PHY/MAC in bad radio conditions?
- *
- * this test will fail if NACK mechanism uses SOstart/SOend
- * (not implemented for the moment)
  */
 TIME, 1,
     ENB_AM, 100000, 100000, 35, 0, 45, -1, -1, 4,

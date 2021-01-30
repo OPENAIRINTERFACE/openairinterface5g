@@ -3064,8 +3064,8 @@ ue_scheduler(const module_id_t module_idP,
         switch (ITTI_MSG_ID(msg_p)) {
           case RRC_MAC_CCCH_DATA_REQ:
             LOG_I(MAC,
-                  "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-                  ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
+                  "Received %s from %s: instance %ld, frameP %d, eNB_index %d\n",
+                  ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_DESTINATION_INSTANCE(msg_p),
                   RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
                   RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
             // TODO process CCCH data req.
@@ -3098,6 +3098,9 @@ ue_scheduler(const module_id_t module_idP,
       pdcp_run(&ctxt);
     }
   }
+
+  void rlc_tick(int, int);
+  rlc_tick(rxFrameP % 1024, rxSubframeP);
 
   //#endif
   UE_mac_inst[module_idP].txFrame = txFrameP;

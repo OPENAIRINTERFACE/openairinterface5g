@@ -41,6 +41,7 @@ import constants as CONST
 import cls_oaicitest		#main class for OAI CI test framework
 import cls_physim           #class PhySim for physical simulators build and test
 import cls_cots_ue			#class CotsUe for Airplane mode control
+import cls_containerize     #class Containerize for all container-based operations on RAN/UE objects
 
 
 import sshconnection 
@@ -98,24 +99,34 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB':
+	if action == 'Build_eNB' or action == 'Build_Image':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
 		if (forced_workspace_cleanup is None):
 			RAN.Build_eNB_forced_workspace_cleanup=False
+			CONTAINERS.forcedWorkspaceCleanup=False
 		else:
 			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
 				RAN.Build_eNB_forced_workspace_cleanup=True
+				CONTAINERS.forcedWorkspaceCleanup=True
 			else:
-				RAN.Build_eNB_forced_workspace_cleanup=False
+				RAN.Build_eNB_forced_workspace_cleanup=True
+				CONTAINERS.forcedWorkspaceCleanup=False
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
+			CONTAINERS.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+			CONTAINERS.eNB_instance=int(eNB_instance)
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+			CONTAINERS.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
+			CONTAINERS.eNB_serverId[CONTAINERS.eNB_instance]=eNB_serverId
 		xmlBgBuildField = test.findtext('backgroundBuild')
 		if (xmlBgBuildField is None):
 			RAN.backgroundBuild=False
@@ -132,9 +143,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
 	elif action == 'Initialize_eNB':
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
@@ -143,9 +156,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
@@ -162,10 +177,12 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
-			
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
+
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
@@ -288,6 +305,27 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.mmeConfFile = string_field
 
+	elif action == 'Deploy_EPC':
+		string_field = test.findtext('parameters')
+		if (string_field is not None):
+			EPC.yamlPath = string_field
+
+	elif action == 'Deploy_Object' or action == 'Undeploy_Object':
+		eNB_instance=test.findtext('eNB_instance')
+		if (eNB_instance is None):
+			CONTAINERS.eNB_instance=0
+		else:
+			CONTAINERS.eNB_instance=int(eNB_instance)
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			CONTAINERS.eNB_serverId[CONTAINERS.eNB_instance]='0'
+		else:
+			CONTAINERS.eNB_serverId[CONTAINERS.eNB_instance]=eNB_serverId
+		string_field = test.findtext('yaml_path')
+		if (string_field is not None):
+			CONTAINERS.yamlPath[CONTAINERS.eNB_instance] = string_field
+
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -339,11 +377,7 @@ SSH = sshconnection.SSHConnection()
 EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
-
-EPC.htmlObj=HTML
-RAN.htmlObj=HTML
-RAN.epcObj=EPC
-
+CONTAINERS = cls_containerize.Containerize()
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
 
@@ -354,7 +388,7 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 #-----------------------------------------------------------
 
 import args_parse
-py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,HELP)
+py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP)
 
 
 
@@ -383,10 +417,10 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	RAN.eNB_serverId='0'
 	RAN.eNB_instance=0
+	RAN.eNB_serverId[0]='0'
 	RAN.eNBSourceCodePath='/tmp/'
-	RAN.TerminateeNB()
+	RAN.TerminateeNB(HTML, EPC)
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
 		HELP.GenericHelp(CONST.Version)
@@ -398,22 +432,22 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	EPC.TerminateHSS()
+	EPC.TerminateHSS(HTML)
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	EPC.TerminateMME()
+	EPC.TerminateMME(HTML)
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath== '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	EPC.TerminateSPGW()
+	EPC.TerminateSPGW(HTML)
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
 	if (RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
 		HELP.GenericHelp(CONST.Version)
@@ -495,7 +529,7 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-	logging.debug('\u001B[1m  Starting Scenario \u001B[0m')
+	logging.debug('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
@@ -566,7 +600,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
 	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
-		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC)
+		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC,CONTAINERS)
 		EPC.SetMmeIPAddress()
 
 	#get the list of tests to be done
@@ -626,17 +660,16 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 							RAN.prematureExit = True
 							break
 				if action == 'Build_eNB':
-					RAN.BuildeNB()
+					RAN.BuildeNB(HTML)
 				elif action == 'WaitEndBuild_eNB':
-					RAN.WaitBuildeNBisFinished()
+					RAN.WaitBuildeNBisFinished(HTML)
 				elif action == 'Initialize_eNB':
 					check_eNB = False
 					check_OAI_UE = False
 					RAN.pStatus=CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-
-					RAN.InitializeeNB()
+					RAN.InitializeeNB(HTML, EPC)
 				elif action == 'Terminate_eNB':
-					RAN.TerminateeNB()
+					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
 					CiTestObj.InitializeUE(HTML,COTS_UE)
 				elif action == 'Terminate_UE':
@@ -656,17 +689,17 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Initialize_OAI_UE':
 					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC)
 				elif action == 'Ping':
 					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Iperf':
@@ -674,17 +707,21 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':
-					EPC.InitializeHSS()
+					EPC.InitializeHSS(HTML)
 				elif action == 'Terminate_HSS':
-					EPC.TerminateHSS()
+					EPC.TerminateHSS(HTML)
 				elif action == 'Initialize_MME':
-					EPC.InitializeMME()
+					EPC.InitializeMME(HTML)
 				elif action == 'Terminate_MME':
-					EPC.TerminateMME()
+					EPC.TerminateMME(HTML)
 				elif action == 'Initialize_SPGW':
-					EPC.InitializeSPGW()
+					EPC.InitializeSPGW(HTML)
 				elif action == 'Terminate_SPGW':
-					EPC.TerminateSPGW()
+					EPC.TerminateSPGW(HTML)
+				elif action == 'Deploy_EPC':
+					EPC.DeployEpc(HTML)
+				elif action == 'Undeploy_EPC':
+					EPC.UndeployEpc(HTML)
 				elif action == 'Initialize_FlexranCtrl':
 					CiTestObj.InitializeFlexranCtrl(HTML,RAN,EPC)
 				elif action == 'Terminate_FlexranCtrl':
@@ -698,6 +735,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if ldpc.exitStatus==1:sys.exit()
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
+				elif action == 'Build_Image':
+					CONTAINERS.BuildImage(HTML)
+				elif action == 'Deploy_Object':
+					CONTAINERS.DeployObject(HTML, EPC)
+				elif action == 'Undeploy_Object':
+					CONTAINERS.UndeployObject(HTML, RAN)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if not RAN.prematureExit:
@@ -707,14 +750,14 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						HTML.testStabilityPointReached = True
 		CiTestObj.FailReportCnt += 1
 	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
-		logging.debug('Testsuite failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.debug('Scenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(False)
 		if CiTestObj.testUnstable and (CiTestObj.testStabilityPointReached or CiTestObj.testMinStableId == '999999'):
 			logging.debug('Scenario has reached minimal stability point -- Not a Failure')
 		else:
 			sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.info('Scenario passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(True)
 elif re.match('^LoadParams$', mode, re.IGNORECASE):
 	pass

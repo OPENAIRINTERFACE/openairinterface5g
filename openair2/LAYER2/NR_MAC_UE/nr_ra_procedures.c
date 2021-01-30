@@ -63,7 +63,6 @@
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-extern const uint8_t nr_slots_per_frame[5];
 
 //extern uint8_t  nfapi_mode;
 
@@ -560,7 +559,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_window_cnt = -1;
         mac->ra_state = RA_SUCCEEDED;
         mac->generate_nr_prach = 2;
-        LOG_I(MAC, "[MAC][UE %d][RAPROC]: RAR successfully received \n", mod_id);
+        LOG_I(MAC, "[MAC][UE %d][RAPROC]: frame %d slot %d RAR successfully received\n", mod_id, frame, nr_slot_tx);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 

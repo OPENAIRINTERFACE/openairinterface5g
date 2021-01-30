@@ -116,7 +116,7 @@ void dump_trees_m3(void)
 m3ap_MCE_instance_t *zz;
 STAILQ_FOREACH(zz, &m3ap_MCE_internal_data.m3ap_MCE_instances_head,
                m3ap_MCE_entries) {
-printf("here comes the tree (instance %d):\n---------------------------------------------\n", zz->instance);
+printf("here comes the tree (instance %ld):\n---------------------------------------------\n", zz->instance);
 dump_tree_m3(zz->m3ap_mce_head.rbh_root);
 printf("---------------------------------------------\n");
 }

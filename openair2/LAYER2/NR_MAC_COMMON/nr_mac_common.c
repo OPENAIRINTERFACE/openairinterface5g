@@ -33,6 +33,8 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include <limits.h>
 
+#define reserved 0xffff
+
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 // Table 6.3.3.1-5 (38.211) NCS for preamble formats with delta_f_RA = 1.25 KHz
@@ -47,6 +49,73 @@ uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,8
 
 // Table 6.3.3.1-7 (38.211) NCS for preamble formats with delta_f_RA = 15 * 2mu KHz where mu = {0,1,2,3}
 uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
+
+
+//	specification mapping talbe, table_38$x_$y_$z_c$a
+//	- $x: specification
+//	- $y: subclause-major
+//	- $z: subclause-minor
+//	- $a: ($a)th of column in table, start from zero
+const int32_t table_38213_13_1_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, reserved}; // index 15 reserved
+const int32_t table_38213_13_1_c2[16] = {24, 24, 24, 24, 24, 24, 48, 48, 48, 48, 48, 48, 96, 96, 96, reserved}; // index 15 reserved
+const int32_t table_38213_13_1_c3[16] = { 2,  2,  2,  3,  3,  3,  1,  1,  2,  2,  3,  3,  1,  2,  3, reserved}; // index 15 reserved
+const int32_t table_38213_13_1_c4[16] = { 0,  2,  4,  0,  2,  4, 12, 16, 12, 16, 12, 16, 38, 38, 38, reserved}; // index 15 reserved
+
+const int32_t table_38213_13_2_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved}; // index 14-15 reserved
+const int32_t table_38213_13_2_c2[16] = {24, 24, 24, 24, 24, 24, 24, 24, 48, 48, 48, 48, 48, 48, reserved, reserved}; // index 14-15 reserved
+const int32_t table_38213_13_2_c3[16] = { 2,  2,  2,  2,  3,  3,  3,  3,  1,  1,  2,  2,  3,  3, reserved, reserved}; // index 14-15 reserved
+const int32_t table_38213_13_2_c4[16] = { 5,  6,  7,  8,  5,  6,  7,  8, 18, 20, 18, 20, 18, 20, reserved, reserved}; // index 14-15 reserved
+
+const int32_t table_38213_13_3_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_3_c2[16] = {48, 48, 48, 48, 48, 48, 96, 96, 96, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_3_c3[16] = { 1,  1,  2,  2,  3,  3,  1,  2,  3, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_3_c4[16] = { 2,  6,  2,  6,  2,  6, 28, 28, 28, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+
+const int32_t table_38213_13_4_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+const int32_t table_38213_13_4_c2[16] = {24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 48, 48, 48, 48, 48, 48};
+const int32_t table_38213_13_4_c3[16] = { 2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  1,  1,  1,  2,  2,  2};
+const int32_t table_38213_13_4_c4[16] = { 0,  1,  2,  3,  4,  0,  1,  2,  3,  4, 12, 14, 16, 12, 14, 16};
+
+const int32_t table_38213_13_5_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_5_c2[16] = {48, 48, 48, 96, 96, 96, 96, 96, 96, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_5_c3[16] = { 1,  2,  3,  1,  1,  2,  2,  3,  3, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_5_c4[16] = { 4,  4,  4,  0, 56,  0, 56,  0, 56, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+
+const int32_t table_38213_13_6_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+const int32_t table_38213_13_6_c2[16] = {24, 24, 24, 24, 48, 48, 48, 48, 48, 48, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+const int32_t table_38213_13_6_c3[16] = { 2,  2,  3,  3,  1,  1,  2,  2,  3,  3, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+const int32_t table_38213_13_6_c4[16] = { 0,  4,  0,  4,  0, 28,  0, 28,  0, 28, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+
+const int32_t table_38213_13_7_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, reserved, reserved, reserved, reserved}; // index 12-15 reserved
+const int32_t table_38213_13_7_c2[16] = {48, 48, 48, 48, 48, 48, 96, 96, 48, 48, 96, 96, reserved, reserved, reserved, reserved}; // index 12-15 reserved
+const int32_t table_38213_13_7_c3[16] = { 1,  1,  2,  2,  3,  3,  1,  2,  1,  1,  1,  1, reserved, reserved, reserved, reserved}; // index 12-15 reserved
+const int32_t table_38213_13_7_c4[16] = { 0,  8,  0,  8,  0,  8, 28, 28,-41, 49,-41, 97, reserved, reserved, reserved, reserved}; // index 12-15 reserved, condition A as default
+
+const int32_t table_38213_13_8_c1[16] = { 1,  1,  1,  1,  3,  3,  3,  3, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved
+const int32_t table_38213_13_8_c2[16] = {24, 24, 48, 48, 24, 24, 48, 48, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved
+const int32_t table_38213_13_8_c3[16] = { 2,  2,  1,  2,  2,  2,  2,  2, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved
+const int32_t table_38213_13_8_c4[16] = { 0,  4, 14, 14,-20, 24,-20, 48, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved, condition A as default
+
+const int32_t table_38213_13_9_c1[16] = {1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+const int32_t table_38213_13_9_c2[16] = {96, 96, 96, 96, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+const int32_t table_38213_13_9_c3[16] = { 1,  1,  2,  2, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+const int32_t table_38213_13_9_c4[16] = { 0, 16,  0, 16, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+
+const int32_t table_38213_13_10_c1[16] = {1, 1, 1, 1, 2, 2, 2, 2, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved
+const int32_t table_38213_13_10_c2[16] = {48, 48, 48, 48, 24, 24, 48, 48, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved
+const int32_t table_38213_13_10_c3[16] = { 1,  1,  2,  2,  1,  1,  1,  1, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved
+const int32_t table_38213_13_10_c4[16] = { 0,  8,  0,  8,-41, 25,-41, 49, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved, condition A as default
+
+const float   table_38213_13_11_c1[16] = { 0,  0,  2,  2,  5,  5,  7,  7,  0,  5,  0,  0,  2,  2,  5,  5};	//	O
+const int32_t table_38213_13_11_c2[16] = { 1,  2,  1,  2,  1,  2,  1,  2,  1,  1,  1,  1,  1,  1,  1,  1};
+const float   table_38213_13_11_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 1, 0.5f,  1,  1,  1,  1,  1,  1,  1,  1};	//	M
+const int32_t table_38213_13_11_c4[16] = { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  1,  2,  1,  2};	// i is even as default
+
+const float   table_38213_13_12_c1[16] = { 0, 0, 2.5f, 2.5f, 5, 5, 0, 2.5f, 5, 7.5f, 7.5f, 7.5f, 0, 5, reserved, reserved}; // O, index 14-15 reserved
+const int32_t table_38213_13_12_c2[16] = { 1,  2,  1,  2,  1,  2,  2,  2,  2,  1,  2,  2,  1,  1,  reserved,  reserved}; // index 14-15 reserved
+const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f, 0.5f, 1, 0.5f, 0.5f, 1, 1,  reserved,  reserved}; // M, index 14-15 reserved
+
+const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 const char *duplex_mode[]={"FDD","TDD"};
@@ -937,14 +1006,22 @@ int64_t table_6_3_3_2_4_prachConfig_Index [256][10] = {
 
 
 int get_format0(uint8_t index,
-                uint8_t unpaired){
+                uint8_t unpaired,
+		frequency_range_t frequency_range){
 
   uint16_t format;
-  if (unpaired)
-    format = table_6_3_3_2_3_prachConfig_Index[index][0];
-  else
-    format = table_6_3_3_2_2_prachConfig_Index[index][0];
-
+  if (unpaired) {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_3_prachConfig_Index[index][0];
+    else
+      format = table_6_3_3_2_4_prachConfig_Index[index][0];
+  }
+  else {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_2_prachConfig_Index[index][0];
+    else
+      AssertFatal(0==1,"no paired spectrum for FR2\n");
+  }
   return format;
 }
 
@@ -965,6 +1042,33 @@ int64_t *get_prach_config_info(uint32_t pointa,
 
   return prach_config_info_p;
 }
+
+void find_aggregation_candidates(uint8_t *aggregation_level,
+                                 uint8_t *nr_of_candidates,
+                                 NR_SearchSpace_t *ss) {
+
+  if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
+    *aggregation_level = 1;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
+  }
+  if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
+    *aggregation_level = 2;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
+  }
+  if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
+    *aggregation_level = 4;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
+  }
+  if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
+    *aggregation_level = 8;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
+  }
+  if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
+    *aggregation_level = 16;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
+  }
+}
+
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
@@ -1402,11 +1506,12 @@ uint16_t table_63313[838] = {
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired) {
+                            uint8_t unpaired,
+			    frequency_range_t frequency_range) {
 
   uint8_t config_index = rach_config->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t ncs_index = rach_config->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-  uint16_t format0 = get_format0(config_index, unpaired);
+  uint16_t format0 = get_format0(config_index, unpaired, frequency_range);
   uint16_t NCS = get_NCS(ncs_index, format0, rach_config->restrictedSetConfig);
   uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139) ? 139 : 839;
   uint16_t r,u,index,q,d_u,n_shift_ra,n_shift_ra_bar,d_start;
@@ -1879,7 +1984,8 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   }
   uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
   uint8_t Imcs = pdsch_rel15->mcsIndex[0];
-  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  uint16_t dmrs_length = get_num_dmrs(pdsch_rel15->dlDmrsSymbPos);
+  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS*dmrs_length - N_PRB_oh;
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
   uint16_t R;
@@ -1896,10 +2002,10 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 
   TBS = nr_compute_tbs(Qm,
                        R,
-		       pdsch_rel15->rbSize,
-		       N_sh_symb,
-		       N_PRB_DMRS, // FIXME // This should be multiplied by the number of dmrs symbols
-		       N_PRB_oh,
+                       pdsch_rel15->rbSize,
+                       N_sh_symb,
+                       N_PRB_DMRS*dmrs_length,
+                       N_PRB_oh,
                        tb_scaling,
 		       pdsch_rel15->nrOfLayers)>>3;
 
@@ -2121,6 +2227,10 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
 }
+/* returns the total DMRS symbols in a slot*/
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols));
+}
 
 // Table 5.1.2.2.1-1 38.214
 uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
@@ -2283,11 +2393,19 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
   long rbg_size_config;
   int num_entries = 0;
   int pusch_antenna_ports = 1; // TODO hardcoded number of antenna ports for pusch
-  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_PDSCH_Config_t *pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
-  NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
-  NR_SRS_Config_t *srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
+
+  NR_BWP_Downlink_t *bwp = NULL;
+  NR_BWP_Uplink_t *ubwp = NULL;
+  NR_PDSCH_Config_t *pdsch_config = NULL;
+  NR_PUSCH_Config_t *pusch_Config = NULL;
+  NR_SRS_Config_t *srs_config = NULL;
+  if(bwp_id > 0) {
+    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+    ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+    pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+    pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
+    srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
+  }
 
   switch(format) {
     /*Only sizes for 0_0 and 1_0 are correct at the moment*/
@@ -2492,8 +2610,13 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
 
     case NR_DL_DCI_FORMAT_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
-      size += 28;
+      size = 28;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
+
+      dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      dci_pdu->time_domain_assignment.nbits = 4;
+      dci_pdu->vrb_to_prb_mapping.nbits = 1;
+
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
@@ -2743,8 +2866,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	case 5 :
 	case 6 :
 	case 7 :
-	  AssertFatal(1==0,"Incoompatible NrOfSymbols %d and dmrs_Additional_Position %d\n",
-		      NrOfSymbols,(int)*dmrs_config->dmrs_AdditionalPosition);
+    return(1<<l0);
 	  break;
 	case 8 :
 	case 9:
@@ -2752,26 +2874,26 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	  break;
 	case 10:
 	case 11:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
 	    return(1<<l0 | 1<<9);
 	  else
 	    return(1<<l0 | 1<<6 | 1<<9);
 	  break;
 	case 12:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
 	    return(1<<l0 | 1<<9);
 	  else if (pos2==1)
 	    return(1<<l0 | 1<<6 | 1<<9);
-	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
+	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
 	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
 	  break;
 	case 13:
 	case 14:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
 	    return(1<<l0 | 1<<11);
 	  else if (pos2==1)
 	    return(1<<l0 | 1<<7 | 1<<11);
-	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
+	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
 	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
 	  break;
 	}
@@ -2784,6 +2906,8 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
+        if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
+	if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
       }
     }
     else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
@@ -2846,3 +2970,442 @@ int binomial(int n, int k) {
   return c;
 }
 
+/* extract PTRS values from RC and validate it based upon 38.214 5.1.6.3 */
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *portIndex,uint8_t *nERatio, uint8_t *reOffset,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 5.1.6.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ptrs_config->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 5.1.6.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ptrs_config->frequencyDensity->list.array[0],
+                         *ptrs_config->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ptrs_config->timeDensity->list.count < 3) {
+    /* Default value for L_PTRS = 1 as defined in T 38.214 5.1.6.3 */
+       *L_ptrs = 1;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ptrs_config->timeDensity->list.array[0],
+                         *ptrs_config->timeDensity->list.array[1],
+                         *ptrs_config->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  *portIndex =*ptrs_config->epre_Ratio;
+  *nERatio = *ptrs_config->resourceElementOffset;
+  *reOffset  = 0;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 5.1.6.3-1 and Table 5.1.6.3-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PDSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PDSCH with allocation duration of 2 symbols as defined in Clause 7.4.1.1.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+  return valid;
+}
+uint32_t get_ssb_slot(uint32_t ssb_index){
+  //  this function now only support f <= 3GHz
+  return ssb_index & 0x3 ;
+
+  //  return first_symbol(case, freq, ssb_index) / 14
+}
+
+int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                          NR_MIB_t *mib,
+                                          uint8_t extra_bits,
+                                          uint32_t ssb_length,
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a) {
+
+  //  deafult for testing
+  subcarrier_spacing_t scs_ssb = scs_30kHz;
+  channel_bandwidth_t min_channel_bw = bw_10MHz;
+  frequency_range_t frequency_range = FR1;
+  const uint32_t num_slot_per_frame = 20;
+
+  type0_PDCCH_CSS_config->ssb_length = ssb_length;
+  type0_PDCCH_CSS_config->ssb_index = ssb_index;
+  type0_PDCCH_CSS_config->frame = (mib->systemFrameNumber.buf[0] >> mib->systemFrameNumber.bits_unused);
+
+  uint16_t frame_number_4lsb = 0;
+  for (int i=0; i<4; i++) {
+    frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
+  }
+
+  uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
+  uint8_t ssb_subcarrier_offset = (uint8_t)mib->ssb_SubcarrierOffset;
+
+  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame << 4;
+  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame | frame_number_4lsb;
+
+  if(type0_PDCCH_CSS_config->ssb_length == 64){
+    type0_PDCCH_CSS_config->ssb_index = type0_PDCCH_CSS_config->ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
+  }else{
+    if(ssb_subcarrier_offset_msb){
+      ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
+    }
+  }
+
+  //  assume carrier frequency < 6GHz
+  subcarrier_spacing_t scs_pdcch;
+  if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
+    scs_pdcch = scs_15kHz;
+  }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
+    scs_pdcch = scs_30kHz;
+  }
+
+  uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
+  uint32_t index_4msb = (mib->pdcch_ConfigSIB1.controlResourceSetZero);
+  uint32_t index_4lsb = (mib->pdcch_ConfigSIB1.searchSpaceZero);
+
+  type0_PDCCH_CSS_config->num_rbs = -1;
+  type0_PDCCH_CSS_config->num_symbols = -1;
+  type0_PDCCH_CSS_config->rb_offset = -1;
+
+  //  type0-pdcch coreset
+  switch( (scs_ssb << 5) | scs_pdcch ){
+    case (scs_15kHz << 5) | scs_15kHz :
+      AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
+      type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_1_c3[index_4msb];
+      type0_PDCCH_CSS_config->rb_offset   = table_38213_13_1_c4[index_4msb];
+      break;
+
+    case (scs_15kHz << 5) | scs_30kHz:
+      AssertFatal(index_4msb < 14, "38.213 Table 13-2 4 MSB out of range\n");
+      type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_2_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_2_c3[index_4msb];
+      type0_PDCCH_CSS_config->rb_offset   = table_38213_13_2_c4[index_4msb];
+      break;
+
+    case (scs_30kHz << 5) | scs_15kHz:
+      if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
+        AssertFatal(index_4msb < 9, "38.213 Table 13-3 4 MSB out of range\n");
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_3_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_3_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_3_c4[index_4msb];
+      }else if(min_channel_bw & bw_40MHz){
+        AssertFatal(index_4msb < 9, "38.213 Table 13-5 4 MSB out of range\n");
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_5_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_5_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_5_c4[index_4msb];
+      }else{ ; }
+
+      break;
+
+    case (scs_30kHz << 5) | scs_30kHz:
+      if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_4_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_4_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_4_c4[index_4msb];
+
+      }else if(min_channel_bw & bw_40MHz){
+        AssertFatal(index_4msb < 10, "38.213 Table 13-6 4 MSB out of range\n");
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_6_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_6_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_6_c4[index_4msb];
+      }else{ ; }
+      break;
+
+    case (scs_120kHz << 5) | scs_60kHz:
+      AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
+      if(index_4msb & 0x7){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      }else if(index_4msb & 0x18){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 2;
+      }else{ ; }
+
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_7_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_7_c3[index_4msb];
+      if(!is_condition_A && (index_4msb == 8 || index_4msb == 10)){
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_7_c4[index_4msb] - 1;
+      }else{
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_7_c4[index_4msb];
+      }
+      break;
+
+    case (scs_120kHz << 5) | scs_120kHz:
+      AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
+      if(index_4msb & 0x3){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      }else if(index_4msb & 0x0c){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 3;
+      }
+
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_8_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_8_c3[index_4msb];
+      if(!is_condition_A && (index_4msb == 4 || index_4msb == 6)){
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_8_c4[index_4msb] - 1;
+      }else{
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_8_c4[index_4msb];
+      }
+      break;
+
+    case (scs_240kHz << 5) | scs_60kHz:
+      AssertFatal(index_4msb < 4, "38.213 Table 13-9 4 MSB out of range\n");
+      type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_9_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_9_c3[index_4msb];
+      type0_PDCCH_CSS_config->rb_offset   = table_38213_13_9_c4[index_4msb];
+      break;
+
+    case (scs_240kHz << 5) | scs_120kHz:
+      AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
+      if(index_4msb & 0x3){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      }else if(index_4msb & 0x0c){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 2;
+      }
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_10_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_10_c3[index_4msb];
+      if(!is_condition_A && (index_4msb == 4 || index_4msb == 6)){
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_10_c4[index_4msb]-1;
+      }else{
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_10_c4[index_4msb];
+      }
+
+      break;
+
+    default:
+      break;
+  }
+
+  LOG_D(MAC,"Coreset0: index_4msb=%d, num_rbs=%d, num_symb=%d, rb_offset=%d\n",
+        index_4msb,type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
+
+  AssertFatal(type0_PDCCH_CSS_config->num_rbs != -1, "Type0 PDCCH coreset num_rbs undefined");
+  AssertFatal(type0_PDCCH_CSS_config->num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
+  AssertFatal(type0_PDCCH_CSS_config->rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
+
+
+  //uint32_t cell_id = 0;   //  obtain from L1 later
+
+  //mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
+  //mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
+
+//  uint64_t mask = 0x0;
+//  uint8_t i;
+//  for(i=0; i<(type0_PDCCH_CSS_config->num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
+//    mask = mask >> 1;
+//    mask = mask | 0x100000000000;
+//  }
+
+  //LOG_I(MAC,">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
+
+//    mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
+//    mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
+//
+//    //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
+//    mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+//    mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
+
+
+  // type0-pdcch search space
+  float big_o = 0.0f;
+  float big_m = 0.0f;
+  type0_PDCCH_CSS_config->sfn_c = SFN_C_IMPOSSIBLE;   //  only valid for mux=1
+  type0_PDCCH_CSS_config->n_c = UINT_MAX;
+  type0_PDCCH_CSS_config->number_of_search_space_per_slot = UINT_MAX;
+  type0_PDCCH_CSS_config->first_symbol_index = UINT_MAX;
+  type0_PDCCH_CSS_config->search_space_duration = 0;  //  element of search space
+  //  38.213 table 10.1-1
+
+  /// MUX PATTERN 1
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR1){
+    big_o = table_38213_13_11_c1[index_4lsb];
+    type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
+    big_m = table_38213_13_11_c3[index_4lsb];
+
+    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
+    if((temp/num_slot_per_frame) & 0x1){
+      type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
+    }else{
+      type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_0;
+    }
+
+    if((index_4lsb == 1 || index_4lsb == 3 || index_4lsb == 5 || index_4lsb == 7) && (type0_PDCCH_CSS_config->ssb_index&1)){
+      type0_PDCCH_CSS_config->first_symbol_index = type0_PDCCH_CSS_config->num_symbols;
+    }else{
+      type0_PDCCH_CSS_config->first_symbol_index = table_38213_13_11_c4[index_4lsb];
+    }
+    //  38.213 chapter 13: over two consecutive slots
+    type0_PDCCH_CSS_config->search_space_duration = 2;
+  }
+
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR2){
+    big_o = table_38213_13_12_c1[index_4lsb];
+    type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
+    big_m = table_38213_13_12_c3[index_4lsb];
+
+    if((index_4lsb == 1 || index_4lsb == 3 || index_4lsb == 5 || index_4lsb == 10) && (type0_PDCCH_CSS_config->ssb_index&1)){
+      type0_PDCCH_CSS_config->first_symbol_index = 7;
+    }else if((index_4lsb == 6 || index_4lsb == 7 || index_4lsb == 8 || index_4lsb == 11) && (type0_PDCCH_CSS_config->ssb_index&1)){
+      type0_PDCCH_CSS_config->first_symbol_index = type0_PDCCH_CSS_config->num_symbols;
+    }else{
+      type0_PDCCH_CSS_config->first_symbol_index = 0;
+    }
+    //  38.213 chapter 13: over two consecutive slots
+    type0_PDCCH_CSS_config->search_space_duration = 2;
+  }
+
+  /// MUX PATTERN 2
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 2){
+
+    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
+      //  38.213 Table 13-13
+      AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
+      //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
+      //                sfn_c = SFN_C_EQ_SFN_SSB;
+      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
+        case 0:
+          type0_PDCCH_CSS_config->first_symbol_index = 0;
+          break;
+        case 1:
+          type0_PDCCH_CSS_config->first_symbol_index = 1;
+          break;
+        case 2:
+          type0_PDCCH_CSS_config->first_symbol_index = 6;
+          break;
+        case 3:
+          type0_PDCCH_CSS_config->first_symbol_index = 7;
+          break;
+        default: break;
+      }
+
+    }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
+      //  38.213 Table 13-14
+      AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
+      //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
+      //                sfn_c = SFN_C_EQ_SFN_SSB;
+      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      switch(type0_PDCCH_CSS_config->ssb_index & 0x7){    //  ssb_index(i) mod 8
+        case 0:
+          type0_PDCCH_CSS_config->first_symbol_index = 0;
+          break;
+        case 1:
+          type0_PDCCH_CSS_config->first_symbol_index = 1;
+          break;
+        case 2:
+          type0_PDCCH_CSS_config->first_symbol_index = 2;
+          break;
+        case 3:
+          type0_PDCCH_CSS_config->first_symbol_index = 3;
+          break;
+        case 4:
+          type0_PDCCH_CSS_config->first_symbol_index = 12;
+          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          break;
+        case 5:
+          type0_PDCCH_CSS_config->first_symbol_index = 13;
+          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          break;
+        case 6:
+          type0_PDCCH_CSS_config->first_symbol_index = 0;
+          break;
+        case 7:
+          type0_PDCCH_CSS_config->first_symbol_index = 1;
+          break;
+        default: break;
+      }
+    }else{ ; }
+    //  38.213 chapter 13: over one slot
+    type0_PDCCH_CSS_config->search_space_duration = 1;
+  }
+
+  /// MUX PATTERN 3
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 3){
+    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_120kHz)){
+      //  38.213 Table 13-15
+      AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
+      //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
+      //                sfn_c = SFN_C_EQ_SFN_SSB;
+      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
+        case 0:
+          type0_PDCCH_CSS_config->first_symbol_index = 4;
+          break;
+        case 1:
+          type0_PDCCH_CSS_config->first_symbol_index = 8;
+          break;
+        case 2:
+          type0_PDCCH_CSS_config->first_symbol_index = 2;
+          break;
+        case 3:
+          type0_PDCCH_CSS_config->first_symbol_index = 6;
+          break;
+        default: break;
+      }
+    }else{ ; }
+    //  38.213 chapter 13: over one slot
+    type0_PDCCH_CSS_config->search_space_duration = 1;
+  }
+
+  AssertFatal(type0_PDCCH_CSS_config->number_of_search_space_per_slot!=UINT_MAX,"");
+
+//  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
+//    mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
+//    mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
+//    mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
+//    mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
+//    mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
+//    mac->type0_pdcch_dci_config.duration = search_space_duration;
+//    mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
+//    AssertFatal(first_symbol_index!=UINT_MAX,"");
+//    mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
+
+  AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
+  AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
+
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
+
+  return 0;
+}

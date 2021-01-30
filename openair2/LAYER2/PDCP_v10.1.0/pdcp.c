@@ -358,16 +358,7 @@ boolean_t pdcp_data_req(
       LOG_D(PDCP, "pdcp data req on drb %ld, size %d, rnti %x, node_type %d \n",
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc ? RC.rrc[ctxt_pP->module_id]->node_type: -1);
 
-      // The check on nos1 is done only for the use case of LTE stack running over 5g-nr PHY. This should be changed
-      // before future merge of develop with develop-nr and instead of a check of IS_SOFTMODEM_NOS1, we should use a check
-      // with a new execution option capturing the nr-ip-over-LTE-stack use case.
-      ngran_node_t node_type;
-      if (IS_SOFTMODEM_NOS1)
-    	  node_type = ngran_gNB;
-      else
-    	  node_type = RC.rrc[ctxt_pP->module_id]->node_type;
-
-      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(node_type)) { //RC.rrc[ctxt_pP->module_id]->node_type
+      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
         LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
         ret=FALSE;
       } else {
@@ -403,7 +394,7 @@ boolean_t pdcp_data_req(
         // DL transfer
         MessageDef                            *message_p;
         // Note: the acyual task must be TASK_PDCP_ENB, but this task is not created
-        message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+        message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
         F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  &pdcp_pdu_p->data[0] ;
         F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = pdcp_pdu_size;
         F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
@@ -939,7 +930,7 @@ pdcp_data_ind(
                                   sdu_buffer_sizeP - payload_offset + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = sdu_buffer_sizeP - payload_offset;
@@ -1148,11 +1139,11 @@ pdcp_run (
             RRC_DCCH_DATA_REQ (msg_p).frame,
             0,
             RRC_DCCH_DATA_REQ (msg_p).eNB_index);
-          LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
+          LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %ld, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
                 PROTOCOL_CTXT_ARGS(&ctxt),
                 ITTI_MSG_NAME (msg_p),
                 ITTI_MSG_ORIGIN_NAME(msg_p),
-                ITTI_MSG_INSTANCE (msg_p),
+                ITTI_MSG_DESTINATION_INSTANCE (msg_p),
                 RRC_DCCH_DATA_REQ (msg_p).rb_id,
                 RRC_DCCH_DATA_REQ (msg_p).muip,
                 RRC_DCCH_DATA_REQ (msg_p).confirmp,
@@ -1274,7 +1265,7 @@ pdcp_mbms_run (
 //                PROTOCOL_CTXT_ARGS(&ctxt),
 //                ITTI_MSG_NAME (msg_p),
 //                ITTI_MSG_ORIGIN_NAME(msg_p),
-//                ITTI_MSG_INSTANCE (msg_p),
+//                ITTI_MSG_DESTINATION_INSTANCE (msg_p),
 //                RRC_DCCH_DATA_REQ (msg_p).rb_id,
 //                RRC_DCCH_DATA_REQ (msg_p).muip,
 //                RRC_DCCH_DATA_REQ (msg_p).confirmp,

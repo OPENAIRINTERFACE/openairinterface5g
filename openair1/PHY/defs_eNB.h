@@ -166,6 +166,8 @@ typedef struct {
   int32_t **ul_ch_magb;
   /// measured RX power based on DRS
   int ulsch_power[2];
+  /// measured Interference power based on DRS
+  int ulsch_interference_power[2];
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
@@ -389,6 +391,8 @@ typedef struct {
   short n0_subband_power_tot_dB[100];
   //! estimated avg noise power per RB (dBm)
   short n0_subband_power_tot_dBm[100];
+  //! etimated avg noise power over all RB (dB)
+  short n0_subband_power_avg_dB;
   // eNB measurements (per user)
   //! estimated received spatial signal power (linear)
   unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
@@ -417,6 +421,8 @@ typedef struct {
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
   /// PRACH background noise level
   int            prach_I0;
+  /// PUCCH background noise level
+  int            n0_pucch_dB;
 } PHY_MEASUREMENTS_eNB;
 
 
@@ -665,6 +671,7 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
   uint8_t *FS6bufferZone;
+  int32_t pusch_signal_threshold;
 } PHY_VARS_eNB;
 
 

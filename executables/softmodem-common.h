@@ -56,6 +56,7 @@ extern "C"
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DORA          "test gNB  and UE with RA procedures\n"
+#define CONFIG_HLP_SA            "run gNB in standalone mode\n"
 #define CONFIG_HLP_EXTS          "tells hardware to use an external timing reference\n"
 #define CONFIG_HLP_DMRSSYNC      "tells RU to insert DMRS in subframe 1 slot 0"
 #define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
@@ -70,7 +71,7 @@ extern "C"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
-
+#define CONFIG_HLP_256QAM        "Use the 256 QAM mcs table for PDSCH\n"
 
 //#define CONFIG_HLP_NUMUES        "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
@@ -100,6 +101,7 @@ extern "C"
 #define TP_CONFIG           softmodem_params.threadPoolConfig
 #define PHY_TEST            softmodem_params.phy_test
 #define DO_RA               softmodem_params.do_ra
+#define SA                  softmodem_params.sa
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
 #define CHAIN_OFFSET        softmodem_params.chain_offset
@@ -109,6 +111,7 @@ extern "C"
 #define TIMING_SOURCE       softmodem_params.timing_source
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
+#define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -118,6 +121,7 @@ extern "C"
     {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)}, \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
     {"do-ra",                CONFIG_HLP_DORA,         PARAMFLAG_BOOL, iptr:&DO_RA,                        defintval:0,           TYPE_INT,    0},                     \
+    {"sa",                   CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&SA,                             defintval:0,           TYPE_INT,    0},                     \
     {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
     {"clock-source",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
     {"time-source",                CONFIG_HLP_TME,          0,              uptr:&TIMING_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
@@ -137,6 +141,7 @@ extern "C"
     {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
+    {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
   }
 
   
@@ -211,6 +216,7 @@ typedef struct {
   char           threadPoolConfig[1024];
   int            phy_test;
   int            do_ra;
+  int            sa;
   uint8_t        usim_test;
   int            emulate_rf;
   int            wait_for_sync; //eNodeB only
@@ -222,6 +228,7 @@ typedef struct {
   uint32_t       timing_source;
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
+  int            use_256qam_table;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);

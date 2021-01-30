@@ -24,6 +24,9 @@
 #include "SCHED_NR_UE/defs.h"
 #include "nr_estimation.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
+#include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "filt16a_32.h"
 
@@ -650,6 +653,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                unsigned short BWPStart,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch)
 {
@@ -667,7 +671,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int **dl_ch_estimates  =ue->pdsch_vars[proc->thread_id][eNB_offset]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
-  if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
+  if (ue->high_speed_flag == 0)
     ch_offset     = ue->frame_parms.ofdm_symbol_size ;
   else
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
@@ -683,10 +687,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
 
   // generate pilot for gNB port number 1000+p
-  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12;
+  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12 - BWPStart;
   uint8_t config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   int8_t delta = get_delta(p, config_type);
-  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][0], &pilot[0],1000+p,0,nb_rb_pdsch+rb_offset);
+  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol][0], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
 
   if (config_type == pdsch_dmrs_type1){
     nushift = (p>>1)&1;
@@ -1196,3 +1200,168 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
   return(0);
 }
+
+/*******************************************************************
+ *
+ * NAME :         nr_pdsch_ptrs_processing
+ *
+ * PARAMETERS :   ue                : ue data structure
+ *                NR_UE_PDSCH       : pdsch_vars pointer
+ *                NR_DL_FRAME_PARMS : frame_parms pointer
+ *                NR_DL_UE_HARQ_t   : dlsch0_harq pointer
+ *                NR_DL_UE_HARQ_t   : dlsch1_harq pointer
+ *                uint8_t           : eNB_id,
+ *                uint8_t           : nr_slot_rx,
+ *                unsigned char     : symbol,
+ *                uint32_t          : nb_re_pdsch,
+ *                unsigned char     : harq_pid
+ *                uint16_t          : rnti
+ *                RX_type_t         : rx_type
+ * RETURN : Nothing
+ *
+ * DESCRIPTION :
+ *  If ptrs is enabled process the symbol accordingly
+ *  1) Estimate common phase error per PTRS symbol
+ *  2) Interpolate PTRS estimated value in TD after all PTRS symbols
+ *  3) Compensate signal with PTRS estimation for slot
+ *********************************************************************/
+void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
+                              NR_UE_PDSCH **pdsch_vars,
+                              NR_DL_FRAME_PARMS *frame_parms,
+                              NR_DL_UE_HARQ_t *dlsch0_harq,
+                              NR_DL_UE_HARQ_t *dlsch1_harq,
+                              uint8_t eNB_id,
+                              uint8_t nr_slot_rx,
+                              unsigned char symbol,
+                              uint32_t nb_re_pdsch,
+                              unsigned char harq_pid,
+                              uint16_t rnti,
+                              RX_type_t rx_type)
+{
+  //#define DEBUG_DL_PTRS 1
+  int16_t *phase_per_symbol = NULL;
+  int32_t *ptrs_re_symbol = NULL;
+  int8_t   ret = 0;
+  /* harq specific variables */
+  uint8_t  symbInSlot       = 0;
+  uint16_t *startSymbIndex  = NULL;
+  uint16_t *nbSymb          = NULL;
+  uint8_t  *L_ptrs          = NULL;
+  uint8_t  *K_ptrs          = NULL;
+  uint16_t *dmrsSymbPos     = NULL;
+  uint16_t *ptrsSymbPos     = NULL;
+  uint8_t  *ptrsSymbIdx     = NULL;
+  uint8_t  *ptrsReOffset    = NULL;
+  uint8_t  *dmrsConfigType  = NULL;
+  uint16_t *nb_rb           = NULL;
+
+  if(dlsch0_harq->status == ACTIVE) {
+    symbInSlot      = dlsch0_harq->start_symbol + dlsch0_harq->nb_symbols;
+    startSymbIndex  = &dlsch0_harq->start_symbol;
+    nbSymb          = &dlsch0_harq->nb_symbols;
+    L_ptrs          = &dlsch0_harq->PTRSTimeDensity;
+    K_ptrs          = &dlsch0_harq->PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch0_harq->dlDmrsSymbPos;
+    ptrsSymbPos     = &dlsch0_harq->ptrs_symbols;
+    ptrsSymbIdx     = &dlsch0_harq->ptrs_symbol_index;
+    ptrsReOffset    = &dlsch0_harq->PTRSReOffset;
+    dmrsConfigType  = &dlsch0_harq->ptrs_symbol_index;
+    nb_rb           = &dlsch0_harq->nb_rb;
+  }
+  if(dlsch1_harq) {
+    symbInSlot      = dlsch1_harq->start_symbol + dlsch0_harq->nb_symbols;
+    startSymbIndex  = &dlsch1_harq->start_symbol;
+    nbSymb          = &dlsch1_harq->nb_symbols;
+    L_ptrs          = &dlsch1_harq->PTRSTimeDensity;
+    K_ptrs          = &dlsch1_harq->PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch1_harq->dlDmrsSymbPos;
+    ptrsSymbPos     = &dlsch1_harq->ptrs_symbols;
+    ptrsSymbIdx     = &dlsch1_harq->ptrs_symbol_index;
+    ptrsReOffset    = &dlsch1_harq->PTRSReOffset;
+    dmrsConfigType  = &dlsch1_harq->ptrs_symbol_index;
+    nb_rb           = &dlsch1_harq->nb_rb;
+  }
+  /* loop over antennas */
+  for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    phase_per_symbol = (int16_t*)pdsch_vars[eNB_id]->ptrs_phase_per_slot[aarx];
+    ptrs_re_symbol = (int32_t*)pdsch_vars[eNB_id]->ptrs_re_per_slot[aarx];
+    ptrs_re_symbol[symbol] = 0;
+    phase_per_symbol[(2*symbol)+1] = 0; // Imag
+    /* set DMRS estimates to 0 angle with magnitude 1 */
+    if(is_dmrs_symbol(symbol,*dmrsSymbPos)) {
+      /* set DMRS real estimation to 32767 */
+      phase_per_symbol[2*symbol]=(int16_t)((1<<15)-1); // 32767
+#ifdef DEBUG_DL_PTRS
+      printf("[PHY][PTRS]: DMRS Symbol %d -> %4d + j*%4d\n", symbol, phase_per_symbol[2*symbol],phase_per_symbol[(2*symbol)+1]);
+#endif
+    }
+    else { // real ptrs value is set to 0
+      phase_per_symbol[2*symbol] = 0; // Real
+    }
+
+    if(dlsch0_harq->status == ACTIVE) {
+      if(symbol == *startSymbIndex) {
+        *ptrsSymbPos = 0;
+        set_ptrs_symb_idx(ptrsSymbPos,
+                          *nbSymb,
+                          *startSymbIndex,
+                          1<< *L_ptrs,
+                          *dmrsSymbPos);
+      }
+      /* if not PTRS symbol set current ptrs symbol index to zero*/
+      *ptrsSymbIdx = 0;
+      /* Check if current symbol contains PTRS */
+      if(is_ptrs_symbol(symbol, *ptrsSymbPos)) {
+        *ptrsSymbIdx = symbol;
+        /*------------------------------------------------------------------------------------------------------- */
+        /* 1) Estimate common phase error per PTRS symbol                                                                */
+        /*------------------------------------------------------------------------------------------------------- */
+        nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
+                               rnti,
+                               (int16_t *)&pdsch_vars[eNB_id]->dl_ch_ptrs_estimates_ext[aarx][symbol*nb_re_pdsch],
+                               nr_slot_rx,
+                               symbol,frame_parms->ofdm_symbol_size,
+                               (int16_t*)&pdsch_vars[eNB_id]->rxdataF_comp0[aarx][(symbol * nb_re_pdsch)],
+                               ue->nr_gold_pdsch[eNB_id][nr_slot_rx][symbol][0],
+                               &phase_per_symbol[2* symbol],
+                               &ptrs_re_symbol[symbol]);
+      }
+    }// HARQ 0
+
+    /* For last OFDM symbol at each antenna perform interpolation and compensation for the slot*/
+    if(symbol == (symbInSlot -1)) {
+      /*------------------------------------------------------------------------------------------------------- */
+      /* 2) Interpolate PTRS estimated value in TD */
+      /*------------------------------------------------------------------------------------------------------- */
+      /* If L-PTRS is > 0 then we need interpolation */
+      if(*L_ptrs > 0) {
+        ret = nr_ptrs_process_slot(*dmrsSymbPos, *ptrsSymbPos, phase_per_symbol, *startSymbIndex, *nbSymb);
+        if(ret != 0) {
+          LOG_W(PHY,"[PTRS] Compensation is skipped due to error in PTRS slot processing !!\n");
+        }
+      }
+#ifdef DEBUG_DL_PTRS
+      LOG_M("ptrsEst.m","est",pdsch_vars[eNB_id]->ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
+      LOG_M("rxdataF_bf_ptrs_comp.m","bf_ptrs_cmp",
+            &pdsch_vars[eNB_id]->rxdataF_comp0[aarx][(*startSymbIndex) * NR_NB_SC_PER_RB * (*nb_rb) ],
+            (*nb_rb) * NR_NB_SC_PER_RB * (*nbSymb),1,1);
+#endif
+      /*------------------------------------------------------------------------------------------------------- */
+      /* 3) Compensated DMRS based estimated signal with PTRS estimation                                        */
+      /*--------------------------------------------------------------------------------------------------------*/
+      for(uint8_t i = *startSymbIndex; i< symbInSlot ;i++) {
+        /* DMRS Symbol has 0 phase so no need to rotate the respective symbol */
+        /* Skip rotation if the slot processing is wrong */
+        if((!is_dmrs_symbol(i,*dmrsSymbPos)) && (ret == 0)) {
+#ifdef DEBUG_DL_PTRS
+          printf("[PHY][DL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[2* i],phase_per_symbol[(2* i) +1]);
+#endif
+          rotate_cpx_vector((int16_t*)&pdsch_vars[eNB_id]->rxdataF_comp0[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
+                            &phase_per_symbol[2* i],
+                            (int16_t*)&pdsch_vars[eNB_id]->rxdataF_comp0[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
+                            ((*nb_rb) * NR_NB_SC_PER_RB), 15);
+        }// if not DMRS Symbol
+      }// symbol loop
+    }// last symbol check
+  }//Antenna loop
+}//main function

@@ -85,8 +85,8 @@ int eNB_handle_MBMS_SCHEDULING_INFORMATION(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MBMS_SCHEDULING_INFORMATION);
-  //message_p2  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MBMS_SCHEDULING_INFORMATION);
+  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MBMS_SCHEDULING_INFORMATION);
+  //message_p2  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MBMS_SCHEDULING_INFORMATION);
 
 
 
@@ -292,7 +292,7 @@ int eNB_handle_MBMS_SESSION_START_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MBMS_SESSION_START_REQ);
+  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MBMS_SESSION_START_REQ);
 
 
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -463,7 +463,7 @@ int eNB_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MBMS_SESSION_STOP_REQ);
+  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MBMS_SESSION_STOP_REQ);
 
 
   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -749,8 +749,8 @@ int eNB_handle_M2_SETUP_RESPONSE(instance_t instance,
    //M2AP_Cells_to_be_Activated_List_Item_t *cell;
    int i,j;
 
-   MessageDef *msg_p = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_SETUP_RESP);
-   //MessageDef *msg_p2 = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_SETUP_RESP);
+   MessageDef *msg_p = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_SETUP_RESP);
+   //MessageDef *msg_p2 = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_SETUP_RESP);
 
    LOG_D(M2AP, "M2AP: M2Setup-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -856,7 +856,7 @@ int eNB_handle_M2_SETUP_FAILURE(instance_t instance,
    M2AP_M2SetupFailure_Ies_t *ie;
 
 
-  MessageDef *msg_p = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_SETUP_FAILURE);
+  MessageDef *msg_p = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_SETUP_FAILURE);
 
    LOG_D(M2AP, "M2AP: M2Setup-Failure: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -1062,7 +1062,7 @@ int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
    //M2AP_ENBConfigurationUpdateFailure_Ies_t *ie;
 
 
-  MessageDef *msg_p = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_ENB_CONFIGURATION_UPDATE_FAILURE);
+  MessageDef *msg_p = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_ENB_CONFIGURATION_UPDATE_FAILURE);
 
    LOG_D(M2AP, "M2AP: ENBConfigurationUpdate-Failure: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -1127,7 +1127,7 @@ int eNB_handle_eNB_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_ENB_CONFIGURATION_UPDATE_ACK);
+  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_ENB_CONFIGURATION_UPDATE_ACK);
 
 
   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -1162,7 +1162,7 @@ int eNB_handle_MCE_CONFIGURATION_UPDATE(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MCE_CONFIGURATION_UPDATE);
+  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MCE_CONFIGURATION_UPDATE);
 
 
   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -1233,7 +1233,7 @@ int eNB_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MBMS_SESSION_UPDATE_REQ);
+  message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MBMS_SESSION_UPDATE_REQ);
 
 
   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -1321,7 +1321,7 @@ int eNB_handle_MBMS_SERVICE_COUNTING_REQ(instance_t instance,
 
 
 
-   //message_p  = itti_alloc_new_message (TASK_M2AP_ENB, M2AP_MBMS_SERVICE_COUNTING_REQ);
+   //message_p  = itti_alloc_new_message (TASK_M2AP_ENB, 0, M2AP_MBMS_SERVICE_COUNTING_REQ);
 
 
    return 0;

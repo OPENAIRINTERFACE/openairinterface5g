@@ -33,6 +33,7 @@
 *
 **************************************************************************/
 
+#include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
@@ -228,13 +229,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
   int       n_HARQ_ACK;
 
-  uint16_t crnti=0x1234;
   int dmrs_scrambling_id=0,data_scrambling_id=0;
-
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_PUCCH_Resource_t *pucch_resource;
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  uint16_t crnti = mac->crnti;
 
   /* update current context */
 
@@ -247,6 +246,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
     pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
+
+  LOG_D(PHY, "PUCCH: %d.%d dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, dl_harq_pid, pucch_resource_indicator);
 
   /* Part - I
    * Collect feedback that should be transmitted at this nr_slot_tx :
@@ -446,7 +447,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     return (FALSE);
   }
 
-  int max_code_rate = 0;
+  //int max_code_rate = 0;
   //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
@@ -503,7 +504,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   if (format !=  pucch_format0_nr) {
 
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL) {
-      max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
+      //max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
 
       if ((O_ACK != 0) && (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->simultaneousHARQ_ACK_CSI[0] == 0)) {
         N_UCI = N_UCI - O_CSI;
@@ -1008,6 +1009,12 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 
     if (resource_set_found == TRUE) {
       if (pucch_resource_indicator < MAX_PUCCH_RESOURCE_INDICATOR) {
+        // Verify that the value of pucch_resource_indicator is valid
+        if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.count <= pucch_resource_indicator)
+        {
+          LOG_E(PHY, "Value of pucch_resource_indicator is out of bounds! Possibly due to a false DCI. \n");
+          return (FALSE);
+        }
         /* check if resource indexing by pucch_resource_indicator of this set is compatible */
         if ((ready_pucch_resource_id == TRUE) || (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0] != MAX_NB_OF_PUCCH_RESOURCES)) {
 

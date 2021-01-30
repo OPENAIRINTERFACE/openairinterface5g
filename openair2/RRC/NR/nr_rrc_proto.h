@@ -71,6 +71,12 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
+void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon);
+
+void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon);
+
+void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0);
+
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 				     NR_CellGroupConfig_t *secondaryCellGroup,
 				     int scg_id,
@@ -119,6 +125,14 @@ void *rrc_gnb_task(void *args_p);
 /* Trigger RRC periodic processing. To be called once per ms. */
 void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
 
+/**\ Function to set or overwrite PTRS DL RRC parameters.
+   \ *bwp Pointer to dedicated RC config structure
+   \ *ptrsNrb Pointer to K_ptrs N_RB related parameters
+   \ *ptrsMcs Pointer to L_ptrs MCS related parameters
+   \ *epre_Ratio Pointer to ep_ratio
+   \ *reOffset Pointer to RE Offset Value */
+void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset);
+
 uint8_t
 nr_rrc_data_req(
   const protocol_ctxt_t   *const ctxt_pP,
@@ -133,4 +147,3 @@ nr_rrc_data_req(
 int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);
-

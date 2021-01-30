@@ -393,6 +393,10 @@ void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
   //pdsch->dl_ch_rho2_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
   pdsch->dl_ch_mag0             = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
   pdsch->dl_ch_magb0            = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
+  pdsch->dl_ch_magr0            = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
+  pdsch->ptrs_phase_per_slot    = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
+  pdsch->ptrs_re_per_slot       = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
+  pdsch->dl_ch_ptrs_estimates_ext = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
   // the allocated memory size is fixed:
   AssertFatal( fp->nb_antennas_rx <= 2, "nb_antennas_rx > 2" );
 
@@ -413,6 +417,10 @@ void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
       //pdsch->dl_ch_rho2_ext[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_mag0[idx]              = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_magb0[idx]             = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_magr0[idx]             = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->ptrs_re_per_slot[idx]        = (int32_t *)malloc16_clear(sizeof(int32_t) * 14);
+      pdsch->ptrs_phase_per_slot[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t) * 14 );
+      pdsch->dl_ch_ptrs_estimates_ext[idx]= (int32_t *)malloc16_clear( sizeof(int32_t) * num);
     }
   }
 }
@@ -466,6 +474,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->total_TBS_last[eNB_id] = 0;
     ue->bitrate[eNB_id] = 0;
     ue->total_received_bits[eNB_id] = 0;
+
+    ue->ul_time_alignment[eNB_id].apply_ta = 0;
+    ue->ul_time_alignment[eNB_id].ta_frame = -1;
+    ue->ul_time_alignment[eNB_id].ta_slot  = -1;
   }
   // init NR modulation lookup tables
   nr_generate_modulation_table();
@@ -570,6 +582,40 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->samples_per_slot_wCP) );
+      }
+    }
+  }
+
+  //PDCCH DMRS init (eNB offset = 0)
+  ue->nr_gold_pdcch[0] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+  uint32_t ***pdcch_dmrs = ue->nr_gold_pdcch[0];
+  AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");
+
+  for (int slot=0; slot<fp->slots_per_frame; slot++) {
+    pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+    AssertFatal(pdcch_dmrs[slot]!=NULL, "NR init: pdcch_dmrs for slot %d - malloc failed\n", slot);
+
+    for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      AssertFatal(pdcch_dmrs[slot][symb]!=NULL, "NR init: pdcch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+    }
+  }
+
+  //PDSCH DMRS init (eNB offset = 0)
+  ue->nr_gold_pdsch[0] = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
+  uint32_t ****pdsch_dmrs = ue->nr_gold_pdsch[0];
+
+  for (int slot=0; slot<fp->slots_per_frame; slot++) {
+    pdsch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
+    AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
+
+    for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t *));
+      AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+
+      for (int q=0; q<NR_MAX_NB_CODEWORDS; q++) {
+        pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
       }
     }
   }

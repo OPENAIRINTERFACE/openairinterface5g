@@ -121,15 +121,14 @@ void RCconfig_L1(void) {
       RC.nb_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
 
       if (RC.eNB[j] == NULL) {
-        RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
+        RC.eNB[j]  = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
         LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
         memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
       }
 
       for (i=0; i<RC.nb_L1_CC[j]; i++) {
         if (RC.eNB[j][i] == NULL) {
-          RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
-          memset((void *)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
+          RC.eNB[j][i] = (PHY_VARS_eNB *)calloc(1, sizeof(PHY_VARS_eNB));
           LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
           RC.eNB[j][i]->Mod_id  = j;
           RC.eNB[j][i]->CC_id   = i;
@@ -170,6 +169,10 @@ void RCconfig_L1(void) {
         RC.eNB[j][0]->pucch1_DTX_threshold_emtc[ce_level]   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
         RC.eNB[j][0]->pucch1ab_DTX_threshold_emtc[ce_level] = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
       }
+
+
+      RC.eNB[j][0]->pusch_signal_threshold    = *(L1_ParamList.paramarray[j][L1_PUSCH_SIGNAL_THRESHOLD_IDX].iptr);
+      LOG_I(ENB_APP,"PUSCH singal threshold = %d \n",RC.eNB[j][0]->pusch_signal_threshold);
     }// j=0..num_inst
 
     LOG_I(ENB_APP,"Initializing northbound interface for L1\n");
@@ -287,7 +290,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
   int32_t           offsetMaxLimit                = 0;
   int32_t           cycleNb                       = 0;
    
-  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_CONFIGURATION_REQ);
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, 0, RRC_CONFIGURATION_REQ);
   ccparams_lte_t ccparams_lte;
   ccparams_sidelink_t SLconfig;
   ccparams_eMTC_t eMTCconfig;
@@ -2051,7 +2054,7 @@ int RCconfig_gtpu(void ) {
 
   if (address) {
     MessageDef *message;
-    AssertFatal((message = itti_alloc_new_message(TASK_ENB_APP, GTPV1U_ENB_S1_REQ))!=NULL,"");
+    AssertFatal((message = itti_alloc_new_message(TASK_ENB_APP, 0, GTPV1U_ENB_S1_REQ))!=NULL,"");
     IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
     LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
     GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;

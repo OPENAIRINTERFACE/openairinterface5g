@@ -24,13 +24,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "common/utils/LOG/log.h"
 
 void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
 
   if (size < 3) abort();
-  if (!(buffer[0] & 0x80)) { printf("%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__); exit(1); }
+
+  if (!(buffer[0] & 0x80))
+    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+
   entity->common.deliver_sdu(entity->common.deliver_sdu_data,
                              (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }
@@ -40,7 +44,7 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
-  char buf[size+2];
+  char buf[size+3];
 
   sn = entity->common.next_nr_pdcp_tx_sn;
 

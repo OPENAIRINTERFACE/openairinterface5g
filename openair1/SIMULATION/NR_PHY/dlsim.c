@@ -61,7 +61,7 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
-
+#include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
@@ -146,13 +146,18 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
-
+void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
+void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
-int g_mcsIndex = -1, g_rbStart = -1, g_rbSize = -1;
+int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot,
@@ -180,10 +185,11 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_ctrl->rbSize = g_rbSize;
   sched_ctrl->mcs = g_mcsIndex;
   sched_ctrl->time_domain_allocation = 2;
-  sched_ctrl->mcsTableIdx = 0;
+  sched_ctrl->mcsTableIdx = g_mcsTableIdx;
   AssertFatal(sched_ctrl->rbStart >= 0, "invalid rbStart %d\n", sched_ctrl->rbStart);
   AssertFatal(sched_ctrl->rbSize > 0, "invalid rbSize %d\n", sched_ctrl->rbSize);
   AssertFatal(sched_ctrl->mcs >= 0, "invalid sched_ctrl->mcs %d\n", sched_ctrl->mcs);
+  AssertFatal(sched_ctrl->mcsTableIdx >= 0 && sched_ctrl->mcsTableIdx <= 2, "invalid sched_ctrl->mcsTableIdx %d\n", sched_ctrl->mcsTableIdx);
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
 }
 
@@ -255,7 +261,20 @@ int main(int argc, char **argv)
   int css_flag=0;
 
   cpuf = get_cpu_freq_GHz();
+  int8_t enable_ptrs = 0;
+  int8_t modify_dmrs = 0;
 
+  int8_t dmrs_arg[2] = {-1,-1};// Invalid values
+  /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
+  int8_t ptrs_arg[2] = {-1,-1};// Invalid values
+
+  uint16_t ptrsRePerSymb = 0;
+  uint16_t pdu_bit_map = 0x0;
+  uint16_t dlPtrsSymPos = 0;
+  uint16_t ptrsSymbPerSlot = 0;
+  uint16_t rbSize = 106;
+  uint8_t  mcsIndex = 9;
+  uint8_t  dlsch_threads = 0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
@@ -266,7 +285,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:q")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -433,9 +452,16 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
-
+    case 'd':
+      dlsch_threads = atoi(optarg);
+      break;    
     case 'e':
       g_mcsIndex = atoi(optarg);
+      break;
+
+    case 'q':
+      g_mcsTableIdx = 1;
+      get_softmodem_params()->use_256qam_table = 1;
       break;
 
     case 'm':
@@ -448,6 +474,20 @@ int main(int argc, char **argv)
 
     case 'w':
       output_fd = fopen("txdata.dat", "w+");
+      break;
+
+    case 'T':
+      enable_ptrs=1;
+      for(i=0; i < atoi(optarg); i++) {
+        ptrs_arg[i] = atoi(argv[optind++]);
+      }
+      break;
+
+    case 'U':
+      modify_dmrs = 1;
+      for(i=0; i < atoi(optarg); i++) {
+        dmrs_arg[i] = atoi(argv[optind++]);
+      }
       break;
 
     default:
@@ -479,22 +519,29 @@ int main(int argc, char **argv)
       printf("-c Start symbol for PDSCH (fixed for now)\n");
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
+      printf("-q Use 2nd MCS table (256 QAM table) for PDSCH\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
+      printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2}, e.g. -U 2 0 2 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
+      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
       exit (-1);
       break;
     }
   }
-  
+
   logInit();
   set_glog(loglvl);
   T_stdout = 1;
+  /* initialize the sin table */
+  InitSinLUT();
 
   get_softmodem_params()->phy_test = 1;
   
   if (snr1set==0)
     snr1 = snr0+10;
+  init_dlsch_tpool(dlsch_threads);
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -578,7 +625,17 @@ int main(int argc, char **argv)
 				  n_tx,
 				  0);
 
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+  /* -U option modify DMRS */
+  if(modify_dmrs) {
+    update_dmrs_config(secondaryCellGroup, NULL,dmrs_arg);
+  }
+  /* -T option enable PTRS */
+  if(enable_ptrs) {
+    update_ptrs_config(secondaryCellGroup, &rbSize, &mcsIndex, ptrs_arg);
+  }
+
+
+  //xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
@@ -693,6 +750,9 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  if(modify_dmrs) {
+    update_dmrs_config( NULL,UE,dmrs_arg);
+  }
   init_nr_ue_transport(UE,0);
 
   nr_gold_pbch(UE);
@@ -700,16 +760,16 @@ int main(int argc, char **argv)
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
-  
+
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
-  
+
 
   UE_mac->if_module = nr_ue_if_module_init(0);
-  
+
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
@@ -767,7 +827,7 @@ int main(int argc, char **argv)
     reset_meas(&gNB->tinput);
     reset_meas(&gNB->tprep);
     reset_meas(&gNB->tparity);
-    reset_meas(&gNB->toutput);  
+    reset_meas(&gNB->toutput);
 
     clear_pdsch_stats(gNB);
 
@@ -815,7 +875,6 @@ int main(int argc, char **argv)
 
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
-        UE_info->UE_sched_ctrl[0].current_harq_pid = harq_pid;
         gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
@@ -833,11 +892,26 @@ int main(int argc, char **argv)
         Sched_INFO.frame     = frame;
         Sched_INFO.slot      = slot;
         Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-        Sched_INFO.UL_tti_req    = &gNB_mac->UL_tti_req[0];
+        Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[slot];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
         nr_schedule_response(&Sched_INFO);
-        
+
+        /* PTRS values for DLSIM calculations   */
+        nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[Sched_INFO.CC_id].dl_tti_request_body;
+        nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[1];
+        nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+        pdu_bit_map = pdsch_pdu_rel15->pduBitmap;
+        if(pdu_bit_map & 0x1) {
+          set_ptrs_symb_idx(&dlPtrsSymPos,
+                            pdsch_pdu_rel15->NrOfSymbols,
+                            pdsch_pdu_rel15->StartSymbolIndex,
+                            1<<pdsch_pdu_rel15->PTRSTimeDensity,
+                            pdsch_pdu_rel15->dlDmrsSymbPos);
+          ptrsSymbPerSlot = get_ptrs_symbols_in_slot(dlPtrsSymPos, pdsch_pdu_rel15->StartSymbolIndex, pdsch_pdu_rel15->NrOfSymbols);
+          ptrsRePerSymb = ((rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity);
+          printf("[DLSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
+        }
         if (run_initial_sync)
           nr_common_signal_procedures(gNB,frame,slot);
         else
@@ -852,7 +926,7 @@ int main(int argc, char **argv)
         }
         int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
         if (n_trials==1) printf("tx_offset %d, txdataF_offset %d \n", tx_offset,txdataF_offset);
-        
+
         //TODO: loop over slots
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     
@@ -894,7 +968,7 @@ int main(int argc, char **argv)
             r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
           }
         }
-        
+        double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size); 
         //AWGN
         sigma2_dB = 10 * log10((double)txlev * ((double)UE->frame_parms.ofdm_symbol_size/(12*rel15->rbSize))) - SNR;
         sigma2    = pow(10, sigma2_dB/10);
@@ -907,21 +981,27 @@ int main(int argc, char **argv)
           for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
             ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            /* Add phase noise if enabled */
+            if (pdu_bit_map & 0x1) {
+              phase_noise(ts, &((short*) UE->common_vars.rxdata[aa])[2*i],
+                          &((short*) UE->common_vars.rxdata[aa])[2*i+1]);
+            }
           }
         }
-        
+
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
         
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               normal_txrx);
+                               normal_txrx,
+                               dlsch_threads);
         
         //printf("dlsim round %d ends\n",round);
         round++;
       } // round
-      
+
       //----------------------------------------------------------
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
@@ -934,13 +1014,17 @@ int main(int argc, char **argv)
       int16_t *UE_llr = pdsch_vars[0]->llr[0];
 
       TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
-      uint16_t length_dmrs = 1;
+      uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
       uint16_t nb_rb       = rel15->rbSize;
       uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4;
       uint8_t  mod_order   = rel15->qamModOrder[0];
       uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
+      if(pdu_bit_map & 0x1) {
+        available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
+        printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
+      }
       
       for (i = 0; i < available_bits; i++) {
 	
@@ -956,7 +1040,7 @@ int main(int argc, char **argv)
 	
       }
       for (i = 0; i < TBS; i++) {
-	
+
 	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
 	test_input_bit[i]       = (gNB_dlsch->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 	
@@ -992,7 +1076,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
     dump_pdsch_stats(gNB);
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
     printf("\n");
 
     if (print_perf==1) {
@@ -1101,4 +1185,80 @@ int main(int argc, char **argv)
     fclose(scg_fd);
   return(n_errors);
   
+}
+
+
+void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, int8_t *ptrs_arg)
+{
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+  int *ptrsFreqDenst = calloc(2, sizeof(long));
+  ptrsFreqDenst[0]= 25;
+  ptrsFreqDenst[1]= 115;
+  int *ptrsTimeDenst = calloc(3, sizeof(long));
+  ptrsTimeDenst[0]= 2;
+  ptrsTimeDenst[1]= 4;
+  ptrsTimeDenst[2]= 10;
+
+  int epre_Ratio = 0;
+  int reOffset = 0;
+
+  if(ptrs_arg[0] ==0) {
+    ptrsTimeDenst[2]= *mcsIndex -1;
+  }
+  else if(ptrs_arg[0] == 1) {
+    ptrsTimeDenst[1]= *mcsIndex - 1;
+    ptrsTimeDenst[2]= *mcsIndex + 1;
+  }
+  else if(ptrs_arg[0] ==2) {
+    ptrsTimeDenst[0]= *mcsIndex - 1;
+    ptrsTimeDenst[1]= *mcsIndex + 1;
+  }
+  else {
+    printf("[DLSIM] Wrong L_PTRS value, using default values 1\n");
+  }
+  /* L = 4 if Imcs < MCS4 */
+  if(ptrs_arg[1] ==2) {
+    ptrsFreqDenst[0]= *rbSize - 1;
+    ptrsFreqDenst[1]= *rbSize + 1;
+  }
+  else if(ptrs_arg[1] == 4) {
+    ptrsFreqDenst[1]= *rbSize - 1;
+  }
+  else {
+    printf("[DLSIM] Wrong K_PTRS value, using default values 2\n");
+  }
+  printf("[DLSIM] PTRS Enabled with L %d, K %d \n", 1<<ptrs_arg[0], ptrs_arg[1] );
+  /* overwrite the values */
+  rrc_config_dl_ptrs_params(bwp, ptrsFreqDenst, ptrsTimeDenst, &epre_Ratio, &reOffset);
+}
+
+void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg)
+{
+  int8_t  mapping_type = typeA;//default value
+  int8_t  add_pos = pdsch_dmrs_pos0;//default value
+  if(dmrs_arg[0] == 0) {
+    mapping_type = typeA;
+  }
+  else if (dmrs_arg[0] == 1) {
+    mapping_type = typeB;
+  }
+  /* Additional DMRS positions 0 ,1 and 2 */
+  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <3 ) {
+    add_pos = dmrs_arg[1];
+  }
+
+  if(scg != NULL) {
+    NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+    *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = add_pos;
+    for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
+    }
+  }
+  if(ue != NULL) {
+    for (int i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++) {
+      ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = mapping_type;
+    }
+    ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = add_pos;
+  }
+  printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d \n", dmrs_arg[0], dmrs_arg[1] );
 }

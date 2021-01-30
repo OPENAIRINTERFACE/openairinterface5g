@@ -461,10 +461,9 @@ void eNB_top(PHY_VARS_eNB *eNB,
     L1_proc->subframe_rx  = ru_proc->tti_rx;
     L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
     L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
-
+    
     if (rxtx(eNB,L1_proc,string) < 0)
-      LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
-
+      LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);  
     ru_proc->timestamp_tx = L1_proc->timestamp_tx;
     ru_proc->tti_tx  = L1_proc->subframe_tx;
     ru_proc->frame_tx     = L1_proc->frame_tx;
@@ -1168,6 +1167,7 @@ void init_eNB_afterRU(void) {
 
       for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
         eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+
         AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
                     "RU %d : common.rxdataF is NULL\n",
                     eNB->RU_list[ru_id]->idx);
@@ -1239,7 +1239,8 @@ void init_eNB(int single_thread_flag,
     if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB **) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
 
     for (CC_id=0; CC_id<RC.nb_L1_CC[inst]; CC_id++) {
-      if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) malloc(sizeof(PHY_VARS_eNB));
+      if (RC.eNB[inst][CC_id] == NULL) 
+         RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) calloc(1,sizeof(PHY_VARS_eNB));
 
       eNB                     = RC.eNB[inst][CC_id];
       eNB->abstraction_flag   = 0;

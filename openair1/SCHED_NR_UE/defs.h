@@ -110,15 +110,17 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
-  @param ue       Pointer to UE variables on which to act
-  @param proc     Pointer to proc information
-  @param gNB_id   Local id of eNB on which to act
-  @param mode     calibration/debug mode
+  @param ue             Pointer to UE variables on which to act
+  @param proc           Pointer to proc information
+  @param gNB_id         Local id of eNB on which to act
+  @param mode           calibration/debug mode
+  @param dlsch_parallel use multithreaded dlsch processing
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           runmode_t mode);
+                           runmode_t mode,
+                           uint8_t dlsch_parallel);
 
 int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
 
@@ -295,6 +297,13 @@ uint16_t nr_get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
 
 
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
+
+/*! \brief UL time alignment procedures for TA application
+  @param PHY_VARS_NR_UE ue
+  @param int slot_tx
+  @param int frame_tx
+*/
+void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx);
 
 /*! \brief Compute the timing adjustment at UE side from the old TA offset and the new received TA command
   @param Mod_id Local UE index on which to act

@@ -78,11 +78,11 @@ typedef enum {
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE              "none"
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING          "annoying"
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO              "info"
- 
 
 /* global parameters, not under a specific section   */
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define GNB_CONFIG_STRING_ACTIVE_GNBS                      "Active_gNBs"
+#define GNB_CONFIG_PUSCH_THREADS                           "Num_Threads_PUSCH"
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            global configuration parameters                                                                                   */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                                        type           numelt     */
@@ -91,6 +91,11 @@ typedef enum {
 {GNB_CONFIG_STRING_ASN1_VERBOSITY,             NULL,     0,        uptr:NULL,   defstrval:GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
 {GNB_CONFIG_STRING_ACTIVE_GNBS,                NULL,     0,        uptr:NULL,   defstrval:NULL, 				   TYPE_STRINGLIST,  0}    \
 }
+
+#define NUM_THREADS_DESC { \
+{GNB_CONFIG_PUSCH_THREADS,                     NULL,     0,        uptr:&num_threads_pusch,   defuintval:1, 				   TYPE_UINT,  0}    \
+}
+
 #define GNB_ASN1_VERBOSITY_IDX                     0
 #define GNB_ACTIVE_GNBS_IDX                        1
 
@@ -117,30 +122,6 @@ typedef enum {
 #define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
 #define GNB_CONFIG_STRING_PUSCHTARGETPOWX10             "pusch_TargetSNRx10"
 #define GNB_CONFIG_STRING_PUCCHTARGETPOWX10             "pucch_TargetSNRx10"
-
-
-typedef struct ccparams_nr_x2 {
-  char             *frame_type;
-  int32_t           tdd_config;
-  int32_t           tdd_config_s;
-  int32_t           nr_band;
-  long long int     downlink_frequency;
-  int32_t           uplink_frequency_offset;
-  int32_t           Nid_cell;
-  int32_t           N_RB_DL;
-  } ccparams_nr_x2_t;
-
-
-#define CCPARAMS_NR_X2_DESC(ccparams) {         \
-    {ENB_CONFIG_STRING_FRAME_TYPE,                                   NULL,   0,           strptr:&ccparams.frame_type,                             defstrval:"TDD",           TYPE_STRING,     0},  \
-    {ENB_CONFIG_STRING_TDD_CONFIG,                                   NULL,   0,           iptr:&ccparams.tdd_config,                               defintval:3,               TYPE_UINT,       0},  \
-    {ENB_CONFIG_STRING_TDD_CONFIG_S,                                 NULL,   0,           iptr:&ccparams.tdd_config_s,                             defintval:0,               TYPE_UINT,       0},  \
-    {ENB_CONFIG_STRING_EUTRA_BAND,                                   NULL,   0,           iptr:&ccparams.nr_band,                               defintval:78,               TYPE_UINT,       0},  \
-    {ENB_CONFIG_STRING_DOWNLINK_FREQUENCY,                           NULL,   0,           i64ptr:(int64_t *)&ccparams.downlink_frequency,          defint64val:3600000000,    TYPE_UINT64,     0},  \
-    {ENB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                      NULL,   0,           iptr:&ccparams.uplink_frequency_offset,                  defintval:0,      TYPE_INT,        0},  \
-    {ENB_CONFIG_STRING_NID_CELL,                                     NULL,   0,           iptr:&ccparams.Nid_cell,                                 defintval:0,               TYPE_UINT,       0},  \
-    {ENB_CONFIG_STRING_N_RB_DL,                                      NULL,   0,           iptr:&ccparams.N_RB_DL,                                  defintval:106,              TYPE_UINT,       0}  \
-}
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
