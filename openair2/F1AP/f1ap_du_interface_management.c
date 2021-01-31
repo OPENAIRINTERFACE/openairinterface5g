@@ -228,7 +228,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* FDD.1.3 freqBandListNr */
             int fdd_ul_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_frequency_bands;
-            LOG_D(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
+            LOG_I(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
             int fdd_ul_j;
             for (fdd_ul_j=0;
                  fdd_ul_j<fdd_ul_num_available_freq_Bands;
@@ -270,7 +270,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* FDD.2.3 freqBandListNr */
             int fdd_dl_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_frequency_bands;
-            LOG_D(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
+            LOG_I(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
             int fdd_dl_j;
             for (fdd_dl_j=0;
                  fdd_dl_j<fdd_dl_num_available_freq_Bands;
@@ -324,7 +324,8 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* TDD.1.3 freqBandListNr */
             int tdd_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].tdd.num_frequency_bands;
-            LOG_D(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            LOG_I(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            AssertFatal(tdd_num_available_freq_Bands > 0, "should have at least one TDD band available\n");
             int j;
             for (j=0;
                  j<tdd_num_available_freq_Bands;
@@ -518,9 +519,9 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                     for (int si =0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
                         F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                         size_t size = sib_item->sIBmessage.size;
-                        F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
-                        LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
-                        F1AP_SETUP_RESP (msg_p).SI_container[i][si] = malloc(F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
+                        F1AP_SETUP_RESP (msg_p).SI_container_length[i][sib_item->sIBtype] = size;
+                        LOG_I(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
+                        F1AP_SETUP_RESP (msg_p).SI_container[i][sib_item->sIBtype] = malloc(size);
                         memcpy((void*)F1AP_SETUP_RESP (msg_p).SI_container[i][sib_item->sIBtype],
                                (void*)sib_item->sIBmessage.buf,
                                size);
@@ -565,7 +566,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
  
    LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
-   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+   itti_send_msg_to_task(TASK_ENB_APP, instance, msg_p);
 
    return 0;
 }

@@ -357,18 +357,20 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
       //for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
       //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
       //printf("\n");
-
-      for (int sIBtype=2;sIBtype<33;sIBtype++) {
-        if (f1ap_setup_resp->SI_container[i][sIBtype]!=NULL) {
-          AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
+      for (int j=2;
+           j<10;
+           j++) {
+        if (j==6) j=9;
+        if (f1ap_setup_resp->SI_container[i][j]!=NULL) {
+          LOG_I(F1AP,"SETUP RESP: SI %d, Type %d\n",i,j);
+          AssertFatal((j < 6) || (j == 9), "Illegal SI type %d\n",j);
           F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
-	  memset((void*)sib_item,0,sizeof(*sib_item));
-	  sib_item->sIBtype = sIBtype;
+	  sib_item->sIBtype = j;
           OCTET_STRING_fromBuf(&sib_item->sIBmessage,
-                               (const char*)f1ap_setup_resp->SI_container[i][sIBtype], 
-                               f1ap_setup_resp->SI_container_length[i][sIBtype]);
+                               (const char*)f1ap_setup_resp->SI_container[i][j], 
+                               f1ap_setup_resp->SI_container_length[i][j]);
         
-          LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->SI_container_length[i][sIBtype]);
+          LOG_I(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,j,f1ap_setup_resp->SI_container_length[i][j]);
 	  ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
         }
       }
