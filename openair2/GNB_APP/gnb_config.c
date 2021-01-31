@@ -51,7 +51,7 @@
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 
-#include "L1_paramdef.h"
+//#include "L1_paramdef.h"
 #include "L1_nr_paramdef.h"
 #include "MACRLC_paramdef.h"
 #include "common/config/config_userapi.h"
@@ -377,7 +377,6 @@ void RCconfig_nr_flexran()
 
 void RCconfig_NR_L1(void) {
   int j;
-  uint8_t pusch_proc_threads;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
