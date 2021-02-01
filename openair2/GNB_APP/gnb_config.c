@@ -665,6 +665,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
         printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
+        printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
         printf("pusch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr;
         printf("pucch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr);

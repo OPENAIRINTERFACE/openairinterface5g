@@ -407,6 +407,7 @@ typedef struct NRRrcConfigurationReq_s {
   NR_ServingCellConfigCommon_t *scc;
   int                     ssb_SubcarrierOffset;
   int                     pdsch_AntennaPorts;
+  int                     pusch_AntennaPorts;
   int                     pusch_TargetSNRx10;
   int                     pucch_TargetSNRx10;
 } gNB_RrcConfigurationReq;

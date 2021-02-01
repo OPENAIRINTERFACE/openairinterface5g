@@ -399,6 +399,7 @@ typedef struct {
   NR_BCCH_BCH_Message_t                     mib;
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
+  int pusch_AntennaPorts;
   int pusch_TargetSNRx10;
   int pucch_TargetSNRx10;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
