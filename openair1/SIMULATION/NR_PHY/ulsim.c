@@ -120,6 +120,8 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
+
 // Dummy function to avoid linking error at compilation of nr-ulsim
 int is_x2ap_enabled(void)
 {
@@ -585,6 +587,9 @@ int main(int argc, char **argv)
 				  0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+
+  /* RRC parameter validation for secondaryCellGroup */
+  fix_scd(scd);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
 
