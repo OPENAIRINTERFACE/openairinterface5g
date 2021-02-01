@@ -788,9 +788,9 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
 #ifdef ITTI_SIM
         MessageDef *message_p;
         uint8_t *message_buffer;
-        message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
+        message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
         memcpy (message_buffer, buffer, length);
-        message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+        message_p = itti_alloc_new_message (TASK_RRC_GNB, GNB_RRC_DCCH_DATA_IND);
         GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
         GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
         GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
