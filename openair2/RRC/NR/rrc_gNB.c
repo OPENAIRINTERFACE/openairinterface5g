@@ -947,15 +947,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
             // DRB has just been removed so remove RLC + PDCP for DRB
-            /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
-            (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
-            */
-            /*rrc_rlc_config_req(ctxt_pP,
-                                SRB_FLAG_NO,
-                                MBMS_FLAG_NO,
-                                CONFIG_ACTION_REMOVE,
-                                nr_DRB2LCHAN[i],
-                                Rlc_info_um);*/
+            /* TODO */
           }
 
           ue_context_pP->ue_context.DRB_active[drb_id] = 0;
@@ -1044,19 +1036,6 @@ rrc_gNB_generate_RRCReestablishment(
     LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n",
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_context->Srb0.Tx_buffer.payload_size);
-#if(0)
-    UE_id = find_nr_UE_id(module_id, rnti);
-    if (UE_id != -1) {
-      /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
-      RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
-      /* Reject UE after 10 frames, LTE_RRCConnectionReestablishmentReject is triggered */
-      RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 100;
-    } else {
-      LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Generating NR_RRCReestablishment without UE_id(MAC) rnti %x\n",
-            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-            rnti);
-    }
-#endif
 #ifdef ITTI_SIM
         MessageDef *message_p;
         uint8_t *message_buffer;
@@ -1553,39 +1532,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
             break;
           }
-#if(0)
-          int UE_id = find_nr_UE_id(ctxt_pP->module_id, c_rnti);
-
-          if(UE_id == -1) {
-            LOG_E(NR_RRC,
-                  PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest without UE_id(MAC) rnti %x, fallback to RRC establishment\n",
-                  PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
-            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
-            break;
-          }
-
-          //previous rnti
-          rnti_t previous_rnti = 0;
-
-          for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-            if (reestablish_rnti_map[i][1] == c_rnti) {
-              previous_rnti = reestablish_rnti_map[i][0];
-              break;
-            }
-          }
-
-          if(previous_rnti != 0) {
-            UE_id = find_nr_UE_id(ctxt_pP->module_id, previous_rnti);
-
-            if(UE_id == -1) {
-              LOG_E(NR_RRC,
-                    PROTOCOL_NR_RRC_CTXT_UE_FMT" RRCReestablishmentRequest without UE_id(MAC) previous rnti %x, fallback to RRC establishment\n",
-                    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),previous_rnti);
-              rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
-              break;
-            }
-          }
-#endif
           //c-plane not end
           if((ue_context_p->ue_context.Status != NR_RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == NR_ReestablishmentCause_spare1)) {
             LOG_E(NR_RRC,
@@ -2201,19 +2147,6 @@ rrc_gNB_decode_dcch(
                   break;
                 }
 
-#if(0)
-                //clear
-                int UE_id = find_nr_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-
-                if(UE_id == -1) {
-                  LOG_E(NR_RRC,
-                        PROTOCOL_RRC_CTXT_UE_FMT" NR_RRCConnectionReestablishmentComplete without UE_id(MAC) rnti %x, fault\n",
-                        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
-                  break;
-                }
-
-                RC.nrmac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
-#endif
                 ue_context_p->ue_context.reestablishment_xid = -1;
 
                 if (ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->criticalExtensions.present ==
