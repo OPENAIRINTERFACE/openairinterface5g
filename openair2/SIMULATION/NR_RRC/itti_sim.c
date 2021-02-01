@@ -421,7 +421,7 @@ void *itti_sim_ue_rrc_task( void *args_p) {
   while(1) {
     // Wait for a message
     itti_receive_msg (TASK_RRC_UE_SIM, &msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -478,7 +478,7 @@ void *itti_sim_gnb_rrc_task( void *args_p) {
   while(1) {
     // Wait for a message
     itti_receive_msg (TASK_RRC_GNB_SIM, &msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -556,9 +556,9 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
 
 
   init_opt();

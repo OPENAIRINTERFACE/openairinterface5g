@@ -37,7 +37,7 @@ void ngap_gNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uin
   MessageDef      *message_p;
   sctp_data_req_t *sctp_data_req;
 
-  message_p = itti_alloc_new_message(TASK_NGAP, SCTP_DATA_REQ);
+  message_p = itti_alloc_new_message(TASK_NGAP, 0, SCTP_DATA_REQ);
 
   sctp_data_req = &message_p->ittiMsg.sctp_data_req;
 
@@ -58,7 +58,7 @@ void ngap_gNB_itti_send_nas_downlink_ind(instance_t instance,
   MessageDef          *message_p;
   ngap_downlink_nas_t *ngap_downlink_nas;
 
-  message_p = itti_alloc_new_message(TASK_NGAP, NGAP_DOWNLINK_NAS);
+  message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_DOWNLINK_NAS);
 
   ngap_downlink_nas = &message_p->ittiMsg.ngap_downlink_nas;
 
@@ -76,7 +76,7 @@ void ngap_gNB_itti_send_sctp_close_association(instance_t instance, int32_t asso
   MessageDef               *message_p = NULL;
   sctp_close_association_t *sctp_close_association_p = NULL;
 
-  message_p = itti_alloc_new_message(TASK_NGAP, SCTP_CLOSE_ASSOCIATION);
+  message_p = itti_alloc_new_message(TASK_NGAP, 0, SCTP_CLOSE_ASSOCIATION);
   sctp_close_association_p = &message_p->ittiMsg.sctp_close_association;
   sctp_close_association_p->assoc_id      = assoc_id;
 

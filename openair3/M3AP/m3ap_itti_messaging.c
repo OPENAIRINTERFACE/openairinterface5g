@@ -36,7 +36,7 @@ void m3ap_MCE_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uin
   MessageDef      *message_p;
   sctp_data_req_t *sctp_data_req;
 
-  message_p = itti_alloc_new_message(TASK_M3AP_MCE, SCTP_DATA_REQ);
+  message_p = itti_alloc_new_message(TASK_M3AP_MCE, 0, SCTP_DATA_REQ);
 
   sctp_data_req = &message_p->ittiMsg.sctp_data_req;
 
@@ -56,7 +56,7 @@ void m3ap_MCE_itti_send_sctp_close_association(instance_t instance, int32_t asso
   MessageDef               *message_p = NULL;
   sctp_close_association_t *sctp_close_association_p = NULL;
 
-  message_p = itti_alloc_new_message(TASK_M3AP_MCE, SCTP_CLOSE_ASSOCIATION);
+  message_p = itti_alloc_new_message(TASK_M3AP_MCE, 0, SCTP_CLOSE_ASSOCIATION);
   sctp_close_association_p = &message_p->ittiMsg.sctp_close_association;
   sctp_close_association_p->assoc_id      = assoc_id;
 
@@ -70,7 +70,7 @@ void m3ap_MME_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uin
   MessageDef      *message_p;
   sctp_data_req_t *sctp_data_req;
 
-  message_p = itti_alloc_new_message(TASK_M3AP_MME, SCTP_DATA_REQ);
+  message_p = itti_alloc_new_message(TASK_M3AP_MME, 0, SCTP_DATA_REQ);
 
   sctp_data_req = &message_p->ittiMsg.sctp_data_req;
 
@@ -88,7 +88,7 @@ void m3ap_MME_itti_send_sctp_close_association(instance_t instance, int32_t asso
   MessageDef               *message_p = NULL;
   sctp_close_association_t *sctp_close_association_p = NULL;
 
-  message_p = itti_alloc_new_message(TASK_M3AP_MME, SCTP_CLOSE_ASSOCIATION);
+  message_p = itti_alloc_new_message(TASK_M3AP_MME, 0, SCTP_CLOSE_ASSOCIATION);
   sctp_close_association_p = &message_p->ittiMsg.sctp_close_association;
   sctp_close_association_p->assoc_id      = assoc_id;
 

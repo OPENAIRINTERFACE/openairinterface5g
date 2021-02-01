@@ -127,7 +127,7 @@ gtpv_data_req(
 
       memcpy (message_buffer, buffer_pP, sdu_sizeP);
 
-      message_p = itti_alloc_new_message (TASK_GTPV1_U, GTPV1U_ENB_DATA_FORWARDING_IND);
+      message_p = itti_alloc_new_message (TASK_GTPV1_U, 0, GTPV1U_ENB_DATA_FORWARDING_IND);
       GTPV1U_ENB_DATA_FORWARDING_IND (message_p).frame 	= ctxt_pP->frame;
       GTPV1U_ENB_DATA_FORWARDING_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
       GTPV1U_ENB_DATA_FORWARDING_IND (message_p).rb_id 	= rb_idP;
@@ -150,7 +150,7 @@ gtpv_data_req(
 
       memcpy (message_buffer, buffer_pP, sdu_sizeP);
 
-      message_p = itti_alloc_new_message (TASK_GTPV1_U, GTPV1U_ENB_END_MARKER_IND);
+      message_p = itti_alloc_new_message (TASK_GTPV1_U, 0, GTPV1U_ENB_END_MARKER_IND);
       GTPV1U_ENB_END_MARKER_IND (message_p).frame 	= ctxt_pP->frame;
       GTPV1U_ENB_END_MARKER_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
       GTPV1U_ENB_END_MARKER_IND (message_p).rb_id 	= rb_idP;

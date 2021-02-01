@@ -149,10 +149,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
   rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
   MessageDef *msg;
-  msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+  msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
-  protocol_ctxt_t ctxt;
+  protocol_ctxt_t ctxt={0};
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
@@ -327,7 +327,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   mac_remove_nr_ue(rrc->module_id, rnti);
 
   /* delete gtp tunnel */
-  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = rnti;
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 1;

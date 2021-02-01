@@ -486,7 +486,7 @@ int main( int argc, char **argv ) {
   set_taus_seed (0);
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   init_opt() ;
   load_nrLDPClib();

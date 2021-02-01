@@ -71,6 +71,7 @@ class gtpEndPoint {
   openAddr_t addr;
   uint8_t foundAddr[20];
   int foundAddrLen;
+  int ipVersion;
   map<int,teidData_t> ue2te_mapping;
   map<int,rntiData_t> te2ue_mapping;
 };
@@ -84,6 +85,7 @@ class gtpEndPoints {
 
 gtpEndPoints globGtp;
 
+  // note TEid 0 is reserved for specific usage: echo req/resp, error and supported extensions
 static  uint32_t gtpv1uNewTeid(void) {
 #ifdef GTPV1U_LINEAR_TEID_ALLOCATION
   g_gtpv1u_teid = g_gtpv1u_teid + 1;
@@ -109,14 +111,18 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   int fullSize=GTPV1U_HEADER_SIZE+headerAdditional+msgLen;
   AssertFatal((buffer=(uint8_t *) malloc(fullSize)) != NULL, "");
   Gtpv1uMsgHeaderT      *msgHdr = (Gtpv1uMsgHeaderT *)buffer ;
+  // N should be 0 for us (it was used only in 2G and 3G)
   msgHdr->PN=npduNumFlag;
   msgHdr->S=seqNumFlag;
   msgHdr->E=extHdrFlag;
   msgHdr->spare=0;
+  //PT=0 is for GTP' TS 32.295 (charging)
   msgHdr->PT=1;
   msgHdr->version=1;
   msgHdr->msgType=GTP_GPDU;
   msgHdr->msgLength=htons(msgLen);
+  if ( seqNumFlag || extHdrFlag || npduNumFlag)
+    msgHdr->msgLength+=4;
   msgHdr->teid=htonl(teid);
 
   if(seqNumFlag || extHdrFlag || npduNumFlag) {
@@ -126,6 +132,7 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   }
 
   memcpy(buffer+GTPV1U_HEADER_SIZE+headerAdditional, Msg, msgLen);
+  // Fix me: add IPv6 support, using flag ipVersion
   static struct sockaddr_in to= {0};
   to.sin_family      = AF_INET;
   to.sin_port        = htons(peerPort);
@@ -180,7 +187,7 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
                          ptr[rab_id].outgoing_ip_addr,
                          ptr[rab_id].outgoing_port,
                          ptr[rab_id].teid_outgoing,
-                         buffer, length, false, false, false, ptr[rab_id].seqNum, ptr[rab_id].npduNum, 0) ;
+                         buffer, length, seqNumFlag, npduNumFlag, false, ptr[rab_id].seqNum, ptr[rab_id].npduNum, 0) ;
 }
 
 static  int udpServerSocket(openAddr_s addr) {
@@ -219,6 +226,7 @@ static  int udpServerSocket(openAddr_s addr) {
         memcpy(globGtp.instances[sockfd].foundAddr,
                &ipv4->sin_addr.s_addr, sizeof(ipv4->sin_addr.s_addr));
         globGtp.instances[sockfd].foundAddrLen=sizeof(ipv4->sin_addr.s_addr);
+	globGtp.instances[sockfd].ipVersion=4;
         break;
       } else if (p->ai_family == AF_INET6) {
         LOG_W(GTPU,"Local address is IP v6\n");
@@ -226,6 +234,7 @@ static  int udpServerSocket(openAddr_s addr) {
         memcpy(globGtp.instances[sockfd].foundAddr,
                &ipv6->sin6_addr.s6_addr, sizeof(ipv6->sin6_addr.s6_addr));
         globGtp.instances[sockfd].foundAddrLen=sizeof(ipv6->sin6_addr.s6_addr);
+	globGtp.instances[sockfd].ipVersion=6;
       } else
         AssertFatal(false,"Local address is not IPv4 or IPv6");
     }
@@ -608,7 +617,7 @@ void *ocp_gtpv1uTask(void *args)  {
       switch (ITTI_MSG_ID(message_p)) {
         // DATA TO BE SENT TO UDP
         case GTPV1U_ENB_TUNNEL_DATA_REQ: {
-          gtpv1uSend(compatInst(ITTI_MESSAGE_GET_INSTANCE(message_p)),
+          gtpv1uSend(compatInst(ITTI_MSG_DESTINATION_INSTANCE(message_p)),
                      &GTPV1U_ENB_TUNNEL_DATA_REQ(message_p), false, false);
           itti_free(OCP_GTPV1_U, GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer);
         }

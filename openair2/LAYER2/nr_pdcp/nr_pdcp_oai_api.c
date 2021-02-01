@@ -433,7 +433,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                                   size + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
