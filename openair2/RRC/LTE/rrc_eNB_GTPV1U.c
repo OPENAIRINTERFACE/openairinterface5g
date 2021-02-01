@@ -126,7 +126,7 @@ gtpv_data_req(
 
       memcpy (message_buffer, buffer_pP, sdu_sizeP);
 
-      message_p = itti_alloc_new_message (TASK_GTPV1_U, GTPV1U_ENB_DATA_FORWARDING_IND);
+      message_p = itti_alloc_new_message (TASK_GTPV1_U, 0, GTPV1U_ENB_DATA_FORWARDING_IND);
       GTPV1U_ENB_DATA_FORWARDING_IND (message_p).frame 	= ctxt_pP->frame;
       GTPV1U_ENB_DATA_FORWARDING_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
       GTPV1U_ENB_DATA_FORWARDING_IND (message_p).rb_id 	= rb_idP;
@@ -149,7 +149,7 @@ gtpv_data_req(
 
       memcpy (message_buffer, buffer_pP, sdu_sizeP);
 
-      message_p = itti_alloc_new_message (TASK_GTPV1_U, GTPV1U_ENB_END_MARKER_IND);
+      message_p = itti_alloc_new_message (TASK_GTPV1_U, 0, GTPV1U_ENB_END_MARKER_IND);
       GTPV1U_ENB_END_MARKER_IND (message_p).frame 	= ctxt_pP->frame;
       GTPV1U_ENB_END_MARKER_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
       GTPV1U_ENB_END_MARKER_IND (message_p).rb_id 	= rb_idP;
@@ -186,7 +186,7 @@ void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
                      "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ",
                      ue_context_pP->ue_context.eNB_ue_s1ap_id);
 
-  MessageDef *msg = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_ENB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg)));
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg).rnti = ue_context_pP->ue_context.rnti;
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg).from_gnb = 0;

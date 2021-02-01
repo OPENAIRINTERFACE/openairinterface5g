@@ -729,7 +729,7 @@ int RCconfig_nr_gtpu(void ) {
 
     if (address) {
       MessageDef *message;
-      AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, GTPV1U_ENB_S1_REQ))!=NULL,"");
+      AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_ENB_S1_REQ))!=NULL,"");
      // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
      // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
 

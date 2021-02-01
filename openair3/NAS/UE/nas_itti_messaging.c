@@ -102,7 +102,7 @@ extern unsigned char NB_eNB_INST;
 
 int nas_itti_kenb_refresh_req(const Byte_t kenb[32], int user_id) {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_KENB_REFRESH_REQ);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_KENB_REFRESH_REQ);
   memcpy(NAS_KENB_REFRESH_REQ(message_p).kenb, kenb, sizeof(NAS_KENB_REFRESH_REQ(message_p).kenb));
   MSC_LOG_TX_MESSAGE(
     MSC_NAS_UE,
@@ -130,7 +130,7 @@ int nas_itti_kenb_refresh_req(const Byte_t kenb[32], int user_id) {
 
 int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat, int user_id) {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_CELL_SELECTION_REQ);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_CELL_SELECTION_REQ);
   NAS_CELL_SELECTION_REQ(message_p).plmnID    = plmnID;
   NAS_CELL_SELECTION_REQ(message_p).rat       = rat;
   MSC_LOG_TX_MESSAGE(
@@ -145,7 +145,7 @@ int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat, int user_id) {
 
 int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t s_tmsi, plmn_t plmnID, Byte_t *data, uint32_t length, int user_id) {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_CONN_ESTABLI_REQ);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_CONN_ESTABLI_REQ);
   NAS_CONN_ESTABLI_REQ(message_p).cause                       = cause;
   NAS_CONN_ESTABLI_REQ(message_p).type                        = type;
   NAS_CONN_ESTABLI_REQ(message_p).s_tmsi                      = s_tmsi;
@@ -165,7 +165,7 @@ int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t
 
 int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t length, int user_id) {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_UPLINK_DATA_REQ);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_UPLINK_DATA_REQ);
   NAS_UPLINK_DATA_REQ(message_p).UEid          = ue_id;
   NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = data;
   NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = length;
@@ -174,7 +174,7 @@ int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t 
 
 int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID, const nas_error_code_t errCode, int user_id) {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, NAS_RAB_ESTABLI_RSP);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_RAB_ESTABLI_RSP);
   NAS_RAB_ESTABLI_RSP(message_p).s_tmsi       = s_tmsi;
   NAS_RAB_ESTABLI_RSP(message_p).rabID        = rabID;
   NAS_RAB_ESTABLI_RSP(message_p).errCode      = errCode;

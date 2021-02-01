@@ -112,7 +112,7 @@ static inline void cmac_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
 {
 
   __m256i cmac_tmp,cmac_tmp_re32,cmac_tmp_im32;
-  __m256i imshuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,19,18,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+  __m256i imshuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
 
   cmac_tmp       = _mm256_sign_epi16(b,*(__m256i*)reflip);
   cmac_tmp_re32  = _mm256_madd_epi16(a,cmac_tmp);
@@ -129,7 +129,7 @@ static inline void cmacc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
 {
 
   __m256i cmac_tmp,cmac_tmp_re32,cmac_tmp_im32;
-  __m256i imshuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,19,18,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+  __m256i imshuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
 
   cmac_tmp_re32   = _mm256_madd_epi16(a,b);
 
