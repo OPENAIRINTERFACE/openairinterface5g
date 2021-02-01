@@ -279,7 +279,7 @@ static void *nr_feptx_thread(void *param) {
 
   RU_feptx_t *feptx = (RU_feptx_t *)param;
   RU_t       *ru;
-  int         aa, slot, start, l, nb_antenna_ports, ret;
+  int         aa, slot, start, l, ret;
   int         i;
   int32_t ***bw;
   NR_DL_FRAME_PARMS *fp;
@@ -298,7 +298,6 @@ static void *nr_feptx_thread(void *param) {
     l     = feptx->symbol;
     fp    = ru->nr_frame_parms;
     start = feptx->symbol;
-    nb_antenna_ports = feptx->nb_antenna_ports;
     ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
     if(ru->num_gNB != 0){
