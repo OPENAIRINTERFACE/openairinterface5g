@@ -317,7 +317,7 @@ void benetel_fh_if4p5_south_out(RU_t *ru,
     int i;
     uint16_t *p = (uint16_t *)(&s->buffers.dl[slot][symbol*1272*4]);
     for (i = 0; i < 1272*2; i++) {
-      p[i] = htons(p[i]);
+      p[i] = htons(p[i]<<4);
     }
   }
 
