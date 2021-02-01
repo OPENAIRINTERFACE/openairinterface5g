@@ -946,6 +946,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
             // rrc_mac_config_req_eNB
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
+            /* TODO : It may be needed if gNB goes into full stack working. */
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
             (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
@@ -1045,6 +1046,7 @@ rrc_gNB_generate_RRCReestablishment(
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_context->Srb0.Tx_buffer.payload_size);
 #if(0)
+    /* TODO : It may be needed if gNB goes into full stack working. */
     UE_id = find_nr_UE_id(module_id, rnti);
     if (UE_id != -1) {
       /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
@@ -1554,6 +1556,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             break;
           }
 #if(0)
+          /* TODO : It may be needed if gNB goes into full stack working. */
           int UE_id = find_nr_UE_id(ctxt_pP->module_id, c_rnti);
 
           if(UE_id == -1) {
@@ -2202,6 +2205,7 @@ rrc_gNB_decode_dcch(
                 }
 
 #if(0)
+                /* TODO : It may be needed if gNB goes into full stack working. */
                 //clear
                 int UE_id = find_nr_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 

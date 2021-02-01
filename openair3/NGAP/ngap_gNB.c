@@ -98,7 +98,7 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
   ngap_gNB_amf_data_t        *ngap_amf_data_p             = NULL;
-  struct ngap_gNB_amf_data_s *amf                         = NULL;
+
   DevAssert(instance_p != NULL);
   DevAssert(amf_ip_address != NULL);
   message_p = itti_alloc_new_message(TASK_NGAP, SCTP_NEW_ASSOCIATION_REQ);
@@ -114,54 +114,32 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
          local_ip_addr,
          sizeof(*local_ip_addr));
   NGAP_INFO("[gNB %d] check the amf registration state\n",instance_p->instance);
-  amf = NULL;
 
-  if ( amf == NULL ) {
-    /* Create new AMF descriptor */
-    ngap_amf_data_p = calloc(1, sizeof(*ngap_amf_data_p));
-    DevAssert(ngap_amf_data_p != NULL);
-    ngap_amf_data_p->cnx_id                = ngap_gNB_fetch_add_global_cnx_id();
-    sctp_new_association_req_p->ulp_cnx_id = ngap_amf_data_p->cnx_id;
-    ngap_amf_data_p->assoc_id          = -1;
-    ngap_amf_data_p->broadcast_plmn_num = broadcast_plmn_num;
-    memcpy(&ngap_amf_data_p->amf_s1_ip,
-    	   amf_ip_address,
-    	   sizeof(*amf_ip_address));
-    for (int i = 0; i < broadcast_plmn_num; ++i)
-      ngap_amf_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
+  /* Create new AMF descriptor */
+  ngap_amf_data_p = calloc(1, sizeof(*ngap_amf_data_p));
+  DevAssert(ngap_amf_data_p != NULL);
+  ngap_amf_data_p->cnx_id                = ngap_gNB_fetch_add_global_cnx_id();
+  sctp_new_association_req_p->ulp_cnx_id = ngap_amf_data_p->cnx_id;
+  ngap_amf_data_p->assoc_id          = -1;
+  ngap_amf_data_p->broadcast_plmn_num = broadcast_plmn_num;
+  memcpy(&ngap_amf_data_p->amf_s1_ip,
+        amf_ip_address,
+        sizeof(*amf_ip_address));
+  for (int i = 0; i < broadcast_plmn_num; ++i)
+    ngap_amf_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
 
-    ngap_amf_data_p->ngap_gNB_instance = instance_p;
-    STAILQ_INIT(&ngap_amf_data_p->served_guami);
-    /* Insert the new descriptor in list of known AMF
-     * but not yet associated.
-     */
-    RB_INSERT(ngap_amf_map, &instance_p->ngap_amf_head, ngap_amf_data_p);
-    ngap_amf_data_p->state = NGAP_GNB_STATE_WAITING;
-    instance_p->ngap_amf_nb ++;
-    instance_p->ngap_amf_pending_nb ++;
-  } else if (amf->state == NGAP_GNB_STATE_WAITING) {
-    instance_p->ngap_amf_pending_nb ++;
-    sctp_new_association_req_p->ulp_cnx_id = amf->cnx_id;
-    NGAP_INFO("[gNB %d] AMF already registered, retrive the data (state %d, cnx %d, amf_nb %d, amf_pending_nb %d)\n",
-              instance_p->instance,
-              amf->state, amf->cnx_id,
-              instance_p->ngap_amf_nb, instance_p->ngap_amf_pending_nb);
-    /*ngap_amf_data_p->cnx_id                = amf->cnx_id;
-    sctp_new_association_req_p->ulp_cnx_id = amf->cnx_id;
-
-    ngap_amf_data_p->assoc_id          = -1;
-    ngap_amf_data_p->ngap_gNB_instance = instance_p;
-    */
-  } else {
-    NGAP_WARN("[gNB %d] AMF already registered but not in the waiting state, retrive the data (state %d, cnx %d, amf_nb %d, amf_pending_nb %d)\n",
-              instance_p->instance,
-              amf->state, amf->cnx_id,
-              instance_p->ngap_amf_nb, instance_p->ngap_amf_pending_nb);
-  }
+  ngap_amf_data_p->ngap_gNB_instance = instance_p;
+  STAILQ_INIT(&ngap_amf_data_p->served_guami);
+  /* Insert the new descriptor in list of known AMF
+   * but not yet associated.
+   */
+  RB_INSERT(ngap_amf_map, &instance_p->ngap_amf_head, ngap_amf_data_p);
+  ngap_amf_data_p->state = NGAP_GNB_STATE_DISCONNECTED;
+  instance_p->ngap_amf_nb ++;
+  instance_p->ngap_amf_pending_nb ++;
 
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
-
 
 void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *ngap_register_gNB) {
   ngap_gNB_instance_t *new_instance;
