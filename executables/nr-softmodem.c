@@ -85,6 +85,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;

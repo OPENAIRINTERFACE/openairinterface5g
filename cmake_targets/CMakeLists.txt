@@ -405,7 +405,7 @@ add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
 add_boolean_option(DEBUG_CONSOLE       False "makes debugging easier, disables stdout/stderr buffering")
-add_boolean_option(NEW_GTPU       True "NEW_GTP")
+add_boolean_option(NEW_GTPU       False "NEW_GTP")
 
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 add_library(ITTI
@@ -2207,16 +2207,6 @@ add_library(CN_UTILS
   )
 
 set(GTPV1U_DIR ${OPENAIR3_DIR}/GTPV1-U)
-set (GTPV1U_SRC
-  ${RRC_DIR}/rrc_eNB_GTPV1U.c
-  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
-  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTrxn.c
-  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uMsg.c
-  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1u.c
-  ${GTPV1U_DIR}/gtpv1u_teid_pool.c
-)
-add_library(GTPV1U ${GTPV1U_SRC})
-add_dependencies(GTPV1U rrc_flag)
 
 add_library (GTPV1U_OCP
   ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c
@@ -2231,6 +2221,7 @@ set (NR_GTPV1U_SRC
   ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c
   ${RRC_DIR}/rrc_eNB_GTPV1U.c
   ${GTPV1U_DIR}/gtpv1u_eNB.c
+  ${GTPV1U_DIR}/gtpv1u_gNB.c
   ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
   ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTrxn.c
   ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uMsg.c
@@ -3022,7 +3013,6 @@ add_executable(nr-softmodem
   ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -3539,7 +3529,6 @@ add_executable(nr-ittisim
   ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
