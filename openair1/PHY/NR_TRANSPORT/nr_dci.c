@@ -182,19 +182,6 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       }
     }
 
-    printf("\n");
-    for(int qq = 0; qq<pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]; qq++ ) {
-      printf("gNB->cce_list[d][p2].reg_list[0].reg_idx = %i\n", gNB->cce_list[d][qq].reg_list[0].reg_idx);
-    }
-    printf("\n");
-    for(int qq = 0; qq<pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]; qq++ ) {
-      printf("reg_list_order[qq] = %i\n", reg_list_order[qq]);
-    }
-    printf("\n");
-
-    getchar();
-
-
     /*Mapping the encoded DCI along with the DMRS */
     for (int cce_count = 0; cce_count < pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]; cce_count ++) {
 
