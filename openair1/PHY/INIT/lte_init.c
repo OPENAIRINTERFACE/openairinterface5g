@@ -436,7 +436,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   eNB->first_run_I0_measurements =
     1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
-  eNB->use_DTX=0;
+  eNB->use_DTX=1;
   if (NFAPI_MODE!=NFAPI_MODE_VNF) {
     common_vars->rxdata  = (int32_t **)NULL;
     common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t *));
@@ -452,7 +452,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         LOG_I(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
               i,common_vars->txdataF[i],
               fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t));
-	if (i<fp->nb_antenna_ports_eNB) eNB->subframe_mask[i] = malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+	if (eNB->use_DTX==0 && i<fp->nb_antenna_ports_eNB) eNB->subframe_mask[i] = malloc16_clear(fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
       }
     }
 
