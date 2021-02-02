@@ -554,7 +554,7 @@ typedef struct eNB_RRC_UE_s {
   LTE_DRB_ToAddModList_t            *DRB_configList;
   LTE_DRB_ToAddModList_t            *DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   LTE_DRB_ToReleaseList_t           *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  uint8_t                            DRB_active[8];
+  uint8_t                            DRB_active[NB_RB_MAX -2];
   struct LTE_PhysicalConfigDedicated    *physicalConfigDedicated;
   struct LTE_SPS_Config             *sps_Config;
   LTE_MeasObjectToAddMod_t          *MeasObj[MAX_MEAS_OBJ];

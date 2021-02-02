@@ -257,7 +257,7 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
       forwarded_buffer = itti_malloc(TASK_UDP, udp_sock_pP->task_id, n*sizeof(uint8_t));
       DevAssert(forwarded_buffer != NULL);
       memcpy(forwarded_buffer, l_buffer, n);
-      message_p = itti_alloc_new_message(TASK_UDP, UDP_DATA_IND);
+      message_p = itti_alloc_new_message(TASK_UDP, 0, UDP_DATA_IND);
       DevAssert(message_p != NULL);
       udp_data_ind_p = &message_p->ittiMsg.udp_data_ind;
       udp_data_ind_p->buffer        = forwarded_buffer;
@@ -318,7 +318,7 @@ void *udp_eNB_task(void *args_p)
     if (received_message_p != NULL) {
 
       //msg_name = ITTI_MSG_NAME (received_message_p);
-      //instance = ITTI_MSG_INSTANCE (received_message_p);
+      //instance = ITTI_MSG_DESTINATION_INSTANCE (received_message_p);
 
       switch (ITTI_MSG_ID(received_message_p)) {
       case UDP_INIT: {

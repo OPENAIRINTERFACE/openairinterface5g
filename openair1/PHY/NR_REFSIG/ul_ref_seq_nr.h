@@ -38,6 +38,10 @@
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 
+#include "PHY/defs_nr_common.h"
+#include "PHY/defs_gNB.h"
+
+
 #ifdef DEFINE_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 #define EXTERN
 #define INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
@@ -255,7 +259,10 @@ const char phi_M_ZC_24[24*U_GROUP_NUMBER]
 ;
 /************** FUNCTION ******************************************/
 
-int16_t *base_sequence_36_or_larger(unsigned int M_ZC, unsigned int u, unsigned int v, unsigned int scaling);
+
+int16_t *base_sequence_36_or_larger(unsigned int M_ZC, unsigned int u, unsigned int v, unsigned int scaling, unsigned int if_dmrs_seq);
+
+
 int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned int scaling);
 /*!
 \brief This function generate the sounding reference symbol (SRS) for the uplink.
@@ -264,6 +271,72 @@ int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned 
 */
 void generate_ul_reference_signal_sequences(unsigned int scaling);
 void free_ul_reference_signal_sequences(void);
+
+
+
+// Supported for 100Mhz configuration - which has max 273 RBs
+#define MAX_INDEX_DMRS_UL_ALLOCATED_REs 53
+
+
+const uint16_t dmrs_ul_allocated_res[MAX_INDEX_DMRS_UL_ALLOCATED_REs]     
+/* Number of possible DMRS REs based on PRBs allocated for PUSCH. Array has values until 273 RBs (100Mhz BW)
+   Number of PUSCH RBs allocated should be able to be expressed as 2topowerofn*3topowerofn*5tothepowerofn
+   According to 3GPP spec 38.211 section 6.3.1.4
+   Table used in calculating DMRS low papr type1 sequence for transform precoding                                    */
+#ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
+= {
+/*RBs      1,    2,     3,    4,    5,     6,    8,    9,    10,   12,   15,   16,                 */ 
+           6,    12,    18,   24,   30,    36,   48,   54,   60,   72,   90,   96,    
+
+/*RBs      18,   20,    24,   25,   27,    30,   32,   36,   40,   45,   48,   50,                 */ 
+           108,  120,   144,  150,  162,   180,  192,  216,  240,  270,  288,  300,    
+
+/*RBs      54,   60,    64,   72    75,    80,   81,   90,   96,   100,   (Bw 40Mhz) */ 
+           324,  360,   384,  432,  450,   480,  486,  540,  576,  600,  
+
+/*RBs      108,  120    125   128   135    144   150   160   162   180    192    200               */
+           648,  720,   750,  768,  810,   864,  900,  960,  972,  1080,  1152,  1200,
+           
+/*RBs      216    225    240   243   250   256    270                        supported until 100Mhz */
+           1296,  1350,  1440, 1458, 1500, 1536,  1620  
+
+}
+#endif
+;
+
+/* Table of largest prime number N_ZC < possible DMRS REs M_ZC, this array has values until 100Mhz
+   According to 3GPP spec 38.211 section 5.2.2.1
+   Table used in calculating DMRS low papr type1 sequence for transform precoding                              */
+const uint16_t dmrs_ref_ul_primes[MAX_INDEX_DMRS_UL_ALLOCATED_REs]
+#ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
+= {
+/*DMRS REs              6,    12,   18,   24,    30,    36,    48,   54,   60,   72,   90,   96,    */
+                        5,    11,   17,   23,    29,    31,    47,   53,   59,   71,   89,   89,    
+
+/*DMRS REs              108,  120,  144,  150,   162,   180,   192,  216,  240,  270,  288,  300,     */             
+                        107,  113,  139,  149,   157,   179,   191,  211,  239,  269,  283,  293, 
+
+/*DMRS REs              324,  360,  384,  432,   450,   480,   486,  540,  576,  600,                 */
+                        317,  359,  383,  431,   449,   479,   479,  523,  571,  599,  
+		   
+/*DMRS REs              648,  720,  750,  768,   810,   864,   900,  960,  972,  1080, 1152, 1200,   */
+                        647,  719,  743,  761,   809,   863,   887,  953,  971,  1069, 1151, 1193, 
+           
+/*DMRS REs              1296, 1350,  1440, 1458, 1500,  1536   1620  supported until 100Mhz */ 
+                        1291, 1327,  1439, 1453, 1499,  1531,  1619
+        
+
+}
+#endif
+;
+
+/// PUSCH DMRS for transform precoding
+int16_t  *gNB_dmrs_lowpaprtype1_sequence[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
+int16_t  *dmrs_lowpaprtype1_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
+int16_t  get_index_for_dmrs_lowpapr_seq(int16_t num_dmrs_res);
+void     generate_lowpapr_typ1_refsig_sequences(unsigned int scaling);
+void     free_gnb_lowpapr_sequences(void);
+
 
 #undef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 #undef EXTERN

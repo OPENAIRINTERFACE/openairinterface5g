@@ -444,7 +444,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
    int num_cells_to_activate = 0;
    F1AP_Cells_to_be_Activated_List_Item_t *cell;
 
-   MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, F1AP_SETUP_RESP);
+   MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, 0, F1AP_SETUP_RESP);
 
    LOG_D(F1AP, "F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);

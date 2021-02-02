@@ -729,7 +729,7 @@ void *et_eNB_app_task(void *args_p)
     itti_receive_msg (TASK_ENB_APP, &msg_p);
 
     msg_name = ITTI_MSG_NAME (msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -1204,7 +1204,7 @@ int main( int argc, char **argv )
   logInit();
   set_glog(LOG_TRACE, LOG_MED);
 
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   set_comp_log(ENB_APP, LOG_TRACE, LOG_MED, 1);
   set_comp_log(S1AP, LOG_TRACE, LOG_MED, 1);

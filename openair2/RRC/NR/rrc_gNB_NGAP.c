@@ -205,7 +205,7 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   rrc_ue_ngap_ids_t  *rrc_ue_ngap_ids_p = NULL;
   // hashtable_rc_t      h_rc;
 
-  message_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_NAS_FIRST_REQ);
+  message_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_NAS_FIRST_REQ);
   memset(&message_p->ittiMsg.ngap_nas_first_req, 0, sizeof(ngap_nas_first_req_t));
   ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id(ctxt_pP->module_id);
   NGAP_NAS_FIRST_REQ(message_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
@@ -325,14 +325,14 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
   gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).gNB_ue_ngap_id;
 
   ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-  LOG_I(NR_RRC, "[gNB %d] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
+  LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
       instance, msg_name, ue_initial_id, gNB_ue_ngap_id);
 
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
     MessageDef *msg_fail_p = NULL;
-    LOG_W(NR_RRC, "[gNB %d] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
-    msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
+    LOG_W(NR_RRC, "[gNB %ld] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+    msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
     NGAP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
     // TODO add failure cause when defined!
     itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
@@ -393,7 +393,7 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
   int e_rab;
   int e_rabs_done = 0;
   int e_rabs_failed = 0;
-  msg_p = itti_alloc_new_message (TASK_RRC_ENB, NGAP_INITIAL_CONTEXT_SETUP_RESP);
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, 0, NGAP_INITIAL_CONTEXT_SETUP_RESP);
   NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
 
   for (e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {

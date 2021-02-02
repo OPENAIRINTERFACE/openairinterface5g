@@ -88,7 +88,7 @@ void *msc_task(void *args_p)
 
     if (received_message_p != NULL) {
       //      msg_name = ITTI_MSG_NAME (received_message_p);
-      //      instance = ITTI_MSG_INSTANCE (received_message_p);
+      //      instance = ITTI_MSG_DESTINATION_INSTANCE (received_message_p);
       switch (ITTI_MSG_ID(received_message_p)) {
         case TIMER_HAS_EXPIRED: {
           msc_flush_messages();
