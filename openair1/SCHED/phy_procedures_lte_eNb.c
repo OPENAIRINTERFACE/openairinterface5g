@@ -90,7 +90,7 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint16_t ULSCH_id,uint8
     // This is the formula from Section 5.1.1.1 in 36.213 10*log10(deltaIF_PUSCH = (2^(MPR*Ks)-1)*beta_offset_pusch)
     if (bw_factor == 1) {
       uint8_t nb_rb = eNB->ulsch[ULSCH_id]->harq_processes[harq_pid]->nb_rb;
-      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_x10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
     } else
       return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_x10((beta_offset_pusch)>>3));
   } else {
@@ -1391,8 +1391,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
            if (eNB->ulsch_stats[j].rnti == ulsch->rnti) {
               eNB->ulsch_stats[j].total_bytes_rx+=ulsch_harq->TBS;
               for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) {
-                eNB->ulsch_stats[j].ulsch_power[aa] = dB_fixed_times10(eNB->pusch_vars[rdata->UEid]->ulsch_power[aa]);
-                eNB->ulsch_stats[j].ulsch_noise_power[aa] = dB_fixed_times10(eNB->pusch_vars[rdata->UEid]->ulsch_noise_power[aa]); 
+                eNB->ulsch_stats[j].ulsch_power[aa] = dB_fixed_x10(eNB->pusch_vars[rdata->UEid]->ulsch_power[aa]);
+                eNB->ulsch_stats[j].ulsch_noise_power[aa] = dB_fixed_x10(eNB->pusch_vars[rdata->UEid]->ulsch_noise_power[aa]); 
               }
               break;
            }
@@ -1641,8 +1641,8 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
      total_power+=(eNB->pusch_vars[ULSCH_id]->ulsch_power[i]);
      avg_noise_power+=(eNB->pusch_vars[ULSCH_id]->ulsch_noise_power[i])/eNB->frame_parms.nb_antennas_rx;
   }
-  int SNRtimes10 = dB_fixed_times10(total_power) - 
-                   dB_fixed_times10(avg_noise_power);
+  int SNRtimes10 = dB_fixed_x10(total_power) - 
+                   dB_fixed_x10(avg_noise_power);
 
   if (SNRtimes10 < -640)
     pdu->rx_indication_rel8.ul_cqi = 0;
@@ -1652,9 +1652,9 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
     pdu->rx_indication_rel8.ul_cqi = (640 + SNRtimes10) / 5;
 
   LOG_D(PHY,"[PUSCH %d] Frame %d Subframe %d Filling RX_indication with SNR %d (%d,%d,%d), timing_advance %d (update %d,sync_pos %d)\n",
-        harq_pid,frame,subframe,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,dB_fixed_times10(total_power),dB_fixed_times10(avg_noise_power),pdu->rx_indication_rel8.timing_advance,timing_advance_update,sync_pos);
+        harq_pid,frame,subframe,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,dB_fixed_x10(total_power),dB_fixed_x10(avg_noise_power),pdu->rx_indication_rel8.timing_advance,timing_advance_update,sync_pos);
   for (int i=0;i<eNB->frame_parms.nb_antennas_rx;i++)
-	LOG_D(PHY,"antenna %d: ulsch_power %d, noise_power %d\n",i,dB_fixed_times10(eNB->pusch_vars[ULSCH_id]->ulsch_power[i]),dB_fixed_times10(eNB->pusch_vars[ULSCH_id]->ulsch_noise_power[i]));
+	LOG_D(PHY,"antenna %d: ulsch_power %d, noise_power %d\n",i,dB_fixed_x10(eNB->pusch_vars[ULSCH_id]->ulsch_power[i]),dB_fixed_x10(eNB->pusch_vars[ULSCH_id]->ulsch_noise_power[i]));
 
   eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus++;
   eNB->UL_INFO.rx_ind.sfn_sf = frame<<4 | subframe;
