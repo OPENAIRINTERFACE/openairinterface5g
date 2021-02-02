@@ -89,7 +89,7 @@
 
 #define NR_MAX_NUM_BWP 4
 
-#define NR_MAX_PDCCH_AGG_LEVEL 16
+#define NR_MAX_PDCCH_AGG_LEVEL 16 // 3GPP TS 38.211 V15.8 Section 7.3.2 Table 7.3.2.1-1: Supported PDCCH aggregation levels
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
