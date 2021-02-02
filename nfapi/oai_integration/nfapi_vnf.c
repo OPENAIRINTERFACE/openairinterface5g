@@ -504,11 +504,11 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
 
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
-  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
-    exit_fun( "error locking mutex_rxtx" );
-    return(-1);
-  }
+  //if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+  //  LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+  //  exit_fun( "error locking mutex_rxtx" );
+  //  return(-1);
+  //}
 
   {
     static uint16_t old_sf = 0;
@@ -529,8 +529,31 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
             proc->frame_rx,
             proc->subframe_rx);
   }
+  // wake up TX for subframe n+sf_ahead
+  // lock the TX mutex and make sure the thread is ready
+  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+      //exit_fun( "error locking mutex_rxtx" );
+      return(-1);
+  }
+  static int busy_log_cnt=0;
+  if(L1_proc->instance_cnt < 0){
+    ++L1_proc->instance_cnt;
+    if(busy_log_cnt!=0){
+      LOG_E(MAC,"RCC singal to rxtx frame %d subframe %d busy end %d (frame %d subframe %d)\n",L1_proc->frame_rx,L1_proc->subframe_rx,busy_log_cnt,proc->frame_rx,proc->subframe_rx);
+    }
+    busy_log_cnt=0;
+  }else{
+    if(busy_log_cnt==0){
+      LOG_E(MAC,"RCC singal to rxtx frame %d subframe %d busy %d (frame %d subframe %d)\n",L1_proc->frame_rx,L1_proc->subframe_rx,L1_proc->instance_cnt,proc->frame_rx,proc->subframe_rx);
+    }
+    pthread_mutex_unlock( &L1_proc->mutex );
+    busy_log_cnt++;
+    return(0);
+  }
 
-  ++L1_proc->instance_cnt;
+  pthread_mutex_unlock( &L1_proc->mutex );
+
   //LOG_D( PHY,"[VNF-subframe_ind] sfn/sf:%d:%d proc[frame_rx:%d subframe_rx:%d] L1_proc->instance_cnt_rxtx:%d \n", sfn, sf, proc->frame_rx, proc->subframe_rx, L1_proc->instance_cnt_rxtx);
   // We have just received and processed the common part of a subframe, say n.
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired
@@ -553,9 +576,6 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
     return(-1);
   }
 
-  //LOG_D(PHY,"%s() About to attempt pthread_mutex_unlock\n", __FUNCTION__);
-  pthread_mutex_unlock( &L1_proc->mutex );
-  //LOG_D(PHY,"%s() UNLOCKED pthread_mutex_unlock\n", __FUNCTION__);
   return(0);
 }
 

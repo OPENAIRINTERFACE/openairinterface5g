@@ -386,7 +386,7 @@ void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE from task %s (%d) to task %s (%d)\n",
         itti_get_task_name(from), from, itti_get_task_name(to), to);
   MessageDef *msg;
-  msg = itti_alloc_new_message (from, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (from, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (to, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -453,7 +453,7 @@ int restart_L1L2(module_id_t enb_id) {
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
@@ -544,14 +544,14 @@ int main ( int argc, char **argv )
 
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // allows to forward in wireshark L2 protocol for decoding
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
   }
 
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();
@@ -566,19 +566,6 @@ int main ( int argc, char **argv )
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
-    init_pdcp();
-    
-    if (create_tasks(1) < 0) {
-      printf("cannot create ITTI tasks\n");
-      exit(-1);
-    }
-
-    for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
-      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
-      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
-      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-    }
-    node_type = RC.rrc[0]->node_type;
   } else {
     printf("RC.nb_inst = 0, Initializing L1\n");
     RCconfig_L1();
@@ -593,17 +580,29 @@ int main ( int argc, char **argv )
           RC.nb_L1_inst, RC.nb_RU, get_nprocs());
   }
 
-   if (RC.nb_inst > 0) {
-     /* Start the agent. If it is turned off in the configuration, it won't start */
-     if(NFAPI_MODE != NFAPI_MODE_PNF)
-     for (i = 0; i < RC.nb_inst; i++) {
-       flexran_agent_start(i);
-     }
+  if (RC.nb_inst > 0) {
+    /* Start the agent. If it is turned off in the configuration, it won't start */
+    for (i = 0; i < RC.nb_inst; i++) {
+      if(NFAPI_MODE != NFAPI_MODE_PNF)
+      flexran_agent_start(i);
+    }
     
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
-   
-   }
+   init_pdcp();
+    
+    if (create_tasks(1) < 0) {
+      printf("cannot create ITTI tasks\n");
+      exit(-1);
+    }
+
+    for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
+      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+    }
+    node_type = RC.rrc[0]->node_type;
+  }
 
   if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
     protocol_ctxt_t ctxt;

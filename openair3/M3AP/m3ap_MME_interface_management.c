@@ -265,7 +265,7 @@ int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
   int MCE_MBMS_M3AP_ID=-1;
 
 
-  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME,M3AP_MBMS_SESSION_START_RESP); //TODO
+  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME, 0,M3AP_MBMS_SESSION_START_RESP); //TODO
 
   LOG_D(M3AP, "M3AP: SessionStart-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -403,7 +403,7 @@ int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
   int MCE_MBMS_M3AP_ID=-1;
 
 
-  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME,M3AP_MBMS_SESSION_STOP_RESP); //TODO
+  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME, 0,M3AP_MBMS_SESSION_STOP_RESP); //TODO
 
   LOG_D(M3AP, "M3AP: MBMSSessionStop-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -522,7 +522,7 @@ int MME_handle_M3_SETUP_REQUEST(instance_t instance,
 //              assoc_id, stream);
 //  }
 //
-    message_p = itti_alloc_new_message(TASK_M3AP_MME, M3AP_SETUP_REQ); 
+    message_p = itti_alloc_new_message(TASK_M3AP_MME, 0, M3AP_SETUP_REQ); 
     //printf("M3AP_SETUP_REQ(message_p).assoc_id %d\n",M3AP_SETUP_REQ(message_p).assoc_id);
 //  
 //  /* assoc_id */
@@ -1055,7 +1055,7 @@ int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
   int MCE_MBMS_M3AP_ID=-1;
 
 
-  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME,M3AP_MBMS_SESSION_UPDATE_RESP); //TODO
+  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME, 0,M3AP_MBMS_SESSION_UPDATE_RESP); //TODO
 
   LOG_D(M3AP, "M3AP: SessionUpdate-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);

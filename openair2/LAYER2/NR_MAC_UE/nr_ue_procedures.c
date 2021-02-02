@@ -1259,6 +1259,44 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
               ulcfg_pdu->pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
             }
 
+            /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/                                    
+           
+            if (ulcfg_pdu->pusch_config_pdu.transform_precoding == transform_precoder_enabled) { 
+
+              uint32_t n_RS_Id = 0;
+
+              NR_PUSCH_Config_t *pusch_config=mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
+              NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;    
+
+              ulcfg_pdu->pusch_config_pdu.num_dmrs_cdm_grps_no_data = 2; 
+
+              if(pusch_config->dmrs_UplinkForPUSCH_MappingTypeA != NULL) 
+                NR_DMRS_ulconfig = pusch_config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup; 
+              else 
+                NR_DMRS_ulconfig = pusch_config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+              
+
+              if (NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+                n_RS_Id = *NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity;
+              else
+                n_RS_Id = *mac->scc->physCellId;
+
+              // U as specified in section 6.4.1.1.1.2 in 38.211, if sequence hopping and group hopping are disabled 
+              ulcfg_pdu->pusch_config_pdu.dfts_ofdm.low_papr_group_number = n_RS_Id % 30; 
+
+              // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
+              if ((NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) && 
+                    (NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceHopping == NULL))
+    	          ulcfg_pdu->pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0; 
+              else 
+                AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
+
+              LOG_D(MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d \n", ulcfg_pdu->pusch_config_pdu.num_dmrs_cdm_grps_no_data, 
+                        ulcfg_pdu->pusch_config_pdu.dfts_ofdm.low_papr_group_number);
+            }
+
+            /* TRANSFORM PRECODING --------------------------------------------------------------------------------------------------------*/                                    
+
             get_num_re_dmrs(&ulcfg_pdu->pusch_config_pdu,
                             &nb_dmrs_re_per_rb,
                             &number_dmrs_symbols);
@@ -2908,9 +2946,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     /* MCS TABLE */
     if (mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-      pusch_config_pdu_0_0->transform_precoding = 1;
+      pusch_config_pdu_0_0->transform_precoding = transform_precoder_disabled;
     else
-      pusch_config_pdu_0_0->transform_precoding = 0;
+      pusch_config_pdu_0_0->transform_precoding = transform_precoder_enabled;
 
     if (pusch_config_pdu_0_0->transform_precoding == transform_precoder_disabled)
       pusch_config_pdu_0_0->mcs_table = get_pusch_mcs_table(pusch_config->mcs_Table, 0,
@@ -3028,9 +3066,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* MCS TABLE */
     if (pusch_config->transformPrecoder == NULL) {
       if (mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-        pusch_config_pdu_0_1->transform_precoding = 1;
+        pusch_config_pdu_0_1->transform_precoding = transform_precoder_disabled;
       else
-        pusch_config_pdu_0_1->transform_precoding = 0;
+        pusch_config_pdu_0_1->transform_precoding = transform_precoder_enabled;
     }
     else
       pusch_config_pdu_0_1->transform_precoding = *pusch_config->transformPrecoder;
@@ -3144,14 +3182,58 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	}
       }
     }
+
+/*-------------------- Changed to enable Transform precoding in RF SIM------------------------------------------------*/
+    
+    NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;  
+
+    if (pusch_config_pdu_0_1->transform_precoding == transform_precoder_enabled) {       
+
+      mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder = transform_precoder_enabled;        
+      
+      if(pusch_config->dmrs_UplinkForPUSCH_MappingTypeA != NULL) {
+
+        NR_DMRS_ulconfig = pusch_config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;  
+        
+        if (NR_DMRS_ulconfig->dmrs_Type == NULL)
+          mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type = 1;
+        if (NR_DMRS_ulconfig->maxLength == NULL)
+          mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length = 1;         
+
+      } else if(pusch_config->dmrs_UplinkForPUSCH_MappingTypeB != NULL) {
+        
+        NR_DMRS_ulconfig = pusch_config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;        
+
+        if (NR_DMRS_ulconfig->dmrs_Type == NULL)
+          mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_b.dmrs_type = 1;
+        if (NR_DMRS_ulconfig->maxLength == NULL)
+          mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_b.max_length = 1; 
+
+      }
+    } else
+        mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder = transform_precoder_disabled;
+    
+    // mapping type b configured from RRC. TBD: Mapping type b is not handled in this function. 
+    if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
+	      (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_b.dmrs_type == 1) &&
+	      (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_b.max_length == 1)) { // tables 7.3.1.1.2-6
+      pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2;
+      pusch_config_pdu_0_1->dmrs_ports = dci->antenna_ports.val;     
+    }
+  
+  /*-------------------- ---------------------------------------------------------------------------------------------------------------*/
+
+
     /* ANTENNA_PORTS */
     uint8_t rank=0; // We need to initialize rank FIXME!!!
+
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-6
       pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
       pusch_config_pdu_0_1->dmrs_ports = dci->antenna_ports.val; //TBC
     }
+
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-7

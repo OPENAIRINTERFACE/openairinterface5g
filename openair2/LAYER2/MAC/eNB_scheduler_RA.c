@@ -212,13 +212,6 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
       hi_dci0_req->sfn_sf                                     = sfnsf_add_subframe(frameP, subframeP, sf_ahead_dl);
       hi_dci0_req->header.message_id                          = NFAPI_HI_DCI0_REQUEST;
 
-      if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-        oai_nfapi_hi_dci0_req(hi_dci0_req);
-        hi_dci0_req_body->number_of_hi=0;
-      }
-
-      LOG_D(MAC, "MSG3: HI_DCI0 SFN/SF:%d number_of_dci:%d number_of_hi:%d\n", NFAPI_SFNSF2DEC(hi_dci0_req->sfn_sf), hi_dci0_req_body->number_of_dci, hi_dci0_req_body->number_of_hi);
-
       // save UL scheduling information for preprocessor
       for (j = 0; j < ra->msg3_nb_rb; j++)
         cc->vrb_map_UL[ra->msg3_first_rb + j] = 1;

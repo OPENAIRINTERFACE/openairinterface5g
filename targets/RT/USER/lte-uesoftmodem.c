@@ -500,7 +500,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -601,14 +601,14 @@ int main( int argc, char **argv ) {
   pthread_mutex_init(&sync_mutex, NULL);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
   }
 
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   init_pdcp();
   //TTN for D2D

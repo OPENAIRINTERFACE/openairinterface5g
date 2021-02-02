@@ -721,6 +721,137 @@ int16_t pucchfmt3_Decode( int16_t b[48],
   }
 }
 
+
+uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
+		  int     frame,
+		  uint8_t subframe,
+		  uint8_t shortened_format
+)
+//-----------------------------------------------------------------------------
+{
+  LTE_eNB_COMMON *common_vars = &eNB->common_vars;
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+
+  uint32_t u,v,n,aa;
+  uint32_t z[12*14];
+  int16_t *zptr;
+  int16_t rxcomp[NB_ANTENNAS_RX][2*12*14];
+  uint8_t ns,N_UL_symb,nsymb,n_cs_base;
+  uint16_t i,j,re_offset;
+  uint8_t m,l;
+  uint8_t n_cs,alpha_ind;
+  int16_t tmp_re,tmp_im,W_re=0,W_im=0;
+  int16_t W4_nouse[4]={32767,32767,-32768,-32768};
+  int32_t n0_IQ[2];
+  double interference_power;
+  int16_t *rxptr;
+  uint32_t symbol_offset;
+
+  uint32_t u0 = (frame_parms->pucch_config_common.grouphop[subframe<<1]) % 30;
+  uint32_t u1 = (frame_parms->pucch_config_common.grouphop[1+(subframe<<1)]) % 30;
+  uint32_t v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  uint32_t v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+  int calc_cnt;
+
+  zptr = (int16_t *)z;
+  N_UL_symb = (frame_parms->Ncp==NORMAL) ? 7 : 6;
+
+  interference_power=0.0;
+  calc_cnt=0;
+  // loop over 2 slots
+  for (n_cs_base=0; n_cs_base<12; n_cs_base++) {
+    zptr = (int16_t *)z;
+    for (ns=(subframe<<1),u=u0,v=v0; ns<(2+(subframe<<1)); ns++,u=u1,v=v1) {
+
+      //loop over symbols in slot
+      for (l=0; l<N_UL_symb; l++) {
+        n_cs = eNB->ncs_cell[ns][l]+n_cs_base;
+        if(((l>1)&&(l<N_UL_symb-2)) || ((ns==(1+(subframe<<1))) && (shortened_format==1)) ){
+          zptr+=24;
+          continue;
+        }
+
+        if (l<2) {                                         // data
+          W_re=W4_nouse[l];
+          W_im=0;
+        } else if ((l>=N_UL_symb-2)) {                     // data
+          W_re=W4_nouse[l-N_UL_symb+4];
+          W_im=0;
+        }
+
+        alpha_ind=0;
+        // compute output sequence
+
+        for (n=0; n<12; n++) {
+
+          // this is r_uv^alpha(n)
+          tmp_re = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][n<<1] - (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)])>>15);
+          tmp_im = (int16_t)(((int32_t)alpha_re[alpha_ind] * ul_ref_sigs[u][v][0][1+(n<<1)] + (int32_t)alpha_im[alpha_ind] * ul_ref_sigs[u][v][0][n<<1])>>15);
+
+          // this is S(ns)*w_noc(m)*r_uv^alpha(n)
+          zptr[n<<1] = (tmp_re*W_re - tmp_im*W_im)>>15;
+          zptr[1+(n<<1)] = -(tmp_re*W_im + tmp_im*W_re)>>15;
+
+          alpha_ind = (alpha_ind + n_cs)%12;
+        } // n
+
+        zptr+=24;
+      } // l
+    } // ns
+
+    m = 1;
+
+    nsymb = N_UL_symb<<1;
+
+    zptr = (int16_t*)z;
+
+    // Do detection
+    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+      n0_IQ[0]=0;
+      n0_IQ[1]=0;
+      for (j=0,l=0; l<nsymb; l++) {
+        if((((l%N_UL_symb)>1)&&((l%N_UL_symb)<N_UL_symb-2)) || ((nsymb>=N_UL_symb) && (shortened_format==1)) ){
+          j+=24;
+          continue;
+        }
+          if ((l<(nsymb>>1)) && ((m&1) == 0))
+            re_offset = (m*6) + frame_parms->first_carrier_offset;
+          else if ((l<(nsymb>>1)) && ((m&1) == 1))
+            re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+          else if ((m&1) == 0)
+            re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+          else
+            re_offset = ((m-1)*6) + frame_parms->first_carrier_offset;
+
+        if (re_offset > frame_parms->ofdm_symbol_size)
+          re_offset -= (frame_parms->ofdm_symbol_size);
+
+        symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*l;
+        rxptr = (int16_t *)&common_vars->rxdataF[aa][symbol_offset];
+
+        for (i=0; i<12; i++,j+=2,re_offset++) {
+          if (re_offset==frame_parms->ofdm_symbol_size)
+            re_offset = 0;
+
+          rxcomp[aa][j]   = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[1+j])>>15);
+          rxcomp[aa][1+j] = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[1+j])>>15) + ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[j])>>15);
+          n0_IQ[0]+=rxcomp[aa][j];
+          n0_IQ[1]+=rxcomp[aa][1+j];
+        } //re
+        calc_cnt++;
+      } // symbol
+      n0_IQ[0]/=12;
+      n0_IQ[1]/=12;
+      interference_power+= (double)(n0_IQ[0]*n0_IQ[0]+n0_IQ[1]*n0_IQ[1]);
+    }  // antenna
+  }
+  interference_power /= calc_cnt;
+  eNB->measurements.n0_pucch_dB = dB_fixed_x10((int)interference_power)/10;
+  LOG_D(PHY,"estimate pucch noise %lf %d %d\n",interference_power,calc_cnt,eNB->measurements.n0_pucch_dB);
+  return 0;
+}
+
+
 /* PUCCH format3 << */
 
 uint32_t rx_pucch(PHY_VARS_eNB *eNB,
@@ -740,7 +871,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   static int first_call = 1;
   LTE_eNB_COMMON *common_vars = &eNB->common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  int8_t sigma2_dB = max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
+  int8_t sigma2_dB = eNB->measurements.n0_pucch_dB;
+
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
   int16_t *zptr;
@@ -765,8 +897,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;
   uint8_t NRB2                      = frame_parms->pucch_config_common.nRB_CQI;
   uint8_t Ncs1_div_deltaPUCCH_Shift = frame_parms->pucch_config_common.nCS_AN;
-  uint32_t u0 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1]) % 30;
-  uint32_t u1 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)]) % 30;
+
+  uint32_t u0 = (frame_parms->pucch_config_common.grouphop[subframe<<1]) % 30;
+  uint32_t u1 = (frame_parms->pucch_config_common.grouphop[1+(subframe<<1)]) % 30;
   uint32_t v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
   uint32_t v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   int chL;
@@ -1141,8 +1274,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             }
 
             // this is total energy received, summed over data and reference
-            stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
-                      ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
+            if (fmt==pucch_format1a){
+                   stat += ((((stat_re*stat_re)) + ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
+            }else{
+                   stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
+                             ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
+            }
+
             // now second slot
             stat_re=0;
             stat_im=0;
@@ -1170,8 +1308,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_PUCCH_RX
             printf("aa%d re %d : phase %d : stat %d\n",aa,re,phase,stat);
 #endif
-            stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
-                      ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
+            if (fmt==pucch_format1a){
+                   stat += ((((stat_re*stat_re)) + ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
+            }else{
+                   stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
+                             ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
+            }
+
           } //re
         } // aa
 
