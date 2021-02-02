@@ -57,7 +57,7 @@ int find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
   int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_DLSCH_MAX; i++) {
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
@@ -81,7 +81,7 @@ int find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
   int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_ULSCH_MAX; i++) {
     AssertFatal(eNB->ulsch[i]!=NULL,"eNB->ulsch[%d] is null\n",i);
 
     if ((eNB->ulsch[i]->harq_mask >0) &&
@@ -299,7 +299,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
 
-  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ) {
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_DLSCH_MAX) ) {
     LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel8->rnti,UE_id);
     return;
   }
@@ -1548,7 +1548,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dci_alloc->i0 = rel13->initial_transmission_sf_io;
   UE_id = find_dlsch (rel13->rnti, eNB, SEARCH_EXIST_OR_FREE);
   AssertFatal (UE_id != -1, "no free or exiting dlsch_context\n");
-  AssertFatal (UE_id < NUMBER_OF_UE_MAX, "returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
+  AssertFatal (UE_id < NUMBER_OF_DLSCH_MAX, "returned UE_id %d >= %d(NUMBER_OF_DLSCH_MAX)\n", UE_id, NUMBER_OF_DLSCH_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch0_harq = dlsch0->harq_processes[rel13->harq_process];
   dci_alloc->ra_flag = 0;

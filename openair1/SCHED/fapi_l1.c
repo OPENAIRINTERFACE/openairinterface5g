@@ -815,7 +815,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
 
     // clear DCI allocation maps for new subframe
     if (NFAPI_MODE!=NFAPI_MODE_VNF)
-      for (volatile int i=0; i<NUMBER_OF_ULSCH_MAX; i++) {
+      for (int i=0; i<NUMBER_OF_ULSCH_MAX; i++) {
         if (eNB->ulsch[i]!=NULL) {
           ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
           ulsch_harq->dci_alloc=0;
