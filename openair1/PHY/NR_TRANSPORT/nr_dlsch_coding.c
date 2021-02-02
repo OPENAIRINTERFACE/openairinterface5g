@@ -68,60 +68,56 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
 #ifdef DEBUG_DLSCH_FREE
     LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
 #endif
-    NR_DL_gNB_HARQ_t *harq=&dlsch->harq_process;
+    NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     if (harq->b) {
-      free16(harq->b,a_segments*1056);
+      free16(harq->b, a_segments * 1056);
       harq->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY,"Freeing harq->b (%p)\n",harq->b);
+      LOG_D(PHY, "Freeing harq->b (%p)\n", harq->b);
 #endif
-      
+
       if (harq->e) {
-	free16(harq->e,14*N_RB*12*8);
-	harq->e = NULL;
+        free16(harq->e, 14 * N_RB * 12 * 8);
+        harq->e = NULL;
 #ifdef DEBUG_DLSCH_FREE
-	printf("Freeing dlsch process %d e (%p)\n",i,harq->e);
+        printf("Freeing dlsch process %d e (%p)\n", i, harq->e);
 #endif
       }
-      
+
       if (harq->f) {
-	free16(harq->f,14*N_RB*12*8);
-	harq->f = NULL;
+        free16(harq->f, 14 * N_RB * 12 * 8);
+        harq->f = NULL;
 #ifdef DEBUG_DLSCH_FREE
-	printf("Freeing dlsch process %d f (%p)\n",i,harq->f);
+        printf("Freeing dlsch process %d f (%p)\n", i, harq->f);
 #endif
       }
-      
+
 #ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY,"Freeing dlsch process %d c (%p)\n",i,harq->c);
+      LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
 #endif
-      
-      for (r=0; r<a_segments; r++) {
-	
+
+      for (r = 0; r < a_segments; r++) {
 #ifdef DEBUG_DLSCH_FREE
-	LOG_D(PHY,"Freeing dlsch process %d c[%d] (%p)\n",i,r,harq->c[r]);
+        LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
 #endif
-	
-	if (harq->c[r]) {
-	  free16(harq->c[r],1056);
-	  harq->c[r] = NULL;
-	}
-	if (harq->d[r]) {
-	  free16(harq->d[r],3*8448);
-	  harq->d[r] = NULL;
-	}
-	
+
+        if (harq->c[r]) {
+          free16(harq->c[r], 1056);
+          harq->c[r] = NULL;
+        }
+        if (harq->d[r]) {
+          free16(harq->d[r], 3 * 8448);
+          harq->d[r] = NULL;
+        }
       }
-      free16(harq,sizeof(NR_DL_gNB_HARQ_t));
+      free16(harq, sizeof(NR_DL_gNB_HARQ_t));
       harq = NULL;
     }
   }
-  
-    free16(dlsch,sizeof(NR_gNB_DLSCH_t));
-    *dlschptr = NULL;
+
+  free16(dlsch, sizeof(NR_gNB_DLSCH_t));
+  *dlschptr = NULL;
 }
-
-
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               unsigned char Kmimo,
@@ -130,8 +126,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint8_t  abstraction_flag,
                               uint16_t N_RB)
 {
-
-  NR_gNB_DLSCH_t *dlsch;
   unsigned char i,r,aa,layer;
   int re;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
@@ -143,9 +137,9 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
-  
-  AssertFatal((dlsch = (NR_gNB_DLSCH_t *)malloc16(sizeof(NR_gNB_DLSCH_t)))!=NULL,"cannot allocate dlsch\n");
-  
+  NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
+  AssertFatal(dlsch, "cannot allocate dlsch\n");
+
   bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
   dlsch->Kmimo = Kmimo;
   dlsch->Mdlharq = Mdlharq;
@@ -153,57 +147,63 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   dlsch->Nsoft = Nsoft;
   
   for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
-    dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(64*sizeof(int32_t*));
-    
-    for (aa=0; aa<64; aa++) {
-      dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-      for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
-	dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+    dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(64 * sizeof(int32_t *));
+
+    for (aa = 0; aa < 64; aa++) {
+      dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES * sizeof(int32_t));
+      for (re = 0; re < OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
+        dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
       }
     }
-    
-    dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
+
+    dlsch->txdataF[layer] =
+        (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH / NR_MAX_NB_LAYERS)
+                            * sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
   }
-  
-  for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
-    dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH*sizeof(int32_t));
-  
-  dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(64*sizeof(int32_t*));
-  for (aa=0; aa<64; aa++) {
-    dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-    
+
+  for (int q = 0; q < NR_MAX_NB_CODEWORDS; q++)
+    dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH * sizeof(int32_t));
+
+  dlsch->calib_dl_ch_estimates = (int32_t **)malloc16(64 * sizeof(int32_t *));
+  for (aa = 0; aa < 64; aa++) {
+    dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES * sizeof(int32_t));
   }
-  
-  for (i=0; i<20; i++) {
+
+  for (i = 0; i < 20; i++) {
     dlsch->harq_ids[0][i] = 0;
     dlsch->harq_ids[1][i] = 0;
   }
-  
+
   NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
-  
-  bzero(harq,sizeof(NR_DL_gNB_HARQ_t));
-  AssertFatal((harq->b = (unsigned char*)malloc16(dlsch_bytes))!=NULL,"cannot allocate memory for harq->b\n");
-  AssertFatal((harq->pdu = (uint8_t*)malloc16(dlsch_bytes))!=NULL,"cannot allocate memory for harq->pdu\n");
-  bzero(harq->pdu,dlsch_bytes);
-  nr_emulate_dlsch_payload(harq->pdu, (dlsch_bytes)>>3);
-  bzero(harq->b,dlsch_bytes);
-  
-  
-  for (r=0; r<a_segments; r++) {
+  bzero(harq, sizeof(NR_DL_gNB_HARQ_t));
+
+  harq->b = malloc16(dlsch_bytes);
+  AssertFatal(harq->b, "cannot allocate memory for harq->b\n");
+  harq->pdu = malloc16(dlsch_bytes);
+  AssertFatal(harq->pdu, "cannot allocate memory for harq->pdu\n");
+  bzero(harq->pdu, dlsch_bytes);
+  nr_emulate_dlsch_payload(harq->pdu, (dlsch_bytes) >> 3);
+  bzero(harq->b, dlsch_bytes);
+
+  for (r = 0; r < a_segments; r++) {
     // account for filler in first segment and CRCs for multiple segment case
     // [hna] 8448 is the maximum CB size in NR
     //       68*348 = 68*(maximum size of Zc)
     //       In section 5.3.2 in 38.212, the for loop is up to N + 2*Zc (maximum size of N is 66*Zc, therefore 68*Zc)
-    AssertFatal((harq->c[r] = (uint8_t*)malloc16(8448))!=NULL,"cannot allocate harq->c[%d]\n",r);
-    AssertFatal((harq->d[r] = (uint8_t*)malloc16(68*384))!=NULL,"cannot allocate harq->d[%d]\n",r);; //max size for coded output
-    bzero(harq->c[r],8448);
-    bzero(harq->d[r],(3*8448));
-    AssertFatal((harq->e = (uint8_t*)malloc16(14*N_RB*12*8))!=NULL,"cannot allocate harq->e\n");
-    bzero(harq->e,14*N_RB*12*8);
-    AssertFatal((harq->f = (uint8_t*)malloc16(14*N_RB*12*8))!=NULL,"cannot allocate harq->f\n");
-    bzero(harq->f,14*N_RB*12*8);
+    harq->c[r] = malloc16(8448);
+    AssertFatal(harq->c[r], "cannot allocate harq->c[%d]\n", r);
+    harq->d[r] = malloc16(68 * 384);
+    AssertFatal(harq->d[r], "cannot allocate harq->d[%d]\n", r); // max size for coded output
+    bzero(harq->c[r], 8448);
+    bzero(harq->d[r], (3 * 8448));
+    harq->e = malloc16(14 * N_RB * 12 * 8);
+    AssertFatal(harq->e, "cannot allocate harq->e\n");
+    bzero(harq->e, 14 * N_RB * 12 * 8);
+    harq->f = malloc16(14 * N_RB * 12 * 8);
+    AssertFatal(harq->f, "cannot allocate harq->f\n");
+    bzero(harq->f, 14 * N_RB * 12 * 8);
   }
-  
+
   return(dlsch);
 }
 
@@ -220,14 +220,14 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   NR_DL_gNB_HARQ_t *harq=&dlsch->harq_process;
 
   for (i=0; i<10; i++) {
-      dlsch->harq_ids[0][i] = Mdlharq;
-      dlsch->harq_ids[1][i] = Mdlharq;
+    dlsch->harq_ids[0][i] = Mdlharq;
+    dlsch->harq_ids[1][i] = Mdlharq;
   }
   for (i=0; i<Mdlharq; i++) {
     for (j=0; j<96; j++)
       for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++)
-	if (harq->d[r])
-	  harq->d[r][j] = NR_NULL;
+        if (harq->d[r])
+          harq->d[r][j] = NR_NULL;
   }
 }
 
@@ -244,7 +244,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
   unsigned int G;
   unsigned int crc=1;
-  NR_DL_gNB_HARQ_t *harq=&dlsch->harq_process;
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
   uint8_t nb_symb_sch = rel15->NrOfSymbols;
@@ -307,10 +307,14 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     
     harq->B = A+24;
     //    harq->b = a;
-    
-    AssertFatal((A/8)+4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_DLSCH_PAYLOAD_BYTES);
-    
-    memcpy(harq->b,a,(A/8)+4);  // why is this +4 if the CRC is only 3 bytes?
+
+    AssertFatal((A / 8) + 4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
+                "A %d is too big (A/8+4 = %d > %d)\n",
+                A,
+                (A / 8) + 4,
+                MAX_NR_DLSCH_PAYLOAD_BYTES);
+
+    memcpy(harq->b, a, (A / 8) + 4); // why is this +4 if the CRC is only 3 bytes?
   }
   else {
     // Add 16-bit crc (polynomial A) to payload
@@ -322,10 +326,14 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     
     harq->B = A+16;
     //    harq->b = a;
-    
-    AssertFatal((A/8)+3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_NR_DLSCH_PAYLOAD_BYTES);
-    
-    memcpy(harq->b,a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
+
+    AssertFatal((A / 8) + 3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
+                "A %d is too big (A/8+3 = %d > %d)\n",
+                A,
+                (A / 8) + 3,
+                MAX_NR_DLSCH_PAYLOAD_BYTES);
+
+    memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
   }
   if (R<1000)
     Coderate = (float) R /(float) 1024;
@@ -338,14 +346,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     harq->BG = 1;
   
   start_meas(dlsch_segmentation_stats);
-  Kb = nr_segmentation(harq->b,
-		       harq->c,
-		       harq->B,
-		       &harq->C,
-		       &harq->K,
-		       Zc, 
-		       &harq->F,
-		       harq->BG);
+  Kb = nr_segmentation(harq->b, harq->c, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
   stop_meas(dlsch_segmentation_stats);
   F = harq->F;
   

@@ -245,10 +245,10 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     }
     
     dlsch = gNB->dlsch[dlsch_id][0];
-    int harq_pid = 0;//slot % num_slots_tdd;
+    int harq_pid = 0;
 
     dlsch->slot_tx[slot]             = 1;
-    dlsch->harq_ids[frame%2][slot]   = 0;//harq_pid;
+    dlsch->harq_ids[frame % 2][slot] = 0;
     AssertFatal(harq_pid < 8 && harq_pid >= 0,
 		"illegal harq_pid %d\n",harq_pid);
     
