@@ -689,7 +689,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     /* DMRS */
     l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
-    pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
+    if (pusch_config_pdu->transform_precoding == transform_precoder_disabled)
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
 
     // Num PRB Overhead from PUSCH-ServingCellConfig
     if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead == NULL) {

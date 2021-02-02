@@ -2389,35 +2389,31 @@ uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
                                int rnti_type,
                                uint8_t configuredGrant){
 
-  uint8_t cg_transformPrecoder = 0;
-
   if (configuredGrant) {
-    if (ubwp->bwp_Dedicated->configuredGrantConfig){
-      if (ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder){
+    if (ubwp->bwp_Dedicated->configuredGrantConfig) {
+      if (ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder) {
         return *ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder;
-      } else {
-        cg_transformPrecoder = 1;
       }
     }
   }
 
-  if (rnti_type == NR_RNTI_RA || *dci_format == NR_UL_DCI_FORMAT_0_0 || cg_transformPrecoder){
-
-    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
-      return 1;
-    } else {
-      return 0;
+  if (rnti_type != NR_RNTI_RA) {
+    if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
+      if (pusch_config->transformPrecoder != NULL) {
+        return *pusch_config->transformPrecoder;
+      }
     }
+  }
 
-  } else if (*dci_format != NR_UL_DCI_FORMAT_0_0 && pusch_config->transformPrecoder != NULL) {
-
-    return *pusch_config->transformPrecoder;
-
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+    return 1; // Transformprecoding disabled
+  } else {
+    LOG_D(PHY, "MAC_COMMON: Transform Precodig enabled through msg3_transformPrecoder\n");
+    return 0; // Enabled
   }
 
   LOG_E(MAC, "In %s: could not fetch transform precoder status...\n", __FUNCTION__);
   return -1;
-
 }
 
 uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
