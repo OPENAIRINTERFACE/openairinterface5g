@@ -216,6 +216,7 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
     for (j = 0; j < RC.nb_macrlc_inst; j++) {
       RC.mac[j]->puSch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCH10xSNR_IDX ].iptr);
       RC.mac[j]->puCch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCH10xSNR_IDX ].iptr);
+      RC.mac[j]->ue_multiple_max = *(MacRLC_ParamList.paramarray[j][MACRLC_UE_MULTIPLE_MAX_IDX ].iptr);
       RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {

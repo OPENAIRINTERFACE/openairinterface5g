@@ -908,7 +908,7 @@ generate_Msg4(module_id_t module_idP,
   }                             // rach_resource_type > 0
   else {
     // This is normal LTE case
-    LOG_I(MAC, "generate_Msg4 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
+    LOG_D(MAC, "generate_Msg4 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
 
     if ((ra->Msg4_frame == frameP) && (ra->Msg4_subframe == subframeP)) {
       // Get RRCConnectionSetup for Piggyback
@@ -925,7 +925,7 @@ generate_Msg4(module_id_t module_idP,
               module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
         //          AssertFatal(rrc_sdu_length > 0,
         //          "[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
-        LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+        LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
               module_idP, CC_idP, frameP, subframeP, ra->rnti);
         /// Choose first 4 RBs for Msg4, should really check that these are free!
         first_rb = 0;
@@ -1093,7 +1093,7 @@ generate_Msg4(module_id_t module_idP,
           }
         }     // CCE Allocation feasible
       } else {
-        LOG_I(MAC,
+        LOG_D(MAC,
               "eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Delaying Msg4 for RRC Piggyback (RNTI %x)\n",
               module_idP, CC_idP, frameP, subframeP, ra->rnti);
         ra->Msg4_subframe ++;

@@ -86,7 +86,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   DevAssert(sctp_new_association_resp != NULL);
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
+    LOG_E(F1AP, "Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);

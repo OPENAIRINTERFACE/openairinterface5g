@@ -410,7 +410,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         /* Receiving CRNTI means that the current rnti has to go away */
         if (old_UE_id != -1) {
           if (mac_eNB_get_rrc_status(enb_mod_idP,old_rnti) ==  RRC_HO_EXECUTION) {
-            LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Handover case\n",
+            LOG_D(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Handover case\n",
                   enb_mod_idP,
                   frameP,
                   subframeP,
@@ -474,7 +474,7 @@ rx_sdu(const module_id_t enb_mod_idP,
               /* Received a new rnti */
               if (ret == 0) {
                 ra->state = MSGCRNTI;
-                LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
+                LOG_D(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
                       enb_mod_idP,
                       frameP,
                       subframeP,
