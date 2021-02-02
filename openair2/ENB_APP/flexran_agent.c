@@ -251,7 +251,7 @@ int flexran_agent_start(mid_t mod_id)
     pthread_mutex_unlock(&flexran->mutex_node_ctrl);
 
     /* reconfigure RRC again, the agent might have changed the configuration */
-    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
     RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[mod_id]->configuration;
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg_p);
   }

@@ -113,7 +113,7 @@ rrc_data_req_ue(
                        ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
                        sdu_sizeP);
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
-    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, RRC_DCCH_DATA_REQ);
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
     RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
     RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
     RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;

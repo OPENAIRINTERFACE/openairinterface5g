@@ -102,8 +102,9 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
       } //l
     }
 
-    out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
-    out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    // Fixme: lround(), rount(), ... is detected by valgrind as error, not found why
+    out_ptr->r += lround(rx_tmp.x*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    out_ptr->i += lround(rx_tmp.y*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
     out_ptr++;
   }
 

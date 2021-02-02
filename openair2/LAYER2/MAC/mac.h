@@ -469,6 +469,7 @@ typedef struct {
 #define BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
 
 
+
 /*! \brief Downlink SCH PDU Structure */
 typedef struct {
   uint8_t payload[8][SCH_PAYLOAD_SIZE_MAX];
@@ -906,6 +907,11 @@ typedef struct {
   uint32_t pucch_tpc_tx_frame;
   uint32_t pucch_tpc_tx_subframe;
 
+  /// stores the frame where the last bler was calculated
+  uint32_t pusch_bler_calc_frame;
+  uint32_t pusch_bler_calc_subframe;
+
+
   uint8_t rach_resource_type;
   uint16_t mpdcch_repetition_cnt;
   frame_t Msg2_frame;
@@ -928,6 +934,8 @@ typedef struct {
 
   /// Current DL harq round per harq_pid on each CC
   uint8_t round[NFAPI_CC_MAX][10];
+  uint32_t ret_cnt[NFAPI_CC_MAX];
+  uint32_t first_cnt[NFAPI_CC_MAX];
   /// Current Active TBs per harq_pid on each CC
   uint8_t tbcnt[NFAPI_CC_MAX][10];
   /// Current UL harq round per harq_pid on each CC
@@ -937,6 +945,7 @@ typedef struct {
   unsigned char rballoc_sub_UE[NFAPI_CC_MAX][N_RBG_MAX];
   int pre_dci_dl_pdu_idx;
   uint16_t ta_timer;
+  double ta_update_f;
   int16_t ta_update;
   uint16_t ul_consecutive_errors;
   int32_t context_active_timer;
@@ -954,13 +963,22 @@ typedef struct {
   int32_t phr_received;
   uint8_t periodic_ri_received[NFAPI_CC_MAX];
   uint8_t aperiodic_ri_received[NFAPI_CC_MAX];
-  uint8_t pucch1_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch1_snr[NFAPI_CC_MAX];
-  uint8_t pucch2_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch2_snr[NFAPI_CC_MAX];
-  uint8_t pucch3_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch3_snr[NFAPI_CC_MAX];
-  uint8_t pusch_snr[NFAPI_CC_MAX];
+  int16_t pucch1_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch1_snr[NFAPI_CC_MAX];
+  int16_t pucch2_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch2_snr[NFAPI_CC_MAX];
+  int16_t pucch3_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch3_snr[NFAPI_CC_MAX];
+  double  pusch_cqi_f[NFAPI_CC_MAX];
+  int16_t pusch_cqi[NFAPI_CC_MAX];
+  int16_t pusch_snr[NFAPI_CC_MAX];
+  int16_t pusch_snr_avg[NFAPI_CC_MAX];
+  uint64_t pusch_rx_num[NFAPI_CC_MAX];
+  uint64_t pusch_rx_num_old[NFAPI_CC_MAX];
+  uint64_t pusch_rx_error_num[NFAPI_CC_MAX];
+  uint64_t pusch_rx_error_num_old[NFAPI_CC_MAX];
+  double  pusch_bler[NFAPI_CC_MAX];
+  uint8_t  mcs_offset[NFAPI_CC_MAX];
   uint16_t feedback_cnt[NFAPI_CC_MAX];
   uint16_t timing_advance;
   uint16_t timing_advance_r9;
@@ -1039,6 +1057,7 @@ typedef struct {
   /// DRX UL retransmission timer, one per UL HARQ process
   /* Not implemented yet */
   /* End of C-DRX related timers */
+  uint32_t rlc_out_of_resources_cnt;
 } UE_sched_ctrl_t;
 
 /*! \brief eNB template for the Random access information */
