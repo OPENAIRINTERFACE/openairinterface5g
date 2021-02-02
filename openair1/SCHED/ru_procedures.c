@@ -775,7 +775,6 @@ void fep_full(RU_t *ru,
 
   if ((fp->frame_type == TDD) && 
      (subframe_select(fp,subframe) != SF_UL)) return;
-
   start_meas(&ru->ofdm_demod_stats);
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+ru->idx, 1 );
 

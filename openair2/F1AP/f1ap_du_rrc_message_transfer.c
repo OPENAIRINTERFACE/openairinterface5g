@@ -143,7 +143,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   // BK: need check
   // create an ITTI message and copy SDU
 
-  //  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
+  //  message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_MAC_CCCH_DATA_IND);
   //  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
   rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
   //  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
@@ -402,7 +402,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                   MessageDef *message_p = NULL;
 
                   /* Send DRX configuration to MAC task to configure timers of local UE context */
-                  message_p = itti_alloc_new_message(TASK_DU_F1, RRC_MAC_DRX_CONFIG_REQ);
+                  message_p = itti_alloc_new_message(TASK_DU_F1, 0, RRC_MAC_DRX_CONFIG_REQ);
                   RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rnti;
                   RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
                   itti_send_msg_to_task(TASK_MAC_ENB, ctxt.module_id, message_p);
@@ -599,7 +599,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   uint32_t len;
 
 
-  LOG_I(F1AP, "[DU %d] %s: size %d UE RNTI %x in SRB %d\n",
+  LOG_I(F1AP, "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
         instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
 
   //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, msg->rrc_container_length);

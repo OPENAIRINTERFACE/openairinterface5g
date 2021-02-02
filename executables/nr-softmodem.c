@@ -608,7 +608,7 @@ void wait_gNBs(void) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -683,7 +683,7 @@ int restart_L1L2(module_id_t gnb_id) {
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[gnb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
@@ -787,9 +787,9 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
 
 
   init_opt();

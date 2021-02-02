@@ -431,7 +431,7 @@ boolean_t pdcp_data_req(
         // DL transfer
         MessageDef                            *message_p;
         // Note: the acyual task must be TASK_PDCP_ENB, but this task is not created
-        message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+        message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
         F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  &pdcp_pdu_p->data[0] ;
         F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = pdcp_pdu_size;
         F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
@@ -967,7 +967,7 @@ pdcp_data_ind(
                                   sdu_buffer_sizeP - payload_offset + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = sdu_buffer_sizeP - payload_offset;
@@ -1176,11 +1176,11 @@ pdcp_run (
             RRC_DCCH_DATA_REQ (msg_p).frame,
             0,
             RRC_DCCH_DATA_REQ (msg_p).eNB_index);
-          LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
+          LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %ld, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
                 PROTOCOL_CTXT_ARGS(&ctxt),
                 ITTI_MSG_NAME (msg_p),
                 ITTI_MSG_ORIGIN_NAME(msg_p),
-                ITTI_MSG_INSTANCE (msg_p),
+                ITTI_MSG_DESTINATION_INSTANCE (msg_p),
                 RRC_DCCH_DATA_REQ (msg_p).rb_id,
                 RRC_DCCH_DATA_REQ (msg_p).muip,
                 RRC_DCCH_DATA_REQ (msg_p).confirmp,
@@ -1302,7 +1302,7 @@ pdcp_mbms_run (
 //                PROTOCOL_CTXT_ARGS(&ctxt),
 //                ITTI_MSG_NAME (msg_p),
 //                ITTI_MSG_ORIGIN_NAME(msg_p),
-//                ITTI_MSG_INSTANCE (msg_p),
+//                ITTI_MSG_DESTINATION_INSTANCE (msg_p),
 //                RRC_DCCH_DATA_REQ (msg_p).rb_id,
 //                RRC_DCCH_DATA_REQ (msg_p).muip,
 //                RRC_DCCH_DATA_REQ (msg_p).confirmp,

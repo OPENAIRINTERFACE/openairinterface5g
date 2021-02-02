@@ -424,6 +424,8 @@ typedef struct {
   int            subband_cqi_tot_dB[NUMBER_OF_SRS_MAX][100];
   /// PRACH background noise level
   int            prach_I0;
+  /// PUCCH background noise level
+  int            n0_pucch_dB;
 } PHY_MEASUREMENTS_eNB;
 
 typedef struct {
@@ -716,6 +718,7 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
   uint8_t *FS6bufferZone;
+  int32_t pusch_signal_threshold;
 } PHY_VARS_eNB;
 
 

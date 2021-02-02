@@ -1085,6 +1085,3 @@ void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeri
 	
       }
 }
-
-
-

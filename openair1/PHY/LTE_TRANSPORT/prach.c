@@ -637,7 +637,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       for (i=0; i<NCS2; i++) {
         lev = (int32_t)prach_ifft[(preamble_shift2+i)];
         avg_en += lev;
-        levdB = dB_fixed_times10(lev);
+        levdB = dB_fixed_x10(lev);
 
         if (levdB>*max_preamble_energy) {
           *max_preamble_energy  = levdB;

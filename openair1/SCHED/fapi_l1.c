@@ -996,11 +996,32 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
 
   if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
     if (number_ul_pdu>0) {
-      //LOG_D(PHY, "UL_CONFIG to send to PNF\n");
-      UL_req->sfn_sf = frame << 4 | subframe;
-      oai_nfapi_ul_config_req(UL_req);
-      UL_req->ul_config_request_body.number_of_pdus=0;
-      number_ul_pdu=0;
+      uint8_t ulsch_pdu_num = 0;
+      for (i=0; i<number_ul_pdu; i++) {
+        if((UL_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) ||
+           (UL_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE) ||
+           (UL_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) ||
+           (UL_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE)){
+          ulsch_pdu_num++;
+        }
+      }
+      if (RC.mac[Mod_id]->scheduler_mode == SCHED_MODE_DEFAULT) {
+        //LOG_D(PHY, "UL_CONFIG to send to PNF\n");
+        UL_req->sfn_sf = frame << 4 | subframe;
+        oai_nfapi_ul_config_req(UL_req);
+        UL_req->ul_config_request_body.number_of_pdus=0;
+        number_ul_pdu=0;
+      }else if (RC.mac[Mod_id]->scheduler_mode == SCHED_MODE_FAIR_RR) {
+        if(ulsch_pdu_num <= RC.rrc[Mod_id]->configuration.radioresourceconfig[CC_id].ue_multiple_max){
+          UL_req->sfn_sf = frame << 4 | subframe;
+          oai_nfapi_ul_config_req(UL_req);
+          UL_req->ul_config_request_body.number_of_pdus=0;
+          number_ul_pdu=0;
+        }else{
+          LOG_E(MAC,"NFAPI: frame %d subframe %d ul_req num %d ul pdu %d\n",
+               frame,subframe,number_ul_pdu,ulsch_pdu_num);
+        }
+      }
     }
   } else {
     for (int i=0; i<number_ul_pdu; i++) {
