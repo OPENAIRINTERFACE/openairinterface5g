@@ -108,7 +108,7 @@ int RCconfig_MCE(void ) {
 
   if (address) {
     MessageDef *message; 
-    AssertFatal((message = itti_alloc_new_message(TASK_MCE_APP, M2AP_MCE_SCTP_REQ))!=NULL,"");
+    AssertFatal((message = itti_alloc_new_message(TASK_MCE_APP, 0, M2AP_MCE_SCTP_REQ))!=NULL,"");
     //IPV4_STR_ADDR_TO_INT_NWBO ( address, M2AP_MCE_SCTP_REQ(message).mce_m2_ip_address, "BAD IP ADDRESS FORMAT FOR MCE M2_C !\n" );
     M2AP_MCE_SCTP_REQ (message).mce_m2_ip_address.ipv6 = 0;
     M2AP_MCE_SCTP_REQ (message).mce_m2_ip_address.ipv4 = 1;

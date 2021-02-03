@@ -85,7 +85,7 @@ int ngap_gNB_handle_nas_first_req(
                      ngap_nas_first_req_p->ue_identity.guami);
 
     if (amf_desc_p) {
-        NGAP_INFO("[gNB %d] Chose AMF '%s' (assoc_id %d) through GUAMI MCC %d MNC %d AMFRI %d AMFSI %d AMFPT %d\n",
+        NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through GUAMI MCC %d MNC %d AMFRI %d AMFSI %d AMFPT %d\n",
                   instance,
                   amf_desc_p->amf_name,
                   amf_desc_p->assoc_id,
@@ -108,7 +108,7 @@ int ngap_gNB_handle_nas_first_req(
                          ngap_nas_first_req_p->ue_identity.s_tmsi.amf_set_id);
 
         if (amf_desc_p) {
-            NGAP_INFO("[gNB %d] Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+            NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
                       instance,
                       amf_desc_p->amf_name,
                       amf_desc_p->assoc_id,
@@ -130,7 +130,7 @@ int ngap_gNB_handle_nas_first_req(
                      ngap_nas_first_req_p->selected_plmn_identity);
 
     if (amf_desc_p) {
-        NGAP_INFO("[gNB %d] Chose AMF '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+        NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
                   instance,
                   amf_desc_p->amf_name,
                   amf_desc_p->assoc_id,
@@ -151,7 +151,7 @@ int ngap_gNB_handle_nas_first_req(
                      ngap_nas_first_req_p->establishment_cause);
 
     if (amf_desc_p) {
-        NGAP_INFO("[gNB %d] Chose AMF '%s' (assoc_id %d) through highest relative capacity\n",
+        NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through highest relative capacity\n",
                   instance,
                   amf_desc_p->amf_name,
                   amf_desc_p->assoc_id);
