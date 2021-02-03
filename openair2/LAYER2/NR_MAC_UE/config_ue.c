@@ -390,13 +390,71 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(*css->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
-    AssertFatal(css->searchSpaceId != 0, "css->searchSpaceId is 0\n");
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
     mac->SSpace[0][0][ss_id] = css;
     ss_id++;
   }
+
+  // TODO: Merge this code in a single function as fill_default_searchSpaceZero() in rrc_gNB_reconfig.c
+  // Search space zero
+  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->search_space_zero->controlResourceSetId == NULL) mac->search_space_zero->controlResourceSetId=calloc(1,sizeof(*mac->search_space_zero->controlResourceSetId));
+  if(mac->search_space_zero->monitoringSymbolsWithinSlot == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot = calloc(1,sizeof(*mac->search_space_zero->monitoringSymbolsWithinSlot));
+  if(mac->search_space_zero->monitoringSymbolsWithinSlot->buf == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  if(mac->search_space_zero->nrofCandidates == NULL) mac->search_space_zero->nrofCandidates = calloc(1,sizeof(*mac->search_space_zero->nrofCandidates));
+  if(mac->search_space_zero->searchSpaceType == NULL) mac->search_space_zero->searchSpaceType = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType));
+  if(mac->search_space_zero->searchSpaceType->choice.common == NULL) mac->search_space_zero->searchSpaceType->choice.common=calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common));
+  if(mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL) mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+  mac->search_space_zero->searchSpaceId = 0;
+  *mac->search_space_zero->controlResourceSetId = 0;
+  mac->search_space_zero->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*mac->search_space_zero->monitoringSlotPeriodicityAndOffset));
+  mac->search_space_zero->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+  mac->search_space_zero->duration=NULL;
+  // should be '1100 0000 0000 00'B (LSB first!), first two symbols in slot, adjust if needed
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[1] = 0;
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  mac->search_space_zero->monitoringSymbolsWithinSlot->size = 2;
+  mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
+
+  // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
+  mac->search_space_zero->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  mac->search_space_zero->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+  mac->search_space_zero->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
+
+  // Coreset0
+  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
+  mac->coreset0->controlResourceSetId = 0;
+  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
+  if(mac->coreset0->frequencyDomainResources.buf == NULL) mac->coreset0->frequencyDomainResources.buf = calloc(1,6);
+  mac->coreset0->frequencyDomainResources.buf[0] = 0xff;
+  mac->coreset0->frequencyDomainResources.buf[1] = 0;
+  mac->coreset0->frequencyDomainResources.buf[2] = 0;
+  mac->coreset0->frequencyDomainResources.buf[3] = 0;
+  mac->coreset0->frequencyDomainResources.buf[4] = 0;
+  mac->coreset0->frequencyDomainResources.buf[5] = 0;
+  mac->coreset0->frequencyDomainResources.size = 6;
+  mac->coreset0->frequencyDomainResources.bits_unused = 3;
+  mac->coreset0->duration = 1;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*mac->coreset0->cce_REG_MappingType.choice.interleaved));
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = NULL;
+  mac->coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+  if(mac->coreset0->tci_StatesPDCCH_ToAddList == NULL) mac->coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*mac->coreset0->tci_StatesPDCCH_ToAddList));
+  NR_TCI_StateId_t *tci[8];
+  for (int i=0;i<8;i++) {
+    tci[i]=calloc(1,sizeof(*tci[i]));
+    *tci[i] = i;
+    ASN_SEQUENCE_ADD(&mac->coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  }
+  mac->coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
+  mac->coreset0->tci_PresentInDCI = NULL;
+  mac->coreset0->pdcch_DMRS_ScramblingID = NULL;
+
 }
 
 int nr_rrc_mac_config_req_ue(
@@ -421,6 +479,8 @@ int nr_rrc_mac_config_req_ue(
       mac->scg = cell_group_config;
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
       config_control_ue(mac);
+      mac->msg3_frame = -1; // initialize to an invalid value
+      mac->msg3_slot = -1;
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
         mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
 	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;

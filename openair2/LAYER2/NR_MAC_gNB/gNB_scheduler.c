@@ -360,7 +360,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
+  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 3);
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
@@ -387,6 +387,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
+
+  // This schedules SIB1
+  if ( get_softmodem_params()->sa == 1 )
+    schedule_nr_sib1(module_idP, frame, slot);
+
 
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0) {

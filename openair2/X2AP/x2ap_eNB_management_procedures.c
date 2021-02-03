@@ -116,7 +116,7 @@ void dump_trees(void)
 x2ap_eNB_instance_t *zz;
 STAILQ_FOREACH(zz, &x2ap_eNB_internal_data.x2ap_eNB_instances_head,
                x2ap_eNB_entries) {
-printf("here comes the tree (instance %d):\n---------------------------------------------\n", zz->instance);
+printf("here comes the tree (instance %ld):\n---------------------------------------------\n", zz->instance);
 dump_tree(zz->x2ap_enb_head.rbh_root);
 printf("---------------------------------------------\n");
 }
