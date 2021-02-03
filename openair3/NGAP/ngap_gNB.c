@@ -101,7 +101,7 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
 
   DevAssert(instance_p != NULL);
   DevAssert(amf_ip_address != NULL);
-  message_p = itti_alloc_new_message(TASK_NGAP, SCTP_NEW_ASSOCIATION_REQ);
+  message_p = itti_alloc_new_message(TASK_NGAP, 0, SCTP_NEW_ASSOCIATION_REQ);
   sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
   sctp_new_association_req_p->port = NGAP_PORT_NUMBER;
   sctp_new_association_req_p->ppid = NGAP_SCTP_PPID;
@@ -113,7 +113,7 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
   memcpy(&sctp_new_association_req_p->local_address,
          local_ip_addr,
          sizeof(*local_ip_addr));
-  NGAP_INFO("[gNB %d] check the amf registration state\n",instance_p->instance);
+  NGAP_INFO("[gNB %ld] check the amf registration state\n",instance_p->instance);
 
   /* Create new AMF descriptor */
   ngap_amf_data_p = calloc(1, sizeof(*ngap_amf_data_p));
@@ -193,7 +193,7 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *
 
     /* Add the new instance to the list of gNB (meaningfull in virtual mode) */
     ngap_gNB_insert_new_instance(new_instance);
-    NGAP_INFO("Registered new gNB[%d] and %s gNB id %u\n",
+    NGAP_INFO("Registered new gNB[%ld] and %s gNB id %u\n",
               instance,
               ngap_register_gNB->cell_type == CELL_MACRO_GNB ? "macro" : "home",
               ngap_register_gNB->gNB_id);
@@ -238,7 +238,7 @@ void ngap_gNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   DevAssert(ngap_amf_data_p != NULL);
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    NGAP_WARN("Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
+    NGAP_WARN("Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
@@ -293,13 +293,13 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
        * Each gNB has to send an NGAP_REGISTER_GNB message with its
        * own parameters.
        */
-      ngap_gNB_handle_register_gNB(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_handle_register_gNB(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                    &NGAP_REGISTER_GNB_REQ(received_msg));
     }
     break;
 
     case SCTP_NEW_ASSOCIATION_RESP: {
-      ngap_gNB_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                             &received_msg->ittiMsg.sctp_new_association_resp);
     }
     break;
@@ -310,61 +310,61 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
     break;
 
     case NGAP_NAS_FIRST_REQ: {
-      ngap_gNB_handle_nas_first_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_handle_nas_first_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                     &NGAP_NAS_FIRST_REQ(received_msg));
     }
     break;
 
     case NGAP_UPLINK_NAS: {
-      ngap_gNB_nas_uplink(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_nas_uplink(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                           &NGAP_UPLINK_NAS(received_msg));
     }
     break;
 
     case NGAP_UE_CAPABILITIES_IND: {
-      ngap_gNB_ue_capabilities(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_ue_capabilities(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                &NGAP_UE_CAPABILITIES_IND(received_msg));
     }
     break;
 
     case NGAP_INITIAL_CONTEXT_SETUP_RESP: {
-      ngap_gNB_initial_ctxt_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_initial_ctxt_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                  &NGAP_INITIAL_CONTEXT_SETUP_RESP(received_msg));
     }
     break;
 
     case NGAP_PDUSESSION_SETUP_RESP: {
-      ngap_gNB_pdusession_setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_pdusession_setup_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                 &NGAP_PDUSESSION_SETUP_RESP(received_msg));
     }
     break;
 
     case NGAP_PDUSESSION_MODIFY_RESP: {
-      ngap_gNB_pdusession_modify_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_pdusession_modify_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                  &NGAP_PDUSESSION_MODIFY_RESP(received_msg));
     }
     break;
 
     case NGAP_NAS_NON_DELIVERY_IND: {
-      ngap_gNB_nas_non_delivery_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_nas_non_delivery_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                     &NGAP_NAS_NON_DELIVERY_IND(received_msg));
     }
     break;
 
     case NGAP_PATH_SWITCH_REQ: {
-      ngap_gNB_path_switch_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_path_switch_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                &NGAP_PATH_SWITCH_REQ(received_msg));
     }
     break;
 
     case NGAP_PDUSESSION_MODIFICATION_IND: {
-    	ngap_gNB_generate_PDUSESSION_Modification_Indication(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    	ngap_gNB_generate_PDUSESSION_Modification_Indication(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
     	                               &NGAP_PDUSESSION_MODIFICATION_IND(received_msg));
     }
     break;
 
     case NGAP_UE_CONTEXT_RELEASE_COMPLETE: {
-      ngap_ue_context_release_complete(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_ue_context_release_complete(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                        &NGAP_UE_CONTEXT_RELEASE_COMPLETE(received_msg));
     }
     break;
@@ -372,9 +372,9 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
     case NGAP_UE_CONTEXT_RELEASE_REQ: {
       ngap_gNB_instance_t               *ngap_gNB_instance_p           = NULL; // test
       struct ngap_gNB_ue_context_s      *ue_context_p                  = NULL; // test
-      ngap_ue_context_release_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_ue_context_release_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                   &NGAP_UE_CONTEXT_RELEASE_REQ(received_msg));
-      ngap_gNB_instance_p = ngap_gNB_get_instance(ITTI_MESSAGE_GET_INSTANCE(received_msg)); // test
+      ngap_gNB_instance_p = ngap_gNB_get_instance(ITTI_MSG_DESTINATION_INSTANCE(received_msg)); // test
       DevAssert(ngap_gNB_instance_p != NULL); // test
 
       if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
@@ -387,7 +387,7 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
     break;
 
     case NGAP_PDUSESSION_RELEASE_RESPONSE: {
-      ngap_gNB_pdusession_release_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+      ngap_gNB_pdusession_release_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                   &NGAP_PDUSESSION_RELEASE_RESPONSE(received_msg));
     }
     break;

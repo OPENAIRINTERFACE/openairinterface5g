@@ -238,7 +238,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
     //power control
     //compute the expected ULSCH RX power (for the stats)
     // this is the snr and this should be constant (regardless of mcs)
-    snr = (5 * UE_sched_ctrl->pusch_snr[CC_id] - 640) / 10;
+    snr = UE_sched_ctrl->pusch_snr[CC_id];
     // new transmission
     ndi = 1-UE_template->oldNDI_UL[harq_pid];
     UE_template->oldNDI_UL[harq_pid]=ndi;
