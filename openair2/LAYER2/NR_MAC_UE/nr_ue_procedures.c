@@ -804,8 +804,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
      *    47 DMRS_SEQ_INI:
      */
 
-    if (dci->bwp_indicator.val == 0) {
-      LOG_W(MAC, "[%d.%d] bwp_indicator == 0! Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
+    if (dci->bwp_indicator.val != 1) {
+      LOG_W(MAC, "[%d.%d] bwp_indicator != 1! Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
     config_bwp_ue(mac, &dci->bwp_indicator.val, &dci_format);
