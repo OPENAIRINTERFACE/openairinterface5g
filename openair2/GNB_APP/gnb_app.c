@@ -56,7 +56,7 @@ static void configure_nr_rrc(uint32_t gnb_id)
   MessageDef *msg_p = NULL;
   //  int CC_id;
 
-  msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
+  msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
 
   if (RC.nrrrc[gnb_id]) {
     RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
@@ -84,7 +84,7 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
         ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
         
         // note:  there is an implicit relationship between the data structure and the message name 
-        msg_p = itti_alloc_new_message (TASK_GNB_APP, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
+        msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
 
         RCconfig_NR_NG(msg_p, gnb_id);
 		
@@ -115,7 +115,7 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, X2AP_REGISTER_ENB_REQ);
+      msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, X2AP_REGISTER_ENB_REQ);
       LOG_I(X2AP, "GNB_ID: %d \n", gnb_id);
       RCconfig_NR_X2(msg_p, gnb_id);
       itti_send_msg_to_task (TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
@@ -182,7 +182,7 @@ void *gNB_app_task(void *args_p)
   __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
   } else {
   /* Start L2L1 task */
-    msg_p = itti_alloc_new_message(TASK_GNB_APP, INITIALIZE_MESSAGE);
+    msg_p = itti_alloc_new_message(TASK_GNB_APP, 0, INITIALIZE_MESSAGE);
     itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
   }
 
@@ -191,7 +191,7 @@ void *gNB_app_task(void *args_p)
     itti_receive_msg (TASK_GNB_APP, &msg_p);
 
     msg_name = ITTI_MSG_NAME (msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -206,7 +206,7 @@ void *gNB_app_task(void *args_p)
 
 
     case NGAP_REGISTER_GNB_CNF:
-      LOG_I(GNB_APP, "[gNB %d] Received %s: associated AMF %d\n", instance, msg_name,
+      LOG_I(GNB_APP, "[gNB %ld] Received %s: associated AMF %d\n", instance, msg_name,
             NGAP_REGISTER_GNB_CNF(msg_p).nb_amf);
 /*
       DevAssert(register_gnb_pending > 0);
@@ -223,7 +223,7 @@ void *gNB_app_task(void *args_p)
           // If all gNB are registered, start L2L1 task 
           MessageDef *msg_init_p;
 
-          msg_init_p = itti_alloc_new_message (TASK_GNB_APP, INITIALIZE_MESSAGE);
+          msg_init_p = itti_alloc_new_message (TASK_GNB_APP, 0, INITIALIZE_MESSAGE);
           itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
 
         } else {
@@ -248,7 +248,7 @@ void *gNB_app_task(void *args_p)
       break;
 
     case NGAP_DEREGISTERED_GNB_IND:
-      LOG_W(GNB_APP, "[gNB %d] Received %s: associated AMF %d\n", instance, msg_name,
+      LOG_W(GNB_APP, "[gNB %ld] Received %s: associated AMF %d\n", instance, msg_name,
             NGAP_DEREGISTERED_GNB_IND(msg_p).nb_amf);
 
       /* TODO handle recovering of registration */

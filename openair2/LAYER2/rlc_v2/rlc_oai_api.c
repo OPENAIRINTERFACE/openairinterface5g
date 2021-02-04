@@ -427,7 +427,7 @@ rb_found:
                 "Can't be CU, bad node type %d\n", type);
 
     if (NODE_IS_DU(type) && is_srb == 1) {
-      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
       F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
@@ -490,7 +490,7 @@ rb_found:
   if (!is_enb)
     return;
 
-  msg = itti_alloc_new_message(TASK_RLC_ENB, RLC_SDU_INDICATION);
+  msg = itti_alloc_new_message(TASK_RLC_ENB, 0, RLC_SDU_INDICATION);
   RLC_SDU_INDICATION(msg).rnti          = ue->rnti;
   RLC_SDU_INDICATION(msg).is_successful = 1;
   RLC_SDU_INDICATION(msg).srb_id        = rb_id;
@@ -543,7 +543,7 @@ rb_found:
   if (!is_enb)
     return;
 
-  msg = itti_alloc_new_message(TASK_RLC_ENB, RLC_SDU_INDICATION);
+  msg = itti_alloc_new_message(TASK_RLC_ENB, 0, RLC_SDU_INDICATION);
   RLC_SDU_INDICATION(msg).rnti          = ue->rnti;
   RLC_SDU_INDICATION(msg).is_successful = 0;
   RLC_SDU_INDICATION(msg).srb_id        = rb_id;
@@ -834,7 +834,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   if (0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
       ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
-    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %d %d %d %d)\n", __FUNCTION__,
+    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d %d)\n", __FUNCTION__,
           ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
           ctxt_pP->eNB_index, ctxt_pP->configured, ctxt_pP->brOption);
     exit(1);
