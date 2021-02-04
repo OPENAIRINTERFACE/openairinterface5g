@@ -574,6 +574,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     uint16_t n_rb0              = 25;
     uint16_t n_rb1              = 75;
 
+    // Basic sanity check for MCS value to check for a false or erroneous DCI
+    if (dci->mcs > 28) {
+      LOG_W(MAC, "MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", dci->mcs);
+      return -1;
+    }
+
     /* Transform precoding */
     if (rnti_type != NR_RNTI_CS || (rnti_type == NR_RNTI_CS && dci->ndi == 1)) {
       pusch_config_pdu->transform_precoding = get_transformPrecoding(scc, pusch_Config, NULL, dci_format, rnti_type, 0);
@@ -587,8 +593,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
 
       /* BANDWIDTH_PART_IND */
-      if (dci->bwp_indicator.val != 1)
+      if (dci->bwp_indicator.val != 1) {
+        LOG_W(MAC, "bwp_indicator != 1! Possibly due to false DCI. Ignoring DCI!\n");
         return -1;
+      }
       config_bwp_ue(mac, &dci->bwp_indicator.val, dci_format);
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci);
