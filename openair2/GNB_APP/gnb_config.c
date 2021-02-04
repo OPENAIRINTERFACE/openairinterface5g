@@ -1433,9 +1433,6 @@ int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t
                                             ->plmn_IdentityList.list.array[0];
 
   // check if mcc is different and return failure if so
-  LOG_I(GNB_APP, "plmn_Identity->mcc: %d%d%d\n", *plmn_Identity->mcc->list.array[0],
-                                                  *plmn_Identity->mcc->list.array[1],
-                                                  *plmn_Identity->mcc->list.array[2]);
   if (mcc !=
       ((*plmn_Identity->mcc->list.array[0])*100)+
       ((*plmn_Identity->mcc->list.array[1])*10) +
@@ -1456,7 +1453,7 @@ int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t
       (mnc !=
        (*plmn_Identity->mnc.list.array[0]*10) +
        (*plmn_Identity->mnc.list.array[1]))) {
-    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%d%d) in DU \n",
+    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%ld%ld) in DU \n",
                     mnc, *plmn_Identity->mnc.list.array[0], *plmn_Identity->mnc.list.array[1]);
     return(0);
   }
@@ -1465,7 +1462,7 @@ int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t
             (*plmn_Identity->mnc.list.array[0]*100) +
             (*plmn_Identity->mnc.list.array[1]*10) +
             (*plmn_Identity->mnc.list.array[2]))) {
-    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%d%d%d) in DU \n",
+    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%ld%ld%ld) in DU \n",
                     mnc, *plmn_Identity->mnc.list.array[0], *plmn_Identity->mnc.list.array[1], *plmn_Identity->mnc.list.array[2]);
     return(0);
   }

@@ -1391,16 +1391,11 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
               if (rrcReconfiguration_ies->radioBearerConfig) {
                 LOG_I(F1AP, "Radio Resource Configuration is present\n");
-                uint8_t DRB2LCHAN[8];
                 long drb_id;
                 int i;
                 NR_DRB_ToAddModList_t  *DRB_configList  = rrcReconfiguration_ies->radioBearerConfig->drb_ToAddModList;
                 NR_SRB_ToAddModList_t  *SRB_configList  = rrcReconfiguration_ies->radioBearerConfig->srb_ToAddModList;
                 // NR_DRB_ToReleaseList_t *DRB_ReleaseList = rrcReconfiguration_ies->radioBearerConfig->drb_ToReleaseList;
-
-                for (i = 0; i< 8; i++){
-                  DRB2LCHAN[i] = 0;
-                }
 
                 // rrc_rlc_config_asn1_req
 
@@ -1485,8 +1480,8 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
 
-  rlc_op_status_t    rlc_status;
-  boolean_t          ret             = TRUE;
+//   rlc_op_status_t    rlc_status;
+//   boolean_t          ret             = TRUE;
   mem_block_t       *pdcp_pdu_p      = NULL; 
   pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
 

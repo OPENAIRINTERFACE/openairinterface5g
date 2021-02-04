@@ -778,7 +778,7 @@ if (0) {
   //   return -1;
   // }
 
-  LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %zd bits\n", len);
+  LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
 
   cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
 

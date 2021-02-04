@@ -304,9 +304,9 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   struct NR_PLMN_Identity *nr_plmn = CALLOC(1, sizeof(struct NR_PLMN_Identity) * num_plmn);
   NR_MCC_MNC_Digit_t (*nr_mcc_digit)[3] = (NR_MCC_MNC_Digit_t(*)[3])CALLOC(1, sizeof(NR_MCC_MNC_Digit_t)*num_plmn*3);
   NR_MCC_MNC_Digit_t (*nr_mnc_digit)[3] = (NR_MCC_MNC_Digit_t(*)[3])CALLOC(1, sizeof(NR_MCC_MNC_Digit_t)*num_plmn*3);;
-  memset(nr_plmn,0,sizeof(nr_plmn));
-  memset(nr_mcc_digit,0,sizeof(nr_mcc_digit));
-  memset(nr_mnc_digit,0,sizeof(nr_mnc_digit));
+  memset(nr_plmn,0,sizeof(struct NR_PLMN_Identity) * num_plmn);
+  memset(nr_mcc_digit,0,sizeof(NR_MCC_MNC_Digit_t)*num_plmn*3);
+  memset(nr_mnc_digit,0,sizeof(NR_MCC_MNC_Digit_t)*num_plmn*3);
   
   //  struct NR_UAC_BarringInfoSet nr_uac_BarringInfoSet;
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
