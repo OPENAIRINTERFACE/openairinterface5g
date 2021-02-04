@@ -103,7 +103,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p = itti_alloc_new_message(TASK_CU_F1, F1AP_SETUP_REQ);
+  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
 
   /* assoc_id */
   F1AP_SETUP_REQ(message_p).assoc_id = assoc_id;

@@ -191,7 +191,7 @@ rrc_gNB_NGAP_get_ue_ids(
         if (ngap_gNB_instance_p != NULL) {
           ue_desc_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p, gNB_ue_ngap_idP); // get s1ap_eNB_ue_context
         } else {
-          LOG_E(NGAP, "[gNB instance %d] Couldn't find the gNB NGAP context\n",
+          LOG_E(NGAP, "[gNB instance %ld] Couldn't find the gNB NGAP context\n",
                 instance);
           return NULL;
         }
@@ -374,110 +374,109 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
 )
 //------------------------------------------------------------------------------
 {
-    // gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-    MessageDef         *message_p         = NULL;
-    rrc_ue_ngap_ids_t  *rrc_ue_ngap_ids_p = NULL;
-    hashtable_rc_t      h_rc;
+  // gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  MessageDef         *message_p         = NULL;
+  rrc_ue_ngap_ids_t  *rrc_ue_ngap_ids_p = NULL;
+  hashtable_rc_t      h_rc;
 
-    message_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_NAS_FIRST_REQ);
-    memset(&message_p->ittiMsg.ngap_nas_first_req, 0, sizeof(ngap_nas_first_req_t));
-    ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id(ctxt_pP->module_id);
-    NGAP_NAS_FIRST_REQ(message_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
-    rrc_ue_ngap_ids_p = malloc(sizeof(rrc_ue_ngap_ids_t));
-    rrc_ue_ngap_ids_p->ue_initial_id  = ue_context_pP->ue_context.ue_initial_id;
-    rrc_ue_ngap_ids_p->gNB_ue_ngap_id = UE_INITIAL_ID_INVALID;
-    rrc_ue_ngap_ids_p->ue_rnti        = ctxt_pP->rnti;
+  message_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_NAS_FIRST_REQ);
+  memset(&message_p->ittiMsg.ngap_nas_first_req, 0, sizeof(ngap_nas_first_req_t));
+  ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id(ctxt_pP->module_id);
+  NGAP_NAS_FIRST_REQ(message_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
+  rrc_ue_ngap_ids_p = malloc(sizeof(rrc_ue_ngap_ids_t));
+  rrc_ue_ngap_ids_p->ue_initial_id  = ue_context_pP->ue_context.ue_initial_id;
+  rrc_ue_ngap_ids_p->gNB_ue_ngap_id = UE_INITIAL_ID_INVALID;
+  rrc_ue_ngap_ids_p->ue_rnti        = ctxt_pP->rnti;
 
-    h_rc = hashtable_insert(RC.nrrrc[ctxt_pP->module_id]->initial_id2_ngap_ids,
-                            (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
-                            rrc_ue_ngap_ids_p);
+  h_rc = hashtable_insert(RC.nrrrc[ctxt_pP->module_id]->initial_id2_ngap_ids,
+                          (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
+                          rrc_ue_ngap_ids_p);
 
-    if (h_rc != HASH_TABLE_OK) {
-      LOG_E(NGAP, "[gNB %d] Error while hashtable_insert in initial_id2_ngap_ids ue_initial_id %u\n",
+  if (h_rc != HASH_TABLE_OK) {
+    LOG_E(NGAP, "[gNB %d] Error while hashtable_insert in initial_id2_ngap_ids ue_initial_id %u\n",
+          ctxt_pP->module_id,
+          ue_context_pP->ue_context.ue_initial_id);
+  }
+
+  /* Assume that cause is coded in the same way in RRC and NGap, just check that the value is in NGap range */
+  AssertFatal(ue_context_pP->ue_context.establishment_cause < NGAP_RRC_CAUSE_LAST,
+              "Establishment cause invalid (%jd/%d) for gNB %d!",
+              ue_context_pP->ue_context.establishment_cause,
+              NGAP_RRC_CAUSE_LAST,
+              ctxt_pP->module_id);
+  NGAP_NAS_FIRST_REQ(message_p).establishment_cause = ue_context_pP->ue_context.establishment_cause;
+  
+  /* Forward NAS message */
+  NGAP_NAS_FIRST_REQ(message_p).nas_pdu.buffer = rrcSetupComplete->dedicatedNAS_Message.buf;
+  NGAP_NAS_FIRST_REQ(message_p).nas_pdu.length = rrcSetupComplete->dedicatedNAS_Message.size;
+  // extract_imsi(NGAP_NAS_FIRST_REQ (message_p).nas_pdu.buffer,
+  //              NGAP_NAS_FIRST_REQ (message_p).nas_pdu.length,
+  //              ue_context_pP);
+
+  /* Fill UE identities with available information */
+  NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask       = NGAP_UE_IDENTITIES_NONE;
+  /* Fill s-TMSI */
+  NGAP_NAS_FIRST_REQ(message_p).ue_identity.s_tmsi.amf_set_id  = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id;
+  NGAP_NAS_FIRST_REQ(message_p).ue_identity.s_tmsi.amf_pointer = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer;
+  NGAP_NAS_FIRST_REQ(message_p).ue_identity.s_tmsi.m_tmsi      = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi;
+
+  /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
+  int selected_plmn_identity = rrcSetupComplete->selectedPLMN_Identity - 1;
+  NGAP_NAS_FIRST_REQ(message_p).selected_plmn_identity = selected_plmn_identity;
+
+  if (rrcSetupComplete->registeredAMF != NULL) {
+      NR_RegisteredAMF_t *r_amf = rrcSetupComplete->registeredAMF;
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask |= NGAP_UE_IDENTITIES_guami;
+
+      if (r_amf->plmn_Identity != NULL) {
+          if ((r_amf->plmn_Identity->mcc != NULL) && (r_amf->plmn_Identity->mcc->list.count > 0)) {
+              /* Use first indicated PLMN MCC if it is defined */
+              NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc = *r_amf->plmn_Identity->mcc->list.array[selected_plmn_identity];
+              LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
+                  ctxt_pP->module_id,
+                  NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mcc,
+                  ue_context_pP->ue_context.rnti);
+          }
+
+          if (r_amf->plmn_Identity->mnc.list.count > 0) {
+              /* Use first indicated PLMN MNC if it is defined */
+              NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
+              LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
+                  ctxt_pP->module_id,
+                  NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
+                  ue_context_pP->ue_context.rnti);
+          }
+      } else {
+          /* TODO */
+      }
+
+      /* amf_Identifier */
+      uint32_t amf_Id = BIT_STRING_to_uint32(&r_amf->amf_Identifier);
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id = amf_Id >> 16;
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id    = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id;
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer   = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer;
+
+      ue_context_pP->ue_context.ue_guami.mcc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc;
+      ue_context_pP->ue_context.ue_guami.mnc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc;
+      ue_context_pP->ue_context.ue_guami.mnc_len = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc_len;
+      ue_context_pP->ue_context.ue_guami.amf_region_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id;
+      ue_context_pP->ue_context.ue_guami.amf_set_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id;
+      ue_context_pP->ue_context.ue_guami.amf_pointer = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer;
+
+      MSC_LOG_TX_MESSAGE(MSC_NGAP_GNB,
+                          MSC_NGAP_AMF,
+                          (const char *)&message_p->ittiMsg.ngap_nas_first_req,
+                          sizeof(ngap_nas_first_req_t),
+                          MSC_AS_TIME_FMT" NGAP_NAS_FIRST_REQ gNB %u UE %x",
+                          MSC_AS_TIME_ARGS(ctxt_pP),
+                          ctxt_pP->module_id,
+                          ctxt_pP->rnti);
+      LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUAMI amf_set_id %u amf_region_id %u ue %x\n",
             ctxt_pP->module_id,
-            ue_context_pP->ue_context.ue_initial_id);
-    }
-
-    /* Assume that cause is coded in the same way in RRC and NGap, just check that the value is in NGap range */
-    AssertFatal(ue_context_pP->ue_context.establishment_cause < NGAP_RRC_CAUSE_LAST,
-                "Establishment cause invalid (%jd/%d) for gNB %d!",
-                ue_context_pP->ue_context.establishment_cause,
-                NGAP_RRC_CAUSE_LAST,
-                ctxt_pP->module_id);
-    NGAP_NAS_FIRST_REQ(message_p).establishment_cause = ue_context_pP->ue_context.establishment_cause;
-    
-    /* Forward NAS message */
-    NGAP_NAS_FIRST_REQ(message_p).nas_pdu.buffer = rrcSetupComplete->dedicatedNAS_Message.buf;
-    NGAP_NAS_FIRST_REQ(message_p).nas_pdu.length = rrcSetupComplete->dedicatedNAS_Message.size;
-    // extract_imsi(NGAP_NAS_FIRST_REQ (message_p).nas_pdu.buffer,
-    //              NGAP_NAS_FIRST_REQ (message_p).nas_pdu.length,
-    //              ue_context_pP);
-
-    /* Fill UE identities with available information */
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask       = NGAP_UE_IDENTITIES_NONE;
-    /* Fill s-TMSI */
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.s_tmsi.amf_set_id  = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id;
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.s_tmsi.amf_pointer = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer;
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.s_tmsi.m_tmsi      = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi;
-
-    /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
-    int selected_plmn_identity = rrcSetupComplete->selectedPLMN_Identity - 1;
-    NGAP_NAS_FIRST_REQ(message_p).selected_plmn_identity = selected_plmn_identity;
-
-    if (rrcSetupComplete->registeredAMF != NULL) {
-        NR_RegisteredAMF_t *r_amf = rrcSetupComplete->registeredAMF;
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask |= NGAP_UE_IDENTITIES_guami;
-
-        if (r_amf->plmn_Identity != NULL) {
-            if ((r_amf->plmn_Identity->mcc != NULL) && (r_amf->plmn_Identity->mcc->list.count > 0)) {
-                /* Use first indicated PLMN MCC if it is defined */
-                NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc = *r_amf->plmn_Identity->mcc->list.array[selected_plmn_identity];
-                LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
-                    ctxt_pP->module_id,
-                    NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mcc,
-                    ue_context_pP->ue_context.rnti);
-            }
-
-            if (r_amf->plmn_Identity->mnc.list.count > 0) {
-                /* Use first indicated PLMN MNC if it is defined */
-                NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
-                LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
-                    ctxt_pP->module_id,
-                    NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
-                    ue_context_pP->ue_context.rnti);
-            }
-        } else {
-            /* TODO */
-        }
-
-        /* amf_Identifier */
-        uint32_t amf_Id = BIT_STRING_to_uint32(&r_amf->amf_Identifier);
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id = amf_Id >> 16;
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id    = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id;
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer   = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer;
-
-        ue_context_pP->ue_context.ue_guami.mcc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc;
-        ue_context_pP->ue_context.ue_guami.mnc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc;
-        ue_context_pP->ue_context.ue_guami.mnc_len = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc_len;
-        ue_context_pP->ue_context.ue_guami.amf_region_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id;
-        ue_context_pP->ue_context.ue_guami.amf_set_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id;
-        ue_context_pP->ue_context.ue_guami.amf_pointer = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer;
-
-        MSC_LOG_TX_MESSAGE(MSC_NGAP_GNB,
-                           MSC_NGAP_AMF,
-                           (const char *)&message_p->ittiMsg.ngap_nas_first_req,
-                           sizeof(ngap_nas_first_req_t),
-                           MSC_AS_TIME_FMT" NGAP_NAS_FIRST_REQ gNB %u UE %x",
-                           MSC_AS_TIME_ARGS(ctxt_pP),
-                           ctxt_pP->module_id,
-                           ctxt_pP->rnti);
-        LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUAMI amf_set_id %u amf_region_id %u ue %x\n",
-              ctxt_pP->module_id,
-              NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_set_id,
-              NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_region_id,
-              ue_context_pP->ue_context.rnti);
-    }
-
+            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_set_id,
+            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_region_id,
+            ue_context_pP->ue_context.rnti);
+  }
 
   itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, message_p);
 }
@@ -501,14 +500,14 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
     gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).gNB_ue_ngap_id;
 
     ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-    LOG_I(NR_RRC, "[gNB %d] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
+    LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
         instance, msg_name, ue_initial_id, gNB_ue_ngap_id);
 
     if (ue_context_p == NULL) {
         /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
         MessageDef *msg_fail_p = NULL;
-        LOG_W(NR_RRC, "[gNB %d] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
-        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
+        LOG_W(NR_RRC, "[gNB %ld] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
         NGAP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
         // TODO add failure cause when defined!
         itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
@@ -578,7 +577,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
 
 if (RC.nrrrc[ctxt.module_id]->node_type == ngran_gNB_CU) {
     MessageDef *message_p;
-    message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_UE_CONTEXT_SETUP_REQ);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
     F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container = (uint8_t *)ue_context_p->ue_context.Srb1.Srb_info.Tx_buffer.Payload;
     F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = ue_context_p->ue_context.Srb1.Srb_info.Tx_buffer.payload_size;
     F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id = 0;
@@ -605,7 +604,7 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
   int pdusession;
   int e_rabs_done = 0;
   int e_rabs_failed = 0;
-  msg_p = itti_alloc_new_message (TASK_RRC_ENB, NGAP_INITIAL_CONTEXT_SETUP_RESP);
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, 0, NGAP_INITIAL_CONTEXT_SETUP_RESP);
   NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
 
   for (pdusession = 0; pdusession < ue_context_pP->ue_context.nb_of_pdusessions; pdusession++) {
@@ -738,7 +737,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
     ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-    LOG_I(NR_RRC, "[gNB %d] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d\n",
+    LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d\n",
             instance,
             msg_name,
             ue_initial_id,
@@ -756,8 +755,8 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
             gNB_ue_ngap_id);
         /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
         MessageDef *msg_fail_p;
-        LOG_W(NR_RRC, "[gNB %d] In NGAP_DOWNLINK_NAS: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
-        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_NAS_NON_DELIVERY_IND);
+        LOG_W(NR_RRC, "[gNB %ld] In NGAP_DOWNLINK_NAS: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_NAS_NON_DELIVERY_IND);
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.length = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.length;
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.buffer = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.buffer;
@@ -805,7 +804,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         case ngran_gNB_CU:
           // create an ITTI message
           // F1AP_DL_RRC_MESSAGE
-          message_p = itti_alloc_new_message (TASK_RRC_GNB, F1AP_DL_RRC_MESSAGE);
+          message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
           F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
           F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = length;
           F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
@@ -841,7 +840,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
           uint8_t *message_buffer;
           message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
           memcpy (message_buffer, buffer, length);
-          message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, GNB_RRC_DCCH_DATA_IND);
+          message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, 0, GNB_RRC_DCCH_DATA_IND);
           GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
           GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
           GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
@@ -887,7 +886,7 @@ rrc_gNB_send_NGAP_UPLINK_NAS(
     if (ulInformationTransfer->criticalExtensions.present == NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer) {
         pdu_length = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size;
         pdu_buffer = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf;
-        msg_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_UPLINK_NAS);
+        msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_UPLINK_NAS);
         NGAP_UPLINK_NAS (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
         NGAP_UPLINK_NAS (msg_p).nas_pdu.length = pdu_length;
         NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer = pdu_buffer;
@@ -914,7 +913,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   int pdusession;
   int qos_flow_index;
 
-  msg_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_PDUSESSION_SETUP_RESP);
+  msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_PDUSESSION_SETUP_RESP);
   NGAP_PDUSESSION_SETUP_RESP(msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
 
   for (pdusession = 0; pdusession < ue_context_pP->ue_context.setup_pdu_sessions; pdusession++) {
@@ -1007,13 +1006,13 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
   ue_initial_id  = NGAP_PDUSESSION_SETUP_REQ(msg_p).ue_initial_id;
   gNB_ue_ngap_id = NGAP_PDUSESSION_SETUP_REQ(msg_p).gNB_ue_ngap_id;
   ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-  LOG_I(NR_RRC, "[gNB %d] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
+  LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
     instance, msg_name, ue_initial_id, gNB_ue_ngap_id);
 
   if (ue_context_p == NULL) {
     MessageDef *msg_fail_p = NULL;
-    LOG_W(NR_RRC, "[gNB %d] In NGAP_PDUSESSION_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
-    msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_PDUSESSION_SETUP_REQUEST_FAIL);
+    LOG_W(NR_RRC, "[gNB %ld] In NGAP_PDUSESSION_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+    msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_PDUSESSION_SETUP_REQUEST_FAIL);
     NGAP_PDUSESSION_SETUP_REQ(msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
     // TODO add failure cause when defined!
     itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
@@ -1099,7 +1098,7 @@ rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
                        "0 NGAP_UE_CONTEXT_RELEASE_REQ gNB_ue_ngap_id 0x%06"PRIX32" ",
                        ue_context_pP->ue_context.gNB_ue_ngap_id);
     MessageDef *msg_context_release_req_p = NULL;
-    msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_REQ);
+    msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_REQ);
     NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).gNB_ue_ngap_id    = ue_context_pP->ue_context.gNB_ue_ngap_id;
     NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause             = causeP;
     NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause_value       = cause_valueP;
@@ -1125,10 +1124,10 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ (
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index, send a failure to ngAP and discard it! */
     MessageDef *msg_fail_p;
-    LOG_W(RRC, "[gNB %d] In NGAP_UE_CONTEXT_RELEASE_REQ: unknown UE from gNB_ue_ngap_id (%d)\n",
+    LOG_W(RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_REQ: unknown UE from gNB_ue_ngap_id (%d)\n",
           instance,
           gNB_ue_ngap_id);
-    msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_RESP); /* TODO change message ID. */
+    msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_RESP); /* TODO change message ID. */
     NGAP_UE_CONTEXT_RELEASE_RESP(msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
     // TODO add failure cause when defined!
     itti_send_msg_to_task(TASK_NGAP, instance, msg_fail_p);
@@ -1138,7 +1137,7 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ (
     /* Send the response */
     {
       MessageDef *msg_resp_p;
-      msg_resp_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_RESP);
+      msg_resp_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_RESP);
       NGAP_UE_CONTEXT_RELEASE_RESP(msg_resp_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
       itti_send_msg_to_task(TASK_NGAP, instance, msg_resp_p);
     }
@@ -1167,7 +1166,7 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index */
     MessageDef *msg_complete_p = NULL;
-    LOG_W(RRC, "[gNB %d] In NGAP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from gNB_ue_ngap_id (%d)\n",
+    LOG_W(RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from gNB_ue_ngap_id (%d)\n",
           instance,
           gNB_ue_ngap_id);
     MSC_LOG_EVENT(MSC_RRC_GNB, "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" context not found",
@@ -1178,7 +1177,7 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
                        0,
                        "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" ",
                        gNB_ue_ngap_id);
-    msg_complete_p = itti_alloc_new_message(TASK_RRC_GNB, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
+    msg_complete_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
     NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
     itti_send_msg_to_task(TASK_NGAP, instance, msg_complete_p);
     rrc_ue_ngap_ids = rrc_gNB_NGAP_get_ue_ids(RC.nrrrc[instance], UE_INITIAL_ID_INVALID, gNB_ue_ngap_id);
@@ -1281,7 +1280,7 @@ rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
     if (ret.encoded == -1) abort();
 
     MessageDef *msg_p;
-    msg_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_UE_CAPABILITIES_IND);
+    msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_UE_CAPABILITIES_IND);
     NGAP_UE_CAPABILITIES_IND (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
     NGAP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.length = (ret.encoded+7)/8;
     NGAP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.buffer = buf2;
@@ -1300,7 +1299,7 @@ rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(
 {
   int pdu_sessions_released = 0;
   MessageDef   *msg_p;
-  msg_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_PDUSESSION_RELEASE_RESPONSE);
+  msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_PDUSESSION_RELEASE_RESPONSE);
   NGAP_PDUSESSION_RELEASE_RESPONSE (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
 
   for (int i = 0;  i < NB_RB_MAX; i++) {
@@ -1361,7 +1360,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     return -1;
   }
   ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, UE_INITIAL_ID_INVALID, gNB_ue_ngap_id);
-  LOG_I(NR_RRC, "[gNB %d] Received %s: gNB_ue_ngap_id %d \n", instance, msg_name, gNB_ue_ngap_id);
+  LOG_I(NR_RRC, "[gNB %ld] Received %s: gNB_ue_ngap_id %d \n", instance, msg_name, gNB_ue_ngap_id);
 
   if (ue_context_p != NULL) {
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
@@ -1425,7 +1424,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     } else {
       //gtp tunnel delete
       LOG_I(NR_RRC, "gtp tunnel delete \n");
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, GTPV1U_GNB_DELETE_TUNNEL_REQ);
+      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_GNB_DELETE_TUNNEL_REQ);
       memset(&GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
       GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
 

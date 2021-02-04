@@ -45,7 +45,7 @@
 #define condwait(condition, mutex) AssertFatal(pthread_cond_wait(&condition, &mutex)==0,"");
 #define condbroadcast(signal) AssertFatal(pthread_cond_broadcast(&signal)==0,"");
 #define condsignal(signal)    AssertFatal(pthread_cond_broadcast(&signal)==0,"");
-
+#define tpool_nbthreads(tpool)   (tpool.nbThreads)
 typedef struct notifiedFIFO_elt_s {
   struct notifiedFIFO_elt_s *next;
   uint64_t key; //To filter out elements
@@ -294,6 +294,6 @@ static inline int abortTpool(tpool_t *t, uint64_t key) {
   mutexunlock(nf->lockF);
   return nbRemoved;
 }
-void initTpool(char *params,tpool_t *pool, bool performanceMeas);
-
+void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name);
+#define  initTpool(PARAMPTR,TPOOLPTR, MEASURFLAG) initNamedTpool(PARAMPTR,TPOOLPTR, MEASURFLAG, NULL)
 #endif

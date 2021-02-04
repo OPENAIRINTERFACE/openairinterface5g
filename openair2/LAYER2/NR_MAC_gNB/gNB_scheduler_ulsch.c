@@ -766,6 +766,25 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
+    /* TRANSFORM PRECODING --------------------------------------------------------*/
+
+    if (pusch_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled){
+
+      // U as specified in section 6.4.1.1.1.2 in 38.211, if sequence hopping and group hopping are disabled
+      pusch_pdu->dfts_ofdm.low_papr_group_number = pusch_pdu->pusch_identity % 30;
+
+      // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
+      if ((ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
+            (ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping == NULL))
+        pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;
+      else
+        AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
+
+      LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, ps->mcs_table);
+    }
+
+    /*-----------------------------------------------------------------------------*/
+
     /* PUSCH PTRS */
     if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
       // TODO to be fixed from RRC config

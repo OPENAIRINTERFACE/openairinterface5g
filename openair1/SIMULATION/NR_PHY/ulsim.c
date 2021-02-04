@@ -63,6 +63,8 @@
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 
+#include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+
 //#define DEBUG_ULSIM
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
@@ -152,6 +154,10 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -227,6 +233,10 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
 
+  uint8_t transform_precoding = transform_precoder_disabled; // 0 - ENABLE, 1 - DISABLE
+  uint8_t num_dmrs_cdm_grps_no_data = 1;
+  uint8_t mcs_table = 0;
+
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
   int file_offset = 0;
@@ -247,7 +257,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -480,9 +490,19 @@ int main(int argc, char **argv)
       params_from_file = 1;
       break;
 
+    case 'Z':
+
+      transform_precoding = transform_precoder_enabled; 
+      num_dmrs_cdm_grps_no_data = 2;
+      mcs_table = 3;
+      
+      printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n",  transform_precoding);
+
+      break;
+
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
@@ -512,6 +532,7 @@ int main(int argc, char **argv)
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
       printf("-Q If -F used, read parameters from file\n");
+      printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       exit(-1);
       break;
 
@@ -707,13 +728,13 @@ int main(int argc, char **argv)
   uint8_t ptrs_mcs3 = 10;
   uint16_t n_rb0 = 25;
   uint16_t n_rb1 = 75;
-  uint8_t mcs_table = 0;
+  
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
   uint8_t max_rounds = 4;
   uint8_t crc_status = 0;
 
-  unsigned char mod_order = nr_get_Qm_ul(Imcs, 0);
-  uint16_t      code_rate = nr_get_code_rate_ul(Imcs, 0);
+  unsigned char mod_order = nr_get_Qm_ul(Imcs, mcs_table);
+  uint16_t      code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
 
   uint8_t mapping_type = typeB; // Default Values
   pusch_dmrs_type_t dmrs_config_type = pusch_dmrs_type1; // Default Values
@@ -743,9 +764,32 @@ int main(int argc, char **argv)
   uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs);
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
+
+  if (transform_precoding == transform_precoder_enabled) {  
+
+    AssertFatal(enable_ptrs == 0, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
+
+    int8_t index = get_index_for_dmrs_lowpapr_seq((NR_NB_SC_PER_RB/2) * nb_rb);
+	  AssertFatal(index >= 0, "Num RBs not configured according to 3GPP 38.211 section 6.3.1.4. For PUSCH with transform precoding, num RBs cannot be multiple of any other primenumber other than 2,3,5\n");
+    
+    dmrs_config_type = pusch_dmrs_type1;
+	  nb_re_dmrs   = nb_re_dmrs * num_dmrs_cdm_grps_no_data;
+
+    printf("[ULSIM]: TRANSFORM PRECODING ENABLED. Num RBs: %d, index for DMRS_SEQ: %d\n", nb_rb, index);
+  }
+
+
   unsigned int available_bits  = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
   unsigned int TBS             = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
+  
+  printf("[ULSIM]: length_dmrs: %u, l_prime_mask: %u	number_dmrs_symbols: %u, mapping_type: %u add_pos: %d \n", length_dmrs, l_prime_mask, number_dmrs_symbols, mapping_type, add_pos);
+  printf("[ULSIM]: CDM groups: %u, dmrs_config_type: %d, num_rbs: %u, nb_symb_sch: %u\n", num_dmrs_cdm_grps_no_data, dmrs_config_type, nb_rb, nb_symb_sch);
+  printf("[ULSIM]: MCS: %d, mod order: %u, code_rate: %u\n", Imcs, mod_order, code_rate);
+  printf("[ULSIM]: VALUE OF G: %u, TBS: %u\n", available_bits, TBS);
+  
+
+  
   uint8_t ulsch_input_buffer[TBS/8];
 
   ulsch_input_buffer[0] = 0x31;
@@ -900,7 +944,7 @@ int main(int argc, char **argv)
       pusch_pdu->mcs_table = mcs_table;
       pusch_pdu->target_code_rate = code_rate;
       pusch_pdu->qam_mod_order = mod_order;
-      pusch_pdu->transform_precoding = 1;
+      pusch_pdu->transform_precoding = transform_precoding;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = 1;
       pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol;
@@ -925,6 +969,13 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+
+      if (transform_precoding == transform_precoder_enabled) { 
+
+        pusch_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2 
+        pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;     // V as defined in 38.211 section 6.4.1.1.1.2
+        pusch_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;        
+      }
 
       // prepare ULSCH/PUSCH reception
       nr_schedule_response(Sched_INFO);
@@ -976,6 +1027,18 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+
+      ul_config.ul_config_list[0].pusch_config_pdu.transform_precoding = transform_precoding;
+
+      if (transform_precoding == transform_precoder_enabled) { 
+   
+        ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_group_number = *scc->physCellId % 30;// U as defined in 38.211 section 6.4.1.1.1.2 
+        ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0;// V as defined in 38.211 section 6.4.1.1.1.2
+        //ul_config.ul_config_list[0].pusch_config_pdu.pdu_bit_map |= PUSCH_PDU_BITMAP_DFTS_OFDM; 
+        ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
+
+      }
+
 
       nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
 

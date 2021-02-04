@@ -59,7 +59,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   F1AP_UEContextSetupRequestIEs_t *ie;
   int i;
   DevAssert(pdu);
-  msg_p = itti_alloc_new_message(TASK_DU_F1, F1AP_UE_CONTEXT_SETUP_REQ);
+  msg_p = itti_alloc_new_message(TASK_DU_F1, 0, F1AP_UE_CONTEXT_SETUP_REQ);
   f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req;
   f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;

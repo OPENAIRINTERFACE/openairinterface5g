@@ -121,7 +121,7 @@ nr_rrc_data_ind(
     uint8_t *message_buffer;
     message_buffer = itti_malloc (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, sdu_sizeP);
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
-    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, NR_RRC_DCCH_DATA_IND);
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, 0, NR_RRC_DCCH_DATA_IND);
     NR_RRC_DCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
     NR_RRC_DCCH_DATA_IND (message_p).dcch_index = DCCH_index;
     NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = sdu_sizeP;
@@ -149,7 +149,7 @@ nr_rrc_data_ind_ccch(
   {
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
-    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, NR_RRC_MAC_CCCH_DATA_IND);
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, 0, NR_RRC_MAC_CCCH_DATA_IND);
     NR_RRC_MAC_CCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame  = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size   = sdu_sizeP;
@@ -537,7 +537,7 @@ static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t
                                   size + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
@@ -675,7 +675,7 @@ printf("\n");
       if (dec_rval.code == RC_OK) {
         if (dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_securityModeCommand) {
           LOG_I(PDCP, "CU send securityModeCommand by F1AP_UE_CONTEXT_SETUP_REQ\n");
-          message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_UE_CONTEXT_SETUP_REQ);
+          message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
           F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container = message_buffer;
           F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = size;
           F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
@@ -697,7 +697,7 @@ printf("\n");
           itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
         } else {
           LOG_I(PDCP, "other NR_DL_DCCH_Message \n");
-          message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+          message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
           F1AP_DL_RRC_MESSAGE (message_p).rrc_container = message_buffer;
           F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
           F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
@@ -714,7 +714,7 @@ printf("\n");
       }
     } else {
       first_dcch = 1;
-      message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+      message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container = message_buffer;
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
       F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
@@ -749,7 +749,7 @@ boolean_t pdcp_data_ind(
       ctxt_pP->eNB_index != 0 ||
       ctxt_pP->configured != 1 ||
       ctxt_pP->brOption != 0) {
-    LOG_E(PDCP, "%s:%d:%s: fatal, module_id %d, instance %d, eNB_index %d, configured %d, brOption %d\n",
+    LOG_E(PDCP, "%s:%d:%s: fatal, module_id %d, instance %ld, eNB_index %d, configured %d, brOption %d\n",
                   __FILE__, __LINE__, __FUNCTION__,
                   ctxt_pP->module_id,
                   ctxt_pP->instance,

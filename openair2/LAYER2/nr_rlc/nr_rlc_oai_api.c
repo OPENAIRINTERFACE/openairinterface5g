@@ -486,7 +486,7 @@ rb_found:
       if (ccch_flag) {
         /* for rfsim, because UE send RRCSetupRequest in SRB1 */
         LOG_I(RLC, "[MSG] RRC Setup Request\n");
-        msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_INITIAL_UL_RRC_MESSAGE);
+        msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc                  = RC.nrrrc[0]->configuration.mnc[0];
@@ -500,7 +500,7 @@ rb_found:
         return;
       }
 
-      msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
       F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
@@ -1066,7 +1066,7 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
   if (/*ctxt_pP->enb_flag != 1 ||*/ ctxt_pP->module_id != 0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
       ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
-    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %d %d %d %d)\n", __FUNCTION__,
+    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d %d)\n", __FUNCTION__,
           ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
           ctxt_pP->eNB_index, ctxt_pP->configured, ctxt_pP->brOption);
     exit(1);

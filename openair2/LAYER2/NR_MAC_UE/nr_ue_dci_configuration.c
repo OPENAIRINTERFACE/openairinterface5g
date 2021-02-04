@@ -38,6 +38,7 @@
 #include "common/utils/nr/nr_common.h"
 #include "executables/softmodem-common.h"
 #include <stdio.h>
+#include "nfapi_nr_interface.h"
 
 #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
 #define LOG_DCI_D(a...) printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) ->" a)
@@ -53,17 +54,33 @@ dci_pdu_rel15_t *def_dci_pdu_rel15;
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
 
   LOG_D(MAC,"Filling search candidates for DCI\n");
-  
-  rel15->number_of_candidates=4;
-  rel15->CCE[0]=0;
-  rel15->L[0]=4;
-  rel15->CCE[1]=4;
-  rel15->L[1]=4;
-  rel15->CCE[2]=8;
-  rel15->L[2]=4;
-  rel15->CCE[3]=12;
-  rel15->L[3]=4;
 
+  if(ss->searchSpaceId == 0) {
+    // TODO: Update the maximum number of PDCCH candidates accordingly with Aggregation Level
+    rel15->number_of_candidates=1;
+    rel15->CCE[0]=0;
+    rel15->L[0]=6;
+  } else {
+    rel15->number_of_candidates=4;
+    rel15->CCE[0]=0;
+    rel15->L[0]=4;
+    rel15->CCE[1]=4;
+    rel15->L[1]=4;
+    rel15->CCE[2]=8;
+    rel15->L[2]=4;
+    rel15->CCE[3]=12;
+    rel15->L[3]=4;
+  }
+
+  uint8_t aggregation;
+  find_aggregation_candidates(&aggregation,
+                              &rel15->number_of_candidates,
+                              ss);
+
+  for (int i=0; i<rel15->number_of_candidates; i++) {
+    rel15->CCE[i] = i*aggregation;
+    rel15->L[i] = aggregation;
+  }
 }
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id){
@@ -76,11 +93,21 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_DownlinkCommon_t *bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
-  NR_SearchSpace_t *ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
 
-  // CORESET configuration
-  NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
+  NR_SearchSpace_t *ss;
+  NR_ControlResourceSet_t *coreset;
+  if(ss_id>=0) {
+    ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
+    coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
+    rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+  } else {
+    ss = mac->search_space_zero;
+    coreset = mac->coreset0;
+    rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+  }
+
   rel15->coreset.duration = coreset->duration;
+
   for (int i = 0; i < 6; i++)
     rel15->coreset.frequency_domain_resource[i] = coreset->frequencyDomainResources.buf[i];
   rel15->coreset.CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved ? FAPI_NR_CCE_REG_MAPPING_TYPE_INTERLEAVED : FAPI_NR_CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
@@ -95,7 +122,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->coreset.InterleaverSize = 0;
     rel15->coreset.ShiftIndex = 0;
   }
-  rel15->coreset.CoreSetType = 1;
+
   rel15->coreset.precoder_granularity = coreset->precoderGranularity;
 
   // Scrambling RNTI
@@ -145,6 +172,20 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     case NR_RNTI_SP_CSI:
     break;
     case NR_RNTI_SI:
+      // we use DL BWP dedicated
+      sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+
+      // for SPS=14 8 MSBs in positions 13 down to 6
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+
+      rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
+      rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+      rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+      rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+
+      for (int i = 0; i < rel15->num_dci_options; i++) {
+        rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, 0);
+      }
     break;
     case NR_RNTI_SFI:
     break;
@@ -206,8 +247,11 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       // Fetch configuration for searchSpaceZero
       // note: The search space with the SearchSpaceId = 0 identifies the search space configured via PBCH (MIB) and in ServingCellConfigCommon (searchSpaceZero).
       if (pdcch_ConfigCommon->choice.setup->searchSpaceZero){
+        if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 == NULL){
+          pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
+        }
+        *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = 0;
         LOG_D(MAC, "[DCI_CONFIG] Configure SearchSpace#0 of the initial BWP\n");
-        LOG_W(MAC, "[DCI_CONFIG] This should not be available yet...");
       }
       if (ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0){
         // check available SS IDs
@@ -328,4 +372,25 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       break;
     }
   }
+
+  // Search space 0, CORESET ID 0
+
+  NR_BWP_DownlinkCommon_t *bwp_Common = bwp->bwp_Common;
+  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
+
+  if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+
+    NR_SearchSpace_t *ss0 = mac->search_space_zero;
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+
+    if (ss0->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+      if( (frame%2 == mac->type0_PDCCH_CSS_config.sfn_c) && (slot == mac->type0_PDCCH_CSS_config.n_0) ){
+        rel15->num_dci_options = 1;
+        rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+        config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+        fill_dci_search_candidates(ss0, rel15);
+      }
+    }
+  }
+
 }

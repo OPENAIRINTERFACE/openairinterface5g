@@ -113,7 +113,7 @@ int m2ap_MCE_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
   }
   
   /* Calling the right handler */
-  LOG_I(M2AP, "Calling handler with instance %d\n",instance);
+  LOG_I(M2AP, "Calling handler with instance %ld\n",instance);
   ret = (*m2ap_MCE_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
         (instance, assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_M2AP_M2AP_PDU, &pdu);

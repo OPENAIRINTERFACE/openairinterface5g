@@ -284,7 +284,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0 && get_softmodem_params()->sa==0)) {
     if (gnb_nb > 0) {
       if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
         LOG_E(S1AP, "Create task for NGAP failed\n");
@@ -422,7 +422,7 @@ void *itti_sim_ue_rrc_task( void *args_p) {
   while(1) {
     // Wait for a message
     itti_receive_msg (TASK_RRC_UE_SIM, &msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -479,7 +479,7 @@ void *itti_sim_gnb_rrc_task( void *args_p) {
   while(1) {
     // Wait for a message
     itti_receive_msg (TASK_RRC_GNB_SIM, &msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -558,9 +558,9 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
 
 
   init_opt();
