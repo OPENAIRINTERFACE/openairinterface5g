@@ -310,6 +310,9 @@ void handle_nr_ul_harq(module_id_t mod_id,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu)
 {
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+
   int UE_id = find_nr_UE_id(mod_id, crc_pdu->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUSCH\n", __func__, crc_pdu->rnti);
@@ -330,7 +333,11 @@ void handle_nr_ul_harq(module_id_t mod_id,
   DevAssert(harq_pid == crc_pdu->harq_id);
   remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
   NR_UE_ul_harq_t *harq = &sched_ctrl->ul_harq_processes[harq_pid];
-  DevAssert(harq->feedback_slot == slot - 1);
+  const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+  AssertFatal(harq->feedback_slot == feedback_slot,
+              "expected feedback slot %d, but found %d instead\n",
+              harq->feedback_slot,
+              feedback_slot);
   DevAssert(harq->is_waiting);
   harq->feedback_slot = -1;
   harq->is_waiting = false;
