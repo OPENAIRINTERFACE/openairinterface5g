@@ -19,30 +19,38 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_gNB_GTPV1U.h
- * \brief rrc GTPV1U procedures for gNB
- * \author Lionel GAUTHIER, Panos MATZAKOS
- * \version 1.0
- * \company Eurecom
- * \email: lionel.gauthier@eurecom.fr, panagiotis.matzakos@eurecom.fr
- */
+/*! \file FGSIdentityResponse.c
 
-#ifndef RRC_GNB_GTPV1U_H_
-#define RRC_GNB_GTPV1U_H_
+\brief identity response procedures for gNB
+\author Yoshio INOUE, Masayuki HARADA
+\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+\date 2020
+\version 0.1
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
+#include "nas_log.h"
+
+#include "FGSIdentityResponse.h"
 
 
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+int encode_identiy_response(fgs_identiy_response_msg *fgs_identity_reps, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
+  int encode_result = 0;
 
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+  if ((encode_result =
+         encode_5gs_mobile_identity(&fgs_identity_reps->fgsmobileidentity, 0, buffer +
+                                    encoded, len - encoded)) < 0)        //Return in case of error
+    return encode_result;
+  else
+    encoded += encode_result;
 
-#endif
+  return encoded;
+}
+
+

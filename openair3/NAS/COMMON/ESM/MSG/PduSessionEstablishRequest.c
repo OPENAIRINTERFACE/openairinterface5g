@@ -19,30 +19,43 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_gNB_GTPV1U.h
- * \brief rrc GTPV1U procedures for gNB
- * \author Lionel GAUTHIER, Panos MATZAKOS
- * \version 1.0
- * \company Eurecom
- * \email: lionel.gauthier@eurecom.fr, panagiotis.matzakos@eurecom.fr
- */
+/*! \file PduSessionEstablishRequest.c
 
-#ifndef RRC_GNB_GTPV1U_H_
-#define RRC_GNB_GTPV1U_H_
+\brief pdu session establishment request procedures
+\author Yoshio INOUE, Masayuki HARADA
+\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+\date 2020
+\version 0.1
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+#include "TLVEncoder.h"
+#include "TLVDecoder.h"
+#include "PduSessionEstablishRequest.h"
 
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
 
-#endif
+int encode_pdu_session_establishment_request(pdu_session_establishment_request_msg *pdusessionestablishrequest, uint8_t *buffer)
+{
+  int encoded = 0;
+
+
+  *(buffer + encoded) = pdusessionestablishrequest->protocoldiscriminator;
+  encoded++;
+  *(buffer + encoded) = pdusessionestablishrequest->pdusessionid;
+  encoded++;
+  *(buffer + encoded) = pdusessionestablishrequest->pti;
+  encoded++;
+  *(buffer + encoded) = pdusessionestablishrequest->pdusessionestblishmsgtype;
+  encoded++;
+
+  IES_ENCODE_U16(buffer, encoded, pdusessionestablishrequest->maxdatarate);
+
+  return encoded;
+}
+
+

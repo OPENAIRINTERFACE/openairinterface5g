@@ -19,30 +19,36 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_gNB_GTPV1U.h
- * \brief rrc GTPV1U procedures for gNB
- * \author Lionel GAUTHIER, Panos MATZAKOS
- * \version 1.0
- * \company Eurecom
- * \email: lionel.gauthier@eurecom.fr, panagiotis.matzakos@eurecom.fr
- */
+/*! \file FGCNasMessageContainer.h
 
-#ifndef RRC_GNB_GTPV1U_H_
-#define RRC_GNB_GTPV1U_H_
+\brief security mode complete procedures for gNB
+\author Yoshio INOUE, Masayuki HARADA
+\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+\date 2020
+\version 0.1
+*/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+#include "OctetString.h"
 
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+#ifndef FGC_NAS_MESSAGE_CONTAINER_H_
+#define FGC_NAS_MESSAGE_CONTAINER_H_
 
-#endif
+#define FGC_NAS_MESSAGE_CONTAINER_MINIMUM_LENGTH 4
+#define FGC_NAS_MESSAGE_CONTAINER_MAXIMUM_LENGTH 65535
+
+typedef struct FGCNasMessageContainer_tag {
+  OctetString nasmessagecontainercontents;
+} FGCNasMessageContainer;
+
+int encode_fgc_nas_message_container(FGCNasMessageContainer *nasmessagecontainer, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+int decode_fgc_nas_message_container(FGCNasMessageContainer *nasmessagecontainer, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+void dump_fgc_nas_message_container_xml(FGCNasMessageContainer *nasmessagecontainer, uint8_t iei);
+
+#endif /* FGC NAS MESSAGE CONTAINER_H_ */
+

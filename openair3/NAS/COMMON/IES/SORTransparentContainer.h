@@ -19,30 +19,27 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_gNB_GTPV1U.h
- * \brief rrc GTPV1U procedures for gNB
- * \author Lionel GAUTHIER, Panos MATZAKOS
- * \version 1.0
- * \company Eurecom
- * \email: lionel.gauthier@eurecom.fr, panagiotis.matzakos@eurecom.fr
- */
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-#ifndef RRC_GNB_GTPV1U_H_
-#define RRC_GNB_GTPV1U_H_
+#include "OctetString.h"
 
+#ifndef SOR_TRANSPARENT_CONTAINER_H_
+#define SOR_TRANSPARENT_CONTAINER_H_
 
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+#define SOR_TRANSPARENT_CONTAINER_MINIMUM_LENGTH 2 // [length]+[length]
+#define SOR_TRANSPARENT_CONTAINER_MAXIMUM_LENGTH 65538 // [IEI]+[length]+[length]+[ESM msg]
 
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+typedef struct SORTransparentContainer_tag {
+  OctetString sortransparentcontainercontents;
+} SORTransparentContainer;
 
-#endif
+int encode_sor_transparent_container(SORTransparentContainer *sortransparentcontainer, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+int decode_sor_transparent_container(SORTransparentContainer *sortransparentcontainer, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+void dump_sor_transparent_container_xml(SORTransparentContainer *sortransparentcontainer, uint8_t iei);
+
+#endif /* ESM MESSAGE CONTAINER_H_ */
+

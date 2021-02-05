@@ -183,7 +183,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
     if (m->nb_e_rabs_tobeadded>0) {
       for (int i=0; i<m->nb_e_rabs_tobeadded; i++) {
-        // Add the new E-RABs at the corresponding rrc ue context of the gNB
+        // Add the new E-RABs at the corresponding rrc ue context of the gNB 
         ue_context_p->ue_context.e_rab[i].param.e_rab_id = m->e_rabs_tobeadded[i].e_rab_id;
         ue_context_p->ue_context.e_rab[i].param.gtp_teid = m->e_rabs_tobeadded[i].gtp_teid;
         memcpy(&ue_context_p->ue_context.e_rab[i].param.sgw_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));
