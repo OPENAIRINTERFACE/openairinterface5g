@@ -68,11 +68,13 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id){
 
+  RA_config_t *ra = &mac->ra;
   uint16_t monitoringSymbolsWithinSlot = 0;
-  uint8_t bwp_id = 1, coreset_id = 1;
+  uint8_t coreset_id = 1;
   int sps = 0;
   def_dci_pdu_rel15 = calloc(1,2*sizeof(dci_pdu_rel15_t));
   AssertFatal(mac->scc != NULL, "scc is null\n");
+  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_DownlinkCommon_t *bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
@@ -111,7 +113,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   // Scrambling RNTI
   if (coreset->pdcch_DMRS_ScramblingID) {
     rel15->coreset.pdcch_dmrs_scrambling_id = *coreset->pdcch_DMRS_ScramblingID;
-    rel15->coreset.scrambling_rnti = mac->t_crnti;
+    rel15->coreset.scrambling_rnti = mac->crnti;
   } else {
     rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
     rel15->coreset.scrambling_rnti = 0;
@@ -129,8 +131,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     // for SPS=14 8 MSBs in positions 13 down to 6
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
     rel15->rnti = mac->crnti;
-    rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
-    rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
+    rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
     for (int i = 0; i < rel15->num_dci_options; i++) {
       rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15+i, rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
@@ -140,9 +142,9 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     // we use the initial DL BWP
     sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-    rel15->rnti = mac->ra_rnti;
-    rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-    rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); //NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+    rel15->rnti = ra->ra_rnti;
+    rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE); //NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
     rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
     break;
@@ -207,13 +209,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot) {
 
+  RA_config_t *ra = &mac->ra;
   int ss_id;
   uint8_t bwp_id = 1, coreset_id = 1;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Downlink_t *bwp = mac->DLbwp[bwp_id - 1];
 
   #ifdef DEBUG_DCI
-    LOG_D(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &mac->ra_rnti, mac->ra_rnti, &mac->crnti, mac->crnti, &mac->t_crnti, mac->t_crnti);
+    LOG_D(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
   #endif
 
   // loop over all available SS for BWP ID 1, CORESET ID 1
@@ -240,7 +243,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
         // check available SS IDs
         if (pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
           if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
-            switch(mac->ra_state){
+            switch(ra->ra_state){
               case WAIT_RAR:
               LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space\n");
               rel15->num_dci_options = 1;
@@ -249,7 +252,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
               fill_dci_search_candidates(ss, rel15);
               break;
               case WAIT_CONTENTION_RESOLUTION:
-              rel15->rnti = mac->t_crnti;
+              LOG_E(MAC, "In %s: CB-RA not implemented yet. Should not have fallen in this case.\n", __FUNCTION__);
               break;
               default:
               break;
@@ -314,7 +317,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       if (ss->searchSpaceType->choice.ue_Specific){
         if(ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1){
           // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
-          if ((mac->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) && mac->crnti > 0) {
+          if ((ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) && mac->crnti > 0) {
             LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
             rel15->num_dci_options = 2;
             rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
