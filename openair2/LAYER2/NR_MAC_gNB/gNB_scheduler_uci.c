@@ -336,14 +336,27 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      /* In case of realtime problems: we can only identify a HARQ process by
+       * timing. If the HARQ process's feedback_slot is not the one we
+       * expected, we assume that processing has been aborted and we need to
+       * skip this HARQ process, which is what happens in the loop below. If
+       * you don't experience real-time problems, you might simply revert the
+       * commit that introduced these changes. */
+      int8_t pid = sched_ctrl->feedback_dl_harq.head;
       DevAssert(pid >= 0);
+      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
+        LOG_W(MAC,
+              "expected feedback slot %d, but found %d instead\n",
+              sched_ctrl->harq_processes[pid].feedback_slot,
+              feedback_slot);
+        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+        handle_dl_harq(mod_id, UE_id, pid, 0);
+        pid = sched_ctrl->feedback_dl_harq.head;
+        DevAssert(pid >= 0);
+      }
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      AssertFatal(harq->feedback_slot == feedback_slot,
-                  "expected feedback slot %d, but found %d instead\n",
-                  harq->feedback_slot, feedback_slot);
       DevAssert(harq->is_waiting);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
@@ -374,14 +387,28 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
       const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      /* In case of realtime problems: we can only identify a HARQ process by
+       * timing. If the HARQ process's feedback_slot is not the one we
+       * expected, we assume that processing has been aborted and we need to
+       * skip this HARQ process, which is what happens in the loop below. If
+       * you don't experience real-time problems, you might simply revert the
+       * commit that introduced these changes. */
+      int8_t pid = sched_ctrl->feedback_dl_harq.head;
       DevAssert(pid >= 0);
+      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
+        LOG_W(MAC,
+              "expected feedback slot %d, but found %d instead\n",
+              sched_ctrl->harq_processes[pid].feedback_slot,
+              feedback_slot);
+        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+        handle_dl_harq(mod_id, UE_id, pid, 0);
+        pid = sched_ctrl->feedback_dl_harq.head;
+        DevAssert(pid >= 0);
+      }
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      AssertFatal(harq->feedback_slot == feedback_slot,
-                  "expected feedback slot %d, but found %d instead\n",
-                  harq->feedback_slot, feedback_slot);
+      DevAssert(harq->is_waiting);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
