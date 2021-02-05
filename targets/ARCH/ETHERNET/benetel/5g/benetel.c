@@ -162,8 +162,9 @@ int trx_benetel_ctlrecv(openair0_device *device, void *msg, ssize_t msg_len)
     cap->FH_fmt                           = OAI_IF4p5_only;
     cap->num_bands                        = 1;
     cap->band_list[0]                     = 78;
-    cap->nb_rx[0]                         = 1;
-    cap->nb_tx[0]                         = 1;
+    /* TODO: hardcoded to 1 for the moment, get the real value somehow... */
+    cap->nb_rx[0]                         = 1; //device->openair0_cfg->rx_num_channels;
+    cap->nb_tx[0]                         = 1; //device->openair0_cfg->tx_num_channels;
     cap->max_pdschReferenceSignalPower[0] = -27;
     cap->max_rxgain[0]                    = 90;
 
@@ -201,12 +202,13 @@ void benetel_fh_if4p5_south_in(RU_t *ru,
   NR_DL_FRAME_PARMS *fp;
   int symbol;
   int32_t *rxdata;
-  int antenna = 0;
+  int antenna;
 
   lock_ul_buffer(&s->buffers, *slot);
 #if 1
 next:
-  while (!(s->buffers.ul_busy[*slot] == 0x3fff ||
+  while (!((s->buffers.ul_busy[0][*slot] == 0x3fff &&
+            s->buffers.ul_busy[1][*slot] == 0x3fff) ||
            s->buffers.prach_busy[*slot] == 1))
     wait_ul_buffer(&s->buffers, *slot);
   if (s->buffers.prach_busy[*slot] == 1) {
@@ -226,28 +228,31 @@ next:
 #endif
 
   fp = ru->nr_frame_parms;
-  for (symbol = 0; symbol < 14; symbol++) {
-    int i;
-    int16_t *p = (int16_t *)(&s->buffers.ul[*slot][symbol*1272*4]);
-    for (i = 0; i < 1272*2; i++) {
-      p[i] = (int16_t)(ntohs(p[i])) / 16;
-    }
-    rxdata = &ru->common.rxdataF[antenna][symbol * fp->ofdm_symbol_size];
+  for (antenna = 0; antenna < ru->nb_rx; antenna++) {
+    for (symbol = 0; symbol < 14; symbol++) {
+      int i;
+      int16_t *p = (int16_t *)(&s->buffers.ul[antenna][*slot][symbol*1272*4]);
+      for (i = 0; i < 1272*2; i++) {
+        p[i] = (int16_t)(ntohs(p[i])) / 16;
+      }
+      rxdata = &ru->common.rxdataF[antenna][symbol * fp->ofdm_symbol_size];
 #if 0
 if (*slot == 0 && symbol == 0)
 printf("rxdata in benetel_fh_if4p5_south_in %p\n", &ru->common.rxdataF[antenna][0]);
 #endif
 #if 1
-    memcpy(rxdata + 2048 - 1272/2,
-           &s->buffers.ul[*slot][symbol*1272*4],
-           (1272/2) * 4);
-    memcpy(rxdata,
-           &s->buffers.ul[*slot][symbol*1272*4] + (1272/2)*4,
-           (1272/2) * 4);
+      memcpy(rxdata + 2048 - 1272/2,
+             &s->buffers.ul[antenna][*slot][symbol*1272*4],
+             (1272/2) * 4);
+      memcpy(rxdata,
+             &s->buffers.ul[antenna][*slot][symbol*1272*4] + (1272/2)*4,
+             (1272/2) * 4);
 #endif
+    }
   }
 
-  s->buffers.ul_busy[*slot] = 0;
+  s->buffers.ul_busy[0][*slot] = 0;
+  s->buffers.ul_busy[1][*slot] = 0;
   signal_ul_buffer(&s->buffers, *slot);
   unlock_ul_buffer(&s->buffers, *slot);
 
@@ -285,43 +290,47 @@ void benetel_fh_if4p5_south_out(RU_t *ru,
   NR_DL_FRAME_PARMS *fp;
   int symbol;
   int32_t *txdata;
-  int aa = 0;
+  int aa;
 
   //printf("BENETEL: %s (f.sf %d.%d ts %ld)\n", __FUNCTION__, frame, slot, timestamp);
 
   lock_dl_buffer(&s->buffers, slot);
-  if (s->buffers.dl_busy[slot]) {
+  if (s->buffers.dl_busy[0][slot] ||
+      s->buffers.dl_busy[1][slot]) {
     printf("%s: fatal: DL buffer busy for subframe %d\n", __FUNCTION__, slot);
     unlock_dl_buffer(&s->buffers, slot);
     return;
   }
 
   fp = ru->nr_frame_parms;
-  if (ru->num_gNB != 1 || ru->nb_tx != 1 || fp->ofdm_symbol_size != 2048 ||
+  if (ru->num_gNB != 1 || fp->ofdm_symbol_size != 2048 ||
       fp->Ncp != NORMAL || fp->symbols_per_slot != 14) {
     printf("%s:%d:%s: unsupported configuration\n",
            __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
 
-  for (symbol = 0; symbol < 14; symbol++) {
-    txdata = &ru->common.txdataF_BF[aa][symbol * fp->ofdm_symbol_size];
+  for (aa = 0; aa < ru->nb_tx; aa++) {
+    for (symbol = 0; symbol < 14; symbol++) {
+      txdata = &ru->common.txdataF_BF[aa][symbol * fp->ofdm_symbol_size];
 #if 1
-    memcpy(&s->buffers.dl[slot][symbol*1272*4],
-           txdata + 2048 - (1272/2),
-           (1272/2) * 4);
-    memcpy(&s->buffers.dl[slot][symbol*1272*4] + (1272/2)*4,
-           txdata,
-           (1272/2) * 4);
+      memcpy(&s->buffers.dl[aa][slot][symbol*1272*4],
+             txdata + 2048 - (1272/2),
+             (1272/2) * 4);
+      memcpy(&s->buffers.dl[aa][slot][symbol*1272*4] + (1272/2)*4,
+             txdata,
+             (1272/2) * 4);
 #endif
-    int i;
-    uint16_t *p = (uint16_t *)(&s->buffers.dl[slot][symbol*1272*4]);
-    for (i = 0; i < 1272*2; i++) {
-      p[i] = htons(p[i]<<4);
+      int i;
+      uint16_t *p = (uint16_t *)(&s->buffers.dl[aa][slot][symbol*1272*4]);
+      for (i = 0; i < 1272*2; i++) {
+        p[i] = htons(p[i]);
+      }
     }
   }
 
-  s->buffers.dl_busy[slot] = 0x3fff;
+  s->buffers.dl_busy[0][slot] = 0x3fff;
+  s->buffers.dl_busy[1][slot] = 0x3fff;
   unlock_dl_buffer(&s->buffers, slot);
 }
 
