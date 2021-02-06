@@ -2728,7 +2728,7 @@ do_RRCConnectionSetup(
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax,
   //SchedulingRequestConfig__setup__dsr_TransMax_n4);
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = LTE_SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = LTE_SchedulingRequestConfig__setup__dsr_TransMax_n64;
   rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetup->criticalExtensions.present = LTE_RRCConnectionSetup__criticalExtensions_PR_c1;
   rrcConnectionSetup->criticalExtensions.choice.c1.present = LTE_RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8 ;

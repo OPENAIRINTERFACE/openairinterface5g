@@ -430,7 +430,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       case CRNTI:
         old_rnti = (((uint16_t) payload_ptr[0]) << 8) + payload_ptr[1];
         old_UE_id = find_UE_id(enb_mod_idP, old_rnti);
-        LOG_D(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",
+        LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",
               enb_mod_idP,
               frameP,
               subframeP,
@@ -508,7 +508,7 @@ rx_sdu(const module_id_t enb_mod_idP,
               /* Received a new rnti */
               if (ret == 0) {
                 ra->state = MSGCRNTI;
-                LOG_D(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
+                LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
                       enb_mod_idP,
                       frameP,
                       subframeP,

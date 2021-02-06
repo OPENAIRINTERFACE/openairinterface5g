@@ -449,7 +449,8 @@ typedef struct {
   int frame;
   int pucch1_trials;
   int pucch1_thres;
-  int current_pucch1_stat;
+  int current_pucch1_stat_pos;
+  int current_pucch1_stat_neg;
   int pucch1_positive_SR;
   int pucch1_low_stat[4];
   int pucch1_high_stat[4];

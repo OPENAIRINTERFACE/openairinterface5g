@@ -5804,7 +5804,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   //SchedulingRequestConfig__setup__dsr_TransMax_n4);
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax =
-    LTE_SchedulingRequestConfig__setup__dsr_TransMax_n4;
+    LTE_SchedulingRequestConfig__setup__dsr_TransMax_n64;
   LOG_D(RRC,
         "handover_config [FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 UE %x) --->][MAC_eNB][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ctxt_pP->module_id);

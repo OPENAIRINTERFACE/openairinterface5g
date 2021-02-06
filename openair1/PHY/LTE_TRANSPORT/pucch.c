@@ -73,17 +73,17 @@ void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
   for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++){
     if (eNB->uci_stats[i].rnti>0) {
       eNB_UCI_STATS_t *uci_stats = &eNB->uci_stats[i];
-      strpos+=sprintf(output+strpos,"UCI RNTI %x: pucch1_trials %d, pucch1_thres %d dB, current pucch1_stat %d dB,positive SR count %d\n",
-	uci_stats->rnti,uci_stats->pucch1_trials,uci_stats->pucch1_thres,dB_fixed(uci_stats->current_pucch1_stat),uci_stats->pucch1_positive_SR);
-      strpos+=sprintf(output+strpos,"UCI RNTI %x: pucch1_low (%d,%d)dB pucch1_high (%d,%d)dB\n",
-	    uci_stats->rnti,
+      strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch1_trials %d, pucch1_n0 %d dB, pucch1_thres %d dB, current pucch1_stat_pos %d dB, current pucch1_stat_neg %d dB, positive SR count %d\n",
+	i,uci_stats->rnti,uci_stats->pucch1_trials,eNB->measurements.n0_pucch_dB/*max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1])*/,uci_stats->pucch1_thres,dB_fixed(uci_stats->current_pucch1_stat_pos),dB_fixed(uci_stats->current_pucch1_stat_neg),uci_stats->pucch1_positive_SR);
+      strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch1_low (%d,%d)dB pucch1_high (%d,%d)dB\n",
+	    i,uci_stats->rnti,
             dB_fixed(uci_stats->pucch1_low_stat[0]),
             dB_fixed(uci_stats->pucch1_low_stat[1]),
             dB_fixed(uci_stats->pucch1_high_stat[0]),
             dB_fixed(uci_stats->pucch1_high_stat[1]));
       
-      strpos+=sprintf(output+strpos,"UCI RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d), pucch1b_trials %d, pucch1b_stat (%d,%d) pucch1ab_DTX %d\n",
-            uci_stats->rnti,
+      strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d), pucch1b_trials %d, pucch1b_stat (%d,%d) pucch1ab_DTX %d\n",
+            i,uci_stats->rnti,
             uci_stats->pucch1a_trials,
             uci_stats->current_pucch1a_stat_re,
             uci_stats->current_pucch1a_stat_im,
@@ -902,7 +902,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   static int first_call = 1;
   LTE_eNB_COMMON *common_vars = &eNB->common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  int8_t sigma2_dB = eNB->measurements.n0_pucch_dB;
+  int8_t sigma2_dB = /*max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]); */eNB->measurements.n0_pucch_dB;
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -1276,13 +1276,14 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       // This is a moving average of the PUCCH1 statistics conditioned on being above or below the threshold
       if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {
         *payload = 1;
-        uci_stats->current_pucch1_stat = stat_max;
+        uci_stats->current_pucch1_stat_pos = stat_max;
         for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
           uci_stats->pucch1_low_stat[aa]=stat0_max[aa];
           uci_stats->pucch1_high_stat[aa]=stat1_max[aa];
           uci_stats->pucch1_positive_SR++;
         }
       } else {
+        uci_stats->current_pucch1_stat_neg = stat_max;
         *payload = 0;
       }
 
