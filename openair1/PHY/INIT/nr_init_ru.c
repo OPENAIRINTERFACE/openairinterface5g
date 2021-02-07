@@ -29,7 +29,8 @@
 #include "assertions.h"
 #include <math.h>
 #include "openair1/PHY/defs_RU.h"
-//#include "openair1/PHY/NR_TRANSPORT/nr_transport_proto.h"
+
+void init_prach_ru_list(RU_t *ru);
 
 extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 

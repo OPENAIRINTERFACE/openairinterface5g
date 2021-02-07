@@ -39,6 +39,7 @@ void init_7_5KHz(void);
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
+void init_sss(void);
 
 void phy_config_sib1_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
