@@ -551,6 +551,8 @@ int wakeup_tx(PHY_VARS_eNB *eNB,
   L1_rxtx_proc_t *L1_proc_tx = &eNB->proc.L1_proc_tx;
   int ret;
   LOG_D(PHY,"ENTERED wakeup_tx (IC %d)\n",L1_proc_tx->instance_cnt);
+  // check if subframe is a has TX else return
+  if (subframe_select(&eNB->frame_parms,subframe_tx) == SF_UL) return 0;  
   AssertFatal((ret = pthread_mutex_lock(&L1_proc_tx->mutex))==0,"mutex_lock returns %d\n",ret);
   LOG_D(PHY,"L1 RX %d.%d Waiting to wake up L1 TX %d.%d (IC L1TX %d)\n",frame_rx,subframe_rx,frame_tx,subframe_tx,L1_proc_tx->instance_cnt);
 
@@ -591,7 +593,10 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
     AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"mutex_unlock return %d\n",ret);
     LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx);
+    AssertFatal(1==0,"L1_thread isn't ready in %d.%d (L1RX %d.%d), aborting RX, exiting\n",
+      ru_proc->frame_rx,ru_proc->tti_rx,L1_proc->frame_rx,L1_proc->subframe_rx);
     return(0);
+   
   }
 
   ++L1_proc->instance_cnt;

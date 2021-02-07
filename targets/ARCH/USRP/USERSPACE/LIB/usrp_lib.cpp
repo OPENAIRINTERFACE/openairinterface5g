@@ -624,14 +624,14 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
   nsamps2 = (nsamps+7)>>3;
-  __m256i buff_tmp[2][nsamps2];
+  __m256i buff_tmp[4][nsamps2];
 #else
   nsamps2 = (nsamps+3)>>2;
-  __m128i buff_tmp[2][nsamps2];
+  __m128i buff_tmp[4][nsamps2];
 #endif
 #elif defined(__arm__)
   nsamps2 = (nsamps+3)>>2;
-  int16x8_t buff_tmp[2][nsamps2];
+  int16x8_t buff_tmp[4][nsamps2];
 #endif
 
   int rxshift;
@@ -1301,8 +1301,10 @@ extern "C" {
   LOG_I(HW,"rx_max_num_samps %zu\n",
         s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
   
-  for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
+  for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
+    LOG_I(HW,"setting rx channel %d\n",i);
     stream_args_rx.channels.push_back(i);
+  }
   
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");

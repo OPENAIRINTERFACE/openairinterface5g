@@ -344,7 +344,6 @@ int main(int argc, char **argv) {
   int UE_id = 0;
   static int nb_rb=25,first_rb=0,mcs=0,round=0;
   //unsigned char l;
-  static int awgn_flag = 0 ;
   SCM_t channel_model=Rice1;
   unsigned char *input_buffer=0,harq_pid;
   unsigned short input_buffer_length;
@@ -1088,14 +1087,12 @@ int main(int argc, char **argv) {
             }
           }
 
-          if (awgn_flag == 0) {
-            if (UE2eNB->max_Doppler == 0) {
-              multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                eNB->frame_parms.samples_per_tti,hold_channel,0);
-            } else {
-              multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                   2*eNB->frame_parms.samples_per_tti,hold_channel);
-            }
+          if (UE2eNB->max_Doppler == 0) {
+            multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
+                              eNB->frame_parms.samples_per_tti,hold_channel,0);
+          } else {
+            multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
+                                 2*eNB->frame_parms.samples_per_tti,hold_channel);
           }
 
           if(abstx) {

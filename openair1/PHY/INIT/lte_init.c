@@ -519,7 +519,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       AssertFatal (fp->symbols_per_tti > 11, "fp->symbols_per_tti %d < 12\n", fp->symbols_per_tti);
       AssertFatal (fp->N_RB_UL > 5, "fp->N_RB_UL %d < 6\n", fp->N_RB_UL);
 
-      for (i = 0; i < 2; i++) {
+      for (i = 0; i < fp->nb_antennas_rx; i++) {
         // FIXME We should get rid of this
         pusch_vars[ULSCH_id]->rxdataF_ext[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
 
@@ -592,7 +592,7 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
   free_and_zero(prach_vars->rxsigF[0]);
 
   for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_ULSCH_MAX; ULSCH_id++) {
-    for (i = 0; i < 2; i++) {
+    for (i = 0; i < fp->nb_antennas_rx; i++) {
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2[i]);
       free_and_zero(pusch_vars[ULSCH_id]->drs_ch_estimates[i]);

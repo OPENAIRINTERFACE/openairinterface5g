@@ -852,7 +852,7 @@ endif (${RU} STREQUAL 0)
 
 # Hardware dependant options
 ###################################
-add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
+add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
