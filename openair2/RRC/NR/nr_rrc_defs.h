@@ -257,6 +257,24 @@ typedef struct nr_rrc_guami_s {
   uint8_t  amf_pointer;
 } nr_rrc_guami_t;
 
+typedef enum pdu_session_satus_e {
+  PDU_SESSION_STATUS_NEW,
+  PDU_SESSION_STATUS_DONE,
+  PDU_SESSION_STATUS_ESTABLISHED,
+  PDU_SESSION_STATUS_REESTABLISHED, // after HO
+  PDU_SESSION_STATUS_TOMODIFY,      // ENDC NSA
+  PDU_SESSION_STATUS_FAILED,
+  PDU_SESSION_STATUS_TORELEASE  // to release DRB between eNB and UE
+} pdu_session_status_t;
+
+typedef struct pdu_session_param_s {
+  pdusession_t param;
+  uint8_t status;
+  uint8_t xid; // transaction_id
+  ngap_Cause_t cause;
+  uint8_t cause_value;
+} __attribute__ ((__packed__)) pdu_session_param_t;
+
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
   LTE_SCellToAddMod_r10_t            sCell_config[2];
@@ -308,7 +326,7 @@ typedef struct gNB_RRC_UE_s {
   NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */
-  NR_ReestablishmentCause_t             reestablishment_cause;
+  NR_ReestablishmentCause_t          reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;
@@ -325,30 +343,44 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                           setup_e_rabs;
   /* Number of e_rab to be setup in the list */
   uint8_t                            nb_of_e_rabs;
+  /* Total number of pdu session already setup in the list */
+  uint8_t                           setup_pdu_sessions;
+  /* Number of pdu session to be setup in the list */
+  uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
+  /* list of pdu session to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  pdu_session_param_t                pdusession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
+  uint8_t                            nb_release_of_pdusessions;
+  pdusession_failed_t                pdusessions_release_failed[NGAP_MAX_PDUSESSION];
   // LG: For GTPV1 TUNNELS
   uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_psi[S1AP_MAX_E_RAB];
 
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
   uint32_t                           ue_release_timer_s1;
   uint32_t                           ue_release_timer_thres_s1;
+  uint32_t                           ue_release_timer_ng;
+  uint32_t                           ue_release_timer_thres_ng;
   uint32_t                           ue_release_timer_rrc;
   uint32_t                           ue_release_timer_thres_rrc;
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+  uint8_t                            pdu_session_release_command_flag;
+  uint32_t                           ue_rrc_inactivity_timer;
+  int8_t                             reestablishment_xid;
   //------------------------------------------------------------------------------//
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
@@ -408,6 +440,8 @@ typedef struct {
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
+  int                                       physCellId;
+  int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------
@@ -425,6 +459,8 @@ typedef struct gNB_RRC_INST_s {
   int                                                 Nb_ue;
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
+  hash_table_t                                        *initial_id2_ngap_ids;
+  hash_table_t                                        *ngap_id2_ngap_ids   ;
 
   // other PLMN parameters
   /// Mobile country code
@@ -444,7 +480,6 @@ typedef struct gNB_RRC_INST_s {
   int srs_enable[MAX_NUM_CCs];
 
 } gNB_RRC_INST;
-
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error
 

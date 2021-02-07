@@ -777,10 +777,10 @@ static void *UE_thread_rxn_txnp4(void *arg)
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
     CPU_SET(threads.one, &cpuset);
 
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
+  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
     CPU_SET(threads.two, &cpuset);
 
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
+  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
     CPU_SET(threads.three, &cpuset);
 
   //CPU_SET(threads.three, &cpuset);
