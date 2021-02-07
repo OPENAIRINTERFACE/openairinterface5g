@@ -438,7 +438,8 @@ int main(int argc, char **argv){
   ru->if_south       = LOCAL_RF;
   ru->nb_tx          = n_tx;
   ru->nb_rx          = n_rx;
-
+  ru->num_gNB        = 1;
+  ru->gNB_list[0]    = gNB;
   gNB->gNB_config.carrier_config.num_tx_ant.value = 1;
   gNB->gNB_config.carrier_config.num_rx_ant.value = 1;
   if (mu==1)

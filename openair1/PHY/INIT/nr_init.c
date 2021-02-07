@@ -554,7 +554,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 
   for (i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH  %d/%d\n",i,NUMBER_OF_NR_ULSCH_MAX);
 
     for (j=0; j<2; j++) {
       // ULSCH for data
