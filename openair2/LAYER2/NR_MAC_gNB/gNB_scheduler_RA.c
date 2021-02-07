@@ -645,7 +645,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   }
 
   uint16_t *vrb_map_UL =
-      &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * 275];
+      &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
   for (int i = 0; i < ra->msg3_nb_rb; ++i) {
     AssertFatal(!vrb_map_UL[i + ra->msg3_first_rb],
                 "RB %d in %4d.%2d is already taken, cannot allocate Msg3!\n",

@@ -409,7 +409,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
   if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
     return false;
 
-  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbStart = 0;
   uint16_t rbSize = 50; /* due to OAI UE limitations */
   if (rbSize>bw)

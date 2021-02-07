@@ -346,7 +346,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
 
     RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
-        calloc(n * 275, sizeof(uint16_t));
+        calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
                 "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
 
