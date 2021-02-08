@@ -150,6 +150,11 @@ typedef enum {
   MOD_QAM256
 }nr_mod_t;
 
+typedef enum {
+  RA_2STEP = 0,
+  RA_4STEP
+} nr_ra_type_e;
+
 typedef struct {
   /// Size of first RBG
   uint8_t start_size;
@@ -205,8 +210,12 @@ typedef struct {
   uint16_t prach_format;
   /// Preamble index for PRACH (0-63)
   uint8_t ra_PreambleIndex;
-  /// RACH MaskIndex
-  uint8_t ra_RACH_MaskIndex;
+  /// Preamble Tx Counter
+  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
+  /// Preamble Power Ramping Counter
+  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
+  /// 2-step RA power offset
+  int POWER_OFFSET_2STEP_RA;
   /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
   int ra_PREAMBLE_RECEIVED_TARGET_POWER;
   /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
@@ -217,8 +226,10 @@ typedef struct {
   uint8_t RA_PREAMBLE_BACKOFF;
   ///
   uint8_t RA_SCALING_FACTOR_BI;
-  ///
-  uint8_t RA_PCMAX;
+  /// Indicating whether it is 2-step or 4-step RA
+  nr_ra_type_e RA_TYPE;
+  /// UE configured maximum output power
+  int RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant
   uint16_t ra_RNTI;
   /// Pointer to Msg3 payload for UL-grant

@@ -39,7 +39,6 @@
 
 #include "platform_types.h"
 
-#include "NR_MAC_UE/mac.h"
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "rrc_list.h"
 #include "NR_asn_constant.h"
@@ -154,6 +153,8 @@ typedef struct NR_UE_RRC_INST_s {
 
     /* KeNB as computed from parameters within USIM card */
     uint8_t kgnb[32];
+    /* Used integrity/ciphering algorithms */
+    //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
     NR_CipheringAlgorithm_t  cipheringAlgorithm;
     e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
     

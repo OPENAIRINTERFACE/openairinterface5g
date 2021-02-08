@@ -239,7 +239,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       } // reg_in_cce_idx
     } // cce_count
 
-    LOG_I(PHY, "DCI: payloadSize = %d | payload = %llx\n",
+    LOG_D(PHY, "DCI: payloadSize = %d | payload = %llx\n",
            *pdcch_pdu_rel15->dci_pdu.PayloadSizeBits,*(unsigned long long*)pdcch_pdu_rel15->dci_pdu.Payload);
 
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
