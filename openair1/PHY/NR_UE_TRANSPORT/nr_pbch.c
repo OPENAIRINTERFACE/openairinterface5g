@@ -35,6 +35,7 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/INIT/phy_init.h"
+#include "openair1/SCHED_NR_UE/defs.h"
 
 //#define DEBUG_PBCH 
 //#define DEBUG_PBCH_ENCODING
@@ -608,23 +609,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
-    
-  dl_indication.module_id = ue->Mod_id;
-  dl_indication.gNB_index = gNB_id;
-  dl_indication.cc_id     = proc->CC_id;
-  dl_indication.frame     = proc->frame_rx;
-  dl_indication.slot      = proc->nr_slot_rx;
-  dl_indication.thread_id = proc->thread_id;
-  dl_indication.rx_ind    = &rx_ind; //  hang on rx_ind instance
-  dl_indication.dci_ind   = NULL;
+  uint16_t number_pdus = 1;
 
-  rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
-  rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0]; //not good as it is pointing to a memory that can change
-  rx_ind.rx_indication_body[0].mib_pdu.additional_bits = nr_ue_pbch_vars->xtra_byte;
-  rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
-  rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
-  rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
-  rx_ind.number_pdus = 1; //rx_ind.number_pdus++;
+  nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_MIB, gNB_id, ue, NULL, number_pdus);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);

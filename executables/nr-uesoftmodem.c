@@ -283,7 +283,6 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   tx_gain[0][CC_id]   = tx_gain[0][0];
 
   // Set UE variables
-
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];

@@ -82,8 +82,11 @@ uint32_t nr_compute_tbs(uint16_t Qm,
       }
     }
   }
-  //printf("Ninfo %d nbp_re %d nb_re %d Qm %d, R %d, tbs %d\n", Ninfo, nbp_re, nb_re, Qm, R, nr_tbs);
+
+  LOG_D(PHY, "In %s: Ninfo %d nbp_re %d nb_re %d Qm %d, R %d, tbs %d\n", __FUNCTION__, Ninfo, nbp_re, nb_re, Qm, R, nr_tbs);
+
   return nr_tbs;
+
 }
 
 
