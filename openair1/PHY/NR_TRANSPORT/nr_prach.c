@@ -302,6 +302,102 @@ void rx_nr_prach_ru(RU_t *ru,
     // do DFT
     if (mu==1) {
       switch(fp->samples_per_subframe) {
+        case 15360:
+          // 10, 15 MHz @ 15.36 Ms/s
+          prach2 = prach[aa] + (1*Ncp); // Ncp is for 30.72 Ms/s, so divide by 2 to bring to 15.36 Ms/s and multiply by 2 for I/Q
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=12288;
+              dft(DFT_12288,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_12288,prach2+24576,rxsigF[aa]+24576,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_12288,prach2+(24576*2),rxsigF[aa]+(24576*2),1);
+              dft(DFT_12288,prach2+(24576*3),rxsigF[aa]+(24576*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=3072;
+              for (int i=0;i<4;i++) dft(DFT_3072,prach2+(i*3072*2),rxsigF[aa]+(i*3072*2),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=16; // 8 samples @ 15.36 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
+            dftlen=512;
+            dft(DFT_512,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_512,prach2+1024,rxsigF[aa]+1024,1);
+              reps++;
+            }
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_512,prach2+1024*2,rxsigF[aa]+1024*2,1);
+              dft(DFT_512,prach2+1024*3,rxsigF[aa]+1024*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_512,prach2+1024*4,rxsigF[aa]+1024*4,1);
+              dft(DFT_512,prach2+1024*5,rxsigF[aa]+1024*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_512,prach2+(1024*i),rxsigF[aa]+(1024*i),1);
+              reps+=6;
+            }
+          }
+          break;
+
+        case 30720:
+          // 20, 25, 30 MHz @ 30.72 Ms/s
+          prach2 = prach[aa] + (2*Ncp); // Ncp is for 30.72 Ms/s, so just multiply by 2 for I/Q
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=24576;
+              dft(DFT_24576,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_24576,prach2+49152,rxsigF[aa]+49152,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_24576,prach2+(49152*2),rxsigF[aa]+(49152*2),1);
+              dft(DFT_24576,prach2+(49152*3),rxsigF[aa]+(49152*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=6144;
+              for (int i=0;i<4;i++) dft(DFT_6144,prach2+(i*6144*2),rxsigF[aa]+(i*6144*2),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=32; // 16 samples @ 30.72 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
+            dftlen=1024;
+            dft(DFT_1024,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_1024,prach2+2048,rxsigF[aa]+2048,1);
+              reps++;
+            }
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_1024,prach2+2048*2,rxsigF[aa]+2048*2,1);
+              dft(DFT_1024,prach2+2048*3,rxsigF[aa]+2048*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_1024,prach2+2048*4,rxsigF[aa]+2048*4,1);
+              dft(DFT_1024,prach2+2048*5,rxsigF[aa]+2048*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_1024,prach2+(2048*i),rxsigF[aa]+(2048*i),1);
+              reps+=6;
+            }
+          }
+          break;
+
         case 61440:
           // 40, 50, 60 MHz @ 61.44 Ms/s
           prach2 = prach[aa] + (4*Ncp); // Ncp is for 30.72 Ms/s, so multiply by 2 for I/Q, and 2 to bring to 61.44 Ms/s
