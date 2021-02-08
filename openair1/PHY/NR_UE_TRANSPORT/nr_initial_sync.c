@@ -309,6 +309,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
         // every 7*(1<<mu) symbols there is a different prefix length (38.211 5.3.1)
         int n_symb_prefix0 = (ue->symbol_offset/(7*(1<<mu)))+1;
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        sync_pos_frame += fp->nb_prefix_samples / 8; // shift sync position ahead by 1/8th of cyclic prefix, same as in nr_adjust_synch_ue()
         if (ue->ssb_offset < sync_pos_frame)
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
         else
