@@ -515,7 +515,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int num_sdus, offset = 0, preambleTransMax;
+  int num_sdus, offset = 0;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
@@ -590,9 +590,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
       }
 
-      // Msg3 was initialized with TBS_max bytes because the mac->RA_Msg3_size will only be known after
+      // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
       // receiving Msg2 (which contains the Msg3 resource reserve).
-      // Msg3 will be transmitted with mac->RA_Msg3_size bytes, removing unnecessary 0s.
+      // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
       mac->ulsch_pdu.Pdu_size = TBS_max;
       memcpy(mac->ulsch_pdu.payload, prach_resources->Msg3, TBS_max);
 

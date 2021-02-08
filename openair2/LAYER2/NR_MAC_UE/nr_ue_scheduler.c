@@ -889,32 +889,41 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
 
-          if (IS_SOFTMODEM_NOS1){
-            // Getting IP traffic to be transmitted
-            data_existing = nr_ue_get_sdu(mod_id,
-                                          cc_id,
-                                          frame_tx,
-                                          slot_tx,
-                                          0,
-                                          ulsch_input_buffer,
-                                          TBS_bytes,
-                                          &access_mode);
-          }
+          if (ra->ra_state == WAIT_RAR){
+            memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
+            printf("\n");
+            LOG_I(MAC,"[RAPROC] Msg3 to be transmitted:\n");
+            for (int k = 0; k < TBS_bytes; k++) {
+              LOG_I(MAC,"(%i): 0x%x\n",k,mac->ulsch_pdu.payload[k]);
+            }
+            printf("\n");
+          } else {
+            if (IS_SOFTMODEM_NOS1){
+              // Getting IP traffic to be transmitted
+              data_existing = nr_ue_get_sdu(mod_id,
+                                            cc_id,
+                                            frame_tx,
+                                            slot_tx,
+                                            0,
+                                            ulsch_input_buffer,
+                                            TBS_bytes,
+                                            &access_mode);
+            }
 
-          //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-          if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-            //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-            //and block this traffic from being forwarded to the upper layers at the gNB
-            LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
+            //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+            if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+              //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+              //and block this traffic from being forwarded to the upper layers at the gNB
+              LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
 
-            //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-            //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-            //have a valid LCID (nr_process_mac_pdu function)
-            ulsch_input_buffer[0] = 0x31;
+              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+              //have a valid LCID (nr_process_mac_pdu function)
+              ulsch_input_buffer[0] = 0x31;
 
-            for (int i = 1; i < TBS_bytes; i++) {
-              ulsch_input_buffer[i] = (unsigned char) rand();
-              //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+              for (int i = 1; i < TBS_bytes; i++) {
+                ulsch_input_buffer[i] = (unsigned char) rand();
+              }
             }
           }
 
