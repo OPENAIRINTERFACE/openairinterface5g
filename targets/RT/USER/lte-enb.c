@@ -1155,7 +1155,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
 
 
 void init_eNB_afterRU(void) {
-  int inst,CC_id,ru_id,i,aa;
+  int inst,CC_id,i,aa;
   PHY_VARS_eNB *eNB;
   LOG_I(PHY,"%s() RC.nb_inst:%d\n", __FUNCTION__, RC.nb_inst);
 
@@ -1165,13 +1165,14 @@ void init_eNB_afterRU(void) {
     for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
       LOG_I(PHY,"RC.nb_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.eNB[inst][CC_id]);
       eNB                                  =  RC.eNB[inst][CC_id];
-      phy_init_lte_eNB(eNB,0,0);
-
-      // map antennas and PRACH signals to eNB RX
-      if (0) AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
-
+     // map antennas and PRACH signals to eNB RX
       LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
       eNB->frame_parms.nb_antennas_rx       = 0;
+      LOG_I(PHY,"eNB->num_RU:%d\n", eNB->num_RU);     
+      AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is      zero\n",eNB->Mod_id);
+      for (int ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) 
+         eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+      phy_init_lte_eNB(eNB,0,0);
       LOG_I(PHY,"Overwriting eNB->prach_vars.rxsigF[0]:%p\n", eNB->prach_vars.rxsigF[0]);
       eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
 
@@ -1180,10 +1181,8 @@ void init_eNB_afterRU(void) {
         eNB->prach_vars_br.rxsigF[ce_level] = (int16_t **)malloc16(64*sizeof(int16_t *));
       }
 
-      LOG_I(PHY,"eNB->num_RU:%d\n", eNB->num_RU);
 
-      for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
-        eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+      for (int ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
 
         AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
                     "RU %d : common.rxdataF is NULL\n",
@@ -1231,7 +1230,7 @@ void init_eNB_afterRU(void) {
     init_eNB_proc(inst);
   }
 
-  for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+  for (int ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
     RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
     RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_eNB;
