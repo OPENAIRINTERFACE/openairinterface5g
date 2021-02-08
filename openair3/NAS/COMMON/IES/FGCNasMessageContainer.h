@@ -19,30 +19,36 @@
  *      contact@openairinterface.org
  */
 
-/* \file mac.h
- * \brief MAC data structures, constant, and function prototype
- * \author R. Knopp, K.H. HSU
- * \date 2018
- * \version 0.1
- * \company Eurecom / NTUST
- * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
- * \note
- * \warning
- */
+/*! \file FGCNasMessageContainer.h
 
-#ifndef __LAYER2_NR_UE_MAC_DEFS_H__
-#define __LAYER2_NR_UE_MAC_DEFS_H__
+\brief security mode complete procedures for gNB
+\author Yoshio INOUE, Masayuki HARADA
+\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+\date 2020
+\version 0.1
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
-/*!\brief UE layer 2 status */
-typedef enum {
-    UE_CONNECTION_OK = 0,
-    UE_CONNECTION_LOST,
-    UE_PHY_RESYNCH,
-    UE_PHY_HO_PRACH
-} NR_UE_L2_STATE_t;
+#include "OctetString.h"
 
-#endif /*__LAYER2_NR_UE_MAC_DEFS_H__ */
+#ifndef FGC_NAS_MESSAGE_CONTAINER_H_
+#define FGC_NAS_MESSAGE_CONTAINER_H_
+
+#define FGC_NAS_MESSAGE_CONTAINER_MINIMUM_LENGTH 4
+#define FGC_NAS_MESSAGE_CONTAINER_MAXIMUM_LENGTH 65535
+
+typedef struct FGCNasMessageContainer_tag {
+  OctetString nasmessagecontainercontents;
+} FGCNasMessageContainer;
+
+int encode_fgc_nas_message_container(FGCNasMessageContainer *nasmessagecontainer, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+int decode_fgc_nas_message_container(FGCNasMessageContainer *nasmessagecontainer, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+void dump_fgc_nas_message_container_xml(FGCNasMessageContainer *nasmessagecontainer, uint8_t iei);
+
+#endif /* FGC NAS MESSAGE CONTAINER_H_ */
+

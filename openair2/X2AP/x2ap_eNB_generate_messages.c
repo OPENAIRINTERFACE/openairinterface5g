@@ -1675,7 +1675,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     for (int i=0;i<e_rabs_tobeadded;i++) {
     	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs = (X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t *)calloc(1,sizeof(X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t));
     	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->id = X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReq_Item;
-    	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->criticality = X2AP_Criticality_ignore;
+        e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->criticality = X2AP_Criticality_reject;
     	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.present = X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs__value_PR_E_RABs_ToBeAdded_SgNBAddReq_Item;
     	e_RABS_ToBeAdded_SgNBAddReq_Item = &e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.choice.E_RABs_ToBeAdded_SgNBAddReq_Item;
       {
