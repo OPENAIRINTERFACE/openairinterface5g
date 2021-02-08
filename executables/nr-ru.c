@@ -125,12 +125,14 @@ typedef struct processingData_L1 {
   int frame_tx;
   int slot_rx;
   int slot_tx;
+  openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
 } processingData_L1_t;
 
 typedef struct processingData_RU {
   int frame_tx;
   int slot_tx;
+  openair0_timestamp timestamp_tx;
   RU_t *ru;
 } processingData_RU_t;
 
@@ -1330,7 +1332,7 @@ void ru_tx_func(void *param) {
 
   if(!emulate_rf) {
     // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,slot_tx,ru->proc.timestamp_tx);
+    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,slot_tx,info->timestamp_tx);
 
     if (ru->fh_north_out) ru->fh_north_out(ru);
   } else {
@@ -1516,6 +1518,7 @@ void tx_func(void *param) {
   notifiedFIFO_elt_t *res; 
   syncMsg->frame_tx = frame_tx;
   syncMsg->slot_tx = slot_tx;
+  syncMsg->timestamp_tx = info->timestamp_tx;
   syncMsg->ru = gNB->RU_list[0];
 
   res = tryPullTpool(gNB->resp_RU_tx, gNB->threadPool_RU_tx);
@@ -1639,6 +1642,7 @@ void rx_func(void *param) {
   syncMsg->slot_rx = slot_rx;
   syncMsg->frame_tx = frame_tx;
   syncMsg->slot_tx = slot_tx;
+  syncMsg->timestamp_tx = info->timestamp_tx;
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
     res = tryPullTpool(gNB->resp_L1_tx, gNB->threadPool_L1_tx);
@@ -1903,6 +1907,7 @@ void *ru_thread( void *param ) {
     syncMsg->slot_rx = proc->tti_rx;
     syncMsg->frame_tx = proc->frame_tx;
     syncMsg->slot_tx = proc->tti_tx;
+    syncMsg->timestamp_tx = proc->timestamp_tx;
 
     // check if previous L1 slot processing is finished
     res = pullTpool(gNB->resp_L1, gNB->threadPool_L1);
