@@ -1072,7 +1072,6 @@ void handle_nfapi_hi_dci0_hi_pdu(
     nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
 }
 
-
 void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
                              int frame,
                              int subframe,
@@ -1131,4 +1130,3 @@ int l1_north_init_eNB(void) {
 
 void init_eNB_afterRU(void) {
 }
-

@@ -234,10 +234,10 @@ if(NFAPI_MODE != NFAPI_MODE_VNF)
     }
   }
 
-// if(NFAPI_MODE != NFAPI_MONOLITHIC && number_ul_tti_pdu>0)
-// {
-//   oai_nfapi_ul_tti_req(UL_tti_req);
-// }
+//   if(NFAPI_MODE != NFAPI_MONOLITHIC && number_ul_tti_pdu>0)
+//   {
+//     oai_nfapi_ul_tti_req(UL_tti_req);
+//   }
  
 //  if (NFAPI_MODE != NFAPI_MONOLITHIC && Sched_INFO->UL_dci_req->numPdus!=0)
 //   {
@@ -245,12 +245,13 @@ if(NFAPI_MODE != NFAPI_MODE_VNF)
 //   }//Only DL in nFAPI mode
  
   if (NFAPI_MODE != NFAPI_MONOLITHIC) 
-  { if(Sched_INFO->DL_req->dl_tti_request_body.nPDUs>0)
-  {
-    Sched_INFO->DL_req->SFN = frame;
-    Sched_INFO->DL_req->Slot = slot;
-    oai_nfapi_dl_tti_req(Sched_INFO->DL_req);
-  }
+  { 
+    if(Sched_INFO->DL_req->dl_tti_request_body.nPDUs>0)
+    {
+      Sched_INFO->DL_req->SFN = frame;
+      Sched_INFO->DL_req->Slot = slot;
+      oai_nfapi_dl_tti_req(Sched_INFO->DL_req);
+    }
     if (Sched_INFO->TX_req->Number_of_PDUs > 0)
     {
        oai_nfapi_tx_data_req(Sched_INFO->TX_req);

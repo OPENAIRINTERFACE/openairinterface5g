@@ -37,3 +37,12 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
   uint8_t                         *inde_list
 );
+
+int
+nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+);
+
+#endif

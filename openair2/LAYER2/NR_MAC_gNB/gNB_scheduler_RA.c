@@ -612,8 +612,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   LOG_I(MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
   uint16_t *vrb_map_UL =
-      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * 275];
-  const uint16_t bwpSize = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
+  const uint16_t bwpSize = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   /* search 18 free RBs */
   int rbSize = 0;
   int rbStart = 0;
@@ -669,7 +669,6 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
   nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
-  //pusch_pdu = (nfapi_nr_pusch_pdu_t *) malloc(sizeof(nfapi_nr_pusch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
   AssertFatal(ra->secondaryCellGroup,
@@ -695,10 +694,10 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = ra->rnti;
   pusch_pdu->handle = 0;
-  int abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-  int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-  int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
-  int ibwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
+  int abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int ibwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
     pusch_pdu->bwp_start = abwp_start;
   else
@@ -788,7 +787,7 @@ void nr_generate_Msg2(module_id_t module_idP,
   }
   else { // on configured BWP or initial LDBWP, bandwidth parameters in DCI correspond size of initialBWP
     locationAndBandwidth = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth;
-    dci10_bw = NRRIV2BW(locationAndBandwidth,275); 
+    dci10_bw = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE); 
   }
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
@@ -841,8 +840,8 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->pduIndex = 0;
 
 
-    pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
@@ -1026,7 +1025,7 @@ void nr_fill_rar(uint8_t Mod_idP,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
-  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u\n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index);
+  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u TA command %d \n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index, ra->timing_offset);
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;

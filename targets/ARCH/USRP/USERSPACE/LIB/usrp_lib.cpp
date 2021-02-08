@@ -72,8 +72,6 @@
 int gpio789=0;
 extern int usrp_tx_thread;
 
-extern int usrp_tx_thread;
-
 
 typedef struct {
 

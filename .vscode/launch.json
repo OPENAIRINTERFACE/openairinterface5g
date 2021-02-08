@@ -4,157 +4,25 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
-    // {
-    //     "type": "extensionHost",
-    //     "request": "launch",
-    //     "name": "Launch Extension",
-    //     "runtimeExecutable": "${execPath}",
-    //     "args": [
-    //         "--extensionDevelopmentPath=${workspaceFolder}"
-    //     ],
-    //     "outFiles": [
-    //         "${workspaceFolder}/out/**/*.js"
-    //     ],
-    //     "preLaunchTask": "npm"
-    // },
         {
-            "name": "(gdb) Launch VNF",
+            "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/spclab/nfapimode/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
-            "args": ["-O ",
-                    "/home/spclab/nfapimode/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band78.tm1.106PRB.nfapi.conf",
-                    "--nfapi","2","--phy-test","--noS1"],
-                "stopAtEntry": false,
-                "cwd": "${workspaceFolder}",
-                "environment": [],
-                "externalConsole": false,
-                "MIMode": "gdb",
-                "miDebuggerPath": "/usr/bin/gdb",
-                "setupCommands": [
-                    {
-                        "description": "Enable pretty-printing for gdb",
-                        "text": "-enable-pretty-printing",
-                        "ignoreFailures": true
-                    }
-                ]
-            },
-            {
-                "name": "(gdb) Launch PNF",
-                "type": "cppdbg",
-                "request": "launch",
-                "program": "/home/spclab/nfapimode/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
-                "args": ["-E",
-                        "-O ",
-                        "/home/spclab/nfapimode/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/oaiL1.nfapi.usrpx300.conf",
-                        "--nfapi","1"],
-                    "stopAtEntry": false,
-                    "cwd": "${workspaceFolder}",
-                    "environment": [],
-                    "externalConsole": false,
-                    "MIMode": "gdb",
-                    "miDebuggerPath": "/usr/bin/gdb",
-                    "setupCommands": [
-                        {
-                            "description": "Enable pretty-printing for gdb",
-                            "text": "-enable-pretty-printing",
-                            "ignoreFailures": true
-                        }
-                    ]
-            }
-            {
-                "name": "(rfsim) PNF",
-                "type": "cppdbg",
-                "request": "launch",
-                "program": "/home/glab/NR_nfapi/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
-                "args": [
-                    "-O",
-                    "/home/glab/NR_nfapi/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/oaiL1.nfapi.usrpx300.conf",
-                    "--pnf",
-                    "--parallel-config",
-                    "PARALLEL_SINGLE_THREAD",
-                    "--rfsim",
-                    "--rfsimulator.serveraddr",
-                    "server"],
-                    "stopAtEntry": false,
-                    "cwd": "${workspaceFolder}",
-                    "environment": [],
-                    "externalConsole": false,
-                    "MIMode": "gdb",
-                    "miDebuggerPath": "/usr/bin/gdb",
-                    "setupCommands": [
-                        {
-                            "description": "Enable pretty-printing for gdb",
-                            "text": "-enable-pretty-printing",
-                            "ignoreFailures": true
-                        }
-                    ]
-            }
-            
-
-            {
-                "name": "(gdb) Launch UE",
-                "type": "cppdbg",
-                "request": "launch",
-                "program": "/home/spclab/nfapimode/openairinterface5g/cmake_targets/ran_build/build/nr-uesoftmodem",
-                
-                
-                // "/home/glab/NR_nfapi/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
-                // "args": [,
-                //         "-O ",
-                //         "/home/glab/NR_nfapi/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf",
-                //         "--parallel-config",
-                //         "PARALLEL_SINGLE_THREAD",
-                //         "--rfsim",
-                //         "--phy-test"],
-                "args":["--numerology","1","-r", "106", "-C" ,"3510000000" ,"--rfsim",
-                    "--rfsimulator.serveraddr",
-                        "127.0.0.1" ],
-                    "stopAtEntry": false,
-                    "cwd": "${workspaceFolder}",
-                    "environment": [],
-                    "externalConsole": false,
-                    "MIMode": "gdb",
-                    "miDebuggerPath": "/usr/bin/gdb",
-                    "setupCommands": [
-                        {
-                            "description": "Enable pretty-printing for gdb",
-                            "text": "-enable-pretty-printing",
-                            "ignoreFailures": true
-                        }
-                    ]
-            }
-            {
-                "name": "(rfsim) Launch GNB",
-                "type": "cppdbg",
-                "request": "launch",
-                "program": "/home/spclab/nfapimode/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
-                "args":["-O",
-                    "/home/spclab/nfapimode/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf",
-                "--rfsim",
-                "--rfsimulator.serveraddr",
-                    "server",
-                "--phy-test"],
-                    "stopAtEntry": false,
-                    "cwd": "${workspaceFolder}",
-                    "environment": [],
-                    "externalConsole": false,
-                    "MIMode": "gdb",
-                    "miDebuggerPath": "/usr/bin/gdb",
-                    "setupCommands": [
-                        {
-                            "description": "Enable pretty-printing for gdb",
-                            "text": "-enable-pretty-printing",
-                            "ignoreFailures": true
-                        }
-                    ]
-            }
-        ]
-    }
-
-    // PNF: oaiL1.nfapi.usrpx300.conf
-    // /home/glab/NR_nfapi/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem -E -O /home/glab/NR_nfapi/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/oaiL1.nfapi.usrpx300.conf 1
-
-    // VNF: rcc.band78.tm1.106PRB.nfapi.conf
-    // /home/glab/NR_nfapi/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem -E -O /home/glab/NR_nfapi/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band78.tm1.106PRB.nfapi.conf 2
+            "program": "enter program name, for example ${workspaceFolder}/a.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/path/to/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

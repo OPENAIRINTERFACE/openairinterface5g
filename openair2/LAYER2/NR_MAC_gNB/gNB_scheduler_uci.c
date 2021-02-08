@@ -40,9 +40,9 @@ void nr_schedule_pucch(int Mod_idP,
                        int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP) {
-
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
+  
   for (int k=0; k<nr_ulmix_slots; k++) {
     for (int l=0; l<2; l++) {
       NR_sched_pucch *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
@@ -62,16 +62,11 @@ void nr_schedule_pucch(int Mod_idP,
                   future_ul_tti_req->SFN,
                   future_ul_tti_req->Slot,
                   curr_pucch->frame,
-                  curr_pucch->ul_slot);
-      
-      nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
+                  curr_pucch->ul_slot);   
       future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-      
-      //future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-
-      /*Seems to cause a segmentation fault in the VNF while running nFAPI. If size of pucch pdu is needed, 
-      use the size function on the pdu structure directly. */
-
+      future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+      nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
+      memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
       future_ul_tti_req->n_pdus += 1;
       LOG_D(MAC,
             "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d, k %d l %d\n",
@@ -84,11 +79,10 @@ void nr_schedule_pucch(int Mod_idP,
             O_csi,
             k, l);
 
-      if(NFAPI_MODE == NFAPI_MONOLITHIC)
-      memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
+  
      
-      if(NFAPI_MODE == NFAPI_MODE_VNF)
-      pucch_pdu = (nfapi_nr_pucch_pdu_t*) calloc(1,sizeof(nfapi_nr_pucch_pdu_t));
+      // if(NFAPI_MODE == NFAPI_MODE_VNF)
+      // pucch_pdu = (nfapi_nr_pucch_pdu_t*) calloc(1,sizeof(nfapi_nr_pucch_pdu_t));
       NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
       nr_configure_pucch(pucch_pdu,
                          scc,

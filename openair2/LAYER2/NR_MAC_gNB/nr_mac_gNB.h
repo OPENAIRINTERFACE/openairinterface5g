@@ -473,7 +473,6 @@ typedef struct {
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
-
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -526,6 +525,7 @@ typedef struct gNB_MAC_INST_s {
 
   /// UL handle
   uint32_t ul_handle;
+  //UE_info_t UE_info;
 
   // MAC function execution peformance profiler
   /// processing time of eNB scheduler

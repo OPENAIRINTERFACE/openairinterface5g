@@ -125,6 +125,32 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+int
+gtpv1u_create_ngu_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
+  return 0;
+}
+
+int
+gtpv1u_update_ngu_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti
+){
+  return 0;
+}
+
+int
+nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+){
+  return 0;
+}
+
 void config_common(int Mod_idP,
                    int pdsch_AntennaPorts, 
 		   NR_ServingCellConfigCommon_t *scc
@@ -1002,7 +1028,6 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               normal_txrx,
                                dlsch_threads);
         
         //printf("dlsim round %d ends\n",round);

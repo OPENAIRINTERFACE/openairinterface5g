@@ -20,13 +20,12 @@
  */
 
 /*! \file mac.h
-* \brief MAC data structures, constant, and function prototype
+* \brief common MAC function prototypes
 * \author Navid Nikaein and Raymond Knopp, WIE-TAI CHEN
 * \date Dec. 2019
 * \version 0.1
 * \company Eurecom
 * \email raymond.knopp@eurecom.fr
-
 */
 
 #ifndef __LAYER2_NR_MAC_COMMON_H__
@@ -37,128 +36,6 @@
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
 #include "openair1/PHY/impl_defs_nr.h"
-
-#define TABLE_38213_13_1_NUM_INDEXES 15
-#define TABLE_38213_13_2_NUM_INDEXES 14
-#define TABLE_38213_13_3_NUM_INDEXES 9
-#define TABLE_38213_13_4_NUM_INDEXES 16
-#define TABLE_38213_13_5_NUM_INDEXES 9
-#define TABLE_38213_13_6_NUM_INDEXES 10
-#define TABLE_38213_13_7_NUM_INDEXES 12
-#define TABLE_38213_13_8_NUM_INDEXES 8
-#define TABLE_38213_13_9_NUM_INDEXES 4
-#define TABLE_38213_13_10_NUM_INDEXES 8
-#define TABLE_38213_13_11_NUM_INDEXES 16
-#define TABLE_38213_13_12_NUM_INDEXES 14
-
-
-// ===============================================
-// SSB to RO mapping public defines and structures
-// ===============================================
-#define MAX_SSB_PER_RO (16) // Maximum number of SSBs that can be mapped to a single RO
-#define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
-#define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
-
-typedef enum frequency_range_e {
-  FR1 = 0,
-  FR2
-} frequency_range_t;
-
-// PRACH occasion details
-typedef struct prach_occasion_info {
-  uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
-  uint8_t fdm; // 0-7 (possible values of msg1-FDM: 1, 2, 4 or 8)
-  uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
-  uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
-  uint8_t mapped_ssb_idx[MAX_SSB_PER_RO]; // List of mapped SSBs
-  uint8_t nb_mapped_ssb;
-  uint16_t format; // RO preamble format
-} prach_occasion_info_t;
-
-// PRACH occasion slot details
-// A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
-typedef struct prach_occasion_slot {
-  prach_occasion_info_t prach_occasion[MAX_TDM][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot
-  uint8_t nb_of_prach_occasion_in_time;
-  uint8_t nb_of_prach_occasion_in_freq;
-} prach_occasion_slot_t;
-
-// ========================================
-
-
-typedef enum {
-  NR_DL_DCI_FORMAT_1_0 = 0,
-  NR_DL_DCI_FORMAT_1_1,
-  NR_DL_DCI_FORMAT_2_0,
-  NR_DL_DCI_FORMAT_2_1,
-  NR_DL_DCI_FORMAT_2_2,
-  NR_DL_DCI_FORMAT_2_3,
-  NR_UL_DCI_FORMAT_0_0,
-  NR_UL_DCI_FORMAT_0_1
-} nr_dci_format_t;
-
-typedef enum {
-  NR_RNTI_new = 0,
-  NR_RNTI_C,
-  NR_RNTI_RA,
-  NR_RNTI_P,
-  NR_RNTI_CS,
-  NR_RNTI_TC,
-  NR_RNTI_SP_CSI,
-  NR_RNTI_SI,
-  NR_RNTI_SFI,
-  NR_RNTI_INT,
-  NR_RNTI_TPC_PUSCH,
-  NR_RNTI_TPC_PUCCH,
-  NR_RNTI_TPC_SRS,
-  NR_RNTI_MCS_C,
-} nr_rnti_type_t;
-
-typedef enum subcarrier_spacing_e {
-  scs_15kHz  = 0x1,
-  scs_30kHz  = 0x2,
-  scs_60kHz  = 0x4,
-  scs_120kHz = 0x8,
-  scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
-typedef enum channel_bandwidth_e {
-  bw_5MHz   = 0x1,
-  bw_10MHz  = 0x2,
-  bw_20MHz  = 0x4,
-  bw_40MHz  = 0x8,
-  bw_80MHz  = 0x16,
-  bw_100MHz = 0x32
-} channel_bandwidth_t;
-
-typedef enum nr_ssb_and_cset_mux_pattern_type_e {
-  NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
-  NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
-  NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
-} nr_ssb_and_cset_mux_pattern_type_t;
-
-typedef enum {
-  SFN_C_MOD_2_EQ_0,
-  SFN_C_MOD_2_EQ_1,
-  SFN_C_IMPOSSIBLE
-} SFN_C_TYPE;
-
-typedef struct Type0_PDCCH_CSS_config_s {
-  int32_t num_rbs;
-  int32_t num_symbols;
-  int32_t rb_offset; // Offset from SSB RB0
-  uint32_t type0_pdcch_ss_mux_pattern;
-  uint16_t frame;
-  SFN_C_TYPE sfn_c;
-  uint32_t n_c;
-  uint32_t n_0;
-  uint32_t number_of_search_space_per_slot;
-  uint32_t first_symbol_index;
-  uint32_t search_space_duration;
-  uint32_t ssb_length;
-  uint32_t ssb_index;
-  uint32_t cset_start_rb;
-} NR_Type0_PDCCH_CSS_config_t;
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
@@ -266,5 +143,19 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
 void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
+/* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
+@param    *pusch_config,   pointer to pusch config
+@param    *ubwp            pointer to uplink bwp
+@param    *dci_format      pointer to dci format
+@param    rnti_type        rnti type
+@param    configuredGrant  indicates whether a configured grant was received or not
+@returns                   transformPrecoding value */
+uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
+                               NR_PUSCH_Config_t *pusch_config,
+                               NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant);
 
 #endif

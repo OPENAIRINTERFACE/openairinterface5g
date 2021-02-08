@@ -18,48 +18,15 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#include "executables/thread-common.h"
+
 #include "executables/nr-uesoftmodem.h"
-
-#include "NR_MAC_UE/mac.h"
-//#include "RRC/LTE/rrc_extern.h"
-#include "PHY_INTERFACE/phy_interface_extern.h"
-
-#undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
-//#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
-#include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/MODULATION/modulation_UE.h"
 #include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
-
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
-
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
-#include "common/utils/LOG/log.h"
-#include "common/utils/system.h"
-#include "common/utils/LOG/vcd_signal_dumper.h"
-#include "executables/nr-softmodem.h"
-
-#include "T.h"
-
-#ifdef XFORMS
-  #include "PHY/TOOLS/nr_phy_scope.h"
-
-  extern char do_forms;
-#endif
-
-// Missing stuff?
-int next_ra_frame = 0;
-module_id_t next_Mod_id = 0;
-
-extern double cpuf;
-//static  nfapi_nr_config_request_t config_t;
-//static  nfapi_nr_config_request_t* config =&config_t;
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -124,15 +91,11 @@ extern double cpuf;
   #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
 #endif
 
-#define FRAME_PERIOD    100000000ULL
-#define DAQ_PERIOD      66667ULL
-
 typedef enum {
-  pss=0,
-  pbch=1,
-  si=2
+  pss = 0,
+  pbch = 1,
+  si = 2
 } sync_mode_t;
-
 
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
@@ -264,7 +227,7 @@ static void UE_synch(void *arg) {
       double rx_gain_off = 0;
       nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
-      if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
+      if (nr_initial_sync(&syncD->proc, UE, 2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
@@ -400,26 +363,17 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
       nr_downlink_indication_t dl_indication;
-      memset((void*)&dl_indication, 0, sizeof(dl_indication));
-
-      dl_indication.module_id = UE->Mod_id;
-      dl_indication.gNB_index = gNB_id;
-      dl_indication.cc_id     = UE->CC_id;
-      dl_indication.frame     = proc->frame_rx;
-      dl_indication.slot      = proc->nr_slot_rx;
-      dl_indication.thread_id = proc->thread_id;
-
+      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, gNB_id);
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
 
   // Process Rx data for one sub-frame
 #ifdef UE_SLOT_PARALLELISATION
-    phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+    phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, UE->mode,get_nrUE_params()->nr_dlsch_parallel);
-    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_slot_rx, (rdtsc()-a)/3500);
-    //printf(">>> nr_ue_pdcch_procedures ended\n");
+    phy_procedures_nrUE_RX(UE, proc, gNB_id, get_nrUE_params()->nr_dlsch_parallel);
+    LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
     if(IS_SOFTMODEM_NOS1){
@@ -429,23 +383,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       pdcp_run(&ctxt);
     }
   }
-
-  // no UL for now
-  /*
-  if (UE->mac_enabled==1) {
-    //  trigger L2 to run ue_scheduler thru IF module
-    //  [TODO] mapping right after NR initial sync
-    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
-      UE->ul_indication.module_id = 0;
-      UE->ul_indication.gNB_index = 0;
-      UE->ul_indication.cc_id = 0;
-      UE->ul_indication.frame = proc->frame_rx;
-      UE->ul_indication.slot = proc->nr_slot_rx;
-      UE->ul_indication.thread_id = proc->thread_id;
-      UE->if_inst->ul_indication(&UE->ul_indication);
-    }
-  }
-  */
 
 }
 

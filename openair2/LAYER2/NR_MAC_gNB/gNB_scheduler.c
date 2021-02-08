@@ -291,8 +291,7 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   return (bitmap >> slot) & 0x01;
 }
 
-void 
-gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
   
@@ -362,7 +361,7 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 3);//In nFAPI mode dlsch needs to be scheduled in even slots
+  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 3); //In nFAPI mode dlsch needs to be scheduled in even slots for now
   const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
@@ -385,6 +384,7 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
 
+
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
@@ -405,7 +405,6 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     const frame_t f = (frame + (slot + n_slots_ahead) / nr_slots_per_frame[*scc->ssbSubcarrierSpacing]) % 1024;
     const sub_frame_t s = (slot + n_slots_ahead) % nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     schedule_nr_prach(module_idP, f, s);
-    
   }
 
   // This schedule SR
@@ -428,13 +427,18 @@ gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     }
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }
+
   // This schedules the DCI for Downlink and PDSCH
   if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd)
       && slot < 10) {
     nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
   }
+
+
   if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
+
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 }

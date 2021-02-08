@@ -66,7 +66,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
                           unsigned char drx_cmd,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding) {
-    gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
   unsigned char *dlsch_buffer_ptr = sdus_payload;
   uint8_t last_size = 0;
@@ -457,8 +457,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   const int current_harq_pid = slot % num_slots_per_tdd;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
   NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   if (harq->round != 0) { /* retransmission */
     sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
@@ -715,8 +715,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
         // fill dlsch_buffer with random data
         for (int i = 0; i < TBS; i++)
-        mac_sdus[i] = (unsigned char) (lrand48()&0xff);
-        
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
         sdu_lcids[0] = 0x3f; // DRB
         sdu_lengths[0] = TBS - ta_len - 3;
         header_length_total += 2 + (sdu_lengths[0] >= 256);

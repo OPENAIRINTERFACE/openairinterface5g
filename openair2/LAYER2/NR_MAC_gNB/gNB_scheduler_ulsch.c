@@ -230,7 +230,6 @@ void nr_process_mac_pdu(
                                  1,
                                  NULL);
 
-
             break;
 
         default:
@@ -358,6 +357,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
     for (int i = 0; i < sdu_lenP ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
@@ -365,6 +365,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 	  printf("%02x ",(unsigned char)sduP[i]);
     }
     printf("\n");
+
 #endif
 
     if (sduP != NULL){
@@ -507,7 +508,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
   uint16_t rbStart = 0;
   while (vrb_map_UL[rbStart]) rbStart++;
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbSize = 1;
   while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize])
     rbSize++;
@@ -676,8 +677,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->handle = 0; //not yet used
 
     /* FAPI: BWP */
-    pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pusch_pdu->subcarrier_spacing = sched_ctrl->active_ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
 
@@ -830,4 +831,3 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(sched_pusch, 0, sizeof(*sched_pusch));
   }
 }
-
