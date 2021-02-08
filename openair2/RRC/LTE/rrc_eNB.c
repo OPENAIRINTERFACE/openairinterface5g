@@ -4665,11 +4665,20 @@ rrc_eNB_process_MeasurementReport(
 
         msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ);
         memset(&(X2AP_ENDC_SGNB_ADDITION_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_addition_req_t));
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.encryption_algorithms = ue_context_pP->ue_context.nr_security.ciphering_algorithms;
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.integrity_algorithms = ue_context_pP->ue_context.nr_security.integrity_algorithms;
+
+        memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).kgnb, ue_context_pP->ue_context.nr_security.kgNB, 32);
+
         memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
+
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
