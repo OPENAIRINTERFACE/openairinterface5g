@@ -301,13 +301,10 @@ void rx_nr_prach_ru(RU_t *ru,
 
     // do DFT
     if (mu==1) {
-      if (fp->N_RB_UL <= 100)
-        AssertFatal(1==0,"N_RB_UL %d not support for NR PRACH yet\n",fp->N_RB_UL);
-      else if (fp->N_RB_UL < 137) {
-        if (fp->threequarter_fs==0) {
-          //40 MHz @ 61.44 Ms/s
-          //50 MHz @ 61.44 Ms/s
-          prach2 = prach[aa] + (Ncp<<2); // Ncp is for 30.72 Ms/s, so multiply by 2 for I/Q, and 2 to bring to 61.44 Ms/s
+      switch(fp->samples_per_subframe) {
+        case 61440:
+          // 40, 50, 60 MHz @ 61.44 Ms/s
+          prach2 = prach[aa] + (4*Ncp); // Ncp is for 30.72 Ms/s, so multiply by 2 for I/Q, and 2 to bring to 61.44 Ms/s
           if (prach_sequence_length == 0) {
             if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
               dftlen=49152;
@@ -327,10 +324,9 @@ void rx_nr_prach_ru(RU_t *ru,
               for (int i=0;i<4;i++) dft(DFT_12288,prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
               reps=4;
             }
-          }// 839 sequence
-          else {
-            if (prachStartSymbol == 0)
-              prach2+=64; // 32 samples @ 61.44 Ms/s in first symbol of each half subframe (15/30 kHz only)
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=64; // 32 samples @ 61.44 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
             dftlen=2048;
             dft(DFT_2048,prach2,rxsigF[aa],1);
             if (prachFormat != 9/*C0*/) {
@@ -352,15 +348,15 @@ void rx_nr_prach_ru(RU_t *ru,
               reps+=6;
             }
           }
-        } else { // threequarter sampling
-          //	40 MHz @ 46.08 Ms/s
+          break;
+
+        case 46080:
+          // 40 MHz @ 46.08 Ms/s
           prach2 = prach[aa] + (3*Ncp); // 46.08 is 1.5 * 30.72, times 2 for I/Q
           if (prach_sequence_length == 0) {
-            AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
             if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
               dftlen=36864;
               dft(DFT_36864,prach2,rxsigF[aa],1);
-	      reps++;
             }
             if (prachFormat == 1 || prachFormat == 2) {
               dft(DFT_36864,prach2+73728,rxsigF[aa]+73728,1);
@@ -374,10 +370,11 @@ void rx_nr_prach_ru(RU_t *ru,
             if (prachFormat == 3) {
               dftlen=9216;
               for (int i=0;i<4;i++) dft(DFT_9216,prach2+(i*9216*2),rxsigF[aa]+(i*9216*2),1);
-                reps=4;
+              reps=4;
             }
-          } else {
+          } else { // 839 sequence
             if (prachStartSymbol == 0) prach2+=48; // 24 samples @ 46.08 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
             dftlen=1536;
             dft(DFT_1536,prach2,rxsigF[aa],1);
             if (prachFormat != 9/*C0*/) {
@@ -398,14 +395,12 @@ void rx_nr_prach_ru(RU_t *ru,
               for (int i=6;i<12;i++) dft(DFT_1536,prach2+(3072*i),rxsigF[aa]+(3072*i),1);
               reps+=6;
             }
-          } // short format
-        } // 3/4 sampling
-      } // <=50 MHz BW
-      else if (fp->N_RB_UL <= 273) {
-        if (fp->threequarter_fs==0) {
-          prach2 = prach[aa] + (Ncp<<3);
-          //80,90,100 MHz @ 122.88 Ms/s
+          }
+          break;
 
+        case 122880:
+          // 70, 80, 90, 100 MHz @ 122.88 Ms/s
+          prach2 = prach[aa] + (8*Ncp);
           if (prach_sequence_length == 0) {
             if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
               dftlen=98304;
@@ -425,8 +420,7 @@ void rx_nr_prach_ru(RU_t *ru,
               for (int i=0;i<4;i++) dft(DFT_24576,prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
               reps=4;
             }
-          }
-          else {
+          } else { // 839 sequence
             if (prachStartSymbol == 0) prach2+=128; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe (15/30 kHz only)
 
             dftlen=4096;
@@ -451,24 +445,29 @@ void rx_nr_prach_ru(RU_t *ru,
               reps+=6;
             }
           }
-        } else {
-          AssertFatal(fp->N_RB_UL <= 217,"cannot do more than 217 PRBs with 3/4 sampling\n");
+          break;
+
+        case 92160:
+          // 80, 90 MHz @ 92.16 Ms/s
           prach2 = prach[aa] + (6*Ncp);
-          // 80 MHz @ 92.16 Ms/s
           if (prach_sequence_length == 0) {
             if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
               dftlen=73728;
-	      dft(DFT_73728,prach2,rxsigF[aa],1);
-	      reps++;
+              dft(DFT_73728,prach2,rxsigF[aa],1);
             }
             if (prachFormat == 1 || prachFormat == 2) {
-              dft(DFT_73728,prach2+(2*73728),rxsigF[aa]+(2*73728),1);
+              dft(DFT_73728,prach2+147456,rxsigF[aa]+147456,1);
               reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_73728,prach2+(147456*2),rxsigF[aa]+(147456*2),1);
+              dft(DFT_73728,prach2+(147456*3),rxsigF[aa]+(147456*3),1);
+              reps+=2;
             }
             if (prachFormat == 3) {
               dftlen=18432;
-	      for (int i=0;i<4;i++) dft(DFT_18432,prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
-	      reps=4;
+              for (int i=0;i<4;i++) dft(DFT_18432,prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
+              reps=4;
             }
           } else {
             if (prachStartSymbol == 0) prach2+=96; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe (15/30 kHz only)
@@ -495,7 +494,9 @@ void rx_nr_prach_ru(RU_t *ru,
               reps+=6;
             }
           }
-        }
+          break;
+        default:
+          AssertFatal(1==0,"sample_rate %f MHz not support for NR PRACH yet\n", fp->samples_per_subframe / 1000.0);
       }
     }
     else if (mu==3) {
