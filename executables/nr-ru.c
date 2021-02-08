@@ -1821,6 +1821,7 @@ void *ru_thread( void *param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
+    proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
     proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
 
@@ -1904,7 +1905,7 @@ void *ru_thread( void *param ) {
     syncMsg->slot_tx = proc->tti_tx;
 
     // check if previous L1 slot processing is finished
-    res = tryPullTpool(gNB->resp_L1, gNB->threadPool_L1);
+    res = pullTpool(gNB->resp_L1, gNB->threadPool_L1);
     if (res == NULL) {
       LOG_W(PHY,"L1 RX of previous slot is still being processed. Adding current slot to queue (%d.%d)\n", proc->frame_rx, proc->tti_rx);
     }

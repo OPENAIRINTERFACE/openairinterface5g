@@ -915,11 +915,12 @@ void init_gNB_Tpool(int inst) {
   gNB->resp_L1 = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initTpool("-1", gNB->threadPool_L1, false);
   initNotifiedFIFO(gNB->resp_L1);
+  pushNotifiedFIFO_nothreadSafe(gNB->resp_L1, newNotifiedFIFO_elt(20, 0,NULL,NULL)); 
 
   // L1 TX threadpool
   gNB->threadPool_L1_tx = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initTpool("-1",gNB->threadPool_L1_tx, false);
+  initTpool("-1,-1,-1",gNB->threadPool_L1_tx, false);
   initNotifiedFIFO(gNB->resp_L1_tx);
 
   // RU TX threadpool
