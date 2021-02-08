@@ -219,7 +219,7 @@ void *mac_enb_task(void *arg)
       case RRC_MAC_DRX_CONFIG_REQ:
         LOG_I(MAC, "MAC Task Received RRC_MAC_DRX_CONFIG_REQ\n");
         /* Set timers and thresholds values in local MAC context of UE */
-        eNB_Config_Local_DRX(ITTI_MESSAGE_GET_INSTANCE(received_msg), &received_msg->ittiMsg.rrc_mac_drx_config_req);
+        eNB_Config_Local_DRX(ITTI_MSG_DESTINATION_INSTANCE(received_msg), &received_msg->ittiMsg.rrc_mac_drx_config_req);
         break;
 
       case TERMINATE_MESSAGE:

@@ -128,15 +128,15 @@ void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0) {
 
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
   ss0->monitoringSymbolsWithinSlot->size = 2;
   ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
 
   // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
   ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
-  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
   ss0->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
 
   ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
@@ -888,8 +888,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pusch_Config->pusch_AggregationFactor=NULL;
  pusch_Config->mcs_Table=NULL;
  pusch_Config->mcs_TableTransformPrecoder=NULL;
- pusch_Config->transformPrecoder=calloc(1,sizeof(*pusch_Config->transformPrecoder));
- *pusch_Config->transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
+ pusch_Config->transformPrecoder= NULL;
+ /* if msg3_transformprecoding is set in conf file - pusch config should not disable it */
+ if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+    pusch_Config->transformPrecoder=calloc(1,sizeof(*pusch_Config->transformPrecoder));
+    *pusch_Config->transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
+ }
  pusch_Config->codebookSubset=calloc(1,sizeof(*pusch_Config->codebookSubset));
  *pusch_Config->codebookSubset = NR_PUSCH_Config__codebookSubset_nonCoherent;
  pusch_Config->maxRank=calloc(1,sizeof(*pusch_Config->maxRank));
@@ -897,6 +901,39 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pusch_Config->rbg_Size=NULL;
  pusch_Config->uci_OnPUSCH=NULL;
  pusch_Config->tp_pi2BPSK=NULL;
+
+ /*------------------------------TRANSFORM PRECODING- -----------------------------------------------------------------------*/
+ 
+ uint8_t transform_precoding = NR_PUSCH_Config__transformPrecoder_disabled;
+
+ // TBD: configure this from .conf file, Dedicated params cannot yet be configured in .conf file.
+ // Enable this to test transform precoding enabled from dedicated config.
+ /*if (pusch_Config->transformPrecoder == NULL)
+    pusch_Config->transformPrecoder=calloc(1,sizeof(*pusch_Config->transformPrecoder));
+
+ *pusch_Config->transformPrecoder = NR_PUSCH_Config__transformPrecoder_enabled;  */
+  // END -------
+
+ if (pusch_Config->transformPrecoder == NULL) {
+  if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder != NULL)
+    transform_precoding = NR_PUSCH_Config__transformPrecoder_enabled;
+ }
+ else 
+    transform_precoding = *pusch_Config->transformPrecoder;
+    
+ 
+ if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled ) {
+    /* Enable DMRS uplink config for transform precoding enabled */
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled = calloc(1,sizeof(*NR_DMRS_UplinkConfig->transformPrecodingEnabled));
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity = NULL;
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping = NULL; 
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping = NULL;
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled->ext1 = NULL; 
+
+    LOG_I(RRC,"TRANSFORM PRECODING ENABLED......\n");
+ 
+  }
+ /*----------------------------------------------------------------------------------------------------------------------------*/ 
 
  initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
  initialUplinkBWP->srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;

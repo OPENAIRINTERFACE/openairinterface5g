@@ -485,7 +485,6 @@ add_custom_target (
 
 add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source} 
     ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c
-    ${OPENAIR2_DIR}/RRC/NR/nr_ngap_gNB.c
     )
 add_dependencies(NR_RRC_LIB nr_rrc_flag)
 include_directories ("${NR_RRC_FULL_DIR}")
@@ -1758,6 +1757,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_prach.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/NR_REFSIG/ul_ref_seq_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_csi_rs.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
@@ -2109,10 +2109,10 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/mac_vars.c
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
+  ${NR_UE_MAC_DIR}/nr_ue_scheduler.c
   ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
   ${NR_UE_MAC_DIR}/nr_l1_helpers.c
   ${NR_UE_MAC_DIR}/nr_ra_procedures.c
-  ${NR_UE_MAC_DIR}/rar_tools_nrUE.c
 )
 
 set (ENB_APP_SRC
@@ -2587,6 +2587,13 @@ if(ITTI_SIM)
 
   set(libnrnas_emm_msg_OBJS
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationAccept.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSIdentityResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSNASSecurityModeComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSUplinkNasTransport.c
+    ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishRequest.c
   )
 
   set(libnrnas_ies_OBJS
@@ -2594,8 +2601,11 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/IES/FGSMobileIdentity.c
     ${NAS_SRC}COMMON/IES/FGSRegistrationType.c
     ${NAS_SRC}COMMON/IES/SpareHalfOctet.c
+    ${NAS_SRC}COMMON/IES/FGSRegistrationResult.c
     ${NAS_SRC}COMMON/IES/FGMMCapability.c
     ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
+    ${NAS_SRC}COMMON/IES/FGCNasMessageContainer.c
+    ${NAS_SRC}COMMON/IES/SORTransparentContainer.c
   )
 
   add_library(LIB_NAS_SIMUE
@@ -3069,7 +3079,7 @@ target_link_libraries (ocp-gnb
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
-  S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB SIMU_COMMON
   -Wl,--end-group z dl)
 
@@ -3289,7 +3299,7 @@ add_executable(nr_dlsim
   ${SHLIB_LOADER_SOURCES}
   )   
 target_link_libraries(nr_dlsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
@@ -3308,7 +3318,7 @@ add_executable(nr_prachsim
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 add_executable(nr_ulschsim
@@ -3341,7 +3351,7 @@ add_executable(nr_ulsim
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_ulsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)

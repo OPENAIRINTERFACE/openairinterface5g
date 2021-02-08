@@ -1239,7 +1239,8 @@ void init_eNB(int single_thread_flag,
     if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB **) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
 
     for (CC_id=0; CC_id<RC.nb_L1_CC[inst]; CC_id++) {
-      if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) malloc(sizeof(PHY_VARS_eNB));
+      if (RC.eNB[inst][CC_id] == NULL) 
+         RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) calloc(1,sizeof(PHY_VARS_eNB));
 
       eNB                     = RC.eNB[inst][CC_id];
       eNB->abstraction_flag   = 0;

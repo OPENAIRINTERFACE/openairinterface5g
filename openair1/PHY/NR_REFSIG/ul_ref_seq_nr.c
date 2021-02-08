@@ -110,6 +110,39 @@ int16_t *base_sequence_less_than_36(unsigned int M_ZC,
 
 /*******************************************************************
 *
+* NAME :         get_index_for_dmrs_lowpapr_seq
+*
+* PARAMETERS :   num_dmrs_res - Total number of DMRS RES possible in allocated RBs                
+*                
+*
+* RETURN :       returns index of array dmrs_ul_allocated_res 
+*
+* DESCRIPTION :  finds the index which in turn is used to index into dmrs low papr sequences 
+*
+*********************************************************************/
+
+int16_t get_index_for_dmrs_lowpapr_seq(int16_t num_dmrs_res) {
+  
+  int16_t index = -1;
+ 
+  if (num_dmrs_res >= dmrs_ul_allocated_res[(MAX_INDEX_DMRS_UL_ALLOCATED_REs-1)]) 
+    index = MAX_INDEX_DMRS_UL_ALLOCATED_REs-1;
+  else 
+    index = (num_dmrs_res/6) -1;
+
+  for (;index >= 0; index--) {
+    if (dmrs_ul_allocated_res[index] == num_dmrs_res)
+      break;
+
+  }
+
+  LOG_D(PHY, "num_dmrs_res: %d    INDEX RETURNED:  %d", num_dmrs_res, index);  
+  return index;  
+
+}
+
+/*******************************************************************
+*
 * NAME :         base_sequence_36_or_larger
 *
 * PARAMETERS :   M_ZC length of Zadoff chu sequence
@@ -126,13 +159,19 @@ int16_t *base_sequence_less_than_36(unsigned int M_ZC,
 int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
                                     unsigned int u,
                                     unsigned int v,
-                                    unsigned int scaling)
+                                    unsigned int scaling, unsigned int if_dmrs_seq)
 {
   int16_t *rv_overbar;
-  unsigned int N_ZC;
+  unsigned int N_ZC, M_ZC;
   double q_overbar, x;
   unsigned int q,m,n;
-  unsigned int M_ZC = ul_allocated_re[Msc_RS];
+  
+
+  if (if_dmrs_seq)
+    M_ZC = dmrs_ul_allocated_res[Msc_RS];
+  else
+    M_ZC = ul_allocated_re[Msc_RS];
+  
 
   rv_overbar = malloc16(IQ_SIZE*M_ZC);
   if (rv_overbar == NULL) {
@@ -140,7 +179,11 @@ int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
     assert(0);
   }
 
-  N_ZC = ref_ul_primes[Msc_RS]; /* The length N_ZC is given by the largest prime number such that N_ZC < M_ZC */
+  if (if_dmrs_seq)
+    N_ZC = dmrs_ref_ul_primes[Msc_RS];
+  else 
+    N_ZC = ref_ul_primes[Msc_RS]; /* The length N_ZC is given by the largest prime number such that N_ZC < M_ZC */
+  
 
   q_overbar = N_ZC * (u+1)/(double)31;
 
@@ -159,19 +202,24 @@ int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
   return rv_overbar;
 }
 
-/*******************************************************************
-*
-* NAME :         generate_ul_srs_sequences
-*
-* PARAMETERS :   scaling to apply
-*
-* RETURN :       none
-*
-* DESCRIPTION :  uplink reference signal sequences generation
-*                which are Low-PAPR base sequences
-*                see TS 38.211 5.2.2 Low-PAPR sequence generation
-*
-*********************************************************************/
+void generate_lowpapr_typ1_refsig_sequences(unsigned int scaling)
+{
+	unsigned int u,Msc_RS;
+  unsigned int v = 0; // sequence hopping and group hopping are not supported yet
+
+  for (Msc_RS=0; Msc_RS <= INDEX_SB_LESS_32; Msc_RS++) {  	
+    for (u=0; u < U_GROUP_NUMBER; u++) {
+      gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS] = base_sequence_less_than_36(ul_allocated_re[Msc_RS], u, scaling);
+    }
+  }
+
+  for (Msc_RS=INDEX_SB_LESS_32+1; Msc_RS < MAX_INDEX_DMRS_UL_ALLOCATED_REs; Msc_RS++) {    
+    for (u=0; u < U_GROUP_NUMBER; u++) {        
+      gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS] = base_sequence_36_or_larger(Msc_RS, u, v, scaling, 1);           
+    }    
+  } 
+}
+
 
 void generate_ul_reference_signal_sequences(unsigned int scaling)
 {
@@ -184,10 +232,13 @@ void generate_ul_reference_signal_sequences(unsigned int scaling)
 
 #endif
 
+  
   for (Msc_RS=0; Msc_RS <= INDEX_SB_LESS_32; Msc_RS++) {
-	v = 0;
+  	v = 0;
     for (u=0; u < U_GROUP_NUMBER; u++) {
       rv_ul_ref_sig[u][v][Msc_RS] = base_sequence_less_than_36(ul_allocated_re[Msc_RS], u, scaling);
+      dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS] = base_sequence_less_than_36(ul_allocated_re[Msc_RS], u, scaling);
+    
 #if 0
       sprintf(output_file, "rv_seq_%d_%d_%d.m", u, v, ul_allocated_re[Msc_RS]);
       sprintf(sequence_name, "rv_seq_%d_%d_%d.m", u, v, ul_allocated_re[Msc_RS]);
@@ -198,10 +249,19 @@ void generate_ul_reference_signal_sequences(unsigned int scaling)
     }
   }
 
+ for (Msc_RS=INDEX_SB_LESS_32+1; Msc_RS < MAX_INDEX_DMRS_UL_ALLOCATED_REs; Msc_RS++) {
+    v = 0;  // neither group hopping or sequnce hopping is supported for PUSCH DMRS hence v = 0
+    for (u=0; u < U_GROUP_NUMBER; u++) {        
+      dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS] = base_sequence_36_or_larger(Msc_RS, u, v, scaling, 1);  
+    }
+    
+  }
+ 
   for (Msc_RS=INDEX_SB_LESS_32+1; Msc_RS < SRS_SB_CONF; Msc_RS++) {
     for (u=0; u < U_GROUP_NUMBER; u++) {
-      for (v=0; v < V_BASE_SEQUENCE_NUMBER; v++) {
-        rv_ul_ref_sig[u][v][Msc_RS] = base_sequence_36_or_larger(Msc_RS, u, v, scaling);
+     for (v=0; v < V_BASE_SEQUENCE_NUMBER; v++) {
+        rv_ul_ref_sig[u][v][Msc_RS] = base_sequence_36_or_larger(Msc_RS, u, v, scaling, 0);
+
 #if 0
         sprintf(output_file, "rv_seq_%d_%d_%d.m", u, v, ul_allocated_re[Msc_RS]);
         sprintf(sequence_name, "rv_seq_%d_%d_%d.m", u, v, ul_allocated_re[Msc_RS]);
@@ -212,7 +272,10 @@ void generate_ul_reference_signal_sequences(unsigned int scaling)
       }
     }
   }
+
+
 }
+
 
 /*******************************************************************
 *
@@ -233,7 +296,33 @@ void free_ul_reference_signal_sequences(void)
       for (v=0; v < V_BASE_SEQUENCE_NUMBER; v++) {
         if (rv_ul_ref_sig[u][v][Msc_RS])
           free16(rv_ul_ref_sig[u][v][Msc_RS],2*sizeof(int16_t)*ul_allocated_re[Msc_RS]);
+        if ((v==0) && (Msc_RS < MAX_INDEX_DMRS_UL_ALLOCATED_REs))
+          if (dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS])
+            free16(dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS],2*sizeof(int16_t)*dmrs_ul_allocated_res[Msc_RS]);        
       }
     }
   }
 }
+/*******************************************************************
+*
+* NAME :         free_gnb_lowpapr_sequences
+*
+* PARAMETERS :   none
+*
+* RETURN :       none
+*
+* DESCRIPTION :  free of uplink reference signal sequences
+*
+*********************************************************************/
+void free_gnb_lowpapr_sequences(void)
+{
+  unsigned int u,v,Msc_RS;
+  for (Msc_RS=0; Msc_RS < MAX_INDEX_DMRS_UL_ALLOCATED_REs; Msc_RS++) {
+    v=0;
+    for (u=0; u < U_GROUP_NUMBER; u++) {      
+      if (gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS])
+        free16(gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS],2*sizeof(int16_t)*dmrs_ul_allocated_res[Msc_RS]);
+    }
+  }
+}
+

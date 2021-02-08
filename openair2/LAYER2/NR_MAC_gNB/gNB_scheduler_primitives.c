@@ -221,7 +221,6 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
 {
   ps->dci_format = dci_format;
   ps->time_domain_allocation = tda;
-  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
       ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -243,13 +242,17 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                                     NR_RNTI_C,
                                     target_ss,
                                     false);
-  else
+  else {
     ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config->mcs_TableTransformPrecoder,
                                     1,
                                     ps->dci_format,
                                     NR_RNTI_C,
                                     target_ss,
                                     false);
+    num_dmrs_cdm_grps_no_data = 2; // in case of transform precoding - no Data sent in DMRS symbol
+  }
+
+  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   /* DMRS calculations */
   ps->mapping_type = tdaList->list.array[tda]->mappingType;
@@ -552,8 +555,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->pduIndex = nr_mac->pdu_index[0]++;
 
   // BWP
-  pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-  pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
   if (bwp->bwp_Common->genericParameters.cyclicPrefix)
     pdsch_pdu_rel15->CyclicPrefix = *bwp->bwp_Common->genericParameters.cyclicPrefix;
@@ -620,7 +623,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
             pdsch_pdu_rel15->rbSize,
             pdsch_pdu_rel15->rbStart,
             NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,
-                     275));
+                     MAX_BWP_SIZE));
   else
     AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
   // time domain assignment: row index used instead of SLIV
@@ -650,7 +653,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         dci_pdu_rel15[0].frequency_domain_assignment.val,
         pdsch_pdu_rel15->rbStart,
         pdsch_pdu_rel15->rbSize,
-        NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, 275),
+        NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
         dci_pdu_rel15[0].time_domain_assignment.val,
         dci_pdu_rel15[0].vrb_to_prb_mapping.val,
         dci_pdu_rel15[0].mcs,
@@ -713,7 +716,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   int *dci_formats,
                   int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id) {
-  const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   switch (dci_formats[(pdcch_pdu_rel15->numDlDci) - 1]) {
     case NR_UL_DCI_FORMAT_0_0:
       dci_pdu_rel15->frequency_domain_assignment.val =
@@ -791,8 +794,8 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                         uint8_t aggregation_level,
                         int CCEIndex) {
   if (bwp) { // This is not the InitialBWP
-    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
 
@@ -933,8 +936,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     else
       pucch_pdu->hopping_id = *scc->physCellId;
 
-    pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pucch_pdu->subcarrier_spacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pucch_pdu->cyclic_prefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
 

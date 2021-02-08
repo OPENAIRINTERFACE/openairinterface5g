@@ -508,7 +508,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
   uint16_t rbStart = 0;
   while (vrb_map_UL[rbStart]) rbStart++;
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbSize = 1;
   while (rbStart + rbSize < bwpSize && !vrb_map_UL[rbStart+rbSize])
     rbSize++;
@@ -677,8 +677,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->handle = 0; //not yet used
 
     /* FAPI: BWP */
-    pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pusch_pdu->subcarrier_spacing = sched_ctrl->active_ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
 
@@ -741,6 +741,25 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
+
+    /* TRANSFORM PRECODING --------------------------------------------------------*/
+
+    if (pusch_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled){
+
+      // U as specified in section 6.4.1.1.1.2 in 38.211, if sequence hopping and group hopping are disabled
+      pusch_pdu->dfts_ofdm.low_papr_group_number = pusch_pdu->pusch_identity % 30;
+
+      // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
+      if ((ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
+            (ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping == NULL))
+        pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;
+      else
+        AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
+
+      LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, ps->mcs_table);
+    }
+
+    /*-----------------------------------------------------------------------------*/
 
     /* PUSCH PTRS */
     if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {

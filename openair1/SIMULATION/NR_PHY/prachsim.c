@@ -99,6 +99,32 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+int
+gtpv1u_create_ngu_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
+  return 0;
+}
+
+int
+gtpv1u_update_ngu_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti
+){
+  return 0;
+}
+
+int
+nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+){
+  return 0;
+}
+
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
 // Dummy function to avoid linking error at compilation of nr-prachsim
@@ -648,7 +674,7 @@ int main(int argc, char **argv){
   UE_nr_rxtx_proc_t proc={0};
   proc.frame_tx   = frame;
   proc.nr_slot_tx = slot;
-  nr_ue_prach_procedures(UE,&proc,0,0);
+  nr_ue_prach_procedures(UE, &proc, 0);
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
