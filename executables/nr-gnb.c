@@ -870,7 +870,7 @@ void init_gNB_proc(int inst) {
   pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
   sync_phy_proc.phy_proc_CC_id = 0;
 
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->threadPool_ulsch = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
   uint32_t num_threads_pusch;
@@ -884,10 +884,50 @@ void init_gNB_proc(int inst) {
     sprintf(ul_pool+2+s_offset,",-1");
     s_offset += 3;
   }
-  initTpool(ul_pool, gNB->threadPool, false);
+  initTpool(ul_pool, gNB->threadPool_ulsch, false);
   initNotifiedFIFO(gNB->respDecode);
 }
 
+void init_gNB_Tpool(int inst) {
+  PHY_VARS_gNB *gNB;
+  gNB = RC.gNB[inst];
+
+  // ULSCH decoding threadpool
+  gNB->threadPool_ulsch = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  uint32_t num_threads_pusch;
+  paramdef_t PUSCHThreads[] = NUM_THREADS_DESC;
+  config_get( PUSCHThreads,sizeof(PUSCHThreads)/sizeof(paramdef_t),NULL);
+  int threadCnt = min(numCPU, num_threads_pusch);
+  char ul_pool[80];
+  sprintf(ul_pool,"-1");
+  int s_offset = 0;
+  for (int icpu=1; icpu<threadCnt; icpu++) {
+    sprintf(ul_pool+2+s_offset,",-1");
+    s_offset += 3;
+  }
+  initTpool(ul_pool, gNB->threadPool_ulsch, false);
+  initNotifiedFIFO(gNB->respDecode);
+
+  // L1 RX threadpool
+  gNB->threadPool_L1 = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->resp_L1 = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initTpool("-1", gNB->threadPool_L1, false);
+  initNotifiedFIFO(gNB->resp_L1);
+
+  // L1 TX threadpool
+  gNB->threadPool_L1_tx = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initTpool("-1",gNB->threadPool_L1_tx, false);
+  initNotifiedFIFO(gNB->resp_L1_tx);
+
+  // RU TX threadpool
+  gNB->threadPool_RU_tx = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->resp_RU_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initTpool("-1",gNB->threadPool_RU_tx, false);
+  initNotifiedFIFO(gNB->resp_RU_tx);
+}
 
 
 /*!
@@ -1010,15 +1050,10 @@ void init_eNB_afterRU(void) {
      * (not tested in other modes).
      */
     //init_precoding_weights(RC.gNB[inst]);
-    init_gNB_proc(inst);
+    //init_gNB_proc(inst);
+    init_gNB_Tpool(inst);
   }
 
-  for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
-    AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
-    RC.ru[ru_id]->nr_wakeup_rxtx         = wakeup_rxtx;
-    //    RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_gNB;
-    RC.ru[ru_id]->gNB_top             = gNB_top;
-  }
 }
 
 void init_gNB(int single_thread_flag,int wait_for_sync) {

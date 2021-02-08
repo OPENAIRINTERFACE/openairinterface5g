@@ -640,7 +640,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->offset = offset;
     rdata->ulsch = ulsch;
     rdata->ulsch_id = UE_id;
-    pushTpool(phy_vars_gNB->threadPool,req);
+    pushTpool(phy_vars_gNB->threadPool_ulsch,req);
     phy_vars_gNB->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);
     r_offset += E;
