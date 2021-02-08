@@ -86,11 +86,6 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 #define L1_RSRP_HYSTERIS 10 //considering 10 dBm as hysterisis for avoiding frequent SSB Beam Switching. !Fixme provide exact value if any
 //#define L1_DIFF_RSRP_STEP_SIZE 2
 
-void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats);
-
 int ssb_index_sorted[MAX_NUM_SSB] = {0};
 int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
 //Sorts ssb_index and ssb_rsrp array data and keeps in ssb_index_sorted and
@@ -283,7 +278,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 
           if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
 
-            switch (RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts) {
+            switch (RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value) {
               case 1:;
                 UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen.ri_bitlen=0;
                 break;
@@ -348,12 +343,10 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
                   nb_allowed_ri = number_of_bits_set(ri_restriction, &max_ri);
                   ri_bitlen = ceil(log2(nb_allowed_ri));
                 }
-                //ri_bitlen = ri_bitlen<1?ri_bitlen:1; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel 
                 UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen.ri_bitlen=ri_bitlen;
                 break;
               default:
-                //UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen.ri_bitlen=0;
-                AssertFatal(RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts>8,"Number of antennas %d are out of range", RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts);
+                AssertFatal(RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value>8,"Number of antennas %d are out of range", RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value);
             }
           }
           UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen.li_bitlen=0;
@@ -365,7 +358,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
         if( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI==reportQuantity_type ){
           if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
 
-            switch (RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts) {
+            switch (RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value) {
               case 1:;
                 UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen.li_bitlen=0;
                 break;
@@ -387,7 +380,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
                 UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen.li_bitlen=ceil(log2(max_ri))<2?ceil(log2(max_ri)):2;
                 break;
               default:
-                AssertFatal(RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts>8,"Number of antennas %d are out of range", RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts);
+                AssertFatal(RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value>8,"Number of antennas %d are out of range", RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value);
             }
           }
         }
@@ -397,7 +390,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
             NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI==reportQuantity_type ||
             NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI==reportQuantity_type){
 
-          switch (RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts){
+          switch (RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value){
             case 1:
             case 2:
             case 4:
@@ -428,7 +421,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
               }
               break;
             default:
-              AssertFatal(RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts>8,"Number of antennas %d are out of range", RC.nrrrc[Mod_idP]->carrier.pdsch_AntennaPorts);
+              AssertFatal(RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value>8,"Number of antennas %d are out of range", RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value);
           }
         }
         if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
@@ -470,7 +463,7 @@ uint16_t nr_get_csi_bitlen(int Mod_idP,
     CSI_report_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
     csi_bitlen+= ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
                   CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen * 
-                  (CSI_report_bitlen->nb_ssbri_cri -1 )));//*UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report);
+                  (CSI_report_bitlen->nb_ssbri_cri -1 )));
   } else{
    csi_meas_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
    csi_bitlen+= (csi_meas_bitlen->cri_bitlen +csi_meas_bitlen->ri_bitlen+csi_meas_bitlen->li_bitlen+csi_meas_bitlen->cqi_bitlen+csi_meas_bitlen->pmi_x1_bitlen+csi_meas_bitlen->pmi_x2_bitlen);
@@ -602,566 +595,91 @@ static void handle_dl_harq(module_id_t mod_id,
   }
 }
 
-void handle_nr_uci_pucch_0_1(module_id_t mod_id,
-                             frame_t frame,
-                             sub_frame_t slot,
-                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                             NR_UL_IND_t *UL_info)
-{
-  int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
-  if (UE_id < 0) {
-    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
-    return;
-  }
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, int Mod_idP, int UE_id) {
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id] ;
+  int nb_tci_states = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
+  NR_TCI_State_t *tci =NULL;
+  int i;
 
-  // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_01->ul_cqi,
-                                30);
+  for(i=0; i<nb_tci_states && i<64; i++) {
+    tci = (NR_TCI_State_t *)secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  if (((uci_01->pduBitmap >> 1) & 0x01)) {
-    // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-      const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
-      const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
+    if(tci != NULL) {
+      if(tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+        if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t)
+          return tci->tci_StateId;  // returned TCI state ID
       }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      DevAssert(harq->is_waiting);
-      handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
+      // if type2 is configured
+      else if(tci->qcl_Type2 != NULL && tci->qcl_Type2->referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+        if(tci->qcl_Type2->referenceSignal.choice.ssb == ssb_index_t)
+          return tci->tci_StateId; // returned TCI state ID
+      } else LOG_I(MAC,"SSB index is not found in first 64 TCI states of TCI_statestoAddModList[%d]", i);
     }
-
-  if (((uci_01->pduBitmap >> 1) & 0x01)) {
-    nr_rx_acknack(NULL,uci_01,NULL,UL_info,sched_ctrl,&UE_info->mac_stats[0]);
   }
+
+  // tci state not identified in first 64 TCI States of PDSCH Config
+  return -1;
 }
 
-void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
-                               frame_t frame,
-                               sub_frame_t slot,
-                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                               NR_UL_IND_t *UL_info)
-{
-  int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
-  if (UE_id < 0) {
-    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
-    return;
-  }
-  NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_id) {
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id] ;
+  int nb_tci_states = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
+  NR_TCI_State_t *tci =NULL;
+  NR_TCI_StateId_t *tci_id = NULL;
+  int bwp_id = 1;
+  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  NR_ControlResourceSet_t *coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1];
+  int i;
+  int flag = 0;
+  int tci_stateID = -1;
 
-  // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_234->ul_cqi,
-                                30);
+  for(i=0; i<nb_tci_states && i<128; i++) {
+    tci = (NR_TCI_State_t *)secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  if ( uci_234 -> pduBitmap & 0x01 ) {
-    ///Handle SR PDU
-    uint8_t sr_id = 0;
-
-    for (sr_id = 0; sr_id < uci_234->sr.sr_bit_len; sr_id++) {
-      sched_ctrl->sr_req.ul_SR[sr_id] = *(uci_234->sr.sr_payload) & 1;
-      *(uci_234->sr.sr_payload) >>= 1;
-    }
-
-    sched_ctrl->sr_req.nr_of_srs = uci_234->sr.sr_bit_len;
-  }
-  // TODO
-  if ((uci_234->pduBitmap >> 1) & 0x01) {
-    // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
-      const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
+    if(tci != NULL && tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+      if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t) {
+        flag = 1;
+        tci_stateID = tci->tci_StateId;
+        break;
+      } else if(tci->qcl_Type2 != NULL && tci->qcl_Type2->referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
+        flag = 1;
+        tci_stateID = tci->tci_StateId;
+        break;
       }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      DevAssert(harq->is_waiting);
-      handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
-    nr_rx_acknack(NULL,NULL,uci_234,UL_info,sched_ctrl,stats);
-  }
-  if ((uci_234->pduBitmap >> 1) & 0x01) {
 
-    NR_SubcarrierSpacing_t scs=*(RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon->ssbSubcarrierSpacing);
-    LOG_I(PHY,"SFN/SF:%d%d scs %ld \n",
-       UL_info->frame,UL_info->slot,
-       scs);
-     //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report (csi_MeasConfig, uci_234, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, mod_id);
-    //TCI handling function
-    tci_handling(mod_id, UE_id, UL_info->CC_id, sched_ctrl, UL_info->frame, UL_info->slot);
-  }
+    if(flag != 0 && tci_stateID != -1 && coreset != NULL) {
+      for(i=0; i<64 && i<coreset->tci_StatesPDCCH_ToAddList->list.count; i++) {
+        tci_id = coreset->tci_StatesPDCCH_ToAddList->list.array[i];
 
-  if (uci_234 -> pduBitmap & 0x08) {
-          ///Handle CSI Report 2
-  }
-}
-
-void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
-                   const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                   const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
-
-  // TODO
-  int max_harq_rounds = 4; // TODO define macro
-
-  if (uci_01 != NULL) {
-    // handle harq
-    int harq_idx_s = 0;
-
-    // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-      // search for the right harq process
-      for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
-        // if the gNB received ack with a good confidence
-        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-          if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
-              (uci_01->harq->harq_confidence_level == 0)) {
-            // toggle NDI and reset round
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          else
-            sched_ctrl->harq_processes[harq_idx].round++;
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-          harq_idx_s = harq_idx + 1;
-          // if the max harq rounds was reached
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-            stats->dlsch_errors++;
-          }
-          break;
-        }
-        // if feedback slot processing is aborted
-        else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
-                 (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
-          sched_ctrl->harq_processes[harq_idx].round++;
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-        }
+        if(tci_id != NULL && *tci_id == tci_stateID)
+          return tci_stateID;
       }
     }
   }
 
-  if (uci_234 != NULL) {
-    int harq_idx_s = 0;
-    int acknack;
-
-    // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
-      acknack = ((uci_234->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
-      for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
-        // if the gNB received ack with a good confidence or if the max harq rounds was reached
-        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-          // TODO add some confidence level for when there is no CRC
-          if ((uci_234->harq.harq_crc != 1) && acknack) {
-            // toggle NDI and reset round
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          else
-            sched_ctrl->harq_processes[harq_idx].round++;
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-          harq_idx_s = harq_idx + 1;
-          // if the max harq rounds was reached
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-            stats->dlsch_errors++;
-          }
-          break;
-        }
-        // if feedback slot processing is aborted
-        else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
-                 (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
-          sched_ctrl->harq_processes[harq_idx].round++;
-          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-            sched_ctrl->harq_processes[harq_idx].round = 0;
-          }
-          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-        }
-      }
-    }
-  }
+  // Need to implement once configuration is received
+  return -1;
 }
 
+//returns the measured RSRP value (upper limit)
+int get_measured_rsrp(uint8_t index) {
+  //if index is invalid returning minimum rsrp -140
+  if((index >= 0 && index <= 15) || index >= 114)
+    return MIN_RSRP_VALUE;
 
-// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
-bool nr_acknack_scheduling(int mod_id,
-                           int UE_id,
-                           frame_t frame,
-                           sub_frame_t slot)
-{
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int nr_ulmix_slots = tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols != 0);
-  const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-  const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-  const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-  const int CC_id = 0;
-
-  AssertFatal(slot < first_ul_slot_tdd + (tdd->nrofUplinkSymbols != 0),
-              "cannot handle multiple TDD periods (yet): slot %d first_ul_slot_tdd %d nrofUplinkSlots %ld\n",
-              slot,
-              first_ul_slot_tdd,
-              tdd->nrofUplinkSlots);
-
-  /* for the moment, we consider:
-   * * only pucch_sched[0] holds HARQ (and SR)
-   * * we do not multiplex with CSI, which is always in pucch_sched[2]
-   * * SR uses format 0 and is allocated in the first UL (mixed) slot (and not
-   *   later)
-   * * that the PUCCH resource set 0 (for up to 2 bits) points to the first N
-   *   PUCCH resources, where N is the number of resources in the PUCCH
-   *   resource set. This is used in pucch_index_used, which counts the used
-   *   resources by index, and not by their ID! */
-  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
-  NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
-  AssertFatal(pucch->csi_bits == 0,
-              "%s(): csi_bits %d in sched_pucch[0]\n",
-              __func__,
-              pucch->csi_bits);
-
-  const int max_acknacks = 2;
-  AssertFatal(pucch->dai_c + pucch->sr_flag <= max_acknacks,
-              "illegal number of bits in PUCCH of UE %d\n",
-              UE_id);
-  /* if the currently allocated PUCCH of this UE is full, allocate it */
-  if (pucch->sr_flag + pucch->dai_c == max_acknacks) {
-    /* advance the UL slot information in PUCCH by one so we won't schedule in
-     * the same slot again */
-    const int f = pucch->frame;
-    const int s = pucch->ul_slot;
-    nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
-    memset(pucch, 0, sizeof(*pucch));
-    pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-    pucch->ul_slot = (s + 1) % n_slots_frame;
-    // we assume that only two indices over the array sched_pucch exist
-    const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
-    // skip the CSI PUCCH if it is present and if in the next frame/slot
-    if (csi_pucch->csi_bits > 0
-        && csi_pucch->frame == pucch->frame
-        && csi_pucch->ul_slot == pucch->ul_slot) {
-      AssertFatal(!csi_pucch->simultaneous_harqcsi,
-                  "%s(): %d.%d cannot handle simultaneous_harqcsi, but found for UE %d\n",
-                  __func__,
-                  pucch->frame,
-                  pucch->ul_slot,
-                  UE_id);
-      nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
-      pucch->frame = s >= n_slots_frame - 2 ?  (f + 1) % 1024 : f;
-      pucch->ul_slot = (s + 2) % n_slots_frame;
-    }
-  }
-
-  /* if the UE's next PUCCH occasion is after the possible UL slots (within the
-   * same frame) or wrapped around to the next frame, then we assume there is
-   * no possible PUCCH allocation anymore */
-  if ((pucch->frame == frame
-       && (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots))
-      || (pucch->frame == frame + 1))
-    return false;
-
-  // this is hardcoded for now as ue specific
-  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  uint8_t pdsch_to_harq_feedback[8];
-  get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
-
-  /* there is a scheduled SR or HARQ. Check whether we can use it for this
-   * ACKNACK */
-  if (pucch->sr_flag + pucch->dai_c > 0) {
-    /* this UE already has a PUCCH occasion */
-    DevAssert(pucch->frame == frame);
-
-    // Find the right timing_indicator value.
-    int i = 0;
-    while (i < 8) {
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
-        break;
-      ++i;
-    }
-    if (i >= 8) {
-      // we cannot reach this timing anymore, allocate and try again
-      const int f = pucch->frame;
-      const int s = pucch->ul_slot;
-      const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-      nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
-      memset(pucch, 0, sizeof(*pucch));
-      pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
-    }
-
-    pucch->timing_indicator = i;
-    pucch->dai_c++;
-    // retain old resource indicator, and we are good
-    return true;
-  }
-
-  /* we need to find a new PUCCH occasion */
-
-  NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-  DevAssert(pucch_Config->resourceToAddModList->list.count > 0);
-  DevAssert(pucch_Config->resourceSetToAddModList->list.count > 0);
-  const int n_res = pucch_Config->resourceSetToAddModList->list.array[0]->resourceList.list.count;
-  int *pucch_index_used = RC.nrmac[mod_id]->pucch_index_used[sched_ctrl->active_ubwp->bwp_Id];
-
-  /* if time information is outdated (e.g., last PUCCH occasion in last frame),
-   * set to first possible UL occasion in this frame. Note that if such UE is
-   * scheduled a lot and used all AckNacks, pucch->frame might have been
-   * wrapped around to next frame */
-  if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
-    DevAssert(pucch->sr_flag + pucch->dai_c == 0);
-    AssertFatal(frame + 1 != pucch->frame,
-                "frame wrap around not handled in %s() yet\n",
-                __func__);
-    pucch->frame = frame;
-    pucch->ul_slot = first_ul_slot_tdd;
-  }
-
-  // increase to first slot in which PUCCH resources are available
-  while (pucch_index_used[pucch->ul_slot] >= n_res) {
-    pucch->ul_slot++;
-    /* if there is no free resource anymore, abort search */
-    if ((pucch->frame == frame
-         && pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots)
-        || (pucch->frame == frame + 1)) {
-      LOG_E(MAC,
-            "%4d.%2d no free PUCCH resources anymore while searching for UE %d\n",
-            frame,
-            slot,
-            UE_id);
-      return false;
-    }
-  }
-
-  // advance ul_slot if it is not reachable by UE
-  pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
-
-  // Find the right timing_indicator value.
-  int i = 0;
-  while (i < 8) {
-    if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
-      break;
-    ++i;
-  }
-  if (i >= 8) {
-    LOG_W(MAC,
-          "%4d.%2d could not find pdsch_to_harq_feedback for UE %d: earliest "
-          "ack slot %d\n",
-          frame,
-          slot,
-          UE_id,
-          pucch->ul_slot);
-    return false;
-  }
-  pucch->timing_indicator = i; // index in the list of timing indicators
-
-  pucch->dai_c++;
-  const int pucch_res = pucch_index_used[pucch->ul_slot];
-  pucch->resource_indicator = pucch_res;
-  pucch_index_used[pucch->ul_slot] += 1;
-  AssertFatal(pucch_index_used[pucch->ul_slot] <= n_res,
-              "UE %d in %4d.%2d: pucch_index_used is %d (%d available)\n",
-              UE_id,
-              pucch->frame,
-              pucch->ul_slot,
-              pucch_index_used[pucch->ul_slot],
-              n_res);
-
-  /* verify that at that slot and symbol, resources are free. We only do this
-   * for initialCyclicShift 0 (we assume it always has that one), so other
-   * initialCyclicShifts can overlap with ICS 0!*/
-  const NR_PUCCH_Resource_t *resource =
-      pucch_Config->resourceToAddModList->list.array[pucch_res];
-  DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
-  if (resource->format.choice.format0->initialCyclicShift == 0) {
-    uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
-    const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
-    AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
-                "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
-                symb, resource->startingPRB, pucch->ul_slot);
-    vrb_map_UL[resource->startingPRB] |= symb;
-  }
-  return true;
+  return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
 }
 
-
-void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
-                       int *period, int *offset) {
-
-    NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
-
-    switch(p_and_o){
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
-        *period = 4;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
-        *period = 5;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
-        *period = 8;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
-        *period = 10;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
-        *period = 16;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
-        *period = 20;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
-        *period = 40;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
-        *period = 80;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
-        *period = 160;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
-        *period = 320;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
-        break;
-    default:
-      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
-    }
+//returns the differential RSRP value (upper limit)
+int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
+  if(strongest_rsrp != -1) {
+    return strongest_rsrp + diff_rsrp_ssb_csi_meas_10_1_6_1_2[index];
+  } else
+    return MIN_RSRP_VALUE;
 }
-
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl) {
-
-  uint16_t O_crc;
-
-  if (O_tot<12)
-    O_crc = 0;
-  else{
-    if (O_tot<20)
-      O_crc = 6;
-    else {
-      if (O_tot<360)
-        O_crc = 11;
-      else
-        AssertFatal(1==0,"Case for segmented PUCCH not yet implemented");
-    }
-  }
-
-  int rtimes100;
-  switch(*maxCodeRate){
-    case NR_PUCCH_MaxCodeRate_zeroDot08 :
-      rtimes100 = 8;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot15 :
-      rtimes100 = 15;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot25 :
-      rtimes100 = 25;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot35 :
-      rtimes100 = 35;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot45 :
-      rtimes100 = 45;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot60 :
-      rtimes100 = 60;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot80 :
-      rtimes100 = 80;
-      break;
-  default :
-    AssertFatal(1==0,"Invalid MaxCodeRate");
-  }
-
-  float r = (float)rtimes100/100;
-
-  if (O_csi == O_tot) {
-    if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
-      AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
-                  r,O_tot,O_crc,nr_prbs);
-    else
-      return nr_prbs;
-  }
-
-  if (format==2){
-    // TODO fix this for multiple CSI reports
-    for (int i=1; i<=nr_prbs; i++){
-      if((O_tot+O_crc)<=(i*n_symb*Qm*n_re_ctrl*r) &&
-         (O_tot+O_crc)>((i-1)*n_symb*Qm*n_re_ctrl*r))
-        return i;
-    }
-    AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with at most %d PRBs",
-                r,O_tot,O_crc,nr_prbs);
-  }
-  else{
-    AssertFatal(1==0,"Not yet implemented");
-  }
-}
-
 
 //identifies the target SSB Beam index
 //keeps the required date for PDCCH and PDSCH TCI state activation/deactivation CE consutruction globally
@@ -1345,26 +863,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
   }//is-triggering_beam_switch
 }//tci handling
 
-
-//returns the measured RSRP value (upper limit)
-int get_measured_rsrp(uint8_t index) {
-  //if index is invalid returning minimum rsrp -140
-  if((index >= 0 && index <= 15) || index >= 114)
-    return MIN_RSRP_VALUE;
-
-  return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
-}
-
-
-//returns the differential RSRP value (upper limit)
-int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
-  if(strongest_rsrp != -1) {
-    return strongest_rsrp + diff_rsrp_ssb_csi_meas_10_1_6_1_2[index];
-  } else
-    return MIN_RSRP_VALUE;
-}
-
-
 void reverse_n_bits(uint8_t *value, uint16_t bitlen) {
   uint16_t j;
   uint8_t i;
@@ -1460,5 +958,404 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
 
 }
+
+void nr_rx_acknack(nfapi_nr_uci_pusch_pdu_t *uci_pusch,
+                   const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                   const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                   NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
+
+  // TODO
+  int max_harq_rounds = 4; // TODO define macro
+
+  if (uci_01 != NULL) {
+    // handle harq
+    int harq_idx_s = 0;
+
+    // iterate over received harq bits
+    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
+      // search for the right harq process
+      for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
+        // if the gNB received ack with a good confidence
+        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+          if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
+              (uci_01->harq->harq_confidence_level == 0)) {
+            // toggle NDI and reset round
+            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+            sched_ctrl->harq_processes[harq_idx].round = 0;
+          }
+          else
+            sched_ctrl->harq_processes[harq_idx].round++;
+          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+          harq_idx_s = harq_idx + 1;
+          // if the max harq rounds was reached
+          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+            sched_ctrl->harq_processes[harq_idx].round = 0;
+            stats->dlsch_errors++;
+          }
+          break;
+        }
+        // if feedback slot processing is aborted
+        else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                 (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+          sched_ctrl->harq_processes[harq_idx].round++;
+          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+            sched_ctrl->harq_processes[harq_idx].round = 0;
+          }
+          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+        }
+      }
+    }
+  }
+
+  if (uci_234 != NULL) {
+    int harq_idx_s = 0;
+    int acknack;
+
+    // iterate over received harq bits
+    for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
+      acknack = ((uci_234->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
+      for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+        // if the gNB received ack with a good confidence or if the max harq rounds was reached
+        if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+          // TODO add some confidence level for when there is no CRC
+          if ((uci_234->harq.harq_crc != 1) && acknack) {
+            // toggle NDI and reset round
+            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+            sched_ctrl->harq_processes[harq_idx].round = 0;
+          }
+          else
+            sched_ctrl->harq_processes[harq_idx].round++;
+          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+          harq_idx_s = harq_idx + 1;
+          // if the max harq rounds was reached
+          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+            sched_ctrl->harq_processes[harq_idx].round = 0;
+            stats->dlsch_errors++;
+          }
+          break;
+        }
+        // if feedback slot processing is aborted
+        else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                 (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+          sched_ctrl->harq_processes[harq_idx].round++;
+          if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+            sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+            sched_ctrl->harq_processes[harq_idx].round = 0;
+          }
+          sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+        }
+      }
+    }
+  }
+}
+
+void handle_nr_uci_pucch_0_1(module_id_t mod_id,
+                             frame_t frame,
+                             sub_frame_t slot,
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
+                             NR_UL_IND_t *UL_info)
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
+    return;
+  }
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  // tpc (power control)
+  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                uci_01->ul_cqi,
+                                30);
+
+  if ( uci_01 -> pduBitmap & 0x01 ) {
+    if ( uci_01->sr->sr_indication && !(uci_01->sr->sr_confidence_level)) {
+      sched_ctrl->sr_req.nr_of_srs =1;
+      sched_ctrl->sr_req.ul_SR[0] = 1;
+    }
+  }
+
+  if (((uci_01->pduBitmap >> 1) & 0x01)) {
+    nr_rx_acknack(NULL,uci_01,NULL,UL_info,sched_ctrl,&UE_info->mac_stats[0]);
+  }
+}
+
+void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
+                               frame_t frame,
+                               sub_frame_t slot,
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
+                               NR_UL_IND_t *UL_info)
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
+  if (UE_id < 0) {
+    LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
+    return;
+  }
+  NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  // tpc (power control)
+  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                uci_234->ul_cqi,
+                                30);
+
+  if ( uci_234 -> pduBitmap & 0x01 ) {
+    ///Handle SR PDU
+    uint8_t sr_id = 0;
+
+    for (sr_id = 0; sr_id < uci_234->sr.sr_bit_len; sr_id++) {
+      sched_ctrl->sr_req.ul_SR[sr_id] = *(uci_234->sr.sr_payload) & 1;
+      *(uci_234->sr.sr_payload) >>= 1;
+    }
+
+    sched_ctrl->sr_req.nr_of_srs = uci_234->sr.sr_bit_len;
+  }
+  // TODO
+  if ((uci_234->pduBitmap >> 1) & 0x01) {
+    nr_rx_acknack(NULL,NULL,uci_234,UL_info,sched_ctrl,&UE_info->mac_stats[0]);
+  }
+  if ((uci_234->pduBitmap >> 1) & 0x01) {
+
+    NR_SubcarrierSpacing_t scs=*(RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon->ssbSubcarrierSpacing);
+    LOG_I(PHY,"SFN/SF:%d%d scs %ld \n",
+       UL_info->frame,UL_info->slot,
+       scs);
+     //API to parse the csi report and store it into sched_ctrl
+    extract_pucch_csi_report (csi_MeasConfig, uci_234, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, mod_id);
+    //TCI handling function
+    tci_handling(mod_id, UE_id, UL_info->CC_id, sched_ctrl, UL_info->frame, UL_info->slot);
+  }
+
+  if (uci_234 -> pduBitmap & 0x08) {
+          ///Handle CSI Report 2
+  }
+}
+
+
+// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
+void nr_acknack_scheduling(int Mod_idP,
+                           int UE_id,
+                           frame_t frameP,
+                           sub_frame_t slotP,
+                           int slots_per_tdd,
+                           int *pucch_id,
+                           int *pucch_occ) {
+
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_sched_pucch *curr_pucch;
+  int max_acknacks,pucch_res,first_ul_slot_tdd,k,i,l;
+  uint8_t pdsch_to_harq_feedback[8];
+  int found = 0;
+  int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
+    nr_ulmix_slots++;
+
+  bool csi_pres=false;
+  for (k=0; k<nr_ulmix_slots; k++) {
+    if(UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits>0)
+      csi_pres=true;
+  }
+
+  // As a preference always schedule ack nacks in PUCCH0 (max 2 per slots)
+  // Unless there is CSI meas reporting scheduled in the period to avoid conflicts in the same slot
+  if (csi_pres)
+    max_acknacks=10;
+  else
+    max_acknacks=2;
+
+  // this is hardcoded for now as ue specific
+  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  get_pdsch_to_harq_feedback(Mod_idP,UE_id,ss_type,pdsch_to_harq_feedback);
+
+  // for each possible ul or mixed slot
+  for (k=0; k<nr_ulmix_slots; k++) {
+    for (l=0; l<1; l++) { // scheduling 2 PUCCH in a single slot does not work with the phone, currently
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
+      //if it is possible to schedule acknack in current pucch (no exclusive csi pucch)
+      if ((curr_pucch->csi_bits == 0) || (curr_pucch->simultaneous_harqcsi==true)) {
+        // if there is free room in current pucch structure
+        if (curr_pucch->dai_c<max_acknacks) {
+          pucch_res = get_pucch_resource(UE_info,UE_id,k,l);
+          if (pucch_res>-1){
+            curr_pucch->resource_indicator = pucch_res;
+            curr_pucch->frame = frameP;
+            // first pucch occasion in first UL or MIXED slot
+            first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+            i = 0;
+            while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+              if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
+                found = 1;
+              if (found == 0) i++;
+            }
+            if (found == 1) {
+              // computing slot in which pucch is scheduled
+              curr_pucch->dai_c++;
+              curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
+              curr_pucch->timing_indicator = i; // index in the list of timing indicators
+              *pucch_id = k;
+              *pucch_occ = l;
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+  AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
+}
+
+
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       int *period, int *offset) {
+
+    NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
+
+    switch(p_and_o){
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
+        *period = 4;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
+        *period = 5;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
+        *period = 8;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
+        *period = 10;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
+        *period = 16;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
+        *period = 20;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
+        *period = 40;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
+        *period = 80;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
+        *period = 160;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
+        *period = 320;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+        break;
+    default:
+      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
+    }
+}
+
+
+int get_pucch_resource(NR_UE_info_t *UE_info,int UE_id,int k,int l) {
+
+  // to be updated later, for now simple implementation
+  // use the second allocation just in case there is csi in the first
+  // in that case use second resource (for a different symbol) see 9.2 in 38.213
+  if (l==1) {
+    if (UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits==0)
+      return -1;
+    else
+      return 1;
+  }
+  else
+    return 0;
+
+}
+
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_tot,
+                                uint16_t O_csi,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl) {
+
+  uint16_t O_crc;
+
+  if (O_tot<12)
+    O_crc = 0;
+  else{
+    if (O_tot<20)
+      O_crc = 6;
+    else {
+      if (O_tot<360)
+        O_crc = 11;
+      else
+        AssertFatal(1==0,"Case for segmented PUCCH not yet implemented");
+    }
+  }
+
+  int rtimes100;
+  switch(*maxCodeRate){
+    case NR_PUCCH_MaxCodeRate_zeroDot08 :
+      rtimes100 = 8;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot15 :
+      rtimes100 = 15;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot25 :
+      rtimes100 = 25;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot35 :
+      rtimes100 = 35;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot45 :
+      rtimes100 = 45;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot60 :
+      rtimes100 = 60;
+      break;
+    case NR_PUCCH_MaxCodeRate_zeroDot80 :
+      rtimes100 = 80;
+      break;
+  default :
+    AssertFatal(1==0,"Invalid MaxCodeRate");
+  }
+
+  float r = (float)rtimes100/100;
+
+  if (O_csi == O_tot) {
+    if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
+      AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
+                  r,O_tot,O_crc,nr_prbs);
+    else
+      return nr_prbs;
+  }
+
+  if (format==2){
+    // TODO fix this for multiple CSI reports
+    for (int i=1; i<=nr_prbs; i++){
+      if((O_tot+O_crc)<=(i*n_symb*Qm*n_re_ctrl*r) &&
+         (O_tot+O_crc)>((i-1)*n_symb*Qm*n_re_ctrl*r))
+        return i;
+    }
+    AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with at most %d PRBs",
+                r,O_tot,O_crc,nr_prbs);
+  }
+  else{
+    AssertFatal(1==0,"Not yet implemented");
+  }
+}
+
+
+
 
 

@@ -52,7 +52,6 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
-void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_ctrl, frame_t frame, slot_t slot);
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
