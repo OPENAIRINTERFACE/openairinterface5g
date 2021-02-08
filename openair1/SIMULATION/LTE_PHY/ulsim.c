@@ -1275,14 +1275,16 @@ int main(int argc, char **argv) {
         if (t_rx > 2000 )
           n_rx_dropped++;
 
-        appendVarArray(table_tx, &t_tx);
-        appendVarArray(table_tx_ifft, &t_tx_ifft);
-        appendVarArray(table_tx_mod, &t_tx_mod );
-        appendVarArray(table_tx_enc, &t_tx_enc );
-        appendVarArray(table_rx, &t_rx );
-        appendVarArray(table_rx_fft, &t_rx_fft );
-        appendVarArray(table_rx_demod, &t_rx_demod );
-        appendVarArray(table_rx_dec, &t_rx_dec );
+        if (trials < 1000) {
+         appendVarArray(table_tx, &t_tx);
+         appendVarArray(table_tx_ifft, &t_tx_ifft);
+         appendVarArray(table_tx_mod, &t_tx_mod );
+         appendVarArray(table_tx_enc, &t_tx_enc );
+         appendVarArray(table_rx, &t_rx );
+         appendVarArray(table_rx_fft, &t_rx_fft );
+         appendVarArray(table_rx_demod, &t_rx_demod );
+         appendVarArray(table_rx_dec, &t_rx_dec );
+       }
       }   //trials
 
       // sort table
