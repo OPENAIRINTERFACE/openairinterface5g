@@ -25,6 +25,11 @@
 #include "PHY/defs_nr_UE.h"
 //#include "common/ran_context.h"
 
+#ifdef XFORMS
+  #include "PHY/TOOLS/nr_phy_scope.h"
+  extern char do_forms;
+#endif
+
 extern char* namepointer_chMag ;
 extern char* namepointer_log2;
 extern char  fmageren_name2[512];
@@ -109,5 +114,8 @@ extern unsigned short Nb_81_110[8][4];
 extern uint16_t hundred_times_log10_NPRB[100];
 extern uint8_t alpha_lut[8];
 extern uint8_t max_turbo_iterations;
+
+extern double cpuf;
+
 #endif /*__PHY_EXTERN_H__ */
 
