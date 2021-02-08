@@ -50,15 +50,15 @@
     {"ue-rxgain",                CONFIG_HLP_UERXG,       0,               dblptr:&(rx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
     {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,               dblptr:&rx_gain_off,                defdblval:0,           TYPE_DOUBLE,   0},     \
     {"ue-txgain",                CONFIG_HLP_UETXG,       0,               dblptr:&(tx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
-    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,     0,               u8ptr:&(fp->nb_antennas_rx),         defuintval:1,          TYPE_UINT8,    0},     \
-    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,     0,               u8ptr:&(fp->nb_antennas_tx),         defuintval:1,          TYPE_UINT8,    0},     \
+    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,     0,               u8ptr:&(fp->nb_antennas_rx),        defuintval:1,          TYPE_UINT8,    0},     \
+    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,     0,               u8ptr:&(fp->nb_antennas_tx),        defuintval:1,          TYPE_UINT8,    0},     \
     {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  iptr:&(UE->UE_scan_carrier),        defintval:0,           TYPE_INT,      0},     \
     {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL,  iptr:&(UE->UE_fo_compensation),     defintval:0,           TYPE_INT,      0},     \
     {"ue-max-power",             NULL,                   0,               iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,      0},     \
     {"r"  ,                      CONFIG_HLP_PRB,         0,               iptr:&(fp->N_RB_DL),                defintval:25,          TYPE_UINT,     0},     \
-    {"A" ,                       CONFIG_HLP_TADV,        0,               iptr:&(UE->timing_advance),         defintval:0,           TYPE_INT,   0}, \
+    {"A" ,                       CONFIG_HLP_TADV,        0,               iptr:&(UE->timing_advance),         defintval:0,           TYPE_INT,      0}, \
     {"E" ,                       CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,  u8ptr:&(fp->threequarter_fs),       defintval:0,           TYPE_UINT8,    0}, \
-    {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                            defintval:0,     TYPE_INT,    0}, \
+    {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,           TYPE_INT,      0}, \
     {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&(UE->no_timing_correction), defintval:0,         TYPE_INT,    0}, \
 }
 
