@@ -245,6 +245,30 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   if (mu==1) {
     switch(fp->samples_per_subframe) {
+    case 15360:
+      // 10, 15 MHz @ 15.36 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 12288;
+        if (prach_fmt_id == 3)
+          dftlen = 3072;
+      } else { // 839 sequence
+        dftlen = 512;
+      }
+      break;
+
+    case 30720:
+      // 20, 25, 30 MHz @ 30.72 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 24576;
+        if (prach_fmt_id == 3)
+          dftlen = 6144;
+      } else { // 839 sequence
+        dftlen = 1024;
+      }
+      break;
+
     case 46080:
       // 40 MHz @ 46.08 Ms/s
       if (prach_sequence_length == 0) {
@@ -531,6 +555,202 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
     }
   } else if (mu == 1) {
     switch (fp->samples_per_subframe) {
+    case 15360: // full sampling @ 15.36 Ms/s
+      Ncp = Ncp/2; // to account for 15.36 Ms/s
+      // This is after cyclic prefix
+      prach2 = prach+(2*Ncp); // times 2 for complex samples
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) { // 24576 samples @ 30.72 Ms/s, 12288 samples @ 15.36 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          // here we have | empty  | Prach12288 |
+          memmove(prach,prach+(12288<<1),(Ncp<<2));
+          // here we have | Prefix | Prach12288 |
+          prach_len = 12288+Ncp;
+        } else if (prach_fmt_id == 1) { // 24576 samples @ 30.72 Ms/s, 12288 samples @ 15.36 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          // here we have | empty  | Prach12288 | empty12288 |
+          memmove(prach2+(12288<<1),prach2,(12288<<2));
+          // here we have | empty  | Prach12288 | Prach12288 |
+          memmove(prach,prach+(12288<<2),(Ncp<<2));
+          // here we have | Prefix | Prach12288 | Prach12288 |
+          prach_len = (12288*2)+Ncp;
+        } else if (prach_fmt_id == 2) { // 24576 samples @ 30.72 Ms/s, 12288 samples @ 15.36 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          // here we have | empty  | Prach12288 | empty12288 | empty12288 | empty12288 |
+          memmove(prach2+(12288<<1),prach2,(12288<<2));
+          // here we have | empty  | Prach12288 | Prach12288 | empty12288 | empty12288 |
+          memmove(prach2+(12288<<2),prach2,(12288<<3));
+          // here we have | empty  | Prach12288 | Prach12288 | Prach12288 | Prach12288 |
+          memmove(prach,prach+(12288<<3),(Ncp<<2));
+          // here we have | Prefix | Prach12288 | Prach12288 | Prach12288 | Prach12288 |
+          prach_len = (12288*4)+Ncp;
+        } else if (prach_fmt_id == 3) { // 6144 samples @ 30.72 Ms/s, 3072 samples @ 15.36 Ms/s
+          idft(IDFT_3072,prachF,prach2,1);
+          // here we have | empty  | Prach3072 | empty3072 | empty3072 | empty3072 |
+          memmove(prach2+(3072<<1),prach2,(3072<<2));
+          // here we have | empty  | Prach3072 | Prach3072 | empty3072 | empty3072 |
+          memmove(prach2+(3072<<2),prach2,(3072<<3));
+          // here we have | empty  | Prach3072 | Prach3072 | Prach3072 | Prach3072 |
+          memmove(prach,prach+(3072<<3),(Ncp<<2));
+          // here we have | Prefix | Prach3072 | Prach3072 | Prach3072 | Prach3072 |
+          prach_len = (3072*4)+Ncp;
+        }
+      } else { // short PRACH sequence
+	if (use_extended_prach_prefix)
+	  Ncp += 8; // 16*kappa, kappa=0.5 for 15.36 Ms/s
+	prach2 = prach+(2*Ncp); // times 2 for complex samples
+        if (prach_fmt_id == 9) {
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 |
+          prach_len = (512*1)+Ncp;
+        } else if (prach_fmt_id == 4 || prach_fmt_id == 7) {
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 |
+          prach_len = (512*2)+Ncp;
+        } else if (prach_fmt_id == 5) { // 4x512
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 | empty512 | empty512 |
+          memmove(prach2+(512<<2),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 | Prach512 | Prach512 |
+          prach_len = (512*4)+Ncp;
+        } else if (prach_fmt_id == 6) { // 6x512
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<2),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | empty512 | empty512 |
+          memmove(prach2+(512<<3),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          prach_len = (512*6)+Ncp;
+        } else if (prach_fmt_id == 8) { // 12x512
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<2),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<3),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1)*6,prach2,(512<<2)*6);
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          prach_len = (512*12)+Ncp;
+        }
+      }
+      break;
+
+    case 30720: // full sampling @ 30.72 Ms/s
+      Ncp = Ncp*1; // to account for 30.72 Ms/s
+      // This is after cyclic prefix
+      prach2 = prach+(2*Ncp); // times 2 for complex samples
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) { // 24576 samples @ 30.72 Ms/s
+          idft(IDFT_24576,prachF,prach2,1);
+          // here we have | empty  | Prach24576 |
+          memmove(prach,prach+(24576<<1),(Ncp<<2));
+          // here we have | Prefix | Prach24576 |
+          prach_len = 24576+Ncp;
+        } else if (prach_fmt_id == 1) { // 24576 samples @ 30.72 Ms/s
+          idft(IDFT_24576,prachF,prach2,1);
+          // here we have | empty  | Prach24576 | empty24576 |
+          memmove(prach2+(24576<<1),prach2,(24576<<2));
+          // here we have | empty  | Prach24576 | Prach24576 |
+          memmove(prach,prach+(24576<<2),(Ncp<<2));
+          // here we have | Prefix | Prach24576 | Prach24576 |
+          prach_len = (24576*2)+Ncp;
+        } else if (prach_fmt_id == 2) { // 24576 samples @ 30.72 Ms/s
+          idft(IDFT_24576,prachF,prach2,1);
+          // here we have | empty  | Prach24576 | empty24576 | empty24576 | empty24576 |
+          memmove(prach2+(24576<<1),prach2,(24576<<2));
+          // here we have | empty  | Prach24576 | Prach24576 | empty24576 | empty24576 |
+          memmove(prach2+(24576<<2),prach2,(24576<<3));
+          // here we have | empty  | Prach24576 | Prach24576 | Prach24576 | Prach24576 |
+          memmove(prach,prach+(24576<<3),(Ncp<<2));
+          // here we have | Prefix | Prach24576 | Prach24576 | Prach24576 | Prach24576 |
+          prach_len = (24576*4)+Ncp;
+        } else if (prach_fmt_id == 3) { // 6144 samples @ 30.72 Ms/s
+          idft(IDFT_6144,prachF,prach2,1);
+          // here we have | empty  | Prach6144 | empty6144 | empty6144 | empty6144 |
+          memmove(prach2+(6144<<1),prach2,(6144<<2));
+          // here we have | empty  | Prach6144 | Prach6144 | empty6144 | empty6144 |
+          memmove(prach2+(6144<<2),prach2,(6144<<3));
+          // here we have | empty  | Prach6144 | Prach6144 | Prach6144 | Prach6144 |
+          memmove(prach,prach+(6144<<3),(Ncp<<2));
+          // here we have | Prefix | Prach6144 | Prach6144 | Prach6144 | Prach6144 |
+          prach_len = (6144*4)+Ncp;
+        }
+      } else { // short PRACH sequence
+	if (use_extended_prach_prefix)
+	  Ncp += 16; // 16*kappa, kappa=1 for 30.72Msps
+	prach2 = prach+(2*Ncp); // times 2 for complex samples
+        if (prach_fmt_id == 9) {
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 |
+          prach_len = (1024*1)+Ncp;
+        } else if (prach_fmt_id == 4 || prach_fmt_id == 7) {
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 |
+          prach_len = (1024*2)+Ncp;
+        } else if (prach_fmt_id == 5) { // 4x1024
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<2),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          prach_len = (1024*4)+Ncp;
+        } else if (prach_fmt_id == 6) { // 6x1024
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<2),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<3),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          prach_len = (1024*6)+Ncp;
+        } else if (prach_fmt_id == 8) { // 12x1024
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<2),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<3),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1)*6,prach2,(1024<<2)*6);
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          prach_len = (1024*12)+Ncp;
+        }
+      }
+      break;
+
     case 61440: // full sampling @ 61.44 Ms/s
       Ncp = Ncp*2; // to account for 61.44 Ms/s
       // This is after cyclic prefix 
