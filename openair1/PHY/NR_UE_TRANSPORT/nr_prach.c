@@ -244,86 +244,58 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
    *********************************************************/
 
   if (mu==1) {
-  if (fp->N_RB_UL <= 100)
-    AssertFatal(1 == 0, "N_RB_UL %d not support for NR PRACH yet\n", fp->N_RB_UL);
-  else if (fp->N_RB_UL < 137) {
-    if (fp->threequarter_fs == 0) {
-      //40 MHz @ 61.44 Ms/s
-      //50 MHz @ 61.44 Ms/s
+    switch(fp->samples_per_subframe) {
+    case 46080:
+      // 40 MHz @ 46.08 Ms/s
       if (prach_sequence_length == 0) {
-        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
-            dftlen = 49152;
-        if (prach_fmt_id == 3)
-            dftlen = 12288;
-      } // 839 sequence
-      else {
-        switch (mu){
-          case 1:
-            dftlen = 2048;
-            break;
-          default:
-            AssertFatal(1 == 0, "Shouldn't get here\n");
-            break;
-        }
-      }
-    } else { // threequarter sampling
-      //  40 MHz @ 46.08 Ms/s
-      if (prach_sequence_length == 0) {
-        AssertFatal(fp->N_RB_UL <= 107, "cannot do 108..136 PRBs with 3/4 sampling\n");
         if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
           dftlen = 36864;
         if (prach_fmt_id == 3)
           dftlen = 9216;
-      } else {
-        switch (mu){
-          case 1:
-            dftlen = 1536;
-          break;
-          default:
-            AssertFatal(1 == 0, "Shouldn't get here\n");
-            break;
-        }
-      } // short format
-    } // 3/4 sampling
-  } // <=50 MHz BW
-  else if (fp->N_RB_UL <= 273) {
-    if (fp->threequarter_fs == 0) {
-    //80,90,100 MHz @ 122.88 Ms/s
+      } else { // 839 sequence
+        dftlen = 1536;
+      }
+      break;
+
+    case 61440:
+      // 40, 50, 60 MHz @ 61.44 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 49152;
+        if (prach_fmt_id == 3)
+          dftlen = 12288;
+      } else { // 839 sequence
+        dftlen = 2048;
+      }
+      break;
+
+    case 92160:
+      // 50, 60, 70, 80, 90 MHz @ 92.16 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 73728;
+        if (prach_fmt_id == 3)
+          dftlen = 18432;
+      } else { // 839 sequence
+        dftlen = 3072;
+      }
+      break;
+
+    case 122880:
+      // 70, 80, 90, 100 MHz @ 122.88 Ms/s
       if (prach_sequence_length == 0) {
         if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
           dftlen = 98304;
         if (prach_fmt_id == 3)
           dftlen = 24576;
+      } else { // 839 sequence
+        dftlen = 4096;
       }
-    } else { // threequarter sampling
-      switch (mu){
-        case 1:
-          dftlen = 4096;
-          break;
-        default:
-          AssertFatal(1 == 0, "Shouldn't get here\n");
-          break;
-      }
+      break;
+
+    default:
+      AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
     }
-  } else {
-    AssertFatal(fp->N_RB_UL <= 217, "cannot do more than 217 PRBs with 3/4 sampling\n");
-    //  80 MHz @ 92.16 Ms/s
-    if (prach_sequence_length == 0) {
-      if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
-        dftlen = 73728;
-      if (prach_fmt_id == 3)
-        dftlen = 18432;
-    } else {
-      switch (mu){
-        case 1:
-          dftlen = 3072;
-          break;
-        default:
-          AssertFatal(1 == 0, "Shouldn't get here\n");
-          break;
-      }
-    }
-  }
   }
   else if (mu==3) {
     if (fp->threequarter_fs) 
@@ -432,8 +404,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
       use_extended_prach_prefix = 1;
   }
 
-  if (fp->N_RB_UL <= 34) { //32 PRB case 61.44Msps
-    if (fp->threequarter_fs == 0) {
+  if (mu == 3) {
+    switch (fp->samples_per_subframe) {
+    case 61440: // 32 PRB case, 61.44 Msps
       Ncp<<=1; //to account for 61.44Mbps
       // This is after cyclic prefix 
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
@@ -491,13 +464,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (512*12)+Ncp;
 	}		
       }
-    }
-    else
-      AssertFatal(1==0,"3/4 sampling not supported for this PRACH size %d\n",fp->N_RB_UL);
-   
-  }
-  else if (fp->N_RB_UL <= 68) {//66 PRB case, 122.88 Msps 
-    if (fp->threequarter_fs == 0) {
+      break;
+
+    case 122880: // 66 PRB case, 122.88 Msps
       Ncp<<=2; //to account for 122.88Mbps
       // This is after cyclic prefix 
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
@@ -555,13 +524,15 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (1024*12)+Ncp;
 	}	
       }
+      break;
+
+    default:
+      AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
     }
-    else
-      AssertFatal(1==0,"3/4 sampling not supported for this PRACH size %d\n",fp->N_RB_UL);
-  }
-  else if (fp->N_RB_UL < 137) { // 46.08 or 61.44 Ms/s
-    if (fp->threequarter_fs == 0) { // full sampling @ 61.44 Ms/s
-      Ncp<<=1; //to account for 61.44Mbps 
+  } else if (mu == 1) {
+    switch (fp->samples_per_subframe) {
+    case 61440: // full sampling @ 61.44 Ms/s
+      Ncp = Ncp*2; // to account for 61.44 Ms/s
       // This is after cyclic prefix 
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
       if (prach_sequence_length == 0){
@@ -587,7 +558,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           memmove(prach,prach+(49152<<3),(Ncp<<2));
           // here we have |Prefix | Prach49152 | Prach49152| Prach49152 | Prach49152
           prach_len = (49152*4)+Ncp;
-        } else if (prach_fmt_id == 3) { // //6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
+        } else if (prach_fmt_id == 3) { // 6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
           idft(IDFT_12288,prachF,prach2,1);
           memmove(prach2+(12288<<1),prach2,(12288<<2));
           // here we have |empty | Prach12288 | Prach12288| empty12288 | empty12288
@@ -649,7 +620,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (2048*12)+Ncp;
         }
       }
-    } else {  // threequarter sampling @ 46.08 Ms/s
+      break;
+
+    case 46080: // threequarter sampling @ 46.08 Ms/s
       Ncp = (Ncp*3)/2;
       prach2 = prach+(Ncp<<1);
       if (prach_sequence_length == 0){
@@ -738,9 +711,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (1536*12)+Ncp;
         }
       }
-    }
-  } else if (fp->N_RB_UL <= 273) {// 92.16 or 122.88 Ms/s
-    if (fp->threequarter_fs == 0) { // full sampling @ 122.88 Ms/s
+      break;
+
+    case 122880: // full sampling @ 122.88 Ms/s
       Ncp<<=2; //to account for 122.88Mbps
       // This is after cyclic prefix
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
@@ -828,7 +801,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (4096*12)+Ncp;
         }
       }
-    } else { // three quarter sampling @ 92.16 Ms/s
+      break;
+
+    case 92160: // three quarter sampling @ 92.16 Ms/s
       Ncp = (Ncp*3); //to account for 92.16 Msps
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
       if (prach_sequence_length == 0){
@@ -915,6 +890,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (3072*12)+Ncp;
         }
       }
+      break;
+
+    default:
+      AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
     }
   }
 
