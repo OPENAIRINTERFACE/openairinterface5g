@@ -1172,8 +1172,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
   int cqi_idx = 0;
   int curr_ssb_beam_index = 0; //ToDo: yet to know how to identify the serving ssb beam index
   uint8_t target_ssb_beam_index = curr_ssb_beam_index;
-  //uint8_t max_reported_RSRP = 16;
-  //int serving_SSB_Beam_RSRP;
   uint8_t is_triggering_ssb_beam_switch =0;
   uint8_t ssb_idx = 0;
   int pdsch_bwp_id =0;
@@ -1182,16 +1180,12 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
   uint8_t idx = 0;
   int bwp_id  = 1;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  //NR_COMMON_channels_t *cc = RC.nrmac[Mod_idP]->common_channels;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  //NR_CSI_MeasConfig_t *csi_MeasConfig = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   //bwp indicator
   int n_dl_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
   uint8_t nr_ssbri_cri = 0;
   uint8_t nb_of_csi_ssb_report = UE_info->csi_report_template[UE_id][cqi_idx].nb_of_csi_ssb_report;
-  //uint8_t bitlen_ssbri = log (nb_of_csi_ssb_report)/log (2);
-  //uint8_t max_rsrp_reported = -1;
   int better_rsrp_reported = -140-(-0); /*minimum_measured_RSRP_value - minimum_differntail_RSRP_value*///considering the minimum RSRP value as better RSRP initially
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
@@ -1213,9 +1207,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
   //for all reported SSB
   for (idx = 0; idx < nb_of_csi_ssb_report; idx++) {
     nr_ssbri_cri = sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri;
-    //if group based beam Reporting is disabled
-    /*if(NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
-        csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {*/
       //extracting the ssb indexes
       for (ssb_idx = 0; ssb_idx < nr_ssbri_cri; ssb_idx++) {
         ssb_index[idx * nb_of_csi_ssb_report + ssb_idx] = sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[ssb_idx];
@@ -1224,7 +1215,7 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
       //if strongest measured RSRP is configured
       strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
       ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
-      LOG_I(MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
+      LOG_D(MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
       //if current ssb rsrp is greater than better rsrp
       if(ssb_rsrp[idx * nb_of_csi_ssb_report] > better_rsrp_reported) {
@@ -1241,40 +1232,13 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
           target_ssb_beam_index = idx * nb_of_csi_ssb_report + diff_rsrp_idx;
         }
       }
-#if 0
-      //}
-    //if group based beam reporting is enabled
-    else if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled !=
-             csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {
-      //extracting the ssb indexes
-      //for group based reporting only 2 SSB RS are reported, 38.331
-      for (ssb_idx = 0; ssb_idx < 2; ssb_idx++) {
-        ssb_index[idx * nb_of_csi_ssb_report + ssb_idx] = sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.CRI_SSBRI[ssb_idx];
-      }
-
-      strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.RSRP);
-      ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
-
-      if(ssb_rsrp[idx * nb_of_csi_ssb_report] > better_rsrp_reported) {
-        better_rsrp_reported = ssb_rsrp[idx * nb_of_csi_ssb_report];
-        target_ssb_beam_index = idx * nb_of_csi_ssb_report;
-      }
-
-      ssb_rsrp[idx * nb_of_csi_ssb_report + 1] = get_diff_rsrp(sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx], strongest_ssb_rsrp);
-
-      if(ssb_rsrp[idx * nb_of_csi_ssb_report + 1] > better_rsrp_reported) {
-        better_rsrp_reported = ssb_rsrp[idx * nb_of_csi_ssb_report + 1];
-        target_ssb_beam_index = idx * nb_of_csi_ssb_report + 1;
-      }
-    }
-#endif
   }
 
 
   if(ssb_index[target_ssb_beam_index] != ssb_index[curr_ssb_beam_index] && ssb_rsrp[target_ssb_beam_index] > ssb_rsrp[curr_ssb_beam_index]) {
     if( ssb_rsrp[target_ssb_beam_index] - ssb_rsrp[curr_ssb_beam_index] > L1_RSRP_HYSTERIS) {
       is_triggering_ssb_beam_switch = 1;
-      LOG_I(MAC, "Triggering ssb beam switching using tci\n");
+      LOG_D(MAC, "Triggering ssb beam switching using tci\n");
     }
   }
 
@@ -1430,13 +1394,11 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
 
   UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = 0;
   for ( csi_report_id =0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
-    //Assuming in periodic reporting for one slot can be configured with only one CSI-ReportConfig
-    //   if (csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic) {
     //Has to implement according to reportSlotConfig type
     /*reportQuantity must be considered according to the current scheduled
       CSI-ReportConfig if multiple CSI-ReportConfigs present*/
     reportQuantity_type = UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
-    LOG_I(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
+    LOG_D(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
 
     if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type || 
         NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type) {
@@ -1477,7 +1439,7 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
             *(UE_info->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 	  
         *payload >>= cri_ssbri_bitlen;
-        LOG_I(PHY,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
+        LOG_D(PHY,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
       }
 
       reverse_n_bits(payload, 7);
@@ -1490,63 +1452,13 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
         *payload >>= 4;
       }
       UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
-      LOG_I(MAC,"csi_payload size = %d, rsrp_id = %d\n",payload_size, sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
+      LOG_D(MAC,"csi_payload size = %d, rsrp_id = %d\n",payload_size, sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
     }
   }
 
   if ( !(reportQuantity_type)) 
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
 
-#if 0
-
-  if ( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1 == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI== reportQuantity_type) {
-    // Handling of extracting cri
-    sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report.cri = calloc ( 1, ceil(bitlen_cri/8));
-    *(sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report.cri) = *((uint32_t *)payload) & ~(~1<<(bitlen_cri-1));
-    *payload >>= bitlen_cri;
-
-    if ( 1 == RC.nrrrc[gnb_mod_idP]->carrier.pdsch_AntennaPorts ) {
-      /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
-      sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report->ri = NULL;
-    } else {
-      //Handling for the ri for multiple csi ports
-    }
-  }
-
-  if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI== reportQuantity_type) {
-    if ( 1 == RC.nrrrc[gnb_mod_idP]->carrier.pdsch_AntennaPorts )
-      /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
-      sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report->li = NULL;
-    else {
-      //Handle for li for multiple CSI ports
-    }
-  }
-
-  //TODO: check for zero padding if available shift payload to the number of zero padding bits
-
-  if ( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI== reportQuantity_type) {
-    if ( 1 == RC.nrrrc[gnb_mod_idP]->carrier.pdsch_AntennaPorts ) {
-      /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
-      sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report->pmi_x1 = NULL;
-      sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report->pmi_x2 = NULL;
-    }
-  }
-
-  if ( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI == reportQuantity_type ||
-       NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI== reportQuantity_type) {
-    /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
-    *(sched_ctrl->CSI_report[UE_id][cqi_idx].choice.cri_ri_li_pmi_cqi_report->cqi) = *(payload) & 0x0f;
-    *(payload) >>= 4;
-  }
-
-#endif
 }
 
 
