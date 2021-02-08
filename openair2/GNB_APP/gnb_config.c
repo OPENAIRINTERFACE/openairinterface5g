@@ -746,6 +746,17 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
 
+    // pdcch_ConfigSIB1
+    rrc->carrier.pdcch_ConfigSIB1 = calloc(1,sizeof(NR_PDCCH_ConfigSIB1_t));
+    paramdef_t pdcch_ConfigSIB1[] = PDCCH_CONFIGSIB1PARAMS_DESC(rrc->carrier.pdcch_ConfigSIB1);
+    paramlist_def_t pdcch_ConfigSIB1ParamList = {GNB_CONFIG_STRING_PDCCH_CONFIGSIB1, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
+    config_getlist(&pdcch_ConfigSIB1ParamList, NULL, 0, aprefix);
+    if (pdcch_ConfigSIB1ParamList.numelt > 0) {
+        sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_PDCCH_CONFIGSIB1, 0);
+        config_get(pdcch_ConfigSIB1,sizeof(pdcch_ConfigSIB1)/sizeof(paramdef_t),aprefix);
+    }
+
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);
@@ -905,19 +916,19 @@ int RCconfig_nr_gtpu(void ) {
 
     if (address) {
       MessageDef *message;
-      AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, GTPV1U_ENB_S1_REQ))!=NULL,"");
-     // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-     // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
-
 
       if (gnb_mode == 1) { // NSA
+        AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_ENB_S1_REQ))!=NULL,"");
+        // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+        // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
         IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
         LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
         GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
       } else {// TODO SA
-        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
-        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
-        GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_NGU;
+        AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_GNB_NG_REQ))!=NULL,"");
+        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
+        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up);
+        GTPV1U_GNB_NG_REQ(message).gnb_port_for_NGu_up = gnb_port_for_NGU;
       }
 
      itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
@@ -1199,7 +1210,7 @@ void NRRCConfig(void) {
   paramdef_t GNBSParams[]         = GNBSPARAMS_DESC;
   
 /* get global parameters, defined outside any section in the config file */
- 
+
   LOG_I(GNB_APP, "Getting GNBSParams\n");
  
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 

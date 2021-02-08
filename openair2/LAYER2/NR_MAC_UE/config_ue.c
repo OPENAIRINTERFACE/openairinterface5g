@@ -152,8 +152,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   mac->phy_config.CC_id = cc_idP;
   
   // carrier config
-
-  LOG_I(MAC, "Entering UE Config Common\n");
+  LOG_D(MAC, "Entering UE Config Common\n");
 
   cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                                       scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
@@ -321,6 +320,47 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
 }
 
+/** \brief This function performs some configuration routines according to clause 12 "Bandwidth part operation" 3GPP TS 38.213 version 16.3.0 Release 16
+    @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
+    @returns void
+    */
+void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format){
+
+  NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
+
+  if (bwp_ind && dci_format){
+
+    switch(*dci_format){
+    case NR_UL_DCI_FORMAT_0_1:
+      mac->UL_BWP_Id = *bwp_ind;
+      break;
+    case NR_DL_DCI_FORMAT_1_1:
+      mac->DL_BWP_Id = *bwp_ind;
+      break;
+    default:
+      LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
+    }
+
+  } else {
+
+    if (scd->firstActiveDownlinkBWP_Id)
+      mac->DL_BWP_Id = *scd->firstActiveDownlinkBWP_Id;
+    else if (scd->defaultDownlinkBWP_Id)
+      mac->DL_BWP_Id = *scd->defaultDownlinkBWP_Id;
+    else
+      mac->DL_BWP_Id = 1;
+
+    if (scd->uplinkConfig && scd->uplinkConfig->firstActiveUplinkBWP_Id)
+      mac->UL_BWP_Id = *scd->uplinkConfig->firstActiveUplinkBWP_Id;
+    else
+      mac->UL_BWP_Id = 1;
+
+  }
+
+  LOG_D(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
+
+}
+
 /** \brief This function is relavant for the UE procedures for control. It loads the search spaces, the BWPs and the CORESETs into the MAC instance and
     \brief performs assert checks on the relevant RRC configuration.
     @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
@@ -328,15 +368,20 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     */
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
-  uint8_t bwp_id = 1, coreset_id = 1, ss_id;
+  uint8_t coreset_id = 1, ss_id;
+
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
   AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
-  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Common;
+  config_bwp_ue(mac, NULL, NULL);
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  AssertFatal(dl_bwp_id != 0, "DL_BWP_Id is 0!");
+
+  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
-  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Dedicated;
+  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated;
   AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
 
   NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
@@ -365,8 +410,8 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
 
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
-  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
-  mac->coreset[bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
+  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1];
+  mac->coreset[dl_bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
 
   // Check dedicated UL BWP and pass to MAC
   mac->ULbwp[0] = uplinkBWP_ToAddModList->list.array[0];
@@ -378,7 +423,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
-    AssertFatal(*ss->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
     mac->SSpace[0][0][ss_id] = ss;
@@ -389,14 +434,74 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
-    AssertFatal(css->searchSpaceId != 0, "css->searchSpaceId is 0\n");
+    AssertFatal(*css->controlResourceSetId == mac->coreset[dl_bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
     mac->SSpace[0][0][ss_id] = css;
     ss_id++;
   }
+
+  // TODO: Merge this code in a single function as fill_default_searchSpaceZero() in rrc_gNB_reconfig.c
+  // Search space zero
+  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->search_space_zero->controlResourceSetId == NULL) mac->search_space_zero->controlResourceSetId=calloc(1,sizeof(*mac->search_space_zero->controlResourceSetId));
+  if(mac->search_space_zero->monitoringSymbolsWithinSlot == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot = calloc(1,sizeof(*mac->search_space_zero->monitoringSymbolsWithinSlot));
+  if(mac->search_space_zero->monitoringSymbolsWithinSlot->buf == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  if(mac->search_space_zero->nrofCandidates == NULL) mac->search_space_zero->nrofCandidates = calloc(1,sizeof(*mac->search_space_zero->nrofCandidates));
+  if(mac->search_space_zero->searchSpaceType == NULL) mac->search_space_zero->searchSpaceType = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType));
+  if(mac->search_space_zero->searchSpaceType->choice.common == NULL) mac->search_space_zero->searchSpaceType->choice.common=calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common));
+  if(mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL) mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+  mac->search_space_zero->searchSpaceId = 0;
+  *mac->search_space_zero->controlResourceSetId = 0;
+  mac->search_space_zero->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*mac->search_space_zero->monitoringSlotPeriodicityAndOffset));
+  mac->search_space_zero->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+  mac->search_space_zero->duration=NULL;
+  // should be '1100 0000 0000 00'B (LSB first!), first two symbols in slot, adjust if needed
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[1] = 0;
+  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
+  mac->search_space_zero->monitoringSymbolsWithinSlot->size = 2;
+  mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
+
+  // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
+  mac->search_space_zero->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n2;
+  mac->search_space_zero->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
+  mac->search_space_zero->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+  mac->search_space_zero->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
+
+  // Coreset0
+  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
+  mac->coreset0->controlResourceSetId = 0;
+  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
+  if(mac->coreset0->frequencyDomainResources.buf == NULL) mac->coreset0->frequencyDomainResources.buf = calloc(1,6);
+  mac->coreset0->frequencyDomainResources.buf[0] = 0xff;
+  mac->coreset0->frequencyDomainResources.buf[1] = 0;
+  mac->coreset0->frequencyDomainResources.buf[2] = 0;
+  mac->coreset0->frequencyDomainResources.buf[3] = 0;
+  mac->coreset0->frequencyDomainResources.buf[4] = 0;
+  mac->coreset0->frequencyDomainResources.buf[5] = 0;
+  mac->coreset0->frequencyDomainResources.size = 6;
+  mac->coreset0->frequencyDomainResources.bits_unused = 3;
+  mac->coreset0->duration = 1;
+  mac->coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*mac->coreset0->cce_REG_MappingType.choice.interleaved));
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = NULL;
+  mac->coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+  if(mac->coreset0->tci_StatesPDCCH_ToAddList == NULL) mac->coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*mac->coreset0->tci_StatesPDCCH_ToAddList));
+  NR_TCI_StateId_t *tci[8];
+  for (int i=0;i<8;i++) {
+    tci[i]=calloc(1,sizeof(*tci[i]));
+    *tci[i] = i;
+    ASN_SEQUENCE_ADD(&mac->coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  }
+  mac->coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
+  mac->coreset0->tci_PresentInDCI = NULL;
+  mac->coreset0->pdcch_DMRS_ScramblingID = NULL;
+
 }
 
 int nr_rrc_mac_config_req_ue(
@@ -410,6 +515,7 @@ int nr_rrc_mac_config_req_ue(
     NR_CellGroupConfig_t            *cell_group_config ){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+    RA_config_t *ra = &mac->ra;
 
     //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
@@ -422,7 +528,7 @@ int nr_rrc_mac_config_req_ue(
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
       config_control_ue(mac);
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
-        mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+        ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
 	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
 	config_common_ue(mac,module_id,cc_idP);
 	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;

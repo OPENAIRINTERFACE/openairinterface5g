@@ -86,6 +86,13 @@ int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_beare
    \param sdu_len       length of buffer*/
 int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len);
 
+/**\brief decode NR SIB1 message
+   \param module_idP    module id
+   \param gNB_index     gNB index
+   \param sduP          pointer to buffer of ASN message
+   \param sdu_len       length of buffer*/
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len);
+
 /**\brief Decode NR DCCH from gNB, sent from lower layer through SRB3
    \param module_id  module id
    \param gNB_index  gNB index

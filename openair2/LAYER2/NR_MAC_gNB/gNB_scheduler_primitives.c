@@ -176,7 +176,13 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   int coreset_id = coreset->controlResourceSetId;
-  int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
+
+  int *cce_list;
+  if(bwp->bwp_Id == 0) {
+    cce_list = nr_mac->cce_list[1][0];
+  } else {
+    cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
+  }
 
   int n_rb=0;
   for (int i=0;i<6;i++)
@@ -191,12 +197,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
   const uint16_t M_s_max = nr_of_candidates;
 
-  AssertFatal(m < nr_of_candidates,
-              "PDCCH candidate index %d in CORESET %d exceeds the maximum "
-              "number of PDCCH candidates (%d)\n",
-              m,
-              coreset_id,
-              nr_of_candidates);
+  //PDCCH candidate index m in CORESET exceeds the maximum number of PDCCH candidates
+  if(m >= nr_of_candidates)
+    return -1;
 
   int first_cce = aggregation * (( Y + CEILIDIV((m*N_cce),(aggregation*M_s_max)) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
@@ -218,7 +221,6 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
 {
   ps->dci_format = dci_format;
   ps->time_domain_allocation = tda;
-  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
       ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -240,13 +242,17 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                                     NR_RNTI_C,
                                     target_ss,
                                     false);
-  else
+  else {
     ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config->mcs_TableTransformPrecoder,
                                     1,
                                     ps->dci_format,
                                     NR_RNTI_C,
                                     target_ss,
                                     false);
+    num_dmrs_cdm_grps_no_data = 2; // in case of transform precoding - no Data sent in DMRS symbol
+  }
+
+  ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   /* DMRS calculations */
   ps->mapping_type = tdaList->list.array[tda]->mappingType;
@@ -549,8 +555,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->pduIndex = nr_mac->pdu_index[0]++;
 
   // BWP
-  pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-  pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
   if (bwp->bwp_Common->genericParameters.cyclicPrefix)
     pdsch_pdu_rel15->CyclicPrefix = *bwp->bwp_Common->genericParameters.cyclicPrefix;
@@ -617,7 +623,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
             pdsch_pdu_rel15->rbSize,
             pdsch_pdu_rel15->rbStart,
             NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,
-                     275));
+                     MAX_BWP_SIZE));
   else
     AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
   // time domain assignment: row index used instead of SLIV
@@ -647,7 +653,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         dci_pdu_rel15[0].frequency_domain_assignment.val,
         pdsch_pdu_rel15->rbStart,
         pdsch_pdu_rel15->rbSize,
-        NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, 275),
+        NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
         dci_pdu_rel15[0].time_domain_assignment.val,
         dci_pdu_rel15[0].vrb_to_prb_mapping.val,
         dci_pdu_rel15[0].mcs,
@@ -710,7 +716,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   int *dci_formats,
                   int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id) {
-  const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const int bw = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   switch (dci_formats[(pdcch_pdu_rel15->numDlDci) - 1]) {
     case NR_UL_DCI_FORMAT_0_0:
       dci_pdu_rel15->frequency_domain_assignment.val =
@@ -788,8 +794,8 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                         uint8_t aggregation_level,
                         int CCEIndex) {
   if (bwp) { // This is not the InitialBWP
-    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
 
@@ -833,8 +839,12 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
       pdcch_pdu->ShiftIndex = 0;
     }
 
-    pdcch_pdu->CoreSetType = 1; 
-    
+    if(coreset->controlResourceSetId == 0) {
+      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+    } else{
+      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+    }
+
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
 
@@ -926,8 +936,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     else
       pucch_pdu->hopping_id = *scc->physCellId;
 
-    pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pucch_pdu->subcarrier_spacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pucch_pdu->cyclic_prefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
 
@@ -1329,22 +1339,42 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
 	break;
 	
       case NR_RNTI_SI:
-	// Freq domain assignment 0-16 bit
-	fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
-	for (int i=0; i<fsize; i++)
-	  *dci_pdu |= ((dci_pdu_rel15->frequency_domain_assignment.val>>(fsize-i-1))&1)<<(dci_size-pos++);
-	// Time domain assignment 4 bit
-	for (int i=0; i<4; i++)
-	  *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val>>(3-i))&1)<<(dci_size-pos++);
-	// VRB to PRB mapping 1 bit
-	*dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
-	// MCS 5bit  //bit over 32, so dci_pdu ++
-	for (int i=0; i<5; i++)
-	  *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
-	// Redundancy version  2bit
-	for (int i=0; i<2; i++)
-	  *dci_pdu |= (((uint64_t)dci_pdu_rel15->rv>>(1-i))&1)<<(dci_size-pos++);
-	
+         pos=1;
+
+        // Freq domain assignment 0-16 bit
+        fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+        for (int i=0; i<fsize; i++)
+          *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val>>(fsize-1-i))&1)<<(dci_size-pos++);
+
+        // Time domain assignment 4 bit
+        for (int i=0; i<4; i++)
+          *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val>>(3-i))&1)<<(dci_size-pos++);
+
+        // VRB to PRB mapping 1 bit
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
+
+        // MCS 5bit  //bit over 32, so dci_pdu ++
+        for (int i=0; i<5; i++)
+          *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
+
+        // Redundancy version  2 bit
+        for (int i=0; i<2; i++)
+          *dci_pdu |= (((uint64_t)dci_pdu_rel15->rv>>(1-i))&1)<<(dci_size-pos++);
+
+        // System information indicator 1bit
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->system_info_indicator&1)<<(dci_size-pos++);
+
+        // reserved 15 bits
+
+        LOG_D(PHY,"dci_size = %i\n", dci_size);
+        LOG_D(PHY,"fsize = %i\n", fsize);
+        LOG_D(PHY,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+        LOG_D(PHY,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+        LOG_D(PHY,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+        LOG_D(PHY,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+        LOG_D(PHY,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+        LOG_D(PHY,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
+
 	break;
 	
       case NR_RNTI_TC:
@@ -1993,32 +2023,6 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   }
 }
 
-
-void find_aggregation_candidates(uint8_t *aggregation_level,
-                                 uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss) {
-
-  if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
-    *aggregation_level = 1;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
-  }
-  if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
-    *aggregation_level = 2;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
-  }
-  if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
-    *aggregation_level = 4;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
-  }
-  if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
-    *aggregation_level = 8;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
-  }
-  if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
-    *aggregation_level = 16;
-    *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
-  }
-}
 
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,

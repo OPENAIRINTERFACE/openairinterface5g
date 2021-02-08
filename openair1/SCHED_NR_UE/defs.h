@@ -20,6 +20,7 @@
  */
 
 /*
+  \brief NR UE PHY functions prototypes
   \author R. Knopp, F. Kaltenberger
   \company EURECOM
   \email knopp@eurecom.fr
@@ -110,17 +111,17 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
-  @param ue       Pointer to UE variables on which to act
-  @param proc     Pointer to proc information
-  @param gNB_id   Local id of eNB on which to act
-  @param mode     calibration/debug mode
+  @param ue             Pointer to UE variables on which to act
+  @param proc           Pointer to proc information
+  @param gNB_id         Local id of eNB on which to act
+  @param dlsch_parallel use multithreaded dlsch processing
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           runmode_t mode);
+                           uint8_t dlsch_parallel);
 
-int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
+int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
 
 
 #ifdef UE_SLOT_PARALLELISATION
@@ -221,7 +222,7 @@ void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
     @param
     @param
  */
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t mode);
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
 
 int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe);
 
@@ -303,15 +304,6 @@ int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 */
 void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx);
 
-/*! \brief Compute the timing adjustment at UE side from the old TA offset and the new received TA command
-  @param Mod_id Local UE index on which to act
-  @param CC_id Component Carrier Index
-  @param ta_command TA command received from the network
-  @param mu numerology index (0,1,2..)
-*/
-void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB);
-void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, int frame_rx, int nr_slot_rx, uint16_t ta_command);
-
 unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
 
 void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
@@ -344,6 +336,8 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
   @returns UE mode
 */
 UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
+
+uint8_t get_ra_PreambleIndex(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id);
 
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables
@@ -394,7 +388,33 @@ int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
 int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 
+/*! \brief This function prepares the dl indication to pass to the MAC
+    @param
+    @param
+    @param
+    @param
+ */
+void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
+                           fapi_nr_dci_indication_t *dci_ind,
+                           fapi_nr_rx_indication_t *rx_ind,
+                           UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           uint8_t gNB_id);
+
 /*@}*/
+
+/*! \brief This function prepares the dl rx indication
+    @param
+    @param
+    @param
+    @param
+ */
+void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
+                           uint8_t pdu_type,
+                           uint8_t gNB_id,
+                           PHY_VARS_NR_UE *ue,
+                           NR_UE_DLSCH_t *dlsch0,
+                           uint16_t n_pdus);
 
 
 #endif

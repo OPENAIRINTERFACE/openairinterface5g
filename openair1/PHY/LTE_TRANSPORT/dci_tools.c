@@ -2071,6 +2071,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
     ulsch->harq_processes[harq_pid]->round++;
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
+    ulsch->harq_processes[harq_pid]->Or1           = 0;
+    ulsch->harq_processes[harq_pid]->Or2           = 0;
   }
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;

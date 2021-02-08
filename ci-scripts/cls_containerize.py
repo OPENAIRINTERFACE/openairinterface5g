@@ -37,6 +37,7 @@ import logging
 import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
+from zipfile import ZipFile
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -80,7 +81,11 @@ class Containerize():
 
 		self.flexranCtrlDeployed = False
 		self.flexranCtrlIpAddress = ''
-
+		self.cli = ''
+		self.dockerfileprefix = ''
+		self.host = ''
+		self.allImagesSize = {}
+		self.collectInfo = {}
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -110,10 +115,21 @@ class Containerize():
 		logging.debug('Building on server: ' + lIpAddr)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
+	
+		# Checking the hostname to get adapted on cli and dockerfileprefixes
+		mySSH.command('hostnamectl', '\$', 5)
+		result = re.search('Ubuntu|Red Hat',  mySSH.getBefore())
+		self.host = result.group(0)
+		if self.host == 'Ubuntu':
+			self.cli = 'docker'
+			self.dockerfileprefix = '.ubuntu18'
+		elif self.host == 'Red Hat':
+			self.cli = 'podman'
+			self.dockerfileprefix = '.rhel8.2'
 
 		imageNames = []
 		result = re.search('eNB', self.imageKind)
-		# Creating a tupple with the imageName and the DockerFile prefix pattern
+		# Creating a tupple with the imageName and the DockerFile prefix pattern on obelix
 		if result is not None:
 			imageNames.append(('oai-enb', 'eNB'))
 		else:
@@ -129,10 +145,13 @@ class Containerize():
 					imageNames.append(('oai-nr-ue', 'nrUE'))
 		if len(imageNames) == 0:
 			imageNames.append(('oai-enb', 'eNB'))
+		
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
+	
 		self.testCase_id = HTML.testCase_id
+	
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
@@ -162,97 +181,156 @@ class Containerize():
 			else:
 				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+
+ 		# if asterix, copy the entitlement and subscription manager configurations
+		if self.host == 'Red Hat':
+			mySSH.command('mkdir -p  tmp/ca/', '\$', 5)
+			mySSH.command('mkdir -p tmp/entitlement/', '\$', 5) 
+			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
+			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
+			
+		#mySSH.close()
+		#return 0
+		sharedimage = 'ran-build'
 		# Let's remove any previous run artifacts if still there
-		mySSH.command('docker image prune --force', '\$', 5)
-		mySSH.command('docker image rm ran-build:' + imageTag, '\$', 5)
+		mySSH.command(self.cli + ' image prune --force', '\$', 5)
+		mySSH.command(self.cli + ' image rm ' + sharedimage + ':' + imageTag, '\$', 5)
 		for image,pattern in imageNames:
-			mySSH.command('docker image rm ' + image + ':' + imageTag, '\$', 5)
+			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag, '\$', 5)
 		# Build the shared image
-		mySSH.command('docker build --target ran-build --tag ran-build:' + imageTag + ' --file docker/Dockerfile.ran.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 800)
+		mySSH.command(self.cli + ' build --target ' + sharedimage + ' --tag ' + sharedimage + ':' + imageTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
 		# Build the target image(s)
-		previousImage='ran-build:' + imageTag
+		previousImage = sharedimage + ':' + imageTag
 		danglingShaOnes=[]
 		for image,pattern in imageNames:
 			# the archived Dockerfiles have "ran-build:latest" as base image
 			# we need to update them with proper tag
-			mySSH.command('sed -i -e "s#ran-build:latest#ran-build:' + imageTag + '#" docker/Dockerfile.' + pattern + '.ubuntu18', '\$', 5)
-			mySSH.command('docker build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + '.ubuntu18 . > cmake_targets/log/' + image + '.log 2>&1', '\$', 600)
+			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
+			mySSH.command(self.cli + ' build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
 			# Retrieving the dangling image(s) for the log collection
-			mySSH.command('docker images --filter "dangling=true" --filter "since=' + previousImage + '" -q | sed -e "s#^#sha=#"', '\$', 5)
+			mySSH.command(self.cli + ' images --filter "dangling=true" --filter "since=' + previousImage + '" -q | sed -e "s#^#sha=#"', '\$', 5)
 			result = re.search('sha=(?P<imageShaOne>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
 			if result is not None:
 				danglingShaOnes.append((image, result.group('imageShaOne')))
-			previousImage=image + ':' + imageTag
+			previousImage = image + ':' + imageTag
 
 		imageTag = 'ci-temp'
 		# First verify if images were properly created.
 		status = True
-		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' ran-build:' + imageTag, '\$', 5)
+		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + imageTag, '\$', 5)
 		if mySSH.getBefore().count('No such object') != 0:
 			logging.error('Could not build properly ran-build')
 			status = False
 		else:
-			result = re.search('Size = (?P<size>[0-9\-]+) bytes', mySSH.getBefore())
+			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 			if result is not None:
 				imageSize = float(result.group('size'))
 				imageSize = imageSize / 1000
 				if imageSize < 1000:
 					logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
+					self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' kbytes'
 				else:
 					imageSize = imageSize / 1000
 					if imageSize < 1000:
 						logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
+						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Mbytes'
 					else:
 						imageSize = imageSize / 1000
 						logging.debug('\u001B[1m   ran-build size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
+						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Gbytes'
 			else:
 				logging.debug('ran-build size is unknown')
 		for image,pattern in imageNames:
-			mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
+			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
 			if mySSH.getBefore().count('No such object') != 0:
 				logging.error('Could not build properly ' + image)
 				status = False
 			else:
-				result = re.search('Size = (?P<size>[0-9\-]+) bytes', mySSH.getBefore())
+				result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 				if result is not None:
 					imageSize = float(result.group('size'))
 					imageSize = imageSize / 1000
 					if imageSize < 1000:
 						logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
+						self.allImagesSize[image] = str(round(imageSize,1)) + ' kbytes'
 					else:
 						imageSize = imageSize / 1000
 						if imageSize < 1000:
 							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
+							self.allImagesSize[image] = str(round(imageSize,1)) + ' Mbytes'
 						else:
 							imageSize = imageSize / 1000
 							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
+							self.allImagesSize[image] = str(round(imageSize,1)) + ' Gbytes'
 				else:
 					logging.debug('ran-build size is unknown')
 		if not status:
 			mySSH.close()
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
+			#HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
 		# Recover build logs, for the moment only possible when build is successful
-		mySSH.command('docker create --name test ran-build:' + imageTag, '\$', 5)
+		mySSH.command(self.cli + ' create --name test ' + sharedimage + ':' + imageTag, '\$', 5)
 		mySSH.command('mkdir -p cmake_targets/log/ran-build', '\$', 5)
-		mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-build', '\$', 5)
-		mySSH.command('docker rm -f test', '\$', 5)
+		mySSH.command(self.cli + ' cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-build', '\$', 5)
+		mySSH.command(self.cli + ' rm -f test', '\$', 5)
 		for image,shaone in danglingShaOnes:
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
-			mySSH.command('docker create --name test ' + shaone, '\$', 5)
-			mySSH.command('docker cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/' + image, '\$', 5)
-			mySSH.command('docker rm -f test', '\$', 5)
-		mySSH.command('docker image prune --force', '\$', 5)
+			mySSH.command(self.cli + ' create --name test ' + shaone, '\$', 5)
+			mySSH.command(self.cli + ' cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/' + image, '\$', 5)
+			mySSH.command(self.cli + ' rm -f test', '\$', 5)
+		mySSH.command(self.cli + ' image prune --force', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
+		#mySSH.close()
+	
+		mySSH.command('cd /tmp/CI-eNB/cmake_targets', '\$', 5)
+		if (os.path.isfile('./build_log_' + self.testCase_id + '.zip')):
+			os.remove('./build_log_' + self.testCase_id + '.zip')
+		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
+		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
+		#mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
 		mySSH.close()
-
+		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
+	
+		#Trying to identify the errors and warnings for each built images
+		imageNames1 = imageNames
+		shared = ('ran-build','ran')
+		imageNames1.insert(0, shared) 
+		for image,pattern in imageNames1:
+			files = {}
+			file_list = [f for f in os.listdir('build_log_' + self.testCase_id + '/' + image) if os.path.isfile(os.path.join('build_log_' + self.testCase_id + '/' + image, f)) and f.endswith('.txt')]
+			for fil in file_list:
+				errorandwarnings = {}
+				warningsNo = 0
+				errorsNo = 0
+				with open('build_log_{}/{}/{}'.format(self.testCase_id,image,fil), mode='r') as inputfile:
+					for line in inputfile:
+						result = re.search(' ERROR ', str(line))
+						if result is not None:
+							errorsNo += 1
+						result = re.search(' error:', str(line))
+						if result is not None:
+							errorsNo += 1
+						result = re.search(' WARNING ', str(line))
+						if result is not None:
+							warningsNo += 1
+						result = re.search(' warning:', str(line))
+						if result is not None:
+							warningsNo += 1
+					errorandwarnings['errors'] = errorsNo
+					errorandwarnings['warnings'] = warningsNo
+					errorandwarnings['status'] = status
+				files[fil] = errorandwarnings
+			self.collectInfo[image] = files
+		
 		logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')
 		HTML.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
 
 	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':

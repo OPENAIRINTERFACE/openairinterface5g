@@ -43,6 +43,8 @@
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "nfapi_nr_interface.h"
 
+#include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+
 /*
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
 extern openair0_config_t openair0_cfg[MAX_CARDS];
@@ -82,8 +84,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
   NR_gNB_PRACH *const prach_vars   = &gNB->prach_vars;
   NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
-  /*LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
-  LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
   int i;
   int Ptx=cfg->carrier_config.num_tx_ant.value;
@@ -96,19 +96,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   while(gNB->configured == 0) usleep(10000);
 
   load_dftslib();
-  /*
-    LOG_I(PHY,"[gNB %"PRIu8"] Initializing DL_FRAME_PARMS : N_RB_DL %"PRIu8", PHICH Resource %d, PHICH Duration %d nb_antennas_tx:%u nb_antennas_rx:%u PRACH[rootSequenceIndex:%u prach_Config_enabled:%u configIndex:%u highSpeed:%u zeroCorrelationZoneConfig:%u freqOffset:%u]\n",
-          gNB->Mod_id,
-          fp->N_RB_DL,fp->phich_config_common.phich_resource,
-          fp->phich_config_common.phich_duration,
-          fp->nb_antennas_tx, fp->nb_antennas_rx,
-          fp->prach_config_common.rootSequenceIndex,
-          fp->prach_config_common.prach_Config_enabled,
-          fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
-          fp->prach_config_common.prach_ConfigInfo.highSpeedFlag,
-          fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
-          fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset
-          );*/
+
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
   crcTableInit();
   init_scrambling_luts();
@@ -134,6 +122,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   nr_generate_modulation_table();
   nr_init_pdcch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
   nr_init_pbch_interleaver(gNB->nr_pbch_interleaver);
+
   //PDSCH DMRS init
   gNB->nr_gold_pdsch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   uint32_t ****pdsch_dmrs             = gNB->nr_gold_pdsch_dmrs;
@@ -193,6 +182,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       AssertFatal(csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
     }
   }
+
+  /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
+  generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
+  
 
   nr_init_csi_rs(gNB, 0); // TODO scramblingID currently hardcoded to 0, to be taken from higher layer parameter scramblingID when implemented
 
@@ -388,6 +381,11 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 /*
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 */
+
+
+  free_gnb_lowpapr_sequences();
+
+
 }
 /*
 void install_schedule_handlers(IF_Module_t *if_inst)

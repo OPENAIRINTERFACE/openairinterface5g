@@ -4948,7 +4948,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,
           break;
 
         default:
-          LOG_E(PHY, "[UE %d] Received unexpected message %s\n", ITTI_MSG_INSTANCE (msg_p), ITTI_MSG_NAME (msg_p));
+          LOG_E(PHY, "[UE %ld] Received unexpected message %s\n", ITTI_MSG_DESTINATION_INSTANCE (msg_p), ITTI_MSG_NAME (msg_p));
           break;
       }
 

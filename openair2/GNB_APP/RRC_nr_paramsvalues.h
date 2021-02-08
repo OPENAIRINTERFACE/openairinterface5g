@@ -39,6 +39,7 @@
 /*    cell configuration section name */
 #define GNB_CONFIG_STRING_GNB_LIST                              "gNBs"
 
+#define GNB_CONFIG_STRING_PDCCH_CONFIGSIB1                      "pdcch_ConfigSIB1"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON               "servingCellConfigCommon"
 #define GNB_CONFIG_STRING_PHYSCELLID                            "physCellId"
 #define GNB_CONFIG_STRING_NTIMINGADVANCEOFFSET                  "n_TimingAdvanceOffset"
@@ -227,6 +228,21 @@
 #define GNB_CONFIG_STRING_ULPTRSREOFFSET_0                               "ul_ptrsReOffset_0"
 #define GNB_CONFIG_STRING_ULPTRSMAXPORTS_0                               "ul_ptrsMaxPorts_0"
 #define GNB_CONFIG_STRING_ULPTRSPOWER_0                                  "ul_ptrsPower_0"
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*                                            pdcch_ConfigSIB1 parameters                                             */
+/*--------------------------------------------------------------------------------------------------------------------*/
+#define CONTROL_RESOURCE_SET_ZERO                   "controlResourceSetZero"
+#define SEARCH_SPACE_ZERO                           "searchSpaceZero"
+
+#define PDCCH_CONFIGSIB1PARAMS_DESC(pdcch_ConfigSIB1) {                                                                                       \
+{CONTROL_RESOURCE_SET_ZERO,        NULL,     0,         i64ptr:&pdcch_ConfigSIB1->controlResourceSetZero,      defintval:0,     TYPE_INT64,        0},   \
+{SEARCH_SPACE_ZERO,                NULL,     0,         i64ptr:&pdcch_ConfigSIB1->searchSpaceZero,      defintval:0,     TYPE_INT64,        0}    \
+}
+
+#define CONTROL_RESOURCE_SET_ZERO_IDX                   0
+#define SEARCH_SPACE_ZERO_IDX                           1
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                     Serving Cell Config Common configuration parameters                                                                                                     */

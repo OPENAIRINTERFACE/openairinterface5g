@@ -87,9 +87,9 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint16_t UE_id,uint8_t 
     // This is the formula from Section 5.1.1.1 in 36.213 10*log10(deltaIF_PUSCH = (2^(MPR*Ks)-1)*beta_offset_pusch)
     if (bw_factor == 1) {
       uint8_t nb_rb = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
-      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_x10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
     } else
-      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3));
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_x10((beta_offset_pusch)>>3));
   } else {
     return(0);
   }
@@ -757,8 +757,8 @@ void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int 
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.tl.tag                       = NFAPI_RX_UE_INFORMATION_TAG;
   pdu->rx_ue_information.rnti                         = rnti;
-  int SNRtimes10 = dB_fixed_times10(stat) - 10 * eNB->measurements.n0_subband_power_avg_dB;
-  LOG_D(PHY,"stat %d subband n0 %d, SNRtimes10 %d\n", stat, eNB->measurements.n0_subband_power_avg_dB, SNRtimes10);
+  int SNRtimes10 = dB_fixed_x10(stat) - 10 * eNB->measurements.n0_pucch_dB;
+  LOG_D(PHY,"stat %d n0 %d, SNRtimes10 %d\n", stat, eNB->measurements.n0_subband_power_dB[0][0], SNRtimes10);
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
 
   if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
@@ -791,6 +791,8 @@ uci_procedures(PHY_VARS_eNB *eNB,
   LTE_eNB_UCI *uci = NULL;
   LTE_DL_FRAME_PARMS *fp = &(eNB->frame_parms);
 
+  calc_pucch_1x_interference(eNB, frame, subframe, 0);
+  
   for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++) {
     uci = &(eNB->uci_vars[i]);
 
@@ -1605,7 +1607,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
 
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
   // estimate UL_CQI for MAC 
-  int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0] + ((eNB->frame_parms.nb_antennas_rx>1) ?eNB->pusch_vars[UE_id]->ulsch_power[1] : 0 )) - 10 * eNB->measurements.n0_subband_power_avg_dB;
+  int SNRtimes10 = dB_fixed_x10(eNB->pusch_vars[UE_id]->ulsch_power[0] + ((eNB->frame_parms.nb_antennas_rx>1) ?eNB->pusch_vars[UE_id]->ulsch_power[1] : 0 ) ) - dB_fixed_x10(eNB->pusch_vars[UE_id]->ulsch_interference_power[0]+((eNB->frame_parms.nb_antennas_rx>1) ?eNB->pusch_vars[UE_id]->ulsch_interference_power[1] : 0 ) );
 
   if (SNRtimes10 < -640)
     pdu->rx_indication_rel8.ul_cqi = 0;
@@ -1919,7 +1921,7 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
   pdu->rx_ue_information.rnti                         = uci->rnti;
   // estimate UL_CQI for MAC (from antenna port 0 only)
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
-  int SNRtimes10 = dB_fixed_times10(uci->stat) - 10 * eNB->measurements.n0_subband_power_avg_dB;
+  int SNRtimes10 = dB_fixed_x10(uci->stat) - 10 * eNB->measurements.n0_pucch_dB;
 
   if (SNRtimes10 < -100)
     LOG_I (PHY, "uci->stat %d \n", uci->stat);

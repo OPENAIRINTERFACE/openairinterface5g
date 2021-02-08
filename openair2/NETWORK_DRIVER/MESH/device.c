@@ -297,7 +297,11 @@ int nas_change_mtu(struct net_device *dev, int mtu)
 }
 
 //---------------------------------------------------------------------------
+#if  LINUX_VERSION_CODE < KERNEL_VERSION(5,7,0)
 void nas_tx_timeout(struct net_device *dev)
+#else
+void nas_tx_timeout(struct net_device *dev, unsigned int x)
+#endif
 {
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.

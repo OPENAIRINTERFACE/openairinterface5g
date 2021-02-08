@@ -385,6 +385,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   
   if (secondaryCellGroup) {
 
+    RC.nrmac[Mod_idP]->secondaryCellGroupCommon = secondaryCellGroup;
+
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
       const int UE_id = add_new_nr_ue(Mod_idP,rnti);
