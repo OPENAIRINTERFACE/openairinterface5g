@@ -808,6 +808,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
             number_harq_feedback++;
             ack_data[code_word][dai_current - 1] = harq_status->ack;
             dai[code_word][dai_current - 1] = dai_current;
+            harq_status->slot_for_feedback_ack = NR_MAX_SLOTS_PER_FRAME;
           }
           if (do_reset == TRUE) {
             init_downlink_harq_status(ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]);
