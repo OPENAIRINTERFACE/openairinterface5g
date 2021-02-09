@@ -1537,9 +1537,9 @@ int vnf_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			{
 				NFAPI_TRACE(NFAPI_TRACE_ERROR, "recvfrom returned 0\n");
 			}
-			else if(recvfrom_result != header.message_length)
+			else if(recvfrom_result != -1 && recvfrom_result != header.message_length)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "did not receive the entire message %d %d\n", recvfrom_result, header.message_length); 
+				NFAPI_TRACE(NFAPI_TRACE_ERROR, "Received unexpected number of bytes %d %d\n", recvfrom_result, header.message_length);
 				
 				recvfrom_result += recvfrom(vnf_p7->socket, &vnf_p7->rx_message_buffer[recvfrom_result], header.message_length - recvfrom_result, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
 	

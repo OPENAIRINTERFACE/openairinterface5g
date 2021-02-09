@@ -29,6 +29,7 @@
 
 #include "hashtable.h"
 #include "LTE_asn_constant.h"
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
 #ifndef GTPV1U_ENB_DEFS_H_
 #define GTPV1U_ENB_DEFS_H_

@@ -31,6 +31,7 @@
 #ifndef UDP_ENB_TASK_H_
 #define UDP_ENB_TASK_H_
 #include "enb_config.h"
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
 
 /** \brief UDP recv callback prototype. Will be called every time a payload is

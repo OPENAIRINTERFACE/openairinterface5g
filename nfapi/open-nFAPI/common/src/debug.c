@@ -59,7 +59,8 @@ void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...)
 
 	if (num_chars > TRACE_HEADER_LENGTH)
 	{
-		printf("trace_dbg: Error, num_chars is too large: %d", num_chars);
+		printf("trace_dbg: Error, num_chars is too large: %d\n", num_chars);
+		fflush(stdout);
 		return;
 	}
 
@@ -73,4 +74,5 @@ void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...)
 		printf("%s", trace_buff);
 	}
 	va_end(p_args);
+	fflush(stdout);
 }

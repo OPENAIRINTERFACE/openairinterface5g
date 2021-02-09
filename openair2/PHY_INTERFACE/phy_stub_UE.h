@@ -19,6 +19,7 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 #include "queue.h"
 
 #define NUM_MCS 28

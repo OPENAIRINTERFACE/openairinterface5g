@@ -221,7 +221,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
      * - END-MARKER
      */
     case NW_GTPV1U_ULP_API_RECV_TPDU: {
-      uint8_t              buffer[4096];
+      uint8_t              buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
       uint32_t             buffer_len;
       struct rrc_eNB_ue_context_s        *ue_context_p;
       uint16_t             msgType = NW_GTP_GPDU;
