@@ -372,9 +372,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                       | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
   const uint64_t ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
 
-  if (get_softmodem_params()->phy_test) // for testing with OAI-UE
-    dlsch_in_slot_bitmap = (1 << 1);
-
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
   NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;

@@ -257,7 +257,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
                              sub_frame_t slot)
 {
-  if (slot != 1 && slot != 3)
+  if (slot != 1)
     return;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
