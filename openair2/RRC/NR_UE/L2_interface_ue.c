@@ -51,7 +51,7 @@ nr_mac_rrc_data_ind_ue(
         AssertFatal( nr_rrc_ue_decode_NR_BCCH_BCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
         break;
       case NR_BCCH_DL_SCH:
-        AssertFatal( nr_rrc_ue_decode_NR_SIB1_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-DLSCH error!\n");
+        AssertFatal( nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len, 0, 0) == 0, "UE decode BCCH-DL-SCH error!\n");
         break;
       default:
         break;

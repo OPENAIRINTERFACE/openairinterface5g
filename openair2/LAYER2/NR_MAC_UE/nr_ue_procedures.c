@@ -154,12 +154,12 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_decode_sib1(module_id_t module_id,
-                         int cc_id,
-                         unsigned int gNB_index,
-                         uint32_t sibs_mask,
-                         uint8_t *pduP,
-                         uint32_t pdu_len) {
+int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
+                                int cc_id,
+                                unsigned int gNB_index,
+                                uint32_t sibs_mask,
+                                uint8_t *pduP,
+                                uint32_t pdu_len) {
   LOG_D(MAC, "Decode sib1\n");
   nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   return 0;
