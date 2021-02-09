@@ -47,10 +47,10 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2
 
         if (cg_ConfigInfo->ue_CapabilityInfo) {
           // Decode UE-CapabilityRAT-ContainerList
-          LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList=NULL;
-          UE_CapabilityRAT_ContainerList = calloc(1,sizeof(LTE_UE_CapabilityRAT_ContainerList_t));
+          NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList=NULL;
+          UE_CapabilityRAT_ContainerList = calloc(1,sizeof(NR_UE_CapabilityRAT_ContainerList_t));
           asn_dec_rval_t dec_rval = uper_decode(NULL,
-                                                &asn_DEF_LTE_UE_CapabilityRAT_ContainerList,
+                                                &asn_DEF_NR_UE_CapabilityRAT_ContainerList,
                                                 (void **)&UE_CapabilityRAT_ContainerList,
                                                 cg_ConfigInfo->ue_CapabilityInfo->buf,
                                                 cg_ConfigInfo->ue_CapabilityInfo->size, 0, 0);

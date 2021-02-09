@@ -232,7 +232,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
     v_return = -1;
   }
 
-  ue->n_connected_eNB = 2;
+  ue->n_connected_gNB = 2;
 
   printf("\n  => Test : Error due to PUCCH format with multiple cells not already implemented \n");
 
@@ -240,7 +240,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
     v_return = -1;
   }
 
-  ue->n_connected_eNB = 1;
+  ue->n_connected_gNB = 1;
 
   return (v_return);
 }

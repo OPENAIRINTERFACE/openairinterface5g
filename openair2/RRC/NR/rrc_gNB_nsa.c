@@ -62,7 +62,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
 
   OCTET_STRING_t *ueCapabilityRAT_Container_nr=NULL;
@@ -74,8 +74,8 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
   AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
 
   for (int i=0; i<list_size; i++) {
-    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
-    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
+    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container;
+    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container;
   }
 
   // decode and store capabilities
@@ -183,7 +183,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
     if (m->nb_e_rabs_tobeadded>0) {
       for (int i=0; i<m->nb_e_rabs_tobeadded; i++) {
-        // Add the new E-RABs at the corresponding rrc ue context of the gNB
+        // Add the new E-RABs at the corresponding rrc ue context of the gNB 
         ue_context_p->ue_context.e_rab[i].param.e_rab_id = m->e_rabs_tobeadded[i].e_rab_id;
         ue_context_p->ue_context.e_rab[i].param.gtp_teid = m->e_rabs_tobeadded[i].gtp_teid;
         memcpy(&ue_context_p->ue_context.e_rab[i].param.sgw_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));

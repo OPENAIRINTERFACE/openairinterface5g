@@ -97,6 +97,34 @@ int derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
 
   return 0;
 }
+
+int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
+  uint8_t string[7];
+
+  /* FC */
+  string[0] = NR_FC_ALG_KEY_DER;
+
+  /* P0 = algorithm type distinguisher */
+  string[1] = (uint8_t)(alg_type & 0xFF);
+
+  /* L0 = length(P0) = 1 */
+  string[2] = 0x00;
+  string[3] = 0x01;
+
+  /* P1 */
+  string[4] = alg_id;
+
+  /* L1 = length(P1) = 1 */
+  string[5] = 0x00;
+  string[6] = 0x01;
+
+  kdf(string, 7, key, 32, out, 32);
+
+  return 0;
+}
+
 /*
 int derive_keNB(const uint8_t key[32], const uint32_t nas_count, uint8_t **keNB)
 {
