@@ -25,7 +25,7 @@
 
 #include "nfapi_pnf_interface.h"
 
-#define NFAPI_MAX_PACKED_MESSAGE_SIZE 8192
+#define NFAPI_MAX_PACKED_MESSAGE_SIZE 4096
 
 typedef struct {
 	uint16_t dl_conf_ontime;

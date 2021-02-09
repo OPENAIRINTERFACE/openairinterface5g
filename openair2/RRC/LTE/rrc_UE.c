@@ -5129,11 +5129,18 @@ void *rrc_control_socket_thread_fct(void *arg) {
     LOG_I(RRC,"Listening to incoming connection from ProSe App \n");
     // receive a message from ProSe App
     memset(receive_buf, 0, BUFSIZE);
-    n = recvfrom(ctrl_sock_fd, receive_buf, BUFSIZE, 0,
+    n = recvfrom(ctrl_sock_fd, receive_buf, BUFSIZE, MSG_TRUNC,
                  (struct sockaddr *) &prose_app_addr, (socklen_t *)&prose_addr_len);
 
     if (n < 0) {
       LOG_E(RRC, "ERROR: Failed to receive from ProSe App\n");
+      exit(EXIT_FAILURE);
+    }
+    if (n == 0) {
+      LOG_E(RRC, "%s(%d). EOF for ctrl_sock_fd\n", __FUNCTION__, __LINE__);
+    }
+    if (n > BUFSIZE) {
+      LOG_E(RRC, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, n);
       exit(EXIT_FAILURE);
     }
 

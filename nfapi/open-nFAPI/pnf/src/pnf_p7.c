@@ -1701,12 +1701,19 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 			}
 
 			// read the segment
-			recvfrom_result = recvfrom(pnf_p7->p7_sock, pnf_p7->rx_message_buffer, header.message_length, MSG_DONTWAIT, (struct sockaddr*)&remote_addr, &remote_addr_size);
+			recvfrom_result = recvfrom(pnf_p7->p7_sock, pnf_p7->rx_message_buffer, pnf_p7->rx_message_buffer_size,
+									   MSG_DONTWAIT | MSG_TRUNC, (struct sockaddr*)&remote_addr, &remote_addr_size);
 
 		now_hr_time = pnf_get_current_time_hr(); //DJP - moved to here - get closer timestamp???
 
 			if(recvfrom_result > 0)
 			{
+				if (recvfrom_result != header.message_length)
+				{
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s(%d). Received unexpected number of bytes. %d != %d",
+								__FUNCTION__, __LINE__, recvfrom_result, header.message_length);
+					break;
+				}
 				pnf_handle_p7_message(pnf_p7->rx_message_buffer, recvfrom_result, pnf_p7, now_hr_time);
 			}
 		}
