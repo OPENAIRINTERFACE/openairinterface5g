@@ -545,6 +545,9 @@ typedef struct {
   NR_pdsch_semi_static_t pdsch_semi_static;
   /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pdsch_t sched_pdsch;
+  /// For UL synchronization: store last UL scheduling grant
+  frame_t last_ul_frame;
+  sub_frame_t last_ul_slot;
 
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
