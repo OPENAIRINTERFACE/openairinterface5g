@@ -1085,13 +1085,15 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
 //      add_srb(rnti, srb2add_listP->list.array[i]);
-      srb_add_drb_am(rnti, drb2add_listP->list.array[0], rlc_bearer2add_list->list.array[0]);
+      if(drb2add_listP != NULL && rlc_bearer2add_list != NULL)
+        srb_add_drb_am(rnti, drb2add_listP->list.array[0], rlc_bearer2add_list->list.array[0]);
     }
   }
 
   if (drb2add_listP != NULL) {
     for (i = 0; i < drb2add_listP->list.count; i++) {
-      add_drb(rnti, drb2add_listP->list.array[i], rlc_bearer2add_list->list.array[i]);
+    if(rlc_bearer2add_list != NULL)
+        add_drb(rnti, drb2add_listP->list.array[i], rlc_bearer2add_list->list.array[i]);
     }
   }
 

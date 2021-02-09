@@ -325,6 +325,10 @@ printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
 
     ctxt.rnti = rnti;
 
+    if (node_type == ngran_gNB) {
+      proto_agent_falg = 1;
+    }
+
     if (proto_agent_falg == 1) {
       pdcp_data_req(&ctxt, SRB_FLAG_NO, lc_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
