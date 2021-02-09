@@ -24,6 +24,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "PHY/impl_defs_top.h"
 
+#include "executables/softmodem-common.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
@@ -104,15 +105,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       {
           first_time = 0;
           ue->time_sync_cell = 1;
-          if (ue->mac_enabled==1) {
+          if (get_softmodem_params()->do_ra) {
               LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
               //mac_resynch();
               //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
               ue->UE_mode[0] = PRACH;
               ue->prach_resources[gNB_id]->sync_frame = frame;
               ue->prach_resources[gNB_id]->init_msg1 = 0;
-          }
-          else {
+          } else {
               ue->UE_mode[0] = PUSCH;
           }
       }

@@ -42,6 +42,9 @@
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
+const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
+const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
+
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
   if(scheduled_response != NULL){
@@ -61,14 +64,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
 
-      LOG_D(PHY,"Received %d DL pdus:\n",dl_config->number_pdus);
       pdcch_vars->nb_search_space = 0;
 
       for (i = 0; i < dl_config->number_pdus; ++i){
 
+        LOG_D(PHY, "In %s: received 1 DL %s PDU of %d total DL PDUs:\n", __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus);
+
         if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
 
-          LOG_D(PHY,"FAPI_NR_DL_CONFIG_TYPE_DCI\n");
           fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
           memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
           pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
@@ -77,11 +80,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         } else {
 
           if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
-            LOG_D(PHY,"FAPI_NR_DL_CONFIG_TYPE_DLSCH\n");
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
-            LOG_D(PHY,"FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH\n");
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
@@ -145,6 +146,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
 
       for (i = 0; i < ul_config->number_pdus; ++i){
+
+        LOG_D(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
         /* PRACH */
@@ -241,14 +244,15 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           // prach config pdu
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
-          PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_Config_enabled = 1;
         break;
 
         default:
         break;
         }
       }
-      ul_config->number_pdus = 0;
+
+      memset(ul_config, 0, sizeof(fapi_nr_ul_config_request_t));
+
     }
   }
   return 0;

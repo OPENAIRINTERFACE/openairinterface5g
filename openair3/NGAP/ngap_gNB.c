@@ -61,6 +61,9 @@
 
 #include "assertions.h"
 #include "conversions.h"
+#if defined(TEST_S1C_AMF)
+  #include "oaisim_amf_test_s1c.h"
+#endif
 
 ngap_gNB_config_t ngap_config;
 
@@ -95,6 +98,7 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
   ngap_gNB_amf_data_t        *ngap_amf_data_p             = NULL;
+
   DevAssert(instance_p != NULL);
   DevAssert(amf_ip_address != NULL);
   message_p = itti_alloc_new_message(TASK_NGAP, 0, SCTP_NEW_ASSOCIATION_REQ);
@@ -119,8 +123,8 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
   ngap_amf_data_p->assoc_id          = -1;
   ngap_amf_data_p->broadcast_plmn_num = broadcast_plmn_num;
   memcpy(&ngap_amf_data_p->amf_s1_ip,
-  	   amf_ip_address,
-  	   sizeof(*amf_ip_address));
+        amf_ip_address,
+        sizeof(*amf_ip_address));
   for (int i = 0; i < broadcast_plmn_num; ++i)
     ngap_amf_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
 
@@ -130,13 +134,12 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
    * but not yet associated.
    */
   RB_INSERT(ngap_amf_map, &instance_p->ngap_amf_head, ngap_amf_data_p);
-  ngap_amf_data_p->state = NGAP_GNB_STATE_WAITING;
+  ngap_amf_data_p->state = NGAP_GNB_STATE_DISCONNECTED;
   instance_p->ngap_amf_nb ++;
   instance_p->ngap_amf_pending_nb ++;
 
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
-
 
 void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *ngap_register_gNB) {
   ngap_gNB_instance_t *new_instance;
@@ -255,10 +258,13 @@ static
 void ngap_gNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
   int result;
   DevAssert(sctp_data_ind != NULL);
-
+#if defined(TEST_S1C_AMF)
+  amf_test_s1_notify_sctp_data_ind(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+                                   sctp_data_ind->buffer, sctp_data_ind->buffer_length);
+#else
   ngap_gNB_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
                           sctp_data_ind->buffer, sctp_data_ind->buffer_length);
-
+#endif
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
