@@ -957,7 +957,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
               retInfo->mcs,
               retInfo->numDmrsCdmGrpsNoData);
       /* we do not have to do anything, since we do not require to get data
-       * from RLC or encode MAC CEs. The TX_req structure is filled below */
+       * from RLC or encode MAC CEs. The TX_req structure is filled below 
+       * or copy data to FAPI structures */
       LOG_D(MAC,
             "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
             frame,
