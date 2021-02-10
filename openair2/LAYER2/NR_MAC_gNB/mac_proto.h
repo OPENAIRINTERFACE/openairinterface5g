@@ -162,13 +162,11 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
                              sub_frame_t slot,
-                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01,
-                             NR_UL_IND_t *UL_info);
+                             const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01);
 void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                frame_t frame,
                                sub_frame_t slot,
-                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234,
-                               NR_UL_IND_t *UL_info);
+                               const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
 
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
