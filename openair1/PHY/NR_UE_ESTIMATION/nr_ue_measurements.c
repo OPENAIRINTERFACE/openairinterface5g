@@ -30,7 +30,7 @@
  * \warning
  */
 
-#include "nr-softmodem-common.h"
+#include "executables/softmodem-common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/LOG/log.h"
@@ -45,25 +45,41 @@
 //#define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
 
+// Returns the pathloss in dBm for the active UL BWP on the selected carrier based on the DL RS associated with the PRACH transmission
+// computation according to clause 7.4 (Physical random access channel) of 3GPP TS 38.213 version 16.3.0 Release 16
+// Assumptions:
+// - PRACH transmission from a UE is not in response to a detection of a PDCCH order by the UE
+// Measurement units:
+// - referenceSignalPower:   dBm/RE (average EPRE of the resources elements that carry secondary synchronization signals in dBm)
 int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
 
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+  int16_t pathloss;
 
-  /*
-  if (ue->frame_parms.mode1_flag == 1)
-    RSoffset = 6;
-  else
-    RSoffset = 3;
-  */
+  if (get_softmodem_params()->do_ra){
 
- /* LOG_D(PHY,"get_nr_PL : rsrp %f dBm/RE (%f), eNB power %d dBm/RE\n", 
-        (1.0*dB_fixed_times10(ue->measurements.rsrp[eNB_index])-(10.0*ue->rx_total_gain_dB))/10.0,
-        10*log10((double)ue->measurements.rsrp[eNB_index]),
-        ue->frame_parms.pdsch_config_common.referenceSignalPower);*/
+    long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
+    double rsrp_dBm = 10*log10(ue->measurements.rsrp[gNB_index]) + 30 - ue->rx_total_gain_dB;
 
-  return((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index]))/10));
-                    //        dB_fixed_times10(RSoffset*12*ue_g[Mod_id][CC_id]->frame_parms.N_RB_DL) +
-                    //(ue->frame_parms.pdsch_config_common.referenceSignalPower*10))/10));
+    pathloss = (int16_t)(10*log10(pow(10, (double)(referenceSignalPower)/10) - pow(10, (double)(rsrp_dBm)/10)));
+
+    LOG_D(MAC, "In %s: pathloss %d dBm, UE RX total gain %d dB, referenceSignalPower %ld dBm (%f mW), RSRP %f dBm (%f mW)\n",
+      __FUNCTION__,
+      pathloss,
+      ue->rx_total_gain_dB,
+      referenceSignalPower,
+      pow(10, referenceSignalPower/10),
+      rsrp_dBm,
+      pow(10, rsrp_dBm/10));
+
+  } else {
+
+    pathloss = ((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index]))/10));
+
+  }
+
+  return pathloss;
+
 }
 
 uint32_t get_nr_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
@@ -108,7 +124,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
 
   // signal measurements
-  for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++){
+  for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++){
 
     ue->measurements.rx_power_tot[gNB_id] = 0;
 
@@ -140,7 +156,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   // filter to remove jitter
   if (ue->init_averaging == 0) {
 
-    for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++)
+    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++)
       ue->measurements.rx_power_avg[gNB_id] = (int)(((k1*((long long int)(ue->measurements.rx_power_avg[gNB_id]))) + (k2*((long long int)(ue->measurements.rx_power_tot[gNB_id])))) >> 10);
 
     ue->measurements.n0_power_avg = (int)(((k1*((long long int) (ue->measurements.n0_power_avg))) + (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
@@ -149,7 +165,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 
   } else {
 
-    for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++)
+    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++)
       ue->measurements.rx_power_avg[gNB_id] = ue->measurements.rx_power_tot[gNB_id];
 
     ue->measurements.n0_power_avg = ue->measurements.n0_power_tot;
@@ -157,7 +173,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 
   }
 
-  for (gNB_id = 0; gNB_id < ue->n_connected_eNB; gNB_id++) {
+  for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     ue->measurements.rx_power_avg_dB[gNB_id] = dB_fixed( ue->measurements.rx_power_avg[gNB_id]);
     ue->measurements.wideband_cqi_tot[gNB_id] = dB_fixed2(ue->measurements.rx_power_tot[gNB_id], ue->measurements.n0_power_tot);
@@ -180,74 +196,74 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 #endif
 }
 
+// This function implements:
+// - SS reference signal received power (SS-RSRP) as per clause 5.1.1 of 3GPP TS 38.215 version 16.3.0 Release 16
+// - no Layer 3 filtering implemented (no filterCoefficient provided from RRC)
+// Todo:
+// - Layer 3 filtering according to clause 5.5.3.2 of 3GPP TS 38.331 version 16.2.0 Release 16
+// Measurement units:
+// - RSRP:    W (dBW)
+// - RX Gain  dB
 void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
-    UE_nr_rxtx_proc_t *proc,
-    uint8_t slot,
-    uint8_t abstraction_flag)
+                             uint8_t gNB_id,
+                             UE_nr_rxtx_proc_t *proc,
+                             uint8_t slot,
+                             uint8_t abstraction_flag)
 {
-	int aarx,rb, symbol_offset;
-	int16_t *rxF;
+  int aarx;
+  int nb_re;
+  int k_start = 55;
+  int k_end   = 183;
+  unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
+  uint8_t           l_sss = ue->symbol_offset + 2;
 
-	uint16_t Nid_cell = ue->frame_parms.Nid_cell;
-	uint8_t eNB_offset=0,l,nushift;
-	uint16_t off,nb_rb;
-//	NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-	int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  if (ssb_offset>= ue->frame_parms.ofdm_symbol_size){
 
-	nushift =  ue->frame_parms.Nid_cell%4;
-	ue->frame_parms.nushift = nushift;
-	unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
-	if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
-	
-	symbol_offset = ue->frame_parms.ofdm_symbol_size*((ue->symbol_offset+1)%(ue->frame_parms.symbols_per_slot));
+    ssb_offset -= ue->frame_parms.ofdm_symbol_size;
 
-    ue->measurements.rsrp[eNB_offset] = 0;
+  }
 
-    //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-		nb_rb = 20;
-	//} else{
-	//	LOG_E(PHY,"report quantity not supported \n");
-	//}
+  ue->measurements.rsrp[gNB_id] = 0;
 
-    if (abstraction_flag == 0) {
+  if (abstraction_flag == 0) {
 
-      for (l=0; l<1; l++) {
+    LOG_D(PHY, "In %s: [UE %d] slot %d l_sss %d ssb_offset %d\n", __FUNCTION__, ue->Mod_id, slot, l_sss, ssb_offset);
 
-        LOG_D(PHY,"[UE %d]  slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, l %d)\n",ue->Mod_id,slot,Nid_cell,nushift,
-              eNB_offset,l);
+    nb_re = 0;
 
-        for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
-          rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+ssb_offset+nushift)];
-          off  = 0; 
+    for (aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
 
-          if (l==0) {
-            for (rb=0; rb<nb_rb; rb++) {
+      int16_t *rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
 
-              ue->measurements.rsrp[eNB_offset] += (((int32_t)(rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1]));
-                      //printf("rb %d, off %d : %d\n",rb,off,((((int32_t)rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1])));
+      for(int k = k_start; k < k_end; k++){
 
-              off = (off+4) % ue->frame_parms.ofdm_symbol_size;
-            }
-          }
-        }
+        #ifdef DEBUG_MEAS_UE
+        LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+        #endif
+
+        ue->measurements.rsrp[gNB_id] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
+
+        nb_re++;
+
       }
-
-	  ue->measurements.rsrp[eNB_offset]/=nb_rb;
-
-	} else { 
-
-      ue->measurements.rsrp[eNB_offset] = -93 ;
     }
 
+    ue->measurements.rsrp[gNB_id] /= nb_re;
 
-      if (eNB_offset == 0)
+  } else {
 
-      LOG_D(PHY,"[UE %d] slot %d RSRP Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
-            ue->Mod_id,
-            slot,eNB_offset,
-            (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
-            10*log10(ue->measurements.rsrp[eNB_offset])-ue->rx_total_gain_dB,
-            ue->measurements.rsrp[eNB_offset]);
+    ue->measurements.rsrp[gNB_id] = -93;
+
+  }
+
+  ue->measurements.rsrp_filtered[gNB_id] = ue->measurements.rsrp[gNB_id];
+
+  LOG_D(PHY, "In %s: [UE %d] slot %d SS-RSRP: %3.1f dBm/RE (%d W)\n",
+    __FUNCTION__,
+    ue->Mod_id,
+    slot,
+    10*log10(ue->measurements.rsrp[gNB_id]) + 30 - ue->rx_total_gain_dB,
+    ue->measurements.rsrp[gNB_id]);
 
 }
 
