@@ -50,7 +50,7 @@ static uint64_t pdcp_optmask;
 extern RAN_CONTEXT_t RC;
 ngran_node_t node_type = ngran_gNB;
 uint8_t first_dcch = 0;
-uint8_t proto_agent_falg = 0;
+uint8_t proto_agent_flag = 0;
 
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
@@ -326,10 +326,10 @@ printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
     ctxt.rnti = rnti;
 
     if (node_type == ngran_gNB) {
-      proto_agent_falg = 1;
+      proto_agent_flag = 1;
     }
 
-    if (proto_agent_falg == 1) {
+    if (proto_agent_flag == 1) {
       pdcp_data_req(&ctxt, SRB_FLAG_NO, lc_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
                     PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
