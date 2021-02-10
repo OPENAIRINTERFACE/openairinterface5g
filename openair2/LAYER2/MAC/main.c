@@ -61,14 +61,42 @@ void *mac_stats_thread(void *param) {
         int CC_id = UE_PCCID(mac->Mod_id, UE_id);
         UE_sched_ctrl_t *UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
-      fprintf(fd,"\nMAC UE rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d (TPC accum %d)  PUCCH SNR %d (TPC accum %d)\n",
+        double total_bler;
+        if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
+          total_bler = 0;
+        }
+        else {
+          total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
+        }
+        fprintf(fd,"MAC UE rnti %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf mcsoff %d bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
               UE_scheduling_control->dl_cqi[CC_id],
-              UE_scheduling_control->pusch_snr[CC_id], UE_scheduling_control->pucch_tpc_accumulated[CC_id],
-              UE_scheduling_control->pucch1_snr[CC_id], UE_scheduling_control->pusch_tpc_accumulated[CC_id]);
-      fprintf(fd,"              ULSCH rounds %d/%d/%d/%d, DLSCH rounds %d/%d/%d/%d, ULSCH errors %d, DLSCH errors %d\n",
+              UE_scheduling_control->pusch_snr/*_avg*/[CC_id],
+              UE_scheduling_control->pucch1_snr[CC_id],
+              UE_scheduling_control->rlc_out_of_resources_cnt,
+              UE_scheduling_control->pusch_rx_num[CC_id],
+              UE_scheduling_control->pusch_rx_error_num[CC_id],
+              total_bler,
+              UE_scheduling_control->mcs_offset[CC_id],
+              UE_info->UE_template[CC_id][UE_id].estimated_ul_buffer,
+              UE_info->UE_template[CC_id][UE_id].scheduled_ul_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
+#if defined(PRE_SCD_THREAD)
+              UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
+#else
+              0,
+#endif
+              UE_scheduling_control->first_cnt[CC_id],
+              UE_scheduling_control->ret_cnt[CC_id],
+              UE_scheduling_control->aperiodic_ri_received[CC_id]
+        );
+        fprintf(fd,"              ULSCH rounds %d/%d/%d/%d, DLSCH rounds %d/%d/%d/%d, ULSCH errors %d, DLSCH errors %d\n",
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0],
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[1],
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[2],
@@ -79,6 +107,8 @@ void *mac_stats_thread(void *param) {
               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[3],
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_errors,
               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_errors);
+
+
       }
     }
     fclose(fd);

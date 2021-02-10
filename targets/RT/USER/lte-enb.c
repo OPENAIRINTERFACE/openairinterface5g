@@ -593,8 +593,9 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
     AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"mutex_unlock return %d\n",ret);
     LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx);
-    AssertFatal(1==0,"L1_thread isn't ready in %d.%d (L1RX %d.%d), aborting RX, exiting\n",
+/*    AssertFatal(1==0,"L1_thread isn't ready in %d.%d (L1RX %d.%d), aborting RX, exiting\n",
       ru_proc->frame_rx,ru_proc->tti_rx,L1_proc->frame_rx,L1_proc->subframe_rx);
+*/
     return(0);
    
   }
