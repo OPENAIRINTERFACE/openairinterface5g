@@ -835,10 +835,7 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t *resp_L1;
   notifiedFIFO_t *resp_L1_tx;
   notifiedFIFO_t *resp_RU_tx;
-  tpool_t *threadPool_ulsch;
-  tpool_t *threadPool_L1;
-  tpool_t *threadPool_L1_tx;
-  tpool_t *threadPool_RU_tx;
+  tpool_t *threadPool;
   int nbDecode;
 
 } PHY_VARS_gNB;
