@@ -500,74 +500,74 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
     gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).gNB_ue_ngap_id;
 
     ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-    LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
+    LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %u \n",
         instance, msg_name, ue_initial_id, gNB_ue_ngap_id);
 
     if (ue_context_p == NULL) {
-        /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
-        MessageDef *msg_fail_p = NULL;
-        LOG_W(NR_RRC, "[gNB %ld] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
-        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
-        NGAP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
-        // TODO add failure cause when defined!
-        itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
-        return (-1);
+      /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
+      MessageDef *msg_fail_p = NULL;
+      LOG_W(NR_RRC, "[gNB %ld] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from NGAP ids (%d, %u)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+      msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
+      NGAP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
+      // TODO add failure cause when defined!
+      itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
+      return (-1);
     } else {
-        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
-        ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).gNB_ue_ngap_id;
-        ue_context_p->ue_context.amf_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).amf_ue_ngap_id;
-        ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nas_pdu_flag;
+      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+      ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).gNB_ue_ngap_id;
+      ue_context_p->ue_context.amf_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).amf_ue_ngap_id;
+      ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nas_pdu_flag;
 
-        if (NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions != 0) {
-          ue_context_p->ue_context.nb_of_pdusessions = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions;
-          for (int i = 0; i < NR_NB_RB_MAX - 3; i++) {
-            if(ue_context_p->ue_context.pdusession[i].status >= PDU_SESSION_STATUS_DONE)
-                continue;
-              ue_context_p->ue_context.pdusession[i].status = PDU_SESSION_STATUS_NEW;
-              ue_context_p->ue_context.pdusession[i].param  = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done];
-              pdu_sessions_done++;
+      if (NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions != 0) {
+        ue_context_p->ue_context.nb_of_pdusessions = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions;
+        for (int i = 0; i < NR_NB_RB_MAX - 3; i++) {
+          if(ue_context_p->ue_context.pdusession[i].status >= PDU_SESSION_STATUS_DONE)
+              continue;
+            ue_context_p->ue_context.pdusession[i].status = PDU_SESSION_STATUS_NEW;
+            ue_context_p->ue_context.pdusession[i].param  = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done];
+            pdu_sessions_done++;
 
-              // TODO establish PDU SESSION
+            // TODO establish PDU SESSION
 
-              if(pdu_sessions_done >= NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions) {
-                break;
-              }
-          }
+            if(pdu_sessions_done >= NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nb_of_pdusessions) {
+              break;
+            }
         }
+      }
 
-        /* NAS PDU */
-        ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu_flag;
-        if (ue_context_p->ue_context.nas_pdu_flag == 1) {
-            ue_context_p->ue_context.nas_pdu.length = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.length;
-            ue_context_p->ue_context.nas_pdu.buffer = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.buffer;
-        }
+      /* NAS PDU */
+      ue_context_p->ue_context.nas_pdu_flag = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu_flag;
+      if (ue_context_p->ue_context.nas_pdu_flag == 1) {
+          ue_context_p->ue_context.nas_pdu.length = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.length;
+          ue_context_p->ue_context.nas_pdu.buffer = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nas_pdu.buffer;
+      }
         
-        /* security */
-        rrc_gNB_process_security(&ctxt, ue_context_p, &(NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities));
-        process_gNB_security_key (
+      /* security */
+      rrc_gNB_process_security(&ctxt, ue_context_p, &(NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities));
+      process_gNB_security_key (
+        &ctxt,
+        ue_context_p,
+        NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
+
+      uint8_t send_security_mode_command = TRUE;
+
+      nr_rrc_pdcp_config_security(
           &ctxt,
           ue_context_p,
-          NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
-        
-        uint8_t send_security_mode_command = TRUE;
+          send_security_mode_command);
 
-        nr_rrc_pdcp_config_security(
-            &ctxt,
-            ue_context_p,
-            send_security_mode_command);
+      if (send_security_mode_command) {
+          rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
+          send_security_mode_command = FALSE;
 
-        if (send_security_mode_command) {
-            rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
-            send_security_mode_command = FALSE;
-
-            nr_rrc_pdcp_config_security(
-                &ctxt,
-                ue_context_p,
-                send_security_mode_command);
-        } else {
-            /* rrc_gNB_generate_UECapabilityEnquiry */
-            rrc_gNB_generate_UECapabilityEnquiry(&ctxt, ue_context_p);
-        }
+          nr_rrc_pdcp_config_security(
+              &ctxt,
+              ue_context_p,
+              send_security_mode_command);
+      } else {
+          /* rrc_gNB_generate_UECapabilityEnquiry */
+          rrc_gNB_generate_UECapabilityEnquiry(&ctxt, ue_context_p);
+      }
 
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
     if (ue_context_p->ue_context.Status == NR_RRC_RECONFIGURED) {
@@ -737,7 +737,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
     ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-    LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d\n",
+    LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %u\n",
             instance,
             msg_name,
             ue_initial_id,
@@ -755,7 +755,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
             gNB_ue_ngap_id);
         /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
         MessageDef *msg_fail_p;
-        LOG_W(NR_RRC, "[gNB %ld] In NGAP_DOWNLINK_NAS: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+        LOG_W(NR_RRC, "[gNB %ld] In NGAP_DOWNLINK_NAS: unknown UE from NGAP ids (%d, %u)\n", instance, ue_initial_id, gNB_ue_ngap_id);
         msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_NAS_NON_DELIVERY_IND);
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.length = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.length;
@@ -837,15 +837,15 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         {
           // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
-          uint8_t *message_buffer;
-          message_buffer = itti_malloc (TASK_RRC_GNB_SIM, TASK_RRC_UE_SIM, length);
-          memcpy (message_buffer, buffer, length);
-          message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, 0, GNB_RRC_DCCH_DATA_IND);
-          GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-          GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-          GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
-          itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
-          LOG_I(NR_RRC, "Send DL NAS message \n");
+        uint8_t *message_buffer;
+        message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
+        memcpy (message_buffer, buffer, length);
+        message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
+        GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+        GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+        GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
+        itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
+        LOG_I(NR_RRC, "Send DL NAS message \n");
 #else
 #if(0)
           /* Transfer data to PDCP */
@@ -1006,12 +1006,12 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
   ue_initial_id  = NGAP_PDUSESSION_SETUP_REQ(msg_p).ue_initial_id;
   gNB_ue_ngap_id = NGAP_PDUSESSION_SETUP_REQ(msg_p).gNB_ue_ngap_id;
   ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
-  LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
+  LOG_I(NR_RRC, "[gNB %ld] Received %s: ue_initial_id %d, gNB_ue_ngap_id %u \n",
     instance, msg_name, ue_initial_id, gNB_ue_ngap_id);
 
   if (ue_context_p == NULL) {
     MessageDef *msg_fail_p = NULL;
-    LOG_W(NR_RRC, "[gNB %ld] In NGAP_PDUSESSION_SETUP_REQ: unknown UE from NGAP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+    LOG_W(NR_RRC, "[gNB %ld] In NGAP_PDUSESSION_SETUP_REQ: unknown UE from NGAP ids (%d, %u)\n", instance, ue_initial_id, gNB_ue_ngap_id);
     msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_PDUSESSION_SETUP_REQUEST_FAIL);
     NGAP_PDUSESSION_SETUP_REQ(msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
     // TODO add failure cause when defined!
@@ -1124,7 +1124,7 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ (
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index, send a failure to ngAP and discard it! */
     MessageDef *msg_fail_p;
-    LOG_W(RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_REQ: unknown UE from gNB_ue_ngap_id (%d)\n",
+    LOG_W(RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_REQ: unknown UE from gNB_ue_ngap_id (%u)\n",
           instance,
           gNB_ue_ngap_id);
     msg_fail_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_RESP); /* TODO change message ID. */
@@ -1166,7 +1166,7 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index */
     MessageDef *msg_complete_p = NULL;
-    LOG_W(RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from gNB_ue_ngap_id (%d)\n",
+    LOG_W(NR_RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from gNB_ue_ngap_id (%u)\n",
           instance,
           gNB_ue_ngap_id);
     MSC_LOG_EVENT(MSC_RRC_GNB, "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" context not found",
@@ -1317,7 +1317,7 @@ rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(
   memcpy(&(NGAP_PDUSESSION_RELEASE_RESPONSE (msg_p).pdusessions_failed[0]), &ue_context_pP->ue_context.pdusessions_release_failed[0],
       sizeof(pdusession_failed_t)*ue_context_pP->ue_context.nb_release_of_pdusessions);
   ue_context_pP->ue_context.setup_pdu_sessions -= pdu_sessions_released;
-  LOG_I(NR_RRC,"NGAP PDUSESSION RELEASE RESPONSE: GNB_UE_NGAP_ID %d release_pdu_sessions %d setup_pdu_sessions %d \n",
+  LOG_I(NR_RRC,"NGAP PDUSESSION RELEASE RESPONSE: GNB_UE_NGAP_ID %u release_pdu_sessions %d setup_pdu_sessions %d \n",
         NGAP_PDUSESSION_RELEASE_RESPONSE (msg_p).gNB_ue_ngap_id,
         pdu_sessions_released, ue_context_pP->ue_context.setup_pdu_sessions);
   itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
@@ -1360,12 +1360,12 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     return -1;
   }
   ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, UE_INITIAL_ID_INVALID, gNB_ue_ngap_id);
-  LOG_I(NR_RRC, "[gNB %ld] Received %s: gNB_ue_ngap_id %d \n", instance, msg_name, gNB_ue_ngap_id);
+  LOG_I(NR_RRC, "[gNB %ld] Received %s: gNB_ue_ngap_id %u \n", instance, msg_name, gNB_ue_ngap_id);
 
   if (ue_context_p != NULL) {
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
     xid = rrc_gNB_get_next_transaction_identifier(ctxt.module_id);
-    LOG_I(NR_RRC,"PDU Session Release Command: AMF_UE_NGAP_ID %lu  GNB_UE_NGAP_ID %d release_pdusessions %d \n",
+    LOG_I(NR_RRC,"PDU Session Release Command: AMF_UE_NGAP_ID %lu  GNB_UE_NGAP_ID %u release_pdusessions %d \n",
           NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).amf_ue_ngap_id&0x000000FFFFFFFFFF, gNB_ue_ngap_id, nb_pdusessions_torelease);
 
     for (pdusession = 0; pdusession < nb_pdusessions_torelease; pdusession++) {
@@ -1443,10 +1443,20 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
       LOG_I(NR_RRC, "Send PDU Session Release Response \n");
     }
   } else {
-    LOG_E(NR_RRC, "PDU Session Release Command: AMF_UE_NGAP_ID %lu  GNB_UE_NGAP_ID %d  Error ue_context_p NULL \n",
+    LOG_E(NR_RRC, "PDU Session Release Command: AMF_UE_NGAP_ID %lu  GNB_UE_NGAP_ID %u  Error ue_context_p NULL \n",
           NGAP_PDUSESSION_RELEASE_COMMAND (msg_p).amf_ue_ngap_id&0x000000FFFFFFFFFF, NGAP_PDUSESSION_RELEASE_COMMAND(msg_p).gNB_ue_ngap_id);
     return -1;
   }
 
   return 0;
 }
+
+void nr_rrc_rx_tx(void) {
+  // check timers
+
+  // check if UEs are lost, to remove them from upper layers
+
+  //
+
+}
+

@@ -714,7 +714,6 @@ int ngap_gNB_initial_ctxt_resp(
     ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListCxtRes;
     ie->criticality = NGAP_Criticality_ignore;
     ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_PDUSessionResourceSetupListCxtRes;
-
     for (i = 0; i < initial_ctxt_resp_p->nb_of_pdusessions; i++) {
       NGAP_PDUSessionResourceSetupItemCxtRes_t *item;
       NGAP_PDUSessionResourceSetupResponseTransfer_t     *pdusessionTransfer_p = NULL;

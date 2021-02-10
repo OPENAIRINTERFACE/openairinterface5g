@@ -113,7 +113,7 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
   memcpy(&sctp_new_association_req_p->local_address,
          local_ip_addr,
          sizeof(*local_ip_addr));
-  NGAP_INFO("[gNB %d] check the amf registration state\n",instance_p->instance);
+  NGAP_INFO("[gNB %ld] check the amf registration state\n",instance_p->instance);
 
   /* Create new AMF descriptor */
   ngap_amf_data_p = calloc(1, sizeof(*ngap_amf_data_p));
@@ -134,7 +134,7 @@ static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
    * but not yet associated.
    */
   RB_INSERT(ngap_amf_map, &instance_p->ngap_amf_head, ngap_amf_data_p);
-  ngap_amf_data_p->state = NGAP_GNB_STATE_WAITING;
+  ngap_amf_data_p->state = NGAP_GNB_STATE_DISCONNECTED;
   instance_p->ngap_amf_nb ++;
   instance_p->ngap_amf_pending_nb ++;
 

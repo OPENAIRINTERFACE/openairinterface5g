@@ -216,10 +216,12 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc->carrier.MIB             = (uint8_t *) malloc16(4);
     rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
-    rrc->carrier.sizeof_SIB1     = do_SIB1_NR(&rrc->carrier,configuration);
   }
-  
-  
+
+  if((get_softmodem_params()->sa) || (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type))) {
+    rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier,configuration);
+  }
+
   if (!NODE_IS_DU(rrc->node_type)) {
     rrc->carrier.SIB23 = (uint8_t *) malloc16(100);
     AssertFatal(rrc->carrier.SIB23 != NULL, "cannot allocate memory for SIB");
@@ -1083,6 +1085,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
             // rrc_mac_config_req_eNB
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
+            /* TODO : It may be needed if gNB goes into full stack working. */
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
             (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
@@ -1182,6 +1185,7 @@ rrc_gNB_generate_RRCReestablishment(
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_context->Srb0.Tx_buffer.payload_size);
 #if(0)
+    /* TODO : It may be needed if gNB goes into full stack working. */
     UE_id = find_nr_UE_id(module_id, rnti);
     if (UE_id != -1) {
       /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
@@ -1691,6 +1695,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             break;
           }
 #if(0)
+          /* TODO : It may be needed if gNB goes into full stack working. */
           int UE_id = find_nr_UE_id(ctxt_pP->module_id, c_rnti);
 
           if(UE_id == -1) {
@@ -2339,6 +2344,7 @@ rrc_gNB_decode_dcch(
                 }
 
 #if(0)
+                /* TODO : It may be needed if gNB goes into full stack working. */
                 //clear
                 int UE_id = find_nr_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 

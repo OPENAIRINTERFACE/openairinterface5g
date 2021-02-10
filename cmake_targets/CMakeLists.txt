@@ -485,7 +485,6 @@ add_custom_target (
 
 add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source} 
     ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c
-    ${OPENAIR2_DIR}/RRC/NR/nr_ngap_gNB.c
     )
 add_dependencies(NR_RRC_LIB nr_rrc_flag)
 include_directories ("${NR_RRC_FULL_DIR}")
@@ -2112,10 +2111,10 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/mac_vars.c
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
+  ${NR_UE_MAC_DIR}/nr_ue_scheduler.c
   ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
   ${NR_UE_MAC_DIR}/nr_l1_helpers.c
   ${NR_UE_MAC_DIR}/nr_ra_procedures.c
-  ${NR_UE_MAC_DIR}/rar_tools_nrUE.c
 )
 
 set (ENB_APP_SRC
