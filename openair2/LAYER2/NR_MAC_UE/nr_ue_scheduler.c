@@ -891,12 +891,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           if (ra->ra_state == WAIT_RAR){
             memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
-            printf("\n");
-            LOG_I(MAC,"[RAPROC] Msg3 to be transmitted:\n");
+            LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
             for (int k = 0; k < TBS_bytes; k++) {
-              LOG_I(MAC,"(%i): 0x%x\n",k,mac->ulsch_pdu.payload[k]);
+              LOG_D(NR_MAC,"(%i): 0x%x\n",k,mac->ulsch_pdu.payload[k]);
             }
-            printf("\n");
           } else {
             if (IS_SOFTMODEM_NOS1){
               // Getting IP traffic to be transmitted
