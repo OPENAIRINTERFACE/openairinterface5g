@@ -875,4 +875,13 @@ union ldpcReqUnion {
   uint64_t p;
 };
 
+typedef struct processingData_L1 {
+  int frame_rx;
+  int frame_tx;
+  int slot_rx;
+  int slot_tx;
+  openair0_timestamp timestamp_tx;
+  PHY_VARS_gNB *gNB;
+} processingData_L1_t;
+
 #endif

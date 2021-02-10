@@ -240,6 +240,10 @@ extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
+void tx_func(void *param);
+void rx_func(void *param);
+void ru_tx_func(void *param);
 #ifdef __cplusplus
 }
 #endif
