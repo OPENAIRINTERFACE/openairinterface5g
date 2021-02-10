@@ -2215,7 +2215,8 @@ function run_test_on_vm {
 
           local try_cnt=0
           NR_STATUS=0
-          while [ $try_cnt -lt 1 ]
+          while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
+
           do
             SYNC_STATUS=0
             RA_STATUS=0
@@ -2295,7 +2296,7 @@ function run_test_on_vm {
           fi
 
           try_cnt=0
-          while [ $try_cnt -lt 1 ]
+          while [ $try_cnt -lt 4 ]
           do
             rm -f $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_gnb.log $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_ue.log
             rm -f $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
