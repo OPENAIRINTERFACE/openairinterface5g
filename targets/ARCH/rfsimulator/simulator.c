@@ -484,7 +484,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       AssertFatal( (conn_sock = accept(t->listen_sock,NULL,NULL)) != -1, "");
       setblocking(conn_sock, notBlocking);
       allocCirBuf(t, conn_sock);
-      LOG_I(HW,"A ue connected, sending the current time\n");
+      LOG_I(HW,"A client connected, sending the current time\n");
       struct complex16 v= {0};
       void *samplesVoid[t->tx_num_channels];
 
