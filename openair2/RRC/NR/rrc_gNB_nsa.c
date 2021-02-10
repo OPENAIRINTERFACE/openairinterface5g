@@ -39,6 +39,7 @@
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include "UTIL/OSA/osa_defs.h"
 
 extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const protocol_ctxt_t *const  ctxt_pP,
@@ -48,7 +49,8 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc
+    uint8_t                  *const kUPenc,
+    uint8_t                  *const kUPint
   #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
   #endif
@@ -280,15 +282,40 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                                                                                                                                                         ctxt.eNB_index);
   }
 
+  /* store security key and security capabilities*/
+  memcpy(ue_context_p->ue_context.kgnb, m->kgnb, 32);
+  ue_context_p->ue_context.security_capabilities.nRencryption_algorithms = m->security_capabilities.encryption_algorithms;
+  ue_context_p->ue_context.security_capabilities.nRintegrity_algorithms = m->security_capabilities.integrity_algorithms;
+
+  /* select ciphering algorithm based on gNB configuration file and
+   * UE's supported algorithms
+   */
+  /* hardcode ciphering to nea2 of the moment */
+  ue_context_p->ue_context.ciphering_algorithm = 2; //NR_CipheringAlgorithm_nea2;
+  /* integrity: no integrity protection */
+  ue_context_p->ue_context.integrity_algorithm = 0;
+
+  /* derive UP security key */
+  unsigned char *kUPenc_kdf, *kUPenc;
+  nr_derive_key_up_enc(ue_context_p->ue_context.ciphering_algorithm,
+                       ue_context_p->ue_context.kgnb,
+                       &kUPenc_kdf);
+  /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
+  kUPenc = malloc(16);
+  if (kUPenc == NULL) exit(1);
+  memcpy(kUPenc, kUPenc_kdf+16, 16);
+  free(kUPenc_kdf);
+
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
     (NR_SRB_ToAddModList_t *) NULL,
     ue_context_p->ue_context.rb_config->drb_ToAddModList ,
     ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-    0xff,
-    NULL,
-    NULL,
-    NULL,
+    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
+    NULL,          /* kRRCenc - unused */
+    NULL,          /* kRRCint - unused */
+    kUPenc,        /* kUPenc  */
+    NULL,          /* kUPint  - unused */
     NULL,
     NULL,
     ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);

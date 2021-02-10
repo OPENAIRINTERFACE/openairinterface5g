@@ -4484,10 +4484,10 @@ static int encode_CG_ConfigInfo(
 
     rb_config->securityConfig = calloc(1,sizeof(struct NR_SecurityConfig ));
     rb_config->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(struct NR_SecurityAlgorithmConfig));
-    rb_config->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
+    rb_config->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea2;
     rb_config->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
     rb_config->securityConfig->keyToUse = calloc(1,sizeof(long));
-    *rb_config->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+    *rb_config->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_secondary;
   }
 
   cg_configinfo = calloc(1,sizeof(struct NR_CG_ConfigInfo));
