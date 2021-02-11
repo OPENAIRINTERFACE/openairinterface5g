@@ -127,13 +127,19 @@ nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
-// Dummy function to avoid linking error at compilation of nr-prachsim
-int is_x2ap_enabled(void)
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
 {
   return 0;
 }
 
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+// Dummy function to avoid linking error at compilation of nr-prachsim
+int is_x2ap_enabled(void)
+{
   return 0;
 }
 
