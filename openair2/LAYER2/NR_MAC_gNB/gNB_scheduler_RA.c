@@ -825,6 +825,19 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
+    uint16_t *vrb_map = cc[CC_id].vrb_map;
+    int rbStart = 0, rbSize = 6;
+    for (int i = 0; (i < rbSize) && (rbStart <= (dci10_bw - rbSize)); i++) {
+      if (vrb_map[rbStart + i]) {
+        rbStart += i;
+        i = 0;
+      }
+    }
+    if (rbStart > (dci10_bw - rbSize)) {
+      LOG_E(MAC, "%s(): cannot find free vrb_map for RA RNTI %04x!\n", __func__, ra->RA_rnti);
+      return;
+    }
+
     nfapi_nr_dl_tti_request_body_t *dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
     // Checking if the DCI allocation is feasible in current subframe: we might
     // need to need up to two (PDCCH + PDSCH) messages, so check that we can
@@ -924,8 +937,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 2;
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
-    pdsch_pdu_rel15->rbStart = 0;
-    pdsch_pdu_rel15->rbSize = 6;
+    pdsch_pdu_rel15->rbStart = rbStart;
+    pdsch_pdu_rel15->rbSize = rbSize;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0; // non interleaved
 
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
@@ -1025,9 +1038,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       T_BUFFER(&tx_req->TLVs[0].value.direct[0], tx_req->TLVs[0].length));
 
     /* mark the corresponding RBs as used */
-    uint16_t *vrb_map = cc[CC_id].vrb_map;
-    for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
-      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
+    for (int rb = 0; rb < rbSize; rb++)
+      vrb_map[rb + rbStart] = 1;
   }
 }
 
