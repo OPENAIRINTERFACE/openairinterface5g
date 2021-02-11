@@ -194,8 +194,6 @@ typedef struct {
   uint32_t PCCH_alloc_pdu;
   /// Outgoing PCCH pdu for PHY
   PCCH_PDU PCCH_pdu;
-  /// Outgoing RAR pdu for PHY
-  RAR_PDU RAR_pdu;
   /// Template for RA computations
   NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels

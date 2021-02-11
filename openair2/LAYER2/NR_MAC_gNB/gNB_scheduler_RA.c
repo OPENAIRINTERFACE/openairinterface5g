@@ -583,7 +583,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       LOG_D(MAC, "RA[state:%d]\n", ra->state);
       switch (ra->state) {
         case Msg2:
-          nr_generate_Msg2(module_idP, CC_id, frameP, slotP);
+          nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra);
           break;
         case Msg4:
           // generate_Msg4(module_idP, CC_id, frameP, slotP);
@@ -656,12 +656,11 @@ void nr_get_Msg3alloc(module_id_t module_id,
   ra->msg3_first_rb = rbStart;
 }
 
-void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
-
+void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra, uint8_t *RAR_pdu)
+{
   gNB_MAC_INST                                   *mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                            *cc = &mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t                   *scc = cc->ServingCellConfigCommon;
-  NR_RA_t                                         *ra = &cc->ra[0];
 
   if (ra->state == RA_IDLE) {
     LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
@@ -776,26 +775,24 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
                                                  pusch_pdu->nrOfLayers = 1)>>3;
 
   // calling function to fill rar message
-  nr_fill_rar(module_idP, ra, cc->RAR_pdu.payload, pusch_pdu);
-
+  nr_fill_rar(module_idP, ra, RAR_pdu, pusch_pdu);
 }
 
-// WIP
-// todo:
-// - fix me
-// - get msg3 alloc (see nr_process_rar)
-void nr_generate_Msg2(module_id_t module_idP,
-                      int CC_id,
-                      frame_t frameP,
-                      sub_frame_t slotP)
+void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra)
 {
-
   int mcsIndex;
   int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
-  NR_RA_t                               *ra = &cc->ra[CC_id];
   NR_SearchSpace_t *ss = ra->ra_ss;
+
+  // This code from this point on will not work on initialBWP or CORESET0
+  AssertFatal(ra->bwp_id > 0, "cannot work on initialBWP for now\n");
+
+  AssertFatal(ra->secondaryCellGroup, "no secondaryCellGroup for RNTI %04x\n", ra->crnti);
+  AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+              "downlinkBWP_ToAddModList has %d BWP!\n",
+              ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
 
   uint16_t RA_rnti = ra->RA_rnti;
   long locationAndBandwidth;
@@ -804,7 +801,7 @@ void nr_generate_Msg2(module_id_t module_idP,
   // get the BW of the PDCCH for PDCCH size and RAR PDSCH size
 
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  int dci10_bw;
+  int dci10_bw = 0;
 
   if (ra->coreset0_configured == 1) {
     AssertFatal(1==0,"This is a standalone condition\n");
@@ -817,7 +814,10 @@ void nr_generate_Msg2(module_id_t module_idP,
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
     nfapi_nr_dl_tti_request_body_t *dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
-    // Checking if the DCI allocation is feasible in current subframe
+    // Checking if the DCI allocation is feasible in current subframe: we might
+    // need to need up to two (PDCCH + PDSCH) messages, so check that we can
+    // always allocate both (this might be an overestimation, since the PDCCH
+    // message might already exist)
     if (dl_req->nPDUs > NFAPI_NR_MAX_DL_TTI_PDUS - 2) {
       LOG_I(MAC, "[RAPROC] Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n", slotP, RA_rnti);
       return;
@@ -839,8 +839,6 @@ void nr_generate_Msg2(module_id_t module_idP,
       LOG_E(MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
       return;
     }
-
-    nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
      * exist, create it. This is especially important if we have multiple RAs,
@@ -868,14 +866,6 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     LOG_I(MAC,"[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RAR DCI, state %d\n", module_idP, CC_id, frameP, slotP, ra->state);
 
-    // This code from this point on will not work on initialBWP or CORESET0
-    AssertFatal(ra->bwp_id>0,"cannot work on initialBWP for now\n");
-
-    AssertFatal(ra->secondaryCellGroup,
-                "no secondaryCellGroup for RNTI %04x\n",
-                ra->crnti);
-    AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-      "downlinkBWP_ToAddModList has %d BWP!\n", ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
     NR_BWP_Uplink_t *ubwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
     LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
@@ -998,17 +988,8 @@ void nr_generate_Msg2(module_id_t module_idP,
                        dci10_bw,
                        ra->bwp_id);
 
-    // Program UL processing for Msg3
-    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
-    LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
-    nr_add_msg3(module_idP, CC_id, frameP, slotP);
-    ra->state = WAIT_Msg3;
-    LOG_I(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
-
-    x_Overhead = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_payload.tb_scaling);
-
     // DL TX request
+    nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
@@ -1016,11 +997,20 @@ void nr_generate_Msg2(module_id_t module_idP,
     nr_mac->TX_req[CC_id].SFN = frameP;
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
-    memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length);
+
+    // Program UL processing for Msg3
+    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
+    LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
+    nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
+    ra->state = WAIT_Msg3;
+    LOG_I(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+
+    x_Overhead = 0;
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_payload.tb_scaling);
 
     T(T_GNB_MAC_DL_RAR_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id),
       T_INT(RA_rnti), T_INT(frameP), T_INT(slotP), T_INT(0) /* harq pid, meaningful? */,
-      T_BUFFER(&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length));
+      T_BUFFER(&tx_req->TLVs[0].value.direct[0], tx_req->TLVs[0].length));
 
     /* mark the corresponding RBs as used */
     uint16_t *vrb_map = cc[CC_id].vrb_map;
