@@ -215,6 +215,8 @@ typedef struct {
   uint8_t max_association_period;
   //SSB index
   uint8_t ssb_index[MAX_NUM_OF_SSB];
+  //CB preambles for each SSB
+  uint8_t cb_preambles_per_ssb;
 } NR_COMMON_channels_t;
 
 
