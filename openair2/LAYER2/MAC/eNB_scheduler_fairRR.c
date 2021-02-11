@@ -2684,19 +2684,20 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
           UE_info->UE_sched_ctrl[UE_id].pusch_rx_num_old[CC_id] = UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[CC_id];
           UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num_old[CC_id] = UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[CC_id];
 
-          if(bler < 0.5) {
-            if(UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id] !=0) {
-              UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id]--;
+          if (eNB->use_mcs_offset == 1) {
+            if(bler < eNB->bler_lower) {
+              if(UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id] !=0) {
+                UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id]--;
+              }
             }
-          }
-          if(bler >= 2) {
-            UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id]++;
-            if(UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id] >= 20) {
-              UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id]=20;
+            if(bler >= eNB->bler_upper) {
+              UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id]++;
+              if(UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id] >= 20) {
+                UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id]=20;
+              }
             }
           }
         }
-
         snr = UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[CC_id];
  
         mcs = 20 - UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id];
@@ -2724,7 +2725,7 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
             }
 
             while ( (tbs < bytes_to_schedule) && (rb_table[rb_table_index]<(N_RB_UL-num_pucch_rb-first_rb[CC_id])) &&
-                    ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
+                    ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < eNB->max_ul_rb_index )) {
               rb_table_index++;
               tbs = get_TBS_UL(mcs,rb_table[rb_table_index]);
               tx_power= estimate_ue_tx_power(0,tbs*8,rb_table[rb_table_index],0,cc->Ncp,0);

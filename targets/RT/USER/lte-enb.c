@@ -1156,7 +1156,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
 
 
 void init_eNB_afterRU(void) {
-  int inst,CC_id,i,aa;
+  int inst,CC_id,i;
   PHY_VARS_eNB *eNB;
   LOG_I(PHY,"%s() RC.nb_inst:%d\n", __FUNCTION__, RC.nb_inst);
 
@@ -1171,7 +1171,7 @@ void init_eNB_afterRU(void) {
       eNB->frame_parms.nb_antennas_rx       = 0;
       LOG_I(PHY,"eNB->num_RU:%d\n", eNB->num_RU);     
       AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is      zero\n",eNB->Mod_id);
-      for (int ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) 
+      for (int ru_id=0; ru_id<eNB->num_RU; ru_id++) 
          eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
       phy_init_lte_eNB(eNB,0,0);
       LOG_I(PHY,"Overwriting eNB->prach_vars.rxsigF[0]:%p\n", eNB->prach_vars.rxsigF[0]);

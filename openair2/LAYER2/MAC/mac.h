@@ -1453,7 +1453,15 @@ typedef struct eNB_MAC_INST_s {
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;
 
+  int max_ul_rb_index;
+
   int ue_multiple_max;
+
+  int use_mcs_offset;
+
+  double bler_lower;
+
+  double bler_upper;
   pthread_t mac_stats_thread;
 } eNB_MAC_INST;
 

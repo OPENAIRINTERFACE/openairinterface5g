@@ -220,6 +220,10 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
       RC.mac[j]->puSch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCH10xSNR_IDX ].iptr);
       RC.mac[j]->puCch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCH10xSNR_IDX ].iptr);
       RC.mac[j]->ue_multiple_max = *(MacRLC_ParamList.paramarray[j][MACRLC_UE_MULTIPLE_MAX_IDX ].iptr);
+      RC.mac[j]->use_mcs_offset = *(MacRLC_ParamList.paramarray[j][MACRLC_USE_MCS_OFFSET_IDX ].iptr);
+      RC.mac[j]->bler_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_LOWER_IDX ].dblptr);
+      RC.mac[j]->bler_upper = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_UPPER_IDX ].dblptr);
+      RC.mac[j]->max_ul_rb_index = *(MacRLC_ParamList.paramarray[j][MACRLC_MAX_UL_RB_INDEX_IDX ].iptr);
       RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
