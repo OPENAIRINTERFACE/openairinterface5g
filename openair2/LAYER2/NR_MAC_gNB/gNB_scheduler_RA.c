@@ -474,9 +474,23 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  for(int i=0; i<NR_NB_RA_PROC_MAX; i++) {  // if the preamble received correspond to one of the listed
+
+  uint8_t total_RApreambles = 64;
+  uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;	
+  if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
+    total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
+  
+  if(num_ssb_per_RO > 3) { /*num of ssb per RO >= 1*/
+    num_ssb_per_RO -= 3;
+    total_RApreambles = total_RApreambles/num_ssb_per_RO ;
+  }
+  
+  for(int i=0; i<NR_NB_RA_PROC_MAX; i++) { 
     NR_RA_t *ra = &cc->ra[i];
 
+  if (ra->state == RA_IDLE) {
+    if((preamble_index < total_RApreambles) && (preamble_index > cc->cb_preambles_per_ssb) && (!ra->cfra)) continue;
+  
   uint16_t ra_rnti;
 
   // ra_rnti from 5.1.3 in 38.321
@@ -494,8 +508,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   LOG_I(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, slotP, preamble_index);
 
-  if (ra->state == RA_IDLE) {
-
     uint8_t beam_index = ssb_index_from_prach(module_idP,
 		                              frameP,
                                               slotP,
@@ -505,14 +517,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
     if (ra->cfra) {
-    int pr_found=0;
-    if (preamble_index == ra->preambles.preamble_list[beam_index]) {
-      pr_found=1;
-    }
-    if (!pr_found) {
+		// if the preamble received correspond to one of the listed
+    if (!(preamble_index == ra->preambles.preamble_list[beam_index])) {
       LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
 			module_idP, preamble_index);
-      return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
+      continue; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
     }
     }
     int loop = 0;
