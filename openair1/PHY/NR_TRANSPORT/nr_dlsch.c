@@ -136,8 +136,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     dlsch = gNB->dlsch[dlsch_id][0];
     if (dlsch->slot_tx[slot] == 0) continue;
 
-    int harq_pid = dlsch->harq_ids[frame%2][slot];
-    NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
+    NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
     uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
@@ -439,15 +438,8 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
     if (gNB->dlsch_stats[i].rnti > 0)
-      LOG_I(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
+      LOG_D(PHY,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
 	    gNB->dlsch_stats[i].rnti,
-	    gNB->dlsch_stats[i].round_trials[0],
-	    (double)gNB->dlsch_stats[i].round_trials[1]/gNB->dlsch_stats[i].round_trials[0],
-	    gNB->dlsch_stats[i].round_trials[1],
-	    (double)gNB->dlsch_stats[i].round_trials[2]/gNB->dlsch_stats[i].round_trials[0],
-	    gNB->dlsch_stats[i].round_trials[2],
-	    (double)gNB->dlsch_stats[i].round_trials[3]/gNB->dlsch_stats[i].round_trials[0],
-	    gNB->dlsch_stats[i].round_trials[3],
 	    gNB->dlsch_stats[i].current_Qm,
 	    gNB->dlsch_stats[i].current_RI,
 	    gNB->dlsch_stats[i].total_bytes_tx);

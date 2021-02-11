@@ -95,6 +95,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
      * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
      * or the rb_offset for other coresets
      * in time: by its first slot and its first symbol*/
+    const nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[d];
 
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
@@ -103,7 +104,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
     // DMRS length is per OFDM symbol
     uint32_t dmrs_length = n_rb*6; //2(QPSK)*3(per RB)*6(REG per CCE)
-    uint32_t encoded_length = pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]*108; //2(QPSK)*9(per RB)*6(REG per CCE)
+    uint32_t encoded_length = dci_pdu->AggregationLevel*108; //2(QPSK)*9(per RB)*6(REG per CCE)
     LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d)\n", dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType);
     dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
       
@@ -125,19 +126,19 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     // CRC attachment + Scrambling + Channel coding + Rate matching
     uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
 
-    uint16_t n_RNTI = pdcch_pdu_rel15->dci_pdu.RNTI[d];
-    uint16_t Nid    = pdcch_pdu_rel15->dci_pdu.ScramblingId[d];
-    uint16_t scrambling_RNTI = pdcch_pdu_rel15->dci_pdu.ScramblingRNTI[d];
+    uint16_t n_RNTI = dci_pdu->RNTI;
+    uint16_t Nid    = dci_pdu->ScramblingId;
+    uint16_t scrambling_RNTI = dci_pdu->ScramblingRNTI;
 
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
-						   pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d], 
-						   pdcch_pdu_rel15->dci_pdu.AggregationLevel[d],
+						   dci_pdu->PayloadSizeBits,
+						   dci_pdu->AggregationLevel,
 						   0,NULL);
-    polar_encoder_fast((uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[d], (void*)encoder_output, n_RNTI,1,currentPtr);
+    polar_encoder_fast((uint64_t*)dci_pdu->Payload, (void*)encoder_output, n_RNTI,1,currentPtr);
 #ifdef DEBUG_CHANNEL_CODING
-    printf("polar rnti %x,length %d, L %d\n",n_RNTI, pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d],pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]);
+    printf("polar rnti %x,length %d, L %d\n",n_RNTI, dci_pdu->PayloadSizeBits,pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]);
     printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
-	   ((uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[d])[0], ((uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[d])[1]);
+	   ((uint64_t*)dci_pdu->Payload)[0], ((uint64_t*)dci_pdu->Payload)[1]);
     printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
     
     for (int i=0; i<encoded_length>>5; i++)
@@ -173,7 +174,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     int reg_list_index = 0;
     int reg_list_order[NR_MAX_PDCCH_AGG_LEVEL] = {};
     for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
-      for(int p2 = 0; p2 < pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]; p2++) {
+      for(int p2 = 0; p2 < dci_pdu->AggregationLevel; p2++) {
         if(gNB->cce_list[d][p2].reg_list[0].reg_idx == p * NR_NB_REG_PER_CCE) {
           reg_list_order[reg_list_index] = p2;
           reg_list_index++;
@@ -183,7 +184,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     }
 
     /*Mapping the encoded DCI along with the DMRS */
-    for (int cce_count = 0; cce_count < pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]; cce_count ++) {
+    for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count ++) {
 
       int8_t cce_idx = reg_list_order[cce_count];
 
@@ -240,9 +241,10 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       } // reg_in_cce_idx
     } // cce_count
 
-    LOG_D(PHY, "DCI: payloadSize = %d | payload = %llx\n",
-           *pdcch_pdu_rel15->dci_pdu.PayloadSizeBits,*(unsigned long long*)pdcch_pdu_rel15->dci_pdu.Payload);
-
+    LOG_D(PHY,
+          "DCI: payloadSize = %d | payload = %llx\n",
+          dci_pdu->PayloadSizeBits,
+          *(unsigned long long *)dci_pdu->Payload);
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
 }
 

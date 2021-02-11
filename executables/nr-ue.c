@@ -716,14 +716,14 @@ void *UE_thread(void *arg) {
     else     if (slot_tx_usrp%tdd_period>first_tx_slot)
       flags = 1;
 
-    if (flags || IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1)
-      AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-					       writeTimestamp,
-					       txp,
-					       writeBlockSize,
-					       UE->frame_parms.nb_antennas_tx,
-					       flags),"");
+    if (flags || IS_SOFTMODEM_RFSIM)
+      AssertFatal(writeBlockSize ==
+                  UE->rfdevice.trx_write_func(&UE->rfdevice,
+                                              writeTimestamp,
+                                              txp,
+                                              writeBlockSize,
+                                              UE->frame_parms.nb_antennas_tx,
+                                              flags),"");
     
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
@@ -732,7 +732,7 @@ void *UE_thread(void *arg) {
     msgToPush->key=slot_nr;
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
-    if ( IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
+    if (IS_SOFTMODEM_RFSIM) {  //getenv("RFSIMULATOR")
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done
