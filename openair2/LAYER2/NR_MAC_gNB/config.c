@@ -283,7 +283,6 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   cfg->num_tlv++;
   cfg->num_tlv++;
 
-
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
@@ -307,8 +306,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     if (return_tdd != 0)
       LOG_E(MAC,"TDD configuration can not be done\n");
     else 
-      LOG_I(MAC,"TDD has been properly configurated\n");
-    
+      LOG_I(MAC,"TDD has been properly configurated\n");    
   }
 
 }

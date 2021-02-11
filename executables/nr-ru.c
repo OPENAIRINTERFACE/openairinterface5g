@@ -97,6 +97,7 @@ static int DEFBFW[] = {0x00007fff};
 
 extern volatile int oai_exit;
 
+
 extern struct timespec timespec_sub(struct timespec lhs, struct timespec rhs);
 extern struct timespec timespec_add(struct timespec lhs, struct timespec rhs);
 extern void  nr_phy_free_RU(RU_t *);
@@ -711,7 +712,6 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 
 
 void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
- 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
@@ -1564,15 +1564,12 @@ void *ru_thread( void *param ) {
 
     if((slot_start.tv_sec > curr_time.tv_sec) || (slot_start.tv_sec == curr_time.tv_sec && slot_start.tv_nsec > curr_time.tv_nsec)){
       sleep_time = timespec_sub(slot_start,curr_time);
-      
       usleep(sleep_time.tv_nsec * 1e-3); 
     }
     else{//continue
     }
 
-   // clock_gettime(CLOCK_MONOTONIC, &curr_time);
-    //printf("sfn:%d, slot:%d, start time %d.%d slot start %d.%d \n",frame,slot,curr_time.tv_sec,curr_time.tv_nsec,slot_start.tv_sec,slot_start.tv_nsec);
-    if (slot==(fp->slots_per_frame-1)) {
+    if(slot==(fp->slots_per_frame-1)) {
       slot=0;
       frame++;
       frame&=1023;

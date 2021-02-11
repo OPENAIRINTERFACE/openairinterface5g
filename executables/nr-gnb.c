@@ -184,6 +184,7 @@ clock_gettime(CLOCK_MONOTONIC, &current);
   // ****************************************
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
+
   /* hack to remove UEs */
   extern int rnti_to_remove[10];
   extern volatile int rnti_to_remove_count;
@@ -244,15 +245,16 @@ clock_gettime(CLOCK_MONOTONIC, &current);
   }
   */
   // Call the scheduler
+
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
-
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
@@ -401,12 +403,9 @@ static void *gNB_L1_thread( void *param ) {
 
 
   while (!oai_exit) {
-    struct timespec t;
-    clock_gettime(CLOCK_MONOTONIC,&t);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
-    clock_gettime(CLOCK_MONOTONIC,&t);
 
     int frame_rx          = L1_proc->frame_rx;
     int slot_rx           = L1_proc->slot_rx;

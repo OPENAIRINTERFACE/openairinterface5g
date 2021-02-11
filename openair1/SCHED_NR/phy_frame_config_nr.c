@@ -116,10 +116,8 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
   while(slot_number != nb_slots_to_set) {
     if(nrofDownlinkSlots != 0) {
       for (int number_of_symbol = 0; number_of_symbol < nrofDownlinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.value= 0; // was 0, made 10 to check
-        // cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.tl.tag= NFAPI_NR_CONFIG_SLOT_CONFIG_TAG;
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.value= 0; 
         
-
         if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
           slot_number++;
       }
@@ -150,7 +148,6 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
       }
     }
   }
-  //printf("Set tdd config nr tti: 26, symbol count: 0 value: %d \n", cfg->tdd_table.max_tdd_periodicity_list[26].max_num_of_symbol_per_slot_list[0].slot_config.value);
 
   /*
   while(slot_number != nb_slots_to_set) {
@@ -313,7 +310,6 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms) {
 
 int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti) {
   /* for FDD all slot can be considered as an uplink */
-
   int mu = cfg->ssb_config.scs_common.value,check_slot=0;
 
   if (cfg->cell_config.frame_duplex_type.value == FDD) {
@@ -321,9 +317,7 @@ int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti)
   }
   
   if (nr_frame%2 == 0) {
-
-    
-    for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
+      for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
       if (cfg->tdd_table.max_tdd_periodicity_list[nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {
         check_slot++;
       }
@@ -347,7 +341,6 @@ int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti)
       return (NR_MIXED_SLOT);
     }
   } else {
-    
     for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {   
       if (cfg->tdd_table.max_tdd_periodicity_list[((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {
         check_slot++;
@@ -372,7 +365,6 @@ int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti)
       return (NR_MIXED_SLOT);
     }
   }
-
 }
 
 /*******************************************************************

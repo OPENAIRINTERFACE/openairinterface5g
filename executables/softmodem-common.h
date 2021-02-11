@@ -91,7 +91,8 @@ extern "C"
 #define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
-#define CONFIG_HLP_NFAPI        "Change the nFAPI mode for NR\n"
+#define CONFIG_HLP_NFAPI         "Change the nFAPI mode for NR\n"
+
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
 /*   optname                 helpstr                  paramflags      XXXptr                              defXXXval              type         numelt   */
@@ -232,7 +233,6 @@ typedef struct {
   uint32_t       send_dmrs_sync;
   int            use_256qam_table;
   uint8_t        nfapi;
-
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);
@@ -245,7 +245,6 @@ extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern uint8_t nfapi_mode;
-
 #ifdef __cplusplus
 }
 #endif

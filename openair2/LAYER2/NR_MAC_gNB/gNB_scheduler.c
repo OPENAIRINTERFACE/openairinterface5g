@@ -381,6 +381,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       UE_info->num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
+
     // clear vrb_maps
     memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * MAX_BWP_SIZE);
     // clear last scheduled slot's content (only)!
@@ -392,6 +393,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
   
+
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
 
 
@@ -429,6 +431,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
   }
+  
   // This schedules the DCI for Uplink and subsequently PUSCH
   {
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);

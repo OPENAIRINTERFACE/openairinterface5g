@@ -143,9 +143,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
-   //LOG_I(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d\n",frame,slot);
-
-
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
@@ -177,6 +174,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
 	gNB->pbch_configured=1;
+
         if(NFAPI_MODE != NFAPI_MODE_VNF)
         handle_nr_nfapi_ssb_pdu(gNB,frame,slot,
                                 dl_tti_pdu);
@@ -209,10 +207,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   }
 
   //  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
-   if(NFAPI_MODE != NFAPI_MODE_VNF)
-   for (int i=0;i<number_ul_dci_pdu;i++) {
-    handle_nfapi_nr_ul_dci_pdu(gNB, frame, slot, &UL_dci_req->ul_dci_pdu_list[i]);
-  }
+  if(NFAPI_MODE != NFAPI_MODE_VNF)
+    for (int i=0;i<number_ul_dci_pdu;i++) {
+      handle_nfapi_nr_ul_dci_pdu(gNB, frame, slot, &UL_dci_req->ul_dci_pdu_list[i]);
+    }
 
 if(NFAPI_MODE != NFAPI_MODE_VNF)
   for (int i = 0; i < number_ul_tti_pdu; i++) {
@@ -242,7 +240,7 @@ if(NFAPI_MODE != NFAPI_MODE_VNF)
 //  if (NFAPI_MODE != NFAPI_MONOLITHIC && Sched_INFO->UL_dci_req->numPdus!=0)
 //   {
 //     oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
-//   }//Only DL in nFAPI mode
+//   } //Uncomment for UL_TTI and UL_DCI messages in in nFAPI mode
  
   if (NFAPI_MODE != NFAPI_MONOLITHIC) 
   { 

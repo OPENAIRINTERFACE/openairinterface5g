@@ -45,6 +45,7 @@
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
+
 uint8_t nfapi_mode=0;
 
 static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
