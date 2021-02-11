@@ -502,6 +502,9 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                 			      preamble_index,
                                               freq_index,
 	   				      symbol);
+
+    // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
+    if (ra->cfra) {
     int pr_found=0;
     if (preamble_index == ra->preambles.preamble_list[beam_index]) {
       pr_found=1;
@@ -511,7 +514,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 			module_idP, preamble_index);
       return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
     }
-
+    }
     int loop = 0;
     LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;
