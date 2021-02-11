@@ -536,37 +536,31 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 }
 
-void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
-
-  //uint8_t i = 0;
-  int CC_id = 0;
+void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+{
   gNB_MAC_INST *mac = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
 
   start_meas(&mac->schedule_ra);
-
-//  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-//    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-  
-//	NR_RA_t *ra = &cc->ra[i];
-	NR_RA_t *ra = &cc->ra[0];
-
-  LOG_D(MAC,"RA[state:%d]\n",ra->state);
-  switch (ra->state){
-    case Msg2:
-      nr_generate_Msg2(module_idP, CC_id, frameP, slotP);
-      break;
-    case Msg4:
-      //generate_Msg4(module_idP, CC_id, frameP, slotP);
-      break;
-    case WAIT_Msg4_ACK:
-      //check_Msg4_retransmission(module_idP, CC_id, frameP, slotP);
-      break;
-    default:
-    break;
+  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+      NR_RA_t *ra = &cc->ra[i];
+      LOG_D(MAC, "RA[state:%d]\n", ra->state);
+      switch (ra->state) {
+        case Msg2:
+          nr_generate_Msg2(module_idP, CC_id, frameP, slotP);
+          break;
+        case Msg4:
+          // generate_Msg4(module_idP, CC_id, frameP, slotP);
+          break;
+        case WAIT_Msg4_ACK:
+          // check_Msg4_retransmission(module_idP, CC_id, frameP, slotP);
+          break;
+        default:
+          break;
+      }
+    }
   }
-//    }
-//  }
   stop_meas(&mac->schedule_ra);
 }
 
