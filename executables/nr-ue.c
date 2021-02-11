@@ -114,6 +114,12 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
     ue->prach_resources[gNB_id] = (NR_PRACH_RESOURCES_t *)malloc16_clear(sizeof(NR_PRACH_RESOURCES_t));
   }
 
+  // Setting UE mode to NOT_SYNCHED by default
+  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
+    ue->UE_mode[gNB_id] = NOT_SYNCHED;
+    ue->prach_resources[gNB_id] = (NR_PRACH_RESOURCES_t *)malloc16_clear(sizeof(NR_PRACH_RESOURCES_t));
+  }
+
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
 
@@ -753,7 +759,7 @@ void *UE_thread(void *arg) {
 }
 
 void init_NR_UE(int nb_inst, char* rrc_config_path) {
-  int inst;
+    int inst;
   NR_UE_MAC_INST_t *mac_inst;
   NR_UE_RRC_INST_t* rrc_inst;
   

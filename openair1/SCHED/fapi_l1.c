@@ -101,8 +101,6 @@ void handle_nfapi_hi_dci0_mpdcch_dci_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   // copy dci configuration in to eNB structure
   fill_mpdcch_dci0(eNB,proc,&pdcch_vars->mdci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->mpdcch_dci_pdu);
 }
-
-
 void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                                  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
   LTE_eNB_PHICH *phich = &eNB->phich_vars[subframe&1];

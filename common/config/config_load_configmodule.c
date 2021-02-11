@@ -43,7 +43,7 @@
 #include "config_userapi.h"
 #include "../utils/LOG/log.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 
 int load_config_sharedlib(configmodule_interface_t *cfgptr) {
   void *lib_handle;
@@ -212,6 +212,7 @@ configmodule_interface_t *load_configmodule(int argc,
     if ( (strcmp(argv[i]+1, "h") == 0) || (strstr(argv[i]+1, "help_") != NULL ) ) {
       tmpflags = CONFIG_HELP;
     }
+
   }
 
   /* look for the OAI_CONFIGMODULE environment variable */

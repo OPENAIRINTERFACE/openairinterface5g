@@ -49,7 +49,6 @@ static uint64_t pdcp_optmask;
 /* rlc_data_req queue - begin                                               */
 /****************************************************************************/
 
-
 #include <pthread.h>
 
 /* NR PDCP and RLC both use "big locks". In some cases a thread may do

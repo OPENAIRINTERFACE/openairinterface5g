@@ -81,7 +81,6 @@ l1_north_init_eNB () {
   return(0);
 }
 
-
 void phy_config_request(PHY_Config_t *phy_config) {
   uint8_t         Mod_id = phy_config->Mod_id;
   int             CC_id = phy_config->CC_id;
@@ -572,6 +571,7 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) eNB->UE_stats_ptr[UE_id] = NULL;
 }
+
 
 void install_schedule_handlers(IF_Module_t *if_inst) {
   if_inst->PHY_config_req = phy_config_request;

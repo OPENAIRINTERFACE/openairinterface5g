@@ -85,12 +85,13 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
+extern uint8_t nfapi_mode; // Default to monolithic mode,set in config_load_configmodule.c
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -736,6 +737,7 @@ void init_pdcp(void) {
 int main( int argc, char **argv )
 {
   int ru_id, CC_id = 0;
+
   start_background_system();
 
   ///static configuration for NR at the moment
@@ -811,7 +813,7 @@ if(!IS_SOFTMODEM_NOS1)
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
   } else {
     printf("No ITTI, Initializing L1\n");
-    RCconfig_L1();
+    RCconfig_NR_L1();
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
@@ -832,7 +834,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   usleep(1000);
 
-  if (nfapi_mode) {
+  if (NFAPI_MODE) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
@@ -840,7 +842,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   const char *nfapi_mode_str = "<UNKNOWN>";
 
-  switch(nfapi_mode) {
+  switch(NFAPI_MODE) {
     case 0:
       nfapi_mode_str = "MONOLITHIC";
       break;
@@ -860,7 +862,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==2) // VNF
+  if (NFAPI_MODE==NFAPI_MODE_VNF) // VNF
     wait_nfapi_init("main?");
 
   printf("START MAIN THREADS\n");
@@ -889,7 +891,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   config_sync_var=0;
 
-  if (nfapi_mode==1) { // PNF
+  if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
     wait_nfapi_init("main?");
   }
 
@@ -909,7 +911,7 @@ if(!IS_SOFTMODEM_NOS1)
     load_softscope("nr",&p);
   }
 
-  if (nfapi_mode != 1 && nfapi_mode != 2) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
     init_eNB_afterRU();
   } else {

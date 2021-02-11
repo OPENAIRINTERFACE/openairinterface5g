@@ -84,7 +84,7 @@
 
 
 #include "T.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -137,27 +137,32 @@ void wakeup_prach_gNB(PHY_VARS_gNB *gNB, RU_t *ru, int frame, int subframe);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+extern void oai_slot_ind(uint16_t sfn, uint16_t slot);
 extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 //#define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
+struct timespec current;
+clock_gettime(CLOCK_MONOTONIC, &current);
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-
+  
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
   // NFAPI not yet supported for NR - this code has to be revised
-  if (nfapi_mode == 1) {
+  if (NFAPI_MODE == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     //add_subframe(&frame, &subframe, 4);
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
-    oai_subframe_ind(frame_rx, slot_rx);
+    // oai_subframe_ind(frame_rx, slot_rx);
+
+    oai_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
@@ -179,7 +184,6 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // ****************************************
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
-
   /* hack to remove UEs */
   extern int rnti_to_remove[10];
   extern volatile int rnti_to_remove_count;
@@ -240,16 +244,15 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   }
   */
   // Call the scheduler
-
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
+
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-  
-  // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
@@ -398,9 +401,12 @@ static void *gNB_L1_thread( void *param ) {
 
 
   while (!oai_exit) {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC,&t);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
+    clock_gettime(CLOCK_MONOTONIC,&t);
 
     int frame_rx          = L1_proc->frame_rx;
     int slot_rx           = L1_proc->slot_rx;

@@ -52,6 +52,7 @@
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -104,7 +105,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   gNB->pdu_index[CC_idP] = 0;
 
-  if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
+  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;
@@ -302,7 +303,7 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
-
+  
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
@@ -314,7 +315,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-
+  
   switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
     case 0:
       nb_periods_per_frame = 20; // 10ms/0p5ms
@@ -380,7 +381,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       UE_info->num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
-
     // clear vrb_maps
     memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * MAX_BWP_SIZE);
     // clear last scheduled slot's content (only)!
@@ -391,8 +391,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
-
-
+  
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
 
 
@@ -430,7 +429,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
   }
-
   // This schedules the DCI for Uplink and subsequently PUSCH
   {
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);

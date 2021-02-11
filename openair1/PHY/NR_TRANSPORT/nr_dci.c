@@ -267,3 +267,6 @@ void nr_generate_dci_top(PHY_VARS_gNB *gNB,
     nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
 
+
+
+

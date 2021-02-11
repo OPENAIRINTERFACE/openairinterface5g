@@ -419,7 +419,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
                    int sample_offset,
                    int no_prefix)
 {
-  int32_t slot_offset, rxdata_offset;
+   int32_t slot_offset, rxdata_offset;
 
   unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);

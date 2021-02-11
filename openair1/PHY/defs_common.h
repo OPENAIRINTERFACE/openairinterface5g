@@ -99,7 +99,6 @@
 
 #define NB_RX_ANTENNAS_MAX 64
 
-
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;

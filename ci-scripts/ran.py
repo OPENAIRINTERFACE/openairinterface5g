@@ -877,7 +877,6 @@ class RANManagement():
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
-
 		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'

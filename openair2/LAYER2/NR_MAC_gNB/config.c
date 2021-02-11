@@ -45,7 +45,7 @@
 
 #include "NR_MIB.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-
+#include "../../../../nfapi/oai_integration/vendor_ext.h"
 /* Softmodem params */
 #include "executables/softmodem-common.h"
 
@@ -264,6 +264,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
 
   cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
+  cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
   cfg->num_tlv++;
 
   cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
@@ -281,6 +282,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
+
 
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
@@ -306,6 +308,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       LOG_E(MAC,"TDD configuration can not be done\n");
     else 
       LOG_I(MAC,"TDD has been properly configurated\n");
+    
   }
 
 }
@@ -366,7 +369,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
-    if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
+    if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
       while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
 	// DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
 	usleep(100 * 1000);

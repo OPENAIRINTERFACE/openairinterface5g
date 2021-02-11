@@ -36,7 +36,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
 #include "executables/softmodem-common.h"
-
+#include "nfapi/oai_integration/vendor_ext.h" 
 #define MAX_IF_MODULES 100
 //#define UL_HARQ_PRINT
 
@@ -184,7 +184,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
-  if (nfapi_mode != 1) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask==0) {
       ifi->current_frame    = UL_info->frame;
       ifi->current_slot = UL_info->slot;
@@ -203,7 +203,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
 
-  if (nfapi_mode != 1) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,
@@ -215,7 +215,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       gNB_dlsch_ulsch_scheduler(module_id,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
 				(UL_info->slot+sl_ahead)%spf);
-      
+
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
@@ -243,6 +243,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 	    sched_info->frame,
 	    sched_info->slot,
 	    sched_info->DL_req->dl_tti_request_body.nPDUs);
+      
     }
   }
 }
