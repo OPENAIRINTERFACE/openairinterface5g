@@ -780,19 +780,15 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
 
           if (harq_status->ack == DL_ACKNACK_NO_SET) {
             LOG_E(PHY,"PUCCH Downlink acknowledgment has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return (0);
           }
           else if (harq_status->vDAI_DL == DL_DAI_NO_SET) {
             LOG_E(PHY,"PUCCH Downlink DAI has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return (0);
           }
           else if (harq_status->vDAI_DL > NR_DL_MAX_DAI) {
             LOG_E(PHY,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return (0);
           }
           else if (harq_status->send_harq_status == 0) {
-            LOG_E(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return(0);
+            LOG_D(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
           }
           else {
 
@@ -808,6 +804,8 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
             number_harq_feedback++;
             ack_data[code_word][dai_current - 1] = harq_status->ack;
             dai[code_word][dai_current - 1] = dai_current;
+            harq_status->slot_for_feedback_ack = NR_MAX_SLOTS_PER_FRAME;
+            harq_status->send_harq_status = 0;
           }
           if (do_reset == TRUE) {
             init_downlink_harq_status(ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]);
