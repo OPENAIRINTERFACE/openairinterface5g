@@ -1581,7 +1581,7 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   }
 
   if (entity->tx_size + size > entity->tx_maxsize) {
-    LOG_D(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
+    LOG_E(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
           __FILE__, __LINE__, __FUNCTION__);
     return;
   }
