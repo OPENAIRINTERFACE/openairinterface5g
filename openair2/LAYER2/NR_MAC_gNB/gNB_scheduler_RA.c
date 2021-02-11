@@ -439,7 +439,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  NR_RA_t *ra = &cc->ra[0];
+  for(int i=0; i<NR_NB_RA_PROC_MAX; i++) {  // if the preamble received correspond to one of the listed
+    NR_RA_t *ra = &cc->ra[i];
 
   uint16_t ra_rnti;
 
@@ -450,23 +451,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   else
    ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
 
-
-  // if the preamble received correspond to one of the listed
-  // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
-  int pr_found=0;
-  for (int i = 0; i < ra->preambles.num_preambles; i++) {
-    if (preamble_index == ra->preambles.preamble_list[i]) {
-      pr_found=1;
-      break;
-    }
-  }
-
-  if (!pr_found) {
-    LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
-          module_idP, preamble_index);
-
-    return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
-  }
   // This should be handled differently when we use the initialBWP for RA
   ra->bwp_id=1;
   NR_BWP_Downlink_t *bwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
@@ -479,10 +463,20 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     uint8_t beam_index = ssb_index_from_prach(module_idP,
 		                              frameP,
-					      slotP,
-					      preamble_index,
-					      freq_index,
-					      symbol);
+                                              slotP,
+                			      preamble_index,
+                                              freq_index,
+	   				      symbol);
+    int pr_found=0;
+    if (preamble_index == ra->preambles.preamble_list[beam_index]) {
+      pr_found=1;
+    }
+    if (!pr_found) {
+      LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
+			module_idP, preamble_index);
+      return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
+    }
+
     int loop = 0;
     LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;
@@ -535,6 +529,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       cc->ssb_index[beam_index]);
 
     return;
+  }
   }
   LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
