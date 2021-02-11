@@ -75,9 +75,19 @@
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
+#define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
+
+/*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
+ * Especially useful in the scheduler and to keep "classes" of users. */
+typedef struct {
+  int head;
+  int *next;
+  int tail;
+  int len;
+} NR_list_t;
 
 typedef enum {
   RA_IDLE = 0,
@@ -282,7 +292,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-} NR_sched_pucch;
+} NR_sched_pucch_t;
 
 /* this struct is a helper: as long as the TDA and DCI format remain the same
  * over the same uBWP and search space, there is no need to recalculate all
@@ -326,13 +336,20 @@ typedef struct NR_sched_pusch {
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
+
+  /// UL HARQ PID to use for this UE, or -1 for "any new"
+  int8_t ul_harq_pid;
 } NR_sched_pusch_t;
 
 typedef struct NR_UE_harq {
-  uint8_t is_waiting;
+  bool is_waiting;
   uint8_t ndi;
   uint8_t round;
   uint16_t feedback_slot;
+
+  /* Transport block to be sent using this HARQ process */
+  uint32_t tb[16384];
+  uint32_t tb_size;
 } NR_UE_harq_t;
 
 typedef struct NR_UE_old_sched {
@@ -350,10 +367,13 @@ typedef enum {
 } NR_UL_harq_states_t;
 
 typedef struct NR_UE_ul_harq {
+  bool is_waiting;
   uint8_t ndi;
   uint8_t round;
-  uint16_t last_tx_slot;
-  NR_UL_harq_states_t state;
+  uint16_t feedback_slot;
+
+  /// sched_pusch keeps information on MCS etc used for the initial transmission
+  NR_sched_pusch_t sched_pusch;
 } NR_UE_ul_harq_t;
 
 
@@ -387,10 +407,12 @@ typedef struct {
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
 
-  NR_sched_pucch **sched_pucch;
-  /// selected PUCCH index, if scheduled
-  int pucch_sched_idx;
-  int pucch_occ_idx;
+  /// PUCCH scheduling information. Array of three, we assume for the moment:
+  /// HARQ in the first field, SR in second, CSI in third (as fixed by RRC
+  /// conf., i.e. if actually present).  The order is important for
+  /// nr_acknack_scheduling()!
+  NR_sched_pucch_t sched_pucch[3];
+
   NR_sched_pusch_save_t pusch_save;
   NR_sched_pusch_t sched_pusch;
 
@@ -404,6 +426,11 @@ typedef struct {
   uint16_t rbSize;
   uint16_t rbStart;
 
+  /// uplink bytes that are currently scheduled
+  int sched_ul_bytes;
+  /// estimation of the UL buffer size
+  int estimated_ul_buffer;
+
   // time-domain allocation for scheduled RBs
   int time_domain_allocation;
 
@@ -414,6 +441,8 @@ typedef struct {
 
   /// Retransmission-related information
   NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
+  /// DL HARQ PID to use for this UE, or -1 for "any new"
+  int8_t dl_harq_pid;
 
   uint16_t ta_frame;
   int16_t ta_update;
@@ -421,8 +450,22 @@ typedef struct {
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
+  /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  /// HARQ processes that are free
+  NR_list_t available_dl_harq;
+  /// HARQ processes that await feedback
+  NR_list_t feedback_dl_harq;
+  /// HARQ processes that await retransmission
+  NR_list_t retrans_dl_harq;
+  /// information about every UL HARQ process
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  /// UL HARQ processes that are free
+  NR_list_t available_ul_harq;
+  /// UL HARQ processes that await feedback
+  NR_list_t feedback_ul_harq;
+  /// UL HARQ processes that await retransmission
+  NR_list_t retrans_ul_harq;
   int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
@@ -438,20 +481,13 @@ typedef struct {
   int dlsch_rounds[8];
   int dlsch_errors;
   int dlsch_total_bytes;
+  int dlsch_current_bytes;
   int ulsch_rounds[8];
   int ulsch_errors;
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
+  int ulsch_current_bytes;
 } NR_mac_stats_t;
-
-
-
-/*! \brief UNR_E_list_t is a "list" of users within UE_info_t. Especial useful in
- * the scheduler and to keep "classes" of users. */
-typedef struct {
-  int head;
-  int next[MAX_MOBILES_PER_GNB];
-} NR_UE_list_t;
 
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
@@ -461,7 +497,7 @@ typedef struct {
   nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
-  NR_UE_list_t list;
+  NR_list_t list;
   int num_UEs;
 
   bool active[MAX_MOBILES_PER_GNB];
@@ -477,9 +513,8 @@ typedef struct {
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               frame_t frame,
-                              sub_frame_t slot,
-                              int num_slots_per_tdd);
-typedef void (*nr_pp_impl_ul)(module_id_t mod_id,
+                              sub_frame_t slot);
+typedef bool (*nr_pp_impl_ul)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot,
                               int num_slots_per_tdd,
@@ -510,6 +545,10 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
   nfapi_nr_dl_tti_request_t         DL_req[NFAPI_CC_MAX];
+  /// a PDCCH PDU groups DCIs per BWP and CORESET. The following structure
+  /// keeps pointers to PDCCH PDUs within DL_req so that we can easily track
+  /// PDCCH PDUs per CC/BWP/CORESET
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_idx[NFAPI_CC_MAX][MAX_NUM_BWP][MAX_NUM_CORESET];
   /// NFAPI UL TTI Request Structure, simple pointer into structure
   /// UL_tti_req_ahead for current frame/slot
   nfapi_nr_ul_tti_request_t        *UL_tti_req[NFAPI_CC_MAX];
@@ -550,6 +589,10 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
+  /// PUCCH: keep track of the resources has already been used by saving the
+  /// highest index not yet been used in a given slot. Dynamically allocated
+  /// so we can have it for every slot as a function of the numerology
+  int *pucch_index_used[MAX_NUM_BWP];
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;

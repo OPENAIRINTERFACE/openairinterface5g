@@ -350,6 +350,8 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+  /// Last NDI of UL HARQ processes
+  uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;

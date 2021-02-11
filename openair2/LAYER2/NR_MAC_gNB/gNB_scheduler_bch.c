@@ -126,7 +126,12 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
               mib_sdu_length);
 
         if ((frameP & 1023) < 80){
-          LOG_I(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);
+          LOG_D(MAC,
+                "[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
+                module_idP,
+                frameP,
+                CC_id,
+                mib_sdu_length);
         }
 
         dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -329,13 +334,19 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
+  dl_req->nPDUs += 1;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+  nr_configure_pdcch(pdcch_pdu_rel15,
+                     gNB_mac->sched_ctrlCommon->search_space,
+                     gNB_mac->sched_ctrlCommon->coreset,
+                     scc,
+                     bwp);
 
-  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
   dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+  dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
   pdcch_pdu_rel15->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
@@ -383,48 +394,50 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
-  dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-  memset(dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t) * MAX_DCI_CORESET);
+  /* Fill PDCCH DL DCI PDU */
+  nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
+  pdcch_pdu_rel15->numDlDci++;
+  dci_pdu->RNTI = SI_RNTI;
+  dci_pdu->ScramblingId = *scc->physCellId;
+  dci_pdu->ScramblingRNTI = 0;
+  dci_pdu->AggregationLevel = gNB_mac->sched_ctrlCommon->aggregation_level;
+  dci_pdu->CceIndex = gNB_mac->sched_ctrlCommon->cce_index;
+  dci_pdu->beta_PDCCH_1_0 = 0;
+  dci_pdu->powerControlOffsetSS = 1;
 
-  dci_pdu_rel15[0].bwp_indicator.val = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id;
+  /* DCI payload */
+  dci_pdu_rel15_t dci_payload;
+  memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
+
+  dci_payload.bwp_indicator.val = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id;
 
   // frequency domain assignment
-  dci_pdu_rel15[0].frequency_domain_assignment.val =
-      PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
-                                        pdsch_pdu_rel15->rbStart,
-                                        gNB_mac->type0_PDCCH_CSS_config.num_rbs);
+  dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(
+      pdsch_pdu_rel15->rbSize, pdsch_pdu_rel15->rbStart, gNB_mac->type0_PDCCH_CSS_config.num_rbs);
 
-  dci_pdu_rel15[0].time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
-  dci_pdu_rel15[0].mcs = gNB_mac->sched_ctrlCommon->mcs;
-  dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
-  dci_pdu_rel15[0].harq_pid = 0;
-  dci_pdu_rel15[0].ndi = 0;
-  dci_pdu_rel15[0].dai[0].val = 0;
-  dci_pdu_rel15[0].tpc = 0; // table 7.2.1-1 in 38.213
-  dci_pdu_rel15[0].pucch_resource_indicator = 0;
-  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = 0;
-  dci_pdu_rel15[0].antenna_ports.val = 0;
-  dci_pdu_rel15[0].dmrs_sequence_initialization.val = pdsch_pdu_rel15->SCID;
+  dci_payload.time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
+  dci_payload.mcs = gNB_mac->sched_ctrlCommon->mcs;
+  dci_payload.rv = pdsch_pdu_rel15->rvIndex[0];
+  dci_payload.harq_pid = 0;
+  dci_payload.ndi = 0;
+  dci_payload.dai[0].val = 0;
+  dci_payload.tpc = 0; // table 7.2.1-1 in 38.213
+  dci_payload.pucch_resource_indicator = 0;
+  dci_payload.pdsch_to_harq_feedback_timing_indicator.val = 0;
+  dci_payload.antenna_ports.val = 0;
+  dci_payload.dmrs_sequence_initialization.val = pdsch_pdu_rel15->SCID;
 
-  nr_configure_pdcch(gNB_mac,
-                     pdcch_pdu_rel15,
-                     SI_RNTI,
-                     gNB_mac->sched_ctrlCommon->search_space,
-                     gNB_mac->sched_ctrlCommon->coreset,
-                     scc,
-                     bwp,
-                     gNB_mac->sched_ctrlCommon->aggregation_level,
-                     gNB_mac->sched_ctrlCommon->cce_index);
+  int dci_format = NR_DL_DCI_FORMAT_1_0;
+  int rnti_type = NR_RNTI_SI;
 
-  int dci_formats[2];
-  int rnti_types[2];
-
-  dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
-  rnti_types[0]   = NR_RNTI_SI;
-
-  fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
-
-  dl_req->nPDUs += 2;
+  fill_dci_pdu_rel15(scc,
+                     secondaryCellGroup,
+                     &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
+                     &dci_payload,
+                     dci_format,
+                     rnti_type,
+                     pdsch_pdu_rel15->BWPSize,
+                     gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
   LOG_D(MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
   LOG_D(MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
