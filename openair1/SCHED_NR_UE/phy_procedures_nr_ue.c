@@ -202,22 +202,15 @@ uint8_t get_ra_PreambleIndex(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id){
 
 }
 
-
-// scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-uint16_t get_bw_scaling(uint16_t nb_rb){
-  uint16_t bw_scaling;
-
-  switch (nb_rb) {
-    case 24:  bw_scaling =  4; break;
-    case 32:  bw_scaling =  4; break;
-    case 66:  bw_scaling =  8; break;
-    case 106: bw_scaling = 16; break;
-    case 217: bw_scaling = 32; break;
-    case 245: bw_scaling = 32; break;
-    case 273: bw_scaling = 32; break;
-    default: AssertFatal(1==0,"N_RB_UL %d not supported\n",nb_rb);
-  }
-  return bw_scaling;
+// convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with samples per second
+//   16 * 64 * T_c            / (2^mu) * samples_per_second
+// = 16 * T_s                 / (2^mu) * samples_per_second
+// = 16 * 1 / (15 kHz * 2048) / (2^mu) * (15 kHz * 2^mu * ofdm_symbol_size)
+// = 16 * 1 /           2048           *                  ofdm_symbol_size
+// = 16 * ofdm_symbol_size / 2048
+static inline
+uint16_t get_bw_scaling(uint16_t ofdm_symbol_size){
+  return 16 * ofdm_symbol_size / 2048;
 }
 
 // UL time alignment procedures:
@@ -235,18 +228,16 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
     if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
 
-      uint8_t numerology = ue->frame_parms.numerology_index;
-      uint16_t bwp_ul_NB_RB = ue->frame_parms.N_RB_UL;
-      int factor_mu = 1 << numerology;
-      uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
+      uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
+      uint16_t bw_scaling = get_bw_scaling(ofdm_symbol_size);
 
       LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d -- UE_mode %d\n", __FUNCTION__, frame_tx, slot_tx, ue->UE_mode[gNB_id]);
 
       if (ue->UE_mode[gNB_id] == RA_RESPONSE){
 
-        ue->timing_advance = ul_time_alignment->ta_command * bw_scaling / factor_mu;
+        ue->timing_advance += ul_time_alignment->ta_command * bw_scaling;
 
-        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Received (RAR) timing advance command %d new value is %u \n",
+        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Received (RAR) timing advance command %u new value is %d\n",
           __FUNCTION__,
           ue->Mod_id,
           frame_tx,
@@ -256,7 +247,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       } else if (ue->UE_mode[gNB_id] == PUSCH){
 
-        ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling / factor_mu;
+        ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
         LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
           __FUNCTION__,
@@ -1259,7 +1250,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
       if (ue->mac_enabled == 1) {
 
-        uint16_t bw_scaling = get_bw_scaling(ue->frame_parms.N_RB_DL);
+        uint16_t bw_scaling = get_bw_scaling(ofdm_symbol_size);
 
         /* Time Alignment procedure
         // - UE processing capability 1
@@ -1268,7 +1259,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         // - Durations of N1 and N2 symbols corresponding to PDSCH and PUSCH are
         //   computed according to sections 5.3 and 6.4 of TS 38.214 */
         factor_mu = 1 << numerology;
-        N_TA_max = 3846 * bw_scaling / factor_mu;
+        N_TA_max = 3846 * bw_scaling;
 
         /* PDSCH decoding time N_1 for processing capability 1 */
         if (ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition == pdsch_dmrs_pos0)
