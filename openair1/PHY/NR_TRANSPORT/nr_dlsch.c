@@ -159,7 +159,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
-    int16_t mod_dmrs[14][n_dmrs] __attribute__ ((aligned(16)));
+    int16_t mod_dmrs[14][n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
     uint16_t beta_ptrs = 1;

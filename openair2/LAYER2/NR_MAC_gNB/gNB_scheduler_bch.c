@@ -299,9 +299,7 @@ void schedule_control_sib1(module_id_t module_id,
     TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                          nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
-
-    // FIXME: Something is not working in nr_modulation() for TBS = 84, so we need to skip it
-  } while ( (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes) || (TBS==84) );
+  } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;

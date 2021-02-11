@@ -541,6 +541,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       sdu_lcids[0] = lcid;
 
       // initialisation by RRC
+      if(get_softmodem_params()->do_ra) {
+        nr_rrc_ue_generate_RRCSetupRequest(mod_id,gNB_id);
+      }
+
       // CCCH PDU
       size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
 
