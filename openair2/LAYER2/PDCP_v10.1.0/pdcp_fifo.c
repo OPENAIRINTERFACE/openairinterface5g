@@ -115,11 +115,13 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
   int              pdcp_nb_sdu_sent = 0;
   int              ret=0;
 
-  while ((sdu_p = list_get_head (&pdcp_sdu_list)) != NULL && ((pdcp_data_ind_header_t *)(sdu_p->data))->inst == ctxt_pP->module_id) {
-	  ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
-    int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
-    int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
-                     ((pdcp_data_ind_header_t *) sdu_p->data)->data_size;
+  while ((sdu_p = list_get_head (&pdcp_sdu_list)) != NULL) {
+    pdcp_data_ind_header_t *hdr = (pdcp_data_ind_header_t *) sdu_p->data;
+    if (hdr->inst != ctxt_pP->module_id) {
+      break;
+    }
+    hdr->inst = 0;
+    int rb_id = hdr->rb_id;
 
     if (rb_id == 10) { //hardcoded for PC5-Signaling
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
@@ -132,42 +134,38 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
 
     } else if (UE_NAS_USE_TUN) {
       //ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
-       if(rb_id == mbms_rab_id){
-       ret = write(nas_sock_mbms_fd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
-       LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
-        }
-       else
-       {
+      if (rb_id == mbms_rab_id) {
+        ret = write(nas_sock_mbms_fd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), hdr->data_size);
+        LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d hdr->data_size %d\n",
+              ret,rb_id,nas_sock_fd[ctxt_pP->module_id], hdr->data_size);
+      } else {
 		#if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
     		LOG_I(PHY, "PDCP output to be sent to TUN interface: \n");
-    		for (int i = sizeof(pdcp_data_ind_header_t); i < sizeToWrite; i++) {
-    			printf("%02x ",(unsigned char)sdu_p->data[i]);
+    		for (int i = 0; i < hdr->data_size; i++) {
+    			printf("%02x ",(unsigned char)sdu_p->data[i + sizeof(pdcp_data_ind_header_t)]);
     		}
     		printf("\n");
     	#endif
-        if (ue_id_g == 0)
-        {
-          ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+        if (ue_id_g == 0) {
+          ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), hdr->data_size);
+        } else {
+          ret = write(nas_sock_fd[ue_id_g], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), hdr->data_size);
         }
-        else
-        {
-          ret = write(nas_sock_fd[ue_id_g], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
-        }
-       //LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
+       //LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d hdr->data_size %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],hdr->data_size);
        }
     } else if (ENB_NAS_USE_TUN) {
 		#if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
     		LOG_I(PHY, "PDCP output to be sent to TUN interface: \n");
-    		for (int i = sizeof(pdcp_data_ind_header_t); i < sizeToWrite; i++) {
-    			printf("%02x ",(unsigned char)sdu_p->data[i]);
+    		for (int i = 0; i < hdr->data_size; i++) {
+    			printf("%02x ",(unsigned char)sdu_p->data[i + sizeof(pdcp_data_ind_header_t)]);
     		}
     		printf("\n");
 		#endif
-    	ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), sizeToWrite);
+        ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), hdr->data_size);
 
     } else if (PDCP_USE_NETLINK) {
-      memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data,  sizeToWrite);
-      nas_nlh_tx->nlmsg_len = sizeToWrite;
+      memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data, sizeof (pdcp_data_ind_header_t) + hdr->data_size);
+      nas_nlh_tx->nlmsg_len = sizeof (pdcp_data_ind_header_t) + hdr->data_size;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
 
@@ -691,12 +689,11 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   memset(receive_buf, 0, BUFSIZE);
   bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, BUFSIZE, MSG_TRUNC,
                             (struct sockaddr *) &prose_pdcp_addr, (socklen_t *)&prose_addr_len);
-
-  if (bytes_received == -1){
+  if (bytes_received == -1) {
     LOG_E(PDCP, "%s(%d). recvfrom failed. %s\n", __FUNCTION__, __LINE__, strerror(errno));
     return;
   }
-  if (bytes_received == 0){
+  if (bytes_received == 0) {
     LOG_E(PDCP, "%s(%d). EOF pdcp_pc5_sockfd.\n", __FUNCTION__, __LINE__);
   }
   if (bytes_received > BUFSIZE) {

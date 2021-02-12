@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
 #include "pnf.h"
 
