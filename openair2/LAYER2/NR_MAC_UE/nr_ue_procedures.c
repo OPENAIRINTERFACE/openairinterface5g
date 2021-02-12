@@ -2046,7 +2046,7 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
   if (crnti) {
     // MAC CE fixed subheader
     mac_pdu_ptr->R = 0;
-    mac_pdu_ptr->LCID = CRNTI;
+    mac_pdu_ptr->LCID = UL_SCH_LCID_C_RNTI;
     mac_pdu_ptr++;
 
     // C-RNTI MAC CE (2 octets)

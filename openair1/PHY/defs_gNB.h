@@ -94,8 +94,6 @@ typedef struct {
   uint32_t frame;
   /// Subframe where current HARQ round was sent
   uint32_t subframe;
-  /// Index of current HARQ round for this DLSCH
-  uint8_t round;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
   /// Concatenated sequences
@@ -138,8 +136,8 @@ typedef struct {
 } NR_gNB_SCH_STATS_t;
 
 typedef struct {
-  /// Pointers to 16 HARQ processes for the DLSCH
-  NR_DL_gNB_HARQ_t *harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  /// Pointers to variables related to DLSCH harq process
+  NR_DL_gNB_HARQ_t harq_process;
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
   int32_t *txdataF[NR_MAX_NB_LAYERS];
   /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
@@ -836,6 +834,7 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t *respDecode;
   tpool_t *threadPool;
   int nbDecode;
+  uint8_t pusch_proc_threads;
 
 } PHY_VARS_gNB;
 
