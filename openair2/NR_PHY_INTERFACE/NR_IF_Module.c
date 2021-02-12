@@ -37,6 +37,7 @@
 #include "common/ran_context.h"
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h" 
+
 #define MAX_IF_MODULES 100
 //#define UL_HARQ_PRINT
 
@@ -104,6 +105,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   }
 
   UL_info->uci_ind.num_ucis = 0;
+
   // mark corresponding PUCCH resources as free
   // NOTE: we just assume it is BWP ID 1, to be revised for multiple BWPs
   RC.nrmac[mod_id]->pucch_index_used[1][slot] = 0;
@@ -215,7 +217,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       gNB_dlsch_ulsch_scheduler(module_id,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
 				(UL_info->slot+sl_ahead)%spf);
-
+      
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
@@ -242,7 +244,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
 	    sched_info->frame,
 	    sched_info->slot,
-	    sched_info->DL_req->dl_tti_request_body.nPDUs);      
+	    sched_info->DL_req->dl_tti_request_body.nPDUs);
     }
   }
 }

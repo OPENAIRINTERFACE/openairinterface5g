@@ -1061,7 +1061,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
             memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
           }
         }
-	
+
         /*
               for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
                 ulsch = eNB_PHY->ulsch[i];
@@ -7894,7 +7894,6 @@ rrc_eNB_decode_dcch(
             }
 
             ue_context_p->ue_context.reestablishment_xid = -1;
-
           } else {
             dedicated_DRB = 1;
             ue_context_p->ue_context.Status = RRC_RECONFIGURED;
@@ -7902,6 +7901,7 @@ rrc_eNB_decode_dcch(
                   PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
           }
+
           rrc_eNB_process_RRCConnectionReconfigurationComplete(
             ctxt_pP,
             ue_context_p,

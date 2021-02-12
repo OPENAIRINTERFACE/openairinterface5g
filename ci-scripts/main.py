@@ -97,6 +97,7 @@ def AssignParams(params_dict):
 		setattr(ldpc, key, value)
 
 
+
 def GetParametersFromXML(action):
 	if action == 'Build_eNB' or action == 'Build_Image':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')

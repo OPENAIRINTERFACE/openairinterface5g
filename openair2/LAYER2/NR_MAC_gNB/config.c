@@ -369,9 +369,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     // if in nFAPI mode 
     if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
       while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
-	// DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
-	usleep(100 * 1000);
-	printf("Waiting for PHY_config_req\n");
+        // DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
+        usleep(100 * 1000);
+        printf("Waiting for PHY_config_req\n");
       }
     }
   

@@ -30,7 +30,6 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
     }
 }
 
-def doRedHatBuild = false
 def doFlexranCtrlTest = false
 
 // Location of the executor node
@@ -67,21 +66,6 @@ pipeline {
                         echo "Platform is ${env.TESTPLATFORM_OWNER}"
                     }
 
-                    if (params.RedHatRemoteServer == null) {
-                        allParametersPresent = false
-                    }
-                    if (params.RedHatRemoteCredentials == null) {
-                        allParametersPresent = false
-                    }
-                    if (params.RedHatWorkingPath == null) {
-                        allParametersPresent = false
-                    }
-                    if (allParametersPresent) {
-                        echo "Performing Red Hat Build"
-                        doRedHatBuild = true
-                    } else {
-                        doRedHatBuild = false
-                    }
                     if (params.FlexRanRtcGitLabRepository_Credentials != null) {
                         doFlexranCtrlTest = true
                     }
@@ -184,65 +168,81 @@ pipeline {
 
         stage ("Start VM -- basic-sim") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- gnb-usrp") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- nr-ue-usrp") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- enb-usrp") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- phy-sim") {
             steps {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
         
         stage ("Start VM -- enb-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
         stage ("Start VM -- ue-ethernet") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
         
         stage ("Start VM -- cppcheck") {
             steps {
-                timeout (time: 5, unit: 'MINUTES') {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
+              }
             }
         }
 
@@ -288,7 +288,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNB-USRP") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -313,33 +313,14 @@ pipeline {
                 }
                 stage ("Build UE-ethernet") {
                     steps {
+                      // This is typically the last one to finish.
+                      lock (vmResource) {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
-                    }
-                }
-                stage ("Build eNB-USRP on Red Hat") {
-                    when {
-                        expression {doRedHatBuild}
-                    }
-                    steps {
-                        gitlabCommitStatus(name: "Build eNB-USRP-RHE") {
-                            script {
-                                try {
-                                    withCredentials([
-                                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.RedHatRemoteCredentials}", usernameVariable: 'RH_Username', passwordVariable: 'RH_Password']
-                                    ]) {
-                                        timeout (time: 20, unit: 'MINUTES') {
-                                            sh "./ci-scripts/buildOnRH.sh --workspace $WORKSPACE --job-name ${JOB_NAME} --build-id ${BUILD_ID} --remote-host ${params.RedHatRemoteServer} --remote-path ${params.RedHatWorkingPath} --remote-user-name ${RH_Username} --remote-password ${RH_Password}"
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    echo "Red Hat build failed but we could keep running pipeline if all ubuntu-based build passed"
-                                }
-                            }
-                        }
+                      }
                     }
                 }
             }
@@ -404,6 +385,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 90, unit: 'MINUTES') {
                                         try {
@@ -415,6 +397,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Build Flexran Controller") {
@@ -422,6 +405,7 @@ pipeline {
                                 expression {doFlexranCtrlTest && doMandatoryTests}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 20, unit: 'MINUTES') {
                                         try {
@@ -431,6 +415,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test basic simulator") {
@@ -438,6 +423,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -449,6 +435,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test L1 simulator") {
@@ -456,6 +443,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -467,6 +455,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test RF simulator") {
@@ -474,8 +463,9 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
-                                    timeout (time: 30, unit: 'MINUTES') {
+                                    timeout (time: 40, unit: 'MINUTES') {
                                         try {
                                             gitlabCommitStatus(name: "Test RF-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
@@ -485,6 +475,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Test L2 simulator") {
@@ -492,6 +483,7 @@ pipeline {
                                 expression {doFullTestsuite}
                             }
                             steps {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -503,6 +495,7 @@ pipeline {
                                         }
                                     }
                                 }
+                              }
                             }
                         }
                         stage ("Destroy all Virtual Machines") {
@@ -510,7 +503,9 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
+                              lock (vmResource) {
                                 sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                              }
                             }
                         }
                     }
