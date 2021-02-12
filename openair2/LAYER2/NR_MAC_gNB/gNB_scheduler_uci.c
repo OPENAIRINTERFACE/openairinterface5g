@@ -1058,13 +1058,6 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                                 uci_01->ul_cqi,
                                 30);
 
-  if ( uci_01 -> pduBitmap & 0x01 ) {
-    if ( uci_01->sr->sr_indication && !(uci_01->sr->sr_confidence_level)) {
-      sched_ctrl->sr_req.nr_of_srs =1;
-      sched_ctrl->sr_req.ul_SR[0] = 1;
-    }
-  }
-
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
     nr_rx_acknack(NULL,uci_01,NULL,slot,sched_ctrl,&UE_info->mac_stats[0]);
   }
@@ -1089,23 +1082,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                 uci_234->ul_cqi,
                                 30);
 
-  if ( uci_234 -> pduBitmap & 0x01 ) {
-    ///Handle SR PDU
-    uint8_t sr_id = 0;
-
-    for (sr_id = 0; sr_id < uci_234->sr.sr_bit_len; sr_id++) {
-      sched_ctrl->sr_req.ul_SR[sr_id] = *(uci_234->sr.sr_payload) & 1;
-      *(uci_234->sr.sr_payload) >>= 1;
-    }
-
-    sched_ctrl->sr_req.nr_of_srs = uci_234->sr.sr_bit_len;
-  }
-  // TODO
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     nr_rx_acknack(NULL,NULL,uci_234,slot,sched_ctrl,&UE_info->mac_stats[0]);
-  }
-  if ((uci_234->pduBitmap >> 1) & 0x01) {
-
      //API to parse the csi report and store it into sched_ctrl
     extract_pucch_csi_report (csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
     //TCI handling function

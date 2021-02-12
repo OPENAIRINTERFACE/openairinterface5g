@@ -406,10 +406,6 @@ struct CSI_Report {
 };
 
 #define MAX_SR_BITLEN 8
-typedef struct NR_UE_sr {
-  uint8_t nr_of_srs;
-  bool ul_SR [MAX_SR_BITLEN];
-} NR_UE_sr_t;
 
 typedef struct {
   uint8_t nb_ssbri_cri;
