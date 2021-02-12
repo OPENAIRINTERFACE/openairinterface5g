@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
 nfapi_pnf_config_t* nfapi_pnf_config_create()
 {
