@@ -423,10 +423,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
           ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
           for(int i=0; i<cc->num_active_ssb; i++) {
             for(int j=0; j<num_preamble; j++) {
-              if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ssb) {
+              if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
                 // one dedicated preamble for each beam
                 ra->preambles.preamble_list[i] =
-                    cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+                    cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
                 break;
               }
             }
