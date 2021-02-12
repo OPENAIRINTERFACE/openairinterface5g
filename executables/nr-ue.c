@@ -707,12 +707,17 @@ void *UE_thread(void *arg) {
     uint8_t num_UL_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots +
                            (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
     uint8_t first_tx_slot = tdd_period - num_UL_slots;
-    if (slot_tx_usrp%tdd_period==first_tx_slot)
-      flags=2;
-    else     if (slot_tx_usrp%tdd_period==first_tx_slot+num_UL_slots-1)
-      flags = 3;
-    else     if (slot_tx_usrp%tdd_period>first_tx_slot)
+
+    if (openair0_cfg[0].duplex_mode == TDD) {
+      if (slot_tx_usrp % tdd_period == first_tx_slot)
+        flags = 2;
+      else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
+        flags = 3;
+      else if (slot_tx_usrp % tdd_period > first_tx_slot)
+        flags = 1;
+    } else {
       flags = 1;
+    }
 
     if (flags || IS_SOFTMODEM_RFSIM)
       AssertFatal( writeBlockSize ==
