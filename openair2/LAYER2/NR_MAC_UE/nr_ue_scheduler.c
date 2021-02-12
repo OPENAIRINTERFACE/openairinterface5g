@@ -890,7 +890,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
 
-          if (IS_SOFTMODEM_NOS1){
+          // Push data from MAC to PHY only when NDI toggles
+          if (IS_SOFTMODEM_NOS1 && (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator)){
             // Getting IP traffic to be transmitted
             data_existing = nr_ue_get_sdu(mod_id,
                                           cc_id,
@@ -902,6 +903,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                                           &access_mode);
           }
 
+          mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
           //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
           if (!IS_SOFTMODEM_NOS1 || !data_existing) {
             //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
