@@ -132,9 +132,9 @@ With the RF simulator (on the same machine):
 
 `sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
 
-## sa setup with OAI
+## SA setup with OAI
 
-The sa flag is used to run gNB in standalone mode. Currently OAI in NR standalone mode transmits and receives SIB1.
+The sa flag is used to run gNB in standalone mode. Currently OAI in NR standalone mode transmits and receives SIB1 and triggers the RA procedure for initial access.
 
 In order to run gNB in standalone mode, the following flag is needed at gNB:
 
@@ -147,8 +147,9 @@ At the gNB the --sa flag does the following
 - it encodes the RRCConfiguration and the RBconfig message and stores them in the binary files rbconfig.raw and reconfig.raw
 - the RRC encodes SIB1 according the configuration file and transmits it through PDSCH
 
-At the UE the --sa flag will
-- read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them.
+At the UE the --sa flag will:
+- Read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them
+- After the successful decoding of a SIB1 at RRC, the UE will start the 5G NR Initial Access Procedure by triggering the RA procedure.
 
 From the `cmake_targets/ran_build/build` folder:
 

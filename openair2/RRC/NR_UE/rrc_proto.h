@@ -132,7 +132,7 @@ void *rrc_nrue_task(void *args_p);
 /**\brief RRC UE generate RRCSetupRequest message.
    \param module_id  module id
    \param gNB_index  gNB index  */
-void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index );
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index);
 
 /** @}*/
 #endif

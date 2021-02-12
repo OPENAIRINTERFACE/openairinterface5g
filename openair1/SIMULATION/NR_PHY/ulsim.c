@@ -154,6 +154,11 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
 int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
                               const int         CC_id,
                               const uint8_t     gNB_id,

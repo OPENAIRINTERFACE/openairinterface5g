@@ -127,6 +127,11 @@ nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
 int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
                               const int         CC_id,
                               const uint8_t     gNB_id,
