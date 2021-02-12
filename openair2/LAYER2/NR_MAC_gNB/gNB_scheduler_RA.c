@@ -484,99 +484,115 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     num_ssb_per_RO -= 3;
     total_RApreambles = total_RApreambles/num_ssb_per_RO ;
   }
-  
-  for(int i=0; i<NR_NB_RA_PROC_MAX; i++) { 
+
+  for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
 
-  if (ra->state == RA_IDLE) {
-    if((preamble_index < total_RApreambles) && (preamble_index > cc->cb_preambles_per_ssb) && (!ra->cfra)) continue;
-  
-  uint16_t ra_rnti;
+    if (ra->state == RA_IDLE) {
+      if ((preamble_index < total_RApreambles) && (preamble_index > cc->cb_preambles_per_ssb) && (!ra->cfra))
+        continue;
 
-  // ra_rnti from 5.1.3 in 38.321
-  // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here. 
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839) 
-   ra_rnti=1+symbol+(9/*slotP*/*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
-  else
-   ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
+      uint16_t ra_rnti;
 
-  // This should be handled differently when we use the initialBWP for RA
-  ra->bwp_id=1;
-  NR_BWP_Downlink_t *bwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+      // ra_rnti from 5.1.3 in 38.321
+      // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here.
+      if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present
+          == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839)
+        ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+      else
+        ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
+      // This should be handled differently when we use the initialBWP for RA
+      ra->bwp_id = 1;
+      NR_BWP_Downlink_t *bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
+                                   ->list.array[ra->bwp_id - 1];
 
-  LOG_I(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, slotP, preamble_index);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
-    uint8_t beam_index = ssb_index_from_prach(module_idP,
-		                              frameP,
-                                              slotP,
-                			      preamble_index,
-                                              freq_index,
-	   				      symbol);
+      LOG_I(MAC,
+            "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n",
+            module_idP,
+            CC_id,
+            frameP,
+            slotP,
+            preamble_index);
 
-    // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
-    if (ra->cfra) {
-		// if the preamble received correspond to one of the listed
-    if (!(preamble_index == ra->preambles.preamble_list[beam_index])) {
-      LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
-			module_idP, preamble_index);
-      continue; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
-    }
-    }
-    int loop = 0;
-    LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
-    ra->state = Msg2;
-    ra->timing_offset = timing_offset;
-    ra->preamble_slot = slotP;
+      uint8_t beam_index = ssb_index_from_prach(module_idP, frameP, slotP, preamble_index, freq_index, symbol);
 
-    struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-    AssertFatal(commonSearchSpaceList->list.count>0,
-	        "common SearchSpace list has 0 elements\n");
-    // Common searchspace list
-    for (int i=0;i<commonSearchSpaceList->list.count;i++) {
-      ss=commonSearchSpaceList->list.array[i];
-      if(ss->searchSpaceId == *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)
-        ra->ra_ss=ss;
-    }
-
-    // retrieving ra pdcch monitoring period and offset
-    find_monitoring_periodicity_offset_common(ra->ra_ss,
-                                              &monitoring_slot_period,
-                                              &monitoring_offset);
-
-    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,beam_index,cc->num_active_ssb);
-
-    ra->Msg2_frame = msg2_frame;
-    ra->Msg2_slot = msg2_slot;
-
-    LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-    if (!ra->cfra) {
-      do {
-        ra->rnti = (taus() % 65518) + 1;
-        loop++;
+      // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
+      if (ra->cfra) {
+        // if the preamble received correspond to one of the listed
+        if (!(preamble_index == ra->preambles.preamble_list[beam_index])) {
+          LOG_E(
+              MAC,
+              "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
+              module_idP,
+              preamble_index);
+          continue; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
+        }
       }
-      while (loop != 100 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1) && ra->rnti >= 1 && ra->rnti <= 65519));
-      if (loop == 100) {
-        LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
-        abort();
+      int loop = 0;
+      LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
+      ra->state = Msg2;
+      ra->timing_offset = timing_offset;
+      ra->preamble_slot = slotP;
+
+      struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList =
+          bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
+      // Common searchspace list
+      for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
+        ss = commonSearchSpaceList->list.array[i];
+        if (ss->searchSpaceId == *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)
+          ra->ra_ss = ss;
       }
+
+      // retrieving ra pdcch monitoring period and offset
+      find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);
+
+      nr_schedule_msg2(frameP,
+                       slotP,
+                       &msg2_frame,
+                       &msg2_slot,
+                       scc,
+                       monitoring_slot_period,
+                       monitoring_offset,
+                       beam_index,
+                       cc->num_active_ssb);
+
+      ra->Msg2_frame = msg2_frame;
+      ra->Msg2_slot = msg2_slot;
+
+      LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
+      if (!ra->cfra) {
+        do {
+          ra->rnti = (taus() % 65518) + 1;
+          loop++;
+        } while (loop != 100
+                 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
+                      && ra->rnti >= 1 && ra->rnti <= 65519));
+        if (loop == 100) {
+          LOG_E(MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+          abort();
+        }
+      }
+      ra->RA_rnti = ra_rnti;
+      ra->preamble_index = preamble_index;
+      ra->beam_id = beam_index;
+
+      LOG_I(MAC,
+            "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB "
+            "index %u\n",
+            module_idP,
+            CC_id,
+            frameP,
+            ra->Msg2_frame,
+            ra->Msg2_slot,
+            ra->RA_rnti,
+            cc->ssb_index[beam_index]);
+
+      return;
     }
-    ra->RA_rnti = ra_rnti;
-    ra->preamble_index = preamble_index;
-    ra->beam_id = beam_index;
-
-    LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB index %u\n",
-      module_idP,
-      CC_id,
-      frameP,
-      ra->Msg2_frame,
-      ra->Msg2_slot,
-      ra->RA_rnti,
-      cc->ssb_index[beam_index]);
-
-    return;
-  }
   }
   LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
