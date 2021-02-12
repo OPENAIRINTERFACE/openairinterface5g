@@ -1220,6 +1220,11 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
     else { // FDD
       x = table_6_3_3_2_2_prachConfig_Index[index][2];
       s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+      for(int i = 0; i < 64 ; i++) {
+        if ( (s_map >> i) & 0x01) {
+          (*N_RA_sfn)++;
+        }
+      }
       *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6];
       if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
         *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1428,6 +1433,11 @@ int get_nr_prach_info_from_index(uint8_t index,
           if (mu == 1) {
             if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+          }
+          for(int i = 0; i <= subframe ; i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+            }
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
