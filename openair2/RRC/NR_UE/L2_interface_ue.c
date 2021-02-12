@@ -75,10 +75,10 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
       //NR_UE_rrc_inst[Mod_idP].Info[gNB_id].T300_active = 1;
       //NR_UE_rrc_inst[Mod_idP].Info[gNB_id].T300_cnt = 0;
 
-      LOG_D(RRC, "nr_mac_rrc_data_req_ue: Payload size = %i\n", NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
+      LOG_D(NR_RRC, "nr_mac_rrc_data_req_ue: Payload size = %i\n", NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
       memcpy(buffer_pP, (uint8_t*)NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.Payload, NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
       for(int i = 0; i<NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size; i++) {
-        LOG_D(RRC,"(%i): %i\n", i, buffer_pP[i]);
+        LOG_D(NR_RRC,"(%i): %i\n", i, buffer_pP[i]);
       }
 
       return NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size;

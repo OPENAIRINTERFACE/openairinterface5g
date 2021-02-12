@@ -541,6 +541,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       sdu_lcids[0] = lcid;
 
       // initialisation by RRC
+
+      // TODO: To be removed after RA procedures fully implemented
       if(get_softmodem_params()->do_ra) {
         nr_rrc_ue_generate_RRCSetupRequest(mod_id,gNB_id);
       }

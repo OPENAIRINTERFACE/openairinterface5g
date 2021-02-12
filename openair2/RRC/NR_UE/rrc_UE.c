@@ -1102,6 +1102,7 @@ int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
 
   switch(NR_UE_rrc_inst[module_id].ra_trigger){
     case INITIAL_ACCESS_FROM_RRC_IDLE:
+      // After SIB1 is received, prepare RRCConnectionRequest
       nr_rrc_ue_generate_RRCSetupRequest(module_id,gNB_index);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
@@ -1192,10 +1193,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
             }
             LOG_I(NR_RRC, "SIB1 decoded\n");
 
-            // TODO: prepare RRCConnectionRequest
-            // After SIB1 is received, prepare RRCConnectionRequest
-
-            // FIXME: fix condition for the RA trigger
+            // FIXME: improve condition for the RA trigger
             // Check for on-demand not broadcasted SI
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
