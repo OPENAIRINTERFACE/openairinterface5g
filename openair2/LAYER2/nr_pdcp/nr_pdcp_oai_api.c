@@ -650,8 +650,10 @@ static void add_drb(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
                ciphering_key, integrity_key);
     break;
   case NR_RLC_Config_PR_um_Bi_Directional:
-    LOG_E(PDCP, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    //add_drb_um(rnti, s);
+    /* hack */
+    add_drb_am(is_gnb, rnti, s, ciphering_algorithm, integrity_algorithm,
+               ciphering_key, integrity_key);
     break;
   default:
     LOG_E(PDCP, "%s:%d:%s: fatal: unhandled DRB type\n",
