@@ -337,10 +337,7 @@ void init_gNB_Tpool(int inst) {
   // ULSCH decoding threadpool
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-  uint32_t num_threads_pusch;
-  paramdef_t PUSCHThreads[] = NUM_THREADS_DESC;
-  config_get( PUSCHThreads,sizeof(PUSCHThreads)/sizeof(paramdef_t),NULL);
-  int threadCnt = min(numCPU, num_threads_pusch);
+  int threadCnt = min(numCPU, gNB->pusch_proc_threads);
   char ul_pool[80];
   sprintf(ul_pool,"-1");
   int s_offset = 0;
