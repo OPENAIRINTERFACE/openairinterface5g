@@ -251,8 +251,6 @@ void rx_func(void *param) {
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 
-  if (oai_exit) return(-1);
-
   //stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 

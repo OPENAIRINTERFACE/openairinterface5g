@@ -787,107 +787,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   }
 }
 
-
-
-
-int wakeup_synch(RU_t *ru) {
-  struct timespec wait;
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-
-  // wake up synch thread
-  // lock the synch mutex and make sure the thread is ready
-  if (pthread_mutex_timedlock(&ru->proc.mutex_synch,&wait) != 0) {
-    LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for RU synch thread (IC %d)\n", ru->proc.instance_cnt_synch );
-    exit_fun( "error locking mutex_synch" );
-    return(-1);
-  }
-
-  ++ru->proc.instance_cnt_synch;
-
-  // the thread can now be woken up
-  if (pthread_cond_signal(&ru->proc.cond_synch) != 0) {
-    LOG_E( PHY, "[RU] ERROR pthread_cond_signal for RU synch thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return(-1);
-  }
-
-  pthread_mutex_unlock( &ru->proc.mutex_synch );
-  return(0);
-}
-
-void do_ru_synch(RU_t *ru) {
-  NR_DL_FRAME_PARMS *fp  = ru->nr_frame_parms;
-  RU_proc_t *proc         = &ru->proc;
-  int i;
-  void *rxp[2],*rxp2[2];
-  int32_t dummy_rx[ru->nb_rx][fp->samples_per_subframe] __attribute__((aligned(32)));
-  int rxs;
-  int ic;
-
-  // initialize the synchronization buffer to the common_vars.rxdata
-  for (int i=0; i<ru->nb_rx; i++)
-    rxp[i] = &ru->common.rxdata[i][0];
-
-  double temp_freq1 = ru->rfdevice.openair0_cfg->rx_freq[0];
-  double temp_freq2 = ru->rfdevice.openair0_cfg->tx_freq[0];
-
-  for (i=0; i<4; i++) {
-    ru->rfdevice.openair0_cfg->rx_freq[i] = ru->rfdevice.openair0_cfg->tx_freq[i];
-    ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq1;
-  }
-
-  ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
-
-  while ((ru->in_synch ==0)&&(!oai_exit)) {
-    // read in frame
-    rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-                                     &(proc->timestamp_rx),
-                                     rxp,
-                                     fp->samples_per_subframe*10,
-                                     ru->nb_rx);
-
-    if (rxs != fp->samples_per_subframe*10) LOG_E(PHY,"requested %d samples, got %d\n",fp->samples_per_subframe*10,rxs);
-
-    // wakeup synchronization processing thread
-    wakeup_synch(ru);
-    ic=0;
-
-    while ((ic>=0)&&(!oai_exit)) {
-      // continuously read in frames, 1ms at a time,
-      // until we are done with the synchronization procedure
-      for (i=0; i<ru->nb_rx; i++)
-        rxp2[i] = (void *)&dummy_rx[i][0];
-
-      for (i=0; i<10; i++)
-        rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-                                         &(proc->timestamp_rx),
-                                         rxp2,
-                                         fp->samples_per_subframe,
-                                         ru->nb_rx);
-
-      pthread_mutex_lock(&ru->proc.mutex_synch);
-      ic = ru->proc.instance_cnt_synch;
-      pthread_mutex_unlock(&ru->proc.mutex_synch);
-    } // ic>=0
-  } // in_synch==0
-
-  // read in rx_offset samples
-  LOG_I(PHY,"Resynchronizing by %d samples\n",ru->rx_offset);
-  rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-                                   &(proc->timestamp_rx),
-                                   rxp,
-                                   ru->rx_offset,
-                                   ru->nb_rx);
-
-  for (i=0; i<4; i++) {
-    ru->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
-    ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq2;
-  }
-
-  ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
-}
-
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
@@ -1289,9 +1188,6 @@ void *ru_thread( void *param ) {
       else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
     } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
-    // if this is a slave RRU, try to synchronize on the DL frequency
-    if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
-
     // start trx write thread
     if(usrp_tx_thread == 1){
       if (ru->start_write_thread){
@@ -1437,12 +1333,10 @@ int start_write_thread(RU_t *ru) {
 void init_RU_proc(RU_t *ru) {
   int i=0;
   RU_proc_t *proc;
-  char name[100];
   LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
   proc = &ru->proc;
   memset((void *)proc,0,sizeof(RU_proc_t));
   proc->ru = ru;
-  proc->instance_cnt_synch       = -1;
   proc->instance_cnt_emulateRF   = -1;
   proc->first_rx                 = 1;
   proc->first_tx                 = 1;
@@ -1453,10 +1347,8 @@ void init_RU_proc(RU_t *ru) {
 
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
 
-  pthread_mutex_init( &proc->mutex_synch,NULL);
   pthread_mutex_init( &proc->mutex_emulateRF,NULL);
   pthread_cond_init( &proc->cond_emulateRF, NULL);
-  pthread_cond_init( &proc->cond_synch,NULL);
   threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
 
   if(emulate_rf)
@@ -1474,29 +1366,8 @@ void init_RU_proc(RU_t *ru) {
 void kill_NR_RU_proc(int inst) {
   RU_t *ru = RC.ru[inst];
   RU_proc_t *proc = &ru->proc;
-  pthread_mutex_lock(&proc->mutex_synch);
-  proc->instance_cnt_synch = 0;
-  pthread_mutex_unlock(&proc->mutex_synch);
-  pthread_cond_signal(&proc->cond_synch);
   LOG_D(PHY, "Joining pthread_FH\n");
   pthread_join(proc->pthread_FH, NULL);
-
-  if (ru->function == NGFI_RRU_IF4p5) {
-    LOG_D(PHY, "Joining pthread_prach\n");
-    pthread_join(proc->pthread_prach, NULL);
-
-    if (ru->is_slave) {
-      LOG_D(PHY, "Joining pthread_\n");
-      pthread_join(proc->pthread_synch, NULL);
-    }
-
-    if ((ru->if_timing == synch_to_other) ||
-        (ru->function == NGFI_RRU_IF5) ||
-        (ru->function == NGFI_RRU_IF4p5)) {
-      LOG_D(PHY, "Joining pthread_asynch_rxtx\n");
-      pthread_join(proc->pthread_asynch_rxtx, NULL);
-    }
-  }
 
   if (get_nprocs() >= 2) {
     if (ru->feprx) {
@@ -1526,9 +1397,6 @@ void kill_NR_RU_proc(int inst) {
     LOG_D(PHY, "Joining ru_stats_thread\n");
     pthread_join(ru->ru_stats_thread, NULL);
   }
-
-  pthread_mutex_destroy(&proc->mutex_synch);
-  pthread_cond_destroy(&proc->cond_synch);
 }
 
 int check_capabilities(RU_t *ru,RRU_capabilities_t *cap)
