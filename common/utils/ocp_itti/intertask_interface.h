@@ -360,6 +360,8 @@ typedef enum {
   FOREACH_TASK(TASK_ENUM)
 } task_id_t;
 
+extern uint16_t ue_idx_standalone;
+extern uint16_t node_number;
 
 typedef task_id_t thread_id_t;
 
@@ -581,6 +583,7 @@ int timer_remove(long timer_id);
 int signal_handle(int *end);
 int signal_mask(void);
 
+void log_scheduler(const char *label);
 #ifdef __cplusplus
 }
 #endif

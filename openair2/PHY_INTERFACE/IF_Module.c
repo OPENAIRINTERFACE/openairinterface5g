@@ -22,25 +22,31 @@ extern UL_RCC_IND_t  UL_RCC_INFO;
 uint16_t frame_cnt=0;
 void handle_rach(UL_IND_t *UL_info) {
   int i;
-
-  if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
-      if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles>0) {
-        AssertFatal(UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles==1,"More than 1 preamble not supported\n");
-        LOG_D(MAC,"UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:SFN/SF:%d\n",UL_info->frame,UL_info->subframe, NFAPI_SFNSF2DEC(UL_RCC_INFO.rach_ind[j].sfn_sf));
-        initiate_ra_proc(UL_info->module_id,
-                         UL_info->CC_id,
-                         NFAPI_SFNSF2SFN(UL_RCC_INFO.rach_ind[j].sfn_sf),
-                         NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf),
-                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.preamble,
-                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.rnti,
-                         0
-                        );
-        free(UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list);
-        UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles = 0;
-        UL_RCC_INFO.rach_ind[j].header.message_id = 0;
+  int j = UL_info->subframe;
+  AssertFatal(j < sizeof(UL_RCC_INFO.rach_ind) / sizeof(UL_RCC_INFO.rach_ind[0]), "j index out of range of index of rach_ind\n");
+  if (NFAPI_MODE == NFAPI_MODE_VNF)
+  {
+    if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 0)
+    {
+      if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 1)
+      {
+        LOG_D(MAC, "handle_rach j: %d  UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles: %d\n",
+          j, UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles);
+        LOG_D(MAC, "UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:Frame: %d Subframe: %d\n",
+          UL_info->frame, UL_info->subframe, NFAPI_SFNSF2SFN(UL_RCC_INFO.rach_ind[j].sfn_sf), NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf));
       }
+      AssertFatal(UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles == 1, "More than 1 preamble not supported\n"); // dump frame/sf and all things in UL_RCC_INFO
+      initiate_ra_proc(UL_info->module_id,
+                       UL_info->CC_id,
+                       NFAPI_SFNSF2SFN(UL_RCC_INFO.rach_ind[j].sfn_sf),
+                       NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf),
+                       UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.preamble,
+                       UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
+                       UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.rnti,
+                       0);
+      free(UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list);
+      UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles = 0;
+      UL_RCC_INFO.rach_ind[j].header.message_id = 0;
     }
   } else {
     if (UL_info->rach_ind.rach_indication_body.number_of_preambles>0) {
@@ -788,6 +794,7 @@ IF_Module_t *IF_Module_init(int Mod_id) {
                 "allocation of if_inst[%d]->if_mutex fails\n",Mod_id);
   }
 
+  memset(&UL_RCC_INFO, 0, sizeof(UL_RCC_INFO));
   return if_inst[Mod_id];
 }
 

@@ -37,6 +37,7 @@
 #include <nfapi.h>
 #include <debug.h>
 
+
 extern int nfapi_unpack_p7_vendor_extension(nfapi_p7_message_header_t* header, uint8_t **ppReadPackedMsg, void* user_data);
 extern int nfapi_pack_p7_vendor_extension(nfapi_p7_message_header_t* header, uint8_t **ppWritePackedMsg, void* user_data);
 
@@ -4500,6 +4501,7 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 					  {
 						  if(!pullarray8(ppReadPackedMsg, pdu->segments[0].segment_data, pdu->segments[0].segment_length, pdu->segments[0].segment_length, end))
 							return 0;
+#if 0
                                                   if (pdu->segments[0].segment_length == 3)
                                                   {
                                                   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
@@ -4508,6 +4510,7 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
                                                       pdu->segments[0].segment_data[2]
                                                       );
                                                   }
+#endif
 					  }
 					  else
 					  {
@@ -4929,35 +4932,35 @@ static uint8_t unpack_rx_indication_rel9_value(void *tlv, uint8_t **ppReadPacked
 	return (pull16(ppReadPackedMsg, &value->timing_advance_r9, end));
 }
 
-static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
+static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config)
 {
-	nfapi_rx_indication_body_t* value = (nfapi_rx_indication_body_t*)tlv;
+	nfapi_rx_indication_body_t *value = (nfapi_rx_indication_body_t *)tlv;
 
-	// the rxBodyEnd points to the end of the cqi PDU's
-	uint8_t* rxBodyEnd = *ppReadPackedMsg + value->tl.length;
-	uint8_t* rxPduEnd = rxBodyEnd;
+	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s value->tl.length in unpack: %u \n", __FUNCTION__,
+				value->tl.length);
+	uint8_t *rxBodyEnd = *ppReadPackedMsg + value->tl.length;
 
-	uint8_t* numberOfPdusAddress = *ppReadPackedMsg;
-
-	if(rxBodyEnd > end)
+	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
+				rxBodyEnd, end);
+	if (rxBodyEnd > end)
 	{
 		// pdu end is past buffer end
 		return 0;
 	}
 
-	if(pull16(ppReadPackedMsg, &value->number_of_pdus, end) == 0)
+	if (pull16(ppReadPackedMsg, &value->number_of_pdus, end) == 0)
 		return 0;
 
-	if(value->number_of_pdus > NFAPI_RX_IND_MAX_PDU)
+	if (value->number_of_pdus > NFAPI_RX_IND_MAX_PDU)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s number of rx ind pdu's exceed maxium (count:%d max:%d)\n", __FUNCTION__, value->number_of_pdus, NFAPI_RX_IND_MAX_PDU);
-		return 0;		
+		return 0;
 	}
 
-	if(value->number_of_pdus > 0)
+	if (value->number_of_pdus > 0)
 	{
-		value->rx_pdu_list = (nfapi_rx_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_rx_indication_pdu_t) * value->number_of_pdus, config);
-		if(value->rx_pdu_list == NULL)
+		value->rx_pdu_list = (nfapi_rx_indication_pdu_t *)nfapi_p7_allocate(sizeof(nfapi_rx_indication_pdu_t) * value->number_of_pdus, config);
+		if (value->rx_pdu_list == NULL)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate rx ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_pdus);
 			return 0;
@@ -4967,87 +4970,97 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 	{
 		value->rx_pdu_list = 0;
 	}
-	
-	uint8_t i = 0;
-	nfapi_rx_indication_pdu_t* pdu = 0;
-	while((uint8_t*)(*ppReadPackedMsg) < rxBodyEnd && (uint8_t*)(*ppReadPackedMsg) < rxPduEnd)
-	{
-		nfapi_tl_t generic_tl;
-		if( unpack_tl(ppReadPackedMsg, &generic_tl, end) == 0)
-			return 0;
 
-		switch(generic_tl.tag)
+	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s number_of_pdus = %u\n", __FUNCTION__, value->number_of_pdus);
+	for (int i = 0; i < value->number_of_pdus; i++)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s i = %u\n", __FUNCTION__, i);
+		nfapi_tl_t generic_tl;
+
+		// NFAPI_RX_UE_INFORMATION_TAG
+		if (unpack_tl(ppReadPackedMsg, &generic_tl, end) == 0)
 		{
-			case NFAPI_RX_UE_INFORMATION_TAG:
-				{
-					pdu = &(value->rx_pdu_list[i++]);
-					pdu->rx_ue_information.tl = generic_tl;
-					if(unpack_rx_ue_information_value(&pdu->rx_ue_information, ppReadPackedMsg, end) == 0)
-						return 0;
-				}
-				break;
-			case NFAPI_RX_INDICATION_REL8_TAG:
-				{
-					if(pdu != 0)
-					{
-						pdu->rx_indication_rel8.tl = generic_tl;
-						if(unpack_rx_indication_rel8_value(&pdu->rx_indication_rel8, ppReadPackedMsg, end) == 0)
-							return 0;
-		
-						if(pdu->rx_indication_rel8.offset > 0)
-						{
-							// Need to check that the data is within the tlv
-							if(numberOfPdusAddress + pdu->rx_indication_rel8.offset + pdu->rx_indication_rel8.length <= rxBodyEnd)
-							{
-								// If this the first pdu set the rxPduEnd
-								if(numberOfPdusAddress + pdu->rx_indication_rel8.offset < rxPduEnd)
-								{
-									rxPduEnd = numberOfPdusAddress + pdu->rx_indication_rel8.offset;
-		
-									if(rxPduEnd > end)
-									{
-										// pdu end is past buffer end
-										return 0;
-									}
-								}
-							}
-							else
-							{
-								NFAPI_TRACE(NFAPI_TRACE_ERROR, "FIXME: the rx data is outside of the tlv\n");
-							}
-						}
-					}
-				}
-				break;
-			case NFAPI_RX_INDICATION_REL9_TAG:
-				{
-					if(pdu != 0)
-					{
-						pdu->rx_indication_rel9.tl = generic_tl;
-						if(unpack_rx_indication_rel9_value(&pdu->rx_indication_rel9, ppReadPackedMsg, end) == 0)
-							return 0;
-					}
-				}
-				break;
-			default:
-				{
-					NFAPI_TRACE(NFAPI_TRACE_ERROR, "RX_ULSCH.indication Invalid pdu type %d \n", generic_tl.tag );
-				}
-				break;
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s unpack_tl failed\n", __FUNCTION__);
+			return 0;
+		}
+
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+
+		if (generic_tl.tag != NFAPI_RX_UE_INFORMATION_TAG)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag wrong\n", __FUNCTION__);
+			return 0;
+		}
+
+		nfapi_rx_indication_pdu_t *pdu = &value->rx_pdu_list[i];
+
+		pdu->rx_ue_information.tl = generic_tl;
+		if (unpack_rx_ue_information_value(&pdu->rx_ue_information, ppReadPackedMsg, end) == 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s unpack_rx_ue_info failure\n", __FUNCTION__);
+			return 0;
+		}
+
+		// NFAPI_RX_INDICATION_REL8_TAG
+		if (unpack_tl(ppReadPackedMsg, &generic_tl, end) == 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s unpack_tl failed\n", __FUNCTION__);
+			return 0;
+		}
+
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+
+		if (generic_tl.tag != NFAPI_RX_INDICATION_REL8_TAG)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag wrong\n", __FUNCTION__);
+			return 0;
+		}
+		pdu->rx_indication_rel8.tl = generic_tl;
+		if (unpack_rx_indication_rel8_value(&pdu->rx_indication_rel8, ppReadPackedMsg, end) == 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s unpack_rx_indication_rel8 failure\n", __FUNCTION__);
+			return 0;
+		}
+		//What is offset not stripping 10 bytes
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s pdu->rx_indication_rel8.offset = %u", __FUNCTION__,
+					pdu->rx_indication_rel8.offset);
+
+		// NFAPI_RX_INDICATION_REL9_TAG
+		if (unpack_tl(ppReadPackedMsg, &generic_tl, end) == 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s unpack_tl failed\n", __FUNCTION__);
+			return 0;
+		}
+
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+
+		if (generic_tl.tag != NFAPI_RX_INDICATION_REL9_TAG)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag wrong\n", __FUNCTION__);
+			return 0;
+		}
+		pdu->rx_indication_rel9.tl = generic_tl;
+		if (unpack_rx_indication_rel9_value(&pdu->rx_indication_rel9, ppReadPackedMsg, end) == 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s unpack_rx_indication_rel9 failure\n", __FUNCTION__);
+			return 0;
 		}
 	}
-	
-	uint8_t idx = 0;
-	for(idx = 0; idx < value->number_of_pdus; ++idx)
+
+	for (int i = 0; i < value->number_of_pdus; ++i)
 	{
-		if(value->rx_pdu_list[idx].rx_indication_rel8.tl.tag == NFAPI_RX_INDICATION_REL8_TAG)
+		nfapi_rx_indication_pdu_t *pdu = &value->rx_pdu_list[i];
+		if (pdu->rx_indication_rel8.tl.tag == NFAPI_RX_INDICATION_REL8_TAG)
 		{
-			uint32_t length = value->rx_pdu_list[idx].rx_indication_rel8.length;
-			value->rx_pdu_list[idx].data = nfapi_p7_allocate(length, config);
-			if(pullarray8(ppReadPackedMsg, value->rx_pdu_list[idx].data, length, length, end) == 0)
+			uint32_t length = pdu->rx_indication_rel8.length;
+			value->rx_pdu_list[i].data = nfapi_p7_allocate(length, config);
+
+			if (pullarray8(ppReadPackedMsg, pdu->data, length, length, end) == 0)
 			{
+				NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pullarray8 failure\n", __FUNCTION__);
 				return 0;
 			}
+
 		}
 	}
 
@@ -6203,7 +6216,9 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 
 		case NFAPI_RX_ULSCH_INDICATION:
 			if (check_unpack_length(NFAPI_RX_ULSCH_INDICATION, unpackedBufLen))
+			{
 				result = unpack_rx_indication(&pReadPackedMessage,  end, pMessageHeader, config);
+			}
 			else
 				return -1;
 			break;
@@ -6315,7 +6330,7 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 
 	if(result == 0)
 		return -1;
-	else 
+	else
 		return 0;
 }
 

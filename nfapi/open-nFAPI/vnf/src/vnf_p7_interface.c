@@ -362,9 +362,7 @@ if (selectRetval==-1 && errno == 22)
 			while(curr != 0)
 			{
 				curr->sfn_sf = increment_sfn_sf(curr->sfn_sf);
-				
 				vnf_sync(vnf_p7, curr);
-
 				curr = curr->next;
 			}
 

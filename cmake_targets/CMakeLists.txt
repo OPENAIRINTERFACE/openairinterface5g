@@ -333,6 +333,14 @@ else (CUDA_FOUND)
     )
 endif ()
 
+# Uncomment these lines to enable the address sanitizer
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+
+# Uncomment these lines to enable gprof profiling
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg -DUSING_GPROF")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -DUSING_GPROF")
+
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
@@ -2095,6 +2103,7 @@ set (MAC_NR_SRC
 
 set (MAC_SRC_UE
   ${PHY_INTERFACE_DIR}/phy_stub_UE.c
+  ${PHY_INTERFACE_DIR}/queue.c
   ${MAC_DIR}/main_ue.c
   ${MAC_DIR}/ue_procedures.c
   ${MAC_DIR}/ra_procedures.c

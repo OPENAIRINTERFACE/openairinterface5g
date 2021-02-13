@@ -407,12 +407,12 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
 
 //-----------------------------------------------------------------------------
 void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
-  uint8_t i=0,rv[6];
+  uint8_t rv[6];
 
   if(UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
-    for (i=0; i<6; i++) {
+    for (int i=0; i<6; i++) {
 #ifdef SMBV
       // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
       rv[i]=i;
@@ -421,6 +421,14 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
 #endif
       LOG_T(RRC,"%x.",rv[i]);
     }
+    LOG_I(RRC, "%s: random = %02X %02X %02X %02X %02X %02X\n",
+          __func__,
+          rv[0],
+          rv[1],
+          rv[2],
+          rv[3],
+          rv[4],
+          rv[5]);
 
     LOG_T(RRC,"\n");
     UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size =
@@ -431,8 +439,8 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
     LOG_I(RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCConnectionRequest (bytes %d, eNB %d)\n",
           ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size, eNB_index);
 
-    for (i=0; i<UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size; i++) {
-      LOG_T(RRC,"%x.",UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.Payload[i]);
+    for (int i=0; i<UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size; i++) {
+      LOG_T(RRC,"%x.\n",UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.Payload[i]);
     }
 
     LOG_T(RRC,"\n");
@@ -622,7 +630,7 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *co
           break;
 
         case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
-          LOG_I(RRC,
+          LOG_A(RRC,
                 "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n",
                 ctxt_pP->module_id,
                 ctxt_pP->frame,
@@ -1694,7 +1702,7 @@ rrc_ue_process_ueCapabilityEnquiry(
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
       }
 
-      LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      LOG_A(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
       rrc_data_req_ue (
         ctxt_pP,
         DCCH,

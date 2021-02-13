@@ -66,6 +66,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "PHY_INTERFACE/phy_stub_UE.h"
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"
@@ -85,9 +86,8 @@
 
 #include "lte-softmodem.h"
 
-
+extern int ue_id_g ; 
 /* temporary compilation wokaround (UE/eNB split */
-uint16_t sf_ahead;
 
 
 pthread_cond_t nfapi_sync_cond;
@@ -95,7 +95,7 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-uint16_t sf_ahead=2;
+uint16_t sf_ahead=1;
 int tddflag;
 char *emul_iface;
 
@@ -278,7 +278,8 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 extern int16_t dlsch_demod_shift;
-
+uint16_t ue_idx_standalone = 0xFFFF;
+uint16_t node_number;
 static void get_options(void) {
   int CC_id=0;
   int tddflag=0;
@@ -525,7 +526,7 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
-void init_pdcp(void) {
+void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
@@ -535,7 +536,7 @@ void init_pdcp(void) {
   if (IS_SOFTMODEM_NOKRNMOD)
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
 
-  pdcp_module_init(pdcp_initmask);
+  pdcp_module_init(pdcp_initmask, ue_id);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
@@ -547,6 +548,21 @@ AssertFatal(false,"");
 }
 
 int main( int argc, char **argv ) {
+  struct sched_param param =
+  {
+    .sched_priority = 79
+  };
+  if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
+  {
+    fprintf(stderr, "sched_setscheduler: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+
   int CC_id;
   uint8_t  abstraction_flag=0;
   // Default value for the number of UEs. It will hold,
@@ -610,7 +626,16 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
-  init_pdcp();
+  ue_id_g = (node_number == 0)? 0 : node_number-2 ;//ue_id_g = 0, 1, ...,
+  if( node_number == 0 )
+  {
+    init_pdcp(0);
+  }
+  else
+  {
+    init_pdcp(node_number-1);
+  }
+  
   //TTN for D2D
   printf ("RRC control socket\n");
   rrc_control_socket_init();
@@ -633,7 +658,7 @@ int main( int argc, char **argv ) {
 
   NB_INST=1;
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);
 
     for (int i=0; i<NB_UE_INST; i++) {
@@ -721,6 +746,19 @@ int main( int argc, char **argv ) {
     //Panos: Temporarily we will be using single set of threads for multiple UEs.
     //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
+  } else if (NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
+    init_queue(&dl_config_req_tx_req_queue);
+    init_queue(&hi_dci0_req_queue);
+    init_queue(&ul_config_req_queue);
+
+    config_sync_var=0;
+    if (sem_init(&sfn_semaphore, 0, 0) != 0)
+    {
+      LOG_E(MAC, "sem_init() error\n");
+      abort();
+    }
+    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
+    init_UE_standalone_thread(ue_id_g);
   } else {
     init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
             frame_parms[0]);

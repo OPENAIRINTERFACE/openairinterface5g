@@ -454,18 +454,8 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
   printf("[VNF] RACH_IND eNB:%p sfn_sf:%d number_of_preambles:%d\n", eNB, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.rach_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_rach_indication : num of rach reach max \n");
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+
     UL_RCC_INFO.rach_ind[index] = *ind;
 
     if (ind->rach_indication_body.number_of_preambles > 0)
@@ -519,18 +509,8 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.harq_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_harq_indication : num of harq reach max \n");
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+
     UL_RCC_INFO.harq_ind[index] = *ind;
 
     if (ind->harq_indication_body.number_of_harqs > 0)
@@ -556,21 +536,8 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.crc_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-      }
-      if(UL_RCC_INFO.rx_ind[i].sfn_sf == ind->sfn_sf){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_crc_indication : num of crc reach max \n");
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+
     UL_RCC_INFO.crc_ind[index] = *ind;
 
     if (ind->crc_indication_body.number_of_crcs > 0)
@@ -622,21 +589,8 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.rx_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-      }
-      if(UL_RCC_INFO.crc_ind[i].sfn_sf == ind->sfn_sf){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_rx_indication : num of rx reach max \n");
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+
     UL_RCC_INFO.rx_ind[index] = *ind;
 
     if (ind->rx_indication_body.number_of_pdus > 0)
@@ -709,18 +663,8 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d srs:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->sr_indication_body.number_of_srs);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.sr_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_sr_indication : num of sr reach max \n");
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+
     UL_RCC_INFO.sr_ind[index] = *ind;
     LOG_D(MAC,"%s() UL_INFO[%d].sr_ind.sr_indication_body.number_of_srs:%d\n", __FUNCTION__, index, eNB->UL_INFO.sr_ind.sr_indication_body.number_of_srs);
     if (ind->sr_indication_body.number_of_srs > 0)
@@ -754,6 +698,35 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
   return 1;
 }
 
+static bool is_ue_same(uint16_t ue_id_1, uint16_t ue_id_2)
+{
+  return (ue_id_1 == ue_id_2);
+}
+
+static void analyze_cqi_pdus_for_duplicates(nfapi_cqi_indication_t *ind)
+{
+  uint16_t num_cqis = ind->cqi_indication_body.number_of_cqis;
+  for (int i = 0; i < num_cqis; i++)
+  {
+    nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
+
+    LOG_I(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+          src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
+
+    for (int j = i + 1; j < num_cqis; j++)
+    {
+      uint16_t rnti_i = ind->cqi_indication_body.cqi_pdu_list[i].rx_ue_information.rnti;
+      uint16_t rnti_j = ind->cqi_indication_body.cqi_pdu_list[j].rx_ue_information.rnti;
+      if (is_ue_same(rnti_i, rnti_j))
+      {
+        LOG_E(MAC, "Problem, two cqis received from a single UE for rnti %x\n",
+              rnti_i);
+        abort();
+      }
+    }
+  }
+}
+
 int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_t *ind) {
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_cqi_ind(p7_vnf->mac, ind);
@@ -761,23 +734,16 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_cqis:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.cqi_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_cqi_indication : num of cqi reach max \n");
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+
     UL_RCC_INFO.cqi_ind[index] = *ind;
     if (ind->cqi_indication_body.number_of_cqis > 0){
       UL_RCC_INFO.cqi_ind[index].cqi_indication_body.cqi_pdu_list = malloc(sizeof(nfapi_cqi_indication_pdu_t)*ind->cqi_indication_body.number_of_cqis );
       UL_RCC_INFO.cqi_ind[index].cqi_indication_body.cqi_raw_pdu_list = malloc(sizeof(nfapi_cqi_indication_raw_pdu_t)*ind->cqi_indication_body.number_of_cqis );
     }
+
+    analyze_cqi_pdus_for_duplicates(ind);
+
     for (int i=0; i<ind->cqi_indication_body.number_of_cqis; i++) {
         nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
         LOG_D(MAC, "SR_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
@@ -795,7 +761,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   dest_ind->cqi_indication_body.cqi_raw_pdu_list = ind->cqi_indication_body.cqi_raw_pdu_list;
   for(int i=0; i<ind->cqi_indication_body.number_of_cqis; i++) {
     nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
-    LOG_D(MAC, "SR_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+    LOG_D(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
                 src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
     memcpy(&dest_ind->cqi_indication_body.cqi_pdu_list[i],
            src_pdu, sizeof(nfapi_cqi_indication_pdu_t));
@@ -1190,6 +1156,23 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   dl_config_req->header.message_id = NFAPI_DL_CONFIG_REQUEST;
+  LOG_I(PHY, "[VNF] %s() DL_CONFIG_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
+        NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_config_req->dl_config_request_body.number_pdu);
+  if (dl_config_req->dl_config_request_body.number_pdu > 0)
+  {
+    for (int i = 0; i < dl_config_req->dl_config_request_body.number_pdu; i++)
+        {
+            uint8_t pdu_type = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].pdu_type;
+            if(pdu_type ==  NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)
+            {
+                uint16_t dl_rnti = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].dlsch_pdu.dlsch_pdu_rel8.rnti;
+                uint16_t numPDUs = dl_config_req->dl_config_request_body.number_pdu;
+                LOG_A(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
+                           " with a RNTI value of: %x and with number of PDUs: %u\n",
+                      NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_rnti, numPDUs);
+            }
+        }
+  }
   int retval = nfapi_vnf_p7_dl_config_req(p7_config, dl_config_req);
   dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
   dl_config_req->dl_config_request_body.number_dci                          = 0;
@@ -1255,12 +1238,69 @@ int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   return retval;
 }
 
+static void remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_config_req)
+{
+  int num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  nfapi_ul_config_request_pdu_t *pdu_list = ul_config_req->ul_config_request_body.ul_config_pdu_list;
+
+  if (index >= num_pdus || index < 0)
+  {
+    LOG_E(MAC, "%s() Unable to drop bad ul_config_req PDU\n", __FUNCTION__);
+    abort();
+  }
+
+  for(int i = index; i + 1 < num_pdus; i++)
+  {
+    pdu_list[i] = pdu_list[i + 1];
+  }
+
+  ul_config_req->ul_config_request_body.number_of_pdus--;
+}
+
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   ul_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   ul_config_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
   //LOG_D(PHY, "[VNF] %s() header message_id:%02x\n", __FUNCTION__, ul_config_req->header.message_id);
   //LOG_D(PHY, "[VNF] %s() UL_CONFIG sfn_sf:%d PDUs:%d rach_prach_frequency_resources:%d srs_present:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ul_config_req->sfn_sf), ul_config_req->ul_config_request_body.number_of_pdus, ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
+
+  int num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  nfapi_ul_config_request_pdu_t *pdu_list = ul_config_req->ul_config_request_body.ul_config_pdu_list;
+  for (int i = 0; i < num_pdus; i++)
+  {
+    uint8_t pdu_type = pdu_list[i].pdu_type;
+
+    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
+          num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
+
+    if (pdu_type != NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)
+    {
+      continue;
+    }
+
+    for (int j = i + 1; j < num_pdus; j++)
+    {
+      uint8_t pdu_type2 = pdu_list[j].pdu_type;
+      if (pdu_type != pdu_type2)
+      {
+        continue;
+      }
+
+      uint16_t rnti_i = pdu_list[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+      uint16_t rnti_j = pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+      if (!is_ue_same(rnti_i, rnti_j))
+      {
+        continue;
+      }
+      remove_ul_config_req_pdu(j, ul_config_req);
+      j--;
+      num_pdus--;
+
+      LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x dropping one\n",
+            rnti_i);
+    }
+  }
+
   int retval = nfapi_vnf_p7_ul_config_req(p7_config, ul_config_req);
 
   if (retval!=0) {

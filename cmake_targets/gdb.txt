@@ -1,0 +1,83 @@
+-------------------------------------------------------------------------------
+Build.
+
+Make sure you've built with debug info:
+
+  cd ~/openairinterface5g # or wherever
+  source oaienv
+  cd cmake_targets
+  ./build_oai --UE --eNB --verbose-compile --run-with-gdb RelWithDebInfo
+  make -C ran_build/build -j4 lte-softmodem lte-uesoftmodem
+
+-------------------------------------------------------------------------------
+Verify.
+
+Verify the build was done correctly:
+
+$ ./gdb-helper
+...
+Reading symbols from ./ran_build/build/lte-softmodem...done.
+(gdb) b main
+Breakpoint 1 at 0x59f110: file /local/episys/openairinterface5g/targets/RT/USER/lte-softmodem.c, line 516.
+(gdb) run
+Starting program: /local/episys/openairinterface5g/cmake_targets/ran_build/build/lte-softmodem -O ../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf --noS1
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, main (argc=4, argv=0x7fffffffe058) at /local/episys/openairinterface5g/targets/RT/USER/lte-softmodem.c:516
+516     {
+(gdb) list
+511       pthread_mutex_unlock(&nfapi_sync_mutex);
+512       printf( "NFAPI: got sync (%s)\n", thread_name);
+513     }
+514
+515     int main ( int argc, char **argv )
+516     {
+517       struct sched_param param =
+518       {
+519         .sched_priority = 79
+520       };
+(gdb) n
+521       if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
+(gdb) quit
+A debugging session is active.
+
+        Inferior 1 [process 19964] will be killed.
+
+Quit anyway? (y or n) y
+$
+
+If gdb says "no debugging symbols found" then clean your workspace and re-do
+the build as above.
+
+(gdb) b main
+
+-------------------------------------------------------------------------------
+Password-less sudo.
+
+Vscode launches lte-softmodem via sudo.  Make sure sudo does not prompt you
+for a password:
+
+  sudo -n id
+
+If that command fails, do the following:
+
+  echo "$USER ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+
+Then verify:
+
+  sudo -n id
+
+-------------------------------------------------------------------------------
+Vscode.
+
+Launch Vscode:
+
+  cd ~/openairinterface5g # or wherever
+  code . targets/RT/USER/lte-softmodem.c .vscode/launch.json
+
+See launch.json for details about how vscode launches lte-softmodem for debugging.
+
+For example, in lte-softmodem.c, scroll to main() and click the line number to
+the left of main to add a breakpoint.  then do Run => Start debugging (F5) to
+run lte-softmodem in the debugger

@@ -8,7 +8,13 @@
 #        define NUMBER_OF_NR_RU_MAX 2
 #        ifndef PHYSIM
 #            ifndef UE_EXPANSION
-#                    define NUMBER_OF_UE_MAX 4
+// TODO:L2 FAPI simulator.
+// UESIM_EXPANSION is used to be same value of NUMBER_OF_UE_MAX
+// in eNB and UE.
+// now , if we use --mu option in UE, compiling error will occur.
+// This problem will be fixed in the future.
+#            ifndef UESIM_EXPANSION
+#                    define NUMBER_OF_UE_MAX 40
 #                    define NUMBER_OF_NR_UE_MAX 4
 #                    define NUMBER_OF_UCI_VARS_MAX 14
 #                    define NUMBER_OF_CONNECTED_eNB_MAX 1
