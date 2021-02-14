@@ -25,7 +25,7 @@ extern "C" {
 #include "nfapi_interface.h"
 #include "debug.h"
 #include <openair2/PHY_INTERFACE/IF_Module.h>
-
+#include <openair1/PHY/defs_eNB.h>
 #include <sys/types.h>
 
 /*! This enum is used to describe the states of the pnf 

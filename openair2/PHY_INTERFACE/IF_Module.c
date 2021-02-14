@@ -687,7 +687,7 @@ static void dump_dl(Sched_Rsp_t *d) {
 /* debug utility functions end                                              */
 /****************************************************************************/
 
-void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
+void UL_indication(UL_IND_t *UL_info, void *proc) {
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 #ifdef DUMP_FAPI
   dump_ul(UL_info);
