@@ -749,7 +749,8 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   }
 }
 
-void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
+void schedule_response(Sched_Rsp_t *Sched_INFO, void *arg) {
+  L1_rxtx_proc_t *proc = (L1_rxtx_proc_t *)arg;
   PHY_VARS_eNB *eNB;
   // copy data from L2 interface into L1 structures
   module_id_t               Mod_id       = Sched_INFO->module_id;

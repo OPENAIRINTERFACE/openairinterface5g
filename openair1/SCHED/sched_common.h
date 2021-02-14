@@ -311,7 +311,7 @@ void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id);
 
 int8_t get_PHR(uint8_t Mod_id, uint8_t CC_id, uint8_t eNB_index);
 
-void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);
+void schedule_response(Sched_Rsp_t *Sched_INFO, void *proc);
 
 LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 
