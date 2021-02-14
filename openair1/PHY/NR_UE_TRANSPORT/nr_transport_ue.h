@@ -38,10 +38,10 @@
 
 //#include "PHY/defs_nr_UE.h"
 #include "../NR_TRANSPORT/nr_transport_common_proto.h"
-#ifndef STANDALONE_COMPILE
+/*#ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif
-
+*/
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 

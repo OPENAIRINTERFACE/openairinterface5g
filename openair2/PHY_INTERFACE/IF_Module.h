@@ -37,7 +37,6 @@
 #include <sched.h>
 //#include "openair1/PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "nfapi_interface.h"
-#include "platform_constants.h"
 #include "platform_types.h"
 #include <common/utils/threadPool/thread-pool.h>
 
