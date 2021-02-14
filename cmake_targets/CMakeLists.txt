@@ -1039,6 +1039,10 @@ add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer 
 add_boolean_option(DEBUG_DLSCH             False "Enable debugging of DLSCH physical layer channel")
 add_boolean_option(MEX                     False "Enabling compilation with mex")
 
+if (${RU} STREQUAL 0)
+add_boolean_option(HAVE_RRC                True "Enable RRC includes")
+endif (${RU} STREQUAL 0)
+
 ##########################
 # NAS LAYER OPTIONS
 ##########################

@@ -32,7 +32,6 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
-#include "SCHED/sched_eNB.h"
 #ifdef DEBUG_DCI_TOOLS
 #include "PHY/phy_vars.h"
 #endif
@@ -43,7 +42,6 @@
 //#define DEBUG_HARQ
 
 
-#include "LAYER2/MAC/mac.h"
 
 //#define DEBUG_DCI
 

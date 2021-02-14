@@ -31,7 +31,6 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "SCHED/sched_eNB.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "nfapi_pnf.h"

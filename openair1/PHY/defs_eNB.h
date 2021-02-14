@@ -65,6 +65,7 @@
 #include "platform_types.h"
 #include "PHY/LTE_TRANSPORT/transport_common.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
+#include "openair2/PHY_INTERFACE/IF_Module.h"
 #include "openairinterface5g_limits.h"
 
 
