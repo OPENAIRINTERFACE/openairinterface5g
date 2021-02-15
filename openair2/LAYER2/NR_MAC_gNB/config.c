@@ -346,9 +346,17 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
 
     RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
-        calloc(n * 275, sizeof(uint16_t));
+        calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
                 "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
+
+    for (int i = 0; i < MAX_NUM_BWP; ++i) {
+      RC.nrmac[Mod_idP]->pucch_index_used[i] =
+        calloc(n, sizeof(*RC.nrmac[Mod_idP]->pucch_index_used));
+      AssertFatal(RC.nrmac[Mod_idP]->pucch_index_used[i],
+                  "could not allocate memory for RC.nrmac[]->pucch_index_used[%d]\n",
+                  i);
+    }
 
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
@@ -389,22 +397,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
-      const int UE_id = add_new_nr_ue(Mod_idP,rnti);
-      UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
-      compute_csi_bitlen (secondaryCellGroup, UE_info, UE_id);
-      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
-          secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-      AssertFatal(bwpList->list.count == 1,
-                  "downlinkBWP_ToAddModList has %d BWP!\n",
-                  bwpList->list.count);
-      const int bwp_id = 1;
-      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
-      struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList =
-          secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
-      AssertFatal(ubwpList->list.count == 1,
-                  "uplinkBWP_ToAddModList has %d BWP!\n",
-                  ubwpList->list.count);
-      UE_info->UE_sched_ctrl[UE_id].active_ubwp = ubwpList->list.array[bwp_id - 1];
+      const int UE_id = add_new_nr_ue(Mod_idP, rnti, secondaryCellGroup);
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       /* TODO: should check for free RA process */

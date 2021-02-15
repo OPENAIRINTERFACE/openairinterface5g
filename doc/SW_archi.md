@@ -186,7 +186,7 @@ development], for FR2 does not exist yet.
   3)  allocate a CCE for the UE (and return if it is not possible)
   4)  Calculate DMRS stuff (nr_save_pusch_fields()) and the TBS.
   5)  Mark used resources in vrb_map_UL.
-* loop through all users: get a free HARQ PID using select_ul_harq_pid() and
+* loop through all users: get a free HARQ PID and
   update statistics. Fill nFAPI structures directly for PUSCH, and call
   config_uldci() and fill_dci_pdu_rel15() for DCI filling and PDCCH messages.
 
