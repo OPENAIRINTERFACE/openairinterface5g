@@ -708,7 +708,7 @@ void *UE_thread(void *arg) {
                            (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
     uint8_t first_tx_slot = tdd_period - num_UL_slots;
 
-    if (openair0_cfg[0].duplex_mode == TDD) {
+    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
       if (slot_tx_usrp % tdd_period == first_tx_slot)
         flags = 2;
       else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
