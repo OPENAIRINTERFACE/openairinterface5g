@@ -432,6 +432,9 @@ set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
+if (${RU} STREQUAL 1)
+add_definitions(-DNO_RRC)
+endif (${RU} STREQUAL 1)
 
 # RRC
 ######
@@ -1038,10 +1041,6 @@ add_boolean_option(DEBUG_PHY               False "Enable PHY layer debugging opt
 add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer procedures")
 add_boolean_option(DEBUG_DLSCH             False "Enable debugging of DLSCH physical layer channel")
 add_boolean_option(MEX                     False "Enabling compilation with mex")
-
-if (${RU} STREQUAL 0)
-add_boolean_option(HAVE_RRC                True "Enable RRC includes")
-endif (${RU} STREQUAL 0)
 
 ##########################
 # NAS LAYER OPTIONS
@@ -3010,6 +3009,7 @@ target_link_libraries (oairu
   -Wl,--end-group z dl)
   
 target_link_libraries (oairu pthread m ${CONFIG_LIB} rt ${CMAKE_DL_LIBS} ${T_LIB})
+
 
 # lte-uesoftmodem is  UE implementation
 #######################################

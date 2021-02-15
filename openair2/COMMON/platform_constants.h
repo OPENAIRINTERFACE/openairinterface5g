@@ -32,7 +32,7 @@
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
 
-#ifdef HAVE_RRC
+#ifndef NO_RRC
 #include "LTE_asn_constant.h"
 #include "NR_asn_constant.h"
 #else 
