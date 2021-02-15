@@ -8241,7 +8241,7 @@ rrc_eNB_decode_dcch(
           xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)ul_dcch_msg);
         }
 
-        LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
+        LOG_A(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
         int eutra_index = -1;
 
         for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
