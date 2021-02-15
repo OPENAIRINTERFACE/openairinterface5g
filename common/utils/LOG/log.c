@@ -479,6 +479,7 @@ char *log_getthreadname(char *threadname,
 }
 
 #if LOG_MINIMAL
+#include <sys/syscall.h>
 void logMinimal(int comp, int level, const char *format, ...)
 {
     struct timespec ts;
@@ -486,9 +487,10 @@ void logMinimal(int comp, int level, const char *format, ...)
         abort();
 
     char buf[MAX_LOG_TOTAL];
-    int n = snprintf(buf, sizeof(buf), "%lu.%06lu [%s] %c ",
+    int n = snprintf(buf, sizeof(buf), "%lu.%06lu %08lx [%s] %c ",
                      ts.tv_sec,
                      ts.tv_nsec / 1000,
+                     syscall(__NR_gettid),
                      g_log->log_component[comp].name,
                      level);
     if (n < 0 || n >= sizeof(buf))

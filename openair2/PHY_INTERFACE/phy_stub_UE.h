@@ -22,7 +22,7 @@
 #include "queue.h"
 
 // this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
-FILL_UL_INFO_MUTEX_t fill_ul_mutex;
+extern FILL_UL_INFO_MUTEX_t fill_ul_mutex;
 //below 2 difinitions move to phy_stub_UE.c to add initialization when difinition.
 extern UL_IND_t *UL_INFO;
 // New
