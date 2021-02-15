@@ -509,6 +509,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
               ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
 #else
               ctxt.module_id = pdcp_read_header_g.inst;
+#endif
             } else {
               ctxt.module_id = 0;
             }

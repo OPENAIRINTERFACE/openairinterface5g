@@ -26,7 +26,7 @@
 #include <sys/eventfd.h>
 
 
-extern "C" {
+extern "C"
 #include <intertask_interface.h>
 #include <common/utils/system.h>
 
