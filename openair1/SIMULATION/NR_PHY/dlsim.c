@@ -235,7 +235,10 @@ int main(int argc, char **argv)
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
-  float roundStats[50];
+  double roundStats[500] = {0};
+  double blerStats[500] = {0};
+  double berStats[500] = {0};
+  double snrStats[500] = {0};
   float effRate;
   //float psnr;
   float eff_tp_check = 0.7;
@@ -1101,7 +1104,9 @@ int main(int argc, char **argv)
       if (UE_harq_process->harq_ack.ack==1) effRate += ((float)TBS)/round;
     } // noise trials
 
+    blerStats[snrRun] = (float) n_errors / (float) n_trials;
     roundStats[snrRun]/=((float)n_trials);
+    berStats[snrRun] = (double)errors_scrambling/available_bits/n_trials;
     effRate /= n_trials;
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
@@ -1109,7 +1114,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
     dump_pdsch_stats(gNB);
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, BLER %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],berStats[snrRun],blerStats[snrRun],effRate,effRate/TBS*100,TBS);
     printf("\n");
 
     if (print_perf==1) {
@@ -1174,15 +1179,19 @@ int main(int argc, char **argv)
       break;
     }
 
-    //if ((float)n_errors/(float)n_trials <= target_error_rate) {
     if (effRate > (eff_tp_check*TBS)) {
       printf("PDSCH test OK\n");
       break;
     }
 
+    snrStats[snrRun] = SNR;
     snrRun++;
   } // NSR
 
+  LOG_M("dlsimStats.m","SNR",snrStats,snrRun,1,7);
+  LOG_MM("dlsimStats.m","BLER",blerStats,snrRun,1,7);
+  LOG_MM("dlsimStats.m","BER",berStats,snrRun,1,7);
+  LOG_MM("dlsimStats.m","rounds",roundStats,snrRun,1,7);
   /*if (n_trials>1) {
     printf("HARQ stats:\nSNR\tRounds\n");
     psnr = snr0;

@@ -88,7 +88,8 @@ int write_file_matlab(const char *fname,
 					  void *data,
 					  int length,
 					  int dec,
-					  char format)
+					  char format,
+            int multiVec)
 {
   FILE *fp=NULL;
   int i;
@@ -98,7 +99,7 @@ int write_file_matlab(const char *fname,
 
   //printf("Writing %d elements of type %d to %s\n",length,format,fname);
 
-  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14) {
+  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14 || multiVec) {
     fp = fopen(fname,"a+");
   } else if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14) {
     fp = fopen(fname,"w+");
@@ -109,7 +110,7 @@ int write_file_matlab(const char *fname,
     return(-1);
   }
 
-  if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14)
+  if ((format != 10 && format !=11  && format != 12 && format != 13 && format != 14) || multiVec)
     fprintf(fp,"%s = [",vname);
 
   switch (format) {
@@ -216,7 +217,7 @@ int write_file_matlab(const char *fname,
       break;
   }
 
-  if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
+  if ((format != 10 && format !=11 && format !=12 && format != 13 && format != 15) || multiVec) {
     fprintf(fp,"];\n");
     fclose(fp);
     return(0);
