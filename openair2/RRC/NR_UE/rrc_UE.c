@@ -68,7 +68,7 @@
 #include "RRC/NAS/rb_config.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-#if ITTI_SIM
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
 #endif
 
@@ -1361,7 +1361,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   const char *nas_msg;
   int   nas_msg_length;
  if (AMF_MODE_ENABLED) {
-#if ITTI_SIM
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
     as_nas_info_t initialNasMsg;
     generateRegistrationRequest(&initialNasMsg);
     nas_msg = (char*)initialNasMsg.data;
@@ -1790,6 +1790,9 @@ nr_rrc_ue_process_securityModeCommand(
 void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
   uint8_t i=0,rv[6];
 
+  if(IS_SOFTMODEM_NOS1) {
+    AMF_MODE_ENABLED = 1;
+  }
   if(NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution

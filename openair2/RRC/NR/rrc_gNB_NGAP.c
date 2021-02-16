@@ -575,19 +575,6 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
     }
 
-if (RC.nrrrc[ctxt.module_id]->node_type == ngran_gNB_CU) {
-    MessageDef *message_p;
-    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container = (uint8_t *)ue_context_p->ue_context.Srb1.Srb_info.Tx_buffer.Payload;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = ue_context_p->ue_context.Srb1.Srb_info.Tx_buffer.payload_size;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id = 0;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_p->ue_context.rnti;
-
-    itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
-    LOG_D(NR_RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
-  }
-
     return 0;
   }
 }
@@ -802,25 +789,10 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         */
        switch (RC.nrrrc[ctxt.module_id]->node_type) {
         case ngran_gNB_CU:
-          // create an ITTI message
-          // F1AP_DL_RRC_MESSAGE
-          message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
-          F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = buffer;
-          F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = length;
-          F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-          F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-          F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-          F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_context_p->ue_context.rnti;
-          F1AP_DL_RRC_MESSAGE (message_p).srb_id               = DCCH;
-          F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-          F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-          itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
-          LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
-
           /* Transfer data to PDCP */
           nr_rrc_data_req (
               &ctxt,
-              ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
+              DCCH, // ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
               (*rrc_gNB_mui)++,
               SDU_CONFIRM_NO,
               length,

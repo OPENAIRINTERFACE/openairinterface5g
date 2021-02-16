@@ -113,7 +113,7 @@ nr_rrc_data_ind(
 //------------------------------------------------------------------------------
 {
   rb_id_t    DCCH_index = Srb_id;
-  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from eNB %d\n",
+  LOG_I(NR_RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from gNB %d\n",
         ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   {
     MessageDef *message_p;

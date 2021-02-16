@@ -987,7 +987,7 @@ add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION w
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 add_boolean_option(ITTI_SIM                 False         "enable itti simulator")
-
+add_boolean_option(RFSIM_NAS                False         "enable rfsim nas")
 ########################
 # Include order
 ##########################
@@ -2515,7 +2515,7 @@ if(NAS_UE)
 endif()
 
 
-if(ITTI_SIM)
+if(ITTI_SIM OR RFSIM_NAS)
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -3125,7 +3125,7 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
-  NFAPI_USER_LIB S1AP_LIB S1AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
+  NFAPI_USER_LIB S1AP_LIB S1AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB} ${NAS_SIM_LIB}
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB
   -Wl,--end-group z dl)
 
