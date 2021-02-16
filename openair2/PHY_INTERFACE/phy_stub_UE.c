@@ -1298,7 +1298,10 @@ void *ue_standalone_pnf_task(void *context)
       LOG_E(MAC, "reading from standalone pnf sctp socket failed \n");
       continue;
     }
-
+    /* First we'll check for possible messages from the proxy. We do this by checking
+       the length of the message. This works because sizeof(uint16_t) < sizeof(nfapi_p7_message_header_t)
+       and sizeof(phy_channel_params_t) < sizeof(nfapi_p7_message_header_t) and
+       sizeof(uint16_t) != sizeof(phy_channel_params_t). */
     if (len == sizeof(uint16_t))
     {
       uint16_t sfn_sf = 0;
@@ -1308,6 +1311,23 @@ void *ue_standalone_pnf_task(void *context)
       if (sem_post(&sfn_semaphore) != 0)
       {
         LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
+    }
+    else if (len == sizeof(phy_channel_params_t))
+    {
+      phy_channel_params_t ch_info;
+      memcpy(&ch_info, buffer, sizeof(phy_channel_params_t));
+      current_sfn_sf = ch_info.sfn_sf;
+      if (sem_post(&sfn_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
+      uint16_t sf = ch_info.sfn_sf & 15;
+      if (sf > 10 && sf < 0)
+      {
+        LOG_E(MAC, "sf out of bounds, sfn: %d\n", sf);
         abort();
       }
     }
