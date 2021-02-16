@@ -1684,13 +1684,11 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
 
-      ul_config->sfn = frameP;
-      ul_config->slot = slotP;
-
-      ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PRACH;
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
-      ul_config->number_pdus += 1;
+
+      fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PRACH);
+
       LOG_D(PHY, "In %s: (%p) %d UL PDUs:\n", __FUNCTION__, ul_config, ul_config->number_pdus);
 
       ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
@@ -1768,11 +1766,10 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
             AssertFatal(1 == 0, "Invalid PRACH format");
         }
       } // if format1
+      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
+      if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+        mac->if_module->scheduled_response(&scheduled_response);
     } // is_nr_prach_slot
-
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
-    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
-      mac->if_module->scheduled_response(&scheduled_response);
   } // if is_nr_UL_slot
 }
 
