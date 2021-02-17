@@ -100,7 +100,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_srb_bearer2add_list,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_drb_bearer2add_list);
 
 //------------------------------------------------------------------------------
 void
@@ -1016,7 +1017,8 @@ void nr_DRB_preconfiguration(uint16_t crnti)
 {
 
   NR_RadioBearerConfig_t             *rbconfig = NULL;
-  struct NR_CellGroupConfig__rlc_BearerToAddModList *Rlc_Bearer_ToAdd_list = NULL;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList *Rlc_DRB_Bearer_ToAdd_list = NULL;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList *Rlc_SRB_Bearer_ToAdd_list = NULL;
   protocol_ctxt_t ctxt;
   //fill_default_rbconfig(rb_config, 5, 1);
   rbconfig = calloc(1, sizeof(*rbconfig));
@@ -1074,14 +1076,21 @@ void nr_DRB_preconfiguration(uint16_t crnti)
 
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-  nr_rlc_bearer_init(RLC_BearerConfig);
-  // nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
-  nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_am);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig->mac_LogicalChannelConfig);
+  /*Adding SRB RLC configuration to the corresponding list*/
+  NR_RLC_BearerConfig_t *RLC_SRB_BearerConfig = calloc(1,sizeof(*RLC_SRB_BearerConfig));
+  nr_rlc_bearer_init(RLC_SRB_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
+  nr_drb_config(RLC_SRB_BearerConfig->rlc_Config, NR_RLC_Config_PR_am);
+  nr_rlc_bearer_init_ul_spec(RLC_SRB_BearerConfig->mac_LogicalChannelConfig);
+  Rlc_SRB_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_SRB_Bearer_ToAdd_list));
+  ASN_SEQUENCE_ADD(&Rlc_SRB_Bearer_ToAdd_list->list, RLC_SRB_BearerConfig);
 
-  Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));
-  ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
+  /*Adding DRB RLC configuration to the corresponding list*/
+  NR_RLC_BearerConfig_t *RLC_DRB_BearerConfig = calloc(1,sizeof(*RLC_DRB_BearerConfig));
+  nr_rlc_bearer_init(RLC_DRB_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity);
+  nr_drb_config(RLC_DRB_BearerConfig->rlc_Config, NR_RLC_Config_PR_am);
+  nr_rlc_bearer_init_ul_spec(RLC_DRB_BearerConfig->mac_LogicalChannelConfig);
+  Rlc_DRB_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_DRB_Bearer_ToAdd_list));
+  ASN_SEQUENCE_ADD(&Rlc_DRB_Bearer_ToAdd_list->list, RLC_DRB_BearerConfig);
 
   if (ENB_NAS_USE_TUN){
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, crnti, 0, 0, 0);
@@ -1102,7 +1111,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     NULL,
     NULL,
     NULL,
-    Rlc_Bearer_ToAdd_list);
+    Rlc_DRB_Bearer_ToAdd_list);
   }
 
   if (!NODE_IS_CU(node_type)) {
@@ -1111,7 +1120,8 @@ void nr_DRB_preconfiguration(uint16_t crnti)
       rbconfig->drb_ToAddModList,
       rbconfig->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
-      Rlc_Bearer_ToAdd_list);
+      Rlc_SRB_Bearer_ToAdd_list,
+      Rlc_DRB_Bearer_ToAdd_list);
   }
 
   LOG_D(PDCP, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
@@ -1282,7 +1292,7 @@ boolean_t pdcp_data_req(
 #endif
   )
 {
-  if (rb_id < 4) { 
+  if (srb_flagP) {
     return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
                            sdu_buffer); 
   }

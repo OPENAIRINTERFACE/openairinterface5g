@@ -195,6 +195,7 @@ void nr_process_mac_pdu(
 
         // MAC SDUs
         case UL_SCH_LCID_SRB1:
+          //break;
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
