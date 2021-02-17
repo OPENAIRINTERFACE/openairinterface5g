@@ -35,7 +35,7 @@
 #include "assertions.h"
 #include <math.h>
 #include "nfapi/oai_integration/vendor_ext.h"
-
+#include <openair1/PHY/LTE_ESTIMATION/lte_estimation.h>
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
 extern int32_t get_uldl_offset(int eutra_bandP);
 
