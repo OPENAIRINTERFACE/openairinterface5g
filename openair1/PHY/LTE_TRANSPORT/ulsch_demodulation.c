@@ -514,7 +514,6 @@ void ulsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   for (i=0; i<(nb_rb*3); i++) {
 #if defined(__x86_64__) || defined(__i386__)
     mmtmpU0 = _mm_abs_epi16(rxF[i]);
-    //    print_shorts("tmp0",&tmp0);
     mmtmpU0 = _mm_subs_epi16(ch_mag[i],mmtmpU0);
     (*llrp128)[0] = _mm_unpacklo_epi32(rxF[i],mmtmpU0);
     (*llrp128)[1] = _mm_unpackhi_epi32(rxF[i],mmtmpU0);
@@ -1160,8 +1159,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
     avgs = cmax(avgs,avgU[aarx]);
 
-  //      log2_maxh = 4+(log2_approx(avgs)/2);
-  log2_maxh = (log2_approx(avgs)/2); //+ log2_approx(frame_parms->nb_antennas_rx-1)+4;
+  log2_maxh = 4+(log2_approx(avgs)/2); 
   LOG_D(PHY,"[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
