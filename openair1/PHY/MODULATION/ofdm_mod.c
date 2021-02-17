@@ -306,15 +306,23 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
 		       int length) {
   int symb_offset = (slot%fp->slots_per_subframe)*fp->symbols_per_slot;
 
+  int16_t *symbol_rotation = fp->symbol_rotation[0];
+
   for (int sidx=0;sidx<nsymb;sidx++) {
+
     LOG_D(PHY,"Rotating symbol %d, slot %d, symbol_subframe_index %d, length %d (%d,%d)\n",
-	  first_symbol+sidx,slot,sidx+first_symbol+symb_offset,length,
-	  fp->symbol_rotation[2*(sidx+first_symbol+symb_offset)],fp->symbol_rotation[1+2*(sidx+first_symbol+symb_offset)]);
-    rotate_cpx_vector(trxdata+(sidx*length*2),
-		      &fp->symbol_rotation[2*(sidx+first_symbol+symb_offset)],
-		      trxdata+(sidx*length*2),
-		      length,
-		      15);
+      first_symbol + sidx,
+      slot,
+      sidx + first_symbol + symb_offset,
+      length,
+      symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
+      symbol_rotation[1 + 2 * (sidx + first_symbol + symb_offset)]);
+
+    rotate_cpx_vector(trxdata + (sidx * length * 2),
+                      &symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
+                      trxdata + (sidx * length * 2),
+                      length,
+                      15);
   }
 }
 		       

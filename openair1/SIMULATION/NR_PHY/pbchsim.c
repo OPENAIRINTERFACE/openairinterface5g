@@ -111,7 +111,7 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
 
   nr_init_frame_parms(gNB_config, fp);
 
-  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+  init_symbol_rotation(fp);
 
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");

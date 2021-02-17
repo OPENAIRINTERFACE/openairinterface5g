@@ -502,35 +502,62 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 }
 
 
-void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq) {
+void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
+
+  uint64_t dl_CarrierFreq = fp->dl_CarrierFreq;
+  uint64_t ul_CarrierFreq = fp->ul_CarrierFreq;
+  double f[2] = {(double)dl_CarrierFreq, (double)ul_CarrierFreq};
 
   const int nsymb = fp->symbols_per_slot * fp->slots_per_frame/10;
   const double Tc=(1/480e3/4096);
   const double Nu=2048*64*(1/(float)(1<<fp->numerology_index));
-  const double f0= (double)CarrierFreq;
   const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
   const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
   double tl=0,poff,exp_re,exp_im;
   double Ncp,Ncpm1=Ncp0;
 
-  poff = 2*M_PI*((Ncp0*Tc))*f0;
-  exp_re = cos(poff);
-  exp_im = sin(-poff);
-  fp->symbol_rotation[0]=(int16_t)floor(exp_re*32767);
-  fp->symbol_rotation[1]=(int16_t)floor(exp_im*32767);
-  LOG_I(PHY,"Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n",f0,nsymb);
-  LOG_I(PHY,"Symbol rotation %d/%d => (%d,%d)\n",0,nsymb,fp->symbol_rotation[0],fp->symbol_rotation[1]);
-  for (int l=1;l<nsymb;l++) {
-    if (l==(7*(1<<fp->numerology_index))) Ncp=Ncp0;
-    else Ncp=Ncp1;
-    tl += (Nu+Ncpm1)*Tc;					     
-    poff = 2*M_PI*(tl + (Ncp*Tc))*f0;
+  for (uint8_t ll = 0; ll < 2; ll++){
+
+    double f0 = f[ll];
+    int16_t *symbol_rotation = fp->symbol_rotation[ll];
+
+    poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
     exp_re = cos(poff);
     exp_im = sin(-poff);
-    fp->symbol_rotation[l<<1]=(int16_t)floor(exp_re*32767);
-    fp->symbol_rotation[1+(l<<1)]=(int16_t)floor(exp_im*32767);
-    LOG_I(PHY,"Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",l,nsymb,tl,fp->symbol_rotation[l<<1],fp->symbol_rotation[1+(l<<1)],
-	  (poff/2/M_PI)-floor(poff/2/M_PI));
-    Ncpm1=Ncp;
+    symbol_rotation[0] = (int16_t)floor(exp_re * 32767);
+    symbol_rotation[1] = (int16_t)floor(exp_im * 32767);
+    LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
+    LOG_I(PHY, "Symbol rotation %d/%d => (%d,%d)\n",
+      0,
+      nsymb,
+      symbol_rotation[0],
+      symbol_rotation[1]);
+
+    for (int l = 1; l < nsymb; l++) {
+
+      if (l == (7 * (1 << fp->numerology_index))) {
+        Ncp = Ncp0;
+      } else {
+        Ncp = Ncp1;
+      }
+
+      tl += (Nu + Ncpm1) * Tc;
+      poff = 2 * M_PI * (tl + (Ncp * Tc)) * f0;
+      exp_re = cos(poff);
+      exp_im = sin(-poff);
+      symbol_rotation[l<<1] = (int16_t)floor(exp_re * 32767);
+      symbol_rotation[1 + (l<<1)] = (int16_t)floor(exp_im * 32767);
+
+      LOG_I(PHY, "Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",
+        l,
+        nsymb,
+        tl,
+        symbol_rotation[l<<1],
+        symbol_rotation[1 + (l<<1)],
+        (poff / 2 / M_PI) - floor(poff / 2 / M_PI));
+
+      Ncpm1 = Ncp;
+
+    }
   }
 }
