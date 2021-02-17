@@ -79,8 +79,8 @@ void init_RA(module_id_t mod_id,
 
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
-      LOG_I(MAC, "Initialization of 4-step contention-free random access procedure\n");
-      prach_resources->RA_TYPE = RA_4STEP;
+      LOG_I(MAC, "Initialization of 2-step contention-free random access procedure\n");
+      prach_resources->RA_TYPE = RA_2STEP;
       ra->cfra = 1;
     } else if (rach_ConfigDedicated->ext1){
       if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
@@ -93,6 +93,10 @@ void init_RA(module_id_t mod_id,
     } else {
       LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
     }
+  } else if (nr_rach_ConfigCommon){
+    LOG_I(MAC, "Initialization of 4-step contention-based random access procedure\n");
+    prach_resources->RA_TYPE = RA_4STEP;
+    ra->cfra = 0;
   } else {
     LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
   }
@@ -366,6 +370,12 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
       prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
       ra->RA_usedGroupA = 0;
     }
+
+    // TODO: Remove to generate random ra_PreambleIndex
+    printf("prach_resources->ra_PreambleIndex = %i\n", prach_resources->ra_PreambleIndex);
+    prach_resources->ra_PreambleIndex = 21;
+    ra->RA_usedGroupA = 1;
+
   } else { // Msg3 is being retransmitted
     if (ra->RA_usedGroupA && noGroupB) {
       prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);

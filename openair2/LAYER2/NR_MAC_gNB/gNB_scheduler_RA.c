@@ -454,11 +454,15 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
   int pr_found=0;
-  for (int i = 0; i < ra->preambles.num_preambles; i++) {
-    if (preamble_index == ra->preambles.preamble_list[i]) {
-      pr_found=1;
-      break;
+  if(ra->preambles.num_preambles > 0) {
+    for (int i = 0; i < ra->preambles.num_preambles; i++) {
+      if (preamble_index == ra->preambles.preamble_list[i]) {
+        pr_found=1;
+        break;
+      }
     }
+  } else {
+    pr_found=1;
   }
 
   if (!pr_found) {
