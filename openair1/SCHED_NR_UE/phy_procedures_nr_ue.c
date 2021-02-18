@@ -238,33 +238,15 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
       int factor_mu = 1 << numerology;
       uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
 
-      LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d -- UE_mode %d\n", __FUNCTION__, frame_tx, slot_tx, ue->UE_mode[gNB_id]);
+      ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling / factor_mu;
 
-      if (ue->UE_mode[gNB_id] == RA_RESPONSE){
-
-        ue->timing_advance = ul_time_alignment->ta_command * bw_scaling / factor_mu;
-
-        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Received (RAR) timing advance command %d new value is %u \n",
-          __FUNCTION__,
-          ue->Mod_id,
-          frame_tx,
-          slot_tx,
-          ul_time_alignment->ta_command,
-          ue->timing_advance);
-
-      } else if (ue->UE_mode[gNB_id] == PUSCH){
-
-        ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling / factor_mu;
-
-        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
-          __FUNCTION__,
-          ue->Mod_id,
-          frame_tx,
-          slot_tx,
-          ul_time_alignment->ta_command,
-          ue->timing_advance);
-
-      }
+      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+        __FUNCTION__,
+        ue->Mod_id,
+        frame_tx,
+        slot_tx,
+        ul_time_alignment->ta_command,
+        ue->timing_advance);
 
       ul_time_alignment->ta_frame = -1;
       ul_time_alignment->ta_slot = -1;
