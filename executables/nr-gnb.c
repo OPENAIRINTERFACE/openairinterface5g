@@ -144,12 +144,10 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
-struct timespec current;
-clock_gettime(CLOCK_MONOTONIC, &current);
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-  
+
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
@@ -161,7 +159,6 @@ clock_gettime(CLOCK_MONOTONIC, &current);
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
     // oai_subframe_ind(frame_rx, slot_rx);
-
     oai_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
@@ -253,7 +250,7 @@ clock_gettime(CLOCK_MONOTONIC, &current);
   gNB->UL_INFO.CC_id     = gNB->CC_id;
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-
+  
   // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);

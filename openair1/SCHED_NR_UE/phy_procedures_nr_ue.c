@@ -1958,7 +1958,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for C-RNTI
   if (ue->dlsch[proc->thread_id][gNB_id][0]->active == 1) {
 
-    LOG_I(PHY, "DLSCH data reception at nr_slot_rx: %d \n \n", nr_slot_rx);
+    LOG_D(PHY, "DLSCH data reception at nr_slot_rx: %d \n \n", nr_slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
 
 #if UE_TIMING_TRACE

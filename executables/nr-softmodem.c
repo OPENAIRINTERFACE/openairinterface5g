@@ -91,7 +91,7 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-extern uint8_t nfapi_mode; // Default to monolithic mode,set in config_load_configmodule.c
+extern uint8_t nfapi_mode; // Default to monolithic mode
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -861,7 +861,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (NFAPI_MODE==NFAPI_MODE_VNF) // VNF
+  if (NFAPI_MODE==NFAPI_MODE_VNF)
     wait_nfapi_init("main?");
 
   printf("START MAIN THREADS\n");
@@ -890,7 +890,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   config_sync_var=0;
 
-  if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
+  if (NFAPI_MODE==NFAPI_MODE_PNF) {
     wait_nfapi_init("main?");
   }
 
