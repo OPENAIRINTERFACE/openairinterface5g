@@ -862,7 +862,7 @@ void nr_schedule_ulsch(module_id_t module_id,
   /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
    * allocated PDCCH so we can easily allocate UE's DCIs independent of any
    * CORESET order */
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_bwp_coreset[MAX_NUM_BWP][MAX_NUM_CORESET] = {0};
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_bwp_coreset[MAX_NUM_BWP][MAX_NUM_CORESET] = {{0}};
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
