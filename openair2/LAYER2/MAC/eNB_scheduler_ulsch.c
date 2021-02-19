@@ -409,7 +409,8 @@ rx_sdu(const module_id_t enb_mod_idP,
     switch (rx_ces[i]) {  // implement and process PHR + CRNTI + BSR
       case POWER_HEADROOM:
         if (UE_id != -1) {
-          UE_template_ptr->phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + (int8_t)(hundred_times_log10_NPRB[UE_template_ptr->nb_rb_ul[harq_pid] - 1] / 100);
+          /*UE_template_ptr->phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + (int8_t)(hundred_times_log10_NPRB[UE_template_ptr->nb_rb_ul[harq_pid] - 1] / 100);i*/
+	  UE_template_ptr->phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + estimate_ue_tx_power(0,sdu_lenP*8,UE_template_ptr->nb_rb_ul[harq_pid],0,mac->common_channels[CC_idP].Ncp,0);
 
           if (UE_template_ptr->phr_info > 40) {
             UE_template_ptr->phr_info = 40;

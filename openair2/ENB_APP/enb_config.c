@@ -225,12 +225,20 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
       RC.mac[j]->bler_upper = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_UPPER_IDX ].dblptr);
       RC.mac[j]->max_ul_rb_index = *(MacRLC_ParamList.paramarray[j][MACRLC_MAX_UL_RB_INDEX_IDX ].iptr);
       RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
-
+      LOG_I(ENB_APP,"MAC instance %d parameters : pusch_snr %lf, pucch_snr %lf, ue_multiple_max %d, use_mcs_offset %d, bler_lower %lf, bler_upper %lf,max_ul_rb_index %d\n",
+	j,
+	RC.mac[j]->puSch10xSnr/10.0,
+	RC.mac[j]->puCch10xSnr/10.0,
+	RC.mac[j]->ue_multiple_max,
+	RC.mac[j]->use_mcs_offset,
+	RC.mac[j]->bler_lower,
+	RC.mac[j]->bler_upper,
+	RC.mac[j]->max_ul_rb_index);
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
         // check number of instances is same as RRC/PDCP
-        printf("Configuring local RRC for MACRLC\n");
+        LOG_I(ENB_APP,"Configuring local RRC for MACRLC\n");
       } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
-        printf("Configuring F1 interfaces for MACRLC\n");
+        LOG_I(ENB_APP,"Configuring F1 interfaces for MACRLC\n");
         RC.mac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         RC.mac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
         RC.mac[j]->eth_params_n.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));

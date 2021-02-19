@@ -92,8 +92,8 @@
 {CONFIG_STRING_MACRLC_DEFAULT_SCHED_DL_ALGO,             NULL,     0,          strptr:NULL,         defstrval:"round_robin_dl", TYPE_STRING,  0},        \
 {CONFIG_STRING_MACRLC_UE_MULTIPLE_MAX,                   NULL,     0,          iptr:NULL,           defintval:4,               TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_USE_MCS_OFFSET,                    NULL,     0,          iptr:NULL,           defintval:1,               TYPE_INT,      0},        \
-{CONFIG_STRING_MACRLC_BLER_TARGET_LOWER,                 NULL,     0,          iptr:NULL,           defdblval:.5,               TYPE_DOUBLE,      0}, \
-{CONFIG_STRING_MACRLC_BLER_TARGET_UPPER,                 NULL,     0,          iptr:NULL,           defdblval:2,               TYPE_DOUBLE,      0}, \
+{CONFIG_STRING_MACRLC_BLER_TARGET_LOWER,                 NULL,     0,          dblptr:NULL,           defdblval:.5,               TYPE_DOUBLE,      0}, \
+{CONFIG_STRING_MACRLC_BLER_TARGET_UPPER,                 NULL,     0,          dblptr:NULL,           defdblval:2,               TYPE_DOUBLE,      0}, \
 {CONFIG_STRING_MACRLC_MAX_UL_RB_INDEX,                   NULL,     0,          iptr:NULL,           defintval:22,              TYPE_INT, 0}}
 
 #define MACRLC_CC_IDX                                          0
