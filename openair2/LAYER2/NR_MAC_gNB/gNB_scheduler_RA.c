@@ -477,6 +477,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint8_t total_RApreambles = 64;
   uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;	
+  int pr_found;
+
   if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
     total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
   
@@ -487,10 +489,19 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
-
+    pr_found = 0;
     if (ra->state == RA_IDLE) {
-      if ((preamble_index < total_RApreambles) && (preamble_index > cc->cb_preambles_per_ssb) && (!ra->cfra))
-        continue;
+      for(int j = 0; j < ra->preambles.num_preambles; j++) {
+        //check if the preamble received correspond to one of the listed or configured preambles
+        if (preamble_index == ra->preambles.preamble_list[j]) {
+          pr_found=1;
+          break;
+        }
+      }
+
+      if (pr_found == 0) {
+         continue;
+      }
 
       uint16_t ra_rnti;
 
