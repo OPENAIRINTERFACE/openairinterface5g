@@ -1113,7 +1113,7 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
 
   if (!is_my_hi_dci0_req(req))
   {
-    LOG_W(MAC, "Filtering hi_dci0_req\n");
+    LOG_I(MAC, "Filtering hi_dci0_req\n");
     return 0;
   }
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
@@ -1309,7 +1309,6 @@ void *ue_standalone_pnf_task(void *context)
     }
     else if (len == sizeof(channel_info))
     {
-      LOG_I(MAC, "Entered Channel Info Loop");
       channel_info * ch_info = malloc(sizeof(channel_info));
 
       memcpy(ch_info, buffer, sizeof(channel_info));
