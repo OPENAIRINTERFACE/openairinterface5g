@@ -4698,8 +4698,8 @@ rrc_eNB_process_MeasurementReport(
     if (!ue_context_pP->ue_context.measResults->measResultNeighCells) {
       ue_context_pP->ue_context.measResults->measResultNeighCells = calloc(1,sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
       ue_context_pP->ue_context.measResults->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
-      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array = calloc(1, sizeof(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
-      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0] = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0] = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]));
       ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.count = 1;
     }
     struct LTE_MeasResultCellNR_r15 *ueCtxtMeasResultCellNR_r15 = ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0];
