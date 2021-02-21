@@ -64,6 +64,8 @@ void init_RA(module_id_t mod_id,
 
   RA_config_t *ra          = &mac->ra;
   ra->RA_active            = 1;
+  ra->ra_PreambleIndex     = -1;
+  ra->RA_usedGroupA        = 1;
   ra->RA_RAPID_found       = 0;
   ra->preambleTransMax     = 0;
   ra->first_Msg3           = 1;
@@ -251,7 +253,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   int messageSizeGroupA = 0;
   int sizeOfRA_PreamblesGroupA = 0;
   int messagePowerOffsetGroupB = 0;
-  int PLThreshold;
+  int PLThreshold = 0;
   long deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0;
   RA_config_t *ra = &mac->ra;
@@ -354,37 +356,34 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   }
   /* Msg3 has not been transmitted yet */
   if (ra->first_Msg3) {
-    if (noGroupB) {
-      // use Group A preamble
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
-      ra->RA_usedGroupA = 1;
-    } else if ((ra->Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
-      // Group B is configured and RA preamble Group A is used
-      // - todo add condition on CCCH_sdu_size for initiation by CCCH
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
-      ra->RA_usedGroupA = 1;
-    } else {
-      // Group B preamble is configured and used
-      // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
-      // the remaining belong to RA Preambles Group B
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
-      ra->RA_usedGroupA = 0;
+    if(ra->ra_PreambleIndex < 0 || ra->ra_PreambleIndex > 63) {
+      if (noGroupB) {
+        // use Group A preamble
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
+        ra->RA_usedGroupA = 1;
+      } else if ((ra->Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
+        // Group B is configured and RA preamble Group A is used
+        // - todo add condition on CCCH_sdu_size for initiation by CCCH
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
+        ra->RA_usedGroupA = 1;
+      } else {
+        // Group B preamble is configured and used
+        // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
+        // the remaining belong to RA Preambles Group B
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+        ra->RA_usedGroupA = 0;
+      }
     }
-
-    // TODO: Remove to generate random ra_PreambleIndex
-    printf("prach_resources->ra_PreambleIndex = %i\n", prach_resources->ra_PreambleIndex);
-    prach_resources->ra_PreambleIndex = 21;
-    ra->RA_usedGroupA = 1;
-
   } else { // Msg3 is being retransmitted
     if (ra->RA_usedGroupA && noGroupB) {
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
     } else if (ra->RA_usedGroupA && !noGroupB){
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
     } else {
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
     }
   }
+  prach_resources->ra_PreambleIndex = ra->ra_PreambleIndex;
 }
 
 // RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)

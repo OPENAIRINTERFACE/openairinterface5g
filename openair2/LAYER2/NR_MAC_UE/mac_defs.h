@@ -257,6 +257,8 @@ typedef struct {
   uint8_t RA_attempt_number;
   /// Random-access procedure flag
   uint8_t RA_active;
+  /// Random-access preamble index
+  int ra_PreambleIndex;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
   uint8_t generate_nr_prach;
 

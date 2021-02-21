@@ -678,19 +678,10 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       }
       
       else {
+        preamble_shift  -= NCS;
 
-        // FIXME: It is working, but we need to differentiate between odd and even preamble index
-        //  Check why preamble_shift does not match with UE
-        //  TS 38.211 Section 6.3.3.1 Sequence generation
-        if(preamble_index%2==0) {
-          preamble_shift  = (NCS==0)? 0 : (preamble_index % (N_ZC/NCS));
-          preamble_shift *= NCS;
-        } else {
-          preamble_shift  -= 2*NCS;
-          if (preamble_shift < 0)
-            preamble_shift+=N_ZC;
-        }
-
+        if (preamble_shift < 0)
+          preamble_shift+=((N_ZC/NCS)*NCS);
       }
     } else { // This is the high-speed case
       new_dft = 0;
