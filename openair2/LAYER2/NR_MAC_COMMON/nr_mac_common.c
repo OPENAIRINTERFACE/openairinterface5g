@@ -2380,8 +2380,44 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 4;
 }
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+// Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
+// - "UE procedure for applying transform precoding on PUSCH"
+uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+                               const NR_PUSCH_Config_t *pusch_config,
+                               const NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant){
+
+  if (configuredGrant) {
+    if (ubwp->bwp_Dedicated->configuredGrantConfig) {
+      if (ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder) {
+        return *ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder;
+      }
+    }
+  }
+
+  if (rnti_type != NR_RNTI_RA) {
+    if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
+      if (pusch_config->transformPrecoder != NULL) {
+        return *pusch_config->transformPrecoder;
+      }
+    }
+  }
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+    return 1; // Transformprecoding disabled
+  } else {
+    LOG_D(PHY, "MAC_COMMON: Transform Precodig enabled through msg3_transformPrecoder\n");
+    return 0; // Enabled
+  }
+
+  LOG_E(MAC, "In %s: could not fetch transform precoder status...\n", __FUNCTION__);
+  return -1;
+}
+
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
@@ -2442,8 +2478,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         rbg_size_config = 1;
       else
         rbg_size_config = 0;
-      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
+                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
       if (pusch_Config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;
@@ -2517,16 +2553,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         }
       }
       // Precoding info and number of layers
-      long transformPrecoder;
-      if (pusch_Config->transformPrecoder == NULL){
-        // if transform precoder is null, apply the values from msg3
-        if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-          transformPrecoder = 1;
-        else
-          transformPrecoder = 0;
-      }
-      else
-        transformPrecoder = *pusch_Config->transformPrecoder;
+      long transformPrecoder = get_transformPrecoding(scc, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
+
       if (pusch_Config->txConfig != NULL){
         if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
           if (pusch_antenna_ports > 1) {
@@ -2637,8 +2665,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
       rbg_size_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
-      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
+                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
       if (pdsch_config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;

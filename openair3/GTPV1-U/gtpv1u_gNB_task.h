@@ -32,6 +32,20 @@ int   gtpv1u_gNB_init(void);
 
 void *gtpv1u_gNB_task(void *args);
 
+void *nr_gtpv1u_gNB_task(void *args);
+
+int
+gtpv1u_create_ngu_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP);
+
+int
+gtpv1u_update_ngu_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti
+);
 
 #endif /* GTPV1U_GNB_TASK_H_ */
 

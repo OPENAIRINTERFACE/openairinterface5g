@@ -9,8 +9,6 @@
  *
  *      http://www.openairinterface.org/?page_id=698
  *
- * Author and copyright: Laurent Thomas, open-cells.com
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,38 +18,42 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#include <openair2/RRC/LTE/MESSAGES/asn1_msg.h>
-#include <openair2/RRC/NR/nr_rrc_proto.h>
 
-void rrc_gNB_process_NGAP_DOWNLINK_NAS (void ) {
-   do_DLInformationTransfer(0,NULL,0,0,NULL);
-   // send it as DL data
-/*
-    rrc_data_req (
-      &ctxt,
-      srb_id,
-      (*rrc_eNB_mui)++,
-      SDU_CONFIRM_NO,
-      length,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
+/*! \file FGSRegistrationResult.h
+
+\brief 5GS Registration result for registration request procedures
+\author Yoshio INOUE, Masayuki HARADA
+\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+\date 2020
+\version 0.1
 */
 
-}
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-void rrc_gNB_send_NGAP_NAS_FIRST_REQ(void ) {
-   // We are noCore only now
-   // create message that should come from 5GC
-  
-   // send it dow
-   rrc_gNB_process_NGAP_DOWNLINK_NAS();
-}
+#include "OctetString.h"
 
-void nr_rrc_rx_tx() {
-  // check timers 
 
-  // check if UEs are lost, to remove them from upper layers
 
-  //
+#ifndef FGS_REGISTRATION_RESULT_H_
+#define FGS_REGISTRATION_RESULT_H_
+#define FGS_REGISTRATION_RESULT_3GPP                      0b001
+#define FGS_REGISTRATION_RESULT_NON_3GPP                  0b010
+#define FGS_REGISTRATION_RESULT_3GPP_AND_NON_3GPP         0b011
 
-}
+typedef struct {
+  uint8_t  iei;
+  uint8_t  resultlength;
+  uint8_t  spare:4;
+  uint8_t  smsallowed:1;
+  uint8_t  registrationresult:3;
+} FGSRegistrationResult;
+
+
+uint16_t encode_fgs_registration_result(FGSRegistrationResult *fgsregistrationresult);
+
+int decode_fgs_registration_result(FGSRegistrationResult *fgsregistrationresult, uint8_t iei, uint16_t value, uint32_t len);
+
+#endif /* FGS REGISTRATION RESULT_H_*/
+

@@ -29,6 +29,7 @@
  ***************************************************************************/
 
 #include "LTE_asn_constant.h"
+#include "NR_asn_constant.h"
 
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
@@ -103,6 +104,7 @@
 #define DEFAULT_RAB_ID 1
 
 #define NB_RB_MAX      (LTE_maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
+#define NR_NB_RB_MAX   (NR_maxDRB + 3)
 
 #define NB_RB_MBMS_MAX (LTE_maxSessionPerPMCH*LTE_maxServiceCount)
 

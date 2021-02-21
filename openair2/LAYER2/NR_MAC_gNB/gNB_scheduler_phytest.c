@@ -80,7 +80,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
   NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
 
-  int dlBWP_carrier_bandwidth = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
+  int dlBWP_carrier_bandwidth = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   
   /*
@@ -94,7 +94,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling common search space DCI type 1 dlBWP BW.firstRB %d.%d\n",
 	  dlBWP_carrier_bandwidth,
-	  NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275));
+	  NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE));
     
     
     dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
@@ -117,8 +117,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->pduIndex = 0;
 
     // BWP
-    pdsch_pdu_rel15->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
-    pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
+    pdsch_pdu_rel15->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdsch_pdu_rel15->SubcarrierSpacing = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
@@ -255,9 +255,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 /* schedules whole bandwidth for first user, all the time */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
-                             sub_frame_t slot,
-                             int num_slots_per_tdd)
+                             sub_frame_t slot)
 {
+  if (slot != 1)
+    return;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
   const int CC_id = 0;
@@ -267,7 +268,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   /* find largest unallocated chunk */
-  const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = 0;
   int tStart = 0;
   int rbSize = 0;
@@ -328,14 +329,25 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  nr_acknack_scheduling(module_id,
-                        UE_id,
-                        frame,
-                        slot,
-                        num_slots_per_tdd,
-                        &sched_ctrl->pucch_sched_idx,
-                        &sched_ctrl->pucch_occ_idx);
-  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  if (!alloc) {
+    LOG_D(MAC,
+          "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+          __func__,
+          UE_id,
+          rnti,
+          frame,
+          slot);
+    UE_info->num_pdcch_cand[UE_id][cid]--;
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
+      cce_list[sched_ctrl->cce_index + i] = 0;
+    return;
+  }
+
+  AssertFatal(alloc,
+              "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
+              rnti, frame, slot);
 
   sched_ctrl->rbStart = rbStart;
   sched_ctrl->rbSize = rbSize;
@@ -350,13 +362,15 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
   sched_ctrl->mcs = 9;
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
+  sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
     vrb_map[rb + sched_ctrl->rbStart] = 1;
 }
 
-void nr_ul_preprocessor_phytest(module_id_t module_id,
+bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
                                 int num_slots_per_tdd,
@@ -372,7 +386,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_info->num_UEs);
   if (UE_info->num_UEs == 0)
-    return;
+    return false;
 
   const int UE_id = 0;
   const int CC_id = 0;
@@ -387,22 +401,22 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
               tda,
               tdaList->list.count);
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
-  const int sched_slot = (slot + K2) % num_slots_per_tdd;
+  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
+  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
   if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
-    return;
+    return false;
 
-  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbStart = 0;
   uint16_t rbSize = 50; /* due to OAI UE limitations */
   if (rbSize>bw)
     rbSize = bw;
 
   uint16_t *vrb_map_UL =
-      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
+      &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
     if (vrb_map_UL[i]) {
       LOG_E(MAC,
@@ -411,7 +425,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
             frame,
             slot,
             i);
-      return;
+      return false;
     }
   }
 
@@ -438,7 +452,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
                                            nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    return;
+    return false;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
@@ -465,6 +479,8 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   sched_pusch->mcs = mcs;
   sched_pusch->rbStart = rbStart;
   sched_pusch->rbSize = rbSize;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 for "any new" */
+  sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   /* Calculate TBS from MCS */
   sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
@@ -487,4 +503,5 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   /* mark the corresponding RBs as used */
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)
     vrb_map_UL[rb] = 1;
+  return true;
 }

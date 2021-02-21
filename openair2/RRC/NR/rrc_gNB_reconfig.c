@@ -128,15 +128,15 @@ void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0) {
 
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
   ss0->monitoringSymbolsWithinSlot->size = 2;
   ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
 
   // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
   ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
-  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
   ss0->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
 
   ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
@@ -1177,7 +1177,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
  pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
  pdsch_servingcellconfig->xOverhead = NULL;
- pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = NULL;
+ pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));
+ *pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16;
  pdsch_servingcellconfig->pucch_Cell= NULL;
  pdsch_servingcellconfig->ext1=calloc(1,sizeof(*pdsch_servingcellconfig->ext1));
  pdsch_servingcellconfig->ext1->maxMIMO_Layers = calloc(1,sizeof(*pdsch_servingcellconfig->ext1->maxMIMO_Layers));
