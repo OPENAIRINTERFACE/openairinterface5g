@@ -342,6 +342,11 @@ int main ( int argc, char **argv )
   LOG_I(PHY, "Starting ru_thread , is_slave %d, send_dmrs %d\n", ru->is_slave, ru->generate_dmrs_sync);
   init_RU_proc(ru);
 
+  pthread_mutex_lock(&ru_mutex);
+  while (ru_mask>0) 
+    pthread_cond_wait(&ru_cond,&ru_mutex);
+  pthread_mutex_unlock(&ru_mutex);
+  LOG_I(PHY,"RU configured, unlocking threads\n"); 
   config_sync_var=0;
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
