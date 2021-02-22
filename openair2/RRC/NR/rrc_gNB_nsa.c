@@ -62,7 +62,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
 
   OCTET_STRING_t *ueCapabilityRAT_Container_nr=NULL;
@@ -74,8 +74,8 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
   AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
 
   for (int i=0; i<list_size; i++) {
-    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
-    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
+    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container;
+    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container;
   }
 
   // decode and store capabilities
@@ -148,10 +148,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
   rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
   MessageDef *msg;
-  msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+  msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
-  protocol_ctxt_t ctxt;
+  protocol_ctxt_t ctxt={0};
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
@@ -162,7 +162,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
   carrier->initial_csi_index[rrc->Nb_ue] = 0;
-  if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1){
+  if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
     ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
     fill_default_rbconfig(ue_context_p->ue_context.rb_config);
   }
@@ -183,7 +183,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
     if (m->nb_e_rabs_tobeadded>0) {
       for (int i=0; i<m->nb_e_rabs_tobeadded; i++) {
-        // Add the new E-RABs at the corresponding rrc ue context of the gNB
+        // Add the new E-RABs at the corresponding rrc ue context of the gNB 
         ue_context_p->ue_context.e_rab[i].param.e_rab_id = m->e_rabs_tobeadded[i].e_rab_id;
         ue_context_p->ue_context.e_rab[i].param.gtp_teid = m->e_rabs_tobeadded[i].gtp_teid;
         memcpy(&ue_context_p->ue_context.e_rab[i].param.sgw_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));
@@ -243,12 +243,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       }
     } else
       LOG_W(RRC, "No E-RAB to be added received from SgNB Addition Request message \n");
-  }
 
-  if (m != NULL) {
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).MeNB_ue_x2_id = m->ue_x2_id;
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).SgNB_ue_x2_id = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
-
     //X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = CG_Config_size; //Need to verify correct value for the buffer_size
     // Send to X2 entity to transport to MeNB
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_Config,
@@ -258,6 +255,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               1024);
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
     itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
+  } else if (get_softmodem_params()->do_ra) {
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
   }
 
   rrc->Nb_ue++;
@@ -271,6 +270,15 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                          1, // add_ue flag
                          ue_context_p->ue_id_rnti,
                          ue_context_p->ue_context.secondaryCellGroup);
+
+  if(m == NULL){
+    LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
+                                                                                                                                                        ctxt.module_id,
+                                                                                                                                                        ctxt.rnti,
+                                                                                                                                                        ctxt.frame,
+                                                                                                                                                        ctxt.subframe,
+                                                                                                                                                        ctxt.eNB_index);
+  }
 
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
@@ -291,6 +299,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       ue_context_p->ue_context.rb_config->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
       ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+
+  LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 
 }
 
@@ -316,7 +326,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   mac_remove_nr_ue(rrc->module_id, rnti);
 
   /* delete gtp tunnel */
-  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = rnti;
   GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 1;

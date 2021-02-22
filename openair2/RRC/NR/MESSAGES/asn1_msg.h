@@ -82,3 +82,86 @@ void do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
 void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);
+
+uint8_t do_RRCReject(uint8_t Mod_id,
+                     uint8_t *const buffer);
+
+uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
+                    rrc_gNB_ue_context_t         *const ue_context_pP,
+                    int                          CC_id,
+                    uint8_t                      *const buffer,
+                    const uint8_t                transaction_id,
+                    NR_SRB_ToAddModList_t        **SRB_configList);
+uint8_t do_NR_SecurityModeCommand(
+                    const protocol_ctxt_t *const ctxt_pP,
+                    uint8_t *const buffer,
+                    const uint8_t Transaction_id,
+                    const uint8_t cipheringAlgorithm,
+                    NR_IntegrityProtAlgorithm_t *integrityProtAlgorithm);
+
+uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
+                                   uint8_t               *const buffer,
+                                   const uint8_t                Transaction_id);
+
+uint8_t do_NR_RRCRelease(uint8_t *buffer,
+                         uint8_t Transaction_id);
+uint16_t do_RRCReconfiguration(
+    const protocol_ctxt_t        *const ctxt_pP,
+    uint8_t                      *buffer,
+    uint8_t                       Transaction_id,
+    NR_SRB_ToAddModList_t        *SRB_configList,
+    NR_DRB_ToAddModList_t        *DRB_configList,
+    NR_DRB_ToReleaseList_t       *DRB_releaseList,
+    NR_SecurityConfig_t          *security_config,
+    NR_SDAP_Config_t             *sdap_config,
+    NR_MeasConfig_t              *meas_config,
+    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
+                                 *dedicatedNAS_MessageList,
+    NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig);
+                    
+uint8_t do_RRCSetupComplete(uint8_t Mod_id, 
+                            uint8_t *buffer, 
+                            const uint8_t Transaction_id, 
+                            uint8_t sel_plmn_id, 
+                            const int dedicatedInfoNASLength, 
+                            const char *dedicatedInfoNAS);
+
+uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv);
+
+uint8_t do_NR_RRCReconfigurationComplete(
+                        const protocol_ctxt_t *const ctxt_pP,
+                        uint8_t *buffer,
+                        const uint8_t Transaction_id
+                      );
+
+uint8_t 
+do_NR_DLInformationTransfer(
+    uint8_t Mod_id,
+    uint8_t **buffer,
+    uint8_t transaction_id,
+    uint32_t pdu_length,
+    uint8_t *pdu_buffer
+);
+
+uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, 
+                        uint32_t pdu_length,
+                        uint8_t *pdu_buffer);
+
+uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti);
+
+uint8_t
+do_RRCReestablishment(
+  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_gNB_ue_context_t      *const ue_context_pP,
+  int                              CC_id,
+  uint8_t                   *const buffer,
+  //const uint8_t                    transmission_mode,
+  const uint8_t                    Transaction_id,
+  NR_SRB_ToAddModList_t               **SRB_configList
+);
+
+uint8_t 
+do_RRCReestablishmentComplete(
+    uint8_t *buffer, 
+    int64_t rrc_TransactionIdentifier);
+

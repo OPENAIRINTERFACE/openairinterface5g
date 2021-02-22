@@ -473,7 +473,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
       // note: probably ul_failure_timer should be less than UE radio link failure time(see T310/N310/N311)
       if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, F1AP_UE_CONTEXT_RELEASE_REQ);
+        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
         F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rnti;
         F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
         F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
@@ -596,13 +596,41 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
       if (((frameP & 127) == 0) && (subframeP == 0)) {
-        LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
+        double total_bler;
+        if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
+          total_bler = 0;
+        }
+        else {
+          total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
+        }
+        LOG_I(MAC,"UE %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf mcsoff %d bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
               UE_scheduling_control->dl_cqi[CC_id],
-              (5 * UE_scheduling_control->pusch_snr[CC_id] - 640) / 10,
-              (5 * UE_scheduling_control->pucch1_snr[CC_id] - 640) / 10);
+              UE_scheduling_control->pusch_snr_avg[CC_id],
+              UE_scheduling_control->pucch1_snr[CC_id],
+              UE_scheduling_control->rlc_out_of_resources_cnt,
+              UE_scheduling_control->pusch_rx_num[CC_id],
+              UE_scheduling_control->pusch_rx_error_num[CC_id],
+              total_bler,
+              UE_scheduling_control->mcs_offset[CC_id],
+              UE_info->UE_template[CC_id][UE_id].estimated_ul_buffer,
+              UE_info->UE_template[CC_id][UE_id].scheduled_ul_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
+#if defined(PRE_SCD_THREAD)
+              UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
+#else
+              0,
+#endif
+              UE_scheduling_control->first_cnt[CC_id],
+              UE_scheduling_control->ret_cnt[CC_id],
+              UE_scheduling_control->aperiodic_ri_received[CC_id]
+        );
       }
 
       RC.eNB[module_idP][CC_id]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = -63;
@@ -914,7 +942,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 #if (!defined(PRE_SCD_THREAD))
   if (!NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
+    void rlc_tick(int, int);
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
+    rlc_tick(frameP, subframeP);
     pdcp_run(&ctxt);
     pdcp_mbms_run(&ctxt);
     rrc_rx_tx(&ctxt, CC_id);

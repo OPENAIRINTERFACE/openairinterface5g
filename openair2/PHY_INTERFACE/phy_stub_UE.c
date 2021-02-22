@@ -64,8 +64,6 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   nfapi_rx_indication_pdu_t *pdu;
   int timing_advance_update;
 
-  pthread_mutex_lock(&fill_ul_mutex.rx_mutex);
-
   UL_INFO->rx_ind.sfn_sf = frame << 4 | subframe;
   UL_INFO->rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
   UL_INFO->rx_ind.vendor_extension = ul_config_req->vendor_extension;
@@ -101,7 +99,6 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
 
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   UL_INFO->rx_ind.sfn_sf = frame << 4 | subframe;
-  pthread_mutex_unlock(&fill_ul_mutex.rx_mutex);
 }
 
 void fill_sr_indication_UE_MAC(int Mod_id,
@@ -109,8 +106,6 @@ void fill_sr_indication_UE_MAC(int Mod_id,
                                int subframe,
                                UL_IND_t *UL_INFO,
                                uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
-
   nfapi_sr_indication_t *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t *sr_ind_body = &sr_ind->sr_indication_body;
   nfapi_sr_indication_pdu_t *pdu = &sr_ind_body->sr_pdu_list[sr_ind_body->number_of_srs];
@@ -139,7 +134,6 @@ void fill_sr_indication_UE_MAC(int Mod_id,
 
   // UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   sr_ind_body->number_of_srs++;
-  pthread_mutex_unlock(&fill_ul_mutex.sr_mutex);
 }
 
 void fill_crc_indication_UE_MAC(int Mod_id,
@@ -149,8 +143,6 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 uint8_t crc_flag,
                                 int index,
                                 uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
-
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
            .crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
@@ -174,8 +166,6 @@ void fill_crc_indication_UE_MAC(int Mod_id,
         __FUNCTION__,
         pdu->rx_ue_information.rnti,
         UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
-
-  pthread_mutex_unlock(&fill_ul_mutex.crc_mutex);
 }
 
 void fill_rach_indication_UE_MAC(int Mod_id,
@@ -184,10 +174,6 @@ void fill_rach_indication_UE_MAC(int Mod_id,
                                  UL_IND_t *UL_INFO,
                                  uint8_t ra_PreambleIndex,
                                  uint16_t ra_RNTI) {
-  LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
-
-  pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
-
   UL_INFO->rach_ind.rach_indication_body.number_of_preambles = 1;
 
   UL_INFO->rach_ind.header.message_id = NFAPI_RACH_INDICATION;
@@ -232,8 +218,6 @@ void fill_rach_indication_UE_MAC(int Mod_id,
   // should call it when we merge with that branch.
   oai_nfapi_rach_ind(&UL_INFO->rach_ind);
   free(UL_INFO->rach_ind.rach_indication_body.preamble_list);
-
-  pthread_mutex_unlock(&fill_ul_mutex.rach_mutex);
 }
 
 void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
@@ -241,7 +225,6 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
                                       uint8_t subframe,
                                       UL_IND_t *UL_INFO,
                                       uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
   nfapi_cqi_indication_pdu_t *pdu =
       &UL_INFO->cqi_ind.cqi_indication_body
            .cqi_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
@@ -275,7 +258,6 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   raw_pdu->pdu[0] = cqi << 4;
 
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis++;
-  pthread_mutex_unlock(&fill_ul_mutex.cqi_mutex);
 }
 
 void fill_ulsch_harq_indication_UE_MAC(
@@ -285,8 +267,6 @@ void fill_ulsch_harq_indication_UE_MAC(
     UL_IND_t *UL_INFO,
     nfapi_ul_config_ulsch_harq_information *harq_information,
     uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
-
   nfapi_harq_indication_pdu_t *pdu =
       &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list
            [UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
@@ -318,7 +298,6 @@ void fill_ulsch_harq_indication_UE_MAC(
   }
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
-  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 }
 
 void fill_uci_harq_indication_UE_MAC(int Mod_id,
@@ -327,8 +306,6 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 			      UL_IND_t *UL_INFO,
 			      nfapi_ul_config_harq_information *harq_information,
 			      uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
-
   nfapi_harq_indication_t *ind = &UL_INFO->harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
   nfapi_harq_indication_pdu_t *pdu =
@@ -410,7 +387,6 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   LOG_D(PHY,
         "Incremented eNB->UL_INFO.harq_ind.number_of_harqs:%d\n",
         UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 }
 
 void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,

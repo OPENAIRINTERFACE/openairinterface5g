@@ -20,53 +20,28 @@
  */
 
 /*! \file mac.h
-* \brief MAC data structures, constant, and function prototype
+* \brief common MAC function prototypes
 * \author Navid Nikaein and Raymond Knopp, WIE-TAI CHEN
 * \date Dec. 2019
 * \version 0.1
 * \company Eurecom
 * \email raymond.knopp@eurecom.fr
-
 */
 
 #ifndef __LAYER2_NR_MAC_COMMON_H__
 #define __LAYER2_NR_MAC_COMMON_H__
 
+#include "NR_MIB.h"
 #include "NR_PDSCH-Config.h"
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
-
-typedef enum {
-  NR_DL_DCI_FORMAT_1_0 = 0,
-  NR_DL_DCI_FORMAT_1_1,
-  NR_DL_DCI_FORMAT_2_0,
-  NR_DL_DCI_FORMAT_2_1,
-  NR_DL_DCI_FORMAT_2_2,
-  NR_DL_DCI_FORMAT_2_3,
-  NR_UL_DCI_FORMAT_0_0,
-  NR_UL_DCI_FORMAT_0_1
-} nr_dci_format_t;
-
-typedef enum {
-  NR_RNTI_new = 0,
-  NR_RNTI_C,
-  NR_RNTI_RA,
-  NR_RNTI_P,
-  NR_RNTI_CS,
-  NR_RNTI_TC,
-  NR_RNTI_SP_CSI,
-  NR_RNTI_SI,
-  NR_RNTI_SFI,
-  NR_RNTI_INT,
-  NR_RNTI_TPC_PUSCH,
-  NR_RNTI_TPC_PUCCH,
-  NR_RNTI_TPC_SRS,
-  NR_RNTI_MCS_C,
-} nr_rnti_type_t;
+#include "openair1/PHY/impl_defs_nr.h"
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
-void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
+void get_frame_type(uint16_t nr_bandP, uint8_t scs_index, lte_frame_type_t *current_type);
+
+void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex);
 
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
@@ -78,13 +53,17 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
 int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
 		     uint16_t N_RB,
                      int bwp_id);
+
+void find_aggregation_candidates(uint8_t *aggregation_level,
+                                 uint8_t *nr_of_candidates,
+                                 NR_SearchSpace_t *ss);
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
@@ -99,7 +78,24 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint16_t *format,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
-                                 uint8_t *N_dur);
+                                 uint8_t *N_dur,
+                                 uint16_t *RA_sfn_index,
+                                 uint8_t *N_RA_slot,
+																 uint8_t *config_period);
+
+int get_nr_prach_occasion_info_from_index(uint8_t index,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur,
+                                 uint8_t *N_RA_slot,
+                                 uint16_t *N_RA_sfn,
+                                 uint8_t *max_association_period);
+
+uint8_t get_nr_prach_duration(uint8_t prach_format);
 
 uint8_t get_pusch_mcs_table(long *mcs_Table,
                             int is_tp,
@@ -110,11 +106,16 @@ uint8_t get_pusch_mcs_table(long *mcs_Table,
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired);
+                            uint8_t unpaired,
+			    frequency_range_t);
 
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
 
-int get_format0(uint8_t index, uint8_t unpaired);
+int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
+
+int64_t *get_prach_config_info(uint32_t pointa,
+                               uint8_t index,
+                               uint8_t unpaired);
 
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
@@ -124,5 +125,36 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
+
+int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                          NR_MIB_t *mib,
+                                          uint8_t extra_bits,
+                                          uint32_t ssb_length,
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a);
+
+int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
+
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
+                        uint8_t *nERatio,uint8_t *reOffset,
+                        uint8_t NrOfSymbols);
+
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
+/* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
+@param    *pusch_config,   pointer to pusch config
+@param    *ubwp            pointer to uplink bwp
+@param    *dci_format      pointer to dci format
+@param    rnti_type        rnti type
+@param    configuredGrant  indicates whether a configured grant was received or not
+@returns                   transformPrecoding value */
+uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+                               const NR_PUSCH_Config_t *pusch_config,
+                               const NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant);
 
 #endif

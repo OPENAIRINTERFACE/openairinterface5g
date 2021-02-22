@@ -48,6 +48,7 @@
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/MODULATION/nr_modulation.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -71,6 +72,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
+#include "gnb_paramdef.h"
 
 
 #ifndef OPENAIR2
@@ -100,6 +102,7 @@ extern int transmission_mode;
 
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
+
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -255,11 +258,16 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
 
     // Do PRACH RU processing
-    int prach_id=find_nr_prach(gNB,frame_rx,slot_rx,0,SEARCH_EXIST);
-    if (prach_id>=0) {
-      L1_nr_prach_procedures(gNB,frame_rx,slot_rx,&gNB->prach_vars.list[prach_id].pdu);
-      gNB->prach_vars.list[prach_id].frame=-1;
-    }
+    L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
+
+    //apply the rx signal rotation here
+    apply_nr_rotation_ul(&gNB->frame_parms,
+			 gNB->common_vars.rxdataF[0],
+			 slot_rx,
+			 0,
+			 gNB->frame_parms.Ncp==EXTENDED?12:14,
+			 gNB->frame_parms.ofdm_symbol_size);
+    
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 
@@ -270,7 +278,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
   // (may be relaxed in the future for performance reasons)
   // *****************************************
-  
+
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
 
     if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {
@@ -864,7 +872,15 @@ void init_gNB_proc(int inst) {
 
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  char ul_pool[] = "-1,-1";
+  int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  int threadCnt = min(numCPU, gNB->pusch_proc_threads);
+  char ul_pool[80];
+  sprintf(ul_pool,"-1");
+  int s_offset = 0;
+  for (int icpu=1; icpu<threadCnt; icpu++) {
+    sprintf(ul_pool+2+s_offset,",-1");
+    s_offset += 3;
+  }
   initTpool(ul_pool, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
 }
@@ -981,7 +997,7 @@ void init_eNB_afterRU(void) {
       
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
 	LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
+	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
 	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }

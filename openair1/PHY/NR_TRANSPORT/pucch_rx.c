@@ -394,6 +394,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
+  uci_pdu->rnti = pucch_pdu->rnti;
   uci_pdu->ul_cqi = cqi;
   uci_pdu->timing_advance = 0xffff; // currently not valid
   uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
@@ -1464,7 +1465,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	cw_ML=cw;
       }
     } // cw loop
-    corr_dB = dB_fixed64(corr);
+    corr_dB = dB_fixed64((uint64_t)corr);
     LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
     decodedPayload[0]=(uint64_t)cw_ML;
   }

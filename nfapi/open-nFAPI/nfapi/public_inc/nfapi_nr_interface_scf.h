@@ -321,6 +321,7 @@ typedef enum {
 #define NFAPI_NR_CONFIG_PRACH_SUB_C_SPACING_TAG 0x1012
 #define NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG 0x1013
 #define NFAPI_NR_CONFIG_NUM_PRACH_FD_OCCASIONS_TAG 0x1014
+#define NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG 0x1029
 #define NFAPI_NR_CONFIG_PRACH_ROOT_SEQUENCE_INDEX_TAG 0x1015
 #define NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG 0x1016
 #define NFAPI_NR_CONFIG_K1_TAG 0x1017
@@ -385,7 +386,6 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t  num_prach_fd_occasions;
   nfapi_uint16_tlv_t prach_root_sequence_index;//Starting logical root sequence index, 𝑖, equivalent to higher layer parameter prach-RootSequenceIndex [38.211, sec 6.3.3.1] Value: 0 -> 837
   nfapi_uint8_tlv_t  num_root_sequences;//Number of root sequences for a particular FD occasion that are required to generate the necessary number of preambles
   nfapi_uint16_tlv_t k1;//Frequency offset (from UL bandwidth part) for each FD. [38.211, sec 6.3.3.2] Value: from 0 to 272
@@ -401,7 +401,9 @@ typedef struct
   nfapi_uint8_tlv_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
   nfapi_uint8_tlv_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
   nfapi_uint8_tlv_t num_prach_fd_occasions;//Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+  nfapi_uint8_tlv_t prach_ConfigurationIndex;//PRACH configuration index. Value:0->255
   nfapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
+
   nfapi_uint8_tlv_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
   nfapi_uint8_tlv_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
 
@@ -628,30 +630,30 @@ typedef struct {
 
 typedef struct {
   // The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
-  uint16_t RNTI[MAX_DCI_CORESET];
+  uint16_t RNTI;
   // For a UE-specific search space it equals the higher-layer parameter PDCCH-DMRSScrambling-ID if configured,
   // otherwise it should be set to the phy cell ID. [TS38.211, sec 7.3.2.3] Value: 0->65535
-  uint16_t ScramblingId[MAX_DCI_CORESET];
+  uint16_t ScramblingId;
   // For a UE-specific search space where PDCCH-DMRSScrambling- ID is configured This param equals the CRNTI.
   // Otherwise, it should be set to 0. [TS38.211, sec 7.3.2.3] Value: 0 -> 65535 
-  uint16_t ScramblingRNTI[MAX_DCI_CORESET];
+  uint16_t ScramblingRNTI;
   // CCE start Index used to send the DCI Value: 0->135
-  uint8_t CceIndex[MAX_DCI_CORESET];
+  uint8_t CceIndex;
   // Aggregation level used [TS38.211, sec 7.3.2.1] Value: 1,2,4,8,16
-  uint8_t AggregationLevel[MAX_DCI_CORESET];
+  uint8_t AggregationLevel;
   // Precoding and Beamforming structure See Table 3-43
-  nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming[MAX_DCI_CORESET];
+  nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming;
   // PDCCH power value used for PDCCH Format 1_0 with CRC scrambled by SI-RNTI, PI-RNTI or RA-RNTI.
   // This is ratio of SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1]
   // Value :0->17 Report title: 5G FAPI: PHY API Specification Issue date: 29 June 2019 Version: 222.10.17 68 Field Type Description representing -8 to 8 dB in 1dB steps
-  uint8_t beta_PDCCH_1_0[MAX_DCI_CORESET];
+  uint8_t beta_PDCCH_1_0;
   // PDCCH power value used for all other PDCCH Formats.
   // This is ratio of SSB/PBCH block EPRE to PDCCH and PDCCH DMRS EPRE [TS38.214, sec 4.1] Values: 0: -3dB,1: 0dB,2: 3dB,3: 6dB
-  uint8_t powerControlOffsetSS[MAX_DCI_CORESET];
+  uint8_t powerControlOffsetSS;
   // The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BYTE_LEN*8
-  uint16_t PayloadSizeBits[MAX_DCI_CORESET];
+  uint16_t PayloadSizeBits;
   // DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB
-  uint8_t Payload[MAX_DCI_CORESET][DCI_PAYLOAD_BYTE_LEN]; 
+  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN];
 
 } nfapi_nr_dl_dci_pdu_t;
 
@@ -696,7 +698,7 @@ typedef struct {
   ///Number of DCIs in this CORESET.Value: 0->MaxDciPerSlot
   uint16_t numDlDci;
   ///DL DCI PDU
-  nfapi_nr_dl_dci_pdu_t dci_pdu;
+  nfapi_nr_dl_dci_pdu_t dci_pdu[MAX_DCI_CORESET];
 }  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
 
 typedef struct {
@@ -1258,7 +1260,7 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t  pdu_idx;//This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 65535
+  uint8_t  pdu_idx;//This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
 
 } nfapi_nr_ul_tti_request_number_of_ue_t;
 

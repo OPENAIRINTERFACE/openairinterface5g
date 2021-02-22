@@ -124,15 +124,11 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     }
   }
 
+  uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t frequency_range = band<100?FR1:FR2;
+
   lte_frame_type_t frame_type;
-  uint16_t band;
-  int32_t offset;
-
-  get_band((cfg->carrier_config.dl_frequency.value)*1000,
-           &band,
-           &offset,
-           &frame_type);
-
+  get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
   RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
 
   // Cell configuration
@@ -148,6 +144,10 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   // SSB configuration
   cfg->ssb_config.ss_pbch_power.value = scc->ss_PBCH_BlockPower;
   cfg->ssb_config.ss_pbch_power.tl.tag = NFAPI_NR_CONFIG_SS_PBCH_POWER_TAG;
+  cfg->num_tlv++;
+
+  cfg->ssb_config.bch_payload.value = 1;
+  cfg->ssb_config.bch_payload.tl.tag = NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG;
   cfg->num_tlv++;
 
   cfg->ssb_config.scs_common.value = *scc->ssbSubcarrierSpacing;
@@ -173,6 +173,9 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   cfg->prach_config.restricted_set_config.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig;
   cfg->prach_config.restricted_set_config.tl.tag = NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG;
   cfg->num_tlv++;
+  cfg->prach_config.prach_ConfigurationIndex.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+  cfg->prach_config.prach_ConfigurationIndex.tl.tag = NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG;
+  cfg->num_tlv++;
 
   switch (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM) {
     case 0 :
@@ -193,26 +196,30 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   cfg->prach_config.num_prach_fd_occasions.tl.tag = NFAPI_NR_CONFIG_NUM_PRACH_FD_OCCASIONS_TAG;
   cfg->num_tlv++;
 
+  cfg->prach_config.prach_ConfigurationIndex.value =  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+  cfg->prach_config.prach_ConfigurationIndex.tl.tag = NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG;
+  cfg->num_tlv++;
+
   cfg->prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *) malloc(cfg->prach_config.num_prach_fd_occasions.value*sizeof(nfapi_nr_num_prach_fd_occasions_t));
   for (i=0; i<cfg->prach_config.num_prach_fd_occasions.value; i++) {
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
+//    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
     if (cfg->prach_config.prach_sequence_length.value)
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
     else
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index.tl.tag = NFAPI_NR_CONFIG_PRACH_ROOT_SEQUENCE_INDEX_TAG;
     cfg->num_tlv++;
-    cfg->prach_config.num_prach_fd_occasions_list[i].k1.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
+    cfg->prach_config.num_prach_fd_occasions_list[i].k1.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart + (get_N_RA_RB( cfg->prach_config.prach_sub_c_spacing.value, scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing ) * i);
+//k1= msg1_FrequencyStart + 12 (no. of FDM)(RB for PRACH occasion);
     cfg->prach_config.num_prach_fd_occasions_list[i].k1.tl.tag = NFAPI_NR_CONFIG_K1_TAG;
     cfg->num_tlv++;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf.tl.tag = NFAPI_NR_CONFIG_PRACH_ZERO_CORR_CONF_TAG;
     cfg->num_tlv++;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.value = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,
-                                                                                                    nb_preambles, frame_type);
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.value = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,nb_preambles, frame_type, frequency_range);
     cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.tl.tag = NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG;
     cfg->num_tlv++;
-    //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = ???
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = 1;
   }
 
   cfg->prach_config.ssb_per_rach.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
@@ -248,8 +255,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       for (i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[3-i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-i]<<i*8);
       }
       break;
     default:
@@ -286,8 +293,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
     cfg->tdd_table.tdd_period.value = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   }
-  LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
   if(cfg->cell_config.frame_duplex_type.value == TDD){
+    LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
     int return_tdd = set_tdd_config_nr(cfg,
 		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
@@ -295,16 +302,17 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
-  if (return_tdd !=0){
-     LOG_E(PHY,"TDD configuration can not be done\n");
-  }
-  else LOG_I(PHY,"TDD has been properly configurated\n");
+    if (return_tdd != 0)
+      LOG_E(MAC,"TDD configuration can not be done\n");
+    else 
+      LOG_I(MAC,"TDD has been properly configurated\n");
   }
 
 }
 
 
 
+extern uint16_t sl_ahead;
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
@@ -317,6 +325,38 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
+
+    /* dimension UL_tti_req_ahead for number of slots in frame */
+    const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
+    const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+    RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
+    AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
+                "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
+    /* fill in slot/frame numbers: slot is fixed, frame will be updated by
+     * scheduler */
+    for (int i = 0; i < n; ++i) {
+      nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
+      /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
+       * already "in the past" and thus we put frame 1 instead of 0!  Note that
+       * variable sl_ahead seems to not be correctly initialized, but I leave
+       * it for information purposes here (the fix would always put 0, what
+       * happens now, too) */
+      req->SFN = i < sl_ahead;
+      req->Slot = i;
+    }
+
+    RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
+        calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
+    AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
+                "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
+
+    for (int i = 0; i < MAX_NUM_BWP; ++i) {
+      RC.nrmac[Mod_idP]->pucch_index_used[i] =
+        calloc(n, sizeof(*RC.nrmac[Mod_idP]->pucch_index_used));
+      AssertFatal(RC.nrmac[Mod_idP]->pucch_index_used[i],
+                  "could not allocate memory for RC.nrmac[]->pucch_index_used[%d]\n",
+                  i);
+    }
 
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
@@ -345,23 +385,19 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     phycfg.cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
     phycfg.cfg->num_tlv++;
 
-    if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg); 
+    if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
+
+    find_SSB_and_RO_available(Mod_idP);
+
   }
   
   if (secondaryCellGroup) {
 
+    RC.nrmac[Mod_idP]->secondaryCellGroupCommon = secondaryCellGroup;
+
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
-      const int UE_id = add_new_nr_ue(Mod_idP,rnti);
-      UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
-      compute_csi_bitlen (secondaryCellGroup, UE_info, UE_id);
-      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
-          secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-      AssertFatal(bwpList->list.count == 1,
-                  "downlinkBWP_ToAddModList has %d BWP!\n",
-                  bwpList->list.count);
-      const int bwp_id = 1;
-      UE_info->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
+      const int UE_id = add_new_nr_ue(Mod_idP, rnti, secondaryCellGroup);
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       /* TODO: should check for free RA process */
@@ -369,12 +405,18 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_RA_t *ra = &RC.nrmac[Mod_idP]->common_channels[CC_id].ra[0];
       ra->state = RA_IDLE;
       ra->secondaryCellGroup = secondaryCellGroup;
-      ra->crnti = rnti;
-      uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
-      ra->preambles.num_preambles = num_preamble;
-      ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
-      for (int i = 0; i < num_preamble; i++)
-        ra->preambles.preamble_list[i] = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+      if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
+        if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
+          ra->cfra = true;
+          ra->rnti = rnti;
+          struct NR_CFRA cfra = *secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+          uint8_t num_preamble = cfra.resources.choice.ssb->ssb_ResourceList.list.count;
+          ra->preambles.num_preambles = num_preamble;
+          ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
+          for (int i = 0; i < num_preamble; i++)
+            ra->preambles.preamble_list[i] = cfra.resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+        }
+      }
       LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);
     } else { // secondaryCellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);

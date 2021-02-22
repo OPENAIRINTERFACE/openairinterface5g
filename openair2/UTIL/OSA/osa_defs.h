@@ -55,6 +55,8 @@ typedef enum {
 
 int derive_key(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
                const uint8_t key[32], uint8_t **out);
+int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out);
 
 //#define derive_key_nas_enc(aLGiD, kEY, kNAS)    derive_key(NAS_ENC_ALG, aLGiD, kEY, kNAS)
 
@@ -71,6 +73,19 @@ int derive_key(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
 
 #define derive_key_up_int(aLGiD, kEY, kNAS)  \
     derive_key(UP_INT_ALG, aLGiD, kEY, kNAS)
+
+// 5G SA
+#define nr_derive_key_rrc_enc(aLGiD, kEY, kRRC)  \
+    nr_derive_key(RRC_ENC_ALG, aLGiD, kEY, kRRC)
+
+#define nr_derive_key_rrc_int(aLGiD, kEY, kRRC)  \
+    nr_derive_key(RRC_INT_ALG, aLGiD, kEY, kRRC)
+
+#define nr_derive_key_up_enc(aLGiD, kEY, kUP)  \
+    nr_derive_key(UP_ENC_ALG, aLGiD, kEY, kUP)
+
+#define nr_derive_key_up_int(aLGiD, kEY, kUP)  \
+    nr_derive_key(UP_INT_ALG, aLGiD, kEY, kUP)
 
 typedef struct {
   uint8_t  *key;

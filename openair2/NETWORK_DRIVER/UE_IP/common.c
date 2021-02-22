@@ -287,18 +287,6 @@ ue_ip_common_ip2wireless(
         printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, dst_addr[0],dst_addr[1],dst_addr[2],dst_addr[3]);
       }
 
-      // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator start
-#ifdef UESIM_EXPANSION
-
-      if ((src_addr[3] - 2)> instP) {
-        pdcph.inst = src_addr[3] - 2;
-        printk("[UE_IP_DRV] change INST from %d to %d\n",instP, pdcph.inst);
-        instP = src_addr[3] - 2;
-        priv_p=netdev_priv(ue_ip_dev[instP]);
-      }
-
-#endif
-      // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator end
       //get Ipv4 address and pass to PCDP header
       printk("[UE_IP_DRV] source Id: 0x%08x\n",pdcph.sourceL2Id );
       printk("[UE_IP_DRV] destinationL2Id Id: 0x%08x\n",pdcph.destinationL2Id );

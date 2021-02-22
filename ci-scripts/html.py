@@ -64,6 +64,10 @@ class HTMLManagement():
 		self.htmlTabIcons = []
 		self.testXMLfiles = []
 
+		self.testUnstable = False
+		self.testMinStableId = '999999'
+		self.testStabilityPointReached = False
+
 		self.htmleNBFailureMsg = ''
 		self.htmlUEFailureMsg = ''
 
@@ -214,7 +218,7 @@ class HTMLManagement():
 				self.htmlFile.write('  <div id="build-tab" class="tab-pane fade">\n')
 			self.htmlFile.write('  <table class="table" border = "1">\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
-			self.htmlFile.write('        <th>Relative Time (ms)</th>\n')
+			self.htmlFile.write('        <th>Relative Time (s)</th>\n')
 			self.htmlFile.write('        <th>Test Id</th>\n')
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
@@ -230,13 +234,20 @@ class HTMLManagement():
 
 	def CreateHtmlTabFooter(self, passStatus):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			testOkEvenIfUnstable = False
+			if self.testUnstable and not passStatus:
+				if self.testStabilityPointReached or self.testMinStableId == '999999':
+					testOkEvenIfUnstable = True
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=3>Final Tab Status</th>\n')
 			if passStatus:
 				self.htmlFile.write('        <th bgcolor = "green" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">PASS <span class="glyphicon glyphicon-ok"></span> </font></th>\n')
 			else:
-				self.htmlFile.write('        <th bgcolor = "red" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+				if testOkEvenIfUnstable:
+					self.htmlFile.write('        <th bgcolor = "orange" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">KNOWN UNSTABLE SCENARIO <span class="glyphicon glyphicon-exclamation-sign"></span> </font></th>\n')
+				else:
+					self.htmlFile.write('        <th bgcolor = "red" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  </div>\n')
@@ -246,7 +257,10 @@ class HTMLManagement():
 				cmd = "sed -i -e 's/__STATE_" + self.htmlTabNames[0] + "__//' test_results.html"
 				subprocess.run(cmd, shell=True)
 			else:
-				cmd = "sed -i -e 's/__STATE_" + self.htmlTabNames[0] + "__/<span class=\"glyphicon glyphicon-remove\"><\/span>/' test_results.html"
+				if testOkEvenIfUnstable:
+					cmd = "sed -i -e 's/__STATE_" + self.htmlTabNames[0] + "__/<span class=\"glyphicon glyphicon-exclamation-sign\"><\/span>/' test_results.html"
+				else:
+					cmd = "sed -i -e 's/__STATE_" + self.htmlTabNames[0] + "__/<span class=\"glyphicon glyphicon-remove\"><\/span>/' test_results.html"
 				subprocess.run(cmd, shell=True)
 		self.htmlFooterCreated = False
 
@@ -383,6 +397,53 @@ class HTMLManagement():
 				self.htmlFile.write('        <td>-</td>\n')
 				i += 1
 		self.htmlFile.write('      </tr>\n')
+		self.htmlFile.close()
+
+
+	def CreateHtmlNextTabHeaderTestRow(self, collectInfo, allImagesSize, machine='eNB'):
+		if (self.htmlFooterCreated or (not self.htmlHeaderCreated)):
+			return
+		self.htmlFile = open('test_results.html', 'a')
+		if bool(collectInfo) == False:
+			self.htmlFile.write('      <tr bgcolor = "red" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ----IMAGES BUILDING FAILED - Unable to recover the image logs ---- </b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+		else:
+			for image in collectInfo:
+				files = collectInfo[image]
+        		# TabHeader for image logs on built shared and target images
+				self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+				self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + image  + ' IMAGE STATUS ----> Size ' + allImagesSize[image] + ' </b></td>\n')
+				self.htmlFile.write('      </tr>\n')
+				self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+				self.htmlFile.write('        <th colspan="2">Element</th>\n')
+				self.htmlFile.write('        <th>Nb Errors</th>\n')
+				self.htmlFile.write('        <th>Nb Warnings</th>\n')
+				self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>Status</th>\n')
+				self.htmlFile.write('      </tr>\n')
+
+				for fil in files:
+					parameters = files[fil]
+					# TestRow for image logs on built shared and target images
+					self.htmlFile.write('      <tr>\n')
+					self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + fil  + ' </td>\n')
+					if (parameters['errors'] == 0):
+						self.htmlFile.write('        <td bgcolor = "green" >' + str(parameters['errors'])  + '</td>\n')
+					else:
+						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['errors'])  + '</td>\n')
+					if (parameters['warnings'] == 0):
+						self.htmlFile.write('        <td bgcolor = "green" >' + str(parameters['warnings'])  + '</td>\n')
+					elif ((parameters['warnings'] > 0) and (parameters['warnings'] <= 20)):
+						self.htmlFile.write('        <td bgcolor = "orange" >' + str(parameters['warnings'])  + '</td>\n')
+					else:
+						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')	
+					if (parameters['errors'] == 0) and (parameters['warnings'] == 0):
+						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" ><font color="white">OK </font></th>\n')
+					elif (parameters['errors'] == 0) and ((parameters['warnings'] > 0) and (parameters['warnings'] <= 20)):
+						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "orange" ><font color="white">OK </font></th>\n')
+					else:
+						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" > NOT OK  </th>\n')	
+					self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):

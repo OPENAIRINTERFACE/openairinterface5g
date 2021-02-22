@@ -496,8 +496,8 @@ typedef struct{ // CSI-MeasConfig IE is used to configure CSI-RS (reference sign
   uint8_t reportTriggerSize;
 } csi_MeasConfig_t;
 typedef enum {
-  pdsch_dmrs_type1 = 1,
-  pdsch_dmrs_type2 = 2
+  pdsch_dmrs_type1 = 0,
+  pdsch_dmrs_type2 = 1
 } pdsch_dmrs_type_t;
 typedef enum {
   pusch_dmrs_type1 = 0,
@@ -601,9 +601,11 @@ typedef enum{
   ul_rgb_config1 = 1,
   ul_rgb_config2 = 2
 } ul_rgb_Size_t;
-typedef enum {
-  transformPrecoder_enabled = 1,
-  transformPrecoder_disabled = 2
+/* Aligned values of this enum to other tranform precoder enums 
+ * eg: as defined in fapi_nr_ue_interface.h for transform_precoder_t*/
+typedef enum { 
+  transformPrecoder_enabled = 0,
+  transformPrecoder_disabled = 1
 } transformPrecoder_t;
 typedef enum {
   codebookSubset_fullyAndPartialAndNonCoherent = 1,

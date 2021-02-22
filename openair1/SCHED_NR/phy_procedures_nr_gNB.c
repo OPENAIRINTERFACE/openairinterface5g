@@ -113,7 +113,15 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
         else
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	
+
+        if (T_ACTIVE(T_GNB_PHY_MIB)) {
+          unsigned char bch[3];
+          bch[0] = gNB->ssb_pdu.ssb_pdu_rel15.bchPayload & 0xff;
+          bch[1] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 8) & 0xff;
+          bch[2] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 16) & 0xff;
+          T(T_GNB_PHY_MIB, T_INT(0) /* module ID */, T_INT(frame), T_INT(slot), T_BUFFER(bch, 3));
+        }
+
 	nr_generate_pbch(&gNB->pbch,
 	                 &gNB->ssb_pdu,
 	                 gNB->nr_pbch_interleaver,
@@ -193,10 +201,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
     nr_generate_pdsch(gNB,frame, slot);
-    if ((frame&127) == 0) dump_pdsch_stats(gNB);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
-
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
     NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[i];
@@ -209,6 +215,11 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
       csirs->active = 0;
     }
   }
+
+  if ((frame&127) == 0) dump_pdsch_stats(gNB);
+
+  //apply the OFDM symbol rotation here
+  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[0][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
@@ -240,7 +251,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   if (decodeSuccess) {
     memcpy(ulsch_harq->b+rdata->offset,
            ulsch_harq->c[r],
-           rdata->Kr_bytes- - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
+           rdata->Kr_bytes - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
 
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
@@ -258,7 +269,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
@@ -385,7 +396,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     case 245: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
     case 66:  timing_advance_update /= 12; break;
-    default: abort();
+    case 32:  timing_advance_update /= 12; break;
+    default: AssertFatal(0==1,"No case defined for PRB %d to calculate timing_advance_update\n",gNB->frame_parms.N_RB_DL);
   }
 
   // put timing advance command in 0..63 range
@@ -516,7 +528,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   uint8_t symbol;
   unsigned char aa;
 
-  for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
+  for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
     // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
 
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
@@ -529,6 +541,16 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
                      0);
     }
   }
+
+  for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+    apply_nr_rotation_ul(&gNB->frame_parms,
+			 gNB->common_vars.rxdataF[aa],
+			 slot_rx,
+			 0,
+			 gNB->frame_parms.Ncp==EXTENDED?12:14,
+			 gNB->frame_parms.ofdm_symbol_size);
+  }
+
 }
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
@@ -536,7 +558,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
-  fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+  if (gNB->frame_parms.frame_type == TDD)
+    fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+
   gNB_I0_measurements(gNB);
 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){

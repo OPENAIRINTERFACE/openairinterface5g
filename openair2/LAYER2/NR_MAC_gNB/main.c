@@ -34,7 +34,6 @@
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
 
-#include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "RRC/NR/nr_rrc_defs.h"
 #include "common/utils/LOG/log.h"
@@ -82,6 +81,14 @@ void mac_top_init_gNB(void)
         
       RC.nrmac[i]->ul_handle = 0;
 
+      if (get_softmodem_params()->phy_test) {
+        RC.nrmac[i]->pre_processor_dl = nr_preprocessor_phytest;
+        RC.nrmac[i]->pre_processor_ul = nr_ul_preprocessor_phytest;
+      } else {
+        RC.nrmac[i]->pre_processor_dl = nr_simple_dlsch_preprocessor;
+        RC.nrmac[i]->pre_processor_ul = nr_simple_ulsch_preprocessor;
+      }
+
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
@@ -89,8 +96,8 @@ void mac_top_init_gNB(void)
     // These should be out of here later
     pdcp_layer_init();
 
-    if(IS_SOFTMODEM_NOS1)
-      nr_DRB_preconfiguration();
+    if(IS_SOFTMODEM_NOS1 && !get_softmodem_params()->do_ra)
+      nr_DRB_preconfiguration(0x1234);
 
     rrc_init_nr_global_param();
 
@@ -106,18 +113,9 @@ void mac_top_init_gNB(void)
     
     UE_info = &nrmac->UE_info;
     UE_info->num_UEs = 0;
-    UE_info->list.head = -1;
+    create_nr_list(&UE_info->list, MAX_MOBILES_PER_GNB);
     for (list_el = 0; list_el < MAX_MOBILES_PER_GNB; list_el++) {
-      UE_info->list.next[list_el] = -1;
       UE_info->active[list_el] = false;
-      for (int list_harq = 0; list_harq < NR_MAX_NB_HARQ_PROCESSES; list_harq++) {
-        UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
-        UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;
-        UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].is_waiting = 0;
-        UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].round = 0;
-        UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].ndi = 0;
-        UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].state = 0;
-      }
     }
   }
 

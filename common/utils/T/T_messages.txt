@@ -85,6 +85,10 @@ ID = ENB_PHY_MIB
     DESC = MIB data
     GROUP = ALL:PHY:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,frame : int,subframe : buffer,data
+ID = GNB_PHY_MIB
+    DESC = NR MIB data
+    GROUP = ALL:PHY:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,frame : int,slot : buffer,data
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -125,12 +129,24 @@ ID = ENB_MAC_UE_DL_PDU_WITH_DATA
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
 ID = ENB_MAC_SCHEDULING_REQUEST
     DESC = MAC scheduling request detected for an UE
-    GROUP = ALL:MAC:ENB
+    GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,frame : int,subframe : int,rnti
 ID = ENB_MAC_UE_DL_RAR_PDU_WITH_DATA
     DESC = MAC downlink PDU for an UE
     GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
+ID = GNB_MAC_DL_PDU_WITH_DATA
+    DESC = NR MAC downlink PDU for an UE
+    GROUP = ALL:MAC:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
+ID = GNB_MAC_UL_PDU_WITH_DATA
+    DESC = NR MAC uplink PDU for an UE
+    GROUP = ALL:MAC:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
+ID = GNB_MAC_DL_RAR_PDU_WITH_DATA
+    DESC = NR MAC downlink PDU for RAR
+    GROUP = ALL:MAC:GNB:WIRESHARK
+    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
 
 #RLC logs
 ID = ENB_RLC_DL
@@ -382,6 +398,27 @@ ID = LEGACY_S1AP_DEBUG
 ID = LEGACY_S1AP_TRACE
     DESC = S1AP legacy logs - trace level
     GROUP = ALL:LEGACY_S1AP:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_NGAP_INFO
+    DESC = NGAP legacy logs - info level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_ERROR
+    DESC = NGAP legacy logs - error level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_WARNING
+    DESC = NGAP legacy logs - warning level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_DEBUG
+    DESC = NGAP legacy logs - debug level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NGAP_TRACE
+    DESC = NGAP legacy logs - trace level
+    GROUP = ALL:LEGACY_NGAP:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
 ID = LEGACY_X2AP_INFO

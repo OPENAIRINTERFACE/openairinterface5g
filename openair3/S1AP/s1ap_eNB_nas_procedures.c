@@ -80,7 +80,7 @@ int s1ap_eNB_handle_nas_first_req(
                          s1ap_nas_first_req_p->ue_identity.gummei);
 
         if (mme_desc_p) {
-            S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through GUMMEI MCC %d MNC %d MMEGI %d MMEC %d\n",
+            S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through GUMMEI MCC %d MNC %d MMEGI %d MMEC %d\n",
                       instance,
                       mme_desc_p->mme_name,
                       mme_desc_p->assoc_id,
@@ -101,7 +101,7 @@ int s1ap_eNB_handle_nas_first_req(
                              s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code);
 
             if (mme_desc_p) {
-                S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through S-TMSI MMEC %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+                S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through S-TMSI MMEC %d and selected PLMN Identity index %d MCC %d MNC %d\n",
                           instance,
                           mme_desc_p->mme_name,
                           mme_desc_p->assoc_id,
@@ -122,7 +122,7 @@ int s1ap_eNB_handle_nas_first_req(
                          s1ap_nas_first_req_p->selected_plmn_identity);
 
         if (mme_desc_p) {
-            S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+            S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
                       instance,
                       mme_desc_p->mme_name,
                       mme_desc_p->assoc_id,
@@ -142,7 +142,7 @@ int s1ap_eNB_handle_nas_first_req(
                          s1ap_nas_first_req_p->establishment_cause);
 
         if (mme_desc_p) {
-            S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
+            S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
                       instance,
                       mme_desc_p->mme_name,
                       mme_desc_p->assoc_id);
@@ -935,7 +935,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
     /* Prepare the S1AP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = S1AP_S1AP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_E_RABModify;
+    pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_E_RABSetup;
     pdu.choice.successfulOutcome.criticality = S1AP_Criticality_reject;
     pdu.choice.successfulOutcome.value.present = S1AP_SuccessfulOutcome__value_PR_E_RABSetupResponse;
     out = &pdu.choice.successfulOutcome.value.choice.E_RABSetupResponse;
@@ -1032,7 +1032,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
                 break;
             }
 
-            S1AP_DEBUG("e_rab_modify_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
+            S1AP_DEBUG("e_rab_setup_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
             ASN_SEQUENCE_ADD(&ie->value.choice.E_RABList.list, item);
         }
 

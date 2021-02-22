@@ -95,9 +95,6 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-#ifdef UESIM_EXPANSION
-  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 uint16_t sf_ahead=2;
 int tddflag;
 char *emul_iface;
@@ -503,7 +500,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -543,12 +540,15 @@ void init_pdcp(void) {
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
 
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_msg(void *notUsed) {
+AssertFatal(false,"");
+	return NULL;
+}
+
 int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef UESIM_EXPANSION
-  memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
-#endif
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
@@ -601,14 +601,14 @@ int main( int argc, char **argv ) {
   pthread_mutex_init(&sync_mutex, NULL);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
   }
 
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   init_pdcp();
   //TTN for D2D

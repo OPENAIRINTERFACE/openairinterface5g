@@ -148,6 +148,7 @@ extern "C" {
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
 #define DEBUG_RLC          (1<<13)
+#define DEBUG_DLSCH_DECOD  (1<<14)
 #define UE_TIMING          (1<<20)
 
 
@@ -166,6 +167,7 @@ extern "C" {
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
     {"RLC",         DEBUG_RLC},\
+    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -226,6 +228,7 @@ typedef enum {
   X2AP,
   M2AP,
   M3AP,
+  NGAP,
   GNB_APP,
   NR_RRC,
   NR_MAC,
@@ -397,18 +400,21 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 /* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
-#    define LOG_I(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)/* */
-#    define LOG_W(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ; } while(0)/* */
-#    define LOG_E(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x) ; } while(0)/* */
-#    define LOG_D(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x) ; } while(0)/* */
-#    define LOG_T(c, x...) /* */
 
-#    define LOG_DUMPMSG(c, b, s, x...) /* */
+#    define LOG_E(c, x...) do { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;}  while (0)
+#    define LOG_W(c, x...) do { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;}  while (0)
+#    define LOG_I(c, x...) do { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;}  while (0)
+#    define LOG_D(c, x...) do { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;}  while (0)
+#    define LOG_T(c, x...) do { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;}  while (0)
+#    define VLOG(c,l, f, args) do { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ; } while (0)
+
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
-#    define LOG_DEBUGFLAG(D)  ( 0 )
-#    define LOG_DUMPFLAG(D) ( 0 )
+#    define LOG_DEBUGFLAG(D)  (g_log->dump_mask & D)
+#    define LOG_DUMPFLAG(D) (g_log->debug_mask & D)
+#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
+
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
-#    define LOG_VAR(A,B)
+#    define LOG_VAR(A,B) A B
 #  endif /* T_TRACER */
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
 #define GCC_NOTUSED   __attribute__((unused))

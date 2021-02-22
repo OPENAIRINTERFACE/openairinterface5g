@@ -23,6 +23,7 @@
 #include "PHY/impl_defs_nr.h"
 
 #define NFAPI_UE_MAX_NUM_CB 8
+#define NFAPI_MAX_NUM_UL_PDU 8
 
 /*
   typedef unsigned int	   uint32_t;
@@ -155,7 +156,7 @@ typedef struct {
   uint16_t slot;
   fapi_nr_tx_config_t tx_config;
   uint16_t number_of_pdus;
-  fapi_nr_tx_request_body_t *tx_request_body;
+  fapi_nr_tx_request_body_t tx_request_body[NFAPI_MAX_NUM_UL_PDU];
 } fapi_nr_tx_request_t;
 
 /// This struct replaces:
@@ -170,6 +171,7 @@ typedef struct {
   uint8_t  prach_format;
   /// Num RA
   uint8_t  num_ra;
+  uint8_t  prach_slot;
   uint8_t  prach_start_symbol;
   /// 38.211 (NCS 38.211 6.3.3.1).
   uint16_t num_cs;
@@ -179,6 +181,8 @@ typedef struct {
   uint8_t  restricted_set;
   /// see TS 38.211 (6.3.3.2).
   uint16_t freq_msg1;
+  // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
+  uint8_t ssb_nb_in_ro;
   // nfapi_nr_ul_beamforming_t beamforming;
 } fapi_nr_ul_config_prach_pdu;
 
@@ -468,6 +472,21 @@ typedef struct {
   uint8_t cbgti;
   uint8_t codeBlockGroupFlushIndicator;
   //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
+  // PTRS [TS38.214, sec 5.1.6.3]
+  /// PT-RS antenna ports [TS38.214, sec 5.1.6.3] [TS38.211, table 7.4.1.2.2-1] Bitmap occupying the 6 LSBs with: bit 0: antenna port 1000 bit 5: antenna port 1005 and for each bit 0: PTRS port not used 1: PTRS port used
+  uint8_t PTRSPortIndex ;
+  /// PT-RS time density [TS38.214, table 5.1.6.3-1] 0: 1 1: 2 2: 4
+  uint8_t PTRSTimeDensity;
+  /// PT-RS frequency density [TS38.214, table 5.1.6.3-2] 0: 2 1: 4
+  uint8_t PTRSFreqDensity;
+  /// PT-RS resource element offset [TS38.211, table 7.4.1.2.2-1] Value: 0->3
+  uint8_t PTRSReOffset;
+  ///  PT-RS-to-PDSCH EPRE ratio [TS38.214, table 4.1-2] Value :0->3
+  uint8_t nEpreRatioOfPDSCHToPTRS;
+  /// MCS table for this DLSCH
+  uint8_t mcs_table;
+
+  uint16_t pduBitmap;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
 typedef struct {
@@ -779,7 +798,7 @@ typedef struct {
 } fapi_nr_pusch_power_control_t;
 
 typedef enum {tx_config_codebook = 1, tx_config_nonCodebook = 2} tx_config_t;
-typedef enum {transform_precoder_disabled = 0, transform_precoder_enabled = 1} transform_precoder_t;
+typedef enum {transform_precoder_enabled = 0, transform_precoder_disabled = 1} transform_precoder_t;
 typedef enum {
   codebook_subset_fullyAndPartialAndNonCoherent = 1,
   codebook_subset_partialAndNonCoherent = 2,
@@ -1000,6 +1019,7 @@ typedef struct
 typedef struct 
 {
   uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 8: ms3 9: ms4
+  uint8_t tdd_period_in_slots;
   fapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
 
 } fapi_nr_tdd_table_t;

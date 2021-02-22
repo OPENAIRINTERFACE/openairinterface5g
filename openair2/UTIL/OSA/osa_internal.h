@@ -36,6 +36,8 @@
 #define FC_ALG_KEY_DER  (0x15)
 #define FC_KASME_TO_CK  (0x16)
 
+#define NR_FC_ALG_KEY_DER  (0x69)
+
 #ifndef hton_int32
 # define hton_int32(x)   \
 (((x & 0x000000FF) << 24) | ((x & 0x0000FF00) << 8) |  \

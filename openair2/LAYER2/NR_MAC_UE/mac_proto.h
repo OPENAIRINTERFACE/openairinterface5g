@@ -34,10 +34,8 @@
 #define __LAYER2_MAC_UE_PROTO_H__
 
 #include "mac_defs.h"
-#include "mac.h"
 #include "PHY/defs_nr_UE.h"
 #include "RRC/NR_UE/rrc_defs.h"
-
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
@@ -58,6 +56,19 @@ int8_t nr_ue_decode_mib(
     void *pduP, 
     uint16_t cell_id );
 
+/**\brief decode sib1 pdu in NR_UE, from if_module dl_ind
+   \param module_id      module id
+   \param cc_id          component carrier id
+   \param gNB_index      gNB index
+   \param sibs_mask      sibs mask
+   \param pduP           pointer to pdu
+   \param pdu_length     length of pdu */
+int8_t nr_ue_decode_sib1(module_id_t module_id,
+                         int cc_id,
+                         unsigned int gNB_index,
+                         uint32_t sibs_mask,
+                         uint8_t *pduP,
+                         uint32_t pdu_len);
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
@@ -96,7 +107,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
    @param module_id_t mod_id           module ID
    @param int cc_id                    CC ID
    @param frame_t frame                frame number
-   @param int slot                     reference number */
+   @param int slot                     reference number
+   @param UE_nr_rxtx_proc_t *proc      pointer to process context */
 void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              fapi_nr_dl_config_request_t *dl_config,
                              fapi_nr_ul_config_request_t *ul_config,
@@ -104,7 +116,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              module_id_t mod_id,
                              int cc_id,
                              frame_t frame,
-                             int slot);
+                             int slot,
+                             int thread_id);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
@@ -119,43 +132,26 @@ uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
 
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
-int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index,fapi_nr_dci_indication_pdu_t *dci);
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format);
+int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
-uint32_t get_ssb_slot(uint32_t ssb_index);
-
 
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
 /* \brief Get payload (MAC PDU) from UE PHY
-@param module_idP Instance id of UE in machine
-@param CC_id Component Carrier index
-@param frameP Current Rx frame
-@param slotP Current Rx slot
-@param pdu Pointer to the MAC PDU
-@param pdu_len Length of the MAC PDU
-@param gNB_id Index of gNB that UE is attached to
-@param ul_time_alignment of struct handling the timing advance parameters
+@param dl_info            pointer to dl indication
+@param ul_time_alignment  pointer to timing advance parameters
+@param pdu_id             index of DL PDU
 @returns void
 */
-void nr_ue_send_sdu(module_id_t module_idP, 
-                    uint8_t CC_id,
-                    frame_t frameP,
-                    int slotP,
-                    uint8_t * pdu,
-                    uint16_t pdu_len,
-                    uint8_t gNB_index,
-                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
+void nr_ue_send_sdu(nr_downlink_indication_t *dl_info,
+                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
+                    int pdu_id);
 
-void nr_ue_process_mac_pdu(module_id_t module_idP,
-                           uint8_t CC_id,
-                           frame_t frameP,
-                           uint8_t *pduP, 
-                           uint16_t mac_pdu_len,
-                           uint8_t gNB_index,
-                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
-
+void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
+                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
+                           int pdu_id);
 
 uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint8_t *pdu,
@@ -170,17 +166,19 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     unsigned short post_padding,
                                     uint16_t buflen);
 
-int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
-
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
-int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-                         int dci_format,
-                         uint8_t dci_length,
-                         uint16_t rnti,
-                         uint64_t *dci_pdu,
-                         dci_pdu_rel15_t *nr_pdci_info_extracted);
+uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+                            uint8_t dci_format,
+                            uint8_t dci_length,
+                            uint16_t rnti,
+                            uint64_t *dci_pdu,
+                            dci_pdu_rel15_t *nr_pdci_info_extracted);
 
+int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
+                                                      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      uint8_t time_domain_ind);
 
 uint8_t
 nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
@@ -204,6 +202,11 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
 */
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format);
 
+/** \brief Function to compute configured maximum output power according to clause 6.2.4 of 3GPP TS 38.101-1 version 16.5.0 Release 16
+    @param Mod_id Module id of UE
+*/
+long nr_get_Pcmax(module_id_t mod_id);
+
 /* Random Access */
 
 /* \brief This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211 tables 6.3.3.2.x
@@ -211,9 +214,10 @@ and fills the PRACH PDU per each FD occasion.
 @param module_idP Index of UE instance
 @param frameP Frame index
 @param slotP Slot index
+@param thread_id RX/TX Thread ID
 @returns void
 */
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
 
 /* \brief This function schedules the Msg3 transmission
 @param
@@ -238,22 +242,15 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-uint16_t nr_ue_process_rar(module_id_t mod_id,
-                           int CC_id,
-                           frame_t frameP,
-                           sub_frame_t slotP,
-                           uint8_t * dlsch_buffer,
-                           rnti_t * t_crnti,
-                           uint8_t preamble_index,
-                           uint8_t * selected_rar_buffer);
+int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id);
 
 void nr_process_rar(nr_downlink_indication_t *dl_info);
 
-void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame);
+void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame, int slot, NR_PRACH_RESOURCES_t *prach_resources);
 
-void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot);
 
-void nr_ra_succeeded(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.
 If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC
@@ -264,29 +261,27 @@ andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 
 @param CC_id Component Carrier Index
 @param frame
 @param gNB_id gNB index
-@param nr_tti_tx slot for PRACH transmission
+@param nr_slot_tx slot for PRACH transmission
 @returns indication to generate PRACH to phy */
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                       fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
-                       UE_MODE_t UE_mode,
                        frame_t frame,
                        uint8_t gNB_id,
-                       int nr_tti_tx);
+                       int nr_slot_tx);
 
 /* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
 @param module_idP Index of UE instance
 @param CC_id Component Carrier Index
 @param gNB_index gNB index
-@param t_id
 @param rach_ConfigDedicated
 @returns void */
 void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
-                            uint8_t t_id,
-                            uint8_t first_Msg3,
                             NR_PRACH_RESOURCES_t *prach_resources,
+                            fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
 
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
@@ -305,5 +300,37 @@ void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
                      uint8_t *nb_dmrs_re_per_rb,
                      uint16_t *number_dmrs_symbols);
 
+void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
+
+void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format);
+
+fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
+
+void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
+
+// PUSCH scheduler:
+// - Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,
+// - where K2 is the offset between the slot in which UL DCI is received and the slot
+// - in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
+// PUSCH Msg3 scheduler:
+// - scheduled by RAR UL grant according to 8.3 of TS 38.213
+int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, uint8_t tda_id);
+
+int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
+
+// Configuration of Msg3 PDU according to clauses:
+// - 8.3 of 3GPP TS 38.213 version 16.3.0 Release 16
+// - 6.1.2.2 of TS 38.214
+// - 6.1.3 of TS 38.214
+// - 6.2.2 of TS 38.214
+// - 6.1.4.2 of TS 38.214
+// - 6.4.1.1.1 of TS 38.211
+// - 6.3.1.7 of 38.211
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+                        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                        dci_pdu_rel15_t *dci,
+                        RAR_grant_t *rar_grant,
+                        uint16_t rnti,
+                        uint8_t *dci_format);
 #endif
 /** @}*/

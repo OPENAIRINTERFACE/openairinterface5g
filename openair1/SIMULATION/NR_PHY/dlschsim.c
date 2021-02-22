@@ -52,6 +52,7 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+UE_nr_rxtx_proc_t proc;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
@@ -426,7 +427,7 @@ int main(int argc, char **argv)
 	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
 	NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
-	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
+	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
 	unsigned int TBS = 8424;
@@ -518,7 +519,7 @@ int main(int argc, char **argv)
 
 				//if (i<16)
 				//   printf("encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
-				if (dlsch->harq_processes[0]->f[i] == 0)
+				if (dlsch->harq_process.f[i] == 0)
 					modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
 				else
 					modulated_input[i] = -1.0;        ///sqrt(2);
@@ -546,7 +547,7 @@ int main(int argc, char **argv)
 				else
 					channel_output_uncoded[i] = 0;
 
-				if (channel_output_uncoded[i] != dlsch->harq_processes[harq_pid]->f[i])
+				if (channel_output_uncoded[i] != dlsch->harq_process.f[i])
 					errors_bit_uncoded = errors_bit_uncoded + 1;
 			}
 
@@ -559,7 +560,7 @@ int main(int argc, char **argv)
 
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_IN);
 
-			ret = nr_dlsch_decoding(UE, channel_output_fixed, &UE->frame_parms,
+			ret = nr_dlsch_decoding(UE, &proc, 0, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
 					slot,harq_pid, is_crnti, llr8_flag);
 

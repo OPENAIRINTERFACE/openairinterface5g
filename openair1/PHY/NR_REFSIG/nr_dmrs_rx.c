@@ -121,18 +121,18 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
   array_of_w *wf;
   array_of_w *wt;
 
-  config_type = 0; //to be updated by higher layer
+  config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
 
-  wf = (config_type==0) ? wf1 : wf2;
-  wt = (config_type==0) ? wt1 : wt2;
+  wf = (config_type==pdsch_dmrs_type1) ? wf1 : wf2;
+  wt = (config_type==pdsch_dmrs_type1) ? wt1 : wt2;
 
   if (config_type > 1)
     LOG_E(PHY,"Bad PDSCH DMRS config type %d\n", config_type);
 
-  if ((p>=1000) && (p<((config_type==0) ? 1008 : 1012))) {
+  if ((p>=1000) && (p<((config_type==pdsch_dmrs_type1) ? 1008 : 1012))) {
       if (ue->frame_parms.Ncp == NORMAL) {
 
-        for (int i=0; i<nb_pdsch_rb*((config_type==0) ? 6:4); i++) {
+        for (int i=0; i<nb_pdsch_rb*((config_type==pdsch_dmrs_type1) ? 6:4); i++) {
 
         	w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
         	mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
@@ -247,3 +247,51 @@ void nr_gen_ref_conj_symbols(uint32_t *in, uint32_t length, int16_t *output, uin
       output[(i<<1)+1] =  nr_rx_mod_table[((offset+idx)<<1)+1];
     }
 }
+
+int nr_pusch_lowpaprtype1_dmrs_rx(PHY_VARS_gNB *gNB,
+                     unsigned int Ns,
+                     int16_t *dmrs_seq,
+                     int32_t *output,
+                     unsigned short p,
+                     unsigned char lp,
+                     unsigned short nb_pusch_rb,
+                     uint32_t re_offset,
+                     uint8_t dmrs_type)
+{
+  int8_t w, nb_dmrs;
+  int k;
+
+  int dmrs_offset = re_offset/((dmrs_type==pusch_dmrs_type1)?2:3);
+
+  if (dmrs_type != pusch_dmrs_type1)
+    LOG_E(PHY,"PUSCH DMRS config type %d not valid\n", dmrs_type);
+
+  if ((p>=1000) && (p<1008)) {
+      if (gNB->frame_parms.Ncp == NORMAL) {
+        nb_dmrs = NR_NB_SC_PER_RB/2; // for DMRS TYPE 1 - 6 DMRS REs present per RB
+        for (int i=dmrs_offset; i<dmrs_offset+(nb_pusch_rb*nb_dmrs); i++) {
+          k = i-dmrs_offset;
+          w = (wf1[p-1000][i&1])*(wt1[p-1000][lp]);
+          
+          ((int16_t*)output)[2*k] = w*dmrs_seq[2*i];          
+          ((int16_t*)output)[(2*k)+1] = -(w*dmrs_seq[(2*i)+1]);// conjugate
+
+
+          #ifdef DEBUG_PUSCH
+            printf("NR_DMRS_RX: nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d nb_dmrs %d\n", dmrs_type, p, nb_pusch_rb, nb_dmrs);
+            printf("NR_DMRS_RX: wf[%d] = %d wt[%d]= %d\n", i&1, wf1[p-1000][i&1], lp, wt1[p-1000][lp]);
+            printf("NR_DMRS_RX: i %d dmrs_offset %d k %d pusch dmrsseq[i<<1] %d, dmrsseq[(i<<1)+1] %d  pilots[k<<1] %d pilots[(k<<1)+1] %d\n", i, dmrs_offset, k, 
+              dmrs_seq[i<<1], dmrs_seq[(i<<1)+1], ((int16_t*)output)[k<<1], ((int16_t*)output)[(k<<1)+1]);
+          #endif
+
+        }
+      } else {
+        LOG_E(PHY,"extended cp not supported for PUSCH DMRS yet\n");
+      }
+  } else {
+    LOG_E(PHY,"Illegal p %d PUSCH DMRS port\n",p);
+  }
+
+  return(0);
+}
+

@@ -333,11 +333,11 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
 
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
-  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
-    exit_fun( "error locking mutex_rxtx" );
-    return(-1);
-  }
+  //if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+  //  LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+  //  exit_fun( "error locking mutex_rxtx" );
+  //  return(-1);
+  //}
 
   {
     static uint16_t old_sf = 0;
@@ -348,10 +348,41 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
     old_sf = sf;
     old_sfn = sfn;
 
-    if (old_sf == 0 && old_sfn % 100==0) LOG_W( PHY,"[eNB] sfn/sf:%d%d old_sfn/sf:%d%d proc[rx:%d%d]\n", sfn, sf, old_sfn, old_sf, proc->frame_rx, proc->subframe_rx);
+    if (old_sf == 0 && old_sfn % 100==0)
+      LOG_D(PHY,
+            "[eNB] sfn/sf:%d%d old_sfn/sf:%d%d proc[rx:%d%d]\n",
+            sfn,
+            sf,
+            old_sfn,
+            old_sf,
+            proc->frame_rx,
+            proc->subframe_rx);
+  }
+  // wake up TX for subframe n+sf_ahead
+  // lock the TX mutex and make sure the thread is ready
+  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+      //exit_fun( "error locking mutex_rxtx" );
+      return(-1);
+  }
+  static int busy_log_cnt=0;
+  if(L1_proc->instance_cnt < 0){
+    ++L1_proc->instance_cnt;
+    if(busy_log_cnt!=0){
+      LOG_E(MAC,"RCC singal to rxtx frame %d subframe %d busy end %d (frame %d subframe %d)\n",L1_proc->frame_rx,L1_proc->subframe_rx,busy_log_cnt,proc->frame_rx,proc->subframe_rx);
+    }
+    busy_log_cnt=0;
+  }else{
+    if(busy_log_cnt==0){
+      LOG_E(MAC,"RCC singal to rxtx frame %d subframe %d busy %d (frame %d subframe %d)\n",L1_proc->frame_rx,L1_proc->subframe_rx,L1_proc->instance_cnt,proc->frame_rx,proc->subframe_rx);
+    }
+    pthread_mutex_unlock( &L1_proc->mutex );
+    busy_log_cnt++;
+    return(0);
   }
 
-  ++L1_proc->instance_cnt;
+  pthread_mutex_unlock( &L1_proc->mutex );
+
   //LOG_D( PHY,"[VNF-subframe_ind] sfn/sf:%d:%d proc[frame_rx:%d subframe_rx:%d] L1_proc->instance_cnt_rxtx:%d \n", sfn, sf, proc->frame_rx, proc->subframe_rx, L1_proc->instance_cnt_rxtx);
   // We have just received and processed the common part of a subframe, say n.
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired
@@ -374,9 +405,6 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
     return(-1);
   }
 
-  //LOG_D(PHY,"%s() About to attempt pthread_mutex_unlock\n", __FUNCTION__);
-  pthread_mutex_unlock( &L1_proc->mutex );
-  //LOG_D(PHY,"%s() UNLOCKED pthread_mutex_unlock\n", __FUNCTION__);
   return(0);
 }
 
@@ -435,6 +463,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
     }
     if(index == -1){
       LOG_E(MAC,"phy_rach_indication : num of rach reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.rach_ind[index] = *ind;
@@ -499,6 +528,7 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
     }
     if(index == -1){
       LOG_E(MAC,"phy_harq_indication : num of harq reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.harq_ind[index] = *ind;
@@ -538,6 +568,7 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
     }
     if(index == -1){
       LOG_E(MAC,"phy_crc_indication : num of crc reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.crc_ind[index] = *ind;
@@ -603,6 +634,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
     }
     if(index == -1){
       LOG_E(MAC,"phy_rx_indication : num of rx reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.rx_ind[index] = *ind;
@@ -686,6 +718,7 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
     }
     if(index == -1){
       LOG_E(MAC,"phy_sr_indication : num of sr reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.sr_ind[index] = *ind;
@@ -737,6 +770,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
     }
     if(index == -1){
       LOG_E(MAC,"phy_cqi_indication : num of cqi reach max \n");
+      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       return 0;
     }
     UL_RCC_INFO.cqi_ind[index] = *ind;

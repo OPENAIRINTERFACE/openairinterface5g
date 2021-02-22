@@ -33,6 +33,8 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include <limits.h>
 
+#define reserved 0xffff
+
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 // Table 6.3.3.1-5 (38.211) NCS for preamble formats with delta_f_RA = 1.25 KHz
@@ -48,8 +50,75 @@ uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,8
 // Table 6.3.3.1-7 (38.211) NCS for preamble formats with delta_f_RA = 15 * 2mu KHz where mu = {0,1,2,3}
 uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
 
-const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
-const char *prachfmt03[]={"0","1","2","3"};
+
+//	specification mapping talbe, table_38$x_$y_$z_c$a
+//	- $x: specification
+//	- $y: subclause-major
+//	- $z: subclause-minor
+//	- $a: ($a)th of column in table, start from zero
+const int32_t table_38213_13_1_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, reserved}; // index 15 reserved
+const int32_t table_38213_13_1_c2[16] = {24, 24, 24, 24, 24, 24, 48, 48, 48, 48, 48, 48, 96, 96, 96, reserved}; // index 15 reserved
+const int32_t table_38213_13_1_c3[16] = { 2,  2,  2,  3,  3,  3,  1,  1,  2,  2,  3,  3,  1,  2,  3, reserved}; // index 15 reserved
+const int32_t table_38213_13_1_c4[16] = { 0,  2,  4,  0,  2,  4, 12, 16, 12, 16, 12, 16, 38, 38, 38, reserved}; // index 15 reserved
+
+const int32_t table_38213_13_2_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved}; // index 14-15 reserved
+const int32_t table_38213_13_2_c2[16] = {24, 24, 24, 24, 24, 24, 24, 24, 48, 48, 48, 48, 48, 48, reserved, reserved}; // index 14-15 reserved
+const int32_t table_38213_13_2_c3[16] = { 2,  2,  2,  2,  3,  3,  3,  3,  1,  1,  2,  2,  3,  3, reserved, reserved}; // index 14-15 reserved
+const int32_t table_38213_13_2_c4[16] = { 5,  6,  7,  8,  5,  6,  7,  8, 18, 20, 18, 20, 18, 20, reserved, reserved}; // index 14-15 reserved
+
+const int32_t table_38213_13_3_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_3_c2[16] = {48, 48, 48, 48, 48, 48, 96, 96, 96, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_3_c3[16] = { 1,  1,  2,  2,  3,  3,  1,  2,  3, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_3_c4[16] = { 2,  6,  2,  6,  2,  6, 28, 28, 28, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+
+const int32_t table_38213_13_4_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+const int32_t table_38213_13_4_c2[16] = {24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 48, 48, 48, 48, 48, 48};
+const int32_t table_38213_13_4_c3[16] = { 2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  1,  1,  1,  2,  2,  2};
+const int32_t table_38213_13_4_c4[16] = { 0,  1,  2,  3,  4,  0,  1,  2,  3,  4, 12, 14, 16, 12, 14, 16};
+
+const int32_t table_38213_13_5_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_5_c2[16] = {48, 48, 48, 96, 96, 96, 96, 96, 96, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_5_c3[16] = { 1,  2,  3,  1,  1,  2,  2,  3,  3, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+const int32_t table_38213_13_5_c4[16] = { 4,  4,  4,  0, 56,  0, 56,  0, 56, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 09-15 reserved
+
+const int32_t table_38213_13_6_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+const int32_t table_38213_13_6_c2[16] = {24, 24, 24, 24, 48, 48, 48, 48, 48, 48, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+const int32_t table_38213_13_6_c3[16] = { 2,  2,  3,  3,  1,  1,  2,  2,  3,  3, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+const int32_t table_38213_13_6_c4[16] = { 0,  4,  0,  4,  0, 28,  0, 28,  0, 28, reserved, reserved, reserved, reserved, reserved, reserved}; // index 10-15 reserved
+
+const int32_t table_38213_13_7_c1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, reserved, reserved, reserved, reserved}; // index 12-15 reserved
+const int32_t table_38213_13_7_c2[16] = {48, 48, 48, 48, 48, 48, 96, 96, 48, 48, 96, 96, reserved, reserved, reserved, reserved}; // index 12-15 reserved
+const int32_t table_38213_13_7_c3[16] = { 1,  1,  2,  2,  3,  3,  1,  2,  1,  1,  1,  1, reserved, reserved, reserved, reserved}; // index 12-15 reserved
+const int32_t table_38213_13_7_c4[16] = { 0,  8,  0,  8,  0,  8, 28, 28,-41, 49,-41, 97, reserved, reserved, reserved, reserved}; // index 12-15 reserved, condition A as default
+
+const int32_t table_38213_13_8_c1[16] = { 1,  1,  1,  1,  3,  3,  3,  3, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved
+const int32_t table_38213_13_8_c2[16] = {24, 24, 48, 48, 24, 24, 48, 48, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved
+const int32_t table_38213_13_8_c3[16] = { 2,  2,  1,  2,  2,  2,  2,  2, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved
+const int32_t table_38213_13_8_c4[16] = { 0,  4, 14, 14,-20, 24,-20, 48, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 15 reserved, condition A as default
+
+const int32_t table_38213_13_9_c1[16] = {1, 1, 1, 1, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+const int32_t table_38213_13_9_c2[16] = {96, 96, 96, 96, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+const int32_t table_38213_13_9_c3[16] = { 1,  1,  2,  2, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+const int32_t table_38213_13_9_c4[16] = { 0, 16,  0, 16, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 04-15 reserved
+
+const int32_t table_38213_13_10_c1[16] = {1, 1, 1, 1, 2, 2, 2, 2, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved
+const int32_t table_38213_13_10_c2[16] = {48, 48, 48, 48, 24, 24, 48, 48, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved
+const int32_t table_38213_13_10_c3[16] = { 1,  1,  2,  2,  1,  1,  1,  1, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved
+const int32_t table_38213_13_10_c4[16] = { 0,  8,  0,  8,-41, 25,-41, 49, reserved, reserved, reserved, reserved, reserved, reserved, reserved, reserved}; // index 08-15 reserved, condition A as default
+
+const float   table_38213_13_11_c1[16] = { 0,  0,  2,  2,  5,  5,  7,  7,  0,  5,  0,  0,  2,  2,  5,  5};	//	O
+const int32_t table_38213_13_11_c2[16] = { 1,  2,  1,  2,  1,  2,  1,  2,  1,  1,  1,  1,  1,  1,  1,  1};
+const float   table_38213_13_11_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 1, 0.5f,  1,  1,  1,  1,  1,  1,  1,  1};	//	M
+const int32_t table_38213_13_11_c4[16] = { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  1,  2,  1,  2};	// i is even as default
+
+const float   table_38213_13_12_c1[16] = { 0, 0, 2.5f, 2.5f, 5, 5, 0, 2.5f, 5, 7.5f, 7.5f, 7.5f, 0, 5, reserved, reserved}; // O, index 14-15 reserved
+const int32_t table_38213_13_12_c2[16] = { 1,  2,  1,  2,  1,  2,  2,  2,  2,  1,  2,  2,  1,  1,  reserved,  reserved}; // index 14-15 reserved
+const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f, 0.5f, 1, 0.5f, 0.5f, 1, 1,  reserved,  reserved}; // M, index 14-15 reserved
+
+const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
+
+const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
+const char *duplex_mode[]={"FDD","TDD"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
@@ -86,100 +155,164 @@ uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config)
   }
 }
 
+//38.211 Table 6.3.3.2-1
+int16_t table_6_3_3_2_1[16][5] = {
+//Length_RA, delta_f_RA_PRACH, delta_f_PUSCH, N_RA_RB, kbar
+{ 839,        1.25,             15,            6,      7},
+{ 839,        1.25,             30,            3,      1},
+{ 839,        1.25,             60,            2,    133},
+{ 839,           5,             15,           24,     12},
+{ 839,           5,             30,           12,     10},
+{ 839,           5,             60,            6,      7},
+{ 139,          15,             15,           12,      2},
+{ 139,          15,             30,            6,      2},
+{ 139,          15,             60,            3,      2},
+{ 139,          30,             15,           24,      2},
+{ 139,          30,             30,           12,      2},
+{ 139,          30,             60,            6,      2},
+{ 139,          60,             60,           12,      2},
+{ 139,          60,            120,            6,      2},
+{ 139,         120,             60,           24,      2},
+{ 139,         120,            120,           12,      2}
+};
 
+/* Function to get number of RBs required for prach occasion based on
+ * 38.211 Table 6.3.3.2-1 */
+int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
+	
+	int8_t index = 0;
+	switch(delta_f_RA_PRACH) {
+			case 0 : index = 6;
+		          if (delta_f_PUSCH == 0)
+			          index += 0;
+		          else if(delta_f_PUSCH == 1)
+			          index += 1;
+		          else
+			          index += 2;
+							break;
+
+		case 1 : index = 9;
+		         if (delta_f_PUSCH == 0)
+			         index += 0;
+		         else if(delta_f_PUSCH == 1)
+		           index += 1;
+		         else
+			          index += 2;
+	           break;
+
+		case 2 : index = 11;
+		         if (delta_f_PUSCH == 2)
+			         index += 0;
+		         else
+			         index += 1;
+		         break;		
+		
+		case 3: index = 13;
+		          if (delta_f_PUSCH == 2)
+			          index += 0;
+		          else
+			          index += 1;
+		          break;
+
+		default : index = 10;/*30khz prach scs and 30khz pusch scs*/
+				
+	}
+  
+	return table_6_3_3_2_1[index][3];
+}	
 // Table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
 // the column 5, (SFN_nbr is a bitmap where we set bit to '1' in the position of the subframe where the RACH can be sent.
 // E.g. in row 4, and column 5 we have set value 512 ('1000000000') which means RACH can be sent at subframe 9.
 // E.g. in row 20 and column 5 we have set value 66  ('0001000010') which means RACH can be sent at subframe 1 or 6
 int64_t table_6_3_3_2_2_prachConfig_Index [256][9] = {
 //format,   format,       x,          y,        SFN_nbr,   star_symb,   slots_sfn,    occ_slot,  duration
-{0,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          8,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{0,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{0,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{0,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{0,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
-{0,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
-{0,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
-{0,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
-{0,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
-{0,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3, 6, 9
-{0,          -1,          1,          0,          341,        0,         -1,         -1,          0},          // (subframe number)           0,2,4,6,8
-{0,          -1,          1,          0,          682,        0,         -1,         -1,          0},          // (subframe number)           1,3,5,7,9
-{0,          -1,          1,          0,          1023,       0,         -1,         -1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
-{1,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          8,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{1,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{1,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{1,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{1,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
-{1,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
-{1,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
-{1,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
-{1,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
-{1,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3,6,9
-{2,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          4,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          2,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          2,          0,          32,         0,         -1,         -1,          0},          // (subframe number)           5
-{2,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{2,          -1,          1,          0,          32,         0,         -1,         -1,          0},          // (subframe number)           5
-{3,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{3,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{3,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
-{3,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
-{3,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
-{3,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
-{3,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
-{3,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
-{3,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
-{3,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
-{3,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
-{3,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3, 6, 9
-{3,          -1,          1,          0,          341,        0,         -1,         -1,          0},          // (subframe number)           0,2,4,6,8
-{3,          -1,          1,          0,          682,        0,         -1,         -1,          0},          // (subframe number)           1,3,5,7,9
-{3,          -1,          1,          0,          1023,       0,         -1,         -1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          16,         1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          16,         1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          16,         1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          8,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          8,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          8,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          4,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          4,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          4,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          4,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          2,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          2,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          2,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          2,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{0,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{0,          -1,          1,          0,          16,         0,         1,         1,          0},          // (subframe number)           4
+{0,          -1,          1,          0,          128,        0,         1,         1,          0},          // (subframe number)           7
+{0,          -1,          1,          0,          66,         0,         1,         1,          0},          // (subframe number)           1,6
+{0,          -1,          1,          0,          132,        0,         1,         1,          0},          // (subframe number)           2,7
+{0,          -1,          1,          0,          264,        0,         1,         1,          0},          // (subframe number)           3,8
+{0,          -1,          1,          0,          146,        0,         1,         1,          0},          // (subframe number)           1,4,7
+{0,          -1,          1,          0,          292,        0,         1,         1,          0},          // (subframe number)           2,5,8
+{0,          -1,          1,          0,          584,        0,         1,         1,          0},          // (subframe number)           3, 6, 9
+{0,          -1,          1,          0,          341,        0,         1,         1,          0},          // (subframe number)           0,2,4,6,8
+{0,          -1,          1,          0,          682,        0,         1,         1,          0},          // (subframe number)           1,3,5,7,9
+{0,          -1,          1,          0,          1023,       0,         1,         1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{1,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          16,         1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          16,         1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          16,         1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          8,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          8,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          8,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          4,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          4,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          4,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          4,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          2,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          2,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          2,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          2,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{1,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{1,          -1,          1,          0,          16,         0,         1,         1,          0},          // (subframe number)           4
+{1,          -1,          1,          0,          128,        0,         1,         1,          0},          // (subframe number)           7
+{1,          -1,          1,          0,          66,         0,         1,         1,          0},          // (subframe number)           1,6
+{1,          -1,          1,          0,          132,        0,         1,         1,          0},          // (subframe number)           2,7
+{1,          -1,          1,          0,          264,        0,         1,         1,          0},          // (subframe number)           3,8
+{1,          -1,          1,          0,          146,        0,         1,         1,          0},          // (subframe number)           1,4,7
+{1,          -1,          1,          0,          292,        0,         1,         1,          0},          // (subframe number)           2,5,8
+{1,          -1,          1,          0,          584,        0,         1,         1,          0},          // (subframe number)           3,6,9
+{2,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          4,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          2,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          2,          0,          32,         0,         1,         1,          0},          // (subframe number)           5
+{2,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{2,          -1,          1,          0,          32,         0,         1,         1,          0},          // (subframe number)           5
+{3,          -1,          16,         1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          16,         1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          16,         1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          16,         1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{3,          -1,          8,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          8,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          8,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          4,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          4,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          4,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          4,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{3,          -1,          2,          1,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          2,          1,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          2,          1,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          2,          1,          512,        0,         1,         1,          0},          // (subframe number)           9
+{3,          -1,          1,          0,          2,          0,         1,         1,          0},          // (subframe number)           1
+{3,          -1,          1,          0,          16,         0,         1,         1,          0},          // (subframe number)           4
+{3,          -1,          1,          0,          128,        0,         1,         1,          0},          // (subframe number)           7
+{3,          -1,          1,          0,          66,         0,         1,         1,          0},          // (subframe number)           1,6
+{3,          -1,          1,          0,          132,        0,         1,         1,          0},          // (subframe number)           2,7
+{3,          -1,          1,          0,          264,        0,         1,         1,          0},          // (subframe number)           3,8
+{3,          -1,          1,          0,          146,        0,         1,         1,          0},          // (subframe number)           1,4,7
+{3,          -1,          1,          0,          292,        0,         1,         1,          0},          // (subframe number)           2,5,8
+{3,          -1,          1,          0,          584,        0,         1,         1,          0},          // (subframe number)           3, 6, 9
+{3,          -1,          1,          0,          341,        0,         1,         1,          0},          // (subframe number)           0,2,4,6,8
+{3,          -1,          1,          0,          682,        0,         1,         1,          0},          // (subframe number)           1,3,5,7,9
+{3,          -1,          1,          0,          1023,       0,         1,         1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
 {0xa1,       -1,          16,         0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
 {0xa1,       -1,          16,         1,          16,         0,          2,          6,          2},          // (subframe number)           4
 {0xa1,       -1,          8,          0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
@@ -353,73 +486,73 @@ int64_t table_6_3_3_2_2_prachConfig_Index [256][9] = {
 // Table 6.3.3.2-3: Random access configurations for FR1 and unpaired spectrum
 int64_t table_6_3_3_2_3_prachConfig_Index [256][9] = {
 //format,     format,      x,         y,     SFN_nbr,   star_symb,   slots_sfn,  occ_slot,  duration
-{0,            -1,         16,        1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         8,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         4,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         2,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         2,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         2,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{0,            -1,         2,         1,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{0,            -1,         1,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{0,            -1,         1,         0,         256,         0,        -1,        -1,         0},         // (subrame number 8)
-{0,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{0,            -1,         1,         0,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{0,            -1,         1,         0,         32,          0,        -1,        -1,         0},         // (subrame number 5)
-{0,            -1,         1,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{0,            -1,         1,         0,         8,           0,        -1,        -1,         0},         // (subrame number 3)
-{0,            -1,         1,         0,         4,           0,        -1,        -1,         0},         // (subrame number 2)
-{0,            -1,         1,         0,         66,          0,        -1,        -1,         0},         // (subrame number 1,6)
-{0,            -1,         1,         0,         66,          7,        -1,        -1,         0},         // (subrame number 1,6)
-{0,            -1,         1,         0,         528,         0,        -1,        -1,         0},         // (subrame number 4,9)
-{0,            -1,         1,         0,         264,         0,        -1,        -1,         0},         // (subrame number 3,8)
-{0,            -1,         1,         0,         132,         0,        -1,        -1,         0},         // (subrame number 2,7)
-{0,            -1,         1,         0,         768,         0,        -1,        -1,         0},         // (subrame number 8,9)
-{0,            -1,         1,         0,         784,         0,        -1,        -1,         0},         // (subrame number 4,8,9)
-{0,            -1,         1,         0,         536,         0,        -1,        -1,         0},         // (subrame number 3,4,9)
-{0,            -1,         1,         0,         896,         0,        -1,        -1,         0},         // (subrame number 7,8,9)
-{0,            -1,         1,         0,         792,         0,        -1,        -1,         0},         // (subrame number 3,4,8,9)
-{0,            -1,         1,         0,         960,         0,        -1,        -1,         0},         // (subrame number 6,7,8,9)
-{0,            -1,         1,         0,         594,         0,        -1,        -1,         0},         // (subrame number 1,4,6,9)
-{0,            -1,         1,         0,         682,         0,        -1,        -1,         0},         // (subrame number 1,3,5,7,9)
-{1,            -1,         16,        1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         8,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         4,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         2,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         2,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{1,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{2,            -1,         16,        1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         8,         1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         4,         1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         2,         0,         64,          7,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         2,         1,         64,          7,        -1,        -1,         0},         // (subrame number 6)
-{2,            -1,         1,         0,         64,          7,        -1,        -1,         0},         // (subrame number 6)
-{3,            -1,         16,        1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         8,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         4,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         2,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         2,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         2,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{3,            -1,         2,         1,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{3,            -1,         1,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
-{3,            -1,         1,         0,         256,         0,        -1,        -1,         0},         // (subrame number 8)
-{3,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
-{3,            -1,         1,         0,         64,          0,        -1,        -1,         0},         // (subrame number 6)
-{3,            -1,         1,         0,         32,          0,        -1,        -1,         0},         // (subrame number 5)
-{3,            -1,         1,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
-{3,            -1,         1,         0,         8,           0,        -1,        -1,         0},         // (subrame number 3)
-{3,            -1,         1,         0,         4,           0,        -1,        -1,         0},         // (subrame number 2)
-{3,            -1,         1,         0,         66,          0,        -1,        -1,         0},         // (subrame number 1,6)
-{3,            -1,         1,         0,         66,          7,        -1,        -1,         0},         // (subrame number 1,6)
-{3,            -1,         1,         0,         528,         0,        -1,        -1,         0},         // (subrame number 4,9)
-{3,            -1,         1,         0,         264,         0,        -1,        -1,         0},         // (subrame number 3,8)
-{3,            -1,         1,         0,         132,         0,        -1,        -1,         0},         // (subrame number 2,7)
-{3,            -1,         1,         0,         768,         0,        -1,        -1,         0},         // (subrame number 8,9)
-{3,            -1,         1,         0,         784,         0,        -1,        -1,         0},         // (subrame number 4,8,9)
-{3,            -1,         1,         0,         536,         0,        -1,        -1,         0},         // (subrame number 3,4,9)
-{3,            -1,         1,         0,         896,         0,        -1,        -1,         0},         // (subrame number 7,8,9)
-{3,            -1,         1,         0,         792,         0,        -1,        -1,         0},         // (subrame number 3,4,8,9)
-{3,            -1,         1,         0,         594,         0,        -1,        -1,         0},         // (subrame number 1,4,6,9)
-{3,            -1,         1,         0,         682,         0,        -1,        -1,         0},         // (subrame number 1,3,5,7,9)
+{0,            -1,         16,        1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         8,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         4,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         2,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         2,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         2,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{0,            -1,         2,         1,         16,          0,        1,        1,         0},         // (subrame number 4)
+{0,            -1,         1,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{0,            -1,         1,         0,         256,         0,        1,        1,         0},         // (subrame number 8)
+{0,            -1,         1,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{0,            -1,         1,         0,         64,          0,        1,        1,         0},         // (subrame number 6)
+{0,            -1,         1,         0,         32,          0,        1,        1,         0},         // (subrame number 5)
+{0,            -1,         1,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{0,            -1,         1,         0,         8,           0,        1,        1,         0},         // (subrame number 3)
+{0,            -1,         1,         0,         4,           0,        1,        1,         0},         // (subrame number 2)
+{0,            -1,         1,         0,         66,          0,        1,        1,         0},         // (subrame number 1,6)
+{0,            -1,         1,         0,         66,          7,        1,        1,         0},         // (subrame number 1,6)
+{0,            -1,         1,         0,         528,         0,        1,        1,         0},         // (subrame number 4,9)
+{0,            -1,         1,         0,         264,         0,        1,        1,         0},         // (subrame number 3,8)
+{0,            -1,         1,         0,         132,         0,        1,        1,         0},         // (subrame number 2,7)
+{0,            -1,         1,         0,         768,         0,        1,        1,         0},         // (subrame number 8,9)
+{0,            -1,         1,         0,         784,         0,        1,        1,         0},         // (subrame number 4,8,9)
+{0,            -1,         1,         0,         536,         0,        1,        1,         0},         // (subrame number 3,4,9)
+{0,            -1,         1,         0,         896,         0,        1,        1,         0},         // (subrame number 7,8,9)
+{0,            -1,         1,         0,         792,         0,        1,        1,         0},         // (subrame number 3,4,8,9)
+{0,            -1,         1,         0,         960,         0,        1,        1,         0},         // (subrame number 6,7,8,9)
+{0,            -1,         1,         0,         594,         0,        1,        1,         0},         // (subrame number 1,4,6,9)
+{0,            -1,         1,         0,         682,         0,        1,        1,         0},         // (subrame number 1,3,5,7,9)
+{1,            -1,         16,        1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         8,         1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         4,         1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         2,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         2,         1,         128,         0,        1,        1,         0},         // (subrame number 7)
+{1,            -1,         1,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{2,            -1,         16,        1,         64,          0,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         8,         1,         64,          0,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         4,         1,         64,          0,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         2,         0,         64,          7,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         2,         1,         64,          7,        1,        1,         0},         // (subrame number 6)
+{2,            -1,         1,         0,         64,          7,        1,        1,         0},         // (subrame number 6)
+{3,            -1,         16,        1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         8,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         4,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         2,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         2,         1,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         2,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{3,            -1,         2,         1,         16,          0,        1,        1,         0},         // (subrame number 4)
+{3,            -1,         1,         0,         512,         0,        1,        1,         0},         // (subrame number 9)
+{3,            -1,         1,         0,         256,         0,        1,        1,         0},         // (subrame number 8)
+{3,            -1,         1,         0,         128,         0,        1,        1,         0},         // (subrame number 7)
+{3,            -1,         1,         0,         64,          0,        1,        1,         0},         // (subrame number 6)
+{3,            -1,         1,         0,         32,          0,        1,        1,         0},         // (subrame number 5)
+{3,            -1,         1,         0,         16,          0,        1,        1,         0},         // (subrame number 4)
+{3,            -1,         1,         0,         8,           0,        1,        1,         0},         // (subrame number 3)
+{3,            -1,         1,         0,         4,           0,        1,        1,         0},         // (subrame number 2)
+{3,            -1,         1,         0,         66,          0,        1,        1,         0},         // (subrame number 1,6)
+{3,            -1,         1,         0,         66,          7,        1,        1,         0},         // (subrame number 1,6)
+{3,            -1,         1,         0,         528,         0,        1,        1,         0},         // (subrame number 4,9)
+{3,            -1,         1,         0,         264,         0,        1,        1,         0},         // (subrame number 3,8)
+{3,            -1,         1,         0,         132,         0,        1,        1,         0},         // (subrame number 2,7)
+{3,            -1,         1,         0,         768,         0,        1,        1,         0},         // (subrame number 8,9)
+{3,            -1,         1,         0,         784,         0,        1,        1,         0},         // (subrame number 4,8,9)
+{3,            -1,         1,         0,         536,         0,        1,        1,         0},         // (subrame number 3,4,9)
+{3,            -1,         1,         0,         896,         0,        1,        1,         0},         // (subrame number 7,8,9)
+{3,            -1,         1,         0,         792,         0,        1,        1,         0},         // (subrame number 3,4,8,9)
+{3,            -1,         1,         0,         594,         0,        1,        1,         0},         // (subrame number 1,4,6,9)
+{3,            -1,         1,         0,         682,         0,        1,        1,         0},         // (subrame number 1,3,5,7,9)
 {0xa1,         -1,         16,        1,         512,         0,         2,         6,         2},         // (subrame number 9)
 {0xa1,         -1,         8,         1,         512,         0,         2,         6,         2},         // (subrame number 9)
 {0xa1,         -1,         4,         1,         512,         0,         1,         6,         2},         // (subrame number 9)
@@ -873,16 +1006,69 @@ int64_t table_6_3_3_2_4_prachConfig_Index [256][10] = {
 
 
 int get_format0(uint8_t index,
-                uint8_t unpaired){
+                uint8_t unpaired,
+		frequency_range_t frequency_range){
 
   uint16_t format;
-  if (unpaired)
-    format = table_6_3_3_2_3_prachConfig_Index[index][0];
-  else
-    format = table_6_3_3_2_2_prachConfig_Index[index][0];
-
+  if (unpaired) {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_3_prachConfig_Index[index][0];
+    else
+      format = table_6_3_3_2_4_prachConfig_Index[index][0];
+  }
+  else {
+    if (frequency_range==FR1)
+      format = table_6_3_3_2_2_prachConfig_Index[index][0];
+    else
+      AssertFatal(0==1,"no paired spectrum for FR2\n");
+  }
   return format;
 }
+
+int64_t *get_prach_config_info(uint32_t pointa,
+                               uint8_t index,
+                               uint8_t unpaired) {
+  int64_t *prach_config_info_p;
+
+  if (pointa > 2016666) { //FR2
+    prach_config_info_p = table_6_3_3_2_4_prachConfig_Index[index];
+  }
+  else { // FR1
+    if (unpaired)
+      prach_config_info_p = table_6_3_3_2_3_prachConfig_Index[index];
+    else
+      prach_config_info_p = table_6_3_3_2_2_prachConfig_Index[index];
+  } // FR2 / FR1
+
+  return prach_config_info_p;
+}
+
+void find_aggregation_candidates(uint8_t *aggregation_level,
+                                 uint8_t *nr_of_candidates,
+                                 NR_SearchSpace_t *ss) {
+
+  if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
+    *aggregation_level = 1;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
+  }
+  if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
+    *aggregation_level = 2;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
+  }
+  if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
+    *aggregation_level = 4;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
+  }
+  if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
+    *aggregation_level = 8;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
+  }
+  if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
+    *aggregation_level = 16;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
+  }
+}
+
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
@@ -955,6 +1141,162 @@ void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
   }
 }
 
+int get_nr_prach_occasion_info_from_index(uint8_t index,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur,
+                                 uint8_t *N_RA_slot,
+                                 uint16_t *N_RA_sfn,
+                                 uint8_t *max_association_period) {
+
+  int x;
+  int64_t s_map;
+  uint8_t format2 = 0xff;
+  if (pointa > 2016666) { //FR2
+    x = table_6_3_3_2_4_prachConfig_Index[index][2];
+    s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
+    for(int i = 0; i < 64 ;i++) {
+      if ( (s_map >> i) & 0x01) {
+        (*N_RA_sfn)++;
+      }
+    }
+    *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
+    *max_association_period = 160/(x * 10); 
+    if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+      *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];//multiple prach occasions in diff slot
+      *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
+      *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
+      if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
+        format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
+        
+      *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
+      LOG_D(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
+            index,
+            pointa,
+            mu,
+            unpaired,
+            *start_symbol,
+            *N_t_slot,
+            *N_dur,
+	    *N_RA_sfn);
+    }
+    return 1;
+ }
+  else {
+
+    if (unpaired) {
+      x = table_6_3_3_2_3_prachConfig_Index[index][2];
+      s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
+		  for(int i = 0; i < 64 ;i++) {
+        if ( (s_map >> i) & 0x01) {
+          (*N_RA_sfn)++;
+				}
+      }
+      *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
+      *max_association_period = 160/(x * 10); 
+      if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+        *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
+        *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
+        *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
+        if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
+          format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
+        *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
+        LOG_I(MAC,"Getting Total PRACH info from index %d (col %lu ) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
+              index, table_6_3_3_2_3_prachConfig_Index[index][6],
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur,
+							*N_RA_sfn);
+      }
+		  return 1;
+	  }
+    else { // FDD
+      x = table_6_3_3_2_2_prachConfig_Index[index][2];
+      s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+      *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6];
+      if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+        *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
+        *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
+        *N_dur = table_6_3_3_2_2_prachConfig_Index[index][8];
+        if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
+          format2 = (uint8_t) table_6_3_3_2_2_prachConfig_Index[index][1];
+        *format = ((uint8_t) table_6_3_3_2_2_prachConfig_Index[index][0]) | (format2<<8);
+        LOG_D(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n",
+              index,
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur);
+      }
+      return 1;
+    }
+  }
+}
+
+
+uint8_t get_nr_prach_duration(uint8_t prach_format){
+
+  switch(prach_format){
+
+      case 0:  // format 0
+         return 0;
+
+      case 1:  // format 1
+         return 0;
+
+      case 2:  // format 2
+         return 0;
+
+      case 3:  // format 3
+         return 0;
+
+      case 4:  // format A1
+         return 2;
+
+      case 5:  // format A2
+         return 4;
+
+      case 6:  // format A3
+         return 6;
+
+      case 7:  // format B1
+         return 2;
+
+      case 8:  // format B4
+         return 12;
+
+      case 9:  // format C0
+         return 2;
+
+      case 10:  // format C2
+         return 6;
+
+      case 11:  // format A1/B1
+         return 2;
+
+      case 12:  // format A2/B2
+         return 4;
+
+      case 13:  // format A3/B3
+         return 6;
+
+      default :
+         AssertFatal(1==0,"Invalid Prach format\n");
+         break;
+
+  }
+
+}
+
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
                                  int slot,
@@ -964,7 +1306,10 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint16_t *format,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
-                                 uint8_t *N_dur) {
+                                 uint8_t *N_dur,
+                                 uint16_t *RA_sfn_index,
+                                 uint8_t *N_RA_slot,
+				 uint8_t *config_period) {
 
   int x,y;
   int64_t s_map;
@@ -980,27 +1325,39 @@ int get_nr_prach_info_from_index(uint8_t index,
     if ( (frame%x)==y || (frame%x)==y2 ) {
       slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
+      if ((s_map >> slot_60khz) & 0x01 ) {
+        for(int i = 0; i <= slot_60khz ;i++) {
+          if ( (s_map >> i) & 0x01) {
+            (*RA_sfn_index)++;
+          }
+        }
+      }
       if ( ((s_map>>slot_60khz)&0x01) ) {
+        *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
         if (mu == 3) {
-          if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 0) )
+          if ( (*N_RA_slot == 1) && (slot%2 == 0) )
             return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
         }
         if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+          *config_period = x;
           *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];
           *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
           *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
           if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
             format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
           *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
-          LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-            slot,
-            index,
-            pointa,
-            mu,
-            unpaired,
-            *start_symbol,
-            *N_t_slot,
-            *N_dur);
+          LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u\n",
+                frame,
+                slot,
+                index,
+                pointa,
+                mu,
+                unpaired,
+                *start_symbol,
+                *N_t_slot,
+                *N_dur,
+                *N_RA_slot,
+                *RA_sfn_index);
         }
         return 1;
       }
@@ -1018,27 +1375,40 @@ int get_nr_prach_info_from_index(uint8_t index,
       if ( (frame%x)==y ) {
         subframe = slot >> mu;
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
-        if ( (s_map>>subframe)&0x01 ) {
-          if (mu == 1) {
-            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
-              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+        if ((s_map >> subframe) & 0x01 ) {
+          for(int i = 0; i <= subframe ;i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+            }
           }
+        }
+        if ( (s_map>>subframe)&0x01 ) {
+         *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
+          if (mu == 1) {
+            if ( (*N_RA_slot <= 1) && (slot%2 == 0) )
+              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
+          } 
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+            *config_period = x;
             *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
             *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
             *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %ld) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-              slot,
-              index, table_6_3_3_2_3_prachConfig_Index[index][6],
-              pointa,
-              mu,
-              unpaired,
-              *start_symbol,
-              *N_t_slot,
-              *N_dur);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n",
+                  frame,
+                  slot,
+                  index,
+                  table_6_3_3_2_3_prachConfig_Index[index][6],
+                  pointa,
+                  mu,
+                  unpaired,
+                  *start_symbol,
+                  *N_t_slot,
+                  *N_dur,
+                  *N_RA_slot,
+                  *RA_sfn_index);
           }
           return 1;
         }
@@ -1066,15 +1436,16 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_2_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_2_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-              slot,
-              index,
-              pointa,
-              mu,
-              unpaired,
-              *start_symbol,
-              *N_t_slot,
-              *N_dur);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n",
+                  frame,
+                  slot,
+                  index,
+                  pointa,
+                  mu,
+                  unpaired,
+                  *start_symbol,
+                  *N_t_slot,
+                  *N_dur);
           }
           return 1;
         }
@@ -1135,11 +1506,12 @@ uint16_t table_63313[838] = {
 
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
-                            uint8_t unpaired) {
+                            uint8_t unpaired,
+			    frequency_range_t frequency_range) {
 
   uint8_t config_index = rach_config->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t ncs_index = rach_config->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-  uint16_t format0 = get_format0(config_index, unpaired);
+  uint16_t format0 = get_format0(config_index, unpaired, frequency_range);
   uint16_t NCS = get_NCS(ncs_index, format0, rach_config->restrictedSetConfig);
   uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139) ? 139 : 839;
   uint16_t r,u,index,q,d_u,n_shift_ra,n_shift_ra_bar,d_start;
@@ -1152,7 +1524,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
     else {
       r = L_ra/NCS;
       found_sequences = (nb_preambles/r) + (nb_preambles%r!=0); //ceil(nb_preambles/r)
-      printf(" found_sequences %u\n", found_sequences);
+      LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
       return (found_sequences);
     }
   }
@@ -1190,12 +1562,17 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
         AssertFatal(1==0,"Procedure to find nb of sequences for restricted type B not implemented yet");
       }
     }
-    printf(" found_sequences %u\n", found_sequences);
+    LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
     return found_sequences;
   }
 }
 
-
+// Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
+// Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
+// Notes:
+// - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
+// - Frequencies are expressed in KHz
+// - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
 nr_bandentry_t nr_bandtable[] = {
   {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
   {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
@@ -1203,18 +1580,28 @@ nr_bandentry_t nr_bandtable[] = {
   {5,    824000,  849000,  869000,  894000, 20, 173800, 100},
   {7,   2500000, 2570000, 2620000, 2690000, 20, 524000, 100},
   {8,    880000,  915000,  925000,  960000, 20, 185000, 100},
-  {12,   698000,  716000,  728000,  746000, 20, 145800, 100},
+  {12,   698000,  716000,  729000,  746000, 20, 145800, 100},
+  {14,   788000,  798000,  758000,  768000, 20, 151600, 100},
+  {18,   815000,  830000,  860000,  875000, 20, 172000, 100},
   {20,   832000,  862000,  791000,  821000, 20, 158200, 100},
   {25,  1850000, 1915000, 1930000, 1995000, 20, 386000, 100},
+  {26,   814000,  849000,  859000,  894000, 20, 171800, 100},
   {28,   703000,  758000,  758000,  813000, 20, 151600, 100},
+  {29,      000,     000,  717000,  728000, 20, 143400, 100},
+  {30,  2305000, 2315000, 2350000, 2360000, 20, 470000, 100},
   {34,  2010000, 2025000, 2010000, 2025000, 20, 402000, 100},
   {38,  2570000, 2620000, 2570000, 2630000, 20, 514000, 100},
   {39,  1880000, 1920000, 1880000, 1920000, 20, 376000, 100},
   {40,  2300000, 2400000, 2300000, 2400000, 20, 460000, 100},
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
+  {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
+  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
+  {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
+  {65,  1920000, 2010000, 2110000, 2200000, 20, 422000, 100},
   {66,  1710000, 1780000, 2110000, 2200000, 20, 422000, 100},
   {70,  1695000, 1710000, 1995000, 2020000, 20, 399000, 100},
   {71,   663000,  698000,  617000,  652000, 20, 123400, 100},
@@ -1225,22 +1612,31 @@ nr_bandentry_t nr_bandtable[] = {
   {77,  3300000, 4200000, 3300000, 4200000,  2, 620000,  30},
   {78,  3300000, 3800000, 3300000, 3800000,  1, 620000,  15},
   {78,  3300000, 3800000, 3300000, 3800000,  2, 620000,  30},
-  {79,  4400000, 5000000, 4400000, 5000000,  1, 693334,  15},
-  {79,  4400000, 5000000, 4400000, 5000000,  2, 693334,  30},
+  {79,  4400010, 5000000, 4400010, 5000000,  1, 693334,  15},
+  {79,  4400010, 5000000, 4400010, 5000000,  2, 693334,  30},
   {80,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {81,   860000,  915000,     000,     000, 20, 176000, 100},
+  {81,   880000,  915000,     000,     000, 20, 176000, 100},
   {82,   832000,  862000,     000,     000, 20, 166400, 100},
   {83,   703000,  748000,     000,     000, 20, 140600, 100},
   {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
   {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {257,26500000,29500000,26500000,29500000,  1,2054166,  60},
-  {257,26500000,29500000,26500000,29500000,  2,2054167, 120},
-  {258,24250000,27500000,24250000,27500000,  1,2016667,  60},
-  {258,24250000,27500000,24250000,27500000,  2,2016667, 120},
-  {260,37000000,40000000,37000000,40000000,  1,2229166,  60},
-  {260,37000000,40000000,37000000,40000000,  2,2229167, 120},
-  {261,27500000,28350000,27500000,28350000,  1,2070833,  60},
-  {261,27500000,28350000,27500000,28350000,  2,2070833, 120}
+  {89,   824000,  849000,     000,     000, 20, 342000, 100},
+  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
+  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
+  {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
+  {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
+  {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
+  {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
+  {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
+  {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
+  {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
+  {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
+  {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
+  {258,24250080,27500000,24250080,27500000,  2,2016667, 120},
+  {260,37000020,40000000,37000020,40000000,  1,2229166,  60},
+  {260,37000080,40000000,37000080,40000000,  2,2229167, 120},
+  {261,27500040,28350000,27500040,28350000,  1,2070833,  60},
+  {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
 };
 
 
@@ -1286,46 +1682,58 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
-void get_band(uint64_t downlink_frequency,
-              uint16_t *current_band,
-              int32_t *current_offset,
-              lte_frame_type_t *current_type)
-{
-    int ind;
-    uint64_t center_frequency_khz;
-    uint64_t center_freq_diff_khz;
-    uint64_t dl_freq_khz = downlink_frequency/1000;
+// Returns the corresponding row index of the NR table
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
 
-    center_freq_diff_khz = 999999999999999999; // 2^64
-    *current_band = 0;
+  int i, j;
+  int scs_khz = 15 << scs_index;
+  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
+  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
 
-    for ( ind=0;
-          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
-          ind++) {
+  for(j = 0; j < s; j++){
+    if (nr_bandP == supplementary_bands[j])
+      AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
+  }
 
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+  AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
+  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
 
-      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
+  // selection of correct Deltaf raster according to SCS
+  if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
+    i++;
 
-        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-          *current_band = nr_bandtable[ind].band;
-	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
-          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+  LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
-	  if (*current_offset == 0)
-	    *current_type = TDD;
-	  else
-	    *current_type = FDD;
-        }
-      }
-    }
+  return i;
 
-    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
-         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
+}
 
-    AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
+// Computes the duplex spacing (either positive or negative) in KHz
+void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
+
+  int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
+
+  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+
+  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+
+}
+
+void get_frame_type(uint16_t current_band,
+                    uint8_t scs_index,
+                    lte_frame_type_t *current_type){
+
+  int32_t current_offset;
+  get_delta_duplex(current_band, scs_index, &current_offset);
+
+  current_offset *= 1000;
+  if (current_offset == 0)
+    *current_type = TDD;
+  else
+    *current_type = FDD;
+
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
+
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1441,6 +1849,15 @@ uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
 
 }
 
+void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
+
+  uint32_t delta_arfcn = nrarfcn - N_OFFs;
+
+  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
+    AssertFatal(1 == 0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
+
+}
+
 uint32_t to_nrarfcn(int nr_bandP,
                     uint64_t dl_CarrierFreq,
                     uint8_t scs_index,
@@ -1448,17 +1865,10 @@ uint32_t to_nrarfcn(int nr_bandP,
 {
   uint64_t dl_CarrierFreq_by_1k = dl_CarrierFreq / 1000;
   int bw_kHz = bw / 1000;
-  int scs_khz = 15<<scs_index;
-  int i;
-  uint32_t nrarfcn, delta_arfcn;
+  uint32_t nrarfcn;
+  int i = get_nr_table_idx(nr_bandP, scs_index);
 
   LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
-  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-
-  // selection of correct Deltaf raster according to SCS
-  if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-   i++;
 
   AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
@@ -1470,71 +1880,89 @@ uint32_t to_nrarfcn(int nr_bandP,
 	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
  
   int deltaFglobal = 60;
+  uint32_t N_REF_Offs = 2016667;
+  uint64_t F_REF_Offs_khz = 24250080;
 
-  if (dl_CarrierFreq < 3e9) deltaFglobal = 15;
-  if (dl_CarrierFreq < 24.25e9) deltaFglobal = 5;
+  if (dl_CarrierFreq < 24.25e9) {
+    deltaFglobal = 15;
+    N_REF_Offs = 600000;
+    F_REF_Offs_khz = 3000000;
+  }
+  if (dl_CarrierFreq < 3e9) {
+    deltaFglobal = 5;
+    N_REF_Offs = 0;
+    F_REF_Offs_khz = 0;
+  }   
 
   // This is equation before Table 5.4.2.1-1 in 38101-1-f30
   // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
-  nrarfcn =  (((dl_CarrierFreq_by_1k - nr_bandtable[i].dl_min)/deltaFglobal)+nr_bandtable[i].N_OFFs_DL);
-
-  delta_arfcn = nrarfcn - nr_bandtable[i].N_OFFs_DL;
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0,"dl_CarrierFreq %lu corresponds to %u which is not on the raster for step size %lu",
-                dl_CarrierFreq,nrarfcn,nr_bandtable[i].step_size);
+  nrarfcn =  (((dl_CarrierFreq_by_1k - F_REF_Offs_khz)/deltaFglobal)+N_REF_Offs);
+  get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
 
   return nrarfcn;
 }
 
-
+// This function computes the RF reference frequency from the NR-ARFCN according to 5.4.2.1 of 3GPP TS 38.104
+// this function applies to both DL and UL
 uint64_t from_nrarfcn(int nr_bandP,
                       uint8_t scs_index,
-                      uint32_t dl_nrarfcn)
+                      uint32_t nrarfcn)
 {
-  int i;
   int deltaFglobal = 5;
-  int scs_khz = 15<<scs_index;
-  uint32_t delta_arfcn;
+  uint32_t N_REF_Offs = 0;
+  uint64_t F_REF_Offs_khz = 0;
+  int32_t delta_duplex;
+  uint64_t N_OFFs, frequency, freq_min;
+  int i = get_nr_table_idx(nr_bandP, scs_index);
 
-  if (dl_nrarfcn > 599999 && dl_nrarfcn < 2016667)
-    deltaFglobal = 15; 
-  if (dl_nrarfcn > 2016666 && dl_nrarfcn < 3279166)
+  if (nrarfcn > 599999 && nrarfcn < 2016667) {
+    deltaFglobal = 15;
+    N_REF_Offs = 600000;
+    F_REF_Offs_khz = 3000000;
+  }
+  if (nrarfcn > 2016666 && nrarfcn < 3279166) {
     deltaFglobal = 60; 
-  
-  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL[%d] %llu\n",dl_nrarfcn, nr_bandtable[i].band,(long long unsigned int)nr_bandtable[i].N_OFFs_DL);
- 
-  // selection of correct Deltaf raster according to SCS
-  if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-   i++;
+    N_REF_Offs = 2016667;
+    F_REF_Offs_khz = 24250080;
+  }
 
-  delta_arfcn = dl_nrarfcn - nr_bandtable[i].N_OFFs_DL;
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0,"dl_nrarfcn %u is not on the raster for step size %lu",dl_nrarfcn,nr_bandtable[i].step_size);
+  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
 
-  LOG_I(PHY,"Computing dl_frequency (pointA %llu => %llu (dlmin %llu, nr_bandtable[%d].N_OFFs_DL %llu))\n",
-	(unsigned long long)dl_nrarfcn,
-	(unsigned long long)(1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal)),
-	(unsigned long long)nr_bandtable[i].dl_min,
-	i,
-	(unsigned long long)nr_bandtable[i].N_OFFs_DL); 
+  if (delta_duplex <= 0){ // DL band >= UL band
+    if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL;
+      freq_min = nr_bandtable[i].dl_min;
+    } else {// is FDD UL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal;
+      freq_min = nr_bandtable[i].ul_min;
+    }
+  } else { // UL band > DL band
+    if (nrarfcn >= nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal){ // is FDD UL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal;
+      freq_min = nr_bandtable[i].ul_min;
+    } else { // is FDD DL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL;
+      freq_min = nr_bandtable[i].dl_min;
+    }
+  }
 
-  return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
+  LOG_D(MAC, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
+
+  AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
+  get_delta_arfcn(i, nrarfcn, N_OFFs);
+
+  frequency = 1000*(F_REF_Offs_khz + (nrarfcn - N_REF_Offs) * deltaFglobal);
+
+  LOG_I(MAC, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
+    (unsigned long long)nrarfcn,
+    (unsigned long long)frequency/1000,
+    (unsigned long long)freq_min,
+    nr_bandP,
+    (unsigned long long)N_OFFs);
+
+  return frequency;
+
 }
-
-
-int32_t get_nr_uldl_offset(int nr_bandP)
-{
-  int i;
-
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-
-  AssertFatal(i < NR_BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, NR_BANDTABLE_SIZE);
-
-  return (nr_bandtable[i].dl_min - nr_bandtable[i].ul_min);
-}
-
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
@@ -1556,7 +1984,8 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   }
   uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
   uint8_t Imcs = pdsch_rel15->mcsIndex[0];
-  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  uint16_t dmrs_length = get_num_dmrs(pdsch_rel15->dlDmrsSymbPos);
+  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS*dmrs_length - N_PRB_oh;
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
   uint16_t R;
@@ -1573,10 +2002,10 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 
   TBS = nr_compute_tbs(Qm,
                        R,
-		       pdsch_rel15->rbSize,
-		       N_sh_symb,
-		       N_PRB_DMRS, // FIXME // This should be multiplied by the number of dmrs symbols
-		       N_PRB_oh,
+                       pdsch_rel15->rbSize,
+                       N_sh_symb,
+                       N_PRB_DMRS*dmrs_length,
+                       N_PRB_oh,
                        tb_scaling,
 		       pdsch_rel15->nrOfLayers)>>3;
 
@@ -1616,7 +2045,7 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][0]);
     break;
@@ -1624,7 +2053,7 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][0]);
     break;
@@ -1632,13 +2061,14 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][0]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      return 0;
   }
 }
 
@@ -1647,7 +2077,7 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][1]);
     break;
@@ -1655,7 +2085,7 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][1]);
     break;
@@ -1663,13 +2093,14 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][1]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
+      return 0;
   }
 }
 
@@ -1678,7 +2109,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][0]);
     break;
@@ -1686,7 +2117,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][0]);
     break;
@@ -1694,7 +2125,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][0]);
     break;
@@ -1702,7 +2133,7 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 3:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 3 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61411[Imcs][0]);
     break;
@@ -1710,13 +2141,14 @@ uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
     case 4:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 4 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61412[Imcs][0]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      return 0;
   }
 }
 
@@ -1725,7 +2157,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 0:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51311[Imcs][1]);
     break;
@@ -1733,7 +2165,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 1:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_51312[Imcs][1]);
     break;
@@ -1741,7 +2173,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 2:
       if (Imcs > 28) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
-        Imcs = 28;
+        return 0;
       }
       return (Table_51313[Imcs][1]);
     break;
@@ -1749,7 +2181,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 3:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 3 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61411[Imcs][1]);
     break;
@@ -1757,13 +2189,14 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
     case 4:
       if (Imcs > 27) {
         LOG_E(MAC, "Invalid MCS index %d for MCS table 4 (expected range [0,27])\n", Imcs);
-        Imcs = 27;
+        return 0;
       }
       return (Table_61412[Imcs][1]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      LOG_E(MAC, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
+      return 0;
   }
 }
 
@@ -1793,6 +2226,10 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
 
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
+}
+/* returns the total DMRS symbols in a slot*/
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols));
 }
 
 // Table 5.1.2.2.1-1 38.214
@@ -1943,8 +2380,44 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 4;
 }
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+// Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
+// - "UE procedure for applying transform precoding on PUSCH"
+uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+                               const NR_PUSCH_Config_t *pusch_config,
+                               const NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant){
+
+  if (configuredGrant) {
+    if (ubwp->bwp_Dedicated->configuredGrantConfig) {
+      if (ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder) {
+        return *ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder;
+      }
+    }
+  }
+
+  if (rnti_type != NR_RNTI_RA) {
+    if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
+      if (pusch_config->transformPrecoder != NULL) {
+        return *pusch_config->transformPrecoder;
+      }
+    }
+  }
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+    return 1; // Transformprecoding disabled
+  } else {
+    LOG_D(PHY, "MAC_COMMON: Transform Precodig enabled through msg3_transformPrecoder\n");
+    return 0; // Enabled
+  }
+
+  LOG_E(MAC, "In %s: could not fetch transform precoder status...\n", __FUNCTION__);
+  return -1;
+}
+
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
@@ -1956,11 +2429,19 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
   long rbg_size_config;
   int num_entries = 0;
   int pusch_antenna_ports = 1; // TODO hardcoded number of antenna ports for pusch
-  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_PDSCH_Config_t *pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
-  NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
-  NR_SRS_Config_t *srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
+
+  NR_BWP_Downlink_t *bwp = NULL;
+  NR_BWP_Uplink_t *ubwp = NULL;
+  NR_PDSCH_Config_t *pdsch_config = NULL;
+  NR_PUSCH_Config_t *pusch_Config = NULL;
+  NR_SRS_Config_t *srs_config = NULL;
+  if(bwp_id > 0) {
+    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+    ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+    pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+    pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
+    srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
+  }
 
   switch(format) {
     /*Only sizes for 0_0 and 1_0 are correct at the moment*/
@@ -1997,8 +2478,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         rbg_size_config = 1;
       else
         rbg_size_config = 0;
-      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
+                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
       if (pusch_Config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;
@@ -2072,16 +2553,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         }
       }
       // Precoding info and number of layers
-      long transformPrecoder;
-      if (pusch_Config->transformPrecoder == NULL){
-        // if transform precoder is null, apply the values from msg3
-        if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-          transformPrecoder = 1;
-        else
-          transformPrecoder = 0;
-      }
-      else
-        transformPrecoder = *pusch_Config->transformPrecoder;
+      long transformPrecoder = get_transformPrecoding(scc, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
+
       if (pusch_Config->txConfig != NULL){
         if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
           if (pusch_antenna_ports > 1) {
@@ -2165,8 +2638,13 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
 
     case NR_DL_DCI_FORMAT_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
-      size += 28;
+      size = 28;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
+
+      dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      dci_pdu->time_domain_assignment.nbits = 4;
+      dci_pdu->vrb_to_prb_mapping.nbits = 1;
+
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
@@ -2187,8 +2665,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
       rbg_size_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
-      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
+                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
       if (pdsch_config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;
@@ -2416,8 +2894,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	case 5 :
 	case 6 :
 	case 7 :
-	  AssertFatal(1==0,"Incoompatible NrOfSymbols %d and dmrs_Additional_Position %d\n",
-		      NrOfSymbols,(int)*dmrs_config->dmrs_AdditionalPosition);
+    return(1<<l0);
 	  break;
 	case 8 :
 	case 9:
@@ -2425,26 +2902,26 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	  break;
 	case 10:
 	case 11:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
 	    return(1<<l0 | 1<<9);
 	  else
 	    return(1<<l0 | 1<<6 | 1<<9);
 	  break;
 	case 12:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
 	    return(1<<l0 | 1<<9);
 	  else if (pos2==1)
 	    return(1<<l0 | 1<<6 | 1<<9);
-	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
+	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
 	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
 	  break;
 	case 13:
 	case 14:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
 	    return(1<<l0 | 1<<11);
 	  else if (pos2==1)
 	    return(1<<l0 | 1<<7 | 1<<11);
-	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
+	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
 	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
 	  break;
 	}
@@ -2457,6 +2934,8 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
+        if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
+	if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
       }
     }
     else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
@@ -2519,3 +2998,442 @@ int binomial(int n, int k) {
   return c;
 }
 
+/* extract PTRS values from RC and validate it based upon 38.214 5.1.6.3 */
+bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *portIndex,uint8_t *nERatio, uint8_t *reOffset,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 5.1.6.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ptrs_config->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 5.1.6.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ptrs_config->frequencyDensity->list.array[0],
+                         *ptrs_config->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ptrs_config->timeDensity->list.count < 3) {
+    /* Default value for L_PTRS = 1 as defined in T 38.214 5.1.6.3 */
+       *L_ptrs = 1;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ptrs_config->timeDensity->list.array[0],
+                         *ptrs_config->timeDensity->list.array[1],
+                         *ptrs_config->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  *portIndex =*ptrs_config->epre_Ratio;
+  *nERatio = *ptrs_config->resourceElementOffset;
+  *reOffset  = 0;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 5.1.6.3-1 and Table 5.1.6.3-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PDSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PDSCH with allocation duration of 2 symbols as defined in Clause 7.4.1.1.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+  return valid;
+}
+uint32_t get_ssb_slot(uint32_t ssb_index){
+  //  this function now only support f <= 3GHz
+  return ssb_index & 0x3 ;
+
+  //  return first_symbol(case, freq, ssb_index) / 14
+}
+
+int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                          NR_MIB_t *mib,
+                                          uint8_t extra_bits,
+                                          uint32_t ssb_length,
+                                          uint32_t ssb_index,
+                                          uint32_t ssb_offset_point_a) {
+
+  //  deafult for testing
+  subcarrier_spacing_t scs_ssb = scs_30kHz;
+  channel_bandwidth_t min_channel_bw = bw_10MHz;
+  frequency_range_t frequency_range = FR1;
+  const uint32_t num_slot_per_frame = 20;
+
+  type0_PDCCH_CSS_config->ssb_length = ssb_length;
+  type0_PDCCH_CSS_config->ssb_index = ssb_index;
+  type0_PDCCH_CSS_config->frame = (mib->systemFrameNumber.buf[0] >> mib->systemFrameNumber.bits_unused);
+
+  uint16_t frame_number_4lsb = 0;
+  for (int i=0; i<4; i++) {
+    frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
+  }
+
+  uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
+  uint8_t ssb_subcarrier_offset = (uint8_t)mib->ssb_SubcarrierOffset;
+
+  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame << 4;
+  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame | frame_number_4lsb;
+
+  if(type0_PDCCH_CSS_config->ssb_length == 64){
+    type0_PDCCH_CSS_config->ssb_index = type0_PDCCH_CSS_config->ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
+  }else{
+    if(ssb_subcarrier_offset_msb){
+      ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
+    }
+  }
+
+  //  assume carrier frequency < 6GHz
+  subcarrier_spacing_t scs_pdcch;
+  if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
+    scs_pdcch = scs_15kHz;
+  }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
+    scs_pdcch = scs_30kHz;
+  }
+
+  uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
+  uint32_t index_4msb = (mib->pdcch_ConfigSIB1.controlResourceSetZero);
+  uint32_t index_4lsb = (mib->pdcch_ConfigSIB1.searchSpaceZero);
+
+  type0_PDCCH_CSS_config->num_rbs = -1;
+  type0_PDCCH_CSS_config->num_symbols = -1;
+  type0_PDCCH_CSS_config->rb_offset = -1;
+
+  //  type0-pdcch coreset
+  switch( (scs_ssb << 5) | scs_pdcch ){
+    case (scs_15kHz << 5) | scs_15kHz :
+      AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
+      type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_1_c3[index_4msb];
+      type0_PDCCH_CSS_config->rb_offset   = table_38213_13_1_c4[index_4msb];
+      break;
+
+    case (scs_15kHz << 5) | scs_30kHz:
+      AssertFatal(index_4msb < 14, "38.213 Table 13-2 4 MSB out of range\n");
+      type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_2_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_2_c3[index_4msb];
+      type0_PDCCH_CSS_config->rb_offset   = table_38213_13_2_c4[index_4msb];
+      break;
+
+    case (scs_30kHz << 5) | scs_15kHz:
+      if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
+        AssertFatal(index_4msb < 9, "38.213 Table 13-3 4 MSB out of range\n");
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_3_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_3_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_3_c4[index_4msb];
+      }else if(min_channel_bw & bw_40MHz){
+        AssertFatal(index_4msb < 9, "38.213 Table 13-5 4 MSB out of range\n");
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_5_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_5_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_5_c4[index_4msb];
+      }else{ ; }
+
+      break;
+
+    case (scs_30kHz << 5) | scs_30kHz:
+      if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_4_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_4_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_4_c4[index_4msb];
+
+      }else if(min_channel_bw & bw_40MHz){
+        AssertFatal(index_4msb < 10, "38.213 Table 13-6 4 MSB out of range\n");
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+        type0_PDCCH_CSS_config->num_rbs     = table_38213_13_6_c2[index_4msb];
+        type0_PDCCH_CSS_config->num_symbols = table_38213_13_6_c3[index_4msb];
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_6_c4[index_4msb];
+      }else{ ; }
+      break;
+
+    case (scs_120kHz << 5) | scs_60kHz:
+      AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
+      if(index_4msb & 0x7){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      }else if(index_4msb & 0x18){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 2;
+      }else{ ; }
+
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_7_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_7_c3[index_4msb];
+      if(!is_condition_A && (index_4msb == 8 || index_4msb == 10)){
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_7_c4[index_4msb] - 1;
+      }else{
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_7_c4[index_4msb];
+      }
+      break;
+
+    case (scs_120kHz << 5) | scs_120kHz:
+      AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
+      if(index_4msb & 0x3){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      }else if(index_4msb & 0x0c){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 3;
+      }
+
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_8_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_8_c3[index_4msb];
+      if(!is_condition_A && (index_4msb == 4 || index_4msb == 6)){
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_8_c4[index_4msb] - 1;
+      }else{
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_8_c4[index_4msb];
+      }
+      break;
+
+    case (scs_240kHz << 5) | scs_60kHz:
+      AssertFatal(index_4msb < 4, "38.213 Table 13-9 4 MSB out of range\n");
+      type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_9_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_9_c3[index_4msb];
+      type0_PDCCH_CSS_config->rb_offset   = table_38213_13_9_c4[index_4msb];
+      break;
+
+    case (scs_240kHz << 5) | scs_120kHz:
+      AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
+      if(index_4msb & 0x3){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
+      }else if(index_4msb & 0x0c){
+        type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 2;
+      }
+      type0_PDCCH_CSS_config->num_rbs     = table_38213_13_10_c2[index_4msb];
+      type0_PDCCH_CSS_config->num_symbols = table_38213_13_10_c3[index_4msb];
+      if(!is_condition_A && (index_4msb == 4 || index_4msb == 6)){
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_10_c4[index_4msb]-1;
+      }else{
+        type0_PDCCH_CSS_config->rb_offset   = table_38213_13_10_c4[index_4msb];
+      }
+
+      break;
+
+    default:
+      break;
+  }
+
+  LOG_D(MAC,"Coreset0: index_4msb=%d, num_rbs=%d, num_symb=%d, rb_offset=%d\n",
+        index_4msb,type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
+
+  AssertFatal(type0_PDCCH_CSS_config->num_rbs != -1, "Type0 PDCCH coreset num_rbs undefined");
+  AssertFatal(type0_PDCCH_CSS_config->num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
+  AssertFatal(type0_PDCCH_CSS_config->rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
+
+
+  //uint32_t cell_id = 0;   //  obtain from L1 later
+
+  //mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
+  //mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
+
+//  uint64_t mask = 0x0;
+//  uint8_t i;
+//  for(i=0; i<(type0_PDCCH_CSS_config->num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
+//    mask = mask >> 1;
+//    mask = mask | 0x100000000000;
+//  }
+
+  //LOG_I(MAC,">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
+
+//    mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
+//    mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
+//
+//    //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
+//    mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+//    mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
+
+
+  // type0-pdcch search space
+  float big_o = 0.0f;
+  float big_m = 0.0f;
+  type0_PDCCH_CSS_config->sfn_c = SFN_C_IMPOSSIBLE;   //  only valid for mux=1
+  type0_PDCCH_CSS_config->n_c = UINT_MAX;
+  type0_PDCCH_CSS_config->number_of_search_space_per_slot = UINT_MAX;
+  type0_PDCCH_CSS_config->first_symbol_index = UINT_MAX;
+  type0_PDCCH_CSS_config->search_space_duration = 0;  //  element of search space
+  //  38.213 table 10.1-1
+
+  /// MUX PATTERN 1
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR1){
+    big_o = table_38213_13_11_c1[index_4lsb];
+    type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
+    big_m = table_38213_13_11_c3[index_4lsb];
+
+    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
+    if((temp/num_slot_per_frame) & 0x1){
+      type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
+    }else{
+      type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_0;
+    }
+
+    if((index_4lsb == 1 || index_4lsb == 3 || index_4lsb == 5 || index_4lsb == 7) && (type0_PDCCH_CSS_config->ssb_index&1)){
+      type0_PDCCH_CSS_config->first_symbol_index = type0_PDCCH_CSS_config->num_symbols;
+    }else{
+      type0_PDCCH_CSS_config->first_symbol_index = table_38213_13_11_c4[index_4lsb];
+    }
+    //  38.213 chapter 13: over two consecutive slots
+    type0_PDCCH_CSS_config->search_space_duration = 2;
+  }
+
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR2){
+    big_o = table_38213_13_12_c1[index_4lsb];
+    type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
+    big_m = table_38213_13_12_c3[index_4lsb];
+
+    if((index_4lsb == 1 || index_4lsb == 3 || index_4lsb == 5 || index_4lsb == 10) && (type0_PDCCH_CSS_config->ssb_index&1)){
+      type0_PDCCH_CSS_config->first_symbol_index = 7;
+    }else if((index_4lsb == 6 || index_4lsb == 7 || index_4lsb == 8 || index_4lsb == 11) && (type0_PDCCH_CSS_config->ssb_index&1)){
+      type0_PDCCH_CSS_config->first_symbol_index = type0_PDCCH_CSS_config->num_symbols;
+    }else{
+      type0_PDCCH_CSS_config->first_symbol_index = 0;
+    }
+    //  38.213 chapter 13: over two consecutive slots
+    type0_PDCCH_CSS_config->search_space_duration = 2;
+  }
+
+  /// MUX PATTERN 2
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 2){
+
+    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
+      //  38.213 Table 13-13
+      AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
+      //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
+      //                sfn_c = SFN_C_EQ_SFN_SSB;
+      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
+        case 0:
+          type0_PDCCH_CSS_config->first_symbol_index = 0;
+          break;
+        case 1:
+          type0_PDCCH_CSS_config->first_symbol_index = 1;
+          break;
+        case 2:
+          type0_PDCCH_CSS_config->first_symbol_index = 6;
+          break;
+        case 3:
+          type0_PDCCH_CSS_config->first_symbol_index = 7;
+          break;
+        default: break;
+      }
+
+    }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
+      //  38.213 Table 13-14
+      AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
+      //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
+      //                sfn_c = SFN_C_EQ_SFN_SSB;
+      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      switch(type0_PDCCH_CSS_config->ssb_index & 0x7){    //  ssb_index(i) mod 8
+        case 0:
+          type0_PDCCH_CSS_config->first_symbol_index = 0;
+          break;
+        case 1:
+          type0_PDCCH_CSS_config->first_symbol_index = 1;
+          break;
+        case 2:
+          type0_PDCCH_CSS_config->first_symbol_index = 2;
+          break;
+        case 3:
+          type0_PDCCH_CSS_config->first_symbol_index = 3;
+          break;
+        case 4:
+          type0_PDCCH_CSS_config->first_symbol_index = 12;
+          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          break;
+        case 5:
+          type0_PDCCH_CSS_config->first_symbol_index = 13;
+          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          break;
+        case 6:
+          type0_PDCCH_CSS_config->first_symbol_index = 0;
+          break;
+        case 7:
+          type0_PDCCH_CSS_config->first_symbol_index = 1;
+          break;
+        default: break;
+      }
+    }else{ ; }
+    //  38.213 chapter 13: over one slot
+    type0_PDCCH_CSS_config->search_space_duration = 1;
+  }
+
+  /// MUX PATTERN 3
+  if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 3){
+    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_120kHz)){
+      //  38.213 Table 13-15
+      AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
+      //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
+      //                sfn_c = SFN_C_EQ_SFN_SSB;
+      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
+        case 0:
+          type0_PDCCH_CSS_config->first_symbol_index = 4;
+          break;
+        case 1:
+          type0_PDCCH_CSS_config->first_symbol_index = 8;
+          break;
+        case 2:
+          type0_PDCCH_CSS_config->first_symbol_index = 2;
+          break;
+        case 3:
+          type0_PDCCH_CSS_config->first_symbol_index = 6;
+          break;
+        default: break;
+      }
+    }else{ ; }
+    //  38.213 chapter 13: over one slot
+    type0_PDCCH_CSS_config->search_space_duration = 1;
+  }
+
+  AssertFatal(type0_PDCCH_CSS_config->number_of_search_space_per_slot!=UINT_MAX,"");
+
+//  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
+//    mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
+//    mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
+//    mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
+//    mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
+//    mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
+//    mac->type0_pdcch_dci_config.duration = search_space_duration;
+//    mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
+//    AssertFatal(first_symbol_index!=UINT_MAX,"");
+//    mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
+
+  AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
+  AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
+
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
+
+  return 0;
+}
