@@ -183,7 +183,6 @@ void nr_schedule_pucch(int Mod_idP,
                        sub_frame_t slotP);
 
 void nr_csirs_scheduling(int Mod_idP,
-                         int UE_id,
                          frame_t frame,
                          sub_frame_t slot,
                          int n_slots_frame);

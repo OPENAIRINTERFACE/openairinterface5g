@@ -422,7 +422,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // TODO
 
   // Schedule CSI-RS transmission
-  //nr_csirs_scheduling(module_idP, UE_id, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
+  nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // Schedule CSI measurement reporting: check in slot 0 for the whole frame
   if (slot == 0)
