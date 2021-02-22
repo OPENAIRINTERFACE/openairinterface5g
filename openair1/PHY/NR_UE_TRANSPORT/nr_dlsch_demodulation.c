@@ -474,7 +474,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
             avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
-        pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2)+3;
+        pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2)+1;
      }
      else if (dlsch0_harq->mimo_mode == NR_DUALSTREAM)
      {
