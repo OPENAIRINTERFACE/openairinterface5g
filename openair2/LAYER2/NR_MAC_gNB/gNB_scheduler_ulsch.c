@@ -465,7 +465,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       // random access pusch with TC-RNTI
       if (ra->rnti != current_rnti) {
-        LOG_W(MAC,
+        LOG_W(NR_MAC,
               "expected TC-RNTI %04x to match current RNTI %04x\n",
               ra->rnti,
               current_rnti);

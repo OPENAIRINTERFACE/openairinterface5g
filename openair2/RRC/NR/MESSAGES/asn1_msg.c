@@ -1368,9 +1368,9 @@ uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
   rrcSetupRequest->rrcSetupRequest.spare.size=1;
   rrcSetupRequest->rrcSetupRequest.spare.bits_unused = 7;
 
-  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)&ul_ccch_msg);
-  //}
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_CCCH_Message,
                                    NULL,
