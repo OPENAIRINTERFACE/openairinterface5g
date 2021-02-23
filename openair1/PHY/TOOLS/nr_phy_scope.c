@@ -38,10 +38,7 @@ int otg_enabled;
 const FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 const FL_COLOR water_colors[4] = {FL_BLUE,FL_GREEN,FL_YELLOW,FL_RED};
 
-typedef struct {
-  int16_t r;
-  int16_t i;
-} scopeSample_t;
+typedef struct complex16 scopeSample_t;
 #define SquaredNorm(VaR) ((VaR).r*(VaR).r+(VaR).i*(VaR).i)
 
 typedef struct OAIgraph {
@@ -546,6 +543,12 @@ static void *scope_thread_gNB(void *arg) {
   pthread_attr_init(&atr);
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
+  p.gNB->scopeData=calloc(sizeof(nrscope_t));
+  nrscope_t scope=(nrscope_t*) p.gNB->scopeData;
+  scope->rxdataF=(int32_t **)malloc16(Prx*sizeof(int32_t*));
+  for (int i=0; i < p.gNB->gNB_config.carrier_config.num_rx_ant.value; ; i++)
+    scope->rxdataF[i] = (scopeSample_t*)malloc16_clear(p->gNB.frme_parms.samples_per_frame_wCP*sizeof(scopeSample_t));
+
   sleep(3); // no clean interthread barriers
   int fl_argc=1;
   char *name="5G-gNB-scope";
