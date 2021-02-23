@@ -1690,10 +1690,10 @@ static void *ru_thread( void *param ) {
 
     // wait to be woken up
     if (ru->function!=eNodeB_3GPP && ru->has_ctrl_prt == 1) {
-      LOG_I(PHY,"Waiting for control thread to say go\n");
+      LOG_D(PHY,"RU %d: Waiting for control thread to say go\n",ru->idx);
       if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
     } else wait_sync("ru_thread"); 
-    LOG_I(PHY,"Got start from control thread\n");
+    LOG_D(PHY,"RU %d: Got start from control thread\n",ru->idx);
 
     if(!(ru->emulate_rf)) {
       if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
@@ -1721,7 +1721,7 @@ static void *ru_thread( void *param ) {
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
-    LOG_I(PHY,"Starting steady-state operation\n");
+    LOG_D(PHY,"RU %d Starting steady-state operation\n",ru->idx);
 
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN || ru->state == RU_CHECK_SYNC) {
@@ -1898,7 +1898,7 @@ static void *ru_thread( void *param ) {
 
 #endif
       } // else wait_cnt == 0
-    } // ru->state = RU_RUN
+    } // ru->state = RU_RUN || RU_CHECK_SYNC
   } // while !oai_exit
 
   LOG_I(PHY, "Exiting ru_thread \n");

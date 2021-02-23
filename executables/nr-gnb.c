@@ -84,7 +84,7 @@
 
 
 #include "T.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -137,6 +137,7 @@ void wakeup_prach_gNB(PHY_VARS_gNB *gNB, RU_t *ru, int frame, int subframe);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+extern void oai_slot_ind(uint16_t sfn, uint16_t slot);
 extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 //#define TICK_TO_US(ts) (ts.diff)
@@ -151,13 +152,14 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
 
   // *******************************************************************
   // NFAPI not yet supported for NR - this code has to be revised
-  if (nfapi_mode == 1) {
+  if (NFAPI_MODE == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     //add_subframe(&frame, &subframe, 4);
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
-    oai_subframe_ind(frame_rx, slot_rx);
+    // oai_subframe_ind(frame_rx, slot_rx);
+    oai_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||

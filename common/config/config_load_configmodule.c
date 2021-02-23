@@ -43,7 +43,7 @@
 #include "config_userapi.h"
 #include "../utils/LOG/log.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 
 int load_config_sharedlib(configmodule_interface_t *cfgptr) {
   void *lib_handle;

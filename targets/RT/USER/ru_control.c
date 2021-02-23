@@ -720,7 +720,7 @@ void* ru_thread_control( void* param )
 	      break;
 
 	    case RRU_sync_ok: //RAU
-	      if (ru->if_south == LOCAL_RF) LOG_E(PHY,"Received RRU_config_ok msg...Ignoring\n");
+	      if (ru->if_south == LOCAL_RF) LOG_E(PHY,"Received RRU_sync_ok msg...Ignoring\n");
 	      else{
 		if (ru->is_slave == 1){
                   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Received RRU_sync_ok from RRU %d\n",ru->idx);

@@ -93,6 +93,7 @@ extern "C"
 #define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
+#define CONFIG_HLP_NFAPI         "Change the nFAPI mode for NR\n"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
@@ -114,6 +115,7 @@ extern "C"
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define USE_256QAM_TABLE    softmodem_params.use_256qam_table
+#define NFAPI               softmodem_params.nfapi
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -145,6 +147,7 @@ extern "C"
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
+    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                       defintval:0,           TYPE_UINT8,  0},                     \
   }
 
   
@@ -232,6 +235,7 @@ typedef struct {
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
   int            use_256qam_table;
+  uint8_t        nfapi;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);
@@ -244,6 +248,7 @@ extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern int usrp_tx_thread;
+extern uint8_t nfapi_mode;
 #ifdef __cplusplus
 }
 #endif

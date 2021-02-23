@@ -62,7 +62,7 @@ RU_t *ru;
 double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
-uint8_t nfapi_mode=0;
+//uint8_t nfapi_mode=0;
 int sl_ahead = 0;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
@@ -70,6 +70,10 @@ int sl_ahead = 0;
 /* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 
 void
 rrc_data_ind(
