@@ -454,15 +454,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
   int pr_found=0;
-  if(ra->preambles.num_preambles > 0) {
-    for (int i = 0; i < ra->preambles.num_preambles; i++) {
-      if (preamble_index == ra->preambles.preamble_list[i]) {
-        pr_found=1;
-        break;
-      }
+  for (int i = 0; i < ra->preambles.num_preambles; i++) {
+    if (preamble_index == ra->preambles.preamble_list[i]) {
+      pr_found=1;
+      break;
     }
-  } else {
-    pr_found=1;
   }
 
   if (!pr_found) {
@@ -487,7 +483,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 					      preamble_index,
 					      freq_index,
 					      symbol);
-    int loop = 0;
+
     LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;
     ra->timing_offset = timing_offset;
@@ -514,6 +510,10 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     ra->Msg2_slot = msg2_slot;
 
     LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
+
+    // TODO: Configure RRC with the new RNTI of the following commented lines
+    /*
+    int loop = 0;
     if (!ra->cfra) {
       do {
         ra->rnti = (taus() % 65518) + 1;
@@ -525,6 +525,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         abort();
       }
     }
+    */
+
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     ra->beam_id = beam_index;

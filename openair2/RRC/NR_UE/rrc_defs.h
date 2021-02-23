@@ -78,14 +78,14 @@ typedef struct OAI_NR_UECapability_s {
 } OAI_NR_UECapability_t;
 
 typedef enum requested_SI_List_e {
-  SIB2  = 0x1,
-  SIB3  = 0x2,
-  SIB4  = 0x4,
-  SIB5  = 0x8,
-  SIB6  = 0x16,
-  SIB7  = 0x32,
-  SIB8  = 0x64,
-  SIB9  = 0x128
+  SIB2  = 1,
+  SIB3  = 2,
+  SIB4  = 4,
+  SIB5  = 8,
+  SIB6  = 16,
+  SIB7  = 32,
+  SIB8  = 64,
+  SIB9  = 128
 } requested_SI_List_t;
 
 // 3GPP TS 38.300 Section 9.2.6
