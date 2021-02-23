@@ -226,6 +226,7 @@ ngap_gNB_config_t ngap_config;
 uint32_t ngap_generate_gNB_id(void) {return 0;}
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) { return;}
 void configure_nfapi_vnf(char *vnf_addr, int vnf_p5_port) { return;}
-
+void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) { return;}
+void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) { return;}
 
 #endif
