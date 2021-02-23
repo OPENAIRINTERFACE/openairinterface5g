@@ -331,9 +331,10 @@ void end_configmodule(void) {
     printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);
 
     for(int i=0; i<cfgptr->numptrs ; i++) {
-      if (cfgptr->ptrs[i] != NULL) {
+      if (cfgptr->ptrs[i] != NULL && cfgptr->ptrsAllocated[i] == true) {
         free(cfgptr->ptrs[i]);
         cfgptr->ptrs[i]=NULL;
+	cfgptr->ptrsAllocated[i] = false;
       }
     }
 
