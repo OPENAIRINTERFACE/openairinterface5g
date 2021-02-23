@@ -85,6 +85,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int usrp_tx_thread=0;
 
+void nfapi_setmode(nfapi_mode_t nfapi_mode) { return; }
 void exit_function(const char *file, const char *function, const int line, const char *s) {
 
   if (s != NULL) {
