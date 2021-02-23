@@ -140,6 +140,7 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
                         uint8_t *nERatio,uint8_t *reOffset,
                         uint8_t NrOfSymbols);
+void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 

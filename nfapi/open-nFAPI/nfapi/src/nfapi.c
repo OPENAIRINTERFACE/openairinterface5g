@@ -712,7 +712,7 @@ int unpack_tlv_list(unpack_tlv_t unpack_fns[], uint16_t size, uint8_t **ppReadPa
 
 		for(idx = 0; idx < size; ++idx)
 		{
-			if(unpack_fns[idx].tag == generic_tl.tag)
+			if(unpack_fns[idx].tag == generic_tl.tag) // match the extracted tag value with all the tags in unpack_fn list
 			{
 				tagMatch = 1;
 				nfapi_tl_t* tl = (nfapi_tl_t*)(unpack_fns[idx].tlv);
