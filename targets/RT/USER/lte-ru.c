@@ -150,7 +150,7 @@ static inline void fh_if4p5_south_out(RU_t *ru,
                                       uint64_t timestamp) {
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
-  LOG_D(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.tti_tx,ru->idx);
+  LOG_I(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.tti_tx,ru->idx);
 
   if (subframe_select(ru->frame_parms, subframe)!=SF_UL) {
     send_IF4p5(ru, frame, subframe, IF4p5_PDLFFT);
@@ -224,7 +224,7 @@ void fh_if4p5_south_in(RU_t *ru,
   if (proc->symbol_mask[*subframe]<symbol_mask_full) { // this is normal case, if not true then we received a PULTICK before the previous subframe was finished
     do {
       recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
-      LOG_D(PHY,"fh_if4p5_south_in (%s/%d): RU %d, frame %d, subframe %d, f %d, sf %d, symbol %d\n",packet_type == IF4p5_PULFFT ? "PULFFT" : "PULTICK",packet_type,ru->idx,*frame,*subframe,f,sf,symbol_number);
+      LOG_I(PHY,"fh_if4p5_south_in (%s/%d): RU %d, frame %d, subframe %d, f %d, sf %d, symbol %d\n",packet_type == IF4p5_PULFFT ? "PULFFT" : "PULTICK",packet_type,ru->idx,*frame,*subframe,f,sf,symbol_number);
 
       if (oai_exit == 1 || ru->cmd== STOP_RU) break;
 
@@ -1126,7 +1126,7 @@ void wakeup_L1s(RU_t *ru) {
   PHY_VARS_eNB *eNB       = eNB_list[0];
   L1_proc_t *proc         = &eNB->proc;
   struct timespec t;
-  LOG_D(PHY, "wakeup_L1s (num %d) for RU %d (%d.%d) ru->eNB_top:%p\n", ru->num_eNB, ru->idx, ru->proc.frame_rx, ru->proc.tti_rx, ru->eNB_top);
+  LOG_I(PHY, "wakeup_L1s (num %d) for RU %d (%d.%d) ru->eNB_top:%p\n", ru->num_eNB, ru->idx, ru->proc.frame_rx, ru->proc.tti_rx, ru->eNB_top);
   char string[20];
   sprintf(string, "Incoming RU %d", ru->idx);
 
@@ -1151,13 +1151,13 @@ void wakeup_L1s(RU_t *ru) {
   for (int i=0; i<eNB->num_RU; i++) {
     if (eNB->RU_list[i]->wait_cnt==1 && ru->proc.tti_rx!=9) eNB->RU_list[i]->wait_cnt=0;
 
-    LOG_D(PHY,"RU %d has frame %d and subframe %d, state %s\n",
+    LOG_I(PHY,"RU %d has frame %d and subframe %d, state %s\n",
           eNB->RU_list[i]->idx, eNB->RU_list[i]->proc.frame_rx, eNB->RU_list[i]->proc.tti_rx, ru_states[eNB->RU_list[i]->state]);
 
     if (ru == eNB->RU_list[i] && eNB->RU_list[i]->wait_cnt == 0) {
       //AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n", eNB->Mod_id,ru->proc.frame_rx,ru->proc.tti_rx,ru->idx,eNB->num_RU,proc->RU_mask);
       proc->RU_mask[ru->proc.tti_rx] |= (1<<i);
-    } else if (/*eNB->RU_list[i]->state == RU_SYNC ||*/(eNB->RU_list[i]->is_slave==1 && eNB->RU_list[i]->wait_cnt>0 && ru!=eNB->RU_list[i] && ru->is_slave==0) ) {
+    } else if (eNB->RU_list[i]->state == RU_SYNC ||(eNB->RU_list[i]->is_slave==1 && eNB->RU_list[i]->wait_cnt>0 && ru!=eNB->RU_list[i] /*&& ru->is_slave==0*/) ) {
       proc->RU_mask[ru->proc.tti_rx] |= (1<<i);
     }
 
@@ -1565,7 +1565,7 @@ static void *ru_thread_tx( void *param ) {
                   eNB->Mod_id,eNB_proc->frame_rx,eNB_proc->subframe_rx,ru->idx,eNB->num_RU,eNB_proc->RU_mask_tx);
 
           eNB_proc->RU_mask_tx |= (1<<j);
-        } else if (/*eNB->RU_list[j]->state==RU_SYNC ||*/ (eNB->RU_list[j]->is_slave==1 && eNB->RU_list[j]->wait_cnt>0 && ru!=eNB->RU_list[j] && ru->is_slave==0)) {
+        } else if (eNB->RU_list[j]->state==RU_SYNC ||(eNB->RU_list[j]->is_slave==1 && eNB->RU_list[j]->wait_cnt>0 && ru!=eNB->RU_list[j])) {
           eNB_proc->RU_mask_tx |= (1<<j);
         }
 
@@ -2960,6 +2960,16 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
 	ru[j]->openair0_cfg.time_source = unset;
       }      
 
+      LOG_I(PHY,"RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
+
+      if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) ru[j]->is_slave=1;
+      else ru[j]->is_slave=0;
+
+      LOG_I(PHY,"RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
+
+      if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) ru[j]->ota_sync_enable=1;
+      else ru[j]->ota_sync_enable=0;
+
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
           ru[j]->if_south                        = LOCAL_RF;
@@ -3005,16 +3015,6 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
             ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
             LOG_I(PHY,"Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
           }
-
-          LOG_I(PHY,"RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
-
-          if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) ru[j]->is_slave=1;
-          else ru[j]->is_slave=0;
-
-          LOG_I(PHY,"RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
-
-          if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) ru[j]->ota_sync_enable=1;
-          else ru[j]->ota_sync_enable=0;
         }
 
         ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
