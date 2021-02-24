@@ -2907,7 +2907,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     const uint8_t                ho_state)
 //-----------------------------------------------------------------------------
 {
-  uint8_t   buffer[RRC_BUF_SIZE];
+  uint8_t   buffer[8000]; //RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
   MessageDef *message_p = NULL;
@@ -3545,7 +3545,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, 8000);
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
                                          xid, // Transaction_id,
