@@ -468,10 +468,12 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   
   slot_offset   = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
 
-  if(symbol == 0)
-    rxdata_offset = slot_offset + nb_prefix_samples0 - SOFFSET;
-  else
-    rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
+  // offset of first OFDM symbol
+  rxdata_offset  = slot_offset + nb_prefix_samples0 - SOFFSET;
+  // offset of n-th OFDM symbol
+  rxdata_offset += symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples);
+  // use OFDM symbol from within 1/8th of the CP to avoid ISI
+  rxdata_offset -= nb_prefix_samples / 8;
 
   if(sample_offset>rxdata_offset) {
     memcpy1((void *)tmp_dft_in,
