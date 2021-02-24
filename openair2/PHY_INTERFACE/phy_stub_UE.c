@@ -960,35 +960,6 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
-			nfapi_pnf_p7_config_t *pnf_p7,
-                         nfapi_dl_config_request_t *req) {
-
-  nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
-
-  // UE_mac_inst[Mod_id].p->header = req->header;
-  p->sfn_sf = req->sfn_sf;
-
-  p->vendor_extension = req->vendor_extension;
-
-  p->dl_config_request_body.number_dci = req->dl_config_request_body.number_dci;
-  p->dl_config_request_body.number_pdcch_ofdm_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
-  p->dl_config_request_body.number_pdsch_rnti = req->dl_config_request_body.number_pdsch_rnti;
-  p->dl_config_request_body.number_pdu = req->dl_config_request_body.number_pdu;
-
-  p->dl_config_request_body.tl.tag = req->dl_config_request_body.tl.tag;
-  p->dl_config_request_body.tl.length = req->dl_config_request_body.tl.length;
-
-  p->dl_config_request_body.dl_config_pdu_list =
-      calloc(req->dl_config_request_body.number_pdu,
-             sizeof(nfapi_dl_config_request_pdu_t));
-  for (int i = 0; i < p->dl_config_request_body.number_pdu; i++) {
-    p->dl_config_request_body.dl_config_pdu_list[i] =
-        req->dl_config_request_body.dl_config_pdu_list[i];
-  }
-
-  return 0;
-}
 
 static bool is_my_ul_config_req(nfapi_ul_config_request_t *req)
 {
@@ -1064,33 +1035,6 @@ void nfapi_free_tx_req_pdu_list(nfapi_tx_req_pdu_list_t *list)
     }
   }
   free(list);
-}
-
-int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
-
-  int num_pdus = req->tx_request_body.number_of_pdus;
-
-  nfapi_tx_req_pdu_list_t *list = calloc(1, sizeof(nfapi_tx_req_pdu_list_t) + num_pdus * sizeof(nfapi_tx_request_pdu_t));
-  list->num_pdus = num_pdus;
-  nfapi_tx_request_pdu_t *p = list->pdus;
-
-  for (int i = 0; i < num_pdus; i++) {
-    p[i].num_segments = req->tx_request_body.tx_pdu_list[i].num_segments;
-    p[i].pdu_index = req->tx_request_body.tx_pdu_list[i].pdu_index;
-    p[i].pdu_length = req->tx_request_body.tx_pdu_list[i].pdu_length;
-    for (int j = 0; j < req->tx_request_body.tx_pdu_list[i].num_segments; j++) {
-      p[i].segments[j].segment_length = req->tx_request_body.tx_pdu_list[i].segments[j].segment_length;
-      if (p[i].segments[j].segment_length > 0) {
-        p[i].segments[j].segment_data = calloc(
-            p[i].segments[j].segment_length, sizeof(uint8_t));
-        memcpy(p[i].segments[j].segment_data,
-               req->tx_request_body.tx_pdu_list[i].segments[j].segment_data,
-               p[i].segments[j].segment_length);
-      }
-    }
-  }
-
-  return 0;
 }
 
 static bool is_my_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req)

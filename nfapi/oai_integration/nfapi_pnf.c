@@ -1030,10 +1030,10 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
   p7_config->ue_release_req = &pnf_phy_ue_release_req;
   if (NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
-    p7_config->dl_config_req = &memcpy_dl_config_req;
-    p7_config->ul_config_req = &memcpy_ul_config_req;
-    p7_config->hi_dci0_req = &memcpy_hi_dci0_req;
-    p7_config->tx_req = &memcpy_tx_req;
+    p7_config->dl_config_req = NULL;
+    p7_config->ul_config_req = NULL;
+    p7_config->hi_dci0_req = NULL;
+    p7_config->tx_req = NULL;
   } else {
     p7_config->dl_config_req = &pnf_phy_dl_config_req;
     p7_config->ul_config_req = &pnf_phy_ul_config_req;
