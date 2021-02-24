@@ -546,6 +546,13 @@ typedef struct rrc_gummei_s {
   uint16_t mme_group_id;
 } rrc_gummei_t;
 
+typedef struct {
+  uint16_t ciphering_algorithms;
+  uint16_t integrity_algorithms;
+  uint16_t sk_counter;
+  uint8_t  kgNB[32];
+} lte_rrc_nr_security_t;
+
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
   LTE_SCellToAddMod_r10_t            sCell_config[2];
@@ -614,6 +621,9 @@ typedef struct eNB_RRC_UE_s {
   rrc_gummei_t                       ue_gummei;
 
   security_capabilities_t            security_capabilities;
+
+  /* security capabilities and settings for an UE in ENDC mode */
+  lte_rrc_nr_security_t              nr_security;
 
   int                                next_hop_chain_count;
 

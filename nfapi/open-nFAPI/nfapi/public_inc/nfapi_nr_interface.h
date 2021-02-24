@@ -10,7 +10,7 @@
 #define _NFAPI_NR_INTERFACE_H_
 
 #include "nfapi_interface.h"
-#include <nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h>
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
@@ -22,62 +22,32 @@
 // nFAPI enums
 
 
-
 //These TLVs are used exclusively by nFAPI
-typedef struct
-{
-  // These TLVs are used to setup the transport connection between VNF and PNF
-  // nfapi_ipv4_address_t p7_vnf_address_ipv4;
-  // nfapi_ipv6_address_t p7_vnf_address_ipv6;
-  // nfapi_uint16_tlv_t p7_vnf_port;
+#define NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG 0x0100
+#define NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG 0x0101
+#define NFAPI_NR_NFAPI_P7_VNF_PORT_TAG 0x0102
+#define NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG 0x0103
+#define NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV6_TAG 0x0104
+#define NFAPI_NR_NFAPI_P7_PNF_PORT_TAG 0x0105
+#define NFAPI_NR_NFAPI_DL_TTI_TIMING_OFFSET 0x0106
+#define NFAPI_NR_NFAPI_UL_TTI_TIMING_OFFSET 0x0107
+#define NFAPI_NR_NFAPI_UL_DCI_TIMING_OFFSET 0x0108
+#define NFAPI_NR_NFAPI_TX_DATA_TIMING_OFFSET 0x0109
+#define NFAPI_NR_NFAPI_TIMING_WINDOW_TAG 0x011E
+#define NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG 0x011F
+#define NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG 0x0120
 
-  // nfapi_ipv4_address_t p7_pnf_address_ipv4;
-  // nfapi_ipv6_address_t p7_pnf_address_ipv6;
-  // nfapi_uint16_tlv_t p7_pnf_port;
-  
-  // // These TLVs are used to setup the transport connection between VNF and PNF
-  // nfapi_uint8_tlv_t dl_ue_per_sf;
-  // nfapi_uint8_tlv_t ul_ue_per_sf;
-
-  // These TLVs are used by PNF to report its RF capabilities to the VNF software
-  nfapi_rf_bands_t rf_bands;
-
-  // These TLVs are used by the VNF to configure the synchronization with the PNF.
-  // nfapi_uint8_tlv_t timing_window;
-  // nfapi_uint8_tlv_t timing_info_mode;
-  // nfapi_uint8_tlv_t timing_info_period;
-
-  // These TLVs are used by the VNF to configure the RF in the PNF
-  // nfapi_uint16_tlv_t max_transmit_power;
-  nfapi_uint32_tlv_t nrarfcn;
-
-  // nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
-  // nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;
-  // nfapi_nmm_frequency_bands_t nmm_lte_frequency_bands;
-  // nfapi_uint8_tlv_t nmm_uplink_rssi_supported;
-
-} nfapi_nr_nfapi_t;
-
-#define NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG 0x5100
-#define NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG 0x5101
-#define NFAPI_NR_NFAPI_P7_VNF_PORT_TAG 0x5102
-#define NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG 0x5103
-#define NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV6_TAG 0x5104
-#define NFAPI_NR_NFAPI_P7_PNF_PORT_TAG 0x5105
-
+/*
 #define NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG 0x510A
 #define NFAPI_NR_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG 0x510B
 #define NFAPI_NR_NFAPI_RF_BANDS_TAG 0x5114
-#define NFAPI_NR_NFAPI_TIMING_WINDOW_TAG 0x511E
-#define NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG 0x511F
-#define NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG 0x5120
 #define NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG 0x5128
 #define NFAPI_NR_NFAPI_NRARFCN_TAG 0x5129
 #define NFAPI_NR_NFAPI_NMM_GSM_FREQUENCY_BANDS_TAG 0x5130
 #define NFAPI_NR_NFAPI_NMM_UMTS_FREQUENCY_BANDS_TAG 0x5131
 #define NFAPI_NR_NFAPI_NMM_LTE_FREQUENCY_BANDS_TAG 0x5132
 #define NFAPI_NR_NFAPI_NMM_UPLINK_RSSI_SUPPORTED_TAG 0x5133
-
+*/
 // P5 Message Structures
 
 typedef struct {
@@ -323,7 +293,7 @@ typedef enum {
 
 typedef enum {
   NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED=0,
-  NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED
+  NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED=1 
 } nfapi_nr_cce_reg_mapping_type_e;
 
 typedef enum {
