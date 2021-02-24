@@ -62,6 +62,7 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
 
       if ( (cfgoptions->paramflags & PARAMFLAG_NOFREE) == 0) {
         config_get_if()->ptrs[config_get_if()->numptrs] = (char *)ptr;
+	config_get_if()->ptrsAllocated[config_get_if()->numptrs] = true;
         config_get_if()->numptrs++;
       }
     } else {
@@ -82,7 +83,9 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
   }
 
   if (*ptr == NULL) {
-    *ptr = malloc(length>40?length:40); // LTS: dummy fix, waiting Francois full fix in 4G branch
+    *ptr = malloc(length>40?length:40);
+    // LTS: dummy fix, waiting Francois full fix in 4G branch
+    // the issue is we don't know at this point the size we will get
 
     if ( *ptr != NULL) {
       memset(*ptr,0,length);

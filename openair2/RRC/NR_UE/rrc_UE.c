@@ -186,7 +186,8 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc
+    uint8_t                  *const kUPenc,
+    uint8_t                  *const kUPint
   #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
   #endif
@@ -1510,8 +1511,9 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
     }
     sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
     if (*(int64_t*)sib1 != 1) {
-       LOG_D(RRC, "SIB1 address: %lx\n", *(int64_t*)sib1);
-       xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
+      LOG_I(RRC, "SIB1 decoded\n");
+      if( g_log->log_component[RRC].level >= OAILOG_DEBUG  )
+        xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
     }
     else
        LOG_E(PHY, "sib1 is starting by 8 times 0\n");
@@ -2100,6 +2102,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
     //                             NULL,
     //                             NULL,
     //                             NULL,
+    //                             NULL,
     //                             NULL);
     // Refresh SRBs
     // nr_rrc_rlc_config_asn1_req(ctxt_pP,
@@ -2190,6 +2193,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
       //                             NULL,
       //                             NULL,
       //                             kUPenc,
+      //                             NULL,
       //                             NULL,
       //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
       //                             NULL);
@@ -2845,6 +2849,8 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
     uint32_t length;
     uint8_t buffer[100];
     length = do_RRCReestablishmentComplete(buffer, rrcReestablishment->rrc_TransactionIdentifier);
+    LOG_I(NR_RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCReestablishmentComplete (bytes%d, gNB %d)\n",
+          ctxt_pP->module_id,ctxt_pP->frame, length, gNB_index);
 #ifdef ITTI_SIM
     MessageDef *message_p;
     uint8_t *message_buffer;

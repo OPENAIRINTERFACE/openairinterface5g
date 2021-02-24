@@ -369,7 +369,7 @@ void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -435,14 +435,14 @@ void *itti_sim_ue_rrc_task( void *args_p) {
         LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
       case GNB_RRC_BCCH_DATA_IND:
-          message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, NR_RRC_MAC_BCCH_DATA_IND);
+          message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, 0, NR_RRC_MAC_BCCH_DATA_IND);
           memset (NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, 0, BCCH_SDU_SIZE);
           NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu_size  = GNB_RRC_BCCH_DATA_IND(msg_p).size;
           memcpy (NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, GNB_RRC_BCCH_DATA_IND(msg_p).sdu, GNB_RRC_BCCH_DATA_IND(msg_p).size);
           itti_send_msg_to_task (TASK_RRC_NRUE, instance, message_p);
         break;
       case GNB_RRC_CCCH_DATA_IND:
-        message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, NR_RRC_MAC_CCCH_DATA_IND);
+        message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, 0, NR_RRC_MAC_CCCH_DATA_IND);
         printf("receive GNB_RRC_CCCH_DATA_IND\n");
         memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
         memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, GNB_RRC_CCCH_DATA_IND(msg_p).sdu, GNB_RRC_CCCH_DATA_IND(msg_p).size);
@@ -451,7 +451,7 @@ void *itti_sim_ue_rrc_task( void *args_p) {
         break;
       case GNB_RRC_DCCH_DATA_IND:
         printf("receive GNB_RRC_DCCH_DATA_IND\n");
-        message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, NR_RRC_DCCH_DATA_IND);
+        message_p = itti_alloc_new_message (TASK_RRC_UE_SIM, 0, NR_RRC_DCCH_DATA_IND);
         NR_RRC_DCCH_DATA_IND (message_p).dcch_index = GNB_RRC_DCCH_DATA_IND(msg_p).rbid;
         NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = GNB_RRC_DCCH_DATA_IND(msg_p).size;
         NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = GNB_RRC_DCCH_DATA_IND(msg_p).sdu;
@@ -492,14 +492,14 @@ void *itti_sim_gnb_rrc_task( void *args_p) {
         LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
       case UE_RRC_CCCH_DATA_IND:
-          message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, NR_RRC_MAC_CCCH_DATA_IND);
+          message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, 0, NR_RRC_MAC_CCCH_DATA_IND);
           NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size = UE_RRC_CCCH_DATA_IND(msg_p).size;
           memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
           memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).sdu, UE_RRC_CCCH_DATA_IND(msg_p).size);
           itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
            break;
       case UE_RRC_DCCH_DATA_IND:
-    	    message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, NR_RRC_DCCH_DATA_IND);
+    	    message_p = itti_alloc_new_message (TASK_RRC_GNB_SIM, 0, NR_RRC_DCCH_DATA_IND);
     	    NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = UE_RRC_DCCH_DATA_IND(msg_p).size;
           NR_RRC_DCCH_DATA_IND (message_p).dcch_index = UE_RRC_DCCH_DATA_IND(msg_p).rbid;
           NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = UE_RRC_DCCH_DATA_IND(msg_p).sdu;

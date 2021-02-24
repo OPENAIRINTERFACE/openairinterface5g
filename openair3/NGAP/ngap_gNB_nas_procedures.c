@@ -708,6 +708,7 @@ int ngap_gNB_initial_ctxt_resp(
   ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_RAN_UE_NGAP_ID;
   ie->value.choice.RAN_UE_NGAP_ID = initial_ctxt_resp_p->gNB_ue_ngap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
   /* optional */
   if (initial_ctxt_resp_p->nb_of_pdusessions){
     ie = (NGAP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(NGAP_InitialContextSetupResponseIEs_t));

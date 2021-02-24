@@ -39,6 +39,7 @@
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include "UTIL/OSA/osa_defs.h"
 
 extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const protocol_ctxt_t *const  ctxt_pP,
@@ -48,7 +49,8 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc
+    uint8_t                  *const kUPenc,
+    uint8_t                  *const kUPint
   #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
   #endif
@@ -62,7 +64,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
 
   OCTET_STRING_t *ueCapabilityRAT_Container_nr=NULL;
@@ -74,8 +76,8 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
   AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
 
   for (int i=0; i<list_size; i++) {
-    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
-    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
+    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container;
+    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container;
   }
 
   // decode and store capabilities
@@ -115,28 +117,14 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
 
   // dump ue_capabilities
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1 && ueCapabilityRAT_Container_nr != NULL) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) && ueCapabilityRAT_Container_nr != NULL ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_NR_Capability, ue_context_p->ue_context.UE_Capability_nr);
   }
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1 && ueCapabilityRAT_Container_MRDC != NULL) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) && ueCapabilityRAT_Container_MRDC != NULL ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }
 
-  if(cg_config_info && cg_config_info->mcg_RB_Config) {
-    asn_dec_rval_t dec_rval = uper_decode(NULL,
-                                          &asn_DEF_NR_RadioBearerConfig,
-                                          (void **)&ue_context_p->ue_context.rb_config,
-                                          cg_config_info->mcg_RB_Config->buf,
-                                          cg_config_info->mcg_RB_Config->size, 0, 0);
-
-    if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-      AssertFatal(1==0,"[InterNode] Failed to decode mcg_rb_config (%zu bits), size of OCTET_STRING %lu\n",
-                  dec_rval.consumed, cg_config_info->mcg_RB_Config->size);
-    }
-  }
-
-  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *)ue_context_p->ue_context.rb_config);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
 
@@ -152,6 +140,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
   protocol_ctxt_t ctxt={0};
+  unsigned char *kUPenc = NULL;
+  int i;
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
@@ -162,9 +152,91 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
   carrier->initial_csi_index[rrc->Nb_ue] = 0;
+  ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
-    ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
-    fill_default_rbconfig(ue_context_p->ue_context.rb_config);
+    fill_default_rbconfig(ue_context_p->ue_context.rb_config,
+                          5 /* EPS bearer ID */,
+                          1 /* drb ID */,
+                          NR_CipheringAlgorithm_nea0,
+                          NR_SecurityConfig__keyToUse_master);
+  } else {
+    /* TODO: handle more than one bearer */
+    if (m == NULL) {
+      LOG_E(RRC, "fatal: m==NULL\n");
+      exit(1);
+    }
+    if (m->nb_e_rabs_tobeadded != 1) {
+      LOG_E(RRC, "fatal: m->nb_e_rabs_tobeadded = %d, should be 1\n", m->nb_e_rabs_tobeadded);
+      exit(1);
+    }
+
+    /* store security key and security capabilities */
+    memcpy(ue_context_p->ue_context.kgnb, m->kgnb, 32);
+    ue_context_p->ue_context.security_capabilities.nRencryption_algorithms = m->security_capabilities.encryption_algorithms;
+    ue_context_p->ue_context.security_capabilities.nRintegrity_algorithms = m->security_capabilities.integrity_algorithms;
+
+    /* Select ciphering algorithm based on gNB configuration file and
+     * UE's supported algorithms.
+     * We take the first from the list that is supported by the UE.
+     * The ordering of the list comes from the configuration file.
+     */
+    /* preset nea0 as fallback */
+    ue_context_p->ue_context.ciphering_algorithm = 0;
+    for (i = 0; i < rrc->security.ciphering_algorithms_count; i++) {
+      int nea_mask[4] = {
+        0,
+        0x8000,  /* nea1 */
+        0x4000,  /* nea2 */
+        0x2000   /* nea3 */
+      };
+      if (rrc->security.ciphering_algorithms[i] == 0) {
+        /* nea0 already preselected */
+        break;
+      }
+      if (ue_context_p->ue_context.security_capabilities.nRencryption_algorithms & nea_mask[rrc->security.ciphering_algorithms[i]]) {
+        ue_context_p->ue_context.ciphering_algorithm = rrc->security.ciphering_algorithms[i];
+        break;
+      }
+    }
+
+    LOG_I(RRC, "selecting ciphering algorithm %d\n", (int)ue_context_p->ue_context.ciphering_algorithm);
+
+    /* integrity: no integrity protection for DRB in ENDC mode
+     * as written in 38.331: "If UE is connected to E-UTRA/EPC, this field
+     * indicates the integrity protection algorithm to be used for SRBs
+     * configured with NR PDCP, as specified in TS 33.501"
+     * So nothing for DRB. Plus a test with a COTS UE revealed that it
+     * did not apply integrity on the DRB.
+     */
+    ue_context_p->ue_context.integrity_algorithm = 0;
+
+    LOG_I(RRC, "selecting integrity algorithm %d\n", ue_context_p->ue_context.integrity_algorithm);
+
+    /* derive UP security key */
+    unsigned char *kUPenc_kdf;
+    nr_derive_key_up_enc(ue_context_p->ue_context.ciphering_algorithm,
+                         ue_context_p->ue_context.kgnb,
+                         &kUPenc_kdf);
+    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
+    kUPenc = malloc(16);
+    if (kUPenc == NULL) exit(1);
+    memcpy(kUPenc, kUPenc_kdf+16, 16);
+    free(kUPenc_kdf);
+
+    e_NR_CipheringAlgorithm cipher_algo;
+    switch (ue_context_p->ue_context.ciphering_algorithm) {
+    case 0: cipher_algo = NR_CipheringAlgorithm_nea0; break;
+    case 1: cipher_algo = NR_CipheringAlgorithm_nea1; break;
+    case 2: cipher_algo = NR_CipheringAlgorithm_nea2; break;
+    case 3: cipher_algo = NR_CipheringAlgorithm_nea3; break;
+    default: LOG_E(RRC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__); exit(1);
+    }
+
+    fill_default_rbconfig(ue_context_p->ue_context.rb_config,
+                          m->e_rabs_tobeadded[0].e_rab_id,
+                          m->e_rabs_tobeadded[0].drb_ID,
+                          cipher_algo,
+                          NR_SecurityConfig__keyToUse_secondary);
   }
   fill_default_reconfig(carrier->servingcellconfigcommon,
                         reconfig_ies,
@@ -285,10 +357,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     (NR_SRB_ToAddModList_t *) NULL,
     ue_context_p->ue_context.rb_config->drb_ToAddModList ,
     ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-    0xff,
-    NULL,
-    NULL,
-    NULL,
+    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
+    NULL,          /* kRRCenc - unused */
+    NULL,          /* kRRCint - unused */
+    kUPenc,        /* kUPenc  */
+    NULL,          /* kUPint  - unused */
     NULL,
     NULL,
     ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);

@@ -9,8 +9,6 @@
  *
  *      http://www.openairinterface.org/?page_id=698
  *
- * Author and copyright: Laurent Thomas, open-cells.com
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,38 +18,16 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#include <openair2/RRC/LTE/MESSAGES/asn1_msg.h>
-#include <openair2/RRC/NR/nr_rrc_proto.h>
 
-void rrc_gNB_process_NGAP_DOWNLINK_NAS (void ) {
-   do_DLInformationTransfer(0,NULL,0,0,NULL);
-   // send it as DL data
-/*
-    rrc_data_req (
-      &ctxt,
-      srb_id,
-      (*rrc_eNB_mui)++,
-      SDU_CONFIRM_NO,
-      length,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
-*/
+#ifndef _NR_PDCP_SECURITY_NEA2_H_
+#define _NR_PDCP_SECURITY_NEA2_H_
 
-}
+void *nr_pdcp_security_nea2_init(unsigned char *ciphering_key);
 
-void rrc_gNB_send_NGAP_NAS_FIRST_REQ(void ) {
-   // We are noCore only now
-   // create message that should come from 5GC
-  
-   // send it dow
-   rrc_gNB_process_NGAP_DOWNLINK_NAS();
-}
+void nr_pdcp_security_nea2_cipher(void *security_context,
+                                  unsigned char *buffer, int length,
+                                  int bearer, int count, int direction);
 
-void nr_rrc_rx_tx(void) {
-  // check timers 
+void nr_pdcp_security_nea2_free_security(void *security_context);
 
-  // check if UEs are lost, to remove them from upper layers
-
-  //
-
-}
+#endif /* _NR_PDCP_SECURITY_NEA2_H_ */

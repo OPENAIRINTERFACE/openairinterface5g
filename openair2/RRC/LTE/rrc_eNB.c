@@ -4426,69 +4426,11 @@ static int encode_CG_ConfigInfo(
   struct NR_RadioBearerConfig *rb_config = NULL;
   asn_enc_rval_t enc_rval;
   int RRC_OK = 1;
-  int index = 0;
   char temp_buff[ASN_MAX_ENCODE_SIZE];
-  LTE_UE_CapabilityRAT_ContainerList_t *ue_cap_rat_container_list = NULL;
-  LTE_UE_CapabilityRAT_Container_t ue_cap_rat_container_MRDC;
-  LTE_UE_CapabilityRAT_Container_t ue_cap_rat_container_nr;
+  NR_UE_CapabilityRAT_ContainerList_t *ue_cap_rat_container_list = NULL;
+  NR_UE_CapabilityRAT_Container_t *ue_cap_rat_container_MRDC = NULL;
+  NR_UE_CapabilityRAT_Container_t *ue_cap_rat_container_nr = NULL;
   int RAT_Container_count = 0;
-  rb_config = calloc(1,sizeof(struct NR_RadioBearerConfig));
-  AssertFatal(rb_config != NULL,"failed to allocate memory for rb_config");
-
-  if(ue_context_pP->ue_context.DRB_configList->list.count != 0) {
-    rb_config->drb_ToAddModList = calloc(1,sizeof(struct NR_DRB_ToAddModList ));
-    AssertFatal(rb_config->drb_ToAddModList != NULL,"failed to allocated memory for drbtoaddmodlist");
-    rb_config->drb_ToAddModList->list.count = NUMBEROF_DRBS_TOBE_ADDED;
-    rb_config->drb_ToAddModList->list.array
-      = calloc(NUMBEROF_DRBS_TOBE_ADDED, sizeof(struct NR_DRB_ToAddMod *));
-    AssertFatal( rb_config->drb_ToAddModList->list.array != NULL,
-                 "falied to allocate memory for list.array");
-
-    for(index = 0; index < NUMBEROF_DRBS_TOBE_ADDED; index++) {
-      rb_config->drb_ToAddModList->list.array[index]
-        = calloc(1,sizeof(struct NR_DRB_ToAddMod));
-      AssertFatal(rb_config->drb_ToAddModList->list.array[index] != NULL,
-                  "failed to allocate memory for drb_toaddmod");
-      rb_config->drb_ToAddModList->list.array[index]->drb_Identity
-        = ue_context_pP->ue_context.DRB_configList->list.array[index]->drb_Identity;
-
-      if(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity) {
-        rb_config->drb_ToAddModList->list.array[index]->cnAssociation
-          = calloc(1,sizeof(struct NR_DRB_ToAddMod__cnAssociation));
-        AssertFatal(rb_config->drb_ToAddModList->list.array[index]->cnAssociation != NULL,
-                    "failed to allocate memory cnAssociation");
-        rb_config->drb_ToAddModList->list.array[index]->cnAssociation->present
-          = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-        rb_config->drb_ToAddModList->list.array[index]->cnAssociation->choice.eps_BearerIdentity
-          = *(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity);
-      }
-
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config = calloc(1,sizeof(struct NR_PDCP_Config));
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb = calloc(1,sizeof(struct NR_PDCP_Config__drb));
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->discardTimer = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->discardTimer
-        = *(ue_context_pP->ue_context.DRB_configList->list.array[index]->pdcp_Config->discardTimer);
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeUL
-        = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeDL
-        = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->headerCompression.present
-        = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->t_Reordering = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->t_Reordering
-        = NR_PDCP_Config__t_Reordering_ms0;
-    }
-
-    rb_config->securityConfig = calloc(1,sizeof(struct NR_SecurityConfig ));
-    rb_config->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(struct NR_SecurityAlgorithmConfig));
-    rb_config->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
-    rb_config->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
-    rb_config->securityConfig->keyToUse = calloc(1,sizeof(long));
-    *rb_config->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
-  }
 
   cg_configinfo = calloc(1,sizeof(struct NR_CG_ConfigInfo));
   AssertFatal(cg_configinfo != NULL,"failed to allocate memory for cg_configinfo");
@@ -4503,10 +4445,6 @@ static int encode_CG_ConfigInfo(
     = calloc(1,sizeof(struct NR_CG_ConfigInfo_IEs));
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo != NULL,
               "failed to allocate memory for cg_configinfo_IEs");
-  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo
-    = calloc(1,sizeof( OCTET_STRING_t));
-  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
-              ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
 
   if(ue_context_pP->ue_context.UE_Capability_MRDC) {
     RAT_Container_count++;
@@ -4514,8 +4452,10 @@ static int encode_CG_ConfigInfo(
                                      (void *)ue_context_pP->ue_context.UE_Capability_MRDC,temp_buff,ASN_MAX_ENCODE_SIZE);
     AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                 enc_rval.failed_type->name, enc_rval.encoded);
-    ue_cap_rat_container_MRDC.rat_Type = LTE_RAT_Type_eutra_nr;
-    OCTET_STRING_fromBuf(&ue_cap_rat_container_MRDC.ueCapabilityRAT_Container,
+    ue_cap_rat_container_MRDC = calloc(1, sizeof(*ue_cap_rat_container_MRDC));
+    AssertFatal(ue_cap_rat_container_MRDC != NULL,"failed to allocate memory for ue_cap_rat_container_MRDC");
+    ue_cap_rat_container_MRDC->rat_Type = NR_RAT_Type_eutra_nr;
+    OCTET_STRING_fromBuf(&ue_cap_rat_container_MRDC->ue_CapabilityRAT_Container,
                          (const char *)temp_buff,(enc_rval.encoded+7)>>3);
     memset((void *)temp_buff,0,sizeof(temp_buff));
   }
@@ -4526,44 +4466,30 @@ static int encode_CG_ConfigInfo(
                                      (void *)ue_context_pP->ue_context.UE_Capability_nr,temp_buff,ASN_MAX_ENCODE_SIZE);
     AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                 enc_rval.failed_type->name, enc_rval.encoded);
-    ue_cap_rat_container_nr.rat_Type = LTE_RAT_Type_nr;
-    OCTET_STRING_fromBuf(&ue_cap_rat_container_nr.ueCapabilityRAT_Container,
+    ue_cap_rat_container_nr = calloc(1, sizeof(*ue_cap_rat_container_nr));
+    AssertFatal(ue_cap_rat_container_nr != NULL,"failed to allocate memory for ue_cap_rat_container_nr");
+    ue_cap_rat_container_nr->rat_Type = NR_RAT_Type_nr;
+    OCTET_STRING_fromBuf(&ue_cap_rat_container_nr->ue_CapabilityRAT_Container,
                          (const char *)temp_buff,(enc_rval.encoded+7)>>3);
     memset((void *)temp_buff,0,sizeof(temp_buff));
   }
 
-  ue_cap_rat_container_list = calloc(1,sizeof(LTE_UE_CapabilityRAT_ContainerList_t));
-  ue_cap_rat_container_list->list.count = RAT_Container_count;
-  ue_cap_rat_container_list->list.size = RAT_Container_count * sizeof(LTE_UE_CapabilityRAT_Container_t);
-  ue_cap_rat_container_list->list.array = calloc(RAT_Container_count,sizeof(LTE_UE_CapabilityRAT_Container_t *));
-
-  if(ue_context_pP->ue_context.UE_Capability_MRDC) {
-    ue_cap_rat_container_list->list.array[0] = calloc(1,sizeof(LTE_UE_CapabilityRAT_Container_t));
-    memcpy(ue_cap_rat_container_list->list.array[0],&ue_cap_rat_container_MRDC,sizeof(LTE_UE_CapabilityRAT_Container_t));
+  if (RAT_Container_count) {
+    cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof( OCTET_STRING_t));
+    AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo-> ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
+    ue_cap_rat_container_list = calloc(1,sizeof(NR_UE_CapabilityRAT_ContainerList_t));
+    if (ue_cap_rat_container_MRDC != NULL)
+      ASN_SEQUENCE_ADD(&ue_cap_rat_container_list->list, ue_cap_rat_container_MRDC);
+    if (ue_cap_rat_container_nr != NULL)
+      ASN_SEQUENCE_ADD(&ue_cap_rat_container_list->list, ue_cap_rat_container_nr);
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,NULL,
+                                     (void *)ue_cap_rat_container_list,temp_buff,ASN_MAX_ENCODE_SIZE);
+    AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                enc_rval.failed_type->name, enc_rval.encoded);
+    OCTET_STRING_fromBuf(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo,
+                         (const char *)temp_buff, (enc_rval.encoded+7)>>3);
   }
 
-  if(ue_context_pP->ue_context.UE_Capability_nr) {
-    ue_cap_rat_container_list->list.array[1] = calloc(1,sizeof(LTE_UE_CapabilityRAT_Container_t));
-    memcpy(ue_cap_rat_container_list->list.array[1],&ue_cap_rat_container_nr,sizeof(LTE_UE_CapabilityRAT_Container_t));
-  }
-
-  //this xer_fprint logs can be enabled for additional debugging logs
-  //xer_fprint(stdout,&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,ue_cap_rat_container_list);
-  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,
-                                   (void *)ue_cap_rat_container_list,temp_buff,ASN_MAX_ENCODE_SIZE);
-  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-              enc_rval.failed_type->name, enc_rval.encoded);
-  OCTET_STRING_fromBuf(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo,
-                       (const char *)temp_buff, (enc_rval.encoded+7)>>3);
-  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config
-    = calloc(1,sizeof(OCTET_STRING_t));
-  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
-              mcg_RB_Config != NULL, "failed to allocate memory for mcg_rb_config");
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig,NULL,(void *)rb_config,temp_buff,ASN_MAX_ENCODE_SIZE);
-  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-              enc_rval.failed_type->name, enc_rval.encoded);
-  OCTET_STRING_fromBuf(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config,
-                       (const char *)temp_buff, (enc_rval.encoded+7)>>3);
   // this xer_fprint can be enabled for additional debugging messages
   // xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void *)cg_configinfo);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_ConfigInfo,NULL,(void *)cg_configinfo,
@@ -4573,7 +4499,7 @@ static int encode_CG_ConfigInfo(
   *enc_size = (enc_rval.encoded+7)/8;
   ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig,rb_config);
   ASN_STRUCT_FREE(asn_DEF_NR_CG_ConfigInfo,cg_configinfo);
-  ASN_STRUCT_FREE(asn_DEF_LTE_UE_CapabilityRAT_ContainerList,ue_cap_rat_container_list);
+  ASN_STRUCT_FREE(asn_DEF_NR_UE_CapabilityRAT_ContainerList,ue_cap_rat_container_list);
   return RRC_OK;
 }
 //-----------------------------------------------------------------------------
@@ -4672,11 +4598,20 @@ rrc_eNB_process_MeasurementReport(
 
         msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ);
         memset(&(X2AP_ENDC_SGNB_ADDITION_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_addition_req_t));
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.encryption_algorithms = ue_context_pP->ue_context.nr_security.ciphering_algorithms;
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.integrity_algorithms = ue_context_pP->ue_context.nr_security.integrity_algorithms;
+
+        memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).kgnb, ue_context_pP->ue_context.nr_security.kgNB, 32);
+
         memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
+
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;

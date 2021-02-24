@@ -56,7 +56,7 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 // needed for some functions
@@ -675,7 +675,7 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
+	ret = nr_initial_sync(&proc, UE, 1);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }

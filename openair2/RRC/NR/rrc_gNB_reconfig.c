@@ -128,15 +128,15 @@ void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0) {
 
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
+  ss0->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
   ss0->monitoringSymbolsWithinSlot->size = 2;
   ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
 
   // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
   ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
-  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
   ss0->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
 
   ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
@@ -1177,7 +1177,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
  pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
  pdsch_servingcellconfig->xOverhead = NULL;
- pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = NULL;
+ pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));
+ *pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16;
  pdsch_servingcellconfig->pucch_Cell= NULL;
  pdsch_servingcellconfig->ext1=calloc(1,sizeof(*pdsch_servingcellconfig->ext1));
  pdsch_servingcellconfig->ext1->maxMIMO_Layers = calloc(1,sizeof(*pdsch_servingcellconfig->ext1->maxMIMO_Layers));
@@ -1328,7 +1329,10 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   reconfig->nonCriticalExtension = NULL;
 }
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
+                          int eps_bearer_id, int rb_id,
+                           e_NR_CipheringAlgorithm ciphering_algorithm,
+                           e_NR_SecurityConfig__keyToUse key_to_use) {
 
   rbconfig->srb_ToAddModList = NULL;
   rbconfig->srb3_ToRelease = NULL;
@@ -1336,8 +1340,8 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
   drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
   drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 5;
-  drb_ToAddMod->drb_Identity = 1;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= eps_bearer_id;
+  drb_ToAddMod->drb_Identity = rb_id;
   drb_ToAddMod->reestablishPDCP = NULL;
   drb_ToAddMod->recoverPDCP = NULL;
   drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
@@ -1366,12 +1370,12 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
 
   rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
   rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
-  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
+  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = ciphering_algorithm;
   rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
   rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
-  *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+  *rbconfig->securityConfig->keyToUse = key_to_use;
 
-  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
+//  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 }
 /* Function to set or overwrite PTRS DL RRC parameters */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset)

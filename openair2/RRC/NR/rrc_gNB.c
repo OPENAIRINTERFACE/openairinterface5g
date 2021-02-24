@@ -104,7 +104,8 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc
+    uint8_t                  *const kUPenc,
+    uint8_t                  *const kUPint
   #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
   #endif
@@ -217,6 +218,9 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     rrc->carrier.MIB             = (uint8_t *) malloc16(4);
     rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
     rrc->carrier.sizeof_SIB1     = do_SIB1_NR(&rrc->carrier,configuration);
+    if(get_softmodem_params()->sa) {
+      rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier,configuration);
+    }
   }
   
   
@@ -227,6 +231,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     LOG_I(NR_RRC,"do_SIB23_NR, size %d \n ", rrc->carrier.sizeof_SIB23);
     AssertFatal(rrc->carrier.sizeof_SIB23 != 255,"FATAL, RC.nrrrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
   }
+
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
@@ -447,45 +452,11 @@ rrc_gNB_generate_RRCSetup(
             PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
             PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
             ue_p->Srb0.Tx_buffer.payload_size);
-      uint8_t *message_buffer;
-      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,
-                ue_p->Srb0.Tx_buffer.payload_size);
-      memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_CCCH_DATA_IND);
-      GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-      GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
-      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#else
-      LOG_D(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-      MSC_LOG_TX_MESSAGE(
-        MSC_RRC_GNB,
-        MSC_RRC_UE,
-        ue_p->Srb0.Tx_buffer.Header, // LG WARNING
-        ue_p->Srb0.Tx_buffer.payload_size,
-        MSC_AS_TIME_FMT" RRCSetup UE %x size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_context_pP->ue_context.rnti,
-        ue_p->Srb0.Tx_buffer.payload_size);
-      LOG_I(NR_RRC,
-          PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
-          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-          ue_p->Srb0.Tx_buffer.payload_size);
-      // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-      ue_context_pP->ue_context.ue_release_timer = 1;
-      // remove UE after 10 frames after RRCConnectionRelease is triggered
-      ue_context_pP->ue_context.ue_release_timer_thres = 1000;
-      /* init timers */
-      //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
-
-      nr_rrc_data_req(ctxt_pP,
-            DCCH,
-            rrc_gNB_mui++,
-            SDU_CONFIRM_NO,
-            ue_p->Srb0.Tx_buffer.payload_size,
-            (uint8_t *)ue_p->Srb0.Tx_buffer.Payload,
-            PDCP_TRANSMISSION_MODE_CONTROL);
+  memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
+  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_CCCH_DATA_IND);
+  GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
+  GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #endif
     }
       break;
@@ -628,14 +599,15 @@ rrc_gNB_generate_RRCReject(
     case ngran_gNB:
     {
 #ifdef ITTI_SIM
-      uint8_t *message_buffer;
-      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,
-                ue_p->Srb0.Tx_buffer.payload_size);
-      memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_CCCH_DATA_IND);
-      GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-      GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
-      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+  MessageDef *message_p;
+  uint8_t *message_buffer;
+  message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,
+            ue_p->Srb0.Tx_buffer.payload_size);
+  memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
+  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_CCCH_DATA_IND);
+  GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
+  GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
+  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #endif
       // rrc_mac_config_req_gNB
     }
@@ -840,14 +812,24 @@ rrc_gNB_generate_defaultRRCReconfiguration(
           ue_context_pP->ue_context.rnti,
           rrc_gNB_mui,
           size);
-      nr_rrc_data_req(ctxt_pP,
-                  DCCH,
-                  rrc_gNB_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
-      // rrc_pdcp_config_asn1_req
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
+    memcpy (message_buffer, buffer, size);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
+    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+    GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+    GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
+  nr_rrc_data_req(ctxt_pP,
+              DCCH,
+              rrc_gNB_mui++,
+              SDU_CONFIRM_NO,
+              size,
+              buffer,
+              PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
       // rrc_rlc_config_asn1_req
     }
@@ -1018,6 +1000,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               kUPenc,
                               NULL,
                               NULL,
+                              NULL,
                               NULL);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
@@ -1083,6 +1066,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
             // rrc_mac_config_req_eNB
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
+            /* TODO : It may be needed if gNB goes into full stack working. */
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
             (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
@@ -1182,6 +1166,7 @@ rrc_gNB_generate_RRCReestablishment(
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_context->Srb0.Tx_buffer.payload_size);
 #if(0)
+    /* TODO : It may be needed if gNB goes into full stack working. */
     UE_id = find_nr_UE_id(module_id, rnti);
     if (UE_id != -1) {
       /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
@@ -1691,6 +1676,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             break;
           }
 #if(0)
+          /* TODO : It may be needed if gNB goes into full stack working. */
           int UE_id = find_nr_UE_id(ctxt_pP->module_id, c_rnti);
 
           if(UE_id == -1) {
@@ -1827,6 +1813,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           //                         NULL,
           //                         NULL,
           //                         0xff,
+          //                         NULL,
           //                         NULL,
           //                         NULL,
           //                         NULL,
@@ -2339,6 +2326,7 @@ rrc_gNB_decode_dcch(
                 }
 
 #if(0)
+                /* TODO : It may be needed if gNB goes into full stack working. */
                 //clear
                 int UE_id = find_nr_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
@@ -2533,19 +2521,18 @@ void *rrc_gnb_task(void *args_p) {
 
       /* Messages from MAC */
       case NR_RRC_MAC_CCCH_DATA_IND:
-        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-                                    NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index,
-                                    GNB_FLAG_YES,
-                                    NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
-                                    msg_p->ittiMsgHeader.lte_time.frame,
-                                    msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_I(NR_RRC,"Decoding CCCH : ue %d, inst %ld, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-                ctxt.rnti,
-                instance,
-                NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
-                &ctxt,
-                NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
-
+	PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+				      NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index,
+				      GNB_FLAG_YES,
+				      NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
+				      msg_p->ittiMsgHeader.lte_time.frame,
+				      msg_p->ittiMsgHeader.lte_time.slot);
+        LOG_I(NR_RRC,"Decoding CCCH : inst %ld, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+	      instance,
+	      NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
+	      &ctxt,
+	      NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+	
         if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= CCCH_SDU_SIZE) {
           LOG_I(NR_RRC, "CCCH message has size %d > %d\n",
               NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,CCCH_SDU_SIZE);
@@ -2777,15 +2764,15 @@ rrc_gNB_generate_SecurityModeCommand(
         rrc_gNB_mui,
         size);
 #ifdef ITTI_SIM
-      MessageDef *message_p;
-      uint8_t *message_buffer;
-      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,size);
-      memcpy (message_buffer, buffer, size);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
-      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-      GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
-      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+  MessageDef *message_p;
+  uint8_t *message_buffer;
+  message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,size);
+  memcpy (message_buffer, buffer, size);
+  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
+  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+  GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+  GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
+  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
       LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
       nr_rrc_data_req(ctxt_pP,
@@ -2859,15 +2846,15 @@ rrc_gNB_generate_UECapabilityEnquiry(
         rrc_gNB_mui,
         size);
 #ifdef ITTI_SIM
-      MessageDef *message_p;
-      uint8_t *message_buffer;
-      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
-      memcpy (message_buffer, buffer, size);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
-      GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-      GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-      GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
-      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+  MessageDef *message_p;
+  uint8_t *message_buffer;
+  message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
+  memcpy (message_buffer, buffer, size);
+  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
+  GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+  GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+  GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
+  itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
       nr_rrc_data_req(
         ctxt_pP,

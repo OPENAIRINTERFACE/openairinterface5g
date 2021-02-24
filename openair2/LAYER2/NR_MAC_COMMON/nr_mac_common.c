@@ -2380,8 +2380,44 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 4;
 }
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+// Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
+// - "UE procedure for applying transform precoding on PUSCH"
+uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+                               const NR_PUSCH_Config_t *pusch_config,
+                               const NR_BWP_Uplink_t *ubwp,
+                               uint8_t *dci_format,
+                               int rnti_type,
+                               uint8_t configuredGrant){
+
+  if (configuredGrant) {
+    if (ubwp->bwp_Dedicated->configuredGrantConfig) {
+      if (ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder) {
+        return *ubwp->bwp_Dedicated->configuredGrantConfig->choice.setup->transformPrecoder;
+      }
+    }
+  }
+
+  if (rnti_type != NR_RNTI_RA) {
+    if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
+      if (pusch_config->transformPrecoder != NULL) {
+        return *pusch_config->transformPrecoder;
+      }
+    }
+  }
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+    return 1; // Transformprecoding disabled
+  } else {
+    LOG_D(PHY, "MAC_COMMON: Transform Precodig enabled through msg3_transformPrecoder\n");
+    return 0; // Enabled
+  }
+
+  LOG_E(MAC, "In %s: could not fetch transform precoder status...\n", __FUNCTION__);
+  return -1;
+}
+
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
@@ -2442,8 +2478,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         rbg_size_config = 1;
       else
         rbg_size_config = 0;
-      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
+                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
       if (pusch_Config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;
@@ -2517,16 +2553,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         }
       }
       // Precoding info and number of layers
-      long transformPrecoder;
-      if (pusch_Config->transformPrecoder == NULL){
-        // if transform precoder is null, apply the values from msg3
-        if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-          transformPrecoder = 1;
-        else
-          transformPrecoder = 0;
-      }
-      else
-        transformPrecoder = *pusch_Config->transformPrecoder;
+      long transformPrecoder = get_transformPrecoding(scc, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
+
       if (pusch_Config->txConfig != NULL){
         if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
           if (pusch_antenna_ports > 1) {
@@ -2637,8 +2665,8 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
       rbg_size_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
-      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
+                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
       if (pdsch_config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;
@@ -3039,6 +3067,49 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
   return valid;
 }
+void get_band(uint64_t downlink_frequency,
+              uint16_t *current_band,
+              int32_t *current_offset,
+              lte_frame_type_t *current_type)
+{
+    int ind;
+    uint64_t center_frequency_khz;
+    uint64_t center_freq_diff_khz;
+    uint64_t dl_freq_khz = downlink_frequency/1000;
+
+    center_freq_diff_khz = 999999999999999999; // 2^64
+    *current_band = 0;
+
+    for ( ind=0;
+          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
+          ind++) {
+
+      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+
+      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
+
+        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
+        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+          *current_band = nr_bandtable[ind].band;
+	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
+          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+
+	  if (*current_offset == 0)
+	    *current_type = TDD;
+	  else
+	    *current_type = FDD;
+        }
+      }
+    }
+
+    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
+         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
+
+    AssertFatal(*current_band != 0,
+	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
+}
+
+
 uint32_t get_ssb_slot(uint32_t ssb_index){
   //  this function now only support f <= 3GHz
   return ssb_index & 0x3 ;

@@ -29,10 +29,27 @@
 void nr_pdcp_entity_drb_am_recv_pdu( protocol_ctxt_t *ctxt_pP , nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
+  int sn;
 
   if (size < 3) abort();
+<<<<<<< HEAD
   if (!(buffer[0] & 0x80)) { printf("%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__); exit(1); }
   entity->common.deliver_sdu(ctxt_pP, entity->common.deliver_sdu_data,
+=======
+
+  if (!(buffer[0] & 0x80))
+    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+
+  sn = (((unsigned char)buffer[0] & 0x3) << 16) |
+        ((unsigned char)buffer[1]        <<  8) |
+         (unsigned char)buffer[2];
+
+  if (entity->common.has_ciphering)
+    entity->common.cipher(entity->common.security_context, (unsigned char *)buffer+3, size-3,
+                          entity->rb_id, sn, entity->common.is_gnb ? 0 : 1);
+
+  entity->common.deliver_sdu(entity->common.deliver_sdu_data,
+>>>>>>> origin/develop
                              (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }
 
@@ -56,6 +73,10 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
   buf[2] = sn & 0xff;
   memcpy(buf+3, buffer, size);
 
+  if (entity->common.has_ciphering)
+    entity->common.cipher(entity->common.security_context, (unsigned char *)buf+3, size,
+                          entity->rb_id, sn, entity->common.is_gnb ? 1 : 0);
+
   entity->common.deliver_pdu(entity->common.deliver_pdu_data,
                              (nr_pdcp_entity_t *)entity, buf, size+3, sdu_id);
 }
@@ -68,5 +89,7 @@ void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *_entity, char *ke
 void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *_entity)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
+  if (entity->common.free_security != NULL)
+    entity->common.free_security(entity->common.security_context);
   free(entity);
 }

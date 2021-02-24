@@ -338,7 +338,7 @@ typedef struct x2ap_ENDC_sgnb_addition_req_s {
   /* used for RRC->X2AP in source eNB */
   int rnti;
 
-  security_capabilities_t security_capabilities;
+  nr_security_capabilities_t security_capabilities;
 
   /* SgNB Security Key */
   uint8_t      kgnb[32];

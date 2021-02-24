@@ -298,7 +298,6 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   tx_gain[0][CC_id]   = tx_gain[0][0];
 
   // Set UE variables
-
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
@@ -576,22 +575,15 @@ int main( int argc, char **argv ) {
 
   
   init_NR_UE_threads(1);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  protocol_ctxt_t ctxt_pP = {0};
-  ctxt_pP.enb_flag = ENB_FLAG_NO;
-  ctxt_pP.rnti = 0x1234;
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
-  rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
-  if (create_tasks_nrue(1) < 0) {
-    printf("cannot create ITTI tasks\n");
-    exit(-1); // need a softer mode
-  }
+  // Sleep a while before checking all parameters have been used
+  // Some are used directly in external threads, asynchronously
+  sleep(20);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+
   while(true)
     sleep(3600);
 
