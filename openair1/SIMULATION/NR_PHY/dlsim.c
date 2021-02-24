@@ -151,6 +151,12 @@ nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
+  return 0;
+}
+
 void config_common(int Mod_idP,
                    int pdsch_AntennaPorts, 
 		   NR_ServingCellConfigCommon_t *scc

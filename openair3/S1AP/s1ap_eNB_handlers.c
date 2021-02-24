@@ -864,21 +864,35 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.encryptionAlgorithms);
     S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.integrity_algorithms =
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.integrityProtectionAlgorithms);
-    /* id-SecurityKey : Copy the security key */
   } else {/* ie != NULL */
     return -1;
   }
 
+  /* id-SecurityKey : Copy the security key */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_SecurityKey, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     memcpy(&S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_key,
            ie->value.choice.SecurityKey.buf, ie->value.choice.SecurityKey.size);
-    itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
   } else {/* ie != NULL */
     return -1;
   }
+
+  /* id-NRUESecurityCapabilities */
+  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
+                             S1AP_ProtocolIE_ID_id_NRUESecurityCapabilities, false);
+  if (ie != NULL) {
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.encryption_algorithms =
+      BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRencryptionAlgorithms);
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.integrity_algorithms =
+      BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRintegrityProtectionAlgorithms);
+  } else {
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.encryption_algorithms = 0;
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.integrity_algorithms = 0;
+  }
+
+  itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
 
   return 0;
 }
