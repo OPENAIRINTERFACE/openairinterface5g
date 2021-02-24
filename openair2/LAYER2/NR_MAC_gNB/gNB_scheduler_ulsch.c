@@ -490,12 +490,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
       free(ra->preambles.preamble_list);
-      ra->state = RA_IDLE;
-      LOG_I(NR_MAC,
-            "reset RA state information for RA-RNTI %04x/index %d\n",
-            ra->rnti,
-            i);
 
+      ra->state = Msg4;
+      ra->Msg4_frame = ( frameP +2 ) % 1024;
+      ra->Msg4_slot = 1;
+      LOG_I(MAC, "set RA state to Msg4 for RA-RNTI %04x, msg4 frame %d %d\n", ra->rnti, ra->Msg4_frame, ra->Msg4_slot);
       return;
     }
   }
