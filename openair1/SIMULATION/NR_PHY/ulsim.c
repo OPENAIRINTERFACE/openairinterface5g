@@ -165,6 +165,12 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
   return 0;
 }
 
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
+  return 0;
+}
+
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];

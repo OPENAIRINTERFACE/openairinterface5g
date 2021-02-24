@@ -346,6 +346,7 @@ int config_libconfig_init(char *cfgP[], int numP) {
   libconfig_privdata.configfile = strdup((char *)cfgP[0]);
   config_get_if()->numptrs=0;
   memset(config_get_if()->ptrs,0,sizeof(void *) * CONFIG_MAX_ALLOCATEDPTRS);
+  memset(config_get_if()->ptrsAllocated, 0, sizeof(config_get_if()->ptrsAllocated));
 
   /* Read the file. If there is an error, report it and exit. */
   if(! config_read_file(&(libconfig_privdata.cfg), libconfig_privdata.configfile)) {

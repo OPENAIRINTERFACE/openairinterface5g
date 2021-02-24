@@ -164,6 +164,8 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   //  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB_SUL        = CALLOC(1,sizeof(NR_RSRP_Range_t));
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing       = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = CALLOC(1,sizeof(long));
+  // 0 - ENABLE, 1 - DISABLE, hence explicitly setting to DISABLED.
+  *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = NR_PUSCH_Config__transformPrecoder_disabled;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_PUSCH_ConfigCommon_t)); 
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->present        = NR_SetupRelease_PUSCH_ConfigCommon_PR_setup;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PUSCH_ConfigCommon));
@@ -514,6 +516,101 @@ void RCconfig_nr_macrlc() {
 
 }
 
+void config_security(gNB_RRC_INST *rrc)
+{
+  paramdef_t logparams_defaults[] = SECURITY_GLOBALPARAMS_DESC;
+  int ret = config_get(logparams_defaults,
+                       sizeof(logparams_defaults) / sizeof(paramdef_t),
+                       CONFIG_STRING_SECURITY);
+  int i;
+
+  if (ret < 0) {
+    LOG_W(RRC, "configuration file does not contain a \"security\" section, applying default parameters (no security)\n");
+    rrc->security.ciphering_algorithms[0]    = 0;  /* nea0 = no ciphering */
+    rrc->security.ciphering_algorithms_count = 1;
+    rrc->security.integrity_algorithms[0]    = 0;  /* nia0 = no integrity */
+    rrc->security.integrity_algorithms_count = 1;
+    return;
+  }
+
+  if (logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].numelt > 4) {
+    LOG_E(RRC, "too much ciphering algorithms in section \"security\" of the configuration file, maximum is 4\n");
+    exit(1);
+  }
+  if (logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].numelt > 4) {
+    LOG_E(RRC, "too much integrity algorithms in section \"security\" of the configuration file, maximum is 4\n");
+    exit(1);
+  }
+
+  /* get ciphering algorithms */
+  rrc->security.ciphering_algorithms_count = 0;
+  for (i = 0; i < logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].numelt; i++) {
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea0")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 0;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea1")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 1;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea2")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 2;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea3")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 3;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    LOG_E(RRC, "unknown ciphering algorithm \"%s\" in section \"security\" of the configuration file\n",
+          logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i]);
+    exit(1);
+  }
+
+  /* get integrity algorithms */
+  rrc->security.integrity_algorithms_count = 0;
+  for (i = 0; i < logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].numelt; i++) {
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia0")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 0;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia1")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 1;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia2")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 2;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia3")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 3;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    LOG_E(RRC, "unknown integrity algorithm \"%s\" in section \"security\" of the configuration file\n",
+          logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i]);
+    exit(1);
+  }
+
+  if (rrc->security.ciphering_algorithms_count == 0) {
+    LOG_W(RRC, "no preferred ciphering algorithm set in configuration file, applying default parameters (no security)\n");
+    rrc->security.ciphering_algorithms[0]    = 0;  /* nea0 = no ciphering */
+    rrc->security.ciphering_algorithms_count = 1;
+  }
+
+  if (rrc->security.integrity_algorithms_count == 0) {
+    LOG_W(RRC, "no preferred integrity algorithm set in configuration file, applying default parameters (no security)\n");
+    rrc->security.integrity_algorithms[0]    = 0;  /* nia0 = no integrity */
+    rrc->security.integrity_algorithms_count = 1;
+  }
+}
+
 void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   int                    num_gnbs                                                      = 0;
@@ -680,7 +777,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     }//End for (k=0; k <num_gnbs ; k++)
   }//End if (num_gnbs>0)
 
-
+  config_security(rrc);
 }//End RCconfig_NRRRC function
 
 int RCconfig_nr_gtpu(void ) {

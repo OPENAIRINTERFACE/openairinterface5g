@@ -141,6 +141,12 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
   return 0;
 }
 
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
+  return 0;
+}
+
 int main(int argc, char **argv){
 
   char c;
