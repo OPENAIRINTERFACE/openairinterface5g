@@ -1325,11 +1325,7 @@ void *ue_standalone_pnf_task(void *context)
         abort();
       }
       uint16_t sf = ch_info.sfn_sf & 15;
-      if (sf > 10 && sf < 0)
-      {
-        LOG_E(MAC, "sf out of bounds, sfn: %d\n", sf);
-        abort();
-      }
+      assert(sf < 10);
     }
     else
     {
