@@ -153,6 +153,12 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
+  return 0;
+}
+
 int main(int argc, char **argv){
 
   char c;

@@ -452,4 +452,27 @@ typedef enum {
 #define CONFIG_HLP_WORKER                          "coding and FEP worker thread WORKER_DISABLE or WORKER_ENABLE\n"
 #define CONFIG_HLP_PARALLEL                        "PARALLEL_SINGLE_THREAD, PARALLEL_RU_L1_SPLIT, or PARALLEL_RU_L1_TRX_SPLIT(RU_L1_TRX_SPLIT by defult)\n"
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* security configuration                                                                                                                                                           */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define CONFIG_STRING_SECURITY      "security"
+
+#define SECURITY_CONFIG_CIPHERING   "ciphering_algorithms"
+#define SECURITY_CONFIG_INTEGRITY   "integrity_algorithms"
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*   security configuration                                                                                                                                                         */
+/*   optname                               help                                          paramflags         XXXptr               defXXXval                 type              numelt */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define SECURITY_GLOBALPARAMS_DESC { \
+    {SECURITY_CONFIG_CIPHERING,            "preferred ciphering algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
+    {SECURITY_CONFIG_INTEGRITY,            "preferred integrity algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
+}
+
+#define SECURITY_CONFIG_CIPHERING_IDX   0
+#define SECURITY_CONFIG_INTEGRITY_IDX   1
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
 #endif
