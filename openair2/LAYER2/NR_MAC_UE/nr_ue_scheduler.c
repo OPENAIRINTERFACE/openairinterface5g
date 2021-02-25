@@ -895,6 +895,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             for (int k = 0; k < TBS_bytes; k++) {
               LOG_D(NR_MAC,"(%i): 0x%x\n",k,mac->ulsch_pdu.payload[k]);
             }
+            LOG_I(NR_MAC,"[RAPROC] RA-Msg3 transmitted\n");
           } else {
             if (IS_SOFTMODEM_NOS1 && (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator)){
               // Getting IP traffic to be transmitted

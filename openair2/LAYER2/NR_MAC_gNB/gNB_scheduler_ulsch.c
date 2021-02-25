@@ -476,13 +476,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
       LOG_I(NR_MAC,
-            "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
+            "[gNB %d][RAPROC] PUSCH with TC-RNTI %x received correctly, "
             "adding UE MAC Context UE_id %d/RNTI %04x\n",
             gnb_mod_idP,
             current_rnti,
             UE_id,
             ra->rnti);
 
+      LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received\n");
       LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
       for (int k = 0; k < sdu_lenP; k++) {
         LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
@@ -496,7 +497,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       ra->state = Msg4;
       ra->Msg4_frame = ( frameP +2 ) % 1024;
       ra->Msg4_slot = 1;
-      LOG_I(MAC, "set RA state to Msg4 for RA-RNTI %04x, msg4 frame %d %d\n", ra->rnti, ra->Msg4_frame, ra->Msg4_slot);
+      LOG_I(MAC, "Scheduling RA-Msg4 for TC-RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
       return;
     }
   }

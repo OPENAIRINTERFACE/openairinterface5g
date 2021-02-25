@@ -783,7 +783,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     // FIXME: Remove this
     if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && rnti == ra->t_crnti){
-      LOG_I(NR_MAC,"RA-Msg4 was received\n");
+      LOG_I(NR_MAC,"RA-Msg4 received\n");
       nr_ra_succeeded(module_id, frame, slot);
     }
 

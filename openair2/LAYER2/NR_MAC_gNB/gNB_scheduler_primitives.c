@@ -1698,7 +1698,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_I(MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);
