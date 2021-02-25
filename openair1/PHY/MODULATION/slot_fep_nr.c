@@ -106,6 +106,9 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     rx_offset += (idx_symb%(0x7<<frame_parms->numerology_index)) ? nb_prefix_samples : nb_prefix_samples0;
   rx_offset += frame_parms->ofdm_symbol_size * symbol;
 
+  // use OFDM symbol from within 1/8th of the CP to avoid ISI
+  rx_offset -= nb_prefix_samples / 8;
+
 #ifdef DEBUG_FEP
   //  if (ue->frame <100)
   printf("slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, rx_offset %u\n",
