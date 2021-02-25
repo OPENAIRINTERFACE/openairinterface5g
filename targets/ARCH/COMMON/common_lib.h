@@ -105,9 +105,10 @@ typedef enum {
   ADRV9371_ZC706_DEV,
   /*!\brief device is UEDv2 */
   UEDv2_DEV,
+  RFSIMULATOR,
   MAX_RF_DEV_TYPE
 } dev_type_t;
-#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2"} 
+#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2", "RFSIMULATOR"} 
 /*!\brief transport protocol types
  */
 typedef enum {
@@ -491,15 +492,11 @@ struct openair0_device_t {
 typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg);
 /* type of transport init function, implemented in shared lib */
 typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *eth_params);
-#define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
-#define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
-#define UE_MAGICDL_TDD 0xA6A6A6A6A6A6A6A6  // UE DL TDD record
-#define UE_MAGICUL_TDD 0x6A6A6A6A6A6A6A6A  // UE UL TDD record
+#define UE_MAGICDL 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
+#define UE_MAGICUL 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
 
-#define ENB_MAGICDL_FDD 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
-#define ENB_MAGICUL_FDD 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
-#define ENB_MAGICDL_TDD 0xB6B6B6B6B6B6B6B6  // eNB DL TDD record
-#define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
+#define ENB_MAGICDL 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
+#define ENB_MAGICUL 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
@@ -515,19 +512,6 @@ typedef struct {
   uint32_t option_value;   // Option value
   uint32_t option_flag;    // Option flag
 } samplesBlockHeader_t;
-
-#define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
-#define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
-#define UE_MAGICDL_TDD 0xA6A6A6A6A6A6A6A6  // UE DL TDD record
-#define UE_MAGICUL_TDD 0x6A6A6A6A6A6A6A6A  // UE UL TDD record
-
-#define ENB_MAGICDL_FDD 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
-#define ENB_MAGICUL_FDD 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
-#define ENB_MAGICDL_TDD 0xB6B6B6B6B6B6B6B6  // eNB DL TDD record
-#define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
-
-#define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
-
 
 #ifdef __cplusplus
 extern "C"

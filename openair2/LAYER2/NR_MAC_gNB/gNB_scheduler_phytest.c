@@ -103,7 +103,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
     dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     
-    dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+    dl_tti_pdsch_pdu = &nr_mac->DL_req[CC_id].dl_tti_request_body.dl_tti_pdu_list[nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+1];
     memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
     dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
@@ -238,14 +238,16 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  pdsch_pdu_rel15->mcsIndex[0]);
     */
     
-    dl_req->nPDUs+=2;
+    nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+=2;
     
     TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     TX_req->PDU_length = 6;
     TX_req->PDU_index = nr_mac->pdu_index[CC_id]++;
     TX_req->num_TLV = 1;
     TX_req->TLVs[0].length = 8;
-    memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&cc[CC_id].RAR_pdu.payload[0],TX_req->TLVs[0].length);
+    // why do we copy from RAR_pdu here? Shouldn't we fill some more or less
+    // meaningful data, e.g., padding + random data?
+    //memcpy((void *)&TX_req->TLVs[0].value.direct[0], (void *)&cc[CC_id].RAR_pdu[0].payload[0], TX_req->TLVs[0].length);
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].SFN=frameP;
     nr_mac->TX_req[CC_id].Slot=slotP;

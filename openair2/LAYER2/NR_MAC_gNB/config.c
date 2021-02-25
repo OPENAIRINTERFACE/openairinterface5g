@@ -45,7 +45,7 @@
 
 #include "NR_MIB.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-
+#include "../../../../nfapi/oai_integration/vendor_ext.h"
 /* Softmodem params */
 #include "executables/softmodem-common.h"
 
@@ -320,7 +320,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
       LOG_E(MAC,"TDD configuration can not be done\n");
     else {
       LOG_I(MAC,"TDD has been properly configurated\n");
-       RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
+      RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
     }
   }
 
@@ -382,11 +382,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
-    if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
+    if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
       while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
-	// DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
-	usleep(100 * 1000);
-	printf("Waiting for PHY_config_req\n");
+        // DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
+        usleep(100 * 1000);
+        printf("Waiting for PHY_config_req\n");
       }
     }
   
@@ -416,21 +416,37 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       const int UE_id = add_new_nr_ue(Mod_idP, rnti, secondaryCellGroup);
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
-      /* TODO: should check for free RA process */
       const int CC_id = 0;
-      NR_RA_t *ra = &RC.nrmac[Mod_idP]->common_channels[CC_id].ra[0];
-      ra->state = RA_IDLE;
+      NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[CC_id];
+      uint8_t ra_index = 0;
+      /* checking for free RA process */
+      for(; ra_index < NR_NB_RA_PROC_MAX; ra_index++) {
+        if((cc->ra[ra_index].state == RA_IDLE) && (!cc->ra[ra_index].cfra)) break;
+      }
+      if (ra_index == NR_NB_RA_PROC_MAX) {
+        LOG_E(MAC, "%s() %s:%d RA processes are not available for CFRA RNTI :%x\n", __FUNCTION__, __FILE__, __LINE__, rnti);
+        return -1;
+      }	
+      NR_RA_t *ra = &cc->ra[ra_index];
       ra->secondaryCellGroup = secondaryCellGroup;
       if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
         if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
           ra->cfra = true;
           ra->rnti = rnti;
-          struct NR_CFRA cfra = *secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
-          uint8_t num_preamble = cfra.resources.choice.ssb->ssb_ResourceList.list.count;
+          struct NR_CFRA *cfra = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+          uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
           ra->preambles.num_preambles = num_preamble;
           ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
-          for (int i = 0; i < num_preamble; i++)
-            ra->preambles.preamble_list[i] = cfra.resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+          for(int i=0; i<cc->num_active_ssb; i++) {
+            for(int j=0; j<num_preamble; j++) {
+              if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
+                // one dedicated preamble for each beam
+                ra->preambles.preamble_list[i] =
+                    cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
+                break;
+              }
+            }
+          }
         }
       }
       LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);

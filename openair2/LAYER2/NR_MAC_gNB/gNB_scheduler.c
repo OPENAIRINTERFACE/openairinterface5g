@@ -52,6 +52,7 @@
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -104,7 +105,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   gNB->pdu_index[CC_idP] = 0;
 
-  if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
+  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;

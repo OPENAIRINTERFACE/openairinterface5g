@@ -173,7 +173,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
-  if (nfapi_mode == 0 || nfapi_mode == 1) { 
+  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
     if ((!(frame%ssb_frame_periodicity)))  // generate SSB only for given frames according to SSB periodicity
       nr_common_signal_procedures(gNB,frame, slot);
   }
