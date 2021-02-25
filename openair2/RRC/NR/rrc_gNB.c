@@ -812,31 +812,20 @@ rrc_gNB_generate_defaultRRCReconfiguration(
           ue_context_pP->ue_context.rnti,
           rrc_gNB_mui,
           size);
-#ifdef ITTI_SIM
-    MessageDef *message_p;
-    uint8_t *message_buffer;
-    message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
-    memcpy (message_buffer, buffer, size);
-    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
-    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-    GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-    GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
-    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#else
-  nr_rrc_data_req(ctxt_pP,
-              DCCH,
-              rrc_gNB_mui++,
-              SDU_CONFIRM_NO,
-              size,
-              buffer,
-              PDCP_TRANSMISSION_MODE_CONTROL);
+      nr_rrc_data_req(ctxt_pP,
+		      DCCH,
+		      rrc_gNB_mui++,
+		      SDU_CONFIRM_NO,
+		      size,
+		      buffer,
+		      PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
       // rrc_rlc_config_asn1_req
     }
-      break;
-
-    default :
-        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
+    break;
+    
+  default :
+    LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
   }
 }
 

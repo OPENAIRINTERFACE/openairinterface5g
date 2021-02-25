@@ -425,38 +425,26 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   NGAP_NAS_FIRST_REQ(message_p).selected_plmn_identity = selected_plmn_identity;
 
   if (rrcSetupComplete->registeredAMF != NULL) {
-      NR_RegisteredAMF_t *r_amf = rrcSetupComplete->registeredAMF;
-      NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask |= NGAP_UE_IDENTITIES_guami;
-
-      if (r_amf->plmn_Identity != NULL) {
-          if ((r_amf->plmn_Identity->mcc != NULL) && (r_amf->plmn_Identity->mcc->list.count > 0)) {
-              /* Use first indicated PLMN MCC if it is defined */
-              NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc = *r_amf->plmn_Identity->mcc->list.array[selected_plmn_identity];
-              LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
-                  ctxt_pP->module_id,
-                  NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mcc,
-                  ue_context_pP->ue_context.rnti);
-          }
-
-          if (r_amf->plmn_Identity->mnc.list.count > 0) {
-              /* Use first indicated PLMN MNC if it is defined */
-              NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
-              LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
-                  ctxt_pP->module_id,
-                  NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
-                  ue_context_pP->ue_context.rnti);
-          }
-      } else {
-          /* TODO */
+    NR_RegisteredAMF_t *r_amf = rrcSetupComplete->registeredAMF;
+    NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask |= NGAP_UE_IDENTITIES_guami;
+    
+    if (r_amf->plmn_Identity != NULL) {
+      if ((r_amf->plmn_Identity->mcc != NULL) && (r_amf->plmn_Identity->mcc->list.count > 0)) {
+	/* Use first indicated PLMN MCC if it is defined */
+	NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc = *r_amf->plmn_Identity->mcc->list.array[selected_plmn_identity];
+	LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
+	      ctxt_pP->module_id,
+	      NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mcc,
+	      ue_context_pP->ue_context.rnti);
       }
-
+      
       if (r_amf->plmn_Identity->mnc.list.count > 0) {
-        /* Use first indicated PLMN MNC if it is defined */
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
-        LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
-            ctxt_pP->module_id,
-            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
-            ue_context_pP->ue_context.rnti);
+	/* Use first indicated PLMN MNC if it is defined */
+	NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
+	LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
+	      ctxt_pP->module_id,
+	      NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
+	      ue_context_pP->ue_context.rnti);
       }
     } else {
       /* TODO */

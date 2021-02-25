@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void nr_pdcp_entity_srb_recv_pdu(protocol_ctxt_t *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size)
+void nr_pdcp_entity_srb_recv_pdu(const protocol_ctxt_t const *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_srb_t *entity = (nr_pdcp_entity_srb_t *)_entity;
 

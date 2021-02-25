@@ -20,7 +20,7 @@
  */
 
 #include "nr_pdcp_entity.h"
-
+#include "nr_pdcp_entity_srb.h"
 #include "nr_pdcp_entity_drb_am.h"
 #include "nr_pdcp_security_nea2.h"
 
@@ -28,7 +28,7 @@
 
 nr_pdcp_entity_t *new_nr_pdcp_entity_srb(
     int is_gnb, int rb_id,
-    void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
+    void (*deliver_sdu)(const protocol_ctxt_t const *ctxt_pP,void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
     void (*deliver_pdu)(void *deliver_pdu_data, struct nr_pdcp_entity_t *entity,
@@ -38,7 +38,7 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_srb(
 
   nr_pdcp_entity_srb_t *ret;
 
-  ret = calloc(1, sizeof(nr_pdcp_entity_srb_t));
+  ret = calloc(1, sizeof(nr_pdcp_entity_t));
   if (ret == NULL) {
     LOG_E(PDCP, "%s:%d:%s: out of memory\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -60,12 +60,13 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_srb(
 
   ret->common.maximum_nr_pdcp_sn = 4095;
 
+  ret->common.is_gnb = is_gnb;
   return (nr_pdcp_entity_t *)ret;
 }
 
 nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
     int is_gnb, int rb_id,
-    void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
+    void (*deliver_sdu)(const protocol_ctxt_t const *ctxt_pP,void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
     void (*deliver_pdu)(void *deliver_pdu_data, struct nr_pdcp_entity_t *entity,

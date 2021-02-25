@@ -29,7 +29,7 @@ typedef struct {
   int srb_id;
 } nr_pdcp_entity_srb_t;
 
-void nr_pdcp_entity_srb_recv_pdu(protocol_ctxt_t *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size);
+void nr_pdcp_entity_srb_recv_pdu(const protocol_ctxt_t const *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size);
 void nr_pdcp_entity_srb_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int size, int sdu_id);
 void nr_pdcp_entity_srb_set_integrity_key(nr_pdcp_entity_t *_entity, char *key);
 void nr_pdcp_entity_srb_delete(nr_pdcp_entity_t *_entity);

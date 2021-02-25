@@ -26,16 +26,12 @@
 #include <string.h>
 #include "common/utils/LOG/log.h"
 
-void nr_pdcp_entity_drb_am_recv_pdu( protocol_ctxt_t *ctxt_pP , nr_pdcp_entity_t *_entity, char *buffer, int size)
+void nr_pdcp_entity_drb_am_recv_pdu(const protocol_ctxt_t const *ctxt_pP , nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
 
   if (size < 3) abort();
-<<<<<<< HEAD
-  if (!(buffer[0] & 0x80)) { printf("%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__); exit(1); }
-  entity->common.deliver_sdu(ctxt_pP, entity->common.deliver_sdu_data,
-=======
 
   if (!(buffer[0] & 0x80))
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
@@ -48,8 +44,7 @@ void nr_pdcp_entity_drb_am_recv_pdu( protocol_ctxt_t *ctxt_pP , nr_pdcp_entity_t
     entity->common.cipher(entity->common.security_context, (unsigned char *)buffer+3, size-3,
                           entity->rb_id, sn, entity->common.is_gnb ? 0 : 1);
 
-  entity->common.deliver_sdu(entity->common.deliver_sdu_data,
->>>>>>> origin/develop
+  entity->common.deliver_sdu(ctxt_pP,entity->common.deliver_sdu_data,
                              (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }
 
