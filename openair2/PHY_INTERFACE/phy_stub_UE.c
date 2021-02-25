@@ -30,6 +30,10 @@
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "common/config/config_load_configmodule.h"
 #include "common/config/config_userapi.h"
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
+#include "openair1/PHY/defs_gNB.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_common.h"
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,

@@ -44,7 +44,7 @@
    /* let's have 100 RBs functional for the basic simulator */
 #  define T_BUFFER_MAX (1024*64*2)
 #else
-#  define T_BUFFER_MAX (1024*64*2)
+#  define T_BUFFER_MAX (1024*128)
 #endif
 
 /* size of the local cache for messages (must be pow(2,something)) */
