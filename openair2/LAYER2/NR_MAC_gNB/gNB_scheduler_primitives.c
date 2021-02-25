@@ -1131,6 +1131,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       break;
 
     case NR_RNTI_TC:
+      pos = 1;
       // indicating a DL DCI format 1bit
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
       // Freq domain assignment 0-16 bit
@@ -1159,9 +1160,27 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // TPC command for scheduled PUCCH – 2 bits
       for (int i = 0; i < 2; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->tpc >> (1 - i)) & 1) << (dci_size - pos++);
+      // PUCCH resource indicator – 3 bits
+      for (int i = 0; i < 3; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->pucch_resource_indicator >> (2 - i)) & 1) << (dci_size - pos++);
       // PDSCH-to-HARQ_feedback timing indicator – 3 bits
       for (int i = 0; i < 3; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val >> (2 - i)) & 1) << (dci_size - pos++);
+
+      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
+
       break;
     }
     break;

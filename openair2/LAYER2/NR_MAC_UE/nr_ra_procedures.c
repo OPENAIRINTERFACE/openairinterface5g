@@ -481,6 +481,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
   // start contention resolution timer
   ra->RA_contention_resolution_cnt = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1) * 8;
   ra->RA_contention_resolution_timer_active = 1;
+  ra->ra_state = WAIT_CONTENTION_RESOLUTION;
 
 }
 
@@ -536,7 +537,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     }
   }
 
-  if (prach_resources->init_msg1) {
+  if (prach_resources->init_msg1 && ra->ra_state != RA_SUCCEEDED) {
 
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
@@ -625,7 +626,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1) {
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
 
-        nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+        //nr_ra_succeeded(mod_id, frame, nr_slot_tx);
 
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 
