@@ -853,9 +853,6 @@ if(!IS_SOFTMODEM_NOS1)
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-//  if(IS_SOFTMODEM_NOS1)
-//    init_pdcp();
-
   if (RC.nb_nr_inst > 0)  {
     nr_read_config_and_init();
   } else {
@@ -864,9 +861,7 @@ if(!IS_SOFTMODEM_NOS1)
   }
 
   if (RC.nb_nr_inst > 0)  {
-
-    if(IS_SOFTMODEM_NOS1)
-      init_pdcp();
+    init_pdcp();
 
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
