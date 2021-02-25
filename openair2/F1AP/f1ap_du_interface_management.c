@@ -462,6 +462,9 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
         LOG_D(F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n",
               F1AP_SETUP_RESP (msg_p).gNB_CU_name);
         break;
+      case F1AP_ProtocolIE_ID_id_GNB_CU_RRC_Version:
+        LOG_D(F1AP, "F1AP: Received GNB-CU-RRC-Version, ignoring\n");
+        break;
       case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List:
       {
         AssertFatal(ie->criticality == F1AP_Criticality_reject,
