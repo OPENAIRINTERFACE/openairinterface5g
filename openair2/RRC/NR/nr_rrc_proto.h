@@ -39,6 +39,7 @@
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
 #include "NR_CG-ConfigInfo.h"
+#include "NR_SecurityConfig.h"
 
 int rrc_init_nr_global_param(void);
 
@@ -90,7 +91,10 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
 			   int n_physical_antenna_ports,
 			   int initial_csi_index);
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig);
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
+                           int eps_bearer_id, int rb_id,
+                           e_NR_CipheringAlgorithm ciphering_algorithm,
+                           e_NR_SecurityConfig__keyToUse key_to_use);
 
 int generate_CG_Config(gNB_RRC_INST *rrc, 
 		       NR_CG_Config_t *cg_Config,

@@ -84,7 +84,7 @@
 #include <executables/softmodem-common.h>
 
 #include "T.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -122,6 +122,7 @@ void stop_gNB(int nb_inst);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+extern void oai_slot_ind(uint16_t sfn, uint16_t slot);
 extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 //#define TICK_TO_US(ts) (ts.diff)
@@ -162,7 +163,37 @@ void rx_func(void *param) {
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
 
-  //start_meas(&softmodem_stats_rxtx_sf);
+  start_meas(&softmodem_stats_rxtx_sf);
+
+  // *******************************************************************
+  // NFAPI not yet supported for NR - this code has to be revised
+  if (NFAPI_MODE == NFAPI_MODE_PNF) {
+    // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
+    //add_subframe(&frame, &subframe, 4);
+    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
+    //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
+    start_meas(&nfapi_meas);
+    // oai_subframe_ind(frame_rx, slot_rx);
+    oai_slot_ind(frame_rx, slot_rx);
+    stop_meas(&nfapi_meas);
+
+    /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
+        gNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs ||
+        gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs ||
+        gNB->UL_INFO.rach_ind.number_of_pdus ||
+        gNB->UL_INFO.cqi_ind.number_of_cqis
+       ) {
+      LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d rach_pdus:%0d.%d:%d cqis:%d] RX:%04d%d TX:%04d%d \n",
+            NFAPI_SFNSF2DEC(gNB->UL_INFO.rx_ind.sfn_sf),   gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus,
+            NFAPI_SFNSF2DEC(gNB->UL_INFO.harq_ind.sfn_sf), gNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs,
+            NFAPI_SFNSF2DEC(gNB->UL_INFO.crc_ind.sfn_sf),  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs,
+            gNB->UL_INFO.rach_ind.sfn, gNB->UL_INFO.rach_ind.slot,gNB->UL_INFO.rach_ind.number_of_pdus,
+            gNB->UL_INFO.cqi_ind.number_of_cqis,
+            frame_rx, slot_rx,
+            frame_tx, slot_tx);
+    }*/
+  }
+  // ****************************************
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 
@@ -251,7 +282,7 @@ void rx_func(void *param) {
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 
-  //stop_meas( &softmodem_stats_rxtx_sf );
+  stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
   notifiedFIFO_elt_t *res; 

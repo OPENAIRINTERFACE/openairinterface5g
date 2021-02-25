@@ -19,12 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#if !defined(NFAPI_PNF_H__)
-#define NFAPI_PNF_H__
-int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
-void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
-void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
+#ifndef _NR_PDCP_SECURITY_NEA2_H_
+#define _NR_PDCP_SECURITY_NEA2_H_
 
-void oai_subframe_ind(uint16_t sfn, uint16_t sf);
-void oai_slot_ind(uint16_t sfn, uint16_t slot);
-#endif
+void *nr_pdcp_security_nea2_init(unsigned char *ciphering_key);
+
+void nr_pdcp_security_nea2_cipher(void *security_context,
+                                  unsigned char *buffer, int length,
+                                  int bearer, int count, int direction);
+
+void nr_pdcp_security_nea2_free_security(void *security_context);
+
+#endif /* _NR_PDCP_SECURITY_NEA2_H_ */
