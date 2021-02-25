@@ -692,9 +692,7 @@ int main(int argc, char **argv)
           nr_slot_fep(UE,
                       &proc,
                       i%frame_parms->symbols_per_slot,
-                      ssb_slot,
-                      0,
-                      0);
+                      ssb_slot);
 
           nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 

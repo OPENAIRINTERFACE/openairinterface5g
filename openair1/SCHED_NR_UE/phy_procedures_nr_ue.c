@@ -1689,9 +1689,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       nr_slot_fep(ue,
                   proc,
                   (ue->symbol_offset+i)%(fp->symbols_per_slot),
-                  nr_slot_rx,
-                  0,
-                  0);
+                  nr_slot_rx);
 
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_channel_estimation_stats);
@@ -1744,9 +1742,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     nr_slot_fep(ue,
                 proc,
                 l,
-                nr_slot_rx,
-                0,
-                0);
+                nr_slot_rx);
 
     dci_cnt = 0;
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
@@ -1805,9 +1801,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
         nr_slot_fep(ue,
                     proc,
                     m,  //to be updated from higher layer
-                    nr_slot_rx,
-                    0,
-                    0);
+                    nr_slot_rx);
       }
     }
   } else {

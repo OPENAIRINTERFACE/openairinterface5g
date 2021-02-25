@@ -508,15 +508,12 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   unsigned char aa;
 
   for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
-    // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
-
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
       nr_slot_fep_ul(&gNB->frame_parms,
                      gNB->common_vars.rxdata[aa],
                      gNB->common_vars.rxdataF[aa],
                      symbol,
                      slot_rx,
-                     0,
                      0);
     }
   }
