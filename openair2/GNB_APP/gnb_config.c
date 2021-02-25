@@ -1483,19 +1483,18 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
         rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
         rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
-        // F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier.physCellId;
-        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = 0;
+        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = *rrc->configuration.scc->physCellId;
         F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
 
-        if (0) {
+        if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
           F1AP_SETUP_REQ (msg_p).fdd_flag = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn = 26200UL;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0] = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0] = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.sul_active              = 0;
         } else {
           /***************** for test *****************/
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);

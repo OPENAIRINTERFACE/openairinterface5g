@@ -40,6 +40,15 @@
 extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
 
+int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
+
+int to_NRNRB(int nrb) {
+
+  for (int i=0;i<29;i++) if (nrb_lut[i] == nrb) return i;
+  AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n");
+
+}
+
 int DU_handle_RESET(instance_t instance,
                                 uint32_t assoc_id,
                                 uint32_t stream,
@@ -299,10 +308,10 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
           /* FDD.3 UL Transmission Bandwidth */
           fDD_Info->uL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.ul_scs;
-          fDD_Info->uL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.ul_nrb;
+          fDD_Info->uL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_du_data->nr_mode_info[i].fdd.ul_nrb);
           /* FDD.4 DL Transmission Bandwidth */
           fDD_Info->dL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.dl_scs;
-          fDD_Info->dL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.dl_nrb;
+          fDD_Info->dL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_du_data->nr_mode_info[i].fdd.dl_nrb);
           
           nR_Mode_Info.choice.fDD = fDD_Info;
         } else { // TDD
@@ -353,7 +362,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
           /* TDD.2 transmission_Bandwidth */
           tDD_Info->transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].tdd.scs;
-          tDD_Info->transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].tdd.nrb;
+          tDD_Info->transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_du_data->nr_mode_info[i].tdd.nrb);
      
           nR_Mode_Info.choice.tDD = tDD_Info;
         } // if nR_Mode_Info
