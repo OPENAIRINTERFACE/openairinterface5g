@@ -25,6 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <stdio.h>
 
@@ -477,14 +478,7 @@ int nfapi_nr_vnf_start(nfapi_vnf_config_t* config)
 
 int nfapi_vnf_start(nfapi_vnf_config_t* config)
 {
-	// Verify that config is not null
-	if(config == 0)
-		return -1;
-
-	// Make sure to set the defined trace function before using NFAPI_TRACE
-	if(config->trace)
-		nfapi_trace_g = (nfapi_trace_fn_t)config->trace;
-
+	assert(config != 0);
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s()\n", __FUNCTION__);
 
 	int p5ListenSock, p5Sock; 

@@ -150,6 +150,8 @@ int        usrp_tx_thread = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
 
+uint16_t ue_idx_standalone = 0xFFFF;
+
 char uecap_xer[1024],uecap_xer_in=0;
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
@@ -447,7 +449,7 @@ void init_pdcp(void) {
   }
   pdcp_layer_init();
   nr_DRB_preconfiguration();*/
-  pdcp_module_init(pdcp_initmask);
+  pdcp_module_init(pdcp_initmask, 0);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   LOG_I(PDCP, "Before getting out from init_pdcp() \n");

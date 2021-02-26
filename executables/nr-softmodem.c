@@ -720,7 +720,7 @@ void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
   }
 
-  pdcp_module_init(pdcp_initmask);
+  pdcp_module_init(pdcp_initmask, 0);
 
   /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
     pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);

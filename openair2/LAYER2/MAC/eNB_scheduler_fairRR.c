@@ -1018,8 +1018,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
           UE_id,
           CC_id,
           N_RBG[CC_id],
-          (uint16_t(*)[NUMBER_OF_UE_MAX])nb_rbs_required,
-          (uint16_t(*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
+          nb_rbs_required,
+          nb_rbs_required_remaining,
           rballoc_sub);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
       temp_total_ue_count--;

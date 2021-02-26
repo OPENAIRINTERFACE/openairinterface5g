@@ -48,29 +48,17 @@ void nfapi_set_trace_level(nfapi_trace_level_t new_level)
 void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...)
 {
 	char trace_buff[MAX_MSG_LENGTH + TRACE_HEADER_LENGTH];
-	uint32_t num_chars;
 	va_list p_args;
 	struct timeval tv;
 	pthread_t tid = pthread_self();
 
 	(void)gettimeofday(&tv, NULL);
 
-	num_chars = (uint32_t)snprintf(trace_buff, TRACE_HEADER_LENGTH, "%04u.%06u: 0x%02x: %10u: ", ((uint32_t)tv.tv_sec) & 0x1FFF, (uint32_t)tv.tv_usec, (uint32_t)level, (uint32_t)tid);
-
-	if (num_chars > TRACE_HEADER_LENGTH)
-	{
-		printf("trace_dbg: Error, num_chars is too large: %d", num_chars);
-		return;
-	}
-
+	snprintf(trace_buff, sizeof(trace_buff), "%04u.%06u: 0x%02x: %10u: ", ((uint32_t)tv.tv_sec) & 0x1FFF, (uint32_t)tv.tv_usec, (uint32_t)level, (uint32_t)tid);
+	int n = strlen(trace_buff);
 	va_start(p_args, format);
-	if ((num_chars = (uint32_t)vsnprintf(&trace_buff[num_chars], MAX_MSG_LENGTH, format, p_args)))
-	{
-		if (level <= NFAPI_TRACE_WARN)
-		{
-			printf("%s", trace_buff);
-		}
-		printf("%s", trace_buff);
-	}
+	vsnprintf(trace_buff + n, sizeof(trace_buff) - n, format, p_args);
 	va_end(p_args);
+	fputs(trace_buff, stdout);
+	fflush(stdout);
 }
