@@ -88,10 +88,10 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database,
   widget_add_child(g, top_container, line, -1);
 
   /* PUCCH/PUSCH IQ data */
-  w = new_xy_plot(g, 55, 55, "", 50);
+  w = new_xy_plot(g, 550, 550, "", 50);
   e->pucch_pusch_iq_plot = w;
   widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
+  xy_plot_set_range(g, w, -512, 512, -512, 512);
   xy_plot_set_title(g, w, "rxdataF");
   l = new_iqlog_full(h, database, "GNB_PHY_PUCCH_PUSCH_IQ", "rxdataF");
   v = new_view_xy(300*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
@@ -115,6 +115,9 @@ int main(int n, char **v)
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
+    if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
+    if (!strcmp(v[i], "-p"))
+      { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-d"))
       { if (i > n-2) usage(); database_filename = v[++i]; continue; }
     usage();
