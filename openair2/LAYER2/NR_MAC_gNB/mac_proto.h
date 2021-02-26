@@ -355,15 +355,9 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
 void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
-void nr_generate_Msg4(module_id_t module_idP,
-                      int CC_id,
-                      frame_t frameP,
-                      sub_frame_t slotP);
+void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
-void nr_check_Msg4_Ack(module_id_t module_id,
-                       int CC_id,
-                       frame_t frame,
-                       sub_frame_t slot);
+void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,

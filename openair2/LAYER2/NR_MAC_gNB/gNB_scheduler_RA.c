@@ -475,7 +475,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
 
-  uint8_t total_RApreambles = 64;
+  uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
   int pr_found;
 
@@ -624,16 +624,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
       for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
         NR_RA_t *ra = &cc->ra[i];
-        LOG_D(MAC, "RA[state:%d]\n", ra->state);
+        LOG_D(NR_MAC, "RA[state:%d]\n", ra->state);
         switch (ra->state) {
           case Msg2:
             nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra);
             break;
           case Msg4:
-            nr_generate_Msg4(module_idP, CC_id, frameP, slotP);
+            nr_generate_Msg4(module_idP, CC_id, frameP, slotP, ra);
             break;
           case WAIT_Msg4_ACK:
-            nr_check_Msg4_Ack(module_idP, CC_id, frameP, slotP);
+            nr_check_Msg4_Ack(module_idP, CC_id, frameP, slotP, ra);
             break;
           default:
             break;
@@ -1055,14 +1055,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
   }
 }
 
-void nr_generate_Msg4(module_id_t module_idP,
-                      int CC_id,
-                      frame_t frameP,
-                      sub_frame_t slotP) {
+void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra) {
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
-  NR_RA_t *ra = &cc->ra[0];
 
   if (ra->Msg4_frame == frameP && ra->Msg4_slot == slotP ) {
 
@@ -1285,16 +1281,12 @@ void nr_generate_Msg4(module_id_t module_idP,
   }
 }
 
-void nr_check_Msg4_Ack(module_id_t module_id,
-                  int CC_id,
-                  frame_t frame,
-                  sub_frame_t slot) {
+void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra) {
 
   LOG_W(NR_MAC,"nr_check_Msg4_Ack() is not implemented yet!\n");
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
-  NR_RA_t *ra = &cc->ra[0];
 
   ra->state = RA_IDLE;
 }
@@ -1303,7 +1295,7 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
   
   NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[0];
   LOG_D(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
-  ra->state = IDLE;
+  ra->state = RA_IDLE;
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
   ra->rnti = 0;
