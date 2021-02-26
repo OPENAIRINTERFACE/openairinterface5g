@@ -438,7 +438,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Downlink and PDSCH
-  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot))
+  bool tx_ra_msg4 = false;
+  for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+    if(cc->ra[i].state == Msg4 && cc->ra[i].Msg4_frame==frame && cc->ra[i].Msg4_slot==slot) {
+      tx_ra_msg4 = true;
+    }
+  }
+  if ( is_xlsch_in_slot(dlsch_in_slot_bitmap, slot) && tx_ra_msg4 == false )
     nr_schedule_ue_spec(module_idP, frame, slot);
 
 

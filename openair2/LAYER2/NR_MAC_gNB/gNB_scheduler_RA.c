@@ -1282,12 +1282,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 }
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra) {
-
   LOG_W(NR_MAC,"nr_check_Msg4_Ack() is not implemented yet!\n");
-
-  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
-  NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
-
   ra->state = RA_IDLE;
 }
 
