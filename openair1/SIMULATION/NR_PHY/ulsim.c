@@ -906,6 +906,10 @@ int main(int argc, char **argv)
     reset_meas(&gNB->ulsch_llr_stats);
     reset_meas(&gNB->ulsch_channel_compensation_stats);
     reset_meas(&gNB->ulsch_rbs_extraction_stats);
+    reset_meas(&UE->ulsch_ldpc_encoding_stats);
+    reset_meas(&UE->ulsch_rate_matching_stats);
+    reset_meas(&UE->ulsch_interleaving_stats);
+    reset_meas(&UE->ulsch_encoding_stats);
 
     clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
@@ -914,6 +918,7 @@ int main(int argc, char **argv)
     crc_status = 1;
     errors_decoding    = 0;
     memset((void*)roundStats,0,50*sizeof(roundStats[0]));
+    ulsch_ue[0]->harq_processes[harq_pid]->ndi = 1;
     while (round<max_rounds && crc_status) {
       round_trials[round]++;
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
@@ -1278,6 +1283,11 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+      printStatIndent(&UE->ulsch_encoding_stats,"ULSCH total encoding time");
+      printStatIndent2(&UE->ulsch_segmentation_stats,"ULSCH segmentation time");
+      printStatIndent2(&UE->ulsch_ldpc_encoding_stats,"ULSCH LDPC encoder time");
+      printStatIndent2(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
+      printStatIndent2(&UE->ulsch_interleaving_stats,"ULSCH interleaving time");
       //printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
       //printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
       //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
