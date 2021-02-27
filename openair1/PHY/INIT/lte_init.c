@@ -507,12 +507,14 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
   LTE_eNB_PRACH *const prach_vars_br = &eNB->prach_vars_br;
   int i, UE_id;
 
-  for (i = 0; i < NB_ANTENNA_PORTS_ENB; i++) {
-    if (i < fp->nb_antenna_ports_eNB || i == 5) {
-      free_and_zero(common_vars->txdataF[i]);
-      /* rxdataF[i] is not allocated -> don't free */
+  if (common_vars->txdataF) {
+    for (i = 0; i < NB_ANTENNA_PORTS_ENB; i++) {
+      if (i < fp->nb_antenna_ports_eNB || i == 5) {
+        free_and_zero(common_vars->txdataF[i]);
+      }
     }
   }
+  /* rxdataF[i] is not allocated -> don't free */
 
   free_and_zero(common_vars->txdataF);
   free_and_zero(common_vars->rxdataF);
@@ -520,8 +522,10 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
   // Channel estimates for SRS
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
     for (i=0; i<64; i++) {
-      free_and_zero(srs_vars[UE_id].srs_ch_estimates[i]);
-      free_and_zero(srs_vars[UE_id].srs_ch_estimates_time[i]);
+      if (srs_vars[UE_id].srs_ch_estimates)
+        free_and_zero(srs_vars[UE_id].srs_ch_estimates[i]);
+      if (srs_vars[UE_id].srs_ch_estimates_time)
+        free_and_zero(srs_vars[UE_id].srs_ch_estimates_time[i]);
     }
 
     free_and_zero(srs_vars[UE_id].srs_ch_estimates);
@@ -534,41 +538,57 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
 
   free_and_zero(prach_vars->prachF);
 
-  for (i = 0; i < 64; i++) free_and_zero(prach_vars->prach_ifft[0][i]);
-
-  free_and_zero(prach_vars->prach_ifft[0]);
+  if (prach_vars->prach_ifft[0]) {
+    for (i = 0; i < 64; i++) {
+      free_and_zero(prach_vars->prach_ifft[0][i]);
+    }
+    free_and_zero(prach_vars->prach_ifft[0]);
+  }
 
   for (int ce_level = 0; ce_level < 4; ce_level++) {
-    for (i = 0; i < 64; i++) free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
-
-    free_and_zero(prach_vars_br->prach_ifft[ce_level]);
+    if (prach_vars_br->prach_ifft[ce_level]) {
+      for (i = 0; i < 64; i++) {
+        free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
+      }
+      free_and_zero(prach_vars_br->prach_ifft[ce_level]);
+    }
     free_and_zero(prach_vars->rxsigF[ce_level]);
   }
 
   free_and_zero(prach_vars_br->prachF);
   free_and_zero(prach_vars->rxsigF[0]);
 
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    for (i = 0; i < 2; i++) {
-      free_and_zero(pusch_vars[UE_id]->rxdataF_ext[i]);
-      free_and_zero(pusch_vars[UE_id]->rxdataF_ext2[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time[i]);
-      free_and_zero(pusch_vars[UE_id]->rxdataF_comp[i]);
-      free_and_zero(pusch_vars[UE_id]->ul_ch_mag[i]);
-      free_and_zero(pusch_vars[UE_id]->ul_ch_magb[i]);
-    }
+  if (pusch_vars[UE_id]) {
+    LTE_eNB_PUSCH *pv = pusch_vars[UE_id];
+    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+      for (i = 0; i < 2; i++) {
+        if (pv->rxdataF_ext)
+          free_and_zero(pv->rxdataF_ext[i]);
+        if (pv->rxdataF_ext2)
+          free_and_zero(pv->rxdataF_ext2[i]);
+        if (pv->drs_ch_estimates)
+          free_and_zero(pv->drs_ch_estimates[i]);
+        if (pv->drs_ch_estimates_time)
+          free_and_zero(pv->drs_ch_estimates_time[i]);
+        if (pv->rxdataF_comp)
+          free_and_zero(pv->rxdataF_comp[i]);
+        if (pv->ul_ch_mag)
+          free_and_zero(pv->ul_ch_mag[i]);
+        if (pv->ul_ch_magb)
+          free_and_zero(pv->ul_ch_magb[i]);
+      }
 
-    free_and_zero(pusch_vars[UE_id]->rxdataF_ext);
-    free_and_zero(pusch_vars[UE_id]->rxdataF_ext2);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time);
-    free_and_zero(pusch_vars[UE_id]->rxdataF_comp);
-    free_and_zero(pusch_vars[UE_id]->ul_ch_mag);
-    free_and_zero(pusch_vars[UE_id]->ul_ch_magb);
-    free_and_zero(pusch_vars[UE_id]->llr);
-    free_and_zero(pusch_vars[UE_id]);
-  } //UE_id
+      free_and_zero(pv->rxdataF_ext);
+      free_and_zero(pv->rxdataF_ext2);
+      free_and_zero(pv->drs_ch_estimates);
+      free_and_zero(pv->drs_ch_estimates_time);
+      free_and_zero(pv->rxdataF_comp);
+      free_and_zero(pv->ul_ch_mag);
+      free_and_zero(pv->ul_ch_magb);
+      free_and_zero(pv->llr);
+      free_and_zero(pv);
+    }
+  }
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) eNB->UE_stats_ptr[UE_id] = NULL;
 }
