@@ -834,6 +834,7 @@ int main( int argc, char **argv ) {
   if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
     PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
 
+  pdcp_module_cleanup();
   terminate_opt();
   logClean();
   printf("Bye.\n");

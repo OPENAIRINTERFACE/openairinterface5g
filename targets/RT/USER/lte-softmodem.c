@@ -803,6 +803,7 @@ int main ( int argc, char **argv )
     }
   }
 
+  pdcp_module_cleanup();
   terminate_opt();
   logClean();
   printf("Bye.\n");

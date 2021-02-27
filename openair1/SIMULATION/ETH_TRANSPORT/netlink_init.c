@@ -133,6 +133,7 @@ int netlink_init_mbms_tun(char *ifprefix, int id) {//for UE, id = 1, 2, ...,
     nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
     nas_dest_addr.nl_groups = 0; /* unicast */
     // TX PART
+    free(nas_nlh_tx);
     nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
     memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
     /* Fill the netlink message header */
@@ -193,6 +194,7 @@ int netlink_init_tun(char *ifprefix, int num_if, int id) {//for UE, id = 1, 2, .
     nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
     nas_dest_addr.nl_groups = 0; /* unicast */
     // TX PART
+    free(nas_nlh_tx);
     nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
     memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
     /* Fill the netlink message header */
@@ -251,6 +253,7 @@ int netlink_init(void) {
   nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
   nas_dest_addr.nl_groups = 0; /* unicast */
   // TX PART
+  free(nas_nlh_tx);
   nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
   memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
   /* Fill the netlink message header */
@@ -273,3 +276,8 @@ int netlink_init(void) {
   return(nas_sock_fd[0]);
 }
 
+void netlink_cleanup(void)
+{
+  free(nas_nlh_tx);
+  nas_nlh_tx = NULL;
+}
