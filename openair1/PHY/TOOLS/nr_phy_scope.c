@@ -56,7 +56,7 @@ typedef struct OAIgraph {
   double *waterFallAvg;
   boolean_t initDone;
   int iteration;
-  void (*gNBfunct) (struct OAIgraph *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id);
+  void (*gNBfunct) (struct OAIgraph *graph, scopeData_t *p, int UE_id);
   void (*nrUEfunct)(struct OAIgraph *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id);
 } OAIgraph_t;
 
@@ -132,7 +132,7 @@ static void commonGraph(OAIgraph_t *graph, int type, FL_Coord x, FL_Coord y, FL_
   graph->iteration=0;
 }
 
-static OAIgraph_t gNBcommonGraph( void (*funct) (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id),
+static OAIgraph_t gNBcommonGraph( void (*funct) (OAIgraph_t *graph, scopeData_t *p, int UE_id),
                                   int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
   OAIgraph_t graph;
   commonGraph(&graph, type, x, y, w, h, label, pointColor);
@@ -223,7 +223,8 @@ static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int laye
 
 static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const int datasize, const int divisions, const char *label) {
   if ( values == NULL )
-     return;
+    return;
+
   fl_winset(FL_ObjWin(graph->graph));
   const int samplesPerPixel=datasize/graph->w;
   int displayPart=graph->waterFallh-ScaleZone;
@@ -318,10 +319,10 @@ static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const sc
   }
 }
 
-static void gNBWaterFall (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+static void gNBWaterFall (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
   //use 1st antenna
-  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdata[0],
+  genericWaterFall(graph, (scopeSample_t *)p->ru->common.rxdata[0],
                    frame_parms->samples_per_frame,  frame_parms->slots_per_frame,
                    "X axis:one frame in time");
 }
@@ -339,31 +340,35 @@ static void timeSignal (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy
 }
 */
 
-static void timeResponse (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  const int len=2*phy_vars_gnb->frame_parms.ofdm_symbol_size;
+static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  const int len=2*p->gNB->frame_parms.ofdm_symbol_size;
   float *values, *time;
   oai_xygraph_getbuff(graph, &time, &values, len, 0);
   const int ant=0; // display antenna 0 for each UE
 
   for (int ue=0; ue<nb_UEs; ue++) {
-    scopeSample_t *data= (scopeSample_t *)phy_vars_gnb->pusch_vars[ue]->ul_ch_estimates_time[ant];
+    if ( p->gNB->pusch_vars && p->gNB->pusch_vars[ue] &&
+         p->gNB->pusch_vars[ue]->ul_ch_estimates_time &&
+         p->gNB->pusch_vars[ue]->ul_ch_estimates_time[ant] ) {
+      scopeSample_t *data= (scopeSample_t *)p->gNB->pusch_vars[ue]->ul_ch_estimates_time[ant];
 
-    if (data != NULL) {
-      for (int i=0; i<len; i++) {
-        values[i] = SquaredNorm(data[i]);
+      if (data != NULL) {
+        for (int i=0; i<len; i++) {
+          values[i] = SquaredNorm(data[i]);
+        }
+
+        oai_xygraph(graph,time,values, len, ue, 10);
       }
-
-      oai_xygraph(graph,time,values, len, ue, 10);
     }
   }
 }
 
-static void gNBfreqWaterFall (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+static void gNBfreqWaterFall (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
   //use 1st antenna
-  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdataF[0], frame_parms->samples_per_frame_wCP,
+  genericWaterFall(graph, (scopeSample_t *)p->rxdataF, frame_parms->samples_per_frame_wCP,
                    frame_parms->slots_per_frame,
-                   "X axis: Frequency domain, one frame");
+                   "X axis: Frequency domain, one subframe");
 }
 
 /*
@@ -375,16 +380,18 @@ static void frequencyResponse (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU
 }
 */
 
-static void puschLLR (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void puschLLR (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   //int Qm = 2;
   int coded_bits_per_codeword =3*8*6144+12; // (8*((3*8*6144)+12)); // frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
 
   for (int ue=0; ue<nb_UEs; ue++) {
-    int16_t *pusch_llr = (int16_t *)phy_vars_gnb->pusch_vars[ue]->llr;
-    float *llr, *bit;
-    oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword, ue);
+    if ( p->gNB->pusch_vars &&
+         p->gNB->pusch_vars[ue] &&
+         p->gNB->pusch_vars[ue]->llr ) {
+      int16_t *pusch_llr = (int16_t *)p->gNB->pusch_vars[ue]->llr;
+      float *llr, *bit;
+      oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword, ue);
 
-    if (pusch_llr) {
       for (int i=0; i<coded_bits_per_codeword; i++) {
         llr[i] = (float) pusch_llr[i];
       }
@@ -394,16 +401,19 @@ static void puschLLR (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_v
   }
 }
 
-static void puschIQ (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+static void puschIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
   int sz=frame_parms->N_RB_UL*12*frame_parms->symbols_per_slot;
 
   for (int ue=0; ue<nb_UEs; ue++) {
-    scopeSample_t *pusch_comp = (scopeSample_t *) phy_vars_gnb->pusch_vars[ue]->rxdataF_comp[0];
-    float *I, *Q;
-    oai_xygraph_getbuff(graph, &I, &Q, sz, ue);
+    if ( p->gNB->pusch_vars &&
+         p->gNB->pusch_vars[ue] &&
+         p->gNB->pusch_vars[ue]->rxdataF_comp &&
+         p->gNB->pusch_vars[ue]->rxdataF_comp[0] ) {
+      scopeSample_t *pusch_comp = (scopeSample_t *) p->gNB->pusch_vars[ue]->rxdataF_comp[0];
+      float *I, *Q;
+      oai_xygraph_getbuff(graph, &I, &Q, sz, ue);
 
-    if (pusch_comp) {
       for (int k=0; k<sz; k++ ) {
         I[k] = pusch_comp[k].r;
         Q[k] = pusch_comp[k].i;
@@ -414,7 +424,7 @@ static void puschIQ (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_va
   }
 }
 
-static void pucchEnergy (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void pucchEnergy (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   // PUSCH I/Q of MF Output
   /*
     int32_t *pucch1ab_comp = (int32_t *) NULL; //phy_vars_gnb->pucch1ab_stats[UE_id];
@@ -440,10 +450,10 @@ static void pucchEnergy (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *ph
   */
 }
 
-static void pucchIQ (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void pucchIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
 }
 
-static void puschThroughtput (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void puschThroughtput (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   // PUSCH Throughput
   /*
   float tput_time_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
@@ -510,8 +520,7 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
 
 static const int scope_enb_num_ue = 1;
 void phy_scope_gNB(OAI_phy_scope_t *form,
-                   PHY_VARS_gNB *phy_vars_gnb,
-                   RU_t *phy_vars_ru,
+                   scopeData_t *p,
                    int UE_id) {
   static OAI_phy_scope_t *rememberForm=NULL;
 
@@ -526,7 +535,7 @@ void phy_scope_gNB(OAI_phy_scope_t *form,
   int i=0;
 
   while (form->graph[i].graph) {
-    form->graph[i].gNBfunct(form->graph+i, phy_vars_gnb, phy_vars_ru, UE_id);
+    form->graph[i].gNBfunct(form->graph+i, p, UE_id);
     i++;
   }
 
@@ -534,7 +543,7 @@ void phy_scope_gNB(OAI_phy_scope_t *form,
 }
 
 static void *scope_thread_gNB(void *arg) {
-  scopeParms_t *p=(scopeParms_t *) arg;
+  scopeData_t *p=(scopeData_t *) arg;
   //# ifdef ENABLE_XFORMS_WRITE_STATS
   //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
   //#endif
@@ -543,12 +552,6 @@ static void *scope_thread_gNB(void *arg) {
   pthread_attr_init(&atr);
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
-  p.gNB->scopeData=calloc(sizeof(nrscope_t));
-  nrscope_t scope=(nrscope_t*) p.gNB->scopeData;
-  scope->rxdataF=(int32_t **)malloc16(Prx*sizeof(int32_t*));
-  for (int i=0; i < p.gNB->gNB_config.carrier_config.num_rx_ant.value; ; i++)
-    scope->rxdataF[i] = (scopeSample_t*)malloc16_clear(p->gNB.frme_parms.samples_per_frame_wCP*sizeof(scopeSample_t));
-
   sleep(3); // no clean interthread barriers
   int fl_argc=1;
   char *name="5G-gNB-scope";
@@ -557,18 +560,31 @@ static void *scope_thread_gNB(void *arg) {
   OAI_phy_scope_t  *form_gnb = create_phy_scope_gnb();
 
   while (!oai_exit) {
-    phy_scope_gNB(form_gnb, p->gNB, p->ru, nb_ue);
+    phy_scope_gNB(form_gnb, p, nb_ue);
     usleep(99*1000);
   }
 
   return NULL;
 }
 
+static void copyRxdataF(int32_t *data, int slot,  void *scopeData) {
+  scopeData_t *scope=(scopeData_t *)scopeData;
+  memcpy(scope->rxdataF + slot*scope->gNB->frame_parms.samples_per_slot_wCP,
+         data,
+         scope->gNB->frame_parms.samples_per_slot_wCP);
+}
+
 void gNBinitScope(scopeParms_t *p) {
-  static scopeParms_t parms;
-  memcpy(&parms,p,sizeof(parms));
+  AssertFatal(p->gNB->scopeData=malloc(sizeof(scopeData_t)),"");
+  scopeData_t *scope=(scopeData_t *) p->gNB->scopeData;
+  scope->argc=p->argc;
+  scope->argv=p->argv;
+  scope->ru=p->ru;
+  scope->gNB=p->gNB;
+  scope->slotFunc=copyRxdataF;
+  AssertFatal(scope->rxdataF=(int32_t *) calloc(p->gNB->frame_parms.samples_per_frame_wCP*sizeof(int32_t),1),"");
   pthread_t forms_thread;
-  threadCreate(&forms_thread, scope_thread_gNB, &parms, "scope", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&forms_thread, scope_thread_gNB, p->gNB->scopeData, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
 
 static void ueWaterFall  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {

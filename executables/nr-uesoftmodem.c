@@ -551,7 +551,7 @@ int main( int argc, char **argv ) {
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
  
-  if(IS_SOFTMODEM_DOFORMS) { 
+  if(IS_SOFTMODEM_DOSCOPE) { 
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
 
