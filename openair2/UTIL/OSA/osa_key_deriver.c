@@ -159,3 +159,27 @@ int derive_keNB(const uint8_t key[32], const uint32_t nas_count, uint8_t **keNB)
     return 0;
 }
 */
+
+int derive_skgNB(const uint8_t *keNB, const uint16_t sk_counter, uint8_t *skgNB)
+{
+  uint8_t *out;
+  uint8_t s[5];
+
+  /* FC is 0x1c (see 3gpp 33.401 annex A.15) */
+  s[0] = 0x1c;
+
+  /* put sk_counter */
+  s[1] = (sk_counter >> 8) & 0xff;
+  s[2] = sk_counter & 0xff;
+
+  /* put length of sk_counter (2) */
+  s[3] = 0x00;
+  s[4] = 0x02;
+
+  kdf(s, 5, keNB, 32, &out, 32);
+
+  memcpy(skgNB, out, 32);
+  free(out);
+
+  return 0;
+}

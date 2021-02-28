@@ -186,7 +186,8 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc
+    uint8_t                  *const kUPenc,
+    uint8_t                  *const kUPint
   #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
   #endif
@@ -1999,6 +2000,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
     //                             NULL,
     //                             NULL,
     //                             NULL,
+    //                             NULL,
     //                             NULL);
     // Refresh SRBs
     // nr_rrc_rlc_config_asn1_req(ctxt_pP,
@@ -2089,6 +2091,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
       //                             NULL,
       //                             NULL,
       //                             kUPenc,
+      //                             NULL,
       //                             NULL,
       //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
       //                             NULL);
