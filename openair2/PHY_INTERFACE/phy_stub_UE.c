@@ -175,6 +175,7 @@ void fill_crc_indication_UE_MAC(int Mod_id,
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
   LOG_D(MAC, "fill crc_indication num_crcs: %u\n",
         UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
+  assert(UL_INFO->crc_ind.crc_indication_body.number_of_crcs < NUMBER_OF_UE_MAX);
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
            .crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
