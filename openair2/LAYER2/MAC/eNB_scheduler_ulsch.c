@@ -403,7 +403,13 @@ rx_sdu(const module_id_t enb_mod_idP,
     switch (rx_ces[i]) {  // implement and process PHR + CRNTI + BSR
       case POWER_HEADROOM:
         if (UE_id != -1) {
-          UE_template_ptr->phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + (int8_t)(hundred_times_log10_NPRB[UE_template_ptr->nb_rb_ul[harq_pid] - 1] / 100);
+          uint16_t nb_rb_ul = UE_template_ptr->nb_rb_ul[harq_pid];
+          if (nb_rb_ul < 1 || nb_rb_ul > sizeof(hundred_times_log10_NPRB) / sizeof(hundred_times_log10_NPRB[0])) {
+            LOG_E(MAC, "invalid nb_rb_ul=%u for harq_pid=%u\n", nb_rb_ul, harq_pid);
+            break;
+          }
+          UE_template_ptr->phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET
+              + (int8_t)(hundred_times_log10_NPRB[nb_rb_ul - 1] / 100);
 
           if (UE_template_ptr->phr_info > 40) {
             UE_template_ptr->phr_info = 40;
