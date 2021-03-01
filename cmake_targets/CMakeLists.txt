@@ -334,8 +334,8 @@ else (CUDA_FOUND)
 endif ()
 
 # Uncomment these lines to enable the address sanitizer
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 
 # Uncomment these lines to enable gprof profiling
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg -DUSING_GPROF")
