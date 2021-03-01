@@ -26,9 +26,10 @@
 
 typedef struct {
   shared_buffers *buffers;
-  int            next_slot;
-  int            next_symbol;
-  int            expected_benetel_frame;
+  /* [2] is for two antennas */
+  int            next_slot[2];
+  int            next_symbol[2];
+  int            expected_benetel_frame[2];
   char           *dpdk_main_command_line;
 } benetel_t;
 
