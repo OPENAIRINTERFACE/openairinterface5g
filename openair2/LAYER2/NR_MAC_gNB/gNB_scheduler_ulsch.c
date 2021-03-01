@@ -237,13 +237,19 @@ void nr_process_mac_pdu(
         case UL_SCH_LCID_SRB3:
               // todo
               break;
-        case UL_SCH_LCID_CCCH_MSG3:
-              // todo
-              break;
         case UL_SCH_LCID_CCCH:
-              // todo
-              mac_subheader_len = 2;
-              break;
+          mac_subheader_len = 1;
+          nr_mac_rrc_data_ind(module_idP,
+                              CC_id,
+                              frameP,
+                              0,
+                              0,
+                              rnti,
+                              CCCH,
+                              pdu_ptr+mac_subheader_len,
+                              pdu_len-mac_subheader_len,
+                              0);
+          break;
 
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
@@ -499,6 +505,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
+      nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
 
       free(ra->preambles.preamble_list);
 
