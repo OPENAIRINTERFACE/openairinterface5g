@@ -1,7 +1,7 @@
 #ifndef _T_T_T_
 #define _T_T_T_
 
-#if T_TRACER
+#if T_TRACER && !defined(__cppcheck__)
 
 #include <stdint.h>
 

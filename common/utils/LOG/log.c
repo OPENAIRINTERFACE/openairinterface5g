@@ -246,7 +246,7 @@ int write_file_matlab(const char *fname,
       fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
       break;
   default:
-    AssertFatal(false, "unknown dump format: %d\n", format);
+    AssertFatal(false, "unknown dump format: %u\n", format);
   }
 
   if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {

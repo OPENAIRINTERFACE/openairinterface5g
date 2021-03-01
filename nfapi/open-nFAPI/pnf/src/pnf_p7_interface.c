@@ -44,6 +44,7 @@ nfapi_pnf_p7_config_t* nfapi_pnf_p7_config_create()
 	_this->_public.codec_config.allocate = &malloc;
 	_this->_public.codec_config.deallocate = &free;
 
+	// cppcheck-suppress memleak
 	return &(_this->_public);
 }
 
