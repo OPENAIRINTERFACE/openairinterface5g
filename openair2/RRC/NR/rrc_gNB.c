@@ -1383,7 +1383,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
-        LOG_I(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %x)\n", ctxt_pP->rnti);
+        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %x)\n", ctxt_pP->rnti);
         ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti);
         if (ue_context_p != NULL) {
           rrc_gNB_free_mem_UE_context(ctxt_pP, ue_context_p);
@@ -1490,15 +1490,13 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                        CC_id);
             break;
           }
-        }
 
-        if (ue_context_p != NULL) {
           ue_context_p->ue_context.establishment_cause = rrcSetupRequest->establishmentCause;
-        }
 
-        rrc_gNB_generate_RRCSetup(ctxt_pP,
-                                  rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
-                                  CC_id);
+          rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                    rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                    CC_id);
+        }
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:

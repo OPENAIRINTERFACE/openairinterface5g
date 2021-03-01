@@ -513,7 +513,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
-  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload;
+  uint8_t lcid = UL_SCH_LCID_CCCH;
+  uint8_t *payload;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
   NR_ServingCellConfigCommon_t *scc = mac->scc;

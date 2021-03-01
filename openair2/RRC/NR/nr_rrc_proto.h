@@ -156,6 +156,24 @@ int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);
 
+int8_t nr_mac_rrc_data_ind(
+    const module_id_t     module_idP,
+    const int             CC_id,
+    const frame_t         frameP,
+    const sub_frame_t     sub_frameP,
+    const int             UE_id,
+    const rnti_t          rntiP,
+    const rb_id_t         srb_idP,
+    const uint8_t        *sduP,
+    const sdu_size_t      sdu_lenP,
+    const boolean_t   brOption
+);
+
+int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
+                           const uint8_t      *buffer,
+                           int                buffer_length,
+                           const int          CC_id);
+
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     const protocol_ctxt_t   *const ctxt_pP,
