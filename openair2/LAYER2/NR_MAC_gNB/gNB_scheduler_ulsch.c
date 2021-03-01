@@ -329,8 +329,16 @@ void handle_nr_ul_harq(module_id_t mod_id,
       return;
 
     remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
-    sched_ctrl->ul_harq_processes[harq_pid].round++;
-    add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    sched_ctrl->ul_harq_processes[harq_pid].is_waiting = false;
+    if(sched_ctrl->ul_harq_processes[harq_pid].round == MAX_HARQ_ROUNDS) {
+      sched_ctrl->ul_harq_processes[harq_pid].ndi ^= 1;
+      sched_ctrl->ul_harq_processes[harq_pid].round = 0;
+      UE_info->mac_stats[UE_id].ulsch_errors++;
+      add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+    } else {
+      sched_ctrl->ul_harq_processes[harq_pid].round++;
+      add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    }
     harq_pid = sched_ctrl->feedback_ul_harq.head;
   }
   remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
