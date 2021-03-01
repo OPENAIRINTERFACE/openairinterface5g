@@ -333,6 +333,11 @@ else (CUDA_FOUND)
     )
 endif ()
 
+if (SANITIZE_ADDRESS)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif ()
+
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
