@@ -304,3 +304,28 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   return(0);
 
 }
+
+int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
+                           const int             CC_id,
+                           const frame_t         frameP,
+                           const sub_frame_t     sub_frameP,
+                           const int             UE_id,
+                           const rnti_t          rntiP,
+                           const rb_id_t         srb_idP,
+                           const uint8_t        *sduP,
+                           const sdu_size_t      sdu_lenP,
+                           const boolean_t   brOption) {
+
+  protocol_ctxt_t ctxt;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP,0);
+
+  if((srb_idP & RAB_OFFSET) == CCCH) {
+    LOG_D(NR_RRC, "[gNB %d] Received SDU for CCCH on SRB %ld\n", module_idP, srb_idP);
+    ctxt.brOption = brOption;
+    if (sdu_lenP > 0) {
+      nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
+    }
+  }
+
+  return 0;
+}

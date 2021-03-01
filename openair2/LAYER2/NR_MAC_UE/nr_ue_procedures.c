@@ -2068,8 +2068,9 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
         last_size = 3;
       }
     } else { // UL CCCH SDU
-      mac_pdu_ptr->R = 0;
-      mac_pdu_ptr->LCID = sdu_lcids[i];
+      ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
+      ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = sdu_lcids[i];
+      last_size = 1;
     }
 
     mac_pdu_ptr += last_size;
