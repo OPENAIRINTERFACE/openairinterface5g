@@ -326,7 +326,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
 
   // cellSelectionInfo
   sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
-  sib1->cellSelectionInfo->q_RxLevMin = -50;
+  sib1->cellSelectionInfo->q_RxLevMin = -65;
 
   // cellAccessRelatedInfo
   struct NR_PLMN_IdentityInfo *nr_plmn_info=CALLOC(1,sizeof(struct NR_PLMN_IdentityInfo));
