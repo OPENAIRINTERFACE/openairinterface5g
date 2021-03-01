@@ -1638,7 +1638,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
     set_Y(UE_info->Y[UE_id], rntiP);
-    compute_csi_bitlen(secondaryCellGroup, UE_info, UE_id);
+    compute_csi_bitlen (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->ta_frame = 0;
