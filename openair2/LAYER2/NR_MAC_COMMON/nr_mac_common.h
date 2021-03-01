@@ -47,7 +47,7 @@ uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol);
 
 int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
@@ -142,7 +142,7 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t NrOfSymbols);
 void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
 @param    *pusch_config,   pointer to pusch config

@@ -971,7 +971,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols);
+    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols, StartSymbolIndex);
 
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
@@ -1190,7 +1190,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols);
+    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols, StartSymbolIndex);
 
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
