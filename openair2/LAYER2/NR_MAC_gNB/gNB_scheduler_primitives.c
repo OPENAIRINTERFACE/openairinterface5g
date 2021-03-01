@@ -1871,15 +1871,21 @@ void nr_csirs_scheduling(int Mod_idP,
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
             csirs_pdu_rel15->row = 1;
             csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>4)&0x0f;
+            for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+              vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
             csirs_pdu_rel15->row = 2;
             csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row1.buf[1]>>4)&0x0f) |
                                            ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0]<<8)&0xf0));
+            for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+              vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
             csirs_pdu_rel15->row = 4;
             csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>5)&0x0f;
+            for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+              vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
             csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>2)&0x0f;
@@ -1889,53 +1895,92 @@ void nr_csirs_scheduling(int Mod_idP,
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
                 csirs_pdu_rel15->row = 3;
+                for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                  vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p4:
                 csirs_pdu_rel15->row = 5;
+                for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                  vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p8:
-                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                   csirs_pdu_rel15->row = 8;
+                  for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                    vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                }
                 else{
                   int num_k = 0;
                   for (int k=0; k<6; k++)
                     num_k+=(((csirs_pdu_rel15->freq_domain)>>k)&0x01);
-                  if(num_k==4)
+                  if(num_k==4) {
                     csirs_pdu_rel15->row = 6;
-                  else
+                    for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                      vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                  }
+                  else {
                     csirs_pdu_rel15->row = 7;
+                    for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                      vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                  }
                 }
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p12:
-                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                   csirs_pdu_rel15->row = 10;
-                else
+                  for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                    vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                }
+                else {
                   csirs_pdu_rel15->row = 9;
+                  for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                    vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                }
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p16:
                 if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
                   csirs_pdu_rel15->row = 12;
                 else
                   csirs_pdu_rel15->row = 11;
+                for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                  vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p24:
-                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                   csirs_pdu_rel15->row = 14;
+                  for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                    vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                }
                 else{
-                  if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4)
+                  if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4) {
                     csirs_pdu_rel15->row = 15;
-                  else
+                    for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                      vrb_map[rb] |= (7 << csirs_pdu_rel15->symb_l0);
+                  }
+                  else {
                     csirs_pdu_rel15->row = 13;
+                    for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                      vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                  }
                 }
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p32:
-                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                   csirs_pdu_rel15->row = 17;
+                  for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                    vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                }
                 else{
-                  if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4)
+                  if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4) {
                     csirs_pdu_rel15->row = 18;
-                  else
+                    for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                      vrb_map[rb] |= (7 << csirs_pdu_rel15->symb_l0);
+                  }
+                  else {
                     csirs_pdu_rel15->row = 16;
+                    for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
+                      vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                  }
                 }
                 break;
             default:
@@ -1946,8 +1991,6 @@ void nr_csirs_scheduling(int Mod_idP,
           AssertFatal(1==0,"Invalid freqency domain allocation in CSI-RS resource\n");
         }
         dl_req->nPDUs++;
-        for (int rb = csirs_pdu_rel15->start_rb; rb < csirs_pdu_rel15->nr_of_rbs; rb++)
-          vrb_map[rb] = 1;
       }
     }
   }
