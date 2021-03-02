@@ -82,6 +82,7 @@ int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
   }
 
   int nb_slots_per_period = ((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
+  cfg->tdd_table.tdd_period_in_slots = nb_slots_per_period;
 
   if ( (nrofDownlinkSymbols + nrofUplinkSymbols) == 0 )
     AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots),

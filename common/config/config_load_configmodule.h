@@ -36,6 +36,8 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "common/config/config_paramdesc.h"
 #include "common/utils/T/T.h"
 #define CONFIG_MAX_OOPT_PARAMS    10     // maximum number of parameters in the -O option (-O <cfgmode>:P1:P2...
@@ -74,6 +76,7 @@ typedef struct configmodule_interface {
   uint32_t numptrs;
   uint32_t rtflags;
   char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];
+  bool ptrsAllocated[CONFIG_MAX_ALLOCATEDPTRS];
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN

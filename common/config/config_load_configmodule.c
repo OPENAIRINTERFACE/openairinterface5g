@@ -43,7 +43,7 @@
 #include "config_userapi.h"
 #include "../utils/LOG/log.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 
 int load_config_sharedlib(configmodule_interface_t *cfgptr) {
   void *lib_handle;
@@ -331,9 +331,10 @@ void end_configmodule(void) {
     printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);
 
     for(int i=0; i<cfgptr->numptrs ; i++) {
-      if (cfgptr->ptrs[i] != NULL) {
+      if (cfgptr->ptrs[i] != NULL && cfgptr->ptrsAllocated[i] == true) {
         free(cfgptr->ptrs[i]);
         cfgptr->ptrs[i]=NULL;
+	cfgptr->ptrsAllocated[i] = false;
       }
     }
 

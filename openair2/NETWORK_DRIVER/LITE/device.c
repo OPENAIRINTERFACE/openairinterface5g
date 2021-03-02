@@ -316,7 +316,11 @@ void oai_nw_drv_change_rx_flags(struct net_device *dev, int flags)
 }
 
 //---------------------------------------------------------------------------
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
+void oai_nw_drv_tx_timeout(struct net_device *dev, unsigned int txqueue)
+#else
 void oai_nw_drv_tx_timeout(struct net_device *dev)
+#endif
 {
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.

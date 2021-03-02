@@ -82,7 +82,6 @@ typedef enum {
 /* global parameters, not under a specific section   */
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define GNB_CONFIG_STRING_ACTIVE_GNBS                      "Active_gNBs"
-#define GNB_CONFIG_PUSCH_THREADS                           "Num_Threads_PUSCH"
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            global configuration parameters                                                                                   */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                                        type           numelt     */
@@ -90,10 +89,6 @@ typedef enum {
 #define GNBSPARAMS_DESC {                                                                                             \
 {GNB_CONFIG_STRING_ASN1_VERBOSITY,             NULL,     0,        uptr:NULL,   defstrval:GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
 {GNB_CONFIG_STRING_ACTIVE_GNBS,                NULL,     0,        uptr:NULL,   defstrval:NULL, 				   TYPE_STRINGLIST,  0}    \
-}
-
-#define NUM_THREADS_DESC { \
-{GNB_CONFIG_PUSCH_THREADS,                     NULL,     0,        uptr:&num_threads_pusch,   defuintval:1, 				   TYPE_UINT,  0}    \
 }
 
 #define GNB_ASN1_VERBOSITY_IDX                     0
@@ -457,4 +452,27 @@ typedef enum {
 #define CONFIG_HLP_WORKER                          "coding and FEP worker thread WORKER_DISABLE or WORKER_ENABLE\n"
 #define CONFIG_HLP_PARALLEL                        "PARALLEL_SINGLE_THREAD, PARALLEL_RU_L1_SPLIT, or PARALLEL_RU_L1_TRX_SPLIT(RU_L1_TRX_SPLIT by defult)\n"
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* security configuration                                                                                                                                                           */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define CONFIG_STRING_SECURITY      "security"
+
+#define SECURITY_CONFIG_CIPHERING   "ciphering_algorithms"
+#define SECURITY_CONFIG_INTEGRITY   "integrity_algorithms"
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*   security configuration                                                                                                                                                         */
+/*   optname                               help                                          paramflags         XXXptr               defXXXval                 type              numelt */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define SECURITY_GLOBALPARAMS_DESC { \
+    {SECURITY_CONFIG_CIPHERING,            "preferred ciphering algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
+    {SECURITY_CONFIG_INTEGRITY,            "preferred integrity algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
+}
+
+#define SECURITY_CONFIG_CIPHERING_IDX   0
+#define SECURITY_CONFIG_INTEGRITY_IDX   1
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
 #endif

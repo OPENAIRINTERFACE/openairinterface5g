@@ -1,3 +1,7 @@
+ID = BENETEL
+  GROUP = ALL
+  FORMAT = int,frame : int,slot : buffer,rxdataF
+
 #general logs
 ID = ENB_MASTER_TICK
     DESC = eNodeB master tick - one tick per ms, to be used as "reference clock", mostly for ticktime view

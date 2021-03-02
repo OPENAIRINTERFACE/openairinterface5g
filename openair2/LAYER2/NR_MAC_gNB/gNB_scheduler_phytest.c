@@ -103,7 +103,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
     dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     
-    dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+    dl_tti_pdsch_pdu = &nr_mac->DL_req[CC_id].dl_tti_request_body.dl_tti_pdu_list[nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+1];
     memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
     dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
@@ -238,14 +238,16 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  pdsch_pdu_rel15->mcsIndex[0]);
     */
     
-    dl_req->nPDUs+=2;
+    nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+=2;
     
     TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     TX_req->PDU_length = 6;
     TX_req->PDU_index = nr_mac->pdu_index[CC_id]++;
     TX_req->num_TLV = 1;
     TX_req->TLVs[0].length = 8;
-    memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&cc[CC_id].RAR_pdu.payload[0],TX_req->TLVs[0].length);
+    // why do we copy from RAR_pdu here? Shouldn't we fill some more or less
+    // meaningful data, e.g., padding + random data?
+    //memcpy((void *)&TX_req->TLVs[0].value.direct[0], (void *)&cc[CC_id].RAR_pdu[0].payload[0], TX_req->TLVs[0].length);
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].SFN=frameP;
     nr_mac->TX_req[CC_id].Slot=slotP;
@@ -255,9 +257,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 /* schedules whole bandwidth for first user, all the time */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
-                             sub_frame_t slot,
-                             int num_slots_per_tdd)
+                             sub_frame_t slot)
 {
+  if (slot != 1)
+    return;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
   const int CC_id = 0;
@@ -328,14 +331,25 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  nr_acknack_scheduling(module_id,
-                        UE_id,
-                        frame,
-                        slot,
-                        num_slots_per_tdd,
-                        &sched_ctrl->pucch_sched_idx,
-                        &sched_ctrl->pucch_occ_idx);
-  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  if (!alloc) {
+    LOG_D(MAC,
+          "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+          __func__,
+          UE_id,
+          rnti,
+          frame,
+          slot);
+    UE_info->num_pdcch_cand[UE_id][cid]--;
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
+      cce_list[sched_ctrl->cce_index + i] = 0;
+    return;
+  }
+
+  AssertFatal(alloc,
+              "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
+              rnti, frame, slot);
 
   sched_ctrl->rbStart = rbStart;
   sched_ctrl->rbSize = rbSize;
@@ -350,13 +364,15 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
   sched_ctrl->mcs = 9;
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
+  sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
     vrb_map[rb + sched_ctrl->rbStart] = 1;
 }
 
-void nr_ul_preprocessor_phytest(module_id_t module_id,
+bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
                                 int num_slots_per_tdd,
@@ -372,7 +388,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_info->num_UEs);
   if (UE_info->num_UEs == 0)
-    return;
+    return false;
 
   const int UE_id = 0;
   const int CC_id = 0;
@@ -387,15 +403,15 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
               tda,
               tdaList->list.count);
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
-  const int sched_slot = (slot + K2) % num_slots_per_tdd;
+  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
+  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
   if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
-    return;
+    return false;
 
-  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbStart = 0;
   uint16_t rbSize = 50; /* due to OAI UE limitations */
   if (rbSize>bw)
@@ -411,7 +427,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
             frame,
             slot,
             i);
-      return;
+      return false;
     }
   }
 
@@ -438,7 +454,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
                                            nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    return;
+    return false;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
@@ -465,6 +481,8 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   sched_pusch->mcs = mcs;
   sched_pusch->rbStart = rbStart;
   sched_pusch->rbSize = rbSize;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 for "any new" */
+  sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   /* Calculate TBS from MCS */
   sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
@@ -487,4 +505,5 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
   /* mark the corresponding RBs as used */
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)
     vrb_map_UL[rb] = 1;
+  return true;
 }

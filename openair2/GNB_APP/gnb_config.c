@@ -51,7 +51,8 @@
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 
-#include "L1_paramdef.h"
+//#include "L1_paramdef.h"
+#include "L1_nr_paramdef.h"
 #include "MACRLC_paramdef.h"
 #include "common/config/config_userapi.h"
 //#include "RRC_config_tools.h"
@@ -162,6 +163,8 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   //  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB_SUL        = CALLOC(1,sizeof(NR_RSRP_Range_t));
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing       = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = CALLOC(1,sizeof(long));
+  // 0 - ENABLE, 1 - DISABLE, hence explicitly setting to DISABLED.
+  *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = NR_PUSCH_Config__transformPrecoder_disabled;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_PUSCH_ConfigCommon_t)); 
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->present        = NR_SetupRelease_PUSCH_ConfigCommon_PR_setup;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PUSCH_ConfigCommon));
@@ -399,6 +402,8 @@ void RCconfig_NR_L1(void) {
 	RC.gNB[j]->Mod_id  = j;
       }
 
+      RC.gNB[j]->pusch_proc_threads = *(L1_ParamList.paramarray[j][L1_PUSCH_PROC_THREADS].uptr);
+
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
         //sf_ahead = 2; // Need 4 subframe gap between RX and TX
       }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
@@ -427,7 +432,7 @@ void RCconfig_NR_L1(void) {
 
         mac_top_init_gNB();
 
-        configure_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
+        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
       }else { // other midhaul
       } 
     }// for (j = 0; j < RC.nb_nr_L1_inst; j++)
@@ -497,8 +502,8 @@ void RCconfig_nr_macrlc() {
 
         //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
-        printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
-        configure_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
+        printf("**************** vnf_port:%d\n", RC.nrmac[j]->eth_params_s.my_portc);
+        configure_nr_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
         printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.nrmac[j]->eth_params_s.my_portc);
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
@@ -508,6 +513,101 @@ void RCconfig_nr_macrlc() {
     AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
   }
 
+}
+
+void config_security(gNB_RRC_INST *rrc)
+{
+  paramdef_t logparams_defaults[] = SECURITY_GLOBALPARAMS_DESC;
+  int ret = config_get(logparams_defaults,
+                       sizeof(logparams_defaults) / sizeof(paramdef_t),
+                       CONFIG_STRING_SECURITY);
+  int i;
+
+  if (ret < 0) {
+    LOG_W(RRC, "configuration file does not contain a \"security\" section, applying default parameters (no security)\n");
+    rrc->security.ciphering_algorithms[0]    = 0;  /* nea0 = no ciphering */
+    rrc->security.ciphering_algorithms_count = 1;
+    rrc->security.integrity_algorithms[0]    = 0;  /* nia0 = no integrity */
+    rrc->security.integrity_algorithms_count = 1;
+    return;
+  }
+
+  if (logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].numelt > 4) {
+    LOG_E(RRC, "too much ciphering algorithms in section \"security\" of the configuration file, maximum is 4\n");
+    exit(1);
+  }
+  if (logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].numelt > 4) {
+    LOG_E(RRC, "too much integrity algorithms in section \"security\" of the configuration file, maximum is 4\n");
+    exit(1);
+  }
+
+  /* get ciphering algorithms */
+  rrc->security.ciphering_algorithms_count = 0;
+  for (i = 0; i < logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].numelt; i++) {
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea0")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 0;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea1")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 1;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea2")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 2;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea3")) {
+      rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 3;
+      rrc->security.ciphering_algorithms_count++;
+      continue;
+    }
+    LOG_E(RRC, "unknown ciphering algorithm \"%s\" in section \"security\" of the configuration file\n",
+          logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i]);
+    exit(1);
+  }
+
+  /* get integrity algorithms */
+  rrc->security.integrity_algorithms_count = 0;
+  for (i = 0; i < logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].numelt; i++) {
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia0")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 0;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia1")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 1;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia2")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 2;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia3")) {
+      rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 3;
+      rrc->security.integrity_algorithms_count++;
+      continue;
+    }
+    LOG_E(RRC, "unknown integrity algorithm \"%s\" in section \"security\" of the configuration file\n",
+          logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i]);
+    exit(1);
+  }
+
+  if (rrc->security.ciphering_algorithms_count == 0) {
+    LOG_W(RRC, "no preferred ciphering algorithm set in configuration file, applying default parameters (no security)\n");
+    rrc->security.ciphering_algorithms[0]    = 0;  /* nea0 = no ciphering */
+    rrc->security.ciphering_algorithms_count = 1;
+  }
+
+  if (rrc->security.integrity_algorithms_count == 0) {
+    LOG_W(RRC, "no preferred integrity algorithm set in configuration file, applying default parameters (no security)\n");
+    rrc->security.integrity_algorithms[0]    = 0;  /* nia0 = no integrity */
+    rrc->security.integrity_algorithms_count = 1;
+  }
 }
 
 void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
@@ -676,7 +776,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     }//End for (k=0; k <num_gnbs ; k++)
   }//End if (num_gnbs>0)
 
-
+  config_security(rrc);
 }//End RCconfig_NRRRC function
 
 int RCconfig_nr_gtpu(void ) {
