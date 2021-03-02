@@ -3686,7 +3686,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.slot1_proc_two != -1 )
     CPU_SET(threads.slot1_proc_two, &cpuset);
 
-  // cppcheck-suppress moduloAlwaysTrueFalse
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.slot1_proc_three != -1 )
     CPU_SET(threads.slot1_proc_three, &cpuset);
 
