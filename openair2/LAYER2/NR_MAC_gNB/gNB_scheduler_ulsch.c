@@ -409,7 +409,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -417,7 +417,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           slotP,
           current_rnti,
           UE_id,
-          ul_cqi);
+          ul_cqi,
+          sduP);
 
     // if not missed detection (10dB threshold for now)
     if (UE_scheduling_control->ul_rssi < (100+rssi)) {
