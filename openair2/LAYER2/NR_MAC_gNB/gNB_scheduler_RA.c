@@ -833,9 +833,9 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
     int mcsIndex = 0;
-    int startSymbolAndLength = 0;
-    int StartSymbolIndex = -1;
-    int NrOfSymbols = 14;
+    int startSymbolAndLength = 53;
+    int StartSymbolIndex = 2;
+    int NrOfSymbols = 12;
     int StartSymbolIndex_tmp = 0;
     int NrOfSymbols_tmp = 0;
     int x_Overhead = 0;
@@ -958,16 +958,17 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->rbSize = rbSize;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
 
+    // FIXME: should use Initial BWP and maybe Default values from TS 38.214 Table 5.1.2.1.1-1
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex_tmp, &NrOfSymbols_tmp);
-      if (NrOfSymbols_tmp < NrOfSymbols) {
+      //if (NrOfSymbols_tmp < NrOfSymbols) {
         NrOfSymbols = NrOfSymbols_tmp;
         StartSymbolIndex = StartSymbolIndex_tmp;
         time_domain_assignment = i; // this is short PDSCH added to the config to fit mixed slot
-      }
+      //}
+      break;
     }
-
     AssertFatal(StartSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
     pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
@@ -1089,9 +1090,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
 
     int mcsIndex = 0;
-    int startSymbolAndLength = 0;
-    int StartSymbolIndex = -1;
-    int NrOfSymbols = 5;
+    int startSymbolAndLength = 53;
+    int StartSymbolIndex = 2;
+    int NrOfSymbols = 12;
     int StartSymbolIndex_tmp = 0;
     int NrOfSymbols_tmp = 0;
     int x_Overhead = 0;
@@ -1240,7 +1241,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->rbSize = rbSize;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
 
-    // FIXME: should use Initial BWP
+    // FIXME: should use Initial BWP and maybe Default values from TS 38.214 Table 5.1.2.1.1-1
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex_tmp, &NrOfSymbols_tmp);
