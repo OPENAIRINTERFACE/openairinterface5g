@@ -19,31 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _BENETEL_5G_LOW_H_
-#define _BENETEL_5G_LOW_H_
+#ifndef _NR_PDCP_SECURITY_NEA2_H_
+#define _NR_PDCP_SECURITY_NEA2_H_
 
-#include "shared_buffers.h"
+void *nr_pdcp_security_nea2_init(unsigned char *ciphering_key);
 
-typedef struct {
-  shared_buffers *buffers;
-  /* [2] is for two antennas */
-  int            next_slot[2];
-  int            next_symbol[2];
-  int            expected_benetel_frame[2];
-  char           *dpdk_main_command_line;
-} benetel_t;
+void nr_pdcp_security_nea2_cipher(void *security_context,
+                                  unsigned char *buffer, int length,
+                                  int bearer, int count, int direction);
 
-typedef struct {
-  int frame;
-  int slot;
-  int symbol;
-  int antenna;
-  unsigned char iq[5088];
-} ul_packet_t;
+void nr_pdcp_security_nea2_free_security(void *security_context);
 
-void *benetel_start(char *ifname, shared_buffers *buffers, char *dpdk_main_command_line);
-
-void store_ul(benetel_t *bs, ul_packet_t *ul);
-void store_prach(benetel_t *bs, int frame, int slot, void *data);
-
-#endif /* _BENETEL_5G_LOW_H_ */
+#endif /* _NR_PDCP_SECURITY_NEA2_H_ */

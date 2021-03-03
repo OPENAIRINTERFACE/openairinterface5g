@@ -245,7 +245,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     TX_req->PDU_index = nr_mac->pdu_index[CC_id]++;
     TX_req->num_TLV = 1;
     TX_req->TLVs[0].length = 8;
-    memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&cc[CC_id].RAR_pdu.payload[0],TX_req->TLVs[0].length);
+    // why do we copy from RAR_pdu here? Shouldn't we fill some more or less
+    // meaningful data, e.g., padding + random data?
+    //memcpy((void *)&TX_req->TLVs[0].value.direct[0], (void *)&cc[CC_id].RAR_pdu[0].payload[0], TX_req->TLVs[0].length);
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].SFN=frameP;
     nr_mac->TX_req[CC_id].Slot=slotP;

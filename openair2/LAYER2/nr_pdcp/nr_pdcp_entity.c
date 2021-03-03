@@ -22,11 +22,12 @@
 #include "nr_pdcp_entity.h"
 
 #include "nr_pdcp_entity_drb_am.h"
+#include "nr_pdcp_security_nea2.h"
 
 #include "LOG/log.h"
 
 nr_pdcp_entity_t *new_nr_pdcp_entity_srb(
-    int rb_id,
+    int is_gnb, int rb_id,
     void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
@@ -38,7 +39,7 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_srb(
 }
 
 nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
-    int rb_id,
+    int is_gnb, int rb_id,
     void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
@@ -47,7 +48,11 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
     void *deliver_pdu_data,
     int sn_size,
     int t_reordering,
-    int discard_timer)
+    int discard_timer,
+    int ciphering_algorithm,
+    int integrity_algorithm,
+    unsigned char *ciphering_key,
+    unsigned char *integrity_key)
 {
   nr_pdcp_entity_drb_am_t *ret;
 
@@ -75,6 +80,26 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
   ret->discard_timer = discard_timer;
 
   ret->common.maximum_nr_pdcp_sn = (1 << sn_size) - 1;
+
+  if (ciphering_key != NULL && ciphering_algorithm != 0) {
+    if (ciphering_algorithm != 2) {
+      LOG_E(PDCP, "FATAL: only nea2 supported for the moment\n");
+      exit(1);
+    }
+    ret->common.has_ciphering = 1;
+    ret->common.ciphering_algorithm = ciphering_algorithm;
+    memcpy(ret->common.ciphering_key, ciphering_key, 16);
+
+    ret->common.security_context = nr_pdcp_security_nea2_init(ciphering_key);
+    ret->common.cipher = nr_pdcp_security_nea2_cipher;
+    ret->common.free_security = nr_pdcp_security_nea2_free_security;
+  }
+  ret->common.is_gnb = is_gnb;
+
+  if (integrity_key != NULL) {
+    printf("%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
 
   return (nr_pdcp_entity_t *)ret;
 }
