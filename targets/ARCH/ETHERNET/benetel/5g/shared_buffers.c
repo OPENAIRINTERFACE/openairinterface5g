@@ -45,11 +45,16 @@ void init_buffers(shared_buffers *s)
    * needs to have slots 1, 2 and 3, 4 and 5 ready. Let's pretend
    * they are ready.
    */
-  s->dl_busy[1] = 0x3fff;
-  s->dl_busy[2] = 0x3fff;
-  s->dl_busy[3] = 0x3fff;
-  s->dl_busy[4] = 0x3fff;
-  s->dl_busy[5] = 0x3fff;
+  s->dl_busy[0][1] = 0x3fff;
+  s->dl_busy[0][2] = 0x3fff;
+  s->dl_busy[0][3] = 0x3fff;
+  s->dl_busy[0][4] = 0x3fff;
+  s->dl_busy[0][5] = 0x3fff;
+  s->dl_busy[1][1] = 0x3fff;
+  s->dl_busy[1][2] = 0x3fff;
+  s->dl_busy[1][3] = 0x3fff;
+  s->dl_busy[1][4] = 0x3fff;
+  s->dl_busy[1][5] = 0x3fff;
 }
 
 void lock_dl_buffer(shared_buffers *s, int slot)

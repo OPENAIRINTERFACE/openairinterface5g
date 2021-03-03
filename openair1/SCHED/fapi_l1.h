@@ -31,6 +31,7 @@
  */
 
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "SCHED/sched_eNB.h"

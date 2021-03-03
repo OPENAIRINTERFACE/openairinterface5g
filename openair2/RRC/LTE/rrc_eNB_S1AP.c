@@ -1045,6 +1045,15 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       }
     }
 
+    ue_context_p->ue_context.nr_security.ciphering_algorithms = S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nr_security_capabilities.encryption_algorithms;
+    ue_context_p->ue_context.nr_security.integrity_algorithms = S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).nr_security_capabilities.integrity_algorithms;
+    /* let's initialize sk_counter to 0 */
+    ue_context_p->ue_context.nr_security.sk_counter = 0;
+    /* let's compute kgNB */
+    derive_skgNB(ue_context_p->ue_context.kenb,
+                 ue_context_p->ue_context.nr_security.sk_counter,
+                 ue_context_p->ue_context.nr_security.kgNB);
+
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
     if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
       LOG_I(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);

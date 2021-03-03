@@ -558,11 +558,14 @@ int main( int argc, char **argv ) {
 
   
   init_NR_UE_threads(1);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+  // Sleep a while before checking all parameters have been used
+  // Some are used directly in external threads, asynchronously
+  sleep(20);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   while(true)
     sleep(3600);

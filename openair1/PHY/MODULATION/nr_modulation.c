@@ -325,10 +325,10 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
 
 void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 {
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i dft_in128[1][1200], dft_out128[1][1200];
+#if defined(__x86_64__) || +defined(__i386__)
+  __m128i dft_in128[1][3240], dft_out128[1][3240];
 #elif defined(__arm__)
-  int16x8_t dft_in128[1][1200], dft_out128[1][1200];
+  int16x8_t dft_in128[1][3240], dft_out128[1][3240];
 #endif
   uint32_t *dft_in0 = (uint32_t*)dft_in128[0], *dft_out0 = (uint32_t*)dft_out128[0];
 
@@ -340,8 +340,10 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
   int16x8_t norm128;
 #endif
 
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    dft_in0[ip] = d[i];
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
+      dft_in0[ip] = d[i];
+    }
   }
 
   switch (Msc_PUSCH) {
@@ -480,7 +482,7 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
       break;
 
     case 972:
-      dft(DFT_960,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_972,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 1080:
@@ -494,11 +496,98 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
     case 1200:
       dft(DFT_1200,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
+
+    case 1296:
+      dft(DFT_1296,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1440:
+      dft(DFT_1440,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1500:
+      dft(DFT_1500,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1536:
+      //dft(DFT_1536,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_1536,(int16_t*)d, (int16_t*)z, 1);
+      break;
+
+    case 1620:
+      dft(DFT_1620,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1728:
+      dft(DFT_1728,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1800:
+      dft(DFT_1800,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1920:
+      dft(DFT_1920,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1944:
+      dft(DFT_1944,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2160:
+      dft(DFT_2160,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2304:
+      dft(DFT_2304,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2400:
+      dft(DFT_2400,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2592:
+      dft(DFT_2592,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2700:
+      dft(DFT_2700,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2880:
+      dft(DFT_2880,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2916:
+      dft(DFT_2916,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 3000:
+      dft(DFT_3000,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 3072:
+      //dft(DFT_3072,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_3072,(int16_t*)d, (int16_t*)z, 1);
+      break;
+
+    case 3240:
+      dft(DFT_3240,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    default:
+      // should not be reached
+      LOG_E( PHY, "Unsupported Msc_PUSCH value of %"PRIu16"\n", Msc_PUSCH );
+      return;
+
   }
 
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = dft_out0[ip];
+
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      z[i] = dft_out0[ip];
   }
+
 }
 
 
