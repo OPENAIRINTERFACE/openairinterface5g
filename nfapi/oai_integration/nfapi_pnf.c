@@ -1242,6 +1242,8 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu=&dl_tti_pdu_list[i];
       memcpy(dl_tti_pdu,&dl_tti_pdu_list[i],sizeof(nfapi_nr_dl_tti_request_pdu_t));
       int SFN=sfn+2;
+      //if(!&dl_tti_pdu->pdcch_pdu)
+      printf("interleaversize = %d, coreset_type = %d. \n",dl_tti_pdu->pdcch_pdu.pdcch_pdu_rel15.InterleaverSize,dl_tti_pdu->pdcch_pdu.pdcch_pdu_rel15.CoreSetType);
       handle_nfapi_nr_pdcch_pdu(gNB, SFN, slot, &dl_tti_pdu->pdcch_pdu);
       //dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);

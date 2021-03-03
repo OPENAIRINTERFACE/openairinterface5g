@@ -547,6 +547,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
   if (gNB->frame_parms.frame_type == TDD)
+    if(NFAPI_MODE != NFAPI_MODE_VNF)
     fill_ul_rb_mask(gNB, frame_rx, slot_rx);
 
   gNB_I0_measurements(gNB);

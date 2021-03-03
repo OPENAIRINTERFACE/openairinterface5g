@@ -1666,6 +1666,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig->pdsch_ServingCellConfig->choice.setup;
     const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
         get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
+    printf("nrofHARQ = %d\n", nrofHARQ);
     // add all available DL HARQ processes for this UE
     create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
     for (int harq = 0; harq < nrofHARQ; harq++)

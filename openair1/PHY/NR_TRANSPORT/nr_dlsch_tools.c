@@ -32,6 +32,7 @@
 */
 
 #include "nr_dlsch.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 extern void set_taus_seed(unsigned int seed_type);
 
@@ -263,13 +264,21 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
    for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
      AssertFatal(gNB->dlsch[i]!=NULL,"gNB->dlsch[%d] is null\n",i);
      AssertFatal(gNB->dlsch[i][0]!=NULL,"gNB->dlsch[%d][0] is null\n",i);
-     LOG_D(PHY,"searching for rnti %x : dlsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,
-	   gNB->dlsch[i][0]->harq_mask,gNB->dlsch[i][0]->rnti,first_free_index);
+     //LOG_D(PHY,"searching for rnti %x : dlsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,
+	   //gNB->dlsch[i][0]->harq_mask,gNB->dlsch[i][0]->rnti,first_free_index);
+     LOG_D(PHY,"searching for  harq_mask %x, rnti %x, gNB->dlsch[i][0]->rnti %x\n", gNB->dlsch[i][0]->harq_mask, rnti, gNB->dlsch[i][0]->rnti);
      if ((gNB->dlsch[i][0]->harq_mask >0) &&
 	 (gNB->dlsch[i][0]->rnti==rnti))       return i;
-     else if ((gNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+     else if ((gNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) {
+     //printf("gNB->dlsch[i][0]->harq_mask = %d \n", gNB->dlsch[i][0]->harq_mask);;
+     first_free_index=i;
+     }
+
    }
-   if (type == SEARCH_EXIST) return -1;
+   if (type == SEARCH_EXIST) {
+     printf("type = %d \n", type);
+     return -1;
+   }
    if (first_free_index != -1)
      gNB->dlsch[first_free_index][0]->rnti = 0;
    return first_free_index;
@@ -284,7 +293,10 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    uint8_t *sdu) {
 
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
- 
+  if (NFAPI_MODE == NFAPI_MODE_PNF) {
+    gNB->dlsch[0][0]->harq_mask = 1;
+    gNB->dlsch[0][0]->rnti = 4660;
+  }
   int dlsch_id = find_nr_dlsch(rel15->rnti,gNB,SEARCH_EXIST);
   AssertFatal( (dlsch_id>=0) && (dlsch_id<NUMBER_OF_NR_DLSCH_MAX),
               "illegal or no dlsch_id found!!! rnti %04x dlsch_id %d\n",rel15->rnti,dlsch_id);

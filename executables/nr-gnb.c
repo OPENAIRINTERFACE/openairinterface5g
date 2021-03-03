@@ -252,8 +252,25 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   
   // RX processing
-  int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
-  int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
+  int tx_slot_type; int rx_slot_type;
+  if(NFAPI_MODE == NFAPI_MODE_VNF) {
+  if ((slot_tx==8) || (slot_rx==8) || (slot_tx==9) || (slot_rx==9) || (slot_tx==18) || (slot_rx==18) || (slot_tx==19) || (slot_rx==19)) {
+    tx_slot_type         = NR_UPLINK_SLOT;
+    rx_slot_type         = NR_UPLINK_SLOT;
+  }
+  else if ((slot_tx==7) || (slot_rx==7) || (slot_tx==17) || (slot_rx==17)) {
+    tx_slot_type         = NR_MIXED_SLOT;
+    rx_slot_type         = NR_MIXED_SLOT;
+  }
+  else {
+    tx_slot_type         = NR_DOWNLINK_SLOT;
+    rx_slot_type         = NR_DOWNLINK_SLOT;
+  }
+  }
+  else {
+  tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
+  rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
+  }
 
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
@@ -400,15 +417,21 @@ static void *gNB_L1_thread( void *param ) {
 
 
   while (!oai_exit) {
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
-    if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     int frame_rx          = L1_proc->frame_rx;
     int slot_rx           = L1_proc->slot_rx;
     int frame_tx          = L1_proc->frame_tx;
     int slot_tx           = L1_proc->slot_tx;
     uint64_t timestamp_tx = L1_proc->timestamp_tx;
+    if(NFAPI_MODE==NFAPI_MODE_VNF)
+      if (gNB->CC_id==0) {
+        int next_slot;
+        next_slot = (slot_rx + 1) % 20;
+        if (rxtx(gNB,frame_rx,next_slot,frame_tx,next_slot,thread_name) < 0) break
+      }
+    if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,slot_tx);
@@ -422,9 +445,12 @@ static void *gNB_L1_thread( void *param ) {
       if (rxtx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,thread_name) < 0) break;
     }
 
+    clock_gettime(CLOCK_MONOTONIC,&t);
+    //printf("\n %d.%d",t.tv_sec,t.tv_nsec);
+   
     if (release_thread(&L1_proc->mutex,&L1_proc->instance_cnt,thread_name)<0) break;
-
-    if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)  wakeup_tx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,timestamp_tx);
+   
+    if (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)  wakeup_tx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,timestamp_tx);
     else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) wakeup_txfh(gNB,L1_proc,frame_tx,slot_tx,timestamp_tx);
   } // while !oai_exit
 

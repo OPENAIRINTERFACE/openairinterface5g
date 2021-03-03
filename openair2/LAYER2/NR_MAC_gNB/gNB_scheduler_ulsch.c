@@ -32,6 +32,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
@@ -882,6 +883,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     if (harq_id < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       harq_id = sched_ctrl->available_ul_harq.head;
+      // if(NFAPI_MODE == NFAPI_MODE_VNF)
+      //   harq_id = 1;
       AssertFatal(harq_id >= 0,
                   "no free HARQ process available for UE %d\n",
                   UE_id);

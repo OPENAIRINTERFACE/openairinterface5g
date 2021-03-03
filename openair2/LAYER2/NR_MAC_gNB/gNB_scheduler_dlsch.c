@@ -47,6 +47,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
@@ -651,7 +652,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
-
+  
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
@@ -716,6 +717,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
+      if (NFAPI_MODE == NFAPI_MODE_VNF)
+        sched_ctrl->available_dl_harq.head = 0;
       current_harq_pid = sched_ctrl->available_dl_harq.head;
       AssertFatal(current_harq_pid >= 0,
                   "no free HARQ process available for UE %d\n",
@@ -732,6 +735,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
     }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    if (NFAPI_MODE == NFAPI_MODE_VNF) {
+      harq->is_waiting = false;
+    }
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
@@ -765,7 +771,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int bwpid = sched_ctrl->active_bwp->bwp_Id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    //nfapi_nr_dl_tti_pdcch_pdu_rel15_t temp;
+    // if(NFAPI_MODE == NFAPI_MODE_VNF){
+    //   memcpy(temp,gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid],sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t));
+    //   pdcch_pdu = temp;
+
+    // }
+
     if (!pdcch_pdu) {
+      printf("creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
