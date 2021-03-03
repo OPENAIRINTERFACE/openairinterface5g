@@ -1090,7 +1090,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
 
     int mcsIndex = 0;
-    int startSymbolAndLength = 53;
+    int mcsTableIndex = 0;
+    int startSymbolAndLength = 0;
     int StartSymbolIndex = 2;
     int NrOfSymbols = 12;
     int StartSymbolIndex_tmp = 0;
@@ -1129,8 +1130,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint32_t TBS = 0;
     do {
       rbSize++;
-      TBS = nr_compute_tbs(nr_get_Qm_dl(nr_mac->sched_ctrlCommon->mcs, nr_mac->sched_ctrlCommon->mcsTableIdx),
-                           nr_get_code_rate_dl(nr_mac->sched_ctrlCommon->mcs, nr_mac->sched_ctrlCommon->mcsTableIdx),
+      TBS = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIndex),
+                           nr_get_code_rate_dl(mcsIndex, mcsTableIndex),
                            rbSize, NrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT,0, 0,1) >> 3;
     } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && TBS < mac_pdu_length);
 
@@ -1212,10 +1213,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
-    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,0);
+    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIndex);
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
-
+/*
     if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL) {
       pdsch_pdu_rel15->mcsTable[0] = 0;
     } else {
@@ -1225,6 +1226,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         pdsch_pdu_rel15->mcsTable[0] = 2;
       }
     }
+    */
+
 
     pdsch_pdu_rel15->rvIndex[0] = 0;
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
@@ -1311,8 +1314,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     x_Overhead = 0;
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_payload.tb_scaling);
 
-    const int cont_res_len = 1 + 6;
-    const int post_padding = TBS > mac_pdu_length;
 
     //LOG_I(NR_MAC, "Configuring DL_TX in %d.%d: TBS %d, header_length_total %d, sdu_length_total %d,cont_res_len %d, post_padding %d \n", frameP, slotP,
     //      TBS, header_length_total, payload_length, cont_res_len, post_padding);
@@ -1320,17 +1321,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
-
-    if (post_padding > 0) {
-      for (int j = 0; j < TBS - mac_pdu_length; j++)
-        mac_pdu[mac_pdu_length + j] = 0;
-    }
-    mac_pdu_length = TBS;
-
-
-    //bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
-    memcpy(&tx_req->TLVs[0].value.direct, mac_pdu, sizeof(uint8_t) * mac_pdu_length);
-
+    memcpy(&tx_req->TLVs[0].value.direct, mac_pdu, sizeof(uint8_t) * TBS);
     tx_req->PDU_length =  TBS;
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
