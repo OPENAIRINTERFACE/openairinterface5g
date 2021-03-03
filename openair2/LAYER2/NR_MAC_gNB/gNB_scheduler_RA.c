@@ -1063,10 +1063,35 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   if (ra->Msg4_frame == frameP && ra->Msg4_slot == slotP ) {
 
+    uint8_t mac_pdu[100] = {};
+    uint16_t mac_pdu_length = 0;
+
+    const int offset = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, (unsigned char *)mac_pdu, 255, ra->cont_res_id);
+    mac_pdu_length += offset;
+
+    uint8_t mac_sdu[30];
+    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, mac_sdu);
+
+
+    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->R = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->F = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->L = mac_sdu_length * 8;
+    mac_pdu_length += 2;
+
+    memcpy(&mac_pdu[mac_pdu_length], mac_sdu, sizeof(uint8_t) * mac_sdu_length);
+    mac_pdu_length += mac_sdu_length;
+
+    LOG_I(NR_MAC, "[gNB %d] Got %d bytes from CCCH\n", module_idP, mac_sdu_length);
+
+    //int header_length_total = 1 + 6 + 2 + (mac_sdu_length >= 128);
+    //int payload_length = mac_sdu_length + header_length_total;
+
+
     int mcsIndex = 0;
     int startSymbolAndLength = 0;
     int StartSymbolIndex = -1;
-    int NrOfSymbols = 14;
+    int NrOfSymbols = 5;
     int StartSymbolIndex_tmp = 0;
     int NrOfSymbols_tmp = 0;
     int x_Overhead = 0;
@@ -1099,13 +1124,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                NrOfSymbols,
                                                StartSymbolIndex);
 
-    uint8_t mac_sdu[30];
-    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, mac_sdu);
-
-    LOG_I(NR_MAC, "[gNB %d] Got %d bytes from CCCH\n", module_idP, mac_sdu_length);
-
-    int header_length_total = 1 + 6 + 2 + (mac_sdu_length >= 128);
-    int payload_length = mac_sdu_length + header_length_total;
 
     uint32_t TBS = 0;
     do {
@@ -1113,7 +1131,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       TBS = nr_compute_tbs(nr_get_Qm_dl(nr_mac->sched_ctrlCommon->mcs, nr_mac->sched_ctrlCommon->mcsTableIdx),
                            nr_get_code_rate_dl(nr_mac->sched_ctrlCommon->mcs, nr_mac->sched_ctrlCommon->mcsTableIdx),
                            rbSize, NrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT,0, 0,1) >> 3;
-    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && TBS < payload_length);
+    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && TBS < mac_pdu_length);
 
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
       if (vrb_map[rbStart + i]) {
@@ -1200,11 +1218,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL) {
       pdsch_pdu_rel15->mcsTable[0] = 0;
     } else {
-        if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0) {
-          pdsch_pdu_rel15->mcsTable[0] = 1;
-        } else {
-          pdsch_pdu_rel15->mcsTable[0] = 2;
-        }
+      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0) {
+        pdsch_pdu_rel15->mcsTable[0] = 1;
+      } else {
+        pdsch_pdu_rel15->mcsTable[0] = 2;
+      }
     }
 
     pdsch_pdu_rel15->rvIndex[0] = 0;
@@ -1222,14 +1240,16 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->rbSize = rbSize;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
 
+    // FIXME: should use Initial BWP
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex_tmp, &NrOfSymbols_tmp);
-      if (NrOfSymbols_tmp < NrOfSymbols) {
+      //if (NrOfSymbols_tmp < NrOfSymbols) {
         NrOfSymbols = NrOfSymbols_tmp;
         StartSymbolIndex = StartSymbolIndex_tmp;
         time_domain_assignment = i; // this is short PDSCH added to the config to fit mixed slot
-      }
+      //}
+      break;
     }
     AssertFatal(StartSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
@@ -1291,31 +1311,24 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_payload.tb_scaling);
 
     const int cont_res_len = 1 + 6;
-    const int post_padding = TBS > header_length_total + payload_length + cont_res_len;
+    const int post_padding = TBS > mac_pdu_length;
 
-    LOG_D(NR_MAC, "Configuring DL_TX in %d.%d: TBS %d, header_length_total %d, sdu_length_total %d,cont_res_len %d, post_padding %d \n", frameP, slotP,
-          TBS, header_length_total, payload_length, cont_res_len, post_padding);
+    //LOG_I(NR_MAC, "Configuring DL_TX in %d.%d: TBS %d, header_length_total %d, sdu_length_total %d,cont_res_len %d, post_padding %d \n", frameP, slotP,
+    //      TBS, header_length_total, payload_length, cont_res_len, post_padding);
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
-    uint8_t payload[50] = {};
-    const int offset = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, (unsigned char *)payload, 255, ra->cont_res_id);
-
-    ((NR_MAC_SUBHEADER_SHORT *) &payload[offset])->R = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &payload[offset])->F = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &payload[offset])->LCID = DL_SCH_LCID_CCCH;
-    ((NR_MAC_SUBHEADER_SHORT *) &payload[offset])->L = mac_sdu_length*8;
-
-    memcpy(&payload[9], mac_sdu, mac_sdu_length);
 
     if (post_padding > 0) {
-      for (int j = 0; j < TBS - payload_length; j++)
-        payload[payload_length + j] = 0;
+      for (int j = 0; j < TBS - mac_pdu_length; j++)
+        mac_pdu[mac_pdu_length + j] = 0;
     }
+    mac_pdu_length = TBS;
 
-    bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
-    memcpy(&tx_req->TLVs[0].value.direct, payload, payload_length);
+
+    //bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
+    memcpy(&tx_req->TLVs[0].value.direct, mac_pdu, sizeof(uint8_t) * mac_pdu_length);
 
     tx_req->PDU_length =  TBS;
     tx_req->PDU_index = pduindex;
