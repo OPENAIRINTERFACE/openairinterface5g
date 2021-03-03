@@ -645,9 +645,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_IN);
-#if UE_TIMING_TRACE
-      start_meas(&ue->dlsch_rx_pdcch_stats);
-#endif
+    start_meas(&ue->dlsch_rx_pdcch_stats);
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
 #ifdef NR_PDCCH_SCHED_DEBUG
@@ -987,7 +985,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 
-      start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+   start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 
     if( dlsch_parallel) {
       ret = nr_dlsch_decoding_mthread(ue,
