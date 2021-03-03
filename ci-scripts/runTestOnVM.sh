@@ -2189,6 +2189,9 @@ function run_test_on_vm {
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
     then
+        echo "############################################################"
+        echo "RA TEST FR2"
+        echo "############################################################"
         #RA FR2 test, attention : has a different config file from the rest of the test
         CN_CONFIG="noS1"
         CONF_FILE=gnb.band261.tm1.32PRB.usrpn300.conf
@@ -2248,7 +2251,7 @@ function run_test_on_vm {
 
             #check RA markers in gNB and NR UE log files
             echo "############################################################"
-            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "${CN_CONFIG} : Checking FR2 RA on gNB / NR-UE"
             echo "############################################################"
 
             # Proper check to be done when RA test is working!
@@ -2264,6 +2267,12 @@ function run_test_on_vm {
         done
         ########### end RA FR2 test
 
+        sleep(30)
+
+
+        echo "############################################################"
+        echo "RA TEST FR1"
+        echo "############################################################"
         ######### redefine config for the rest of the test
 
         CN_CONFIG="noS1"
@@ -2324,14 +2333,14 @@ function run_test_on_vm {
 
             #check RA markers in gNB and NR UE log files
             echo "############################################################"
-            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "${CN_CONFIG} : Checking FR1 RA on gNB / NR-UE"
             echo "############################################################"
 
             # Proper check to be done when RA test is working!
             check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
             if [ $RA_STATUS -ne 0 ]
             then
-                echo "RA test NOT OK"
+                echo "RA FR1 test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
             else
