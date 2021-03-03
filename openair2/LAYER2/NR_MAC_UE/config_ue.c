@@ -203,8 +203,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
   frequency_range_t  frequency_range = band<100?FR1:FR2;
  
-  lte_frame_type_t frame_type;
-  get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing, &frame_type);
+  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
 
   // cell config
 

@@ -1692,9 +1692,45 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
-// Returns the corresponding row index of the NR table
-int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
+uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
+{
+  const uint64_t dl_freq_khz = downlink_frequency / 1000;
+  const int32_t  delta_duplex_khz = delta_duplex / 1000;
 
+  uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
+  uint16_t current_band = 0;
+
+  for (int ind = 0; ind < NR_BANDTABLE_SIZE; ind++) {
+
+    LOG_D(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min, nr_bandtable[ind].ul_min);
+
+    if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
+      continue;
+
+    int32_t current_offset_khz = nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min;
+
+    if (current_offset_khz != delta_duplex_khz)
+      continue;
+
+    uint64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
+
+    if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+      current_band = nr_bandtable[ind].band;
+      center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+    }
+  }
+
+  LOG_I(PHY, "DL frequency %"PRIu64": band %d, UL frequency %"PRIu64"\n",
+        downlink_frequency, current_band, downlink_frequency+delta_duplex);
+
+  AssertFatal(current_band != 0, "Can't find EUTRA band for frequency %"PRIu64" and duplex_spacing %u\n", downlink_frequency, delta_duplex);
+
+  return current_band;
+}
+
+// Returns the corresponding row index of the NR table
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
+{
   int i, j;
   int scs_khz = 15 << scs_index;
   int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
@@ -1715,35 +1751,33 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
-
 }
 
 // Computes the duplex spacing (either positive or negative) in KHz
-void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
-
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
+{
   int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
 
-  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+  LOG_I(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
+  return delta_duplex;
 }
 
-void get_frame_type(uint16_t current_band,
-                    uint8_t scs_index,
-                    lte_frame_type_t *current_type){
+lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+{
+  lte_frame_type_t current_type;
+  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
 
-  int32_t current_offset;
-  get_delta_duplex(current_band, scs_index, &current_offset);
-
-  current_offset *= 1000;
-  if (current_offset == 0)
-    *current_type = TDD;
+  if (delta_duplex == 0)
+    current_type = TDD;
   else
-    *current_type = FDD;
+    current_type = FDD;
 
-  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
 
+  return current_type;
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1921,7 +1955,6 @@ uint64_t from_nrarfcn(int nr_bandP,
   int deltaFglobal = 5;
   uint32_t N_REF_Offs = 0;
   uint64_t F_REF_Offs_khz = 0;
-  int32_t delta_duplex;
   uint64_t N_OFFs, frequency, freq_min;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
@@ -1936,7 +1969,7 @@ uint64_t from_nrarfcn(int nr_bandP,
     F_REF_Offs_khz = 24250080;
   }
 
-  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
+  int32_t delta_duplex = get_delta_duplex(nr_bandP, scs_index);
 
   if (delta_duplex <= 0){ // DL band >= UL band
     if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
@@ -3081,48 +3114,6 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
   return valid;
 }
-void get_band(uint64_t downlink_frequency,
-              uint16_t *current_band,
-              int32_t *current_offset,
-              lte_frame_type_t *current_type)
-{
-    int ind;
-    uint64_t center_frequency_khz;
-    uint64_t center_freq_diff_khz;
-    uint64_t dl_freq_khz = downlink_frequency/1000;
-
-    center_freq_diff_khz = 999999999999999999; // 2^64
-    *current_band = 0;
-
-    for ( ind=0;
-          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
-          ind++) {
-
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
-
-      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
-
-        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-          *current_band = nr_bandtable[ind].band;
-	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
-          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-
-	  if (*current_offset == 0)
-	    *current_type = TDD;
-	  else
-	    *current_type = FDD;
-        }
-      }
-    }
-
-    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
-         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
-
-    AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
-}
-
 
 uint32_t get_ssb_slot(uint32_t ssb_index){
   //  this function now only support f <= 3GHz
