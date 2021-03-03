@@ -105,7 +105,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
+  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
   //if(mac->mib != NULL){
@@ -161,7 +161,7 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
                                 uint8_t *pduP,
                                 uint32_t pdu_len) {
   LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
-  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
+  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   return 0;
 }
 
@@ -1824,23 +1824,28 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
             //  MAC CE
 
             case DL_SCH_LCID_CCCH:
-                //  MSG4 RRC Connection Setup 38.331
-                //  variable length
-                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+              //  MSG4 RRC Connection Setup 38.331
+              //  variable length
+
+              if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
+                              | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
+                mac_subheader_len = 3;
+              } else {
+                mac_sdu_len = ((NR_MAC_SUBHEADER_LONG *) pduP)->L1;
                 mac_subheader_len = 2;
-                if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-                    mac_subheader_len = 3;
-                }
+              }
 
-                LOG_D(NR_MAC,"DL_SCH_LCID_CCCH with payload len %d: bits\n", mac_ce_len);
+              LOG_D(NR_MAC,"DL_SCH_LCID_CCCH with payload len %d: bits\n", mac_sdu_len);
 
-                // TODO: Forward RRCSetup to RRC
-                LOG_D(NR_MAC,"RRCSetup received at nr_ue_process_mac_pdu with payload len %d: \n bits, rx bytes: \n", mac_ce_len);
-                for (int i = 0; i < mac_ce_len/8; i++) {
-                  LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[i + 2]);
-                }
-                break;
+
+              LOG_D(NR_MAC,"RRCSetup received at nr_ue_process_mac_pdu with payload len %d: \n bits, rx bytes: \n", mac_sdu_len);
+              for (int i = 0; i < mac_sdu_len/8; i++) {
+                LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[i + 2]);
+              }
+
+              nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pduP+mac_subheader_len, mac_sdu_len);
+              break;
 
             case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
 

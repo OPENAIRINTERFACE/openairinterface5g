@@ -42,17 +42,48 @@ nr_mac_rrc_data_ind_ue(
     const module_id_t     module_id,
     const int             CC_id,
     const uint8_t         gNB_index,
+    const frame_t         frame,
+    const sub_frame_t     sub_frame,
+    const rnti_t          rnti,
     const channel_t       channel,
     const uint8_t*        pduP,
     const sdu_size_t      pdu_len){
+    sdu_size_t      sdu_size = 0;
+    protocol_ctxt_t ctxt;
 
     switch(channel){
       case NR_BCCH_BCH:
         AssertFatal( nr_rrc_ue_decode_NR_BCCH_BCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
         break;
+
       case NR_BCCH_DL_SCH:
         AssertFatal( nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len, 0, 0) == 0, "UE decode BCCH-DL-SCH error!\n");
         break;
+
+      case CCCH:
+        if (pdu_len>0) {
+          LOG_T(NR_RRC,"[UE %d] Received SDU for CCCH on SRB %ld from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
+
+          MessageDef *message_p;
+          int msg_sdu_size = CCCH_SDU_SIZE;
+
+          if (pdu_len > msg_sdu_size) {
+            LOG_E(NR_RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
+            sdu_size = msg_sdu_size;
+          } else {
+            sdu_size =  pdu_len;
+          }
+
+          message_p = itti_alloc_new_message (TASK_MAC_UE, 0, NR_RRC_MAC_CCCH_DATA_IND);
+          memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+          memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
+          NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = frame; //frameP
+          NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = sub_frame; //sub_frameP
+          NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = sdu_size;
+          NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = gNB_index;
+          NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;  //rntiP
+          itti_send_msg_to_task (TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE( module_id ), message_p);
+        }
       default:
         break;
     }
