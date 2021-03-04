@@ -2267,7 +2267,7 @@ function run_test_on_vm {
         done
         ########### end RA FR2 test
 
-        sleep(30)
+        sleep 30
 
 
         echo "############################################################"
