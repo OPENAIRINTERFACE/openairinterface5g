@@ -532,6 +532,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int                    num_gnbs                                                      = 0;
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   int32_t                gnb_id                                                        = 0;
+  int                    k                                                             = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   ////////// Identification parameters

@@ -134,6 +134,34 @@ nr_rrc_data_ind(
   }
 }
 
+//------------------------------------------------------------------------------
+void
+nr_rrc_data_ind_ccch(
+  const protocol_ctxt_t *const ctxt_pP,
+  const rb_id_t                Srb_id,
+  const sdu_size_t             sdu_sizeP,
+  const char   *const       buffer_pP
+)
+//------------------------------------------------------------------------------
+{
+  rb_id_t    DCCH_index = Srb_id;
+  LOG_I(RRC, "[UE %x] Frame %d: received a CCCH %ld message on SRB %ld with Size %d from gNB %d\n",
+        ctxt_pP->module_id, ctxt_pP->frame, DCCH_index, Srb_id, sdu_sizeP, ctxt_pP->eNB_index);
+  {
+    MessageDef *message_p;
+    // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, 0, NR_RRC_MAC_CCCH_DATA_IND);
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame  = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size   = sdu_sizeP;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index  = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti       = ctxt_pP->rnti;
+    memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu,buffer_pP,sdu_sizeP);
+    itti_send_msg_to_task (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+  }
+}
+
 static void *rlc_data_req_thread(void *_)
 {
   int i;
@@ -595,6 +623,7 @@ rb_found:
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
 }
 
+static int ccch_or_dcch = 0; //since msg3 and msg4 is not ok, send ccch through dcch.
 static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
@@ -625,8 +654,13 @@ rb_found:
   ctxt.brOption = 0;
   ctxt.rnti = ue->rnti;
 
-  nr_rrc_data_ind( &ctxt, srb_id, size, buf);
-
+/* TODO: when msg3 and msg4 are ok, should only be dcch here. */
+  if (ccch_or_dcch == 0) {
+    nr_rrc_data_ind_ccch( &ctxt, srb_id, size, buf);
+    ccch_or_dcch = 1;
+  } else {
+    nr_rrc_data_ind( &ctxt, srb_id, size, buf);
+  }
   return;
 }
 

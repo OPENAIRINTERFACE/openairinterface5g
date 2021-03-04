@@ -942,7 +942,7 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
     }
   }
 
-  if (drb2add_listP != NULL) {
+  if ((drb2add_listP != NULL) && (rlc_bearer2add_list != NULL)) {
     for (i = 0; i < drb2add_listP->list.count; i++) {
       for(j = 0; j < rlc_bearer2add_list->list.count; j++){
         if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
