@@ -26,10 +26,11 @@
 #include <stdint.h>
 
 typedef struct {
-  unsigned char dl[10][14*1200*4];
-  unsigned char ul[10][14*1200*4];
-  uint16_t dl_busy[10];
-  uint16_t ul_busy[10];
+  /* [2] is for two antennas */
+  unsigned char dl[2][10][14*1200*4];
+  unsigned char ul[2][10][14*1200*4];
+  uint16_t dl_busy[2][10];
+  uint16_t ul_busy[2][10];
 
   pthread_mutex_t m_ul[10];
   pthread_cond_t  c_ul[10];

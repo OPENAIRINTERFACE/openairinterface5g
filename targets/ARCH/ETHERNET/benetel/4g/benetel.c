@@ -163,8 +163,8 @@ int trx_benetel_ctlrecv(openair0_device *device, void *msg, ssize_t msg_len)
     cap->FH_fmt                           = OAI_IF4p5_only;
     cap->num_bands                        = 1;
     cap->band_list[0]                     = 7;
-    cap->nb_rx[0]                         = 1;
-    cap->nb_tx[0]                         = 1;
+    cap->nb_rx[0]                         = device->openair0_cfg->rx_num_channels;
+    cap->nb_tx[0]                         = device->openair0_cfg->tx_num_channels;
     cap->max_pdschReferenceSignalPower[0] = -27;
     cap->max_rxgain[0]                    = 90;
 
@@ -194,11 +194,12 @@ void benetel_fh_if4p5_south_in(RU_t *ru,
   LTE_DL_FRAME_PARMS *fp;
   int symbol;
   int32_t *rxdata;
-  int antenna = 0;
+  int antenna;
 
   lock_ul_buffer(&s->buffers, *subframe);
 next:
-  while (!(s->buffers.ul_busy[*subframe] == 0x3fff ||
+  while (!((s->buffers.ul_busy[0][*subframe] == 0x3fff &&
+            s->buffers.ul_busy[1][*subframe] == 0x3fff) ||
            s->buffers.prach_busy[*subframe] == 1))
     wait_ul_buffer(&s->buffers, *subframe);
   if (s->buffers.prach_busy[*subframe] == 1) {
@@ -217,24 +218,27 @@ next:
 
   eNB = eNB_list[0];
   fp  = &eNB->frame_parms;
-  for (symbol = 0; symbol < 14; symbol++) {
-    int i;
-    uint16_t *p = (uint16_t *)(&s->buffers.ul[*subframe][symbol*1200*4]);
-    for (i = 0; i < 1200*2; i++) {
-      p[i] = htons(p[i]);
-    }
-    rxdata = &ru->common.rxdataF[antenna][symbol * fp->ofdm_symbol_size];
+  for (antenna = 0; antenna < ru->nb_rx; antenna++) {
+    for (symbol = 0; symbol < 14; symbol++) {
+      int i;
+      uint16_t *p = (uint16_t *)(&s->buffers.ul[antenna][*subframe][symbol*1200*4]);
+      for (i = 0; i < 1200*2; i++) {
+        p[i] = htons(p[i]);
+      }
+      rxdata = &ru->common.rxdataF[antenna][symbol * fp->ofdm_symbol_size];
 #if 1
-    memcpy(rxdata + 2048 - 600,
-           &s->buffers.ul[*subframe][symbol*1200*4],
-           600 * 4);
-    memcpy(rxdata,
-           &s->buffers.ul[*subframe][symbol*1200*4] + 600*4,
-           600 * 4);
+      memcpy(rxdata + 2048 - 600,
+             &s->buffers.ul[antenna][*subframe][symbol*1200*4],
+             600 * 4);
+      memcpy(rxdata,
+             &s->buffers.ul[antenna][*subframe][symbol*1200*4] + 600*4,
+             600 * 4);
 #endif
+    }
   }
 
-  s->buffers.ul_busy[*subframe] = 0;
+  s->buffers.ul_busy[0][*subframe] = 0;
+  s->buffers.ul_busy[1][*subframe] = 0;
   signal_ul_buffer(&s->buffers, *subframe);
   unlock_ul_buffer(&s->buffers, *subframe);
 
@@ -272,45 +276,49 @@ void benetel_fh_if4p5_south_out(RU_t *ru,
   LTE_DL_FRAME_PARMS *fp;
   int symbol;
   int32_t *txdata;
-  int aa = 0;
+  int aa;
 
   //printf("BENETEL: %s (f.sf %d.%d ts %ld)\n", __FUNCTION__, frame, subframe, timestamp);
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   lock_dl_buffer(&s->buffers, subframe);
-  if (s->buffers.dl_busy[subframe]) {
+  if (s->buffers.dl_busy[0][subframe] ||
+      s->buffers.dl_busy[1][subframe]) {
     printf("%s: fatal: DL buffer busy for subframe %d\n", __FUNCTION__, subframe);
      unlock_dl_buffer(&s->buffers, subframe);
     return;
   }
   eNB = eNB_list[0];
   fp  = &eNB->frame_parms;
-  if (ru->num_eNB != 1 || ru->nb_tx != 1 || fp->ofdm_symbol_size != 2048 ||
+  if (ru->num_eNB != 1 || fp->ofdm_symbol_size != 2048 ||
       fp->Ncp != NORMAL || fp->symbols_per_tti != 14) {
     printf("%s:%d:%s: unsupported configuration\n",
            __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
 
-  for (symbol = 0; symbol < 14; symbol++) {
-    txdata = &ru->common.txdataF_BF[aa][symbol * fp->ofdm_symbol_size];
+  for (aa = 0; aa < ru->nb_tx; aa++) {
+    for (symbol = 0; symbol < 14; symbol++) {
+      txdata = &ru->common.txdataF_BF[aa][symbol * fp->ofdm_symbol_size];
 #if 1
-    memcpy(&s->buffers.dl[subframe][symbol*1200*4],
-           txdata + 2048 - 600,
-           600 * 4);
-    memcpy(&s->buffers.dl[subframe][symbol*1200*4] + 600*4,
-           txdata + 1,
-           600 * 4);
+      memcpy(&s->buffers.dl[aa][subframe][symbol*1200*4],
+             txdata + 2048 - 600,
+             600 * 4);
+      memcpy(&s->buffers.dl[aa][subframe][symbol*1200*4] + 600*4,
+             txdata + 1,
+             600 * 4);
 #endif
-    int i;
-    uint16_t *p = (uint16_t *)(&s->buffers.dl[subframe][symbol*1200*4]);
-    for (i = 0; i < 1200*2; i++) {
-      p[i] = htons(p[i]);
+      int i;
+      uint16_t *p = (uint16_t *)(&s->buffers.dl[aa][subframe][symbol*1200*4]);
+      for (i = 0; i < 1200*2; i++) {
+        p[i] = htons(p[i]);
+      }
     }
   }
 
-  s->buffers.dl_busy[subframe] = 0x3fff;
+  s->buffers.dl_busy[0][subframe] = 0x3fff;
+  s->buffers.dl_busy[1][subframe] = 0x3fff;
   unlock_dl_buffer(&s->buffers, subframe);
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_OUT_RU+ru->idx, ru->proc.frame_tx);
