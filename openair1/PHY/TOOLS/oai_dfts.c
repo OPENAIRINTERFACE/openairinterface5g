@@ -3103,10 +3103,12 @@ void dft128(int16_t *x,int16_t *y,unsigned char scale)
 
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+16),1);
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft128a.m","dfta",ytmp,64,1,1);
     LOG_M("dft128b.m","dftb",ytmp+16,64,1,1);
   }
+#endif
   for (i=0; i<16; i++) {
     bfly2_16(ytmpp,ytmpp+16,
              y128p,y128p+16,
@@ -3155,10 +3157,12 @@ void dft128(int16_t *x,int16_t *y,unsigned char scale)
 
 
   }
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("dft128out.m","dft128",y,128,1,1);
      exit(-1);
   }
+#endif
   _mm_empty();
   _m_empty();
 
@@ -3183,18 +3187,20 @@ void dft128(int16_t *x,int16_t *y,unsigned char scale)
   transpose4_ooff_simd256(x256+10,xtmp+5,8);
   transpose4_ooff_simd256(x256+12,xtmp+6,8);
   transpose4_ooff_simd256(x256+14,xtmp+7,8);
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {  
      LOG_M("dft128ina_256.m","dftina",xtmp,64,1,1);
      LOG_M("dft128inb_256.m","dftinb",xtmp+8,64,1,1);
   }
-
+#endif
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {  
     LOG_M("dft128outa_256.m","dftouta",ytmp,64,1,1);
     LOG_M("dft128outb_256.m","dftoutb",ytmp+8,64,1,1);
   }
-
+#endif
   for (i=0; i<8; i++) {
     bfly2_16_256(ytmpp,ytmpp+8,
 		 y256p,y256p+8,
@@ -3226,10 +3232,12 @@ void dft128(int16_t *x,int16_t *y,unsigned char scale)
     y256[15] = mulhi_int16_simd256(y256[15],ONE_OVER_SQRT2_Q15_256);
 
   }
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {  
    LOG_M("dft128.m","dft",y256,128,1,1);
    exit(-1);
   }
+#endif
 }
 
 #endif
@@ -6031,11 +6039,13 @@ void dft1536(int16_t *input, int16_t *output, unsigned char scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft1536out0.m","o0",tmpo[0],2048,1,1);
     LOG_M("dft1536out1.m","o1",tmpo[1],2048,1,1);
     LOG_M("dft1536out2.m","o2",tmpo[2],2048,1,1);
   }
+#endif
   for (i=0,i2=0; i<1024; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+1024+i),(simd_q15_t*)(output+2048+i),
@@ -6193,14 +6203,14 @@ void idft6144(int16_t *input, int16_t *output,unsigned char scale)
   idft2048((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
   idft2048((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft2048((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
-
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft6144in.m","in",input,6144,1,1);
     LOG_M("idft6144out0.m","o0",tmpo[0],2048,1,1);
     LOG_M("idft6144out1.m","o1",tmpo[1],2048,1,1);
     LOG_M("idft6144out2.m","o2",tmpo[2],2048,1,1);
   }
-
+#endif
   for (i=0,i2=0; i<4096; i+=8,i2+=4)  {
     ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
 	   (simd_q15_t*)(output+i),(simd_q15_t*)(output+4096+i),(simd_q15_t*)(output+8192+i),
@@ -6260,11 +6270,13 @@ void dft6144(int16_t *input, int16_t *output,unsigned char scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("ft6144out0.m","o0",tmpo[0],2048,1,1);
     LOG_M("ft6144out1.m","o1",tmpo[1],2048,1,1);
     LOG_M("ft6144out2.m","o2",tmpo[2],2048,1,1);
   }
+#endif
   for (i=0,i2=0; i<4096; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+4096+i),(simd_q15_t*)(output+8192+i),
@@ -6336,11 +6348,13 @@ void dft12288(int16_t *input, int16_t *output,unsigned char scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft12288out0.m","o0",tmpo[0],4096,1,1);
     LOG_M("dft12288out1.m","o1",tmpo[1],4096,1,1);
     LOG_M("dft12288out2.m","o2",tmpo[2],4096,1,1);
   }
+#endif
   for (i=0,i2=0; i<8192; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+8192+i),(simd_q15_t*)(output+16384+i),
@@ -6392,14 +6406,14 @@ void idft12288(int16_t *input, int16_t *output,unsigned char scale)
   idft4096((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),scale);
   idft4096((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),scale);
   idft4096((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),scale);
-
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft12288in.m","in",input,12288,1,1);
     LOG_M("idft12288out0.m","o0",tmpo[0],4096,1,1);
     LOG_M("idft12288out1.m","o1",tmpo[1],4096,1,1);
     LOG_M("idft12288out2.m","o2",tmpo[2],4096,1,1);
   }
-
+#endif
   for (i=0,i2=0; i<8192; i+=8,i2+=4)  {
     ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+8192+i),(simd_q15_t*)(output+16384+i),
@@ -6429,9 +6443,11 @@ void idft12288(int16_t *input, int16_t *output,unsigned char scale)
   }
   _mm_empty();
   _m_empty();
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("idft12288out.m","out",output,6144,1,1);
   }
+#endif
 }
 
 int16_t twa18432[12288] __attribute__((aligned(32)));
@@ -6560,11 +6576,13 @@ void dft24576(int16_t *input, int16_t *output,unsigned char scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft24576out0.m","o0",tmpo[0],8192,1,1);
     LOG_M("dft24576out1.m","o1",tmpo[1],8192,1,1);
     LOG_M("dft24576out2.m","o2",tmpo[2],8192,1,1);
   }
+#endif
   for (i=0,i2=0; i<16384; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+16384+i),(simd_q15_t*)(output+32768+i),
@@ -6595,9 +6613,11 @@ void dft24576(int16_t *input, int16_t *output,unsigned char scale)
   }
   _mm_empty();
   _m_empty();
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("out.m","out",output,24576,1,1);
   }
+#endif
 }
 
 void idft24576(int16_t *input, int16_t *output,unsigned char scale)
@@ -6617,14 +6637,14 @@ void idft24576(int16_t *input, int16_t *output,unsigned char scale)
   idft8192((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
   idft8192((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft8192((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
-  
+ #ifndef MR_MAIN 
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft24576in.m","in",input,24576,1,1);
     LOG_M("idft24576out0.m","o0",tmpo[0],8192,1,1);
     LOG_M("idft24576out1.m","o1",tmpo[1],8192,1,1);
     LOG_M("idft24576out2.m","o2",tmpo[2],8192,1,1);
   }
-
+#endif
   for (i=0,i2=0; i<16384; i+=8,i2+=4)  {
     ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+16384+i),(simd_q15_t*)(output+32768+i),
@@ -6653,10 +6673,11 @@ void idft24576(int16_t *input, int16_t *output,unsigned char scale)
   }
   _mm_empty();
   _m_empty();
-
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft24576out.m","out",output,24576,1,1);
   }
+#endif
 }
 
 int16_t twa36864[24576] __attribute__((aligned(32)));
@@ -6680,13 +6701,13 @@ void dft36864(int16_t *input, int16_t *output,uint8_t scale) {
   dft12288((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
   dft12288((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   dft12288((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
-
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft36864out0.m","o0",tmpo[0],12288,1,1);
     LOG_M("dft36864out1.m","o1",tmpo[1],12288,1,1);
     LOG_M("dft36864out2.m","o2",tmpo[2],12288,1,1);
   }
-
+#endif
   for (i=0,i2=0; i<24576; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+24576+i),(simd_q15_t*)(output+49152+i),
@@ -6716,9 +6737,11 @@ void dft36864(int16_t *input, int16_t *output,uint8_t scale) {
   }
   _mm_empty();
   _m_empty();
+#ifndef MR_MAIN
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("out.m","out",output,36864,1,1);
   }
+#endif
 }
 
 void idft36864(int16_t *input, int16_t *output,uint8_t scale) {
