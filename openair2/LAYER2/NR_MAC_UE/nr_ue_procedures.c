@@ -104,7 +104,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_I(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
+  frequency_range_t frequency_range;
   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
@@ -120,9 +120,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   frame = frame << 4;
   frame = frame | frame_number_4lsb;
   if(ssb_length == 64){
+    frequency_range = FR2;
     for (int i=0; i<3; i++)
       ssb_index += (((extra_bits>>(7-i))&0x01)<<(3+i));
   }else{
+    frequency_range = FR1;
     if(ssb_subcarrier_offset_msb){
       ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
     }
@@ -141,10 +143,19 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;
 
-  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config, mac->mib, extra_bits, ssb_length, ssb_index,
+  // TODO fix this (it shouldn't be taken from config)
+  uint8_t scs_ssb = mac->phy_config.config_req.ssb_config.scs_common;
+
+  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
+                                        frame,
+                                        mac->mib,
+                                        nr_slots_per_frame[scs_ssb],
+                                        ssb_subcarrier_offset,
+                                        scs_ssb,
+                                        frequency_range,
+                                        ssb_index,
                                         mac->phy_config.config_req.ssb_table.ssb_offset_point_a);
 
-  ssb_index = mac->type0_PDCCH_CSS_config.ssb_index; //  TODO: ssb_index should obtain from L1 in case Lssb != 64
   mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
   mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
   mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;

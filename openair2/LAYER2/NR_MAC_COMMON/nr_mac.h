@@ -418,14 +418,6 @@ typedef enum {
   NR_RNTI_MCS_C,
 } nr_rnti_type_t;
 
-typedef enum subcarrier_spacing_e {
-  scs_15kHz  = 0x1,
-  scs_30kHz  = 0x2,
-  scs_60kHz  = 0x4,
-  scs_120kHz = 0x8,
-  scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
 typedef enum channel_bandwidth_e {
   bw_5MHz   = 0x1,
   bw_10MHz  = 0x2,
