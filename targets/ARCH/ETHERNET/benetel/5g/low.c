@@ -35,63 +35,61 @@ printf("store_ul %d.%ld (%ld)\n", (int)(t.tv_sec % 60), t.tv_nsec, t.tv_nsec - o
 old = t;
 #endif
 
-  /* only antenna 0 for the moment */
-  if (ul->antenna != 0)
-    return;
+  int a = ul->antenna;
 
-  if (ul->slot != bs->next_slot ||
-      ul->symbol != bs->next_symbol) {
-    printf("%s: error, expected frame.sl.symbol %d.%d.%d, got %d.%d.%d\n",
+  if (ul->slot != bs->next_slot[a] ||
+      ul->symbol != bs->next_symbol[a]) {
+    printf("%s: error, antenna %d expected frame.sl.symbol %d.%d.%d, got %d.%d.%d\n",
            __FUNCTION__,
-           bs->expected_benetel_frame, bs->next_slot, bs->next_symbol,
+           a, bs->expected_benetel_frame[a], bs->next_slot[a], bs->next_symbol[a],
            ul->frame, ul->slot, ul->symbol);
   }
 
   /* fill missing data with 0s */
-  while (ul->slot != bs->next_slot ||
-         ul->symbol != bs->next_symbol) {
-    lock_ul_buffer(bs->buffers, bs->next_slot);
-    if (bs->buffers->ul_busy[bs->next_slot] & (1 << bs->next_symbol)) {
-      printf("%s: warning, UL overflow (sl.symbol %d.%d)\n", __FUNCTION__,
-             bs->next_slot, bs->next_symbol);
+  while (ul->slot != bs->next_slot[a] ||
+         ul->symbol != bs->next_symbol[a]) {
+    lock_ul_buffer(bs->buffers, bs->next_slot[a]);
+    if (bs->buffers->ul_busy[a][bs->next_slot[a]] & (1 << bs->next_symbol[a])) {
+      printf("%s: warning, antenna %d UL overflow (sl.symbol %d.%d)\n", __FUNCTION__,
+             a, bs->next_slot[a], bs->next_symbol[a]);
     }
 
-    memset(bs->buffers->ul[bs->next_slot] + bs->next_symbol * 1272*4,
+    memset(bs->buffers->ul[a][bs->next_slot[a]] + bs->next_symbol[a] * 1272*4,
            0, 1272*4);
-    bs->buffers->ul_busy[bs->next_slot] |= (1 << bs->next_symbol);
-    signal_ul_buffer(bs->buffers, bs->next_slot);
-    unlock_ul_buffer(bs->buffers, bs->next_slot);
+    bs->buffers->ul_busy[a][bs->next_slot[a]] |= (1 << bs->next_symbol[a]);
+    signal_ul_buffer(bs->buffers, bs->next_slot[a]);
+    unlock_ul_buffer(bs->buffers, bs->next_slot[a]);
 
-    bs->next_symbol++;
-    if (bs->next_symbol == 14) {
-      bs->next_symbol = 0;
-      bs->next_slot = (bs->next_slot + 1) % 20;
-      if (bs->next_slot == 0) {
-        bs->expected_benetel_frame++;
-        bs->expected_benetel_frame &= 255;
+    bs->next_symbol[a]++;
+    if (bs->next_symbol[a] == 14) {
+      bs->next_symbol[a] = 0;
+      bs->next_slot[a] = (bs->next_slot[a] + 1) % 20;
+      if (bs->next_slot[a] == 0) {
+        bs->expected_benetel_frame[a]++;
+        bs->expected_benetel_frame[a] &= 255;
       }
     }
   }
 
-  lock_ul_buffer(bs->buffers, bs->next_slot);
-  if (bs->buffers->ul_busy[bs->next_slot] & (1 << bs->next_symbol)) {
-    printf("%s: warning, UL overflow (sl.symbol %d.%d)\n", __FUNCTION__,
-           bs->next_slot, bs->next_symbol);
+  lock_ul_buffer(bs->buffers, bs->next_slot[a]);
+  if (bs->buffers->ul_busy[a][bs->next_slot[a]] & (1 << bs->next_symbol[a])) {
+    printf("%s: warning, antenna %d UL overflow (sl.symbol %d.%d)\n", __FUNCTION__,
+           a, bs->next_slot[a], bs->next_symbol[a]);
   }
 
-  memcpy(bs->buffers->ul[bs->next_slot] + bs->next_symbol * 1272*4,
+  memcpy(bs->buffers->ul[a][bs->next_slot[a]] + bs->next_symbol[a] * 1272*4,
          ul->iq, 1272*4);
-  bs->buffers->ul_busy[bs->next_slot] |= (1 << bs->next_symbol);
-  signal_ul_buffer(bs->buffers, bs->next_slot);
-  unlock_ul_buffer(bs->buffers, bs->next_slot);
+  bs->buffers->ul_busy[a][bs->next_slot[a]] |= (1 << bs->next_symbol[a]);
+  signal_ul_buffer(bs->buffers, bs->next_slot[a]);
+  unlock_ul_buffer(bs->buffers, bs->next_slot[a]);
 
-  bs->next_symbol++;
-  if (bs->next_symbol == 14) {
-    bs->next_symbol = 0;
-    bs->next_slot = (bs->next_slot + 1) % 20;
-    if (bs->next_slot == 0) {
-      bs->expected_benetel_frame++;
-      bs->expected_benetel_frame &= 255;
+  bs->next_symbol[a]++;
+  if (bs->next_symbol[a] == 14) {
+    bs->next_symbol[a] = 0;
+    bs->next_slot[a] = (bs->next_slot[a] + 1) % 20;
+    if (bs->next_slot[a] == 0) {
+      bs->expected_benetel_frame[a]++;
+      bs->expected_benetel_frame[a] &= 255;
     }
   }
 }
