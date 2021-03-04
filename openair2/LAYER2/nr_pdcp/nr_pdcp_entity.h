@@ -27,14 +27,14 @@
 
 typedef struct nr_pdcp_entity_t {
   /* functions provided by the PDCP module */
-  void (*recv_pdu)(protocol_ctxt_t *ctxt_pP,struct nr_pdcp_entity_t *entity, char *buffer, int size);
+  void (*recv_pdu)(struct nr_pdcp_entity_t *entity, char *buffer, int size);
   void (*recv_sdu)(struct nr_pdcp_entity_t *entity, char *buffer, int size,
                    int sdu_id);
   void (*delete)(struct nr_pdcp_entity_t *entity);
   void (*set_integrity_key)(struct nr_pdcp_entity_t *entity, char *key);
 
   /* callbacks provided to the PDCP module */
-  void (*deliver_sdu)(protocol_ctxt_t *ctxt_pP,void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
+  void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                       char *buf, int size);
   void *deliver_sdu_data;
   void (*deliver_pdu)(void *deliver_pdu_data, struct nr_pdcp_entity_t *entity,

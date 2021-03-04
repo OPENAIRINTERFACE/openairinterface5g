@@ -77,6 +77,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 #include "RRC/NR/MESSAGES/asn1_msg.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
 
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
@@ -531,7 +532,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int                    num_gnbs                                                      = 0;
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   int32_t                gnb_id                                                        = 0;
-  int k;
+
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   ////////// Identification parameters
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;

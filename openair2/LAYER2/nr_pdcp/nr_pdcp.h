@@ -19,24 +19,13 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_ENTITY_DRB_AM_H_
-#define _NR_PDCP_ENTITY_DRB_AM_H_
+#include <stdint.h>
 
-#include "nr_pdcp_entity.h"
-#include "platform_types.h"
+#ifndef _NR_PDCP_H_
+#define _NR_PDCP_H_
 
-typedef struct {
-  nr_pdcp_entity_t common;
-  int rb_id;
-  int sn_size;               /* unit: bits */
-  int t_reordering;          /* unit: ms */
-  int discard_timer;         /* unit: ms, -1 means infinity */
-} nr_pdcp_entity_drb_am_t;
+void pdcp_layer_init_for_CU(void);
+void nr_pdcp_layer_init_ue(void);
+void nr_DRB_preconfiguration(uint16_t crnti);
 
-void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *entity, char *buffer, int size);
-void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *entity, char *buffer, int size,
-                                    int sdu_id);
-void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *entity, char *key);
-void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *entity);
-
-#endif /* _NR_PDCP_ENTITY_DRB_AM_H_ */
+#endif /* _NR_PDCP_H_ */

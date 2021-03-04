@@ -26,13 +26,13 @@
 #include <string.h>
 #include "common/utils/LOG/log.h"
 
-void nr_pdcp_entity_drb_am_recv_pdu( protocol_ctxt_t *ctxt_pP , nr_pdcp_entity_t *_entity, char *buffer, int size)
+void nr_pdcp_entity_drb_am_recv_pdu( nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
 
   if (size < 3) abort();
   if (!(buffer[0] & 0x80)) { printf("%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__); exit(1); }
-  entity->common.deliver_sdu(ctxt_pP, entity->common.deliver_sdu_data,
+  entity->common.deliver_sdu(entity->common.deliver_sdu_data,
                              (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }
 
