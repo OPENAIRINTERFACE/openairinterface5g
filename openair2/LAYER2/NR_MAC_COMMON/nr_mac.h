@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define TABLE_38213_13_1_NUM_INDEXES 15
 #define TABLE_38213_13_2_NUM_INDEXES 14
@@ -454,6 +455,7 @@ typedef struct Type0_PDCCH_CSS_config_s {
   uint32_t ssb_length;
   uint32_t ssb_index;
   uint32_t cset_start_rb;
+  bool active;
 } NR_Type0_PDCCH_CSS_config_t;
 
 #endif /*__LAYER2_MAC_H__ */

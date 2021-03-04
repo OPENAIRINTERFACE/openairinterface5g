@@ -603,8 +603,7 @@ typedef struct gNB_MAC_INST_s {
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
   NR_CellGroupConfig_t *secondaryCellGroupCommon;
-  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[3];
-  uint8_t num_css_config;
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
 } gNB_MAC_INST;
 

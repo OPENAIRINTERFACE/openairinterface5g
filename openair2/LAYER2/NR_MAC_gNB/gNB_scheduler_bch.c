@@ -159,8 +159,6 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
 
-  gNB->num_css_config = 0;
-
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
   nfapi_nr_dl_tti_request_body_t *dl_req;
   NR_MIB_t *mib = RC.nrrrc[module_idP]->carrier.mib.message.choice.mib;
@@ -226,7 +224,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                 schedule_ssb(scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
-                  get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[gNB->num_css_config],
+                  get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
                                                         mib,
                                                         slots_per_frame,
@@ -235,7 +233,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         FR1,
                                                         i_ssb,
                                                         offset_pointa);
-                  gNB->num_css_config++;
+                  gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
               }
             }
@@ -251,7 +249,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                 schedule_ssb(scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
-                  get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[gNB->num_css_config],
+                  get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
                                                         mib,
                                                         slots_per_frame,
@@ -260,7 +258,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         FR1,
                                                         i_ssb,
                                                         offset_pointa);
-                  gNB->num_css_config++;
+                  gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
               }
             }
@@ -276,7 +274,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                 schedule_ssb(scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
-                  get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[gNB->num_css_config],
+                  get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
                                                         mib,
                                                         slots_per_frame,
@@ -285,7 +283,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         FR2,
                                                         i_ssb,
                                                         offset_pointa);
-                  gNB->num_css_config++;
+                  gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
               }
             }
@@ -559,11 +557,30 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
   uint8_t mcs = 6;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
+  NR_ServingCellConfigCommon_t *scc = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
 
-  for (int i=0; i<gNB_mac->num_css_config; i++) {
+  int L_max;
+  switch (scc->ssb_PositionsInBurst->present) {
+    case 1:
+      L_max = 4;
+      break;
+    case 2:
+      L_max = 8;
+    case 3:
+      L_max = 64;
+    default:
+      AssertFatal(0,"SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
+                  scc->ssb_PositionsInBurst->present);
+  }
+
+  for (int i=0; i<L_max; i++) {
 
     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = &gNB_mac->type0_PDCCH_CSS_config[i];
-    if( (frameP%2 == type0_PDCCH_CSS_config->sfn_c) && (slotP == type0_PDCCH_CSS_config->n_0) && (type0_PDCCH_CSS_config->num_rbs > 0) ) {
+
+    if((frameP%2 == type0_PDCCH_CSS_config->sfn_c) &&
+       (slotP == type0_PDCCH_CSS_config->n_0) &&
+       (type0_PDCCH_CSS_config->num_rbs > 0) &&
+       (type0_PDCCH_CSS_config->active == true)) {
 
       LOG_D(MAC,"> SIB1 transmission\n");
 
@@ -610,6 +627,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       gNB_mac->TX_req[CC_id].Number_of_PDUs++;
       gNB_mac->TX_req[CC_id].SFN = frameP;
       gNB_mac->TX_req[CC_id].Slot = slotP;
+
+      type0_PDCCH_CSS_config->active = false;
     }
   }
 }
