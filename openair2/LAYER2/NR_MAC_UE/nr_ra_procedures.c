@@ -568,6 +568,11 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (size_sdu > 0) {
 
+        // UE Contention Resolution Identity
+        // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to determine whether or not the
+        // Random Access Procedure has been successful after reception of Msg4
+        memcpy(ra->cont_res_id, mac_sdus, sizeof(uint8_t) * 6);
+
         LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
         ra->Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
@@ -624,10 +629,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         prach_resources->RA_PREAMBLE_BACKOFF = 0;
       }
 
-      if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1) {
+      if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1 && ra->cfra) {
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-
-        //nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+        nr_ra_succeeded(mod_id, frame, nr_slot_tx);
 
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 

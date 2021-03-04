@@ -506,7 +506,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       // UE Contention Resolution Identity
       // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
-      memcpy(ra->cont_res_id, sduP, sizeof(uint8_t) * 6);
+      // First byte corresponds to R/LCID MAC sub-header
+      memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
 
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;

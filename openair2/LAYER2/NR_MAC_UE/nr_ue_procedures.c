@@ -515,10 +515,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       // Config PUSCH PDU
       ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
 
-      //if (ret != -1 && ra->RA_active && mac->crnti){
-      //  nr_ra_succeeded(module_id, frame, slot);
-      //}
-
     }
     
     break;
@@ -577,10 +573,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
       // Config PUSCH PDU
       ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
-
-      //if (ret != -1 && ra->RA_active && mac->crnti){
-      //  nr_ra_succeeded(module_id, frame, slot);
-      //}
 
     }
 
@@ -781,12 +773,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
     dl_config->number_pdus = dl_config->number_pdus + 1;
-
-    // FIXME: Remove this
-    if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && rnti == ra->t_crnti){
-      LOG_I(NR_MAC,"RA-Msg4 received\n");
-      nr_ra_succeeded(module_id, frame, slot);
-    }
 
     break;
   }
@@ -1957,20 +1943,34 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
                 break;
             case DL_SCH_LCID_CON_RES_ID:
-                //  Clause 5.1.5 and 6.1.3.3 of 3GPP TS 38.321 version 16.2.1 Release 16
-                // WIP todo: handle CCCH_pdu
-                // MAC Header: 1 byte (R/R/LCID)
-                // MAC SDU: 6 bytes (UE Contention Resolution Identity)
-                mac_ce_len = 6;
-                
-                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution identity: 0x%x%x%x%x%x%x. Terminating RA procedure\n", module_idP, frameP, pduP[1], pduP[2], pduP[3], pduP[4], pduP[5], pduP[6]);
+              //  Clause 5.1.5 and 6.1.3.3 of 3GPP TS 38.321 version 16.2.1 Release 16
+              // MAC Header: 1 byte (R/R/LCID)
+              // MAC SDU: 6 bytes (UE Contention Resolution Identity)
+              mac_ce_len = 6;
 
-                // FIXME: Only succeeds if received contention resolution equals to the first 48 bits of transmitted Mgs3
-                if (ra->RA_active == 1) {
-                  nr_ra_succeeded(module_idP, frameP, slot);
+              if(ra->ra_state == WAIT_CONTENTION_RESOLUTION) {
+                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution identity: 0x%02x%02x%02x%02x%02x%02x Terminating RA procedure\n",
+                      module_idP, frameP, pduP[1], pduP[2], pduP[3], pduP[4], pduP[5], pduP[6]);
+
+                bool ra_success = true;
+                for(int i = 0; i<mac_ce_len; i++) {
+                  if(ra->cont_res_id[i] != pduP[i+1]) {
+                    ra_success = false;
+                    break;
+                  }
                 }
 
-                break;
+                if ( (ra->RA_active == 1) && ra_success) {
+                  nr_ra_succeeded(module_idP, frameP, slot);
+                } else if (!ra_success){
+                  // TODO: Handle failure of RA procedure @ MAC layer
+                  //  nr_ra_failed(module_idP, CC_id, prach_resources, frameP, slot); // prach_resources is a PHY structure
+                  ra->ra_state = RA_UE_IDLE;
+                  ra->RA_active = 0;
+                }
+              }
+
+              break;
             case DL_SCH_LCID_PADDING:
                 done = 1;
                 //  end of MAC PDU, can ignore the rest.
