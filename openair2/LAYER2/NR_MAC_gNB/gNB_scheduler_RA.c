@@ -837,6 +837,18 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int rbStart = 0;
     int rbSize = 6;
 
+    if (nr_mac->sched_ctrlCommon == NULL){
+      nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
+      nr_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->search_space));
+      nr_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->active_bwp));
+      nr_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->coreset));
+      nr_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->active_bwp));
+      fill_default_searchSpaceZero(nr_mac->sched_ctrlCommon->search_space);
+      fill_default_coresetZero(nr_mac->sched_ctrlCommon->coreset,cc->ServingCellConfigCommon);
+      fill_default_initialDownlinkBWP(nr_mac->sched_ctrlCommon->active_bwp,cc->ServingCellConfigCommon);
+    }
+    nr_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
+
     NR_SearchSpace_t *ss = nr_mac->sched_ctrlCommon->search_space;
     NR_BWP_Downlink_t *bwp = nr_mac->sched_ctrlCommon->active_bwp;
     NR_ControlResourceSet_t *coreset = nr_mac->sched_ctrlCommon->coreset;
