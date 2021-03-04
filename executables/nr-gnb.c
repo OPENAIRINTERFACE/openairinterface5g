@@ -85,23 +85,13 @@
 
 #include "T.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include <nfapi/oai_integration/nfapi_pnf.h>
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
-
-extern volatile int start_gNB;
-extern volatile int start_UE;
-extern volatile int oai_exit;
-
-extern openair0_config_t openair0_cfg[MAX_CARDS];
-
-extern int transmission_mode;
-
-extern uint16_t sf_ahead;
-extern uint16_t sl_ahead;
 
 //pthread_t                       main_gNB_thread;
 
@@ -111,25 +101,13 @@ time_stats_t softmodem_stats_rxtx_sf; // total tx time
 time_stats_t nfapi_meas; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
 
-extern double cpuf;
-
-void init_gNB(int,int);
-void stop_gNB(int nb_inst);
 
 #include "executables/thread-common.h"
-//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-//extern WORKER_CONF_t   get_thread_worker_conf(void);
 
-extern uint8_t nfapi_mode;
-extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
-extern void oai_slot_ind(uint16_t sfn, uint16_t slot);
-extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 //#define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
-extern void init_td_thread(PHY_VARS_gNB *);
-extern void init_te_thread(PHY_VARS_gNB *);
 
 void tx_func(void *param) {
 
@@ -411,9 +389,6 @@ void kill_gNB_proc(int inst) {
   
 }
 
-
-
-
 void reset_opp_meas(void) {
   int sfn;
   reset_meas(&softmodem_stats_mt);
@@ -481,7 +456,6 @@ printf("after %p\n", gNB->common_vars.rxdataF[aa]);
      * (not tested in other modes).
      */
     //init_precoding_weights(RC.gNB[inst]);
-    //init_gNB_proc(inst);
     init_gNB_Tpool(inst);
   }
 
