@@ -502,7 +502,8 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				     double DS_TDL,
                                      double forgetting_factor,
                                      int32_t channel_offset,
-                                     double path_loss_dB) {
+                                     double path_loss_dB,
+				     float  noise_power_dB) {
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
   for(int i=0; i<max_chan;i++) {
   	  if (defined_channels[i] == NULL) {
@@ -530,6 +531,8 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   chan_desc->path_loss_dB               = path_loss_dB;
   chan_desc->first_run                  = 1;
   chan_desc->ip                                 = 0.0;
+  chan_desc->noise_power_dB             = noise_power_dB;
+
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
 
   int tdl_paths=0;
@@ -1861,7 +1864,7 @@ static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt 
 	prnt("channelmod show current: display the currently used models in the running executable\n");
 	prnt("channelmod modify <model index> <param name> <param value>: set the specified parameters in a current model to the given value\n");
 	prnt("                  <model index> specifies the model, the show current model command can be used to list the current models indexes\n");
-	prnt("                  <param name> can be one of \"riceanf\", \"aoa\", \"randaoa\", \"ploss\", \"offset\", \"forgetf\"\n");
+	prnt("                  <param name> can be one of \"riceanf\", \"aoa\", \"randaoa\", \"ploss\", \"noise_power_dB\", \"offset\", \"forgetf\"\n");
     return CMDSTATUS_FOUND;
 }
 
@@ -1874,8 +1877,8 @@ static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_
 	prnt("nb_tx: %i    nb_rx: %i    taps: %i bandwidth: %lf    sampling: %lf\n",cd->nb_tx, cd->nb_rx, cd->nb_taps, cd->channel_bandwidth, cd->sampling_rate);
 	prnt("channel length: %i    Max path delay: %lf   ricean fact.: %lf    angle of arrival: %lf (randomized:%s)\n",
 		 cd->channel_length, cd->Td, cd->ricean_factor, cd->aoa, (cd->random_aoa?"Yes":"No"));
-	prnt("max Doppler: %lf    path loss: %lf   rchannel offset: %i    forget factor; %lf\n",
-		 cd->max_Doppler, cd->path_loss_dB, cd->channel_offset, cd->forgetting_factor);	
+	prnt("max Doppler: %lf    path loss: %lf  noise: %lf rchannel offset: %i    forget factor; %lf\n",
+	     cd->max_Doppler, cd->path_loss_dB, cd->noise_power_dB, cd->channel_offset, cd->forgetting_factor);	
 	prnt("Initial phase: %lf   nb_path: %i \n",
 		 cd->ip, cd->nb_paths);		
 	for (int i=0; i<cd->nb_taps ; i++) {
@@ -1945,6 +1948,9 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
     } else if ( strcmp(param,"ploss") == 0) {
         double dbl = atof(value);
         defined_channels[cd_id]->path_loss_dB=dbl;     
+    } else if ( strcmp(param,"noise_power_dB") == 0) {
+      double dbl = atof(value);
+      defined_channels[cd_id]->noise_power_dB=dbl;
     } else if ( strcmp(param,"offset") == 0) {
         int i = atoi(value);
         defined_channels[cd_id]->channel_offset=i;     

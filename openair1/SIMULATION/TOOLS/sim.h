@@ -89,6 +89,7 @@ typedef struct {
   double path_loss_dB;
   ///additional delay of channel in samples.
   int32_t channel_offset;
+  float noise_power_dB;
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
   double forgetting_factor;
   ///needs to be set to 1 for the first call, 0 otherwise.
@@ -280,7 +281,8 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				     double TDL_DS,
                                      double forgetting_factor,
                                      int32_t channel_offset,
-                                     double path_loss_dB);
+                                     double path_loss_dB,
+				     float noise_power_dB);
 /**
 \brief free memory allocated for a model descriptor
 \param ch points to the model, which cannot be used after calling this fuction

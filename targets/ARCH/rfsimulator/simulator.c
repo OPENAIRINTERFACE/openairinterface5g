@@ -133,6 +133,7 @@ typedef struct {
   double chan_pathloss;
   double chan_forgetfact;
   int    chan_offset;
+  float  noise_power_dB;
   void *telnetcmd_qid;
   poll_telnetcmdq_func_t poll_telnetcmdq;
 } rfsimulator_state_t;
@@ -190,7 +191,8 @@ static void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             30e-9,  // TDL delay-spread parameter
                                             bridge->chan_forgetfact, // forgetting_factor
                                             bridge->chan_offset, // maybe used for TA
-                                            bridge->chan_pathloss); // path_loss in dB
+                                            bridge->chan_pathloss,
+					    bridge->noise_power_dB); // path_loss in dB
     set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
     random_channel(ptr->channel_model,false);
   }
@@ -341,7 +343,9 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
                                    30e-9,  // TDL delay-spread parameter
                                    t->chan_forgetfact, // forgetting_factor
                                    t->chan_offset, // maybe used for TA
-                                   t->chan_pathloss); // path_loss in dB
+							t->chan_pathloss,
+							t->noise_power_dB
+							); // path_loss in dB
           set_channeldesc_owner(newmodel, RFSIMU_MODULEID);
           random_channel(newmodel,false);
           channel_desc_t *oldmodel=b->channel_model;
