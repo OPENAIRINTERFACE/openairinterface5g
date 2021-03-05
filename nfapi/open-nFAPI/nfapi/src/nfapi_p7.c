@@ -267,7 +267,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
-		if(!push16(value->dci_pdu[i].RNTI, ppWritePackedMsg, end) &&
+		if(!(push16(value->dci_pdu[i].RNTI, ppWritePackedMsg, end) &&
 		push16(value->dci_pdu[i].ScramblingId, ppWritePackedMsg, end) &&
 
 		push16(value->dci_pdu[i].ScramblingRNTI, ppWritePackedMsg, end) &&
@@ -277,7 +277,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 		push8(value->dci_pdu[i].powerControlOffsetSS, ppWritePackedMsg, end) &&
 		push16(value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end) &&
-		pusharray8(value->dci_pdu[i].Payload, DCI_PAYLOAD_BYTE_LEN, value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end))
+		pusharray8(value->dci_pdu[i].Payload, value->dci_pdu[i].PayloadSizeBits, value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end)))
 		return 0;
 		
 	}
@@ -3757,7 +3757,7 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
-		if(!pull16(ppReadPackedMsg, &value->dci_pdu[i].RNTI, end) &&
+		if(!(pull16(ppReadPackedMsg, &value->dci_pdu[i].RNTI, end) &&
 		pull16(ppReadPackedMsg, &value->dci_pdu[i].ScramblingId, end) &&
 
 		pull16(ppReadPackedMsg, &value->dci_pdu[i].ScramblingRNTI, end) &&
@@ -3768,7 +3768,7 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 		pull8(ppReadPackedMsg, &value->dci_pdu[i].powerControlOffsetSS, end) &&
 		pull16(ppReadPackedMsg, &value->dci_pdu[i].PayloadSizeBits, end) &&
 		
-		pullarray8(ppReadPackedMsg, value->dci_pdu[i].Payload, DCI_PAYLOAD_BYTE_LEN, value->dci_pdu[i].PayloadSizeBits, end))
+		pullarray8(ppReadPackedMsg, value->dci_pdu[i].Payload, value->dci_pdu[i].PayloadSizeBits, value->dci_pdu[i].PayloadSizeBits, end)))
 			
 		return 0;
 	}
