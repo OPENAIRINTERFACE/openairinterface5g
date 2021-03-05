@@ -60,7 +60,7 @@ uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
 uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 // needed for some functions
@@ -504,7 +504,7 @@ int main(int argc, char **argv)
   unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
 
   if (input_fd == NULL) {
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
+    nr_ulsch_encoding(ue, ulsch_ue, frame_parms, harq_pid, G);
   }
   
   printf("\n");

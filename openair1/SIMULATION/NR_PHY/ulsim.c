@@ -76,9 +76,10 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int sf_ahead=4 ;
+int slot_ahead=6 ;
 int sl_ahead=0;
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 
@@ -154,7 +155,19 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+//nFAPI P7 dummy functions 
+
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
   return 0;
 }
 
@@ -896,6 +909,10 @@ int main(int argc, char **argv)
     reset_meas(&gNB->ulsch_llr_stats);
     reset_meas(&gNB->ulsch_channel_compensation_stats);
     reset_meas(&gNB->ulsch_rbs_extraction_stats);
+    reset_meas(&UE->ulsch_ldpc_encoding_stats);
+    reset_meas(&UE->ulsch_rate_matching_stats);
+    reset_meas(&UE->ulsch_interleaving_stats);
+    reset_meas(&UE->ulsch_encoding_stats);
 
     clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
@@ -904,6 +921,7 @@ int main(int argc, char **argv)
     crc_status = 1;
     errors_decoding    = 0;
     memset((void*)roundStats,0,50*sizeof(roundStats[0]));
+    ulsch_ue[0]->harq_processes[harq_pid]->ndi = 1;
     while (round<max_rounds && crc_status) {
       round_trials[round]++;
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
@@ -1268,6 +1286,11 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+      printStatIndent(&UE->ulsch_encoding_stats,"ULSCH total encoding time");
+      printStatIndent2(&UE->ulsch_segmentation_stats,"ULSCH segmentation time");
+      printStatIndent2(&UE->ulsch_ldpc_encoding_stats,"ULSCH LDPC encoder time");
+      printStatIndent2(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
+      printStatIndent2(&UE->ulsch_interleaving_stats,"ULSCH interleaving time");
       //printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
       //printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
       //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
