@@ -174,7 +174,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
-    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && get_softmodem_params()->fd_interpolation){
+    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && get_softmodem_params()->fd_interpolation == 1){
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -382,7 +382,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
 #endif    
     }
-    else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && get_softmodem_params()->fd_interpolation) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
+    else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && get_softmodem_params()->fd_interpolation == 1) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
 
       // Treat first DMRS specially (left edge)
 

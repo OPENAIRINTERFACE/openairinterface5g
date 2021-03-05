@@ -72,7 +72,7 @@ extern "C"
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_256QAM        "Use the 256 QAM mcs table for PDSCH\n"
-#define CONFIG_HLP_FDINTER       "Do frequency domain linear interpolation for channel estimates. By default, average of estimates over 1 PRB is used."
+#define CONFIG_HLP_FDINTER       "Do frequency domain linear interpolation for channel estimates. By default, average of estimates over 1 PRB is used\n"
 
 //#define CONFIG_HLP_NUMUES        "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
