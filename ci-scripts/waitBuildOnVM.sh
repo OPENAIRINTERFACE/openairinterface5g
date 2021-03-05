@@ -47,6 +47,12 @@ function wait_on_vm_build {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]]
+    then
+        echo "This VM type is no longer supported in the pipeline framework"
+        return
+    fi
+
     IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
 
     if [ $IS_VM_ALIVE -eq 0 ]
