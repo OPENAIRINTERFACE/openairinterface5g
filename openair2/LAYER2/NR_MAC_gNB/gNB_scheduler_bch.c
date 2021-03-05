@@ -53,33 +53,7 @@
 #include "executables/softmodem-common.h"
 
 extern RAN_CONTEXT_t RC;
-extern uint8_t SSB_Table[38];
 
-// start symbols for SSB types A,B,C,D,E
-uint16_t symbol_ssb_AC[8]={2,8,16,22,30,36,44,50};
-uint16_t symbol_ssb_BD[64]={4,8,16,20,32,36,44,48,60,64,72,76,88,92,100,104,144,148,156,160,172,176,184,188,200,204,212,216,228,232,240,244,284,288,
-                            296,300,312,316,324,328,340,344,352,356,368,372,380,384,424,428,436,440,452,456,464,468,480,484,492,496,508,512,520,524};
-uint16_t symbol_ssb_E[64]={8,12,16,20,32,36,40,44,64,68,72,76,88,92,96,100,120,124,128,132,144,148,152,156,176,180,184,188,200,204,208,212,288,292,
-                           296,300,312,316,320,324,344,348,352,356,368,372,376,380,400,404,408,412,424,428,432,436,456,460,464,468,480,484,488,492};
-
-uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb) {
-
-  switch (scs) {
-    case NR_SubcarrierSpacing_kHz15:
-      return symbol_ssb_AC[i_ssb];  //type A
-    case NR_SubcarrierSpacing_kHz30:
-      if (band == 5 || band == 66)
-        return symbol_ssb_BD[i_ssb];  //type B
-      else
-        return symbol_ssb_AC[i_ssb];  //type C
-    case NR_SubcarrierSpacing_kHz120:
-      return symbol_ssb_BD[i_ssb];  //type D
-    case NR_SubcarrierSpacing_kHz240:
-      return symbol_ssb_E[i_ssb];
-    default:
-      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",scs);
-  }
-}
 
 uint16_t get_ssboffset_pointa(NR_ServingCellConfigCommon_t *scc,const long band) {
 
@@ -229,6 +203,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         mib,
                                                         slots_per_frame,
                                                         ssbSubcarrierOffset,
+                                                        ssb_start_symbol,
                                                         scs,
                                                         FR1,
                                                         i_ssb,
@@ -254,6 +229,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         mib,
                                                         slots_per_frame,
                                                         ssbSubcarrierOffset,
+                                                        ssb_start_symbol,
                                                         scs,
                                                         FR1,
                                                         i_ssb,
@@ -279,6 +255,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         mib,
                                                         slots_per_frame,
                                                         ssbSubcarrierOffset,
+                                                        ssb_start_symbol,
                                                         scs,
                                                         FR2,
                                                         i_ssb,

@@ -318,7 +318,7 @@ typedef struct {
   NR_TAG_Config_t                 *tag_Config;
   NR_PHR_Config_t                 *phr_Config;
   NR_RNTI_Value_t                 *cs_RNTI;
-  NR_MIB_t                         *mib;
+  NR_MIB_t                        *mib;
 
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];

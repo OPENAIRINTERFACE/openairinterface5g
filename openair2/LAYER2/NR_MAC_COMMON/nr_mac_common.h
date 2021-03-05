@@ -131,10 +131,13 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            NR_MIB_t *mib,
                                            uint8_t num_slot_per_frame,
                                            uint8_t ssb_subcarrier_offset,
+                                           uint16_t ssb_start_symbol,
                                            NR_SubcarrierSpacing_t scs_ssb,
                                            frequency_range_t frequency_range,
                                            uint32_t ssb_index,
                                            uint32_t ssb_offset_point_a);
+
+uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb);
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
