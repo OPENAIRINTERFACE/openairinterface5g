@@ -90,6 +90,12 @@ function wait_on_vm_build {
 }
 
 function check_on_vm_build {
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]]
+    then
+        echo "This VM type is no longer supported in the pipeline framework"
+        return
+    fi
+
     echo "############################################################"
     echo "Creating a tmp folder to store results and artifacts"
     echo "############################################################"

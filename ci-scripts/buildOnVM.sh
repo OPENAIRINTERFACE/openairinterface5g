@@ -216,10 +216,10 @@ function build_on_vm {
         else
             if [[ "$VM_NAME" == *"-enb-ethernet"* ]]
             then
-                echo "echo \"sleep 200 && ./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
-            elif [[ "$VM_NAME" == *"-enb-ethernet"* ]]
+                echo "echo \"sleep 170 && ./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+            elif [[ "$VM_NAME" == *"-ue-ethernet"* ]]
             then
-                echo "echo \"sleep 100 && ./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+                echo "echo \"sleep 60 && ./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
             else
                 echo "echo \"./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
             fi
