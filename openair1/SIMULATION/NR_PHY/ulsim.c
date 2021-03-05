@@ -921,7 +921,6 @@ int main(int argc, char **argv)
     crc_status = 1;
     errors_decoding    = 0;
     memset((void*)roundStats,0,50*sizeof(roundStats[0]));
-    ulsch_ue[0]->harq_processes[harq_pid]->ndi = 1;
     while (round<max_rounds && crc_status) {
       round_trials[round]++;
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
