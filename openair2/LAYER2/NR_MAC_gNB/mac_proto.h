@@ -64,21 +64,9 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
-int nr_generate_dlsch_pdu(module_id_t Mod_idP,
-                          NR_UE_sched_ctrl_t *ue_sched_ctl,
-                          unsigned char *sdus_payload,
-                          unsigned char *mac_pdu,
-                          unsigned char num_sdus,
-                          unsigned short *sdu_lengths,
-                          unsigned char *sdu_lcids,
-                          unsigned char drx_cmd,
-                          unsigned char *ue_cont_res_id,
-                          unsigned short post_padding);
-
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot,
-                         int num_slots_per_tdd);
+                         sub_frame_t slot);
 
 void schedule_control_sib1(module_id_t module_id,
                            int CC_id,
@@ -92,8 +80,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 /* \brief default preprocessor */
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
-                                  sub_frame_t slot,
-                                  int num_slots_per_tdd);
+                                  sub_frame_t slot);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
@@ -105,7 +92,7 @@ void nr_schedule_ulsch(module_id_t module_id,
                        int ul_slots,
                        uint64_t ulsch_in_slot_bitmap);
 
-void nr_simple_ulsch_preprocessor(module_id_t module_id,
+bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd,
@@ -159,11 +146,10 @@ uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
  * freq resources */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
-                             sub_frame_t slot,
-                             int num_slots_per_tdd);
+                             sub_frame_t slot);
 /* \brief UL preprocessor for phytest: schedules UE_id 0 with fixed MCS on a
  * fixed set of resources */
-void nr_ul_preprocessor_phytest(module_id_t module_id,
+bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
                                 int num_slots_per_tdd,
@@ -172,22 +158,6 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
-
-void nr_fill_nfapi_dl_pdu(int Mod_id,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
-                          rnti_t rnti,
-                          NR_CellGroupConfig_t *secondaryCellGroup,
-                          NR_UE_sched_ctrl_t *sched_ctrl,
-                          NR_sched_pucch *pucch_sched,
-                          nfapi_nr_dmrs_type_e dmrsConfigType,
-                          uint16_t R,
-                          uint8_t Qm,
-                          uint32_t tbs,
-                          int StartSymbolIndex,
-                          int NrOfSymbols,
-                          int harq_pid,
-                          int ndi,
-                          int round);
 
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
@@ -199,40 +169,30 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
 
 
-void config_uldci(NR_BWP_Uplink_t *ubwp,
-                  nfapi_nr_pusch_pdu_t *pusch_pdu,
-                  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+void config_uldci(const NR_BWP_Uplink_t *ubwp,
+                  const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
-                  int *dci_formats,
-                  int time_domain_assignment, uint8_t tpc,
-                  int n_ubwp, int bwp_id);
+                  int dci_format,
+                  int time_domain_assignment,
+                  uint8_t tpc,
+                  int n_ubwp,
+                  int bwp_id);
 
 void nr_schedule_pucch(int Mod_idP,
-                       int UE_id,
-                       int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP);
 
-void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
                        int *period, int *offset);
 
 void nr_csi_meas_reporting(int Mod_idP,
+                           frame_t frameP,
+                           sub_frame_t slotP);
+
+bool nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
-                           sub_frame_t slotP,
-                           int slots_per_tdd,
-                           int ul_slots,
-                           int n_slots_frame);
-
-void nr_acknack_scheduling(int Mod_idP,
-                           int UE_id,
-                           frame_t frameP,
-                           sub_frame_t slotP,
-                           int slots_per_tdd,
-                           int *pucch_id,
-                           int *pucch_occ);
-
-int get_pucch_resource(NR_UE_info_t *UE_info,int UE_id,int k,int l);
+                           sub_frame_t slotP);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -271,26 +231,22 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        uint16_t rnti,
+void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp,
-                        uint8_t aggregation_level,
-                        int CCEIndex);
+                        NR_BWP_Downlink_t *bwp);
 
-void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
-                        NR_CellGroupConfig_t *secondaryCellGroup,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
+                        const NR_CellGroupConfig_t *secondaryCellGroup,
+                        nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
-                        int *dci_formats,
-                        int *rnti_types,
+                        int dci_formats,
+                        int rnti_types,
                         int N_RB,
                         int bwp_id);
 
-void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
+void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
@@ -337,14 +293,21 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB);
 
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 
-void dump_nr_ue_list(NR_UE_list_t *listP);
-void add_nr_ue_list(NR_UE_list_t *listP, int UE_id);
+/* Functions to manage an NR_list_t */
+void dump_nr_list(NR_list_t *listP);
+void create_nr_list(NR_list_t *listP, int len);
+void destroy_nr_list(NR_list_t *list);
+void add_nr_list(NR_list_t *listP, int id);
+void remove_nr_list(NR_list_t *listP, int id);
+void add_tail_nr_list(NR_list_t *listP, int id);
+void add_front_nr_list(NR_list_t *listP, int id);
+void remove_front_nr_list(NR_list_t *listP);
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup);
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
@@ -383,11 +346,7 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
-
-void nr_generate_Msg2(module_id_t module_idP,
-                      int CC_id,
-                      frame_t frameP,
-                      sub_frame_t slotP);
+void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -438,4 +397,5 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
+bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

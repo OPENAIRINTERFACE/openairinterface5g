@@ -53,8 +53,8 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
 int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
@@ -140,6 +140,7 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
                         uint8_t *nERatio,uint8_t *reOffset,
                         uint8_t NrOfSymbols);
+void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
@@ -150,9 +151,9 @@ uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
 @param    rnti_type        rnti type
 @param    configuredGrant  indicates whether a configured grant was received or not
 @returns                   transformPrecoding value */
-uint8_t get_transformPrecoding(NR_ServingCellConfigCommon_t *scc,
-                               NR_PUSCH_Config_t *pusch_config,
-                               NR_BWP_Uplink_t *ubwp,
+uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+                               const NR_PUSCH_Config_t *pusch_config,
+                               const NR_BWP_Uplink_t *ubwp,
                                uint8_t *dci_format,
                                int rnti_type,
                                uint8_t configuredGrant);

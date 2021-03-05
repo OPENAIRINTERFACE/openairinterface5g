@@ -575,11 +575,11 @@ int main( int argc, char **argv ) {
 
   
   init_NR_UE_threads(1);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
   protocol_ctxt_t ctxt_pP = {0};
   ctxt_pP.enb_flag = ENB_FLAG_NO;
   ctxt_pP.rnti = 0x1234;
@@ -591,6 +591,12 @@ int main( int argc, char **argv ) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
   }
+
+  // Sleep a while before checking all parameters have been used
+  // Some are used directly in external threads, asynchronously
+  sleep(20);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+
   while(true)
     sleep(3600);
 

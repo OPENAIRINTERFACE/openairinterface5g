@@ -36,6 +36,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
 #include "executables/softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h" 
 
 #define MAX_IF_MODULES 100
 //#define UL_HARQ_PRINT
@@ -104,6 +105,10 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   }
 
   UL_info->uci_ind.num_ucis = 0;
+
+  // mark corresponding PUCCH resources as free
+  // NOTE: we just assume it is BWP ID 1, to be revised for multiple BWPs
+  RC.nrmac[mod_id]->pucch_index_used[1][slot] = 0;
 }
 
 
@@ -181,7 +186,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
-  if (nfapi_mode != 1) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask==0) {
       ifi->current_frame    = UL_info->frame;
       ifi->current_slot = UL_info->slot;
@@ -200,7 +205,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
 
-  if (nfapi_mode != 1) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,

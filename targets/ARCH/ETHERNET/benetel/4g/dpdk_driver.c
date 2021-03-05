@@ -233,19 +233,20 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 	}
 
 
-	if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce && ANT_NUM == 0x00) {
+	if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce) {
           p.frame = FRAME;
           p.subframe = SUBFRAME >> 4;
           p.slot = 0; /* unused */
           p.symbol = SYMBOL;
-          p.antenna = 0;
+          p.antenna = ANT_NUM;
           memcpy(p.iq, IQ_ptr, 4800);
           store_ul(bs, &p);
         }
 
-	// U-PLANE UL ANT_0 PROCESSING
-	if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce && ANT_NUM == 0x00 && dl_start == 1)
+	// U-PLANE UL PROCESSING
+	if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce && dl_start == 1)
 	{
+                int a = ANT_NUM;
                 int tx_frame = FRAME;
                 int tx_subframe = SUBFRAME >> 4;
                 int tx_symbol = SYMBOL + 5;
@@ -266,33 +267,20 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
                 SUBFRAME = tx_subframe << 4;
                 SYMBOL = tx_symbol;
 
-                /* antenna 0 - send actual DL data (if available) */
+                /* send actual DL data (if available) */
                 lock_dl_buffer(bs->buffers, tx_subframe);
-                if (!(bs->buffers->dl_busy[tx_subframe] & (1 << tx_symbol))) {
-                  printf("%s: warning, DL underflow (sf.symbol %d.%d)\n", __FUNCTION__,
+                if (!(bs->buffers->dl_busy[a][tx_subframe] & (1 << tx_symbol))) {
+                  printf("%s: warning, DL underflow (antenna %d sf.symbol %d.%d)\n",
+                         __FUNCTION__,
+                         a,
                          tx_subframe, tx_symbol);
                   memset(IQ_ptr, 0, 1200 * 4);
                 } else {
-                  memcpy(IQ_ptr, bs->buffers->dl[tx_subframe] + tx_symbol * 1200*4,
+                  memcpy(IQ_ptr, bs->buffers->dl[a][tx_subframe] + tx_symbol * 1200*4,
                          1200*4);
                 }
-                bs->buffers->dl_busy[tx_subframe] &= ~(1 << tx_symbol);
+                bs->buffers->dl_busy[a][tx_subframe] &= ~(1 << tx_symbol);
                 unlock_dl_buffer(bs->buffers, tx_subframe);
-
-		// fill DL Data for ant 0 with 0 value
-//		memset(IQ_ptr, 0, 4800);
-	}
-
-	// U-PLANE UL ANT_1 PROCESSING
-	else if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce && ANT_NUM == 0x01 && dl_start == 1)
-	{
-
-//		ANT_NUM = 0x01;
-		SYMBOL = (SYMBOL + 5) % 14;
-		PAYLOAD_2 = 0xc8;
-
-		// fill DL Data for ant 1 with 0 value
-		memset(IQ_ptr, 0, 4800);
 	}
 
 	// U-PLANE PRACH PROCESSING

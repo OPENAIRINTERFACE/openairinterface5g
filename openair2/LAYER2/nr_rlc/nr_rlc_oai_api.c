@@ -175,7 +175,7 @@ void mac_rlc_data_ind     (
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: no RB found (channel ID %d)\n",
           __FILE__, __LINE__, __FUNCTION__, channel_idP);
-    exit(1);
+    // exit(1);
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
@@ -696,15 +696,23 @@ static void add_srb_am(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig_
   if (ue->srb[srb_id-1] != NULL) {
     LOG_W(RLC, "%s:%d:%s: SRB %d already exists for UE with RNTI %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    nr_rlc_am = new_nr_rlc_entity_am(100000,
-        100000,
-        deliver_sdu, ue,
-        successful_delivery, ue,
-        max_retx_reached, ue,
-        t_poll_retransmit,
-        t_reassembly, t_status_prohibit,
-        poll_pdu, poll_byte, max_retx_threshold,
-        sn_field_length);
+    /* hack: hardcode values for NR */
+    t_poll_retransmit = 45;
+    t_reassembly = 35;
+    t_status_prohibit = 0;
+    poll_pdu = -1;
+    poll_byte = -1;
+    max_retx_threshold = 8;
+    sn_field_length = 12;
+    nr_rlc_am = new_nr_rlc_entity_am(10000000,
+                                     10000000,
+                                     deliver_sdu, ue,
+                                     successful_delivery, ue,
+                                     max_retx_reached, ue,
+                                     t_poll_retransmit,
+                                     t_reassembly, t_status_prohibit,
+                                     poll_pdu, poll_byte, max_retx_threshold,
+                                     sn_field_length);
     nr_rlc_ue_add_srb_rlc_entity(ue, srb_id, nr_rlc_am);
 
     LOG_D(RLC, "%s:%d:%s: added srb %d to UE with RNTI %x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
@@ -793,8 +801,8 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   if (ue->drb[drb_id-1] != NULL) {
     LOG_W(RLC, "%s:%d:%s: DRB %d already exists for UE with RNTI %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    nr_rlc_am = new_nr_rlc_entity_am(100000,
-                                     100000,
+    nr_rlc_am = new_nr_rlc_entity_am(10000000,
+                                     10000000,
                                      deliver_sdu, ue,
                                      successful_delivery, ue,
                                      max_retx_reached, ue,
@@ -865,8 +873,8 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   if (ue->drb[drb_id-1] != NULL) {
     LOG_W(RLC, "DEBUG add_drb_um %s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    nr_rlc_um = new_nr_rlc_entity_um(1000000,
-                                     1000000,
+    nr_rlc_um = new_nr_rlc_entity_um(100000000,
+                                     100000000,
                                      deliver_sdu, ue,
                                      t_reassembly,
                                      sn_field_length);

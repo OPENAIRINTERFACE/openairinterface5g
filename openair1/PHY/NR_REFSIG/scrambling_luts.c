@@ -51,7 +51,7 @@ void init_byte2m64(void) {
 	    ((int16_t*)&byte2m64_re[s])[0],((int16_t*)&byte2m64_im[s])[0],    
 	    ((int16_t*)&byte2m64_re[s])[1],((int16_t*)&byte2m64_im[s])[1],    
 	    ((int16_t*)&byte2m64_re[s])[2],((int16_t*)&byte2m64_im[s])[2],    
-	    ((int16_t*)&byte2m64_re[s])[3],((int16_t*)&byte2m64_im[s])[3]);    
+	    ((int16_t*)&byte2m64_re[s])[3],((int16_t*)&byte2m64_im[s])[3]);  
 
   }
 }
