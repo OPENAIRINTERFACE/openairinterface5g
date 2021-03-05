@@ -1136,6 +1136,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 bwp_start_subcarrier,
                                 rel15_ul);
 
+    nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
+
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
                                                                         rel15_ul->rb_size*12);
