@@ -31,6 +31,7 @@
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "executables/softmodem-common.h"
 
 
 //#define DEBUG_CH
@@ -173,7 +174,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
-    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1){
+    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && get_softmodem_params()->fd_interpolation){
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -381,7 +382,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
 #endif    
     }
-    else { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
+    else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && get_softmodem_params()->fd_interpolation) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
 
       // Treat first DMRS specially (left edge)
 
@@ -467,6 +468,105 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ul_ch_128[0] = _mm_slli_epi16 (ul_ch_128[0], 2);
     }
 
+    else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) {// this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 6 DMRS REs and use a common value for the whole PRB
+
+      for (pilot_cnt=0; pilot_cnt<6*nb_rb_pusch; pilot_cnt+=6) {
+        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+        ch[0]/=6;
+        ch[1]/=6;
+        ((__m128i*)ul_ch)[0]=_mm_set1_epi32(*(int32_t*)ch);
+        ((__m128i*)ul_ch)[1]=((__m128i*)ul_ch)[0];
+        ((__m128i*)ul_ch)[2]=((__m128i*)ul_ch)[0];
+        ul_ch+=24;
+      }
+    }
+    else  { // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 4 DMRS REs and use a common value for the whole PRB
+      for (pilot_cnt=0; pilot_cnt<4*nb_rb_pusch; pilot_cnt+=4) {
+        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+
+        pil+=2;
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+        ch[0]>>=2;
+        ch[1]>>=2;
+        ((__m128i*)ul_ch)[0]=_mm_set1_epi32(*(int32_t*)ch);
+        ((__m128i*)ul_ch)[1]=((__m128i*)ul_ch)[0];
+        ((__m128i*)ul_ch)[2]=((__m128i*)ul_ch)[0];
+        ul_ch+=24;
+      }
+    }
+#ifdef DEBUG_PDSCH
+    ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
+    for(uint16_t idxP=0; idxP<ceil((float)nb_rb_pusch*12/8); idxP++) {
+      for(uint8_t idxI=0; idxI<16; idxI+=2) {
+        printf("%d\t%d\t",ul_ch[idxP*16+idxI],ul_ch[idxP*16+idxI+1]);
+      }
+      printf("%d\n",idxP);
+    }
+#endif
 
     // Convert to time domain
 
