@@ -334,15 +334,27 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   rrc->Nb_ue++;
   // configure MAC and RLC
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->carrier.ssb_SubcarrierOffset,
-                         rrc->carrier.pdsch_AntennaPorts,
-                         rrc->carrier.pusch_TargetSNRx10,
-                         rrc->carrier.pucch_TargetSNRx10,
-                         NULL,
-                         1, // add_ue flag
-                         ue_context_p->ue_id_rnti,
-                         ue_context_p->ue_context.secondaryCellGroup);
+  if (NODE_IS_DU(rrc->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_TargetSNRx10,
+                           rrc->carrier.pucch_TargetSNRx10,
+                           rrc->carrier.servingcellconfigcommon,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  } else {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_TargetSNRx10,
+                           rrc->carrier.pucch_TargetSNRx10,
+                           NULL,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  }
 
   if(m == NULL){
     LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
