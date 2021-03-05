@@ -1649,6 +1649,8 @@ nr_bandentry_t nr_bandtable[] = {
   {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
 };
 
+#define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
+const size_t nr_bandtable_size = NR_BANDTABLE_SIZE;
 
 // TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
 // The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
@@ -1689,44 +1691,6 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 {1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
 {1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
 };
-
-#define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
-
-uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
-{
-  const uint64_t dl_freq_khz = downlink_frequency / 1000;
-  const int32_t  delta_duplex_khz = delta_duplex / 1000;
-
-  uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
-  uint16_t current_band = 0;
-
-  for (int ind = 0; ind < NR_BANDTABLE_SIZE; ind++) {
-
-    LOG_D(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min, nr_bandtable[ind].ul_min);
-
-    if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
-      continue;
-
-    int32_t current_offset_khz = nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min;
-
-    if (current_offset_khz != delta_duplex_khz)
-      continue;
-
-    uint64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
-
-    if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-      current_band = nr_bandtable[ind].band;
-      center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-    }
-  }
-
-  LOG_I(PHY, "DL frequency %"PRIu64": band %d, UL frequency %"PRIu64"\n",
-        downlink_frequency, current_band, downlink_frequency+delta_duplex);
-
-  AssertFatal(current_band != 0, "Can't find EUTRA band for frequency %"PRIu64" and duplex_spacing %u\n", downlink_frequency, delta_duplex);
-
-  return current_band;
-}
 
 // Returns the corresponding row index of the NR table
 int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
