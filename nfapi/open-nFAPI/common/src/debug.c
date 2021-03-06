@@ -37,7 +37,7 @@ void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...);
 // initialize the trace function to 0
 void (*nfapi_trace_g)(nfapi_trace_level_t level, const char* format, ...) = &nfapi_trace_dbg;
 
-nfapi_trace_level_t nfapi_trace_level_g = NFAPI_TRACE_INFO;
+nfapi_trace_level_t nfapi_trace_level_g = NFAPI_TRACE_ERROR;
 //nfapi_trace_level_t nfapi_trace_level_g = NFAPI_TRACE_WARN;
 
 void nfapi_set_trace_level(nfapi_trace_level_t new_level)
@@ -47,6 +47,8 @@ void nfapi_set_trace_level(nfapi_trace_level_t new_level)
 
 void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...)
 {
+        if (level < nfapi_trace_level_g)
+                return;
 	char trace_buff[MAX_MSG_LENGTH + TRACE_HEADER_LENGTH];
 	uint32_t num_chars;
 	va_list p_args;

@@ -1989,7 +1989,7 @@ static int get_cqi_from_mcs(void)
       int mcs = get_mcs_from_sinr(sf_rnti_mcs[sf].sinr);
       CHECK_INDEX(mcs_to_cqi, mcs);
       int cqi = mcs_to_cqi[mcs];
-      LOG_A(MAC, "SINR: %f -> MCS: %d -> CQI: %d\n", sf_rnti_mcs[sf].sinr, mcs, cqi);
+      LOG_I(MAC, "SINR: %f -> MCS: %d -> CQI: %d\n", sf_rnti_mcs[sf].sinr, mcs, cqi);
       return cqi;
     }
     sf++;

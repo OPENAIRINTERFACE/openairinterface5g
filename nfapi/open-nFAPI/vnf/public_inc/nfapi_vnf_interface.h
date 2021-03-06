@@ -19,16 +19,14 @@
 
 #include "nfapi_interface.h"
 #include "nfapi_nr_interface_scf.h"
-
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 #include "debug.h"
-
 #include "netinet/in.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#define NFAPI_MAX_PACKED_MESSAGE_SIZE 8192
 
 /*! The nfapi VNF phy configuration information
  */

@@ -999,7 +999,6 @@ nfapi_pnf_p7_subframe_buffer_t dummy_subframe;
 
 int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_start_request_t *req) {
   printf("[PNF] Received NFAPI_START_REQ phy_id:%d\n", req->header.phy_id);
-  nfapi_set_trace_level(NFAPI_TRACE_INFO);
   pnf_info *pnf = (pnf_info *)(config->user_data);
   phy_info *phy_info = pnf->phys;
   nfapi_pnf_p7_config_t *p7_config = nfapi_pnf_p7_config_create();
