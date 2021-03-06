@@ -629,9 +629,14 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         prach_resources->RA_PREAMBLE_BACKOFF = 0;
       }
 
-      if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1 && ra->cfra) {
-        // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-        nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+      if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1) {
+
+        if(ra->cfra) {
+          // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
+          nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+        } else {
+          ra->generate_nr_prach = 2;
+        }
 
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 
