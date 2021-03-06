@@ -57,6 +57,9 @@
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
 
+int harq_rounds = 0;
+int harq_pid = 0;
+
 // Compute and write all MAC CEs and subheaders, and return number of written
 // bytes
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
@@ -821,6 +824,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
     pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
+    if (NFAPI_MODE == NFAPI_MODE_VNF){ // done since uplink isnt operational yet which means harq structures dont get filled properly
+      pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq_rounds];
+      if (harq_rounds % 5 == 0 && harq_rounds!=0){
+        harq_rounds = 0;
+        harq_pid = (harq_pid + 1) % 16;
+      }      
+      harq_rounds++;
+    }
     pdsch_pdu->TBSize[0] = TBS;
 
     pdsch_pdu->dataScramblingId = *scc->physCellId;
@@ -932,6 +943,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
     const int rnti_type = NR_RNTI_C;
 
+    if (NFAPI_MODE == NFAPI_MODE_VNF){
+      dci_payload.harq_pid = harq_pid;
+      dci_payload.tpc = 2;
+    }
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
                        dci_pdu,
