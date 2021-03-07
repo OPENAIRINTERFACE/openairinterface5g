@@ -213,15 +213,15 @@ function variant__v6__nr_ue_usrp {
 function variant__v7__enb_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=enb_eth
-    NB_PATTERN_FILES=8
-    BUILD_OPTIONS="--eNB"
+    NB_PATTERN_FILES=9
+    BUILD_OPTIONS="--eNB -w USRP"
 }
 
 function variant__v8__ue_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=ue_eth
-    NB_PATTERN_FILES=12
-    BUILD_OPTIONS="--UE"
+    NB_PATTERN_FILES=13
+    BUILD_OPTIONS="--UE -w USRP"
 }
 
 function variant__v10__flexran_rtc {
