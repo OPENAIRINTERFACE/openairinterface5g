@@ -78,7 +78,7 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
 static int s1ap_sctp_req(s1ap_eNB_instance_t *instance_p,
                          s1ap_eNB_mme_data_t *s1ap_mme_data_p);
 void s1ap_eNB_timer_expired(instance_t                 instance,
-                                  s1ap_timer_has_expired_t   *msg_p);
+                            timer_has_expired_t   *msg_p);
 
 uint32_t s1ap_generate_eNB_id(void) {
   char    *out;
@@ -157,7 +157,6 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
   uint8_t index;
   DevAssert(s1ap_register_eNB != NULL);
   /* Look if the provided instance already exists */
-  s1ap_timer_init();
   new_instance = s1ap_eNB_get_instance(instance);
 
   if (new_instance != NULL) {
@@ -268,45 +267,36 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
                                      sctp_new_association_resp->ulp_cnx_id);
   DevAssert(s1ap_mme_data_p != NULL);
   memset(enb_s1ap_id, 0, sizeof(enb_s1ap_id) );
-  if( s1ap_mme_data_p->timer_id != S1AP_TIMERID_INIT )
-  {
+  if( s1ap_mme_data_p->timer_id != S1AP_TIMERID_INIT ) {
     s1ap_timer_remove( s1ap_mme_data_p->timer_id );
     s1ap_mme_data_p->timer_id = S1AP_TIMERID_INIT;
   }
   
-  if( sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED )
-  {
-    RB_FOREACH(ue_p, s1ap_ue_map, &instance_p->s1ap_ue_head)
-    {
-      if( ue_p->mme_ref == s1ap_mme_data_p )
-      {
-        if(cnt < NUMBER_OF_UE_MAX){
+  if( sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED ) {
+    RB_FOREACH(ue_p, s1ap_ue_map, &instance_p->s1ap_ue_head) {
+      if( ue_p->mme_ref == s1ap_mme_data_p ) {
+        if(cnt < NUMBER_OF_UE_MAX) {
           enb_s1ap_id[cnt] = ue_p->eNB_ue_s1ap_id;
           cnt++;
           
           message_p = NULL;
-          message_p = itti_alloc_new_message(TASK_S1AP, S1AP_UE_CONTEXT_RELEASE_COMMAND);
+          message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_UE_CONTEXT_RELEASE_COMMAND);
           
-          if( message_p != NULL )
-          {
+          if( message_p != NULL ) {
             S1AP_UE_CONTEXT_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = ue_p->eNB_ue_s1ap_id;
             
-            if( itti_send_msg_to_task(TASK_RRC_ENB, ue_p->eNB_instance->instance, message_p) < 0 )
-            {
+            if( itti_send_msg_to_task(TASK_RRC_ENB, ue_p->eNB_instance->instance, message_p) < 0 ) {
               S1AP_ERROR("UE Context Release Command Transmission Failure: eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
             }
-          }
-          else
-          {
+          } else {
             S1AP_ERROR("Invalid message_p : eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
           }
         }else{
-            S1AP_ERROR("s1ap_eNB_handle_sctp_association_resp: cnt %d > max\n", cnt);
+          S1AP_ERROR("s1ap_eNB_handle_sctp_association_resp: cnt %d > max\n", cnt);
         }
       }
     }
-    for( ; cnt > 0 ; )
-    {
+    for( ; cnt > 0 ; ) {
       cnt--;
       struct s1ap_eNB_ue_context_s *ue_context_p = NULL;
       struct s1ap_eNB_ue_context_s *s1ap_ue_context_p = NULL;
@@ -323,25 +313,21 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     s1ap_mme_data_p->out_streams = 0;
     s1ap_mme_data_p->assoc_id = -1;
     
-    while (!STAILQ_EMPTY(&s1ap_mme_data_p->served_gummei))
-    {
+    while (!STAILQ_EMPTY(&s1ap_mme_data_p->served_gummei)) {
       gummeiInfo = STAILQ_FIRST(&s1ap_mme_data_p->served_gummei);
       STAILQ_REMOVE_HEAD(&s1ap_mme_data_p->served_gummei, next);
 
-      while (!STAILQ_EMPTY(&gummeiInfo->served_plmns))
-      {
+      while (!STAILQ_EMPTY(&gummeiInfo->served_plmns)) {
         plmnInfo = STAILQ_FIRST(&gummeiInfo->served_plmns);
         STAILQ_REMOVE_HEAD(&gummeiInfo->served_plmns, next);
         free(plmnInfo);
       }
-      while (!STAILQ_EMPTY(&gummeiInfo->served_group_ids))
-      {
+      while (!STAILQ_EMPTY(&gummeiInfo->served_group_ids)) {
         groupInfo = STAILQ_FIRST(&gummeiInfo->served_group_ids);
         STAILQ_REMOVE_HEAD(&gummeiInfo->served_group_ids, next);
         free(groupInfo);
       }
-      while (!STAILQ_EMPTY(&gummeiInfo->mme_codes))
-      {
+      while (!STAILQ_EMPTY(&gummeiInfo->mme_codes)) {
         mmeCode = STAILQ_FIRST(&gummeiInfo->mme_codes);
         STAILQ_REMOVE_HEAD(&gummeiInfo->mme_codes, next);
         free(mmeCode);
@@ -351,45 +337,33 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     
     STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
     
-    if( s1ap_mme_data_p->state == S1AP_ENB_STATE_DISCONNECTED )
-    {
+    if( s1ap_mme_data_p->state == S1AP_ENB_STATE_DISCONNECTED ) {
       if( (s1ap_mme_data_p->sctp_req_cnt <= instance_p->sctp_req_count) ||
-        (instance_p->sctp_req_count == 0xffff) )
-      {
+        (instance_p->sctp_req_count == 0xffff) ) {
         timer_kind = s1ap_mme_data_p->cnx_id;
         timer_kind = timer_kind | S1AP_MMEIND;
         timer_kind = timer_kind | SCTP_REQ_WAIT;
         
         if( s1ap_timer_setup( instance_p->sctp_req_timer, 0, TASK_S1AP, instance_p->instance,
-          timer_kind, S1AP_TIMER_ONE_SHOT, NULL, &s1ap_mme_data_p->timer_id) < 0 )
-        {
+          timer_kind, S1AP_TIMER_ONE_SHOT, NULL, &s1ap_mme_data_p->timer_id) < 0 ) {
           S1AP_ERROR("Timer Start NG(SCTP retransmission wait timer) : MME=%d\n",s1ap_mme_data_p->cnx_id);
           s1ap_sctp_req( instance_p, s1ap_mme_data_p );
         }
-      }
-      else
-      {
+      } else {
         S1AP_ERROR("Retransmission count exceeded of SCTP : MME=%d\n",s1ap_mme_data_p->cnx_id);
       }
-    }
-    else
-    {
+    } else {
       S1AP_ERROR("SCTP disconnection reception : MME = %d\n",s1ap_mme_data_p->cnx_id);
 
       if( (s1ap_mme_data_p->sctp_req_cnt <= instance_p->sctp_req_count) ||
-          (instance_p->sctp_req_count == 0xffff) )
-      {
+          (instance_p->sctp_req_count == 0xffff) ) {
         s1ap_sctp_req( instance_p, s1ap_mme_data_p );
-      }
-      else
-      {
+      } else {
         S1AP_ERROR("Retransmission count exceeded of SCTP : MME=%d\n",s1ap_mme_data_p->cnx_id);
       }
       s1ap_mme_data_p->state = S1AP_ENB_STATE_DISCONNECTED;
     }
-  }
-  else
-  {
+  } else {
     /* Update parameters */
     s1ap_mme_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
     s1ap_mme_data_p->in_streams  = sctp_new_association_resp->in_streams;
@@ -422,101 +396,81 @@ void s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
 }
 
 void s1ap_eNB_timer_expired(
-    instance_t                instance,
-    s1ap_timer_has_expired_t   *msg_p)
+  instance_t                instance,
+  timer_has_expired_t   *msg_p)
 {
-    uint32_t                  timer_kind = 0;
-    int16_t                   line_ind = 0;
-    s1ap_eNB_mme_data_t       *mme_desc_p = NULL;
-    uint32_t                  timer_ind = 0;
-    s1ap_eNB_instance_t       *instance_p = NULL;
-    long                      timer_id = S1AP_TIMERID_INIT;
-    
-    instance_p = s1ap_eNB_get_instance(instance);
-    timer_kind = msg_p->timer_kind;
-    line_ind = (int16_t)(timer_kind & S1AP_LINEIND);
-    timer_id = msg_p->timer_id;
-    
-    if( (timer_kind & S1AP_MMEIND) == S1AP_MMEIND )
-    {
-        mme_desc_p = s1ap_eNB_get_MME(instance_p, -1, line_ind);
-        if(mme_desc_p != NULL)
+  uint32_t                  timer_kind = 0;
+  int16_t                   line_ind = 0;
+  s1ap_eNB_mme_data_t       *mme_desc_p = NULL;
+  uint32_t                  timer_ind = 0;
+  s1ap_eNB_instance_t       *instance_p = NULL;
+  long                      timer_id = S1AP_TIMERID_INIT;
+  
+  instance_p = s1ap_eNB_get_instance(instance);
+  timer_kind = *((uint32_t*)msg_p->arg);
+  line_ind = (int16_t)(timer_kind & S1AP_LINEIND);
+  timer_id = msg_p->timer_id;
+  
+  if( (timer_kind & S1AP_MMEIND) == S1AP_MMEIND ) {
+    mme_desc_p = s1ap_eNB_get_MME(instance_p, -1, line_ind);
+    if(mme_desc_p != NULL) {
+      if( timer_id == mme_desc_p->timer_id ) {
+        mme_desc_p->timer_id = S1AP_TIMERID_INIT;
+        timer_ind = timer_kind & S1AP_TIMERIND;
+        
+        switch(timer_ind)
         {
-            if( timer_id == mme_desc_p->timer_id )
-            {
-                mme_desc_p->timer_id = S1AP_TIMERID_INIT;
-                timer_ind = timer_kind & S1AP_TIMERIND;
-                
-                switch(timer_ind)
-                {
-                    case S1_SETRSP_WAIT:
-                    {
-                        if( (instance_p->s1_setupreq_count >= mme_desc_p->s1_setupreq_cnt) ||
-                            (instance_p->s1_setupreq_count == 0xffff) )
-                        {
-                            s1ap_eNB_generate_s1_setup_request( instance_p, mme_desc_p );
-                        }
-                        else
-                        {
-                            S1AP_ERROR("Retransmission count exceeded of S1 SETUP REQUEST : MME=%d\n",line_ind);
-                        }
-                        break;
-                    }
-                    case S1_SETREQ_WAIT:
-                    {
-                        if( (instance_p->s1_setupreq_count >= mme_desc_p->s1_setupreq_cnt) ||
-                            (instance_p->s1_setupreq_count == 0xffff) )
-                        {
-                            s1ap_eNB_generate_s1_setup_request( instance_p, mme_desc_p );
-                        }
-                        else
-                        {
-                            S1AP_ERROR("Retransmission count exceeded of S1 SETUP REQUEST : MME=%d\n",line_ind);
-                        }
-                        break;
-                    }
-                    case SCTP_REQ_WAIT:
-                    {
-                        if( (instance_p->sctp_req_count >= mme_desc_p->sctp_req_cnt) ||
-                            (instance_p->sctp_req_count == 0xffff) )
-                        {
-                            s1ap_sctp_req( instance_p, mme_desc_p );
-                        }
-                        else
-                        {
-                            S1AP_ERROR("Retransmission count exceeded of SCTP : MME=%d\n",line_ind);
-                        }
-                        break;
-                    }
-                    default:
-                    {
-                        S1AP_WARN("Invalid Timer indication\n");
-                        break;
-                    }
-                }
+          case S1_SETRSP_WAIT:
+          {
+            if( (instance_p->s1_setupreq_count >= mme_desc_p->s1_setupreq_cnt) ||
+                (instance_p->s1_setupreq_count == 0xffff) ) {
+              s1ap_eNB_generate_s1_setup_request( instance_p, mme_desc_p );
+            } else {
+              S1AP_ERROR("Retransmission count exceeded of S1 SETUP REQUEST : MME=%d\n",line_ind);
             }
-            else
-            {
-                S1AP_DEBUG("Unmatch timer id\n");
-                return;
+            break;
+          }
+          case S1_SETREQ_WAIT:
+          {
+            if( (instance_p->s1_setupreq_count >= mme_desc_p->s1_setupreq_cnt) ||
+                (instance_p->s1_setupreq_count == 0xffff) ) {
+              s1ap_eNB_generate_s1_setup_request( instance_p, mme_desc_p );
+            } else {
+              S1AP_ERROR("Retransmission count exceeded of S1 SETUP REQUEST : MME=%d\n",line_ind);
             }
+            break;
+          }
+          case SCTP_REQ_WAIT:
+          {
+            if( (instance_p->sctp_req_count >= mme_desc_p->sctp_req_cnt) ||
+                (instance_p->sctp_req_count == 0xffff) ) {
+              s1ap_sctp_req( instance_p, mme_desc_p );
+            } else {
+              S1AP_ERROR("Retransmission count exceeded of SCTP : MME=%d\n",line_ind);
+            }
+            break;
+          }
+          default:
+          {
+            S1AP_WARN("Invalid Timer indication\n");
+            break;
+          }
         }
-        else
-        {
-            S1AP_WARN("Not applicable MME detected : connection id = %d\n", line_ind);
-            return;
-        }
+      } else {
+        S1AP_DEBUG("Unmatch timer id\n");
+        return;
+      }
+    } else {
+      S1AP_WARN("Not applicable MME detected : connection id = %d\n", line_ind);
+      return;
     }
-    else
-    {
-    }
-    return;
+  }
+  return;
 }
 
 void s1ap_eNB_init(void) {
   S1AP_DEBUG("Starting S1AP layer\n");
   s1ap_eNB_prepare_internal_data();
-  s1ap_timer_init();
   itti_mark_task_ready(TASK_S1AP);
   MSC_START_USE();
 }
@@ -639,8 +593,8 @@ void *s1ap_eNB_process_itti_msg(void *notUsed) {
 
     case TIMER_HAS_EXPIRED:
     {
-      s1ap_eNB_timer_expired(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                             (s1ap_timer_has_expired_t *) &TIMER_HAS_EXPIRED(received_msg));
+      s1ap_eNB_timer_expired(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                             &received_msg->ittiMsg.timer_has_expired);
     }
     break;
 
@@ -781,61 +735,52 @@ static int s1ap_eNB_generate_s1_setup_request(
 static int s1ap_sctp_req(s1ap_eNB_instance_t *instance_p,
                          s1ap_eNB_mme_data_t *s1ap_mme_data_p)
 {
-    MessageDef                 *message_p                   = NULL;
-    sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
-    
-    if( instance_p == NULL )
-    {
-        S1AP_ERROR("Invalid instance_p\n");
-        return -1;
+  MessageDef                 *message_p                   = NULL;
+  sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
+  
+  if( instance_p == NULL )
+  {
+      S1AP_ERROR("Invalid instance_p\n");
+      return -1;
+  }
+  
+  message_p = itti_alloc_new_message(TASK_S1AP, 0, SCTP_NEW_ASSOCIATION_REQ);
+  sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
+  sctp_new_association_req_p->port = S1AP_PORT_NUMBER;
+  sctp_new_association_req_p->ppid = S1AP_SCTP_PPID;
+  sctp_new_association_req_p->in_streams  = instance_p->sctp_in_streams;
+  sctp_new_association_req_p->out_streams = instance_p->sctp_out_streams;
+  sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
+  
+  if( s1ap_mme_data_p->mme_ip_address.ipv4 != 0 ) {
+    memcpy(&sctp_new_association_req_p->remote_address,
+        &s1ap_mme_data_p->mme_ip_address,
+        sizeof(net_ip_address_t));
+    if( instance_p->enb_ip_address.ipv4 != 0 ) {
+      memcpy(&sctp_new_association_req_p->local_address,
+          &instance_p->enb_ip_address,
+          sizeof(net_ip_address_t));
+    } else {
+      S1AP_ERROR("Invalid IP Address Format V4(MME):V6\n");
+      return -1;
     }
-    
-    message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
-    sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
-    sctp_new_association_req_p->port = S1AP_PORT_NUMBER;
-    sctp_new_association_req_p->ppid = S1AP_SCTP_PPID;
-    sctp_new_association_req_p->in_streams  = instance_p->sctp_in_streams;
-    sctp_new_association_req_p->out_streams = instance_p->sctp_out_streams;
-    sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
-    
-    if( s1ap_mme_data_p->mme_ip_address.ipv4 != 0 )
-    {
-        memcpy(&sctp_new_association_req_p->remote_address,
-            &s1ap_mme_data_p->mme_ip_address,
-            sizeof(net_ip_address_t));
-        if( instance_p->enb_ip_address.ipv4 != 0 )
-        {
-            memcpy(&sctp_new_association_req_p->local_address,
-                &instance_p->enb_ip_address,
-                sizeof(net_ip_address_t));
-        }
-        else
-        {
-            S1AP_ERROR("Invalid IP Address Format V4(MME):V6\n");
-            return -1;
-        }
+  } else {
+    memcpy(&sctp_new_association_req_p->remote_address,
+        &s1ap_mme_data_p->mme_ip_address,
+        sizeof(net_ip_address_t));
+    if( instance_p->enb_ip_address.ipv6 != 0 ) {
+      memcpy(&sctp_new_association_req_p->local_address,
+          &instance_p->enb_ip_address,
+          sizeof(net_ip_address_t));
+    } else {
+      S1AP_ERROR("Invalid IP Address Format V6(MME):V4\n");
+      return -1;
     }
-    else
-    {
-        memcpy(&sctp_new_association_req_p->remote_address,
-            &s1ap_mme_data_p->mme_ip_address,
-            sizeof(net_ip_address_t));
-        if( instance_p->enb_ip_address.ipv6 != 0 )
-        {
-            memcpy(&sctp_new_association_req_p->local_address,
-                &instance_p->enb_ip_address,
-                sizeof(net_ip_address_t));
-        }
-        else
-        {
-            S1AP_ERROR("Invalid IP Address Format V6(MME):V4\n");
-            return -1;
-        }
-    }
-    
-    itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
-    
-    s1ap_mme_data_p->sctp_req_cnt++;
-    
-    return 0;
+  }
+  
+  itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
+  
+  s1ap_mme_data_p->sctp_req_cnt++;
+  
+  return 0;
 }

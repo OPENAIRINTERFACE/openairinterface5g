@@ -290,8 +290,7 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupFailureIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_Cause,true);
 
-  if(ie == NULL)
-  {
+  if(ie == NULL) {
     return -1;
   }
 
@@ -302,19 +301,16 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
     S1AP_ERROR("Received s1 setup failure for MME... please check your parameters\n");
   }
 
-  if( mme_desc_p->timer_id != S1AP_TIMERID_INIT )
-  {
+  if( mme_desc_p->timer_id != S1AP_TIMERID_INIT ) {
     s1ap_timer_remove( mme_desc_p->timer_id );
     mme_desc_p->timer_id = S1AP_TIMERID_INIT;
   }
   instance_p = mme_desc_p->s1ap_eNB_instance;
   if( ( instance_p->s1_setupreq_count >= mme_desc_p->s1_setupreq_cnt) ||
-      ( instance_p->s1_setupreq_count == 0xffff) )
-  {
+      ( instance_p->s1_setupreq_count == 0xffff) ) {
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupFailureIEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_TimeToWait, false);
-    if( ie != NULL )
-    {
+    if( ie != NULL ) {
       switch(ie->value.choice.TimeToWait)
       {
         case S1AP_TimeToWait_v1s:
@@ -339,9 +335,7 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
           interval_sec = instance_p->s1_setupreq_wait_timer;
           break;
       }
-    }
-    else
-    {
+    } else {
       interval_sec = instance_p->s1_setupreq_wait_timer;
     }
     
@@ -350,16 +344,12 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
     timer_kind = timer_kind | S1_SETREQ_WAIT;
     
     if( s1ap_timer_setup(interval_sec, 0, TASK_S1AP, instance_p->instance, timer_kind, S1AP_TIMER_ONE_SHOT,
-      NULL, &mme_desc_p->timer_id) < 0 )
-    {
+      NULL, &mme_desc_p->timer_id) < 0 ) {
       S1AP_ERROR("Timer Start NG(S1 Setup Request) : MME=%d\n",mme_desc_p->cnx_id);
-      
       s1ap_eNB_snd_s1_setup_request( instance_p, mme_desc_p );
     }
-  }
-  else
-  {
-      S1AP_ERROR("Retransmission count exceeded of S1 SETUP REQUEST : MME=%d\n",mme_desc_p->cnx_id);
+  } else {
+    S1AP_ERROR("Retransmission count exceeded of S1 SETUP REQUEST : MME=%d\n",mme_desc_p->cnx_id);
   }
   return 0;
 }
@@ -391,16 +381,14 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
   /* Set the capacity of this MME */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupResponseIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_RelativeMMECapacity, true);
-  if(ie == NULL)
-  {
+  if(ie == NULL) {
     return -1;
   }
   mme_desc_p->relative_mme_capacity = ie->value.choice.RelativeMMECapacity;
 
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupResponseIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_ServedGUMMEIs, true);
-  if(ie == NULL)
-  {
+  if(ie == NULL) {
     return -1;
   }
 
@@ -462,13 +450,7 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
 
     STAILQ_INSERT_TAIL(&mme_desc_p->served_gummei, new_gummei_p, next);
   }
-
-  /* Set the capacity of this MME */
-//  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupResponseIEs_t, ie, container,
-//                             S1AP_ProtocolIE_ID_id_RelativeMMECapacity, true);
-//
-//  mme_desc_p->relative_mme_capacity = ie->value.choice.RelativeMMECapacity;
-//
+  
   /* Optionaly set the mme name */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupResponseIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_MMEname, false);
@@ -486,7 +468,6 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
    */
   mme_desc_p->state = S1AP_ENB_STATE_CONNECTED;
   mme_desc_p->s1ap_eNB_instance->s1ap_mme_associated_nb ++;
-//  s1ap_handle_s1_setup_message(mme_desc_p, 0);
   return 0;
 }
 
@@ -819,8 +800,7 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
                              S1AP_ProtocolIE_ID_id_CriticalityDiagnostics, false);
 
   if (ie) {
-    if( ie->value.choice.CriticalityDiagnostics.procedureCode )
-    {
+    if( ie->value.choice.CriticalityDiagnostics.procedureCode ) {
       S1AP_WARN("Received S1 Error indication CriticalityDiagnostics procedureCode = %ld\n", *ie->value.choice.CriticalityDiagnostics.procedureCode);
     }
     // TODO continue
@@ -1023,8 +1003,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
 
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_UEContextReleaseCommand_IEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_Cause, true);
-  if( ie == NULL )
-  {
+  if( ie == NULL ) {
     S1AP_ERROR( "Mandatory Element Nothing : UEContextReleaseCommand(Cause)\n" );
     return -1;
   }
@@ -1076,9 +1055,6 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
       //#warning "TODO mapping mme_ue_s1ap_id  enb_ue_s1ap_id?"
 
       case S1AP_UE_S1AP_IDs_PR_mME_UE_S1AP_ID:
-//        mme_ue_s1ap_id = ie->value.choice.UE_S1AP_IDs.choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
-//        S1AP_ERROR("TO DO mapping mme_ue_s1ap_id  enb_ue_s1ap_id");
-//        (void)mme_ue_s1ap_id; /* TODO: remove - it's to remove gcc warning about unused var */
         mme_ue_s1ap_id = ie->value.choice.UE_S1AP_IDs.choice.mME_UE_S1AP_ID;
         
         RB_FOREACH(ue_desc_p, s1ap_ue_map, &mme_desc_p->s1ap_eNB_instance->s1ap_ue_head)
@@ -1087,7 +1063,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
           {
             enb_ue_s1ap_id = ue_desc_p->eNB_ue_s1ap_id;
             
-            message_p = itti_alloc_new_message(TASK_S1AP, S1AP_UE_CONTEXT_RELEASE_COMMAND);
+            message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_UE_CONTEXT_RELEASE_COMMAND);
             S1AP_UE_CONTEXT_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
             itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
             

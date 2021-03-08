@@ -24,8 +24,7 @@
 
 struct s1ap_eNB_mme_data_s *
 s1ap_eNB_nnsf_select_mme(s1ap_eNB_instance_t       *instance_p,
-                         rrc_establishment_cause_t  cause,
-                         uint32_t                   plmn_id);
+                         rrc_establishment_cause_t  cause);
 
 struct s1ap_eNB_mme_data_s *
 s1ap_eNB_nnsf_select_mme_by_plmn_id(s1ap_eNB_instance_t       *instance_p,

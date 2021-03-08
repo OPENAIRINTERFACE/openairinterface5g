@@ -139,8 +139,7 @@ int s1ap_eNB_handle_nas_first_req(
          */
         mme_desc_p = s1ap_eNB_nnsf_select_mme(
                        instance_p,
-                       s1ap_nas_first_req_p->establishment_cause,
-                       s1ap_nas_first_req_p->selected_plmn_identity);
+                       s1ap_nas_first_req_p->establishment_cause);
 
         if (mme_desc_p) {
             S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
@@ -233,9 +232,9 @@ int s1ap_eNB_handle_nas_first_req(
     MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,
                                   0, // Cell ID
                                   &ie->value.choice.EUTRAN_CGI.cell_ID);
-    MCC_MNC_TO_TBCD(instance_p->mcc[mme_desc_p->broadcast_plmn_index[0]],
-                    instance_p->mnc[mme_desc_p->broadcast_plmn_index[0]],
-                    instance_p->mnc_digit_length[mme_desc_p->broadcast_plmn_index[0]],
+    MCC_MNC_TO_TBCD(instance_p->mcc[ue_desc_p->selected_plmn_identity],
+                    instance_p->mnc[ue_desc_p->selected_plmn_identity],
+                    instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
                     &ie->value.choice.EUTRAN_CGI.pLMNidentity);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* Set the establishment cause according to those provided by RRC */

@@ -102,8 +102,7 @@ struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME(
   temp.assoc_id = assoc_id;
   temp.cnx_id   = cnx_id;
 
-  if( cnx_id != 0 )
-  {
+  if( cnx_id != 0 ) {
     if (instance_p == NULL) {
       STAILQ_FOREACH(instance_p, &s1ap_eNB_internal_data.s1ap_eNB_instances_head,
                      s1ap_eNB_entries) {
@@ -116,29 +115,19 @@ struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME(
     } else {
       return RB_FIND(s1ap_mme_map, &instance_p->s1ap_mme_head, &temp);
     }
-  }
-  else
-  {
-    if (instance_p == NULL)
-    {
+  } else {
+    if (instance_p == NULL) {
       STAILQ_FOREACH(instance_p, &s1ap_eNB_internal_data.s1ap_eNB_instances_head,
-                     s1ap_eNB_entries)
-      {
-        RB_FOREACH(mme_p, s1ap_mme_map, &instance_p->s1ap_mme_head)
-        {
-          if( mme_p->assoc_id == assoc_id )
-          {
+                     s1ap_eNB_entries) {
+        RB_FOREACH(mme_p, s1ap_mme_map, &instance_p->s1ap_mme_head) {
+          if( mme_p->assoc_id == assoc_id ) {
             return mme_p;
           }
         }
       }
-    }
-    else
-    {
-      RB_FOREACH(mme_p, s1ap_mme_map, &instance_p->s1ap_mme_head)
-      {
-        if( mme_p->assoc_id == assoc_id )
-        {
+    } else {
+      RB_FOREACH(mme_p, s1ap_mme_map, &instance_p->s1ap_mme_head) {
+        if( mme_p->assoc_id == assoc_id ) {
           return mme_p;
         }
       }
