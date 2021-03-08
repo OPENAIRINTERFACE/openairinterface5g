@@ -8563,16 +8563,16 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         }
 
         F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc[0];
-        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc[0];
-        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length[0];
-        F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
-        F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mcc                           = rrc->configuration.mcc[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
 
         if (rrc->carrier[0].SIB23) {
-          F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][num_SI]        = rrc->carrier[0].SIB23;
-          F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][num_SI] = rrc->carrier[0].sizeof_SIB23;
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[num_SI]        = rrc->carrier[0].SIB23;
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[num_SI] = rrc->carrier[0].sizeof_SIB23;
           //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]);
           //for (int n = 0; n < F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]; n++)
           //  printf("%02x ", F1AP_SETUP_RESP(msg_p).SI_container[0][num_SI][n]);
@@ -8580,7 +8580,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           num_SI++;
         }
 
-        F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].num_SI = num_SI;
         cu_cell_ind++;
         found_cell=1;
         F1AP_SETUP_RESP (msg_p).num_cells_to_activate = cu_cell_ind;

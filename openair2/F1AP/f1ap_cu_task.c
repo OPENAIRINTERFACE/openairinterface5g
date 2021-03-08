@@ -172,6 +172,14 @@ void *F1AP_CU_task(void *arg) {
                                                &F1AP_SETUP_RESP(received_msg));
         break;
 
+      case F1AP_GNB_CU_CONFIGURATION_UPDATE: // from rrc
+        LOG_I(F1AP, "CU Task Received F1AP_GNB_CU_CONFIGURAITON_UPDATE\n");
+        // CU_send_f1setup_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        //                                       &F1AP_SETUP_RESP(received_msg));
+        CU_send_gNB_CU_CONFIGURATION_UPDATE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+					    &F1AP_GNB_CU_CONFIGURATION_UPDATE(received_msg));
+        break;
+
       case F1AP_DL_RRC_MESSAGE: // from rrc
         LOG_I(F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),

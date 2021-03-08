@@ -159,6 +159,14 @@ void *F1AP_DU_task(void *arg) {
         du_task_send_sctp_association_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
+      case F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE:
+	DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+							&F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(received_msg));
+	break;
+      case F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE:
+	DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+						    &F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(received_msg));
+	break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon

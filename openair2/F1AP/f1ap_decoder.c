@@ -49,6 +49,11 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
       break;
 
+    case F1AP_ProcedureCode_id_gNBCUConfigurationUpdate:
+      //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_gNBCUConfigurationUpdate\n", __func__);
+      break;
+
     case F1AP_ProcedureCode_id_InitialULRRCMessageTransfer:
       //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_InitialULRRCMessageTransfer\n", __func__);
@@ -152,7 +157,7 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
                         0,
                         0);
 
-  if (asn1_decoder_xer_print) {
+  if (1 /*asn1_decoder_xer_print*/) {
     LOG_E(F1AP, "----------------- ASN1 DECODER PRINT START----------------- \n");
     xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
     LOG_E(F1AP, "----------------- ASN1 DECODER PRINT END ----------------- \n");
@@ -160,7 +165,7 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
   //LOG_I(F1AP, "f1ap_decode_pdu.dec_ret.code = %d\n", dec_ret.code);
 
   if (dec_ret.code != RC_OK) {
-    LOG_E(F1AP, "Failed to decode pdu\n");
+    AssertFatal(1==0,"Failed to decode pdu\n");
     return -1;
   }
 

@@ -43,10 +43,8 @@ extern RAN_CONTEXT_t RC;
 int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
 
 int to_NRNRB(int nrb) {
-
   for (int i=0;i<29;i++) if (nrb_lut[i] == nrb) return i;
-  AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n");
-
+  AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
 }
 
 int DU_handle_RESET(instance_t instance,
@@ -495,7 +493,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 
           cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
 
-          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i], F1AP_SETUP_RESP (msg_p).mnc_digit_length[i]);
+          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc_digit_length);
           AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
           LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
                 cell->nRCGI.nRCellIdentity.buf[0],
@@ -504,7 +502,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                 cell->nRCGI.nRCellIdentity.buf[3],
                 cell->nRCGI.nRCellIdentity.buf[4]);
           BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
-          F1AP_SETUP_RESP (msg_p).nr_cellid[i]);
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid);
            F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
           AssertFatal(ext!=NULL,"Extension is null\n");
 
@@ -521,20 +519,20 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   */
               case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation:
               {
-                F1AP_SETUP_RESP (msg_p).nrpci[i] = *cell->nRPCI;
+                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nrpci = *cell->nRPCI;
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t*)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
-                F1AP_SETUP_RESP (msg_p).num_SI[i] = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
+                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
                 LOG_D(F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
-                      i, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i],
-                      F1AP_SETUP_RESP (msg_p).nr_cellid[i], F1AP_SETUP_RESP (msg_p).num_SI[i]);
+                      i, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc,
+                      F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI);
                 for (int si = 0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                   size_t size = sib_item->sIBmessage.size;
-                  F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si] = size;
                   LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
-                  F1AP_SETUP_RESP (msg_p).SI_container[i][si] = malloc(F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
-                  memcpy((void*)F1AP_SETUP_RESP (msg_p).SI_container[i][si],
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si]);
+                  memcpy((void*)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si],
                           (void*)sib_item->sIBmessage.buf,
                           size);
                 }
@@ -567,12 +565,12 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
     } // switch ie
   } // for IE
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
-  AssertFatal(num_cells_to_activate>0,"No cells activated\n");
+  LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
   F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
   // tmp
   // F1AP_SETUP_RESP (msg_p).num_SI[0] = 1;
   for (int i=0;i<num_cells_to_activate;i++)
-    AssertFatal(F1AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
+    AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
 
   MSC_LOG_RX_MESSAGE(
   MSC_F1AP_DU,
@@ -1051,17 +1049,191 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                                 uint32_t assoc_id,
                                 uint32_t stream,
                                 F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+
+  LOG_D(F1AP, "DU_handle_gNB_CU_CONFIGURATION_UPDATE\n");
+
+  AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_initiatingMessage,
+        "pdu->present != F1AP_F1AP_PDU_PR_initiatingMessage\n");
+  AssertFatal(pdu->choice.initiatingMessage->procedureCode  == F1AP_ProcedureCode_id_gNBCUConfigurationUpdate,
+        "pdu->choice.initiatingMessage->procedureCode != F1AP_ProcedureCode_id_gNBCUConfigurationUpdate\n");
+  AssertFatal(pdu->choice.initiatingMessage->criticality  == F1AP_Criticality_reject,
+        "pdu->choice.initiatingMessage->criticality != F1AP_Criticality_reject\n");
+  AssertFatal(pdu->choice.initiatingMessage->value.present  == F1AP_InitiatingMessage__value_PR_GNBCUConfigurationUpdate,
+        "pdu->choice.initiatingMessage->value.present != F1AP_InitiatingMessage__value_PR_GNBCUConfigurationUpdate\n");
+
+  F1AP_GNBCUConfigurationUpdate_t *in = &pdu->choice.initiatingMessage->value.choice.GNBCUConfigurationUpdate;
+
+
+  F1AP_GNBCUConfigurationUpdateIEs_t *ie;
+  int TransactionId = -1;
+  int num_cells_to_activate = 0;
+  F1AP_Cells_to_be_Activated_List_Item_t *cell;
+
+  MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
+
+  LOG_D(F1AP, "F1AP: gNB_CU_Configuration_Update: protocolIEs.list.count %d\n",
+        in->protocolIEs.list.count);
+  for (int i=0;i < in->protocolIEs.list.count; i++) {
+    ie = in->protocolIEs.list.array[i];
+    switch (ie->id) {
+      case F1AP_ProtocolIE_ID_id_TransactionID:
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+        "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID,
+        "ie->value.present != F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID\n");
+        TransactionId=ie->value.choice.TransactionID;
+        LOG_D(F1AP, "F1AP: GNB-CU-ConfigurationUpdate: TransactionId %d\n",
+              TransactionId);
+        break;
+      case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List:
+      {
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+          "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Activated_List,
+          "ie->value.present != F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Activated_List\n");
+        num_cells_to_activate = ie->value.choice.Cells_to_be_Activated_List.list.count;
+        LOG_D(F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
+        for (int i=0;i<num_cells_to_activate;i++) {
+
+          F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *) ie->value.choice.Cells_to_be_Activated_List.list.array[i];
+
+          AssertFatal(cells_to_be_activated_list_item_ies->id == F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item,
+              "cells_to_be_activated_list_item_ies->id != F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item");
+          AssertFatal(cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject,
+                "cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject");
+          AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
+                "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
+
+          cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
+
+          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc_digit_length);
+          AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
+          LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
+                cell->nRCGI.nRCellIdentity.buf[0],
+                cell->nRCGI.nRCellIdentity.buf[1],
+                cell->nRCGI.nRCellIdentity.buf[2],
+                cell->nRCGI.nRCellIdentity.buf[3],
+                cell->nRCGI.nRCellIdentity.buf[4]);
+          BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
+          F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid);
+           F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
+          AssertFatal(ext!=NULL,"Extension is null\n");
+
+          for (int cnt=0;cnt<ext->list.count;cnt++) {
+            F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
+            switch (cells_to_be_activated_list_itemExtIEs->id) {
+  /*
+                case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_NOTHING:
+                case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation,
+                case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailablePLMNList,
+                case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_ExtendedAvailablePLMN_List,
+                case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_IAB_Info_IAB_donor_CU,
+                case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailableSNPN_ID_List
+  */
+              case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation:
+              {
+                F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nrpci = *cell->nRPCI;
+                F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t*)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
+                F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
+                AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
+                LOG_D(F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                      i, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc,
+                      F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI);
+                for (int si = 0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
+                  F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
+                  size_t size = sib_item->sIBmessage.size;
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si] = size;
+                  LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si]);
+                  memcpy((void*)F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si],
+                          (void*)sib_item->sIBmessage.buf,
+                          size);
+                }
+                break;
+              }
+              case F1AP_ProtocolIE_ID_id_AvailablePLMNList:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+              case F1AP_ProtocolIE_ID_id_ExtendedAvailablePLMN_List:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+              case F1AP_ProtocolIE_ID_id_IAB_Info_IAB_donor_CU:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+              case F1AP_ProtocolIE_ID_id_AvailableSNPN_ID_List:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+              default:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id %d unknown\n",(int)cells_to_be_activated_list_itemExtIEs->id);
+                break;
+            }
+          } // for (cnt=...
+        } // for (cells_to_activate...
+        break;
+      } // case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List
+
+      default:
+        AssertFatal(1==0,"F1AP_ProtocolIE_ID_id %d unknown\n", (int)ie->id);
+        break;
+    } // switch ie
+  } // for IE
+  AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
+  LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
+  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_cells_to_activate = num_cells_to_activate;
+  // tmp
+  // F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_SI[0] = 1;
+  for (int i=0;i<num_cells_to_activate;i++)
+    AssertFatal(F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
+
+  MSC_LOG_RX_MESSAGE(
+  MSC_F1AP_DU,
+  MSC_F1AP_CU,
+  0,
+  0,
+  MSC_AS_TIME_FMT" DU_handle_GNB_CU_CONFIGURATION_UPDATE initiatingMessage assoc_id %d",
+  0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+  assoc_id);
+
+  if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+    LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message to GNB_APP with assoc_id (%d->%d)\n",
+         assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
+    itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  } else {
+    LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message to ENB_APP with assoc_id (%d->%d)\n",
+         assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
+    itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  }
+
+  return 0;
 }
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
-  AssertFatal(1==0,"Not implemented yet\n");
+						f1ap_gnb_cu_configuration_update_failure_t *GNBCUConfigurationUpdateFailure) {
+  AssertFatal(1==0,"received gNB CU CONFIGURATION UPDATE FAILURE with cause %d\n",
+	      GNBCUConfigurationUpdateFailure->cause);
 }
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
-  AssertFatal(1==0,"Not implemented yet\n");
+						    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated == 0,
+	      "%d cells failed to activate\n",
+	      GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated);
+
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_to_setup == 0,
+	      "%d TNLAssociations to setup, handle this ...\n",
+	      GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_to_setup);
+
+
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_failed == 0,
+	      "%d TNLAssociations failed\n",
+	      GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_failed);
+  
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs == 0,
+	      "%d DedicatedSIDeliveryNeededUEs\n",
+	      GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs);
+
+  return 0;
 }
 
 

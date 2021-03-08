@@ -2353,7 +2353,7 @@ rrc_gNB_decode_dcch(
 void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
   LOG_I(NR_RRC,"Received F1 Setup Request from gNB_DU %llu (%s)\n",(unsigned long long int)f1_setup_req->gNB_DU_id,f1_setup_req->gNB_DU_name);
   int cu_cell_ind = 0;
-  MessageDef *msg_p = NULL;
+  MessageDef *msg_p = NULL,*msg_p2=NULL;
 
   for (int i = 0; i < f1_setup_req->num_cells_available; i++) {
     int found_cell=0;
@@ -2406,32 +2406,39 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
                     "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
         rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
         rrc->carrier.physCellId = f1_setup_req->nr_pci[i];
+	if (cu_cell_ind == 0) {
+	  // prepare F1_SETUP_RESPONSE + GNB_CU_CONFIGURATION_UPDATE
+	  if (msg_p == NULL) {
+	    msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
+	  }
+	  if (msg_p2 == NULL) {
+	    msg_p2 = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
+	  }
+	  
+	  F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
+	  F1AP_SETUP_RESP (msg_p).num_cells_to_activate = 0;
 
-        // prepare F1_SETUP_RESPONSE
-        if (msg_p == NULL) {
-          msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
-        }
+	}
 
-        F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc[0];
-        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc[0];
-        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length[0];
-        F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
-        F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;	
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mcc                           = rrc->configuration.mcc[0];
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
 
         if (rrc->carrier.SIB23) {
-          F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][2]        = rrc->carrier.SIB23;
-          F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][2] = rrc->carrier.sizeof_SIB23;
+          F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].SI_container[2]        = rrc->carrier.SIB23;
+          F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].SI_container_length[2] = rrc->carrier.sizeof_SIB23;
           num_SI++;
         }
 
-        F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
+        F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].num_SI = num_SI;
         cu_cell_ind++;
         found_cell=1;
-        F1AP_SETUP_RESP (msg_p).num_cells_to_activate = cu_cell_ind;
-        // send ITTI message to F1AP-CU task
-        itti_send_msg_to_task (TASK_CU_F1, GNB_MODULE_ID_TO_INSTANCE(j), msg_p);
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).num_cells_to_activate = cu_cell_ind;
+	// send 
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
         LOG_W(NR_RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d rrc->nr_cellid/f1_setup_req->nr_cellid %ld/%ld \n",
@@ -2443,6 +2450,13 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 
     if (found_cell == 0) {
       AssertFatal(1 == 0, "No cell found\n");
+    }
+    else {
+      // send ITTI message to F1AP-CU task
+      itti_send_msg_to_task (TASK_CU_F1, 0, msg_p);
+
+      itti_send_msg_to_task (TASK_CU_F1, 0, msg_p2);
+
     }
 
     // handle other failure cases

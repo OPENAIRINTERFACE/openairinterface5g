@@ -42,6 +42,7 @@
 #include "ngap_gNB.h"
 #include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
+#include "F1AP_CauseRadioNetwork.h"
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
@@ -1698,9 +1699,11 @@ void configure_gnb_du_mac(int inst) {
                         );
 }
 
-void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
+
+int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
   int i, j, si_ind;
-  LOG_I(GNB_APP, "cells_to_activated %d, RRC instances %d\n",
+  int ret=0;
+  LOG_I(GNB_APP, "cells_to_activate %d, RRC instances %d\n",
         resp->num_cells_to_activate, RC.nb_nr_inst);
 
   for (j = 0; j < resp->num_cells_to_activate; j++) {
@@ -1708,27 +1711,85 @@ void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
       LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
-            j, i, RC.nrrrc[i]->nr_cellid, resp->nr_cellid[j]);
+            j, i, RC.nrrrc[i]->nr_cellid, resp->cells_to_activate[j].nr_cellid);
 
-      if (RC.nrrrc[i]->nr_cellid == resp->nr_cellid[j] &&
-          (du_check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
-           resp->nrpci[j] == carrier->physCellId)) {
+      if (RC.nrrrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid &&
+          (du_check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
+           resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=0; si_ind<resp->num_SI[j]; si_ind++)  {
+        for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   resp->SI_container[j][si_ind],
-                                   resp->SI_container_length[j][si_ind]);
+                                   resp->cells_to_activate[j].SI_container[si_ind],
+                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
         }
 
         // perform MAC/L1 common configuration
         configure_gnb_du_mac(i);
+	ret++;
       } else {
         LOG_E(GNB_APP, "F1 Setup Response not matching\n");
       }
     }
   }
+  return(ret);
+}
+
+int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_update_t *gnb_cu_cfg_update) {
+  int i, j, si_ind, ret=0;
+  LOG_I(GNB_APP, "cells_to_activate %d, RRC instances %d\n",
+        gnb_cu_cfg_update->num_cells_to_activate, RC.nb_nr_inst);
+
+  for (j = 0; j < gnb_cu_cfg_update->num_cells_to_activate; j++) {
+    for (i = 0; i < RC.nb_nr_inst; i++) {
+      rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
+      // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
+      LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, gnb_cu_cfg_updatenr_cellid %lx\n",
+            j, i, RC.nrrrc[i]->nr_cellid, gnb_cu_cfg_update->cells_to_activate[j].nr_cellid);
+
+      if (RC.nrrrc[i]->nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid &&
+          (du_check_plmn_identity(carrier, gnb_cu_cfg_update->cells_to_activate[j].mcc, gnb_cu_cfg_update->cells_to_activate[j].mnc, gnb_cu_cfg_update->cells_to_activate[j].mnc_digit_length)>0 &&
+           gnb_cu_cfg_update->cells_to_activate[j].nrpci == carrier->physCellId)) {
+        // copy system information and decode it
+        for (si_ind=0; si_ind<gnb_cu_cfg_update->cells_to_activate[j].num_SI; si_ind++)  {
+
+          du_extract_and_decode_SI(i,
+                                   si_ind,
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[si_ind],
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[si_ind]);
+        }
+
+        // perform MAC/L1 common configuration
+        configure_gnb_du_mac(i);
+	ret++;
+      } else {
+        LOG_E(GNB_APP, "GNB_CU_CONFIGURATION_UPDATE not matching\n");
+      }
+    }
+  }
+  MessageDef *msg_ack_p = NULL;
+  if (ret > 0) {
+    // generate gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE
+    msg_ack_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE);
+    F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(msg_ack_p).num_cells_failed_to_be_activated = 0;
+    F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(msg_ack_p).have_criticality = 0; 
+    F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(msg_ack_p).noofTNLAssociations_to_setup =0;
+    F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(msg_ack_p).noofTNLAssociations_failed = 0;
+    F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(msg_ack_p).noofDedicatedSIDeliveryNeededUEs = 0;
+    itti_send_msg_to_task (TASK_DU_F1, INSTANCE_DEFAULT, msg_ack_p);
+
+  }
+  else {
+    // generate gNB_CU_CONFIGURATION_UPDATE_FAILURE
+    msg_ack_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE);
+    F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(msg_ack_p).cause = F1AP_CauseRadioNetwork_cell_not_available;
+
+    itti_send_msg_to_task (TASK_DU_F1, INSTANCE_DEFAULT, msg_ack_p);
+
+  }
+
+  return(ret);
 }
 
 void set_node_type(void) {
