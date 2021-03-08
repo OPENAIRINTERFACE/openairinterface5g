@@ -101,7 +101,10 @@ uint16_t get_ssboffset_pointa(NR_ServingCellConfigCommon_t *scc,const long band)
 }
 
 
-void schedule_ssb(NR_ServingCellConfigCommon_t *scc, nfapi_nr_dl_tti_request_body_t *dl_req, int i_ssb, uint8_t scoffset, uint16_t offset_pointa, uint32_t payload) {
+void schedule_ssb(frame_t frame, sub_frame_t slot,
+                  NR_ServingCellConfigCommon_t *scc,
+                  nfapi_nr_dl_tti_request_body_t *dl_req,
+                  int i_ssb, uint8_t scoffset, uint16_t offset_pointa, uint32_t payload) {
 
   nfapi_nr_dl_tti_request_pdu_t  *dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -126,13 +129,14 @@ void schedule_ssb(NR_ServingCellConfigCommon_t *scc, nfapi_nr_dl_tti_request_bod
   dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = payload;
   dl_req->nPDUs++;
 
+  LOG_D(MAC,"Scheduling ssb %d at frame %d and slot %d\n",i_ssb,frame,slot);
+
 }
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, uint8_t slots_per_frame){
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
-
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
   nfapi_nr_dl_tti_request_body_t *dl_req;
   NR_MIB_t *mib = RC.nrrrc[module_idP]->carrier.mib.message.choice.mib;
@@ -195,7 +199,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
-                schedule_ssb(scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
+                schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
@@ -221,7 +225,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
-                schedule_ssb(scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
+                schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
@@ -247,7 +251,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
-                schedule_ssb(scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
+                schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
