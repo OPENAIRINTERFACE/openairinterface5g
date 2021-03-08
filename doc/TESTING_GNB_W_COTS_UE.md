@@ -30,8 +30,6 @@ http://www.saelig.com/MFR00066/ste2300.htm
 ## Configuration Overview
 
 * Non Standalone (NSA) configuration  : initial Control Plane established between UE and RAN eNB, then User Plane established between UE and gNB, Core network is 4G based supporting rel 15
-
-* Commercial UE: Oppo Reno 5G
 * OAI Software Defined gNB and eNB
 * eNB RF front end: USRP (ETTUS) B200 Mini or B210
 * gNB RF front end: USRP (ETTUS) B200 Mini or B210 (N310 will be needed for MIMO and wider BW's)
@@ -39,6 +37,17 @@ http://www.saelig.com/MFR00066/ste2300.htm
 * 5G FR1 Band n78 (3.5 GHz)
 * BW: 40MHz
 * Antenna scheme: SISO
+
+## COTS UEs 
+
+Our code might not work with all 5G phones yet, but we are constantly improving it. Here is a list of COTS UEs that we know that work with OAI. 
+
+*  Oppo Reno 5G
+*  Samsung A90 5G
+*  Google Pixel 5G
+*  Simcom SIMCOM8200EA 
+*  Quectel RM500Q-GL
+
 
 ## Repository
 
