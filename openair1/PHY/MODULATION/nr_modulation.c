@@ -602,17 +602,17 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
   const double Nu=2048*64*(1/(float)(1<<fp->numerology_index));
   const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
   const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
-  double tl=0,poff,exp_re,exp_im;
-  double Ncp,Ncpm1=Ncp0;
 
   for (uint8_t ll = 0; ll < 2; ll++){
 
     double f0 = f[ll];
+    double Ncpm1 = Ncp0;
     int16_t *symbol_rotation = fp->symbol_rotation[ll];
 
-    poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
+    double tl = 0;
+    double poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
+    double exp_re = cos(poff);
+    double exp_im = sin(-poff);
     symbol_rotation[0] = (int16_t)floor(exp_re * 32767);
     symbol_rotation[1] = (int16_t)floor(exp_im * 32767);
     LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
@@ -624,6 +624,7 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
     for (int l = 1; l < nsymb; l++) {
 
+      double Ncp;
       if (l == (7 * (1 << fp->numerology_index))) {
         Ncp = Ncp0;
       } else {
