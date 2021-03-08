@@ -485,7 +485,6 @@ add_custom_target (
 
 add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source} 
     ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c
-    ${OPENAIR2_DIR}/RRC/NR/nr_ngap_gNB.c
     )
 add_dependencies(NR_RRC_LIB nr_rrc_flag)
 include_directories ("${NR_RRC_FULL_DIR}")
@@ -1759,6 +1758,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_prach.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/NR_REFSIG/ul_ref_seq_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_csi_rs.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
@@ -1969,6 +1969,7 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_ue_manager.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_drb_am.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
   )
 
@@ -2110,10 +2111,10 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/mac_vars.c
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
+  ${NR_UE_MAC_DIR}/nr_ue_scheduler.c
   ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
   ${NR_UE_MAC_DIR}/nr_l1_helpers.c
   ${NR_UE_MAC_DIR}/nr_ra_procedures.c
-  ${NR_UE_MAC_DIR}/rar_tools_nrUE.c
 )
 
 set (ENB_APP_SRC
@@ -2133,7 +2134,23 @@ set (MCE_APP_SRC
   ${OPENAIR2_DIR}/MCE_APP/mce_app.c
   ${OPENAIR2_DIR}/MCE_APP/mce_config.c
   )
+set (MISC_NFAPI_LTE
+ ${OPENAIR1_DIR}/SCHED/nfapi_lte_dummy.c
+ )
 
+
+add_library(MISC_NFAPI_LTE_LIB
+  ${MISC_NFAPI_LTE}
+ )
+
+set (MISC_NFAPI_NR
+ ${OPENAIR1_DIR}/SCHED/nfapi_nr_dummy.c
+ )
+
+
+add_library(MISC_NFAPI_NR_LIB
+  ${MISC_NFAPI_NR}
+ )
 add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
@@ -2588,6 +2605,13 @@ if(ITTI_SIM)
 
   set(libnrnas_emm_msg_OBJS
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationAccept.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSIdentityResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSNASSecurityModeComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSUplinkNasTransport.c
+    ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishRequest.c
   )
 
   set(libnrnas_ies_OBJS
@@ -2595,8 +2619,11 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/IES/FGSMobileIdentity.c
     ${NAS_SRC}COMMON/IES/FGSRegistrationType.c
     ${NAS_SRC}COMMON/IES/SpareHalfOctet.c
+    ${NAS_SRC}COMMON/IES/FGSRegistrationResult.c
     ${NAS_SRC}COMMON/IES/FGMMCapability.c
     ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
+    ${NAS_SRC}COMMON/IES/FGCNasMessageContainer.c
+    ${NAS_SRC}COMMON/IES/SORTransparentContainer.c
   )
 
   add_library(LIB_NAS_SIMUE
@@ -2876,7 +2903,7 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag oai_iqplayer)
 target_link_libraries (lte-softmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
-  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7
+  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB LFDS7
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
   
@@ -2917,7 +2944,7 @@ add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer coding params_l
 target_link_libraries (ocp-enb
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
-  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7 SIMU_COMMON
+  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7 SIMU_COMMON
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
 target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${LIB_LMS_LIBRARIES} ${T_LIB})
@@ -2987,7 +3014,7 @@ target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP F1AP_LIB
   GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
-  PHY_UE PHY_RU LFDS L2_UE L2_LTE LFDS7 SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  PHY_UE PHY_RU LFDS L2_UE L2_LTE LFDS7 SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
@@ -3070,7 +3097,7 @@ target_link_libraries (ocp-gnb
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
-  S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB SIMU_COMMON
   -Wl,--end-group z dl)
 
@@ -3114,6 +3141,8 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
   NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB
   -Wl,--end-group z dl)
@@ -3233,6 +3262,7 @@ add_executable(nr_dlschsim
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3247,6 +3277,7 @@ add_executable(nr_pbchsim
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3263,6 +3294,7 @@ add_executable(nr_pucchsim
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3281,12 +3313,13 @@ add_executable(nr_dlsim
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${NFAPI_USER_DIR}/nfapi.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )   
 target_link_libraries(nr_dlsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
@@ -3300,11 +3333,12 @@ add_executable(nr_prachsim
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${NFAPI_USER_DIR}/nfapi.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 add_executable(nr_ulschsim
@@ -3337,7 +3371,7 @@ add_executable(nr_ulsim
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_ulsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)

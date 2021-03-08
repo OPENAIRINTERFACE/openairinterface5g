@@ -196,7 +196,7 @@ void s1ap_handle_s1_setup_message(s1ap_eNB_mme_data_t *mme_desc_p, int sctp_shut
       /* If there are no more associated MME, inform eNB app */
       if (mme_desc_p->s1ap_eNB_instance->s1ap_mme_associated_nb == 0) {
         MessageDef                 *message_p;
-        message_p = itti_alloc_new_message(TASK_S1AP, S1AP_DEREGISTERED_ENB_IND);
+        message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_DEREGISTERED_ENB_IND);
         S1AP_DEREGISTERED_ENB_IND(message_p).nb_mme = 0;
         itti_send_msg_to_task(TASK_ENB_APP, mme_desc_p->s1ap_eNB_instance->instance, message_p);
       }
@@ -214,7 +214,7 @@ void s1ap_handle_s1_setup_message(s1ap_eNB_mme_data_t *mme_desc_p, int sctp_shut
     /* If there are no more pending messages, inform eNB app */
     if (mme_desc_p->s1ap_eNB_instance->s1ap_mme_pending_nb == 0) {
       MessageDef                 *message_p;
-      message_p = itti_alloc_new_message(TASK_S1AP, S1AP_REGISTER_ENB_CNF);
+      message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_REGISTER_ENB_CNF);
       S1AP_REGISTER_ENB_CNF(message_p).nb_mme = mme_desc_p->s1ap_eNB_instance->s1ap_mme_associated_nb;
       itti_send_msg_to_task(TASK_ENB_APP, mme_desc_p->s1ap_eNB_instance->instance, message_p);
     }
@@ -889,7 +889,7 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
 
   ue_desc_p->rx_stream = stream;
   ue_desc_p->mme_ue_s1ap_id = mme_ue_s1ap_id;
-  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_INITIAL_CONTEXT_SETUP_REQ);
+  message_p        = itti_alloc_new_message(TASK_S1AP, 0, S1AP_INITIAL_CONTEXT_SETUP_REQ);
   S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
   S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).eNB_ue_s1ap_id = ue_desc_p->eNB_ue_s1ap_id;
@@ -909,31 +909,6 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
     return -1;
   }
 
-  /* id-UESecurityCapabilities */
-  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
-                             S1AP_ProtocolIE_ID_id_UESecurityCapabilities, true);
-
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.encryption_algorithms =
-      BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.encryptionAlgorithms);
-    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.integrity_algorithms =
-      BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.integrityProtectionAlgorithms);
-    /* id-SecurityKey : Copy the security key */
-  } else {/* ie != NULL */
-    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    return -1;
-  }
-
-  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
-                             S1AP_ProtocolIE_ID_id_SecurityKey, true);
-
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    memcpy(&S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_key,
-           ie->value.choice.SecurityKey.buf, ie->value.choice.SecurityKey.size);
-  } else {/* ie != NULL */
-    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    return -1;
-  }
 
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_E_RABToBeSetupListCtxtSUReq, true);
@@ -981,7 +956,47 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
     return -1;
   }
 
-    itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
+  /* id-UESecurityCapabilities */
+  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
+                             S1AP_ProtocolIE_ID_id_UESecurityCapabilities, true);
+
+  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.encryption_algorithms =
+      BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.encryptionAlgorithms);
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.integrity_algorithms =
+      BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.integrityProtectionAlgorithms);
+  } else {/* ie != NULL */
+    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
+    return -1;
+  }
+
+  /* id-SecurityKey : Copy the security key */
+  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
+                             S1AP_ProtocolIE_ID_id_SecurityKey, true);
+
+  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
+    memcpy(&S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_key,
+           ie->value.choice.SecurityKey.buf, ie->value.choice.SecurityKey.size);
+  } else {/* ie != NULL */
+    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
+    return -1;
+  }
+  
+  /* id-NRUESecurityCapabilities */
+  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_InitialContextSetupRequestIEs_t, ie, container,
+                             S1AP_ProtocolIE_ID_id_NRUESecurityCapabilities, false);
+  if (ie != NULL) {
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.encryption_algorithms =
+      BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRencryptionAlgorithms);
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.integrity_algorithms =
+      BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRintegrityProtectionAlgorithms);
+  } else {
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.encryption_algorithms = 0;
+    S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).nr_security_capabilities.integrity_algorithms = 0;
+  }
+  
+  itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
+
   return 0;
 }
 
@@ -1045,7 +1060,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
             NULL,0,
             "0 S1AP_UE_CONTEXT_RELEASE_COMMAND/%d eNB_ue_s1ap_id "S1AP_UE_ID_FMT" ",
             enb_ue_s1ap_id);
-          message_p    = itti_alloc_new_message(TASK_S1AP, S1AP_UE_CONTEXT_RELEASE_COMMAND);
+          message_p    = itti_alloc_new_message(TASK_S1AP, 0, S1AP_UE_CONTEXT_RELEASE_COMMAND);
 
           if (ue_desc_p->mme_ue_s1ap_id == 0) { // case of Detach Request and switch off from RRC_IDLE mode
             ue_desc_p->mme_ue_s1ap_id = mme_ue_s1ap_id;
@@ -1160,7 +1175,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
               ue_desc_p->mme_ue_s1ap_id, mme_ue_s1ap_id);
   }
 
-  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_E_RAB_SETUP_REQ);
+  message_p        = itti_alloc_new_message(TASK_S1AP, 0, S1AP_E_RAB_SETUP_REQ);
   S1AP_E_RAB_SETUP_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   S1AP_E_RAB_SETUP_REQ(message_p).mme_ue_s1ap_id  = mme_ue_s1ap_id;
   S1AP_E_RAB_SETUP_REQ(message_p).eNB_ue_s1ap_id  = enb_ue_s1ap_id;
@@ -1248,7 +1263,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
     return -1;
   }
 
-  message_p = itti_alloc_new_message(TASK_S1AP, S1AP_PAGING_IND);
+  message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_PAGING_IND);
   /* convert S1AP_PagingIEs_t to s1ap_paging_ind_t */
   /* id-UEIdentityIndexValue : convert UE Identity Index value */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PagingIEs_t, ie, container,
@@ -1451,7 +1466,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
   if (ue_desc_p->mme_ue_s1ap_id != mme_ue_s1ap_id) {
     S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
               ue_desc_p->mme_ue_s1ap_id, mme_ue_s1ap_id);
-    message_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFY_RESP);
+    message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, S1AP_E_RAB_MODIFY_RESP);
     S1AP_E_RAB_MODIFY_RESP (message_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_E_RABModifyRequestIEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_E_RABToBeModifiedListBearerModReq, true);
@@ -1478,7 +1493,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
     return -1;
   }
 
-  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_E_RAB_MODIFY_REQ);
+  message_p        = itti_alloc_new_message(TASK_S1AP, 0, S1AP_E_RAB_MODIFY_REQ);
   S1AP_E_RAB_MODIFY_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   S1AP_E_RAB_MODIFY_REQ(message_p).mme_ue_s1ap_id  = mme_ue_s1ap_id;
   S1AP_E_RAB_MODIFY_REQ(message_p).eNB_ue_s1ap_id  = enb_ue_s1ap_id;
@@ -1590,7 +1605,7 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
 
   S1AP_DEBUG("[SCTP %d] Received E-RAB release command for eNB_UE_S1AP_ID %ld mme_ue_s1ap_id %ld\n",
              assoc_id, enb_ue_s1ap_id, mme_ue_s1ap_id);
-  message_p = itti_alloc_new_message(TASK_S1AP, S1AP_E_RAB_RELEASE_COMMAND);
+  message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_E_RAB_RELEASE_COMMAND);
   S1AP_E_RAB_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
   S1AP_E_RAB_RELEASE_COMMAND(message_p).mme_ue_s1ap_id = mme_ue_s1ap_id;
   /* id-E-RABToBeReleasedList */
@@ -1659,7 +1674,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   }
 
   // send a message to RRC
-  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_PATH_SWITCH_REQ_ACK);
+  message_p        = itti_alloc_new_message(TASK_S1AP, 0, S1AP_PATH_SWITCH_REQ_ACK);
   /* mandatory */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
                              S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);

@@ -580,16 +580,42 @@ function report_build {
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
     sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
 
-    summary_table_header "OAI Build: 4G LTE eNB -- USRP option" ./archives/enb_usrp
-    summary_table_row "LTE SoftModem - Release 15" ./archives/enb_usrp/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_usrp_row1.html
-    summary_table_row "Coding - Release 15" ./archives/enb_usrp/coding.Rel15.txt "Built target coding" ./enb_usrp_row2.html
-    summary_table_row "OAI USRP device if - Release 15" ./archives/enb_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
-    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/enb_usrp/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./enb_usrp_row4.html
-    summary_table_row "Parameters Lib Config - Release 15" ./archives/enb_usrp/params_libconfig.Rel15.txt "Built target params_libconfig" ./enb_usrp_row5.html
-    summary_table_row "NASMESH - Release 15" ./archives/enb_usrp/nasmesh.Rel15.txt "Built target nasmesh" ./enb_usrp_row6.html
-    summary_table_row "RB Tool - Release 15" ./archives/enb_usrp/rb_tool.Rel15.txt "Built target rb_tool" ./enb_usrp_row7.html
-    summary_table_row "RF Simulator - Release 15" ./archives/enb_usrp/rfsimulator.Rel15.txt "Built target rfsimulator" ./enb_usrp_row8.html
-    summary_table_row "TCP Bridge - Release 15" ./archives/enb_usrp/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_usrp_row9.html
+#    summary_table_header "OAI Build: 4G LTE eNB -- USRP option" ./archives/enb_usrp
+#    summary_table_row "LTE SoftModem - Release 15" ./archives/enb_usrp/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_usrp_row1.html
+#    summary_table_row "Coding - Release 15" ./archives/enb_usrp/coding.Rel15.txt "Built target coding" ./enb_usrp_row2.html
+#    summary_table_row "OAI USRP device if - Release 15" ./archives/enb_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
+#    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/enb_usrp/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./enb_usrp_row4.html
+#    summary_table_row "Parameters Lib Config - Release 15" ./archives/enb_usrp/params_libconfig.Rel15.txt "Built target params_libconfig" ./enb_usrp_row5.html
+#    summary_table_row "NASMESH - Release 15" ./archives/enb_usrp/nasmesh.Rel15.txt "Built target nasmesh" ./enb_usrp_row6.html
+#    summary_table_row "RB Tool - Release 15" ./archives/enb_usrp/rb_tool.Rel15.txt "Built target rb_tool" ./enb_usrp_row7.html
+#    summary_table_row "RF Simulator - Release 15" ./archives/enb_usrp/rfsimulator.Rel15.txt "Built target rfsimulator" ./enb_usrp_row8.html
+#    summary_table_row "TCP Bridge - Release 15" ./archives/enb_usrp/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_usrp_row9.html
+#    summary_table_footer
+#
+    summary_table_header "OAI Build: 4G LTE eNB -- USRP option" ./archives/enb_eth
+    summary_table_row "LTE SoftModem - Release 15" ./archives/enb_eth/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_eth_row1.html
+    summary_table_row "Coding - Release 15" ./archives/enb_eth/coding.Rel15.txt "Built target coding" ./enb_eth_row2.html
+    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/enb_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
+    summary_table_row "Parameters Lib Config - Release 15" ./archives/enb_eth/params_libconfig.Rel15.txt "Built target params_libconfig" ./enb_eth_row4.html
+    summary_table_row "RF Simulator - Release 15" ./archives/enb_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./enb_eth_row5.html
+    summary_table_row "TCP OAI Bridge - Release 15" ./archives/enb_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_eth_row6.html
+    summary_table_row "OAI USRP device if - Release 15" ./archives/enb_eth/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_eth_row7.html
+    summary_table_row "NASMESH - Release 15" ./archives/enb_eth/nasmesh.Rel15.txt "Built target nasmesh" ./enb_eth_row8.html
+    summary_table_row "RB Tool - Release 15" ./archives/enb_eth/rb_tool.Rel15.txt "Built target rb_tool" ./enb_eth_row9.html
+    summary_table_footer
+
+    summary_table_header "OAI Build: 4G LTE UE -- USRP option" ./archives/ue_eth
+    summary_table_row "LTE UE SoftModem - Release 15" ./archives/ue_eth/lte-uesoftmodem.Rel15.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
+    summary_table_row "Coding - Release 15" ./archives/ue_eth/coding.Rel15.txt "Built target coding" ./ue_eth_row2.html
+    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/ue_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
+    summary_table_row "Parameters Lib Config - Release 15" ./archives/ue_eth/params_libconfig.Rel15.txt "Built target params_libconfig" ./ue_eth_row4.html
+    summary_table_row "RF Simulator - Release 15" ./archives/ue_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./ue_eth_row5.html
+    summary_table_row "TCP OAI Bridge - Release 15" ./archives/ue_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./ue_eth_row6.html
+    summary_table_row "Conf 2 UE Data - Release 15" ./archives/ue_eth/conf2uedata.Rel15.txt "Built target conf2uedata" ./ue_eth_row7.html
+    summary_table_row "NVRAM - Release 15" ./archives/ue_eth/nvram.Rel15.txt "Built target nvram" ./ue_eth_row8.html
+    summary_table_row "UE IP - Release 15" ./archives/ue_eth/ue_ip.Rel15.txt "Built target ue_ip" ./ue_eth_row9.html
+    summary_table_row "USIM - Release 15" ./archives/ue_eth/usim.Rel15.txt "Built target usim" ./ue_eth_row9a.html
+    summary_table_row "OAI USRP device if - Release 15" ./archives/ue_eth/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./ue_eth_row9b.html
     summary_table_footer
 
     summary_table_header "OAI Build: 4G LTE basic simulator option" ./archives/basic_sim
@@ -676,28 +702,6 @@ function report_build {
         summary_table_footer
     fi
 
-    summary_table_header "OAI Build: 4G LTE eNB -- ETHERNET transport option" ./archives/enb_eth
-    summary_table_row "LTE SoftModem - Release 15" ./archives/enb_eth/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_eth_row1.html
-    summary_table_row "Coding - Release 15" ./archives/enb_eth/coding.Rel15.txt "Built target coding" ./enb_eth_row2.html
-    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/enb_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
-    summary_table_row "Parameters Lib Config - Release 15" ./archives/enb_eth/params_libconfig.Rel15.txt "Built target params_libconfig" ./enb_eth_row4.html
-    summary_table_row "RF Simulator - Release 15" ./archives/enb_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./enb_eth_row5.html
-    summary_table_row "TCP OAI Bridge - Release 15" ./archives/enb_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_eth_row6.html
-    summary_table_footer
-
-    summary_table_header "OAI Build: 4G LTE UE -- ETHERNET transport option" ./archives/ue_eth
-    summary_table_row "LTE UE SoftModem - Release 15" ./archives/ue_eth/lte-uesoftmodem.Rel15.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
-    summary_table_row "Coding - Release 15" ./archives/ue_eth/coding.Rel15.txt "Built target coding" ./ue_eth_row2.html
-    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/ue_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
-    summary_table_row "Parameters Lib Config - Release 15" ./archives/ue_eth/params_libconfig.Rel15.txt "Built target params_libconfig" ./ue_eth_row4.html
-    summary_table_row "RF Simulator - Release 15" ./archives/ue_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./ue_eth_row5.html
-    summary_table_row "TCP OAI Bridge - Release 15" ./archives/ue_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./ue_eth_row6.html
-    summary_table_row "Conf 2 UE Data - Release 15" ./archives/ue_eth/conf2uedata.Rel15.txt "Built target conf2uedata" ./ue_eth_row7.html
-    summary_table_row "NVRAM - Release 15" ./archives/ue_eth/nvram.Rel15.txt "Built target nvram" ./ue_eth_row8.html
-    summary_table_row "UE IP - Release 15" ./archives/ue_eth/ue_ip.Rel15.txt "Built target ue_ip" ./ue_eth_row9.html
-    summary_table_row "USIM - Release 15" ./archives/ue_eth/usim.Rel15.txt "Built target usim" ./ue_eth_row9a.html
-    summary_table_footer
-
     if [ -e ./archives/red_hat ]
     then
         echo "   <h2>Red Hat Enterprise Linux Server release 7.6) -- Summary</h2>" >> ./build_results.html
@@ -714,9 +718,23 @@ function report_build {
     echo "   <button data-toggle=\"collapse\" data-target=\"#oai-compilation-details\">Details for Compilation Errors and Warnings </button>" >> ./build_results.html
     echo "   <div id=\"oai-compilation-details\" class=\"collapse\">" >> ./build_results.html
 
-    if [ -f ./enb_usrp_row1.html ] || [ -f ./enb_usrp_row2.html ] || [ -f ./enb_usrp_row3.html ] || [ -f ./enb_usrp_row4.html ]
+#    if [ -f ./enb_usrp_row1.html ] || [ -f ./enb_usrp_row2.html ] || [ -f ./enb_usrp_row3.html ] || [ -f ./enb_usrp_row4.html ]
+#    then
+#        for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
+#        do
+#            cat $DETAILS_TABLE >> ./build_results.html
+#        done
+#    fi
+    if [ -f ./enb_eth_row1.html ] || [ -f ./enb_eth_row2.html ] || [ -f ./enb_eth_row3.html ] || [ -f ./enb_eth_row4.html ] || [ -f ./enb_eth_row5.html ] || [ -f ./enb_eth_row6.html ] || [ -f ./enb_eth_row7.html ] || [ -f ./enb_eth_row8.html ] || [ -f ./enb_eth_row9.html ]
     then
-        for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
+        for DETAILS_TABLE in `ls ./enb_eth_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./ue_eth_row1.html ] || [ -f ./ue_eth_row2.html ] || [ -f ./ue_eth_row3.html ] || [ -f ./ue_eth_row4.html ] || [ -f ./ue_eth_row5.html ] || [ -f ./ue_eth_row6.html ] || [ -f ./ue_eth_row7.html ] || [ -f ./ue_eth_row8.html ] || [ -f ./ue_eth_row9.html ] || [ -f ./ue_eth_row9a.html ] || [ -f ./ue_eth_row9b.html ]
+    then
+        for DETAILS_TABLE in `ls ./ue_eth_row*.html`
         do
             cat $DETAILS_TABLE >> ./build_results.html
         done
@@ -745,20 +763,6 @@ function report_build {
     if [ -f ./nr_ue_usrp_row1.html ] || [ -f ./nr_ue_usrp_row2.html ] || [ -f ./nr_ue_usrp_row3.html ] || [ -f ./nr_ue_usrp_row4.html ]
     then
         for DETAILS_TABLE in `ls ./nr_ue_usrp_row*.html`
-        do
-            cat $DETAILS_TABLE >> ./build_results.html
-        done
-    fi
-    if [ -f ./enb_eth_row1.html ] || [ -f ./enb_eth_row2.html ] || [ -f ./enb_eth_row3.html ] || [ -f ./enb_eth_row4.html ] || [ -f ./enb_eth_row5.html ] || [ -f ./enb_eth_row6.html ]
-    then
-        for DETAILS_TABLE in `ls ./enb_eth_row*.html`
-        do
-            cat $DETAILS_TABLE >> ./build_results.html
-        done
-    fi
-    if [ -f ./ue_eth_row1.html ] || [ -f ./ue_eth_row2.html ] || [ -f ./ue_eth_row3.html ] || [ -f ./ue_eth_row4.html ] || [ -f ./ue_eth_row5.html ] || [ -f ./ue_eth_row6.html ]
-    then
-        for DETAILS_TABLE in `ls ./ue_eth_row*.html`
         do
             cat $DETAILS_TABLE >> ./build_results.html
         done

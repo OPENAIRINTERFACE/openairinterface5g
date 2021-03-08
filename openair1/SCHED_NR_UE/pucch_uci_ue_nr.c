@@ -202,8 +202,6 @@ void nr_generate_pucch3_4(int32_t **txdataF,
 *
 *********************************************************************/
 
-static int bwp_id = 1;
-
 bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc, bool reset_harq)
 {
   uint8_t   sr_payload = 0;
@@ -234,6 +232,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_PUCCH_Resource_t *pucch_resource;
   uint16_t crnti = mac->crnti;
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* update current context */
 
@@ -246,6 +245,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
     pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
+
+  LOG_D(PHY, "PUCCH: %d.%d dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, dl_harq_pid, pucch_resource_indicator);
 
   /* Part - I
    * Collect feedback that should be transmitted at this nr_slot_tx :
@@ -445,7 +446,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     return (FALSE);
   }
 
-  int max_code_rate = 0;
+  //int max_code_rate = 0;
   //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
@@ -502,7 +503,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   if (format !=  pucch_format0_nr) {
 
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL) {
-      max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
+      //max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
 
       if ((O_ACK != 0) && (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->simultaneousHARQ_ACK_CSI[0] == 0)) {
         N_UCI = N_UCI - O_CSI;
@@ -760,7 +761,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
     number_of_code_word = 1;
   }
 
-  if (ue->n_connected_eNB > 1) {
+  if (ue->n_connected_gNB > 1) {
     LOG_E(PHY,"PUCCH ACK feedback is not implemented for mutiple gNB cells : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (0);
   }
@@ -779,19 +780,15 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
 
           if (harq_status->ack == DL_ACKNACK_NO_SET) {
             LOG_E(PHY,"PUCCH Downlink acknowledgment has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return (0);
           }
           else if (harq_status->vDAI_DL == DL_DAI_NO_SET) {
             LOG_E(PHY,"PUCCH Downlink DAI has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return (0);
           }
           else if (harq_status->vDAI_DL > NR_DL_MAX_DAI) {
             LOG_E(PHY,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return (0);
           }
           else if (harq_status->send_harq_status == 0) {
-            LOG_E(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return(0);
+            LOG_D(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
           }
           else {
 
@@ -807,6 +804,8 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
             number_harq_feedback++;
             ack_data[code_word][dai_current - 1] = harq_status->ack;
             dai[code_word][dai_current - 1] = dai_current;
+            harq_status->slot_for_feedback_ack = NR_MAX_SLOTS_PER_FRAME;
+            harq_status->send_harq_status = 0;
           }
           if (do_reset == TRUE) {
             init_downlink_harq_status(ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]);
@@ -937,6 +936,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
   pucch_format_nr_t format_pucch;
   int ready_pucch_resource_id = FALSE; /* in the case that it is already given */
   NR_PUCCH_Resource_t *pucch_resource;
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* ini values to unset */
   *initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
@@ -1109,6 +1109,8 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 {
   int pucch_resource_set_id = 0;
+  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
+
   //long *pucch_max_pl_bits = NULL;
 
   /* from TS 38.331 field maxPayloadMinus1

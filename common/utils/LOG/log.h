@@ -148,6 +148,7 @@ extern "C" {
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
 #define DEBUG_RLC          (1<<13)
+#define DEBUG_DLSCH_DECOD  (1<<14)
 #define UE_TIMING          (1<<20)
 
 
@@ -166,6 +167,7 @@ extern "C" {
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
     {"RLC",         DEBUG_RLC},\
+    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -334,7 +336,25 @@ typedef struct {
 @param dec    decimation level
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
 */
-int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
+#define MATLAB_RAW (1<<31)
+#define MATLAB_SHORT 0
+#define MATLAB_CSHORT 1
+#define MATLAB_INT 2
+#define MATLAB_CINT 3
+#define MATLAB_INT8 4
+#define MATLAB_CINT8 5
+#define MATLAB_LLONG 6
+#define MATLAB_DOUBLE 7
+#define MATLAB_CDOUBLE 8
+#define MATLAB_UINT8 9
+#define MATLEB_EREN1 10
+#define MATLEB_EREN2 11
+#define MATLEB_EREN3 12
+#define MATLAB_CSHORT_BRACKET1 13
+#define MATLAB_CSHORT_BRACKET2 14
+#define MATLAB_CSHORT_BRACKET3 15
+  
+int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format);
 
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"

@@ -546,6 +546,13 @@ typedef struct rrc_gummei_s {
   uint16_t mme_group_id;
 } rrc_gummei_t;
 
+typedef struct {
+  uint16_t ciphering_algorithms;
+  uint16_t integrity_algorithms;
+  uint16_t sk_counter;
+  uint8_t  kgNB[32];
+} lte_rrc_nr_security_t;
+
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
   LTE_SCellToAddMod_r10_t            sCell_config[2];
@@ -554,7 +561,7 @@ typedef struct eNB_RRC_UE_s {
   LTE_DRB_ToAddModList_t            *DRB_configList;
   LTE_DRB_ToAddModList_t            *DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   LTE_DRB_ToReleaseList_t           *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  uint8_t                            DRB_active[8];
+  uint8_t                            DRB_active[NB_RB_MAX -2];
   struct LTE_PhysicalConfigDedicated    *physicalConfigDedicated;
   struct LTE_SPS_Config             *sps_Config;
   LTE_MeasObjectToAddMod_t          *MeasObj[MAX_MEAS_OBJ];
@@ -614,6 +621,9 @@ typedef struct eNB_RRC_UE_s {
   rrc_gummei_t                       ue_gummei;
 
   security_capabilities_t            security_capabilities;
+
+  /* security capabilities and settings for an UE in ENDC mode */
+  lte_rrc_nr_security_t              nr_security;
 
   int                                next_hop_chain_count;
 

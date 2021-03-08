@@ -124,8 +124,9 @@ typedef struct s1ap_eNB_mme_data_s {
   /* This is the optional name provided by the MME */
   char *mme_name;
 
-  /* MME S1AP IP address */
+  /* MME S1AP IP address and port */
   net_ip_address_t mme_s1_ip;
+  uint16_t         mme_port;
 
   /* List of served GUMMEI per MME. There is one GUMMEI per RAT with a max
    * number of 8 RATs but in our case only one is used. The LTE related pool

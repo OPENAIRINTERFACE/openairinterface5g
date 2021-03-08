@@ -52,6 +52,7 @@
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -59,24 +60,31 @@ void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
 
-void dump_mac_stats(gNB_MAC_INST *gNB) {
-
+void dump_mac_stats(gNB_MAC_INST *gNB)
+{
   NR_UE_info_t *UE_info = &gNB->UE_info;
-  NR_mac_stats_t *stats;
-  int lc_id;
-
-  for (int UE_id=0;UE_id<MAX_MOBILES_PER_GNB;UE_id++) {
-    if (UE_info->active[UE_id]) {
-      LOG_I(MAC, "UE %x\n", UE_info->rnti[UE_id]);
-      stats = &UE_info->mac_stats[UE_id];
-      LOG_I(MAC,"dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",stats->dlsch_rounds[0],stats->dlsch_rounds[1],stats->dlsch_rounds[2],stats->dlsch_rounds[3],stats->dlsch_errors);
-      LOG_I(MAC,"dlsch_total_bytes %d\n",stats->dlsch_total_bytes);
-      LOG_I(MAC,"ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",stats->ulsch_rounds[0],stats->ulsch_rounds[1],stats->ulsch_rounds[2],stats->ulsch_rounds[3],stats->ulsch_errors);
-      LOG_I(MAC,"ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",stats->ulsch_total_bytes_scheduled,stats->ulsch_total_bytes_rx);
-      for (lc_id=0;lc_id<63;lc_id++) {
-	if (stats->lc_bytes_tx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes TX\n",lc_id,stats->lc_bytes_tx[lc_id]);
-	if (stats->lc_bytes_rx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes RX\n",lc_id,stats->lc_bytes_rx[lc_id]);
-      }
+  int num = 1;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
+    const NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+    LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",
+          UE_id,
+          stats->dlsch_rounds[0], stats->dlsch_rounds[1],
+          stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors);
+    LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
+    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
+          UE_id,
+          stats->ulsch_rounds[0], stats->ulsch_rounds[1],
+          stats->ulsch_rounds[2], stats->ulsch_rounds[3], stats->ulsch_errors);
+    LOG_I(MAC,
+          "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
+          UE_id,
+          stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
+    for (int lc_id = 0; lc_id < 63; lc_id++) {
+      if (stats->lc_bytes_tx[lc_id] > 0)
+        LOG_I(MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+      if (stats->lc_bytes_rx[lc_id] > 0)
+        LOG_I(MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
 }
@@ -89,6 +97,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t ***pdcch = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t ***)gNB->pdcch_pdu_idx[CC_idP];
   nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
       &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
   nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
@@ -96,13 +105,14 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   gNB->pdu_index[CC_idP] = 0;
 
-  if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
+  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;
     DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
     DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
     //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
+    memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
 
     UL_dci_req[CC_idP].SFN                         = frameP;
     UL_dci_req[CC_idP].Slot                        = slotP;
@@ -299,11 +309,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
  
   int nb_periods_per_frame;
 
-  const int UE_id = 0;
   const int bwp_id = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_UE_info_t *UE_info = &gNB->UE_info;
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
@@ -360,23 +368,33 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  const uint64_t dlsch_in_slot_bitmap = (1 << 1) | (1 << 2);
-  const uint64_t ulsch_in_slot_bitmap = (1 << 8);
+#define BIT(x) (1 << (x))
+  const uint64_t dlsch_in_slot_bitmap = BIT( 1) | BIT( 2) | BIT( 3) | BIT( 4) | BIT( 5) | BIT( 6)
+                                      | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
+
+  uint8_t prach_config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint64_t ulsch_in_slot_bitmap;
+  if (prach_config_index==4) //this is the PRACH config used in the Benetel RRU. TODO: make this generic for any PRACH config. 
+    ulsch_in_slot_bitmap = BIT( 8) | BIT( 9);
+  else
+    ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
-  for (int i=0; i<MAX_NUM_CORESET; i++)
-    RC.nrmac[module_idP]->UE_info.num_pdcch_cand[UE_id][i] = 0;
+  NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])
+    for (int i=0; i<MAX_NUM_CORESET; i++)
+      UE_info->num_pdcch_cand[UE_id][i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 
     // clear vrb_maps
-    memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * 275);
+    memset(cc[CC_id].vrb_map, 0, sizeof(uint16_t) * MAX_BWP_SIZE);
     // clear last scheduled slot's content (only)!
     const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     const int last_slot = (slot + num_slots - 1) % num_slots;
     uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
-    memset(&vrb_map_UL[last_slot * 275], 0, sizeof(uint16_t) * 275);
+    memset(&vrb_map_UL[last_slot * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
@@ -387,6 +405,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
+
+  // This schedules SIB1
+  if ( get_softmodem_params()->sa == 1 )
+    schedule_nr_sib1(module_idP, frame, slot);
+
 
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0) {
@@ -405,9 +428,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule SR
   // TODO
 
-  // This schedule CSI measurement reporting
-  if (UE_info->active[UE_id])
-    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
+  // Schedule CSI measurement reporting: check in slot 0 for the whole frame
+  if (slot == 0)
+    nr_csi_meas_reporting(module_idP, frame, slot);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
@@ -416,19 +439,16 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
-  if (slot < 10) {
+  {
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }
 
   // This schedules the DCI for Downlink and PDSCH
-  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd)
-      && slot < 10) {
-    nr_schedule_ue_spec(module_idP, frame, slot, num_slots_per_tdd);
-  }
+  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot))
+    nr_schedule_ue_spec(module_idP, frame, slot);
 
 
-  if (UE_info->active[UE_id])
-    nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
+  nr_schedule_pucch(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

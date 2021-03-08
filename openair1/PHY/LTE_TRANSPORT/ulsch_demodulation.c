@@ -755,6 +755,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
   __m128i *ul_ch128,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128;
   uint8_t aarx;//,symbol_mod;
   __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
+
 #elif defined(__arm__)
   int16x4_t *ul_ch128,*rxdataF128;
   int16x8_t *ul_ch_mag128,*ul_ch_mag128b,*rxdataF_comp128;
@@ -762,6 +763,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
   int32x4_t mmtmpU0,mmtmpU1,mmtmpU0b,mmtmpU1b;
   int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
   int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
+
 #endif
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -872,6 +874,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       rxdataF_comp128[0] = _mm_add_epi16(rxdataF_comp128[0],(*(__m128i *)&jitter[0]));
       rxdataF_comp128[1] = _mm_add_epi16(rxdataF_comp128[1],(*(__m128i *)&jitter[0]));
       rxdataF_comp128[2] = _mm_add_epi16(rxdataF_comp128[2],(*(__m128i *)&jitter[0]));
+
       ul_ch128+=3;
       ul_ch_mag128+=3;
       ul_ch_mag128b+=3;
@@ -918,9 +921,10 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
       rxdataF_comp128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
       // Add a jitter to compensate for the saturation in "packs" resulting in a bias on the DC after IDFT
-      rxdataF_comp128[0] = vqaddq_s16(rxdataF_comp128[0],(*(int16x8_t *)&jitter[0]));
-      rxdataF_comp128[1] = vqaddq_s16(rxdataF_comp128[1],(*(int16x8_t *)&jitter[0]));
-      rxdataF_comp128[2] = vqaddq_s16(rxdataF_comp128[2],(*(int16x8_t *)&jitter[0]));
+      rxdataF_comp128[0] = vqaddq_s16(rxdataF_comp128[0],(*(int16x8_t*)&jitter[0]));
+      rxdataF_comp128[1] = vqaddq_s16(rxdataF_comp128[1],(*(int16x8_t*)&jitter[0]));
+      rxdataF_comp128[2] = vqaddq_s16(rxdataF_comp128[2],(*(int16x8_t*)&jitter[0]));
+      
       ul_ch128+=6;
       ul_ch_mag128+=3;
       ul_ch_mag128b+=3;
@@ -1031,6 +1035,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   AssertFatal(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb > 0,
               "PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti);
 
+
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
     if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
       LOG_I(PHY,"rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
@@ -1064,18 +1069,38 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   if (deltaMCS==1) {
     // Note we're using TBS instead of sumKr, since didn't run segmentation yet!
     MPR_times_100Ks = 500*ulsch[UE_id]->harq_processes[harq_pid]->TBS/(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
-    AssertFatal(MPR_times_100Ks < 750 && MPR_times_100Ks >= 0,"Impossible value for MPR_times_100Ks %d (TBS %d,Nre %d)\n",
-                MPR_times_100Ks,ulsch[UE_id]->harq_processes[harq_pid]->TBS,
-                (ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch));
 
-    if (MPR_times_100Ks > 0) correction_factor = ulsch_power_LUT[MPR_times_100Ks];
+    if ((MPR_times_100Ks > 0)&&(MPR_times_100Ks < 750)){
+      correction_factor = ulsch_power_LUT[MPR_times_100Ks];
+    }else{
+      correction_factor = 1;
+    }
   }
 
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-    pusch_vars->ulsch_power[i] = signal_energy_nodc(pusch_vars->drs_ch_estimates[i],
-                                 ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
-    LOG_D(PHY,"%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid,
-          ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i]));
+    //symbol 3
+    int symbol_offset = frame_parms->N_RB_UL*12*(3 - frame_parms->Ncp);
+    pusch_vars->ulsch_interference_power[i] = interference_power(&pusch_vars->drs_ch_estimates[i][symbol_offset],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
+    pusch_vars->ulsch_power[i] = signal_power(&pusch_vars->drs_ch_estimates[i][symbol_offset],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
+    //symbol 3+7
+    symbol_offset = frame_parms->N_RB_UL*12*((3 - frame_parms->Ncp)+(7-frame_parms->Ncp));
+    pusch_vars->ulsch_interference_power[i] += interference_power(&pusch_vars->drs_ch_estimates[i][symbol_offset],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
+    pusch_vars->ulsch_power[i] += signal_power(&pusch_vars->drs_ch_estimates[i][symbol_offset],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
+
+    pusch_vars->ulsch_interference_power[i] = pusch_vars->ulsch_interference_power[i]/correction_factor;
+    pusch_vars->ulsch_power[i] = pusch_vars->ulsch_power[i]/correction_factor;
+
+    if(pusch_vars->ulsch_power[i]>0x20000000){
+      pusch_vars->ulsch_power[i] = 0x20000000;
+      pusch_vars->ulsch_interference_power[i] = 1;
+    }else{
+      pusch_vars->ulsch_power[i] -=  pusch_vars->ulsch_interference_power[i];
+      if(pusch_vars->ulsch_power[i]<1) pusch_vars->ulsch_power[i] = 1;
+      if(pusch_vars->ulsch_interference_power[i]<1)pusch_vars->ulsch_interference_power[i] = 1;
+    }
+
+    LOG_D(PHY,"%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid, ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_x10(pusch_vars->ulsch_power[i]));
+     
   }
 
   ulsch_channel_level(pusch_vars->drs_ch_estimates,
