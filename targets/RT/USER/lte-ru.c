@@ -3013,6 +3013,7 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
             ru[j]->if_south                        = LOCAL_RF;
             ru[j]->function                        = NGFI_RRU_IF4p5;
             ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
+            ru[j]->has_ctrl_prt                   =1;
             LOG_I(PHY,"Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
           }
         }
@@ -3056,6 +3057,7 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
 	  ru[j]->if_south                     = REMOTE_IF4p5;
 	  ru[j]->function                     = NGFI_RAU_IF4p5;
 	  ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
+	  ru[j]->has_ctrl_prt                 = 1;
 	
           if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) ru[j]->is_slave=1;
           else ru[j]->is_slave=0;

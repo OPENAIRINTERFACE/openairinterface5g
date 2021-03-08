@@ -52,7 +52,7 @@
    /* we don't need much space for the basic simulator */
 #  define T_CACHE_SIZE 1024
 #else
-#  define T_CACHE_SIZE (8192 )
+#  define T_CACHE_SIZE (8192)
 #endif
 
 /* maximum number of bytes a message can contain */
