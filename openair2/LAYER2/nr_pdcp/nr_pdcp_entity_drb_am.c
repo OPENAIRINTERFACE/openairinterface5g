@@ -26,7 +26,7 @@
 #include <string.h>
 #include "common/utils/LOG/log.h"
 
-void nr_pdcp_entity_drb_am_recv_pdu( protocol_ctxt_t *ctxt_pP , nr_pdcp_entity_t *_entity, char *buffer, int size)
+void nr_pdcp_entity_drb_am_recv_pdu( nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
