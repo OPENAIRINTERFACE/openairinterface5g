@@ -2189,6 +2189,92 @@ function run_test_on_vm {
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
     then
+        echo "############################################################"
+        echo "RA TEST FR2"
+        echo "############################################################"
+        #RA FR2 test, attention : has a different config file from the rest of the test
+        CN_CONFIG="noS1"
+        CONF_FILE=gnb.band261.tm1.32PRB.usrpn300.conf
+        S1_NOS1_CFG=0
+        PRB=32
+        FREQUENCY=28000 #28GHz
+
+        if [ ! -d $ARCHIVES_LOC ]
+        then
+            mkdir --parents $ARCHIVES_LOC
+        fi
+
+        local try_cnt=0
+        NR_STATUS=0
+
+        ######### start of RA TEST loop
+        while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
+        do
+
+            SYNC_STATUS=0
+            RA_FR2_STATUS=0
+            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}*ra_fr2_test.log
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Starting the gNB"
+            echo "############################################################"
+            CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb_ra_fr2_test.log
+            #last argument = 1 is to enable --do-ra for RA test
+            start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 1
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Starting the NR-UE"
+            echo "############################################################"
+            CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_ra_fr2_test.log
+            #last argument = 1 is to enable --do-ra for RA test
+            start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
+            if [ $NR_UE_SYNC -eq 0 ]
+            then
+                echo "Problem w/ gNB and NR-UE not syncing"
+                terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
+                terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
+                scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
+                scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
+                SYNC_STATUS=-1
+                try_cnt=$((try_cnt+1))
+                continue
+            fi
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Terminate gNB/NR-UE simulators"
+            echo "############################################################"
+            sleep 20
+            terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
+            terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
+            scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
+
+            #check RA markers in gNB and NR UE log files
+            echo "############################################################"
+            echo "${CN_CONFIG} : Checking FR2 RA on gNB / NR-UE"
+            echo "############################################################"
+
+            # Proper check to be done when RA test is working!
+            check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
+            if [ $RA_FR2_STATUS -ne 0 ]
+            then
+                echo "RA FR2 test NOT OK"
+                echo "try_cnt = " $try_cnt
+                try_cnt=$((try_cnt+1))
+            else
+                try_cnt=$((try_cnt+10))
+            fi
+        done
+        ########### end RA FR2 test
+
+        sleep 30
+
+
+        echo "############################################################"
+        echo "RA TEST FR1"
+        echo "############################################################"
+        ######### redefine config for the rest of the test
+
         CN_CONFIG="noS1"
         CONF_FILE=gnb.band78.tm1.106PRB.usrpn300.conf
         S1_NOS1_CFG=0
@@ -2247,14 +2333,14 @@ function run_test_on_vm {
 
             #check RA markers in gNB and NR UE log files
             echo "############################################################"
-            echo "${CN_CONFIG} : Checking RA on gNB / NR-UE"
+            echo "${CN_CONFIG} : Checking FR1 RA on gNB / NR-UE"
             echo "############################################################"
 
             # Proper check to be done when RA test is working!
             check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
             if [ $RA_STATUS -ne 0 ]
             then
-                echo "RA test NOT OK"
+                echo "RA FR1 test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
             else
@@ -2377,6 +2463,7 @@ function run_test_on_vm {
         echo "Checking run status"
         echo "############################################################"
 
+        if [ $RA_FR2_STATUS -ne 0 ]; then NR_STATUS=-1; fi        
         if [ $RA_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $PING_STATUS -ne 0 ]; then NR_STATUS=-1; fi
