@@ -312,7 +312,6 @@ void schedule_control_sib1(module_id_t module_id,
   if (gNB_mac->sched_ctrlCommon == NULL){
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
-    gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
     gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
     fill_default_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space);
@@ -412,6 +411,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
                      bwp);
+
+  // TODO: This assignment should be done in function nr_configure_pdcch()
+  pdcch_pdu_rel15->BWPSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
+  pdcch_pdu_rel15->BWPStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
