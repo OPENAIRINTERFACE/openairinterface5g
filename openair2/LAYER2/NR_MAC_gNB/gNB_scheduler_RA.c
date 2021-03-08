@@ -840,7 +840,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     if (nr_mac->sched_ctrlCommon == NULL){
       nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
       nr_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->search_space));
-      nr_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->active_bwp));
       nr_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->coreset));
       nr_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->active_bwp));
       fill_default_searchSpaceZero(nr_mac->sched_ctrlCommon->search_space);
