@@ -2266,27 +2266,32 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
   uint8_t preamble_index   = get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
 
-  LOG_D(MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
+  LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
   while (1) {
     n_subheaders++;
     if (rarh->T == 1) {
       n_subPDUs++;
-      LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
+      LOG_I(NR_MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
     } else {
-      n_subPDUs++;
       ra->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
       ra->RA_BI_found = 1;
-      LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ra->RA_backoff_indicator);
+      LOG_I(NR_MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d ms\n", mod_id, ra->RA_backoff_indicator);
+      if ( ((NR_RA_HEADER_BI *)rarh)->E == 1) {
+        rarh += sizeof(NR_RA_HEADER_BI);
+        continue;
+      } else {
+        break;
+      }
     }
     if (rarh->RAPID == preamble_index) {
-      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
+      LOG_I(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       break;
     }
     if (rarh->E == 0) {
-      LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match the intended RAPID...\n", mod_id, preamble_index);
+      LOG_W(NR_MAC,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match the intended RAPID (%d)\n", mod_id, rarh->RAPID, preamble_index);
       break;
     } else {
       rarh += sizeof(NR_MAC_RAR) + 1;

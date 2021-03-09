@@ -835,7 +835,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint8_t time_domain_assignment = 3;
     uint8_t mcsIndex = 0;
     int rbStart = 0;
-    int rbSize = 6;
+    int rbSize = 8;
 
     if (nr_mac->sched_ctrlCommon == NULL){
       nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
@@ -1043,7 +1043,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
-    tx_req->TLVs[0].length = 8;
+    tx_req->TLVs[0].length = tx_req->PDU_length + 2;
     nr_mac->TX_req[CC_id].SFN = frameP;
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
@@ -1371,8 +1371,9 @@ void nr_fill_rar(uint8_t Mod_idP,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
   LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u TA command %d \n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index, ra->timing_offset);
-  NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
-  NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
+  NR_RA_HEADER_BI *rarbi = (NR_RA_HEADER_BI *) dlsch_buffer;
+  NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) (dlsch_buffer + 1);
+  NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 2);
   unsigned char csi_req = 0, tpc_command;
   //uint8_t N_UL_Hop;
   uint8_t valid_bits;
@@ -1380,6 +1381,16 @@ void nr_fill_rar(uint8_t Mod_idP,
   uint16_t f_alloc, prb_alloc, bwp_size, truncation=0;
 
   tpc_command = 3; // this is 0 dB
+
+  /// E/T/R/R/BI subheader ///
+  // E = 1, MAC PDU includes another MAC sub-PDU (RAPID)
+  // T = 0, Back-off indicator subheader
+  // R = 2, Reserved
+  // BI = 0, 5ms
+  rarbi->E = 1;
+  rarbi->T = 0;
+  rarbi->R = 0;
+  rarbi->BI = 0;
 
   /// E/T/RAPID subheader ///
   // E = 0, one only RAR, first and last
@@ -1428,6 +1439,11 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
   // FIXME: To be removed
+  //LOG_I(NR_MAC, "rarbi->E = 0x%x\n", rarbi->E);
+  //LOG_I(NR_MAC, "rarbi->T = 0x%x\n", rarbi->T);
+  //LOG_I(NR_MAC, "rarbi->R = 0x%x\n", rarbi->R);
+  //LOG_I(NR_MAC, "rarbi->BI = 0x%x\n", rarbi->BI);
+
   LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
   LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
   LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
