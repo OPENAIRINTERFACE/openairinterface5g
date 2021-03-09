@@ -1048,13 +1048,14 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       DevAssert(harq->is_waiting);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
+  }
+  if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
     extract_pucch_csi_report (csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
     //TCI handling function
     tci_handling(mod_id, UE_id,frame, slot);
   }
-
-  if (uci_234 -> pduBitmap & 0x08) {
+  if ((uci_234->pduBitmap >> 3) & 0x01) {
     //@TODO:Handle CSI Report 2
   }
 }
