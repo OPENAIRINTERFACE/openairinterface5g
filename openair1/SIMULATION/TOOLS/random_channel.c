@@ -61,7 +61,9 @@ static telnetshell_vardef_t channelmod_vardef[] = {
 static double snr_dB=25;
 static double sinr_dB=0;
 static unsigned int max_chan;
-static channel_desc_t**  defined_channels;
+static channel_desc_t **defined_channels;
+static char modellist_name[MAX_OPTNAME_SIZE];  
+
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
                        uint8_t nb_rx,
@@ -494,16 +496,17 @@ struct complex *R_sqrt_22_EPA_medium[1]     = {R_sqrt_22_EPA_medium_tap};
 
 //Rayleigh1_orth_eff_ch_TM4
 
+
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
                                      double sampling_rate,
                                      double channel_bandwidth,
-				     double DS_TDL,
+				                     double DS_TDL,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB,
-				     float  noise_power_dB) {
+				                     float  noise_power_dB) {
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
   for(int i=0; i<max_chan;i++) {
   	  if (defined_channels[i] == NULL) {
@@ -540,6 +543,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   double *tdl_amps_dB;
   double *tdl_delays;
 
+  /*  Spatial Channel Models (SCM)  channel model from TR 38.901 Section 7.7.2 */
   switch (channel_model) {
     case SCM_A:
       LOG_W(OCM,"channel model not yet supported\n");
@@ -670,6 +674,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
       break;
       
+/*  tapped delay line (TDL)  channel model from TR 38.901 Section 7.7.2 */    
     case TDL_A:
     case TDL_B:
     case TDL_C:  
@@ -1631,8 +1636,21 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
   chan_desc->nb_paths = 10;
   return(chan_desc);
-}
-     
+} /* channel_desc_t *new_channel_desc_scm  */
+
+channel_desc_t * find_channel_desc_fromname( char *modelname ) {
+  for(int i=0; i<max_chan;i++) {
+  	  if (defined_channels[i] != NULL) {
+  	  	  if (strcmp(defined_channels[i]->model_name,modelname) == 0)
+  	  	  	  return defined_channels[i];                             
+  	     }
+  	  }
+  LOG_E(OCM,"Model %s not found \n", modelname);
+  return NULL;
+} /* channel_desc_t * new_channel_desc_fromconfig */
+
+
+
 void free_channel_desc_scm(channel_desc_t *ch) {
   // Must be made cleanly, a lot of leaks...
   defined_channels[ch->chan_idx]=NULL; 
@@ -1657,7 +1675,8 @@ void free_channel_desc_scm(channel_desc_t *ch) {
   free(ch->R_sqrt);        
   free(ch->ch); 
   free(ch->chF);
-  free(ch->a);  
+  free(ch->a);
+  free(ch->model_name);
   free(ch);                                          
 }
 
@@ -1851,7 +1870,7 @@ double N_RB2channel_bandwidth(uint16_t N_RB) {
       break;
 
     default:
-      LOG_E(PHY,"Unknown N_PRB\n");
+      LOG_E(OCM,"Unknown N_PRB\n");
       return(-1);
   }
   return(channel_bandwidth);
@@ -1989,18 +2008,74 @@ double channelmod_get_sinr_dB(void) {
 
 void init_channelmod(void) {
   paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
-  int ret = config_get( channelmod_params,sizeof(channelmod_params)/sizeof(paramdef_t),CHANNELMOD_SECTION);
+  
+  int numparams=sizeof(channelmod_params)/sizeof(paramdef_t);
+  int ret = config_get( channelmod_params,numparams,CHANNELMOD_SECTION);
   AssertFatal(ret >= 0, "configuration couldn't be performed");
     defined_channels=calloc(max_chan,sizeof( channel_desc_t*));
   AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
-  
+
   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
 
   if (addcmd != NULL) {
     addcmd("channelmod",channelmod_vardef,channelmod_cmdarray);
   }
-}
+} /* init_channelmod */
+
+void load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double channel_bandwidth) {
+  
+  paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
+  
+  int numparams=sizeof(channelmod_params)/sizeof(paramdef_t);
+  int ret = config_get( channelmod_params,numparams,CHANNELMOD_SECTION);
+  AssertFatal(ret >= 0, "configuration couldn't be performed");
+    defined_channels=calloc(max_chan,sizeof( channel_desc_t*));
+  AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
+
+  
+  paramdef_t achannel_params[] = CHANNELMOD_MODEL_PARAMS_DESC;
+  paramlist_def_t channel_list;
+  memset(&channel_list,0,sizeof(paramlist_def_t));
+  strncpy(channel_list.listname,modellist_name,MAX_OPTNAME_SIZE-1);
+
+  numparams = sizeof(achannel_params)/sizeof(paramdef_t);
+  config_getlist( &channel_list,achannel_params,numparams, CHANNELMOD_SECTION);
+  AssertFatal(channel_list.numelt>0, "List %s.%s not found in config filee\n",CHANNELMOD_SECTION,CHANNELMOD_MODELLIST_PARANAME);
+  int pindex_NAME = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_NAME_PNAME);  
+  int pindex_DT = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_DT_PNAME );
+  int pindex_FF = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_FF_PNAME );
+  int pindex_CO = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_CO_PNAME );
+  int pindex_PL = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_PL_PNAME );
+  int pindex_NP = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_NP_PNAME );
+  int pindex_TYPE = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_TYPE_PNAME);
+  
+  for (int i=0; i<channel_list.numelt; i++) {
+
+    int modid = modelid_fromname( *(channel_list.paramarray[i][pindex_TYPE].strptr) );
+    if (modid <0) {
+     LOG_E(OCM,"Valid channel model types:\n");
+     for (int m=0; channelmod_names[i].name != NULL ; m++) {
+          printf(" %s ", map_int_to_str(channelmod_names,m ));
+      }
+      AssertFatal(0, "\n  Choose a valid model type\n");
+    }
+    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,nb_rx,modid,sampling_rate,channel_bandwidth,
+				                                         *(channel_list.paramarray[i][pindex_DT].dblptr), *(channel_list.paramarray[i][pindex_FF].dblptr), 
+				                                         *(channel_list.paramarray[i][pindex_CO].iptr), *(channel_list.paramarray[i][pindex_PL].dblptr),
+				                                         *(channel_list.paramarray[i][pindex_NP].dblptr) );
+	AssertFatal( (channeldesc_p!= NULL), "Could not allocate channel %s type %s \n",*(channelmod_params[pindex_NAME].strptr), *(channelmod_params[pindex_TYPE].strptr));
+	channeldesc_p->model_name = strdup(*(channel_list.paramarray[i][pindex_NAME].strptr));
+	LOG_I(OCM,"Model %s type %s allocated from config file, list %s\n",*(channel_list.paramarray[i][pindex_NAME].strptr), 
+		  *(channel_list.paramarray[i][pindex_TYPE].strptr), modellist_name);
+  } /* for loop on channel_list */
+  /* look for telnet server, if it is loaded, add the channel modeling commands to it */
+  add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
+
+  if (addcmd != NULL) {
+    addcmd("channelmod",channelmod_vardef,channelmod_cmdarray);
+  }
+} /* load_channelist */
 
 #ifdef RANDOM_CHANNEL_MAIN
 #define sampling_rate 5.0
