@@ -1427,4 +1427,44 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_3 = (uint8_t) (ul_grant >> 8) & 0xff;
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
+  // FIXME: To be removed
+  LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
+  LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
+  LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
+
+  LOG_I(NR_MAC, "rar->R = 0x%x\n", rar->R);
+  LOG_I(NR_MAC, "rar->TA1 = 0x%x\n", rar->TA1);
+
+  LOG_I(NR_MAC, "rar->TA2 = 0x%x\n", rar->TA2);
+  LOG_I(NR_MAC, "rar->UL_GRANT_1 = 0x%x\n", rar->UL_GRANT_1);
+
+  LOG_I(NR_MAC, "rar->UL_GRANT_2 = 0x%x\n", rar->UL_GRANT_2);
+  LOG_I(NR_MAC, "rar->UL_GRANT_3 = 0x%x\n", rar->UL_GRANT_3);
+  LOG_I(NR_MAC, "rar->UL_GRANT_4 = 0x%x\n", rar->UL_GRANT_4);
+
+  LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
+  LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
+
+  int mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
+  // time alloc
+  int Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x07);
+  // frequency alloc
+  int Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
+  // frequency hopping
+  int freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
+  // TA command
+  int  ta_command = rar->TA2 + (rar->TA1 << 5);
+  // TC-RNTI
+  int t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+
+  LOG_I(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+        __FUNCTION__,
+        Msg3_t_alloc,
+        Msg3_f_alloc,
+        ta_command,
+        mcs,
+        freq_hopping,
+        tpc_command,
+        csi_req,
+        t_crnti);
 }
