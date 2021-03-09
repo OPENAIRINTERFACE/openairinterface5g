@@ -60,7 +60,7 @@ uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
 uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 // needed for some functions
