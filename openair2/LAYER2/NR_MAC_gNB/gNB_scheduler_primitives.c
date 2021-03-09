@@ -699,7 +699,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     n_set = pucch_Config->resourceSetToAddModList->list.count; 
     AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
 
-    LOG_I(MAC, "UCI n_set= %d\n", n_set);
+    LOG_D(MAC, "UCI n_set= %d\n", n_set);
 
     N2 = 2;
     // procedure to select pucch resource id from resource sets according to 
