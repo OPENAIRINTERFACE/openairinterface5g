@@ -44,7 +44,7 @@ void nr_pdcp_entity_drb_am_recv_pdu( nr_pdcp_entity_t *_entity, char *buffer, in
     entity->common.cipher(entity->common.security_context, (unsigned char *)buffer+3, size-3,
                           entity->rb_id, sn, entity->common.is_gnb ? 0 : 1);
 
-  entity->common.deliver_sdu(ctxt_pP, entity->common.deliver_sdu_data,
+  entity->common.deliver_sdu( entity->common.deliver_sdu_data,
                              (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }
 

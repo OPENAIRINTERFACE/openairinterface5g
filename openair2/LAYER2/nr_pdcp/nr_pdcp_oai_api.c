@@ -1167,7 +1167,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     NULL,
     NULL,
     NULL,
-    Rlc_DRB_Bearer_ToAdd_list);
+    Rlc_Bearer_ToAdd_list);
   }
 
   if (!NODE_IS_CU(node_type)) {
