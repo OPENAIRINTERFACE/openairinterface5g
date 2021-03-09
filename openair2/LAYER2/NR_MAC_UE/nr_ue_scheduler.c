@@ -121,7 +121,7 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot)
 {
   //Check if request to access ul_config is for a UL slot
-  if (is_nr_UL_slot(mac->scc, slot, mac->phy_config.config_req.cell_config.frame_duplex_type) == 0) {
+  if (is_nr_UL_slot(mac->scc, slot, mac->frame_type) == 0) {
     LOG_W(MAC, "Slot %d is not a UL slot. %s called for wrong slot!!!\n", slot, __FUNCTION__);
     return NULL;
   }
@@ -1663,7 +1663,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
   ra->generate_nr_prach = 0; // Reset flag for PRACH generation
 
-  if (is_nr_UL_slot(scc, slotP, mac->phy_config.config_req.cell_config.frame_duplex_type)) {
+  if (is_nr_UL_slot(scc, slotP, mac->frame_type)) {
 
     // WIP Need to get the proper selected ssb_idx
     //     Initial beam selection functionality is not available yet
