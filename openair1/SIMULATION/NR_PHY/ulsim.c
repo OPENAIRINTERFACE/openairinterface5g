@@ -235,6 +235,7 @@ int main(int argc, char **argv)
   float effRate; 
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
+  int fd_inter = 0;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
@@ -270,7 +271,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Zi")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -362,14 +363,10 @@ int main(int argc, char **argv)
       
       break;
       
-      /*case 'i':
-        interf1 = atoi(optarg);
-        break;
+    case 'i':
+      fd_inter=1;
+      break;
 	
-	case 'j':
-        interf2 = atoi(optarg);
-        break;*/
-
     case 'k':
       printf("Setting threequarter_fs_flag\n");
       openair0_cfg[0].threequarter_fs= 1;
@@ -521,7 +518,7 @@ int main(int argc, char **argv)
       printf("-f Number of frames to simulate\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
       printf("-h This message\n");
-      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-i Activate freq domain interpolation for channel estimation. Average over 1 PRB by default.\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
@@ -604,6 +601,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
+  gNB->fd_interpolation = fd_inter;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
 
