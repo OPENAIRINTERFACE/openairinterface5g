@@ -195,9 +195,13 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
+	uint8_t fiveGS_TAC[3];
 	served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
+	fiveGS_TAC[0] = ((uint8_t*)&f1ap_du_data->tac[i])[2];
+	fiveGS_TAC[1] = ((uint8_t*)&f1ap_du_data->tac[i])[1];
+	fiveGS_TAC[2] = ((uint8_t*)&f1ap_du_data->tac[i])[0];
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
-                             (const char*)&f1ap_du_data->tac[i],
+                             (const char *)fiveGS_TAC,
                              3);
 
         /* - Configured_EPS_TAC */
@@ -715,8 +719,12 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
+	uint8_t fiveGS_TAC[3];
+	fiveGS_TAC[0] = ((uint8_t*)&f1ap_setup_req->tac[i])[2];
+	fiveGS_TAC[1] = ((uint8_t*)&f1ap_setup_req->tac[i])[1];
+	fiveGS_TAC[2] = ((uint8_t*)&f1ap_setup_req->tac[i])[0];
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
-                             (const char *) &f1ap_setup_req->tac[i],
+                             (const char *)fiveGS_TAC,
                              3);
 
         /* - Configured_EPS_TAC */
