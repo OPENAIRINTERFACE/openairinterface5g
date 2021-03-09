@@ -2230,7 +2230,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   // TA command
   ul_time_alignment->apply_ta = 1;
-  ul_time_alignment->ta_command = rar->TA2 + (rar->TA1 << 5);
+  ul_time_alignment->ta_command = 31 + rar->TA2 + (rar->TA1 << 5);
 
 #ifdef DEBUG_RAR
   // CSI

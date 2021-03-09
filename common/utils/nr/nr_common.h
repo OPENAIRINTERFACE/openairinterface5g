@@ -36,6 +36,20 @@
 #include <stdint.h>
 #include "assertions.h"
 
+typedef struct nr_bandentry_s {
+  int16_t band;
+  uint64_t ul_min;
+  uint64_t ul_max;
+  uint64_t dl_min;
+  uint64_t dl_max;
+  uint64_t step_size;
+  uint64_t N_OFFs_DL;
+  uint8_t deltaf_raster;
+} nr_bandentry_t;
+
+extern const size_t nr_bandtable_size;
+extern nr_bandentry_t nr_bandtable[];
+
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize);

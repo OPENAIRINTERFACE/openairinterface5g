@@ -168,7 +168,7 @@ With the RF simulator (on the same machine):
 
 ## IF setup with OAI
 
-The -C and -CO flags can be used together at UE side to set custom downlink and uplink FR1 intermediate frequencies for the IF equipment.
+The -C and --CO flags can be used together at UE side to set custom downlink and uplink FR1 arbitrary frequencies for the IF equipment.
 
 In order to run this setup, the following flags are needed at the UE side:
 
@@ -182,9 +182,11 @@ and the following parameters must be configured in the RUs section of the gNB co
 
 `if_offset`
 
-### Run OAI with custom DL/UL intermediate frequencies
+The values must be given in Hz.
 
-The following example uses DL frequency 2169.080 MHz and UL frequency offset -400 MHz, with a configuration file for band 66 at gNB side.
+### Run OAI with custom DL/UL arbitrary frequencies
+
+The following example uses DL frequency 2169.080 MHz and UL frequency offset -400 MHz, with a configuration file for band 66 (FDD) at gNB side.
 
 From the `cmake_targets/ran_build/build` folder:
 
