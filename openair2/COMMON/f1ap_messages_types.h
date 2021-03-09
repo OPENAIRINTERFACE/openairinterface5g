@@ -103,7 +103,7 @@ typedef struct f1ap_setup_req_s {
 
   // Served Cell Information
   /* Tracking area code */
-  uint16_t tac[F1AP_MAX_NB_CELLS];
+  uint32_t tac[F1AP_MAX_NB_CELLS];
 
   /* Mobile Country Codes
    * Mobile Network Codes

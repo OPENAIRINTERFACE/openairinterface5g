@@ -195,9 +195,13 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
+	uint8_t fiveGS_TAC[3];
 	served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
+	fiveGS_TAC[0] = ((uint8_t*)&f1ap_du_data->tac[i])[2];
+	fiveGS_TAC[1] = ((uint8_t*)&f1ap_du_data->tac[i])[1];
+	fiveGS_TAC[2] = ((uint8_t*)&f1ap_du_data->tac[i])[0];
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
-                             (const char*)&f1ap_du_data->tac[i],
+                             (const char *)fiveGS_TAC,
                              3);
 
         /* - Configured_EPS_TAC */
@@ -507,7 +511,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
           cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
 
           TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc_digit_length);
-          AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
+
           LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
                 cell->nRCGI.nRCellIdentity.buf[0],
                 cell->nRCGI.nRCellIdentity.buf[1],
@@ -532,7 +536,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   */
               case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation:
               {
-                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nrpci = *cell->nRPCI;
+                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nrpci = (cell->nRPCI != NULL) ? *cell->nRPCI : 0;
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t*)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
                 F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
@@ -715,8 +719,12 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
+	uint8_t fiveGS_TAC[3];
+	fiveGS_TAC[0] = ((uint8_t*)&f1ap_setup_req->tac[i])[2];
+	fiveGS_TAC[1] = ((uint8_t*)&f1ap_setup_req->tac[i])[1];
+	fiveGS_TAC[2] = ((uint8_t*)&f1ap_setup_req->tac[i])[0];
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
-                             (const char *) &f1ap_setup_req->tac[i],
+                             (const char *)fiveGS_TAC,
                              3);
 
         /* - Configured_EPS_TAC */
@@ -1121,7 +1129,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
           cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
 
           TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc_digit_length);
-          AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
+
           LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
                 cell->nRCGI.nRCellIdentity.buf[0],
                 cell->nRCGI.nRCellIdentity.buf[1],
@@ -1146,7 +1154,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   */
               case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation:
               {
-                F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nrpci = *cell->nRPCI;
+                F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nrpci = (cell->nRPCI != NULL) ? *cell->nRPCI : 0;
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t*)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
                 F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
