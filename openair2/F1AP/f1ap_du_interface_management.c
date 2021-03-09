@@ -521,7 +521,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
           BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
           F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid);
            F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
-          AssertFatal(ext!=NULL,"Extension is null\n");
+	  if (ext==NULL) continue;
 
           for (int cnt=0;cnt<ext->list.count;cnt++) {
             F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
@@ -1137,10 +1137,11 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                 cell->nRCGI.nRCellIdentity.buf[3],
                 cell->nRCGI.nRCellIdentity.buf[4]);
           BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
-          F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid);
-           F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
-          AssertFatal(ext!=NULL,"Extension is null\n");
+					 F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid);
+	  F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
 
+	  if (ext==NULL) continue;
+ 
           for (int cnt=0;cnt<ext->list.count;cnt++) {
             F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
             switch (cells_to_be_activated_list_itemExtIEs->id) {
