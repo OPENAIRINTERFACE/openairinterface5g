@@ -914,7 +914,8 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
 {
   int rnti = ctxt_pP->rnti;
-  int i,j;
+  int i;
+  int j;
 
   if (/*ctxt_pP->enb_flag != 1 ||*/ ctxt_pP->module_id != 0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
