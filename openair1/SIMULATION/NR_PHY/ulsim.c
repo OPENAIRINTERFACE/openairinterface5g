@@ -1074,27 +1074,28 @@ int main(int argc, char **argv)
 	      }
 	      ///////////
 	      ////////////////////////////////////////////////////
-	      tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
+        tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
 	  
-	      txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-				                    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+        txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+                            frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
       }	
       else n_trials = 1;
 
       if (input_fd == NULL ) {
 
-	      sigma_dB = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
-	      sigma    = pow(10,sigma_dB/10);
+        sigma_dB = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
+        sigma    = pow(10,sigma_dB/10);
 
 
-	      if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)frame_parms->ofdm_symbol_size/(12*nb_rb));
+        if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)                
+                                frame_parms->ofdm_symbol_size/(12*nb_rb));
 
-	      for (i=0; i<slot_length; i++) {
-	        for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-	          s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
-	          s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
-	        }
-	}
+        for (i=0; i<slot_length; i++) {
+          for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+            s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
+            s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
+          }
+        }
 
 
 	      if (UE2gNB->max_Doppler == 0) {
@@ -1113,8 +1114,8 @@ int main(int argc, char **argv)
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
                           &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1]);
             }
-	        }
-	      }
+          }
+        }
 
       } /*End input_fd */
 
