@@ -1058,26 +1058,26 @@ int main(int argc, char **argv)
       for (int i=0;i<(TBS/8);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
       if (input_fd == NULL) {
 
-	      // set FAPI parameters for UE, put them in the scheduled response and call
-	      nr_ue_scheduled_response(&scheduled_response);
-	  
-	  
-	      /////////////////////////phy_procedures_nr_ue_TX///////////////////////
-	      ///////////
-	  
-	      phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
-	  
-	  
-	      if (n_trials==1) {
-	        LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
-	        LOG_M("txsig0F.m","txs0F", UE->common_vars.txdataF[0],frame_parms->ofdm_symbol_size*14,1,1);
-	      }
-	      ///////////
-	      ////////////////////////////////////////////////////
+        // set FAPI parameters for UE, put them in the scheduled response and call
+        nr_ue_scheduled_response(&scheduled_response);
+
+
+        /////////////////////////phy_procedures_nr_ue_TX///////////////////////
+        ///////////
+
+        phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
+
+
+        if (n_trials==1) {
+          LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
+          LOG_M("txsig0F.m","txs0F", UE->common_vars.txdataF[0],frame_parms->ofdm_symbol_size*14,1,1);
+        }
+        ///////////
+        ////////////////////////////////////////////////////
         tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
-	  
+
         txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-                            frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+                              frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
       }	
       else n_trials = 1;
 
@@ -1087,7 +1087,7 @@ int main(int argc, char **argv)
         sigma    = pow(10,sigma_dB/10);
 
 
-        if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)                
+        if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)
                                 frame_parms->ofdm_symbol_size/(12*nb_rb));
 
         for (i=0; i<slot_length; i++) {
@@ -1098,17 +1098,15 @@ int main(int argc, char **argv)
         }
 
 
-	      if (UE2gNB->max_Doppler == 0) {
-	      multipath_channel(UE2gNB,s_re,s_im,r_re,r_im,
-			                    slot_length,0,(n_trials==1)?1:0);
-	      } else {
-	      multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
-			                       2*slot_length,0);
-	      }
-	      for (i=0; i<slot_length; i++) {
-	        for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	          ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-	          ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+        if (UE2gNB->max_Doppler == 0) {
+          multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
+        } else {
+          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
+        }
+        for (i=0; i<slot_length; i++) {
+          for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
+            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
