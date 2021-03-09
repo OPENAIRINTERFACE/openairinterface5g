@@ -550,8 +550,10 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       break;
     case 2:
       L_max = 8;
+      break;
     case 3:
       L_max = 64;
+      break;
     default:
       AssertFatal(0,"SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
                   scc->ssb_PositionsInBurst->present);
