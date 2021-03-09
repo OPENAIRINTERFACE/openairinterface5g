@@ -961,7 +961,8 @@ int CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
                                                        uint32_t assoc_id,
                                                        uint32_t stream,
                                                        F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+  LOG_I(F1AP,"Cell Configuration ok (assoc_id %d)\n",assoc_id);
+  return(0);
 }
 
 

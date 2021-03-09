@@ -259,11 +259,11 @@ void *gNB_app_task(void *args_p)
 	ret=gNB_app_handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
 
       DevAssert(register_gnb_pending > 0);
-      register_gnb_pending--;
 
       /* Check if at least gNB is registered with one AMF */
       if (F1AP_SETUP_RESP(msg_p).num_cells_to_activate > 0) {
         registered_gnb++;
+	register_gnb_pending--;
       }
 
       /* Check if all register gNB requests have been processed */
@@ -322,9 +322,8 @@ void *gNB_app_task(void *args_p)
           itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
 
         } else {
-          LOG_W(GNB_APP, " %d gNB not associated with a AMF, retrying registration in %d seconds ...\n",
-                gnb_nb - registered_gnb,  GNB_REGISTER_RETRY_DELAY);
 
+	  DevAssert(1==0);	  
           /* Restart the gNB registration process in GNB_REGISTER_RETRY_DELAY seconds */
           if (timer_setup (GNB_REGISTER_RETRY_DELAY, 0, TASK_GNB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
                            NULL, &gnb_register_retry_timer_id) < 0) {

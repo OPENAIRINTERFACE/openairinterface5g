@@ -110,6 +110,10 @@ static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
       break;
 
+    case F1AP_ProcedureCode_id_gNBCUConfigurationUpdate:
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_gNBCUConfigurationUpdate\n", __func__);
+      break;
+
     case F1AP_ProcedureCode_id_UEContextRelease:
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextRelease\n", __func__);
       break;

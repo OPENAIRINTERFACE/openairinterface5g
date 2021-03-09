@@ -540,14 +540,14 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t*)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
                 F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-                LOG_D(F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                LOG_D(F1AP, "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
                       i, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc,
                       F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI);
                 for (int si = 0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                   size_t size = sib_item->sIBmessage.size;
                   F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si] = size;
-                  LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
+                  LOG_D(F1AP, "F1AP: SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
                   F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si]);
                   memcpy((void*)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si],
                           (void*)sib_item->sIBmessage.buf,
@@ -1159,14 +1159,14 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t*)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
                 F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-                LOG_D(F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                LOG_D(F1AP, "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
                       i, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc,
                       F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI);
                 for (int si = 0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                   size_t size = sib_item->sIBmessage.size;
                   F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si] = size;
-                  LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
+                  LOG_D(F1AP, "F1AP: SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
                   F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si]);
                   memcpy((void*)F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si],
                           (void*)sib_item->sIBmessage.buf,
@@ -1203,10 +1203,6 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
   LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
   F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_cells_to_activate = num_cells_to_activate;
-  // tmp
-  // F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_SI[0] = 1;
-  for (int i=0;i<num_cells_to_activate;i++)
-    AssertFatal(F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
 
   MSC_LOG_RX_MESSAGE(
   MSC_F1AP_DU,
@@ -1255,6 +1251,39 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs == 0,
 	      "%d DedicatedSIDeliveryNeededUEs\n",
 	      GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs);
+
+  F1AP_F1AP_PDU_t           pdu;
+  uint8_t  *buffer;
+  uint32_t  len;
+
+  /* Create */
+  /* 0. pdu Type */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
+  pdu.choice.successfulOutcome = (F1AP_SuccessfulOutcome_t *)calloc(1, sizeof(F1AP_SuccessfulOutcome_t));
+  pdu.choice.successfulOutcome->procedureCode = F1AP_ProcedureCode_id_gNBCUConfigurationUpdate;
+  pdu.choice.successfulOutcome->criticality   = F1AP_Criticality_reject;
+  pdu.choice.successfulOutcome->value.present = F1AP_SuccessfulOutcome__value_PR_GNBCUConfigurationUpdateAcknowledge;
+  F1AP_GNBCUConfigurationUpdateAcknowledge_t *out = &pdu.choice.successfulOutcome->value.choice.GNBCUConfigurationUpdateAcknowledge;
+
+  /* mandatory */
+  /* c1. Transaction ID (integer value)*/
+  F1AP_GNBCUConfigurationUpdateAcknowledgeIEs_t *ie = (F1AP_GNBCUConfigurationUpdateAcknowledgeIEs_t *)calloc(1, sizeof(F1AP_F1SetupResponseIEs_t));
+  ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ie->criticality               = F1AP_Criticality_reject;
+  ie->value.present             = F1AP_GNBCUConfigurationUpdateAcknowledgeIEs__value_PR_TransactionID;
+  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(F1AP, "Failed to encode GNB-DU-Configuration-Update-Acknowledge\n");
+    return -1;
+  }
+
+  du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, 0);
+
+
 
   return 0;
 }
