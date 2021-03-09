@@ -195,6 +195,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
+	served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
                              (const char*)&f1ap_du_data->tac[i],
                              3);
@@ -395,6 +396,18 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
                         gnb_du_served_cell_list_item_ies);
 
   }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c5. RRC VERSION */
+  ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
+  ie->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
+  ie->criticality               = F1AP_Criticality_reject;
+  ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
+  ie->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
+  ie->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
+  ie->value.choice.RRC_Version.latest_RRC_Version.size = 1;
+  ie->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
@@ -864,6 +877,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
+	served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
                              (const char *) &f1ap_setup_req->tac[i],
                              3);

@@ -135,58 +135,58 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   int num_cells_available = F1AP_SETUP_REQ(message_p).num_cells_available;
 
   for (i=0; i<num_cells_available; i++) {
-    F1AP_GNB_DU_Served_Cells_Item_t *served_celles_item_p;
+    F1AP_GNB_DU_Served_Cells_Item_t *served_cells_item_p;
 
-    served_celles_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->value.choice.GNB_DU_Served_Cells_Item);
+    served_cells_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->value.choice.GNB_DU_Served_Cells_Item);
     
     /* tac */
-    if (served_celles_item_p->served_Cell_Information.fiveGS_TAC) {
-      OCTET_STRING_TO_INT16(served_celles_item_p->served_Cell_Information.fiveGS_TAC, F1AP_SETUP_REQ(message_p).tac[i]);
+    if (served_cells_item_p->served_Cell_Information.fiveGS_TAC) {
+      OCTET_STRING_TO_INT16(served_cells_item_p->served_Cell_Information.fiveGS_TAC, F1AP_SETUP_REQ(message_p).tac[i]);
       LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n",
             i, F1AP_SETUP_REQ(message_p).tac[i]);
     }
     /* - nRCGI */
-    TBCD_TO_MCC_MNC(&(served_celles_item_p->served_Cell_Information.nRCGI.pLMN_Identity), F1AP_SETUP_REQ(message_p).mcc[i],
+    TBCD_TO_MCC_MNC(&(served_cells_item_p->served_Cell_Information.nRCGI.pLMN_Identity), F1AP_SETUP_REQ(message_p).mcc[i],
                     F1AP_SETUP_REQ(message_p).mnc[i],
                     F1AP_SETUP_REQ(message_p).mnc_digit_length[i]);
     
     
     // NR cellID
-    BIT_STRING_TO_NR_CELL_IDENTITY(&served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
+    BIT_STRING_TO_NR_CELL_IDENTITY(&served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
 				   F1AP_SETUP_REQ(message_p).nr_cellid[i]);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
           F1AP_SETUP_REQ(message_p).mcc[i],
           F1AP_SETUP_REQ(message_p).mnc[i],
           (long long unsigned int)F1AP_SETUP_REQ(message_p).nr_cellid[i]);
     LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
-          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[0],
-          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[1],
-          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[2],
-          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[3],
-          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);
+          served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[0],
+          served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[1],
+          served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[2],
+          served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[3],
+          served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);
     /* - nRPCI */
-    F1AP_SETUP_REQ(message_p).nr_pci[i] = served_celles_item_p->served_Cell_Information.nRPCI;
+    F1AP_SETUP_REQ(message_p).nr_pci[i] = served_cells_item_p->served_Cell_Information.nRPCI;
     LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n",
           i, F1AP_SETUP_REQ(message_p).nr_pci[i]);
   
     // System Information
     /* mib */
-    F1AP_SETUP_REQ(message_p).mib[i] = calloc(served_celles_item_p->gNB_DU_System_Information->mIB_message.size + 1, sizeof(char));
-    memcpy(F1AP_SETUP_REQ(message_p).mib[i], served_celles_item_p->gNB_DU_System_Information->mIB_message.buf,
-           served_celles_item_p->gNB_DU_System_Information->mIB_message.size);
+    F1AP_SETUP_REQ(message_p).mib[i] = calloc(served_cells_item_p->gNB_DU_System_Information->mIB_message.size + 1, sizeof(char));
+    memcpy(F1AP_SETUP_REQ(message_p).mib[i], served_cells_item_p->gNB_DU_System_Information->mIB_message.buf,
+           served_cells_item_p->gNB_DU_System_Information->mIB_message.size);
     /* Convert the mme name to a printable string */
-    F1AP_SETUP_REQ(message_p).mib[i][served_celles_item_p->gNB_DU_System_Information->mIB_message.size] = '\0';
-    F1AP_SETUP_REQ(message_p).mib_length[i] = served_celles_item_p->gNB_DU_System_Information->mIB_message.size;
+    F1AP_SETUP_REQ(message_p).mib[i][served_cells_item_p->gNB_DU_System_Information->mIB_message.size] = '\0';
+    F1AP_SETUP_REQ(message_p).mib_length[i] = served_cells_item_p->gNB_DU_System_Information->mIB_message.size;
     LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).mib[%d] %s , len = %d \n",
           i, F1AP_SETUP_REQ(message_p).mib[i], F1AP_SETUP_REQ(message_p).mib_length[i]);
 
     /* sib1 */
-    F1AP_SETUP_REQ(message_p).sib1[i] = calloc(served_celles_item_p->gNB_DU_System_Information->sIB1_message.size + 1, sizeof(char));
-    memcpy(F1AP_SETUP_REQ(message_p).sib1[i], served_celles_item_p->gNB_DU_System_Information->sIB1_message.buf,
-           served_celles_item_p->gNB_DU_System_Information->sIB1_message.size);
+    F1AP_SETUP_REQ(message_p).sib1[i] = calloc(served_cells_item_p->gNB_DU_System_Information->sIB1_message.size + 1, sizeof(char));
+    memcpy(F1AP_SETUP_REQ(message_p).sib1[i], served_cells_item_p->gNB_DU_System_Information->sIB1_message.buf,
+           served_cells_item_p->gNB_DU_System_Information->sIB1_message.size);
     /* Convert the mme name to a printable string */
-    F1AP_SETUP_REQ(message_p).sib1[i][served_celles_item_p->gNB_DU_System_Information->sIB1_message.size] = '\0';
-    F1AP_SETUP_REQ(message_p).sib1_length[i] = served_celles_item_p->gNB_DU_System_Information->sIB1_message.size;
+    F1AP_SETUP_REQ(message_p).sib1[i][served_cells_item_p->gNB_DU_System_Information->sIB1_message.size] = '\0';
+    F1AP_SETUP_REQ(message_p).sib1_length[i] = served_cells_item_p->gNB_DU_System_Information->sIB1_message.size;
     LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).sib1[%d] %s , len = %d \n",
           i, F1AP_SETUP_REQ(message_p).sib1[i], F1AP_SETUP_REQ(message_p).sib1_length[i]);
   }
