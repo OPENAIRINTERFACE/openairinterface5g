@@ -226,6 +226,29 @@ void nr_process_mac_pdu(
         	//  end of MAC PDU, can ignore the rest.
         	break;
 
+        case UL_SCH_LCID_SRB1:
+          if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+            //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+            mac_subheader_len = 3;
+            mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1 & 0x7f) << 8)
+                | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
+          } else {
+            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+            mac_subheader_len = 2;
+          }
+          LOG_I(MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
+          mac_rlc_data_ind(module_idP,
+              rnti,
+              module_idP,
+              frameP,
+              ENB_FLAG_YES,
+              MBMS_FLAG_NO,
+              rx_lcid,
+              (char *) (pdu_ptr + mac_subheader_len),
+              mac_sdu_len,
+              1,
+              NULL);
+          break;
        case UL_SCH_LCID_SRB2:
               // todo
               break;
@@ -239,9 +262,6 @@ void nr_process_mac_pdu(
               // todo
               mac_subheader_len = 2;
               break;
-
-        // MAC SDUs
-        case UL_SCH_LCID_SRB1:
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
@@ -255,39 +275,13 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_I(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+                LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 		int UE_id = find_nr_UE_id(module_idP, rnti);
 		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
 		    log_dump(MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
                 #endif
-                if(IS_SOFTMODEM_NOS1){
-                  mac_rlc_data_ind(module_idP,
-                      0x1234,
-                      module_idP,
-                      frameP,
-                      ENB_FLAG_YES,
-                      MBMS_FLAG_NO,
-                      rx_lcid,
-                      (char *) (pdu_ptr + mac_subheader_len),
-                      mac_sdu_len,
-                      1,
-                      NULL);
-                }
-                else{
-                  mac_rlc_data_ind(module_idP,
-                      0x1234,
-                      module_idP,
-                      frameP,
-                      ENB_FLAG_YES,
-                      MBMS_FLAG_NO,
-                      rx_lcid,
-                      (char *) (pdu_ptr + mac_subheader_len),
-                      mac_sdu_len,
-                      1,
-                      NULL);
-                }
 
                 mac_rlc_data_ind(module_idP,
                                  rnti,
@@ -418,7 +412,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -426,7 +420,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           slotP,
           current_rnti,
           UE_id,
-          ul_cqi);
+          ul_cqi,
+          sduP);
 
     // if not missed detection (10dB threshold for now)
     if (UE_scheduling_control->ul_rssi < (100+rssi)) {

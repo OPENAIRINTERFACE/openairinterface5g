@@ -55,6 +55,7 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
+static boolean_t loop_dcch_dtch = TRUE;
 // Compute and write all MAC CEs and subheaders, and return number of written
 // bytes
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
@@ -340,7 +341,9 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    const int lcid = DL_SCH_LCID_DTCH;
+    loop_dcch_dtch = BOOL_NOT(loop_dcch_dtch);
+    const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
+    // const int lcid = DL_SCH_LCID_DTCH;
     const uint16_t rnti = UE_info->rnti[UE_id];
     sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                       rnti,
@@ -353,6 +356,17 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+    LOG_I(MAC,
+        "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
+        frame,
+        slot,
+        lcid,
+        sched_ctrl->num_total_bytes);  
+
+    if (sched_ctrl->num_total_bytes == 0
+        && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
+      return;
+
     LOG_D(MAC,
           "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
@@ -989,7 +1003,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       /* next, get RLC data */
 
-      const int lcid = DL_SCH_LCID_DTCH;
+      // const int lcid = DL_SCH_LCID_DTCH;
+      const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
@@ -1005,7 +1020,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
            * such that TBS is full */
           const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
           len = mac_rlc_data_req(module_id,
-                                 rnti,
+                                 0x1234,
                                  module_id,
                                  frame,
                                  ENB_FLAG_YES,
@@ -1020,7 +1035,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                 "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
-                rnti,
+                0x1234,
                 len,
                 lcid,
                 ndata,

@@ -935,7 +935,6 @@ if(!IS_SOFTMODEM_NOS1)
     wait_nfapi_init("main?");
   }
 
-
   if (NODE_IS_DU(node_type) || (node_type == ngran_gNB)) {
     printf("wait RUs\n");
     wait_RUs();
@@ -952,7 +951,7 @@ if(!IS_SOFTMODEM_NOS1)
       p.ru=RC.ru[0];
       load_softscope("nr",&p);
     }
-    
+
     if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
       printf("Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();

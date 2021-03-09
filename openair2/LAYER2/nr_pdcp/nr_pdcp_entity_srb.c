@@ -25,12 +25,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-void nr_pdcp_entity_srb_recv_pdu(const protocol_ctxt_t const *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size)
+void nr_pdcp_entity_srb_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_srb_t *entity = (nr_pdcp_entity_srb_t *)_entity;
 
   if (size < 2) abort();
-  entity->common.deliver_sdu(ctxt_pP, entity->common.deliver_sdu_data,
+  entity->common.deliver_sdu(entity->common.deliver_sdu_data,
                              (nr_pdcp_entity_t *)entity, buffer+2, size-6);
 }
 

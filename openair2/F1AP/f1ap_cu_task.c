@@ -39,7 +39,7 @@
 #include "proto_agent.h"
 
 extern RAN_CONTEXT_t RC;
-extern uint8_t proto_agent_falg;
+extern uint8_t proto_agent_flag;
 
 f1ap_setup_req_t *f1ap_du_data_from_du;
 f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
@@ -80,7 +80,7 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   };
   AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
-  proto_agent_falg = 1;
+  proto_agent_flag = 1;
 }
 
 void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {

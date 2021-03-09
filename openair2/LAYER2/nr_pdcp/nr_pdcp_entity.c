@@ -20,8 +20,8 @@
  */
 
 #include "nr_pdcp_entity.h"
-#include "nr_pdcp_entity_srb.h"
 #include "nr_pdcp_entity_drb_am.h"
+#include "nr_pdcp_entity_srb.h"
 #include "nr_pdcp_security_nea2.h"
 
 #include "LOG/log.h"

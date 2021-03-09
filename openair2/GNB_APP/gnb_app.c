@@ -49,7 +49,7 @@ extern unsigned char NB_gNB_INST;
 extern RAN_CONTEXT_t RC;
 
 #define GNB_REGISTER_RETRY_DELAY 10
-
+#if 0
 /*------------------------------------------------------------------------------*/
 static void configure_nr_rrc(uint32_t gnb_id)
 {
@@ -68,7 +68,7 @@ static void configure_nr_rrc(uint32_t gnb_id)
   }
   else AssertFatal(0,"NRRRC context for gNB %d not allocated\n",gnb_id);
 }
-
+#endif
 /*------------------------------------------------------------------------------*/
 
 

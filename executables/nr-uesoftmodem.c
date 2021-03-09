@@ -579,6 +579,17 @@ int main( int argc, char **argv ) {
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
+  //Don't understand why generation of RRCSetupRequest is called here. It seems wrong
+  protocol_ctxt_t ctxt_pP = {0};
+  ctxt_pP.enb_flag = ENB_FLAG_NO;
+  ctxt_pP.rnti = 0x1234;
+  rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
+  if (create_tasks_nrue(1) < 0) {
+    printf("cannot create ITTI tasks\n");
+    exit(-1); // need a softer mode
+  }
+
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
   sleep(20);

@@ -86,7 +86,7 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
+//uint8_t nfapi_mode = 0; // Default to monolithic mode
 uint32_t target_dl_mcs = 28;
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
