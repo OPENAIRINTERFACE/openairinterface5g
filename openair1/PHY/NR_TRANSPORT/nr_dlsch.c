@@ -268,6 +268,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
 
     /// DMRS QPSK modulation
+    // TODO: performance improvement, we can skip the modulation of DMRS symbols outside the bandwidth part
     for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
       if (rel15->dlDmrsSymbPos & (1 << l)) {
         nr_modulation(pdsch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs[l]); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
