@@ -681,7 +681,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
         preamble_shift  -= NCS;
 
         if (preamble_shift < 0)
-          preamble_shift+=((N_ZC/NCS)*NCS);
+          preamble_shift+=N_ZC;
       }
     } else { // This is the high-speed case
       new_dft = 0;
