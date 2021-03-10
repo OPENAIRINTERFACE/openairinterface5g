@@ -124,9 +124,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
   int rx_power_tot[NUMBER_OF_NR_ULSCH_MAX];
   int rx_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
-  int wideband_cqi_avg[NUMBER_OF_NR_ULSCH_MAX];
   unsigned short rx_power_avg_dB[NUMBER_OF_NR_ULSCH_MAX];
-  unsigned short rx_power_dB[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
   unsigned short rx_power_tot_dB[NUMBER_OF_NR_ULSCH_MAX];
 
   openair0_config_t *    cfg = &gNB->RU_list[0]->openair0_cfg;
@@ -156,7 +154,6 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
     }
 
-    rx_power_dB[ulsch_id][aarx] = (unsigned short) dB_fixed(rx_power[ulsch_id][aarx]);
     rx_power_tot[ulsch_id] += rx_power[ulsch_id][aarx];
 
   }

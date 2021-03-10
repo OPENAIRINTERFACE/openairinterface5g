@@ -49,8 +49,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 void gNB_I0_measurements(PHY_VARS_gNB *gNB);
 
-int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol);
 
+int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               NR_DL_FRAME_PARMS *frame_parms,

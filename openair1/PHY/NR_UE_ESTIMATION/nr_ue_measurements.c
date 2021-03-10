@@ -271,20 +271,18 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
 // This function computes the received noise power
 // Measurement units:
-// - psd_awgm (AWGN power spectral density):     dBm/Hz
+// - psd_awgn (AWGN power spectral density):     dBm/Hz
 void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             uint8_t slot){
 
   uint8_t k;
   int aarx, nb_nulls;
-  int psd_awgm = -174;
   int16_t *rxF_sss;
   uint8_t k_left = 48;
   uint8_t k_right = 183;
   uint8_t k_length = 8;
   uint8_t l_sss = ue->symbol_offset + 2;
-  int scs = 15000 * pow(2, (ue->frame_parms.numerology_index));
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   double rx_gain = openair0_cfg[0].rx_gain[0];
   double rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
@@ -332,7 +330,9 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/aarx);
 
   #ifdef DEBUG_MEAS_RRC
-  int nf_usrp = ue->measurements.n0_power_tot_dB + 3 + 30 - ((int)rx_gain - (int)rx_gain_offset) - 10 * log10(pow(2, 30)) - (psd_awgm + dB_fixed(scs) + dB_fixed(ue->frame_parms.ofdm_symbol_size));
+  const int psd_awgn = -174;
+  const int scs = 15000 * (1 << ue->frame_parms.numerology_index);
+  const int nf_usrp = ue->measurements.n0_power_tot_dB + 3 + 30 - ((int)rx_gain - (int)rx_gain_offset) - 10 * log10(pow(2, 30)) - (psd_awgn + dB_fixed(scs) + dB_fixed(ue->frame_parms.ofdm_symbol_size));
   LOG_D(PHY, "In [%s][slot:%d] NF USRP %d dB\n", __FUNCTION__, slot, nf_usrp);
   #endif
 
