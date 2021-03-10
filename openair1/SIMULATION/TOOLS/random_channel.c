@@ -64,6 +64,7 @@ static unsigned int max_chan;
 static channel_desc_t **defined_channels;
 static char modellist_name[MAX_OPTNAME_SIZE]="";  
 
+
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
                        uint8_t nb_rx,
@@ -2026,6 +2027,54 @@ void init_channelmod(void) {
   if (addcmd != NULL) {
     addcmd("channelmod",channelmod_vardef,channelmod_cmdarray);
   }
+} /* init_channelmod */
+
+void load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double channel_bandwidth) {
+  
+  paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
+  
+  int numparams=sizeof(channelmod_params)/sizeof(paramdef_t);
+  int ret = config_get( channelmod_params,numparams,CHANNELMOD_SECTION);
+  AssertFatal(ret >= 0, "configuration couldn't be performed");
+    defined_channels=calloc(max_chan,sizeof( channel_desc_t*));
+  AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
+
+  
+  paramdef_t achannel_params[] = CHANNELMOD_MODEL_PARAMS_DESC;
+  paramlist_def_t channel_list;
+  memset(&channel_list,0,sizeof(paramlist_def_t));
+  strncpy(channel_list.listname,modellist_name,MAX_OPTNAME_SIZE-1);
+
+  numparams = sizeof(achannel_params)/sizeof(paramdef_t);
+  config_getlist( &channel_list,achannel_params,numparams, CHANNELMOD_SECTION);
+  AssertFatal(channel_list.numelt>0, "List %s.%s not found in config filee\n",CHANNELMOD_SECTION,CHANNELMOD_MODELLIST_PARANAME);
+  int pindex_NAME = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_NAME_PNAME);  
+  int pindex_DT = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_DT_PNAME );
+  int pindex_FF = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_FF_PNAME );
+  int pindex_CO = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_CO_PNAME );
+  int pindex_PL = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_PL_PNAME );
+  int pindex_NP = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_NP_PNAME );
+  int pindex_TYPE = config_paramidx_fromname(channelmod_params,numparams, CHANNELMOD_MODEL_TYPE_PNAME);
+  
+  for (int i=0; i<channel_list.numelt; i++) {
+
+    int modid = modelid_fromname( *(channel_list.paramarray[i][pindex_TYPE].strptr) );
+    if (modid <0) {
+     LOG_E(OCM,"Valid channel model types:\n");
+     for (int m=0; channelmod_names[i].name != NULL ; m++) {
+          printf(" %s ", map_int_to_str(channelmod_names,m ));
+      }
+      AssertFatal(0, "\n  Choose a valid model type\n");
+    }
+    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,nb_rx,modid,sampling_rate,channel_bandwidth,
+				                                         *(channel_list.paramarray[i][pindex_DT].dblptr), *(channel_list.paramarray[i][pindex_FF].dblptr), 
+				                                         *(channel_list.paramarray[i][pindex_CO].iptr), *(channel_list.paramarray[i][pindex_PL].dblptr),
+				                                         *(channel_list.paramarray[i][pindex_NP].dblptr) );
+	AssertFatal( (channeldesc_p!= NULL), "Could not allocate channel %s type %s \n",*(channelmod_params[pindex_NAME].strptr), *(channelmod_params[pindex_TYPE].strptr));
+	channeldesc_p->model_name = strdup(*(channel_list.paramarray[i][pindex_NAME].strptr));
+	LOG_I(OCM,"Model %s type %s allocated from config file, list %s\n",*(channel_list.paramarray[i][pindex_NAME].strptr), 
+		  *(channel_list.paramarray[i][pindex_TYPE].strptr), modellist_name);
+  } /* for loop on channel_list */
 } /* init_channelmod */
 
 int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double channel_bandwidth) {
