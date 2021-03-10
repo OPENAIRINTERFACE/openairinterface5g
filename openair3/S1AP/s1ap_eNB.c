@@ -58,8 +58,6 @@
 #include "s1ap_eNB_ue_context.h" // test, to be removed
 #include "msc.h"
 
-#include "s1ap_eNB_timer.h"
-
 #include "assertions.h"
 #include "conversions.h"
 #if defined(TEST_S1C_MME)
@@ -79,6 +77,37 @@ static int s1ap_sctp_req(s1ap_eNB_instance_t *instance_p,
                          s1ap_eNB_mme_data_t *s1ap_mme_data_p);
 void s1ap_eNB_timer_expired(instance_t                 instance,
                             timer_has_expired_t   *msg_p);
+
+int s1ap_timer_setup(
+  uint32_t      interval_sec,
+  uint32_t      interval_us,
+  task_id_t     task_id,
+  int32_t       instance,
+  uint32_t      timer_kind,
+  timer_type_t  type,
+  void         *timer_arg,
+  long         *timer_id)
+{
+  uint32_t *timeoutArg=NULL;
+  int ret=0;
+  timeoutArg=malloc(sizeof(uint32_t));
+  *timeoutArg=timer_kind;
+  ret=timer_setup(interval_sec,
+                interval_us,
+                task_id,
+                instance,
+                type,
+                (void*)timeoutArg,
+                timer_id);
+  return ret;
+}
+
+int s1ap_timer_remove(long timer_id)
+{
+  int ret;
+  ret=timer_remove(timer_id);
+  return ret;
+}
 
 uint32_t s1ap_generate_eNB_id(void) {
   char    *out;
@@ -407,7 +436,13 @@ void s1ap_eNB_timer_expired(
   long                      timer_id = S1AP_TIMERID_INIT;
   
   instance_p = s1ap_eNB_get_instance(instance);
-  timer_kind = *((uint32_t*)msg_p->arg);
+  if(msg_p->arg!=NULL){
+    timer_kind = *((uint32_t*)msg_p->arg);
+    free(msg_p->arg);
+  }else{
+    S1AP_ERROR("s1 timer timer_kind is NULL\n");
+    return;
+  }
   line_ind = (int16_t)(timer_kind & S1AP_LINEIND);
   timer_id = msg_p->timer_id;
   

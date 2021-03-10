@@ -52,7 +52,6 @@
 #include "assertions.h"
 #include "conversions.h"
 #include "msc.h"
-#include "s1ap_eNB_timer.h"
 
 static
 int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
@@ -116,6 +115,16 @@ int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               as
 static int s1ap_eNB_snd_s1_setup_request(
   s1ap_eNB_instance_t *instance_p,
   s1ap_eNB_mme_data_t *s1ap_mme_data_p);
+
+int s1ap_timer_setup(
+  uint32_t      interval_sec,
+  uint32_t      interval_us,
+  task_id_t     task_id,
+  int32_t       instance,
+  uint32_t      timer_kind,
+  timer_type_t  type,
+  void         *timer_arg,
+  long         *timer_id);
 
 /* Handlers matrix. Only eNB related procedure present here */
 s1ap_message_decoded_callback messages_callback[][3] = {
