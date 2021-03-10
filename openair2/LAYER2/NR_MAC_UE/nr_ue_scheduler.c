@@ -495,11 +495,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     int ibwp_size = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
     // BWP start selection according to 8.3 of TS 38.213
-    pusch_config_pdu->bwp_size = ibwp_size;
-    if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
+    if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size)) {
       pusch_config_pdu->bwp_start = abwp_start;
-    else
+      pusch_config_pdu->bwp_size = abwp_size;
+    } else {
       pusch_config_pdu->bwp_start = ibwp_start;
+      pusch_config_pdu->bwp_size = ibwp_size;
+    }
 
     //// Resource assignment from RAR
     // Frequency domain allocation according to 8.3 of TS 38.213
@@ -513,7 +515,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       return -1;
 
     // virtual resource block to physical resource mapping for Msg3 PUSCH (6.3.1.7 in 38.211)
-    pusch_config_pdu->rb_start += ibwp_start - abwp_start;
+    //pusch_config_pdu->rb_start += ibwp_start - abwp_start;
 
     // Time domain allocation
     SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
