@@ -445,7 +445,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
     fp->nr_band = 261;
     //  fp->threequarter_fs= 0;
   }
-    
+
+  fp->threequarter_fs = 0;
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);

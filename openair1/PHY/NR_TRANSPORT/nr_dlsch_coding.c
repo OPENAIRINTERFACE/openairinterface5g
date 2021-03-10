@@ -110,8 +110,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
           harq->d[r] = NULL;
         }
       }
-      free16(harq, sizeof(NR_DL_gNB_HARQ_t));
-      harq = NULL;
     }
   }
 
@@ -268,7 +266,6 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
