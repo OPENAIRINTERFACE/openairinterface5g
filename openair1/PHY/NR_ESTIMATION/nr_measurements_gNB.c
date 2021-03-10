@@ -35,6 +35,8 @@
 #include "PHY/phy_extern.h"
 #include "nr_ul_estimation.h"
 
+extern openair0_config_t openair0_cfg[MAX_CARDS];
+
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
 {
   int temp, i, aa, max_pos = 0, max_val = 0;
@@ -76,9 +78,8 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB) {
   NR_gNB_COMMON *common_vars = &gNB->common_vars;
   PHY_MEASUREMENTS_gNB *measurements = &gNB->measurements;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  openair0_config_t *cfg = &gNB->RU_list[0]->openair0_cfg;
-  double rx_gain = cfg->rx_gain[0];
-  double rx_gain_offset = cfg->rx_gain_offset[0];
+  double rx_gain = openair0_cfg[0].rx_gain[0];
+  double rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
   uint32_t *rb_mask = gNB->rb_mask_ul;
   int symbol = gNB->ulmask_symb;
   int rb, offset, nb_rb;
@@ -127,9 +128,8 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   unsigned short rx_power_avg_dB[NUMBER_OF_NR_ULSCH_MAX];
   unsigned short rx_power_tot_dB[NUMBER_OF_NR_ULSCH_MAX];
 
-  openair0_config_t *    cfg = &gNB->RU_list[0]->openair0_cfg;
-  double             rx_gain = cfg->rx_gain[0];
-  double      rx_gain_offset = cfg->rx_gain_offset[0];
+  double             rx_gain = openair0_cfg[0].rx_gain[0];
+  double      rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
   NR_DL_FRAME_PARMS      *fp = &gNB->frame_parms;
   int              ch_offset = fp->ofdm_symbol_size * symbol;
