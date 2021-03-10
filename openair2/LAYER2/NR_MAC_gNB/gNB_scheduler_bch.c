@@ -413,8 +413,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      bwp);
 
   // TODO: This assignment should be done in function nr_configure_pdcch()
-  pdcch_pdu_rel15->BWPSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
-  pdcch_pdu_rel15->BWPStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
+  pdcch_pdu_rel15->BWPSize = gNB_mac->type0_PDCCH_CSS_config->num_rbs;
+  pdcch_pdu_rel15->BWPStart = gNB_mac->type0_PDCCH_CSS_config->cset_start_rb;
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
