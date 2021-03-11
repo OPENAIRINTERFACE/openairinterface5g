@@ -12,14 +12,14 @@
 //#define DEBUG_RB_EXT
 //#define DEBUG_CH_MAG
 
-void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
+void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i idft_in128[1][1200], idft_out128[1][1200];
+  __m128i idft_in128[1][3240], idft_out128[1][3240];
   __m128i norm128;
 #elif defined(__arm__)
-  int16x8_t idft_in128[1][1200], idft_out128[1][1200];
+  int16x8_t idft_in128[1][3240], idft_out128[1][3240];
   int16x8_t norm128;
 #endif
   int16_t *idft_in0 = (int16_t*)idft_in128[0], *idft_out0 = (int16_t*)idft_out128[0];
@@ -28,19 +28,18 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 
   LOG_T(PHY,"Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
-  // conjugate input
-  for (i = 0; i < (Msc_PUSCH>>2); i++) {
+  if ((Msc_PUSCH % 1536) > 0) {
+    // conjugate input
+    for (i = 0; i < (Msc_PUSCH>>2); i++) {
 #if defined(__x86_64__)||defined(__i386__)
-    *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
+      *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
 #elif defined(__arm__)
-    *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
 #endif
+    }
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      ((uint32_t*)idft_in0)[ip+0] = z[i];
   }
-
-  for (i=0,ip=0; i<Msc_PUSCH; i++, ip+=4) {
-    ((uint32_t*)idft_in0)[ip+0] = z[i];
-  }
-
 
   switch (Msc_PUSCH) {
     case 12:
@@ -194,25 +193,102 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
       dft(DFT_1200,idft_in0, idft_out0, 1);
       break;
 
+    case 1296:
+      dft(DFT_1296,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1440:
+      dft(DFT_1440,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1500:
+      dft(DFT_1500,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1536:
+      //dft(DFT_1536,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      idft(IDFT_1536,(int16_t*)z, (int16_t*)z, 1);
+      break;
+
+    case 1620:
+      dft(DFT_1620,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1728:
+      dft(DFT_1728,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1800:
+      dft(DFT_1800,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1920:
+      dft(DFT_1920,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1944:
+      dft(DFT_1944,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2160:
+      dft(DFT_2160,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2304:
+      dft(DFT_2304,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2400:
+      dft(DFT_2400,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2592:
+      dft(DFT_2592,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2700:
+      dft(DFT_2700,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2880:
+      dft(DFT_2880,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2916:
+      dft(DFT_2916,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 3000:
+      dft(DFT_3000,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 3072:
+      //dft(DFT_3072,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      idft(IDFT_3072,(int16_t*)z, (int16_t*)z, 1);
+      break;
+
+    case 3240:
+      dft(DFT_3240,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
     default:
       // should not be reached
       LOG_E( PHY, "Unsupported Msc_PUSCH value of %"PRIu16"\n", Msc_PUSCH );
       return;
   }
 
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      z[i] = ((uint32_t*)idft_out0)[ip];
 
-
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = ((uint32_t*)idft_out0)[ip];
-  }
-
-  // conjugate output
-  for (i = 0; i < (Msc_PUSCH>>2); i++) {
+    // conjugate output
+    for (i = 0; i < (Msc_PUSCH>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-    ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
+      ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
 #elif defined(__arm__)
-    *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
 #endif
+    }
   }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -221,6 +297,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 #endif
 
 }
+
 
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
@@ -1118,6 +1195,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     }
     LOG_D(PHY,"dmrs_symbol: nb_re_pusch %d\n",nb_re_pusch);
     gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
+
   } else {
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
   }
@@ -1219,9 +1297,21 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 			   symbol,
 			   rel15_ul->rb_size);
     stop_meas(&gNB->ulsch_mrc_stats);
-#ifdef NR_SC_FDMA
-    nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
-#endif
+
+
+    if (rel15_ul->transform_precoding == transform_precoder_enabled) { 
+      
+      #ifdef __AVX2__
+        // For odd number of resource blocks need byte alignment to multiple of 8
+        int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
+      #else
+        int nb_re_pusch2 = nb_re_pusch;
+      #endif      
+      
+      // perform IDFT operation on the compensated rxdata if transform precoding is enabled
+      nr_idft(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][symbol * nb_re_pusch2], nb_re_pusch);
+      LOG_D(PHY,"Transform precoding being done on data- symbol: %d, nb_re_pusch: %d\n", symbol, nb_re_pusch);      
+    }
 
 
     //----------------------------------------------------------
@@ -1245,32 +1335,33 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       /*  Subtract total PTRS RE's in the symbol from PUSCH RE's */
       gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] -= gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
     }
-
-    /*---------------------------------------------------------------------------------------------------- */
-    /*--------------------  LLRs computation  -------------------------------------------------------------*/
-    /*-----------------------------------------------------------------------------------------------------*/
-    if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1))
-    {
-#ifdef __AVX2__
-      int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
-#else
-      int off = 0;
-#endif
-      uint32_t rxdataF_ext_offset = 0;
-      for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++) {
-        start_meas(&gNB->ulsch_llr_stats);
-        nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][i * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                             gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
-                             gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
-                             &gNB->pusch_vars[ulsch_id]->llr[rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                             rel15_ul->rb_size,
-                             gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i],
-                             i,
-                             rel15_ul->qam_mod_order);
-        stop_meas(&gNB->ulsch_llr_stats);
-        rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i];
-      }// symbol loop
-    }// last symbol check
   }
+
+  /*---------------------------------------------------------------------------------------------------- */
+  /*--------------------  LLRs computation  -------------------------------------------------------------*/
+  /*-----------------------------------------------------------------------------------------------------*/
+  if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1)) {
+  
+#ifdef __AVX2__
+    int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
+#else
+    int off = 0;
+#endif
+    uint32_t rxdataF_ext_offset = 0;
+    for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++) {
+      start_meas(&gNB->ulsch_llr_stats);
+      nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][i * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                          gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                          gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
+                          &gNB->pusch_vars[ulsch_id]->llr[rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                          rel15_ul->rb_size,
+                          gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i],
+                          i,
+                          rel15_ul->qam_mod_order);
+      stop_meas(&gNB->ulsch_llr_stats);
+      rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i];
+    }// symbol loop
+  }// last symbol check
+  
   return (0);
 }

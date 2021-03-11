@@ -73,6 +73,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                unsigned short BWPStart,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch);
 
@@ -89,6 +90,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                         uint8_t slot);
 
 void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
+                             uint8_t gNB_index,
                              UE_nr_rxtx_proc_t *proc,
                              uint8_t slot,
                              uint8_t abstraction_flag);

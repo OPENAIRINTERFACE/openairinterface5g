@@ -47,6 +47,7 @@
 #include "OCG_vars.h"
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
+//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 
 #define NR_PRACH_DEBUG 1
@@ -62,7 +63,7 @@ RU_t *ru;
 double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
-uint8_t nfapi_mode=0;
+//uint8_t nfapi_mode=0;
 int sl_ahead = 0;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
@@ -70,6 +71,10 @@ int sl_ahead = 0;
 /* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 
 void
 rrc_data_ind(
@@ -99,10 +104,46 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
+int
+gtpv1u_create_ngu_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
+  return 0;
+}
+
+int
+gtpv1u_update_ngu_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti
+){
+  return 0;
+}
+
+int
+nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+){
+  return 0;
+}
+
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
 // Dummy function to avoid linking error at compilation of nr-prachsim
 int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
+int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+  return 0;
+}
+
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
 {
   return 0;
 }
@@ -641,7 +682,7 @@ int main(int argc, char **argv){
   UE_nr_rxtx_proc_t proc={0};
   proc.frame_tx   = frame;
   proc.nr_slot_tx = slot;
-  nr_ue_prach_procedures(UE,&proc,0,0);
+  nr_ue_prach_procedures(UE, &proc, 0);
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);

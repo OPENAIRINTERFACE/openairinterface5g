@@ -38,6 +38,10 @@ def nodeExecutor = params.nodeExecutor
 // VM Lockable resources
 def vmResource = params.vmLockableResource
 
+// Tags to shorten pipeline duration
+def doMandatoryTests = false
+def doFullTestsuite = false
+
 pipeline {
     agent {
         label nodeExecutor
@@ -46,31 +50,6 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: [
-            "Build gNB-USRP",
-            "Build nr-UE-USRP",
-            "Build eNB-USRP",
-            "Build basic-sim",
-            "Build phy-sim",
-            "Build eNB-ethernet",
-            "Build UE-ethernet",
-            "Analysis with cppcheck",
-            "Test phy-sim",
-            "Test basic-sim",
-            "Test L1-sim",
-            "Test RF-sim",
-            "Test L2-sim",
-            "Test-Mono-FDD-Band7",
-            "Test-Mono-TDD-Band40",
-            "Test-IF4p5-FDD-Band7",
-            "Test-IF4p5-TDD-Band40",
-            "Test-Mono-FDD-Band13-LTE-M",
-            "Test-IF4p5-TDD-Band38-Multi-RRU",
-            "Test-eNB-OAI-UE-FDD-Band7",
-            "Test-Mono-FDD-Band13-X2-HO",
-            "Test-TDD-Band78-gNB-NR-UE",
-            "Test-OCP-FDD-Band7"
-        ])
         ansiColor('xterm')
     }
 
@@ -92,6 +71,33 @@ pipeline {
                     }
                     if (fileExists("flexran")) {
                         sh "rm -Rf flexran > /dev/null 2>&1"
+                    }
+
+                    echo '\u2705 \u001B[32mVerify Labels\u001B[0m'
+                    if ("MERGE".equals(env.gitlabActionType)) {
+                        LABEL_CHECK = sh returnStdout: true, script: 'ci-scripts/checkGitLabMergeRequestLabels.sh --mr-id ' + env.gitlabMergeRequestIid
+                        LABEL_CHECK = LABEL_CHECK.trim()
+                        if (LABEL_CHECK == 'NONE') {
+                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Your merge request has none of the mandatory labels:\n\n"
+                            message += " - BUILD-ONLY\n"
+                            message += " - 4G-LTE\n"
+                            message += " - 5G-NR\n"
+                            message += " - CI\n\n"
+                            message += "Not performing CI due to lack of labels"
+                            addGitLabMRComment comment: message
+                            error('Not performing CI due to lack of labels')
+                        } else if (LABEL_CHECK == 'FULL') {
+                            doMandatoryTests = true
+                            doFullTestsuite = true
+                        } else if (LABEL_CHECK == 'SHORTEN-5G') {
+                            doMandatoryTests = true
+                        } else {
+                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): We will perform only build stages on your Merge Request"
+                            addGitLabMRComment comment: message
+                        }
+                    } else {
+                        doMandatoryTests = true
+                        doFullTestsuite = true
                     }
                 }
             }
@@ -135,7 +141,7 @@ pipeline {
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
                         sh "./ci-scripts/checkCodingFormattingRules.sh"
                     }
-                    if (doFlexranCtrlTest) {
+                    if (doFlexranCtrlTest && doMandatoryTests) {
                         sh "mkdir flexran"
                         dir ('flexran') {
                             withCredentials([
@@ -190,16 +196,6 @@ pipeline {
             }
         }
 
-        stage ("Start VM -- enb-usrp") {
-            steps {
-              lock (vmResource) {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
-                }
-              }
-            }
-        }
-
         stage ("Start VM -- phy-sim") {
             steps {
               lock (vmResource) {
@@ -245,7 +241,7 @@ pipeline {
                 stage ("Analysis with cppcheck") {
                     steps {
                         gitlabCommitStatus(name: "Analysis with cppcheck") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
@@ -254,7 +250,7 @@ pipeline {
                 stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -263,7 +259,7 @@ pipeline {
                 stage ("Build 5G gNB-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build gNB-USRP") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -272,17 +268,8 @@ pipeline {
                 stage ("Build 5G NR-UE-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build nr-UE-USRP") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                            }
-                        }
-                    }
-                }
-                stage ("Build eNB-USRP") {
-                    steps {
-                        gitlabCommitStatus(name: "Build eNB-USRP") {
-                            timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -290,7 +277,7 @@ pipeline {
                 stage ("Build physical simulators") {
                     steps {
                         gitlabCommitStatus(name: "Build phy-sim") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -299,7 +286,7 @@ pipeline {
                 stage ("Build eNB-ethernet") {
                     steps {
                         gitlabCommitStatus(name: "Build eNB-ethernet") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -310,7 +297,7 @@ pipeline {
                       // This is typically the last one to finish.
                       lock (vmResource) {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
-                            timeout (time: 20, unit: 'MINUTES') {
+                            timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -375,6 +362,9 @@ pipeline {
                 stage ("VM-based tests") {
                     stages {
                         stage ("Test physical simulators") {
+                            when {
+                                expression {doMandatoryTests}
+                            }
                             steps {
                               lock (vmResource) {
                                 script {
@@ -393,7 +383,7 @@ pipeline {
                         }
                         stage ("Build Flexran Controller") {
                             when {
-                                expression {doFlexranCtrlTest}
+                                expression {doFlexranCtrlTest && doMandatoryTests}
                             }
                             steps {
                               lock (vmResource) {
@@ -410,6 +400,9 @@ pipeline {
                             }
                         }
                         stage ("Test basic simulator") {
+                            when {
+                                expression {doMandatoryTests}
+                            }
                             steps {
                               lock (vmResource) {
                                 script {
@@ -427,6 +420,9 @@ pipeline {
                             }
                         }
                         stage ("Test L1 simulator") {
+                            when {
+                                expression {doMandatoryTests}
+                            }
                             steps {
                               lock (vmResource) {
                                 script {
@@ -444,6 +440,9 @@ pipeline {
                             }
                         }
                         stage ("Test RF simulator") {
+                            when {
+                                expression {doMandatoryTests}
+                            }
                             steps {
                               lock (vmResource) {
                                 script {
@@ -461,6 +460,9 @@ pipeline {
                             }
                         }
                         stage ("Test L2 simulator") {
+                            when {
+                                expression {doFullTestsuite}
+                            }
                             steps {
                               lock (vmResource) {
                                 script {
@@ -478,6 +480,9 @@ pipeline {
                             }
                         }
                         stage ("Destroy all Virtual Machines") {
+                            when {
+                                expression {doMandatoryTests}
+                            }
                             steps {
                               lock (vmResource) {
                                 sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
@@ -487,6 +492,9 @@ pipeline {
                     }
                 }
                 stage ("Test MONOLITHIC - FDD - Band 7 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             triggerSlaveJob ('eNB-CI-FDD-Band7-B210', 'Test-Mono-FDD-Band7')
@@ -506,6 +514,9 @@ pipeline {
                     }
                 }
                 stage ("Test MONOLITHIC - TDD - Band 40 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             triggerSlaveJob ('eNB-CI-TDD-Band40-B210', 'Test-Mono-TDD-Band40')
@@ -525,6 +536,9 @@ pipeline {
                     }
                 }
                 stage ("Test IF4p5 - FDD - Band 7 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             sh "sleep 60"
@@ -545,6 +559,9 @@ pipeline {
                     }
                 }
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             sh "sleep 60"
@@ -565,6 +582,9 @@ pipeline {
                     }
                 }
                 stage ("Test MONOLITHIC - FDD - Band 13 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             sh "sleep 60"
@@ -585,6 +605,9 @@ pipeline {
                     }
                 }
                 stage ("Test X2 Handover - FDD - Band 13 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             sh "sleep 60"
@@ -605,6 +628,9 @@ pipeline {
                     }
                 }
                 stage ("Test IF4p5 - TDD - Band 38 - B210 - MultiRRU") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             triggerSlaveJob ('eNB-CI-IF4p5-TDD-Band38-MultiRRU-B210', 'Test-IF4p5-TDD-Band38-Multi-RRU')
@@ -624,6 +650,9 @@ pipeline {
                     }
                 }
                 stage ("Test OAI UE - FDD - Band 20 - B200") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             triggerSlaveJobNoGitLab ('UE-CI-FDD-Band20-B200')
@@ -643,6 +672,9 @@ pipeline {
                     }
                 }
                 stage ("Test OAI UE - OAI eNB - FDD - Band 7 - B200") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             // Delayed trigger on slave job, so it is always the last one to run
@@ -664,6 +696,9 @@ pipeline {
                     }
                 }
                 stage ("Test OAI NR UE - OAI gNB - TDD - Band 78 - N300") {
+                    when {
+                        expression {doMandatoryTests}
+                    }
                     steps {
                         script {
                             triggerSlaveJob ('gNB-nrUE-MONO-TDD-Band78-N300', 'Test-TDD-Band78-gNB-NR-UE')
@@ -683,6 +718,9 @@ pipeline {
                     }
                 }
                 stage ("Test OAI OCP-eNB - FDD - Band 7 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
                     steps {
                         script {
                             triggerSlaveJob ('OCPeNB-FDD-Band7-B210', 'Test-OCP-FDD-Band7')
@@ -705,6 +743,7 @@ pipeline {
             post {
                 always {
                     script {
+                      if (doMandatoryTests) {
                         dir ('archives') {
                             sh "if [ -d basic_sim/test ] || [ -d phy_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
                         }
@@ -720,6 +759,7 @@ pipeline {
                                 archiveArtifacts artifacts: 'test_simulator_results.html'
                             }
                         }
+                      }
                     }
                 }
             }

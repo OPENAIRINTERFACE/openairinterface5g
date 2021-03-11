@@ -101,7 +101,7 @@ void x2ap_check_timers(instance_t instance)
                                                      X2AP_CAUSE_T_DC_PREP_TIMEOUT);
 
       /* inform RRC of timeout */
-      msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_DC_PREP_TIMEOUT);
+      msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_DC_PREP_TIMEOUT);
       X2AP_ENDC_DC_PREP_TIMEOUT(msg).rnti  = x2ap_id_get_rnti(m, i);
       itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
@@ -125,7 +125,7 @@ void x2ap_check_timers(instance_t instance)
               id_source, id_target, X2AP_CAUSE_T_DC_OVERALL_TIMEOUT);
 
       /* inform RRC of timeout */
-      msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_DC_OVERALL_TIMEOUT);
+      msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_DC_OVERALL_TIMEOUT);
       X2AP_ENDC_DC_OVERALL_TIMEOUT(msg).rnti  = x2ap_id_get_rnti(m, i);
       itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
 
@@ -144,7 +144,7 @@ lte_handover_timeout:
     x2ap_eNB_generate_x2_handover_cancel(instance_p, target, i, cause);
 
     /* inform RRC of cancellation */
-    msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_CANCEL);
+    msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_HANDOVER_CANCEL);
     X2AP_HANDOVER_CANCEL(msg).rnti  = x2ap_id_get_rnti(m, i);
     X2AP_HANDOVER_CANCEL(msg).cause = cause;
     itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);

@@ -6,9 +6,6 @@
  *   eNB retx with still smaller PDUs [1..400] [401..600] [601..900]
  *   [401..600] received, ACK goes through
  *   link clean, all goes through
- *
- * this test will fail if NACK mechanism uses SOstart/SOend
- * (not implemented for the moment)
  */
 TIME, 1,
     ENB_AM, 100000, 100000, 35, 0, 45, -1, -1, 4,

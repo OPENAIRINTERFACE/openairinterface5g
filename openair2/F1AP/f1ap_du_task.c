@@ -50,7 +50,7 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
 
-  message_p = itti_alloc_new_message(TASK_DU_F1, SCTP_NEW_ASSOCIATION_REQ);
+  message_p = itti_alloc_new_message(TASK_DU_F1, 0, SCTP_NEW_ASSOCIATION_REQ);
 
   sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
   sctp_new_association_req_p->ulp_cnx_id = instance;
@@ -86,7 +86,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   DevAssert(sctp_new_association_resp != NULL);
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
+    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
@@ -109,7 +109,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
     .remote_port         = RC.mac[instance]->eth_params_n.remote_portd
   };
   AssertFatal(proto_agent_start(instance, &params) == 0,
-              "could not start PROTO_AGENT for F1U on instance %d!\n", instance);
+              "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
 
   DU_send_F1_SETUP_REQUEST(instance);
 }
@@ -156,7 +156,7 @@ void *F1AP_DU_task(void *arg) {
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
         LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
-        du_task_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        du_task_send_sctp_association_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
 
@@ -164,26 +164,26 @@ void *F1AP_DU_task(void *arg) {
         // 1. store the respon
         // 2. send the f1setup_req
         LOG_I(F1AP, "DU Task Received SCTP_NEW_ASSOCIATION_RESP\n");
-        du_task_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        du_task_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                       &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
         LOG_I(F1AP, "DU Task Received SCTP_DATA_IND\n");
-        du_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        du_task_handle_sctp_data_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                     &received_msg->ittiMsg.sctp_data_ind);
         break;
 
      case F1AP_UL_RRC_MESSAGE: // to rrc
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                         &F1AP_UL_RRC_MESSAGE(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC
         LOG_I(F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
-        DU_send_UE_CONTEXT_RELEASE_REQUEST(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        DU_send_UE_CONTEXT_RELEASE_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                            &F1AP_UE_CONTEXT_RELEASE_REQ(received_msg));
         break;
 

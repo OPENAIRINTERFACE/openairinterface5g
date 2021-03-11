@@ -85,12 +85,13 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
+extern uint8_t nfapi_mode; // Default to monolithic mode
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -300,87 +301,11 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
-  /* Wait for the initialize message */
-  printf("Wait for the ITTI initialize message\n");
-
-  do {
-    if (message_p != NULL) {
-      result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    }
-
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case INITIALIZE_MESSAGE:
-        /* Start gNB thread */
-        LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
-        start_gNB = 1;
-        break;
-
-      case TERMINATE_MESSAGE:
-        printf("received terminate message\n");
-        oai_exit=1;
-        start_gNB = 0;
-        itti_exit_task ();
-        break;
-
-      default:
-        LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-  } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
-
-  result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-  AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  /* ???? no else but seems to be UE only ???
-    do {
-      // Wait for a message
-      itti_receive_msg (TASK_L2L1, &message_p);
-
-      switch (ITTI_MSG_ID(message_p)) {
-      case TERMINATE_MESSAGE:
-        oai_exit=1;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-      }
-
-      result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    } while(!oai_exit);
-  */
-  return NULL;
-}
 
 int create_gNB_tasks(uint32_t gnb_nb) {
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
 
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  }
 
   if (gnb_nb > 0) {
     /* Last task to create, others task must be ready before its start */
@@ -419,7 +344,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
 
-  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0 && get_softmodem_params()->sa==0)) {
     if (gnb_nb > 0) {
       /*
       if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
@@ -679,7 +604,7 @@ void wait_gNBs(void) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -717,7 +642,6 @@ int stop_L1L2(module_id_t gnb_id) {
 
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, gnb_id);
-  terminate_task(TASK_L2L1, gnb_id);
   LOG_I(GNB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
   LOG_I(GNB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
@@ -753,16 +677,9 @@ int restart_L1L2(module_id_t gnb_id) {
   rrc_enb_init();
   itti_mark_task_ready(TASK_RRC_ENB);
 
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  } else {
-    LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
-  }
-
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[gnb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
@@ -851,6 +768,9 @@ int main( int argc, char **argv )
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
+  if (get_softmodem_params()->sa)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
+
 #if T_TRACER
   T_Config_Init();
 #endif
@@ -863,9 +783,9 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
 
 
   init_opt();
@@ -892,7 +812,7 @@ if(!IS_SOFTMODEM_NOS1)
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
   } else {
     printf("No ITTI, Initializing L1\n");
-    RCconfig_L1();
+    RCconfig_NR_L1();
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
@@ -913,7 +833,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   usleep(1000);
 
-  if (nfapi_mode) {
+  if (NFAPI_MODE) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
@@ -921,7 +841,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   const char *nfapi_mode_str = "<UNKNOWN>";
 
-  switch(nfapi_mode) {
+  switch(NFAPI_MODE) {
     case 0:
       nfapi_mode_str = "MONOLITHIC";
       break;
@@ -941,7 +861,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==2) // VNF
+  if (NFAPI_MODE==NFAPI_MODE_VNF)
     wait_nfapi_init("main?");
 
   printf("START MAIN THREADS\n");
@@ -970,7 +890,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   config_sync_var=0;
 
-  if (nfapi_mode==1) { // PNF
+  if (NFAPI_MODE==NFAPI_MODE_PNF) {
     wait_nfapi_init("main?");
   }
 
@@ -990,7 +910,7 @@ if(!IS_SOFTMODEM_NOS1)
     load_softscope("nr",&p);
   }
 
-  if (nfapi_mode != 1 && nfapi_mode != 2) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
     init_eNB_afterRU();
   } else {

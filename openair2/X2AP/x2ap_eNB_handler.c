@@ -230,7 +230,7 @@ void x2ap_handle_x2_setup_message(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data
       if (instance_p->x2_target_enb_associated_nb == 0) {
         MessageDef                 *message_p;
 
-        message_p = itti_alloc_new_message(TASK_X2AP, X2AP_DEREGISTERED_ENB_IND);
+        message_p = itti_alloc_new_message(TASK_X2AP, 0, X2AP_DEREGISTERED_ENB_IND);
         X2AP_DEREGISTERED_ENB_IND(message_p).nb_x2 = 0;
         itti_send_msg_to_task(TASK_ENB_APP, instance_p->instance, message_p);
       }
@@ -250,7 +250,7 @@ void x2ap_handle_x2_setup_message(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data
     if (instance_p->x2_target_enb_pending_nb == 0) {
       MessageDef                 *message_p;
 
-      message_p = itti_alloc_new_message(TASK_X2AP, X2AP_REGISTER_ENB_CNF);
+      message_p = itti_alloc_new_message(TASK_X2AP, 0, X2AP_REGISTER_ENB_CNF);
       X2AP_REGISTER_ENB_CNF(message_p).nb_x2 = instance_p->x2_target_enb_associated_nb;
       itti_send_msg_to_task(TASK_ENB_APP, instance_p->instance, message_p);
     }
@@ -480,7 +480,7 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
     return -1;
   }
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_SETUP_REQ);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_SETUP_REQ);
 
   X2AP_SETUP_REQ(msg).num_cc = ie->value.choice.ServedCells.list.count;
 
@@ -598,7 +598,7 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
     return -1;
   }
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_SETUP_RESP);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_SETUP_RESP);
 
   X2AP_SETUP_RESP(msg).num_cc = ie->value.choice.ServedCells.list.count;
 
@@ -724,7 +724,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_HANDOVER_REQ);
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
@@ -865,7 +865,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ_ACK);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_HANDOVER_REQ_ACK);
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
@@ -1005,7 +1005,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_UE_CONTEXT_RELEASE);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_UE_CONTEXT_RELEASE);
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
@@ -1150,7 +1150,7 @@ int x2ap_eNB_handle_handover_cancel (instance_t instance,
     exit(1);
   }
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_CANCEL);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_HANDOVER_CANCEL);
 
   X2AP_HANDOVER_CANCEL(msg).rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
   X2AP_HANDOVER_CANCEL(msg).cause = cause;
@@ -1199,7 +1199,7 @@ int x2ap_eNB_handle_senb_addition_request (instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_SENB_ADDITION_REQ);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_SENB_ADDITION_REQ);
 
   /*MeNB_UE_X2AP_ID */
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SeNBAdditionRequest_IEs_t, ie, x2SeNBAdditionRequest,
@@ -1410,7 +1410,7 @@ x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
 		  X2AP_ProtocolIE_ID_id_InitiatingNodeType_EndcX2Setup, true);
 
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SETUP_REQ);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_SETUP_REQ);
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
@@ -1703,7 +1703,7 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   DevAssert(instance_p != NULL);
 
   //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_ADDITION_REQ);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_SGNB_ADDITION_REQ);
 
   /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
@@ -1851,7 +1851,7 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 	  DevAssert(instance_p != NULL);
 
 	  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
-	  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+	  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
 
 	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).gnb_x2_assoc_id = assoc_id;
 
@@ -1997,7 +1997,7 @@ int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
   DevAssert(instance_p != NULL);
 
   //Allocate an ITTI X2AP_sGNB_reconfiguration_complete message
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_RECONF_COMPLETE);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_SGNB_RECONF_COMPLETE);
 
   /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
@@ -2135,7 +2135,7 @@ int x2ap_gNB_handle_ENDC_sGNB_release_request(instance_t instance,
   }
 
   if (rnti != -1) {
-    msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_RELEASE_REQUEST);
+    msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_SGNB_RELEASE_REQUEST);
 
     X2AP_ENDC_SGNB_RELEASE_REQUEST(msg).rnti = rnti;
 
@@ -2228,7 +2228,7 @@ int x2ap_gNB_handle_ENDC_sGNB_release_required(instance_t instance,
 
   gnb_rnti = id_target;
 
-  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_RELEASE_REQUIRED);
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_SGNB_RELEASE_REQUIRED);
   X2AP_ENDC_SGNB_RELEASE_REQUIRED(msg).gnb_rnti = gnb_rnti;
   itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
