@@ -193,6 +193,7 @@ int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
 void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
+extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration 
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
@@ -670,13 +671,15 @@ int main(int argc, char **argv)
   prepare_scd(scd);
 
   fill_default_secondaryCellGroup(scc,
-          scd,
-				  secondaryCellGroup,
-				  0,
-				  1,
-				  n_tx,
-				  0);
+                                  scd,
+                                  secondaryCellGroup,
+                                  0,
+                                  1,
+                                  n_tx,
+                                  0);
 
+  /* RRC parameter validation for secondaryCellGroup */
+  fix_scd(scd);
   /* -U option modify DMRS */
   if(modify_dmrs) {
     update_dmrs_config(secondaryCellGroup, NULL,dmrs_arg);

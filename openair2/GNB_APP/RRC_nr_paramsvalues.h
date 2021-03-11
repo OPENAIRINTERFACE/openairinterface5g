@@ -228,6 +228,7 @@
 #define GNB_CONFIG_STRING_ULPTRSREOFFSET_0                               "ul_ptrsReOffset_0"
 #define GNB_CONFIG_STRING_ULPTRSMAXPORTS_0                               "ul_ptrsMaxPorts_0"
 #define GNB_CONFIG_STRING_ULPTRSPOWER_0                                  "ul_ptrsPower_0"
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*                                            pdcch_ConfigSIB1 parameters                                             */
 /*--------------------------------------------------------------------------------------------------------------------*/
