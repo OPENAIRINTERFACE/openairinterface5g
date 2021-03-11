@@ -459,8 +459,13 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
     ue->pbch_vars[gNB_id]->pdu_errors++;
 
     if (ue->pbch_vars[gNB_id]->pdu_errors_conseq>=100) {
-      LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
-      exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
+      if (get_softmodem_params()->non_stop) {
+        LOG_E(PHY,"More that 100 consecutive PBCH errors! Going back to Sync mode!\n");
+        ue->lost_sync = 1;
+      } else {
+        LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
+        exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
+      }
     }
   }
 

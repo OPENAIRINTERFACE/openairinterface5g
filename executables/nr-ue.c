@@ -395,30 +395,10 @@ void processSlotRX(void *arg) {
   res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
   processingData_t *curMsg=(processingData_t *)NotifiedFifoData(res);
   *curMsg = *rxtxD;
-  res->key = proc->nr_slot_rx;
+  res->key = 1;
   pushTpool(&(get_nrUE_params()->Tpool), res);
 
 }
-
-/*!
- * \brief This is the UE thread for RX subframe n and TX subframe n+4.
- * This thread performs the phy_procedures_UE_RX() on every received slot.
- * then, if TX is enabled it performs TX for n+4.
- * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
- * \returns a pointer to an int. The storage is not on the heap and must not be freed.
- */
-
-//void UE_processing(void *arg) {
-//  processingData_t *rxtxD = (processingData_t *) arg;
-//  UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
-//  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
-//  int slot_tx = proc->nr_slot_tx;
-//  int frame_tx = proc->frame_tx;
-//
-//  processSlotRX(UE, proc);
-//  processSlotTX(UE, proc);
-//
-//}
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
   void *dummy_tx[UE->frame_parms.nb_antennas_tx];
@@ -534,6 +514,8 @@ void *UE_thread(void *arg) {
   int start_rx_stream = 0;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
   UE->rfdevice.host_type = RAU_HOST;
+  UE->lost_sync = 0;
+  UE->is_synchronized = 0;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
 
   notifiedFIFO_t nf;
@@ -542,12 +524,12 @@ void *UE_thread(void *arg) {
   notifiedFIFO_t rxFifo;
   UE->rxFifo = &rxFifo;
   initNotifiedFIFO(&rxFifo);
-  pushNotifiedFIFO_nothreadSafe(&rxFifo, newNotifiedFIFO_elt(sizeof(processingData_t), 0,&rxFifo,processSlotRX));
+  pushNotifiedFIFO_nothreadSafe(&rxFifo, newNotifiedFIFO_elt(sizeof(processingData_t), 1,&rxFifo,processSlotRX));
 
   notifiedFIFO_t txFifo;
   UE->txFifo = &txFifo;
   initNotifiedFIFO(&txFifo);
-  pushNotifiedFIFO_nothreadSafe(&txFifo, newNotifiedFIFO_elt(sizeof(processingData_t), 0,&txFifo,processSlotTX));
+  pushNotifiedFIFO_nothreadSafe(&txFifo, newNotifiedFIFO_elt(sizeof(processingData_t), 1,&txFifo,processSlotTX));
 
   int nbSlotProcessing=0;
   int thread_idx=0;
@@ -559,6 +541,12 @@ void *UE_thread(void *arg) {
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
   while (!oai_exit) {
+    if (UE->lost_sync) {
+      abortTpool(&(get_nrUE_params()->Tpool),0);
+      UE->is_synchronized = 0;
+      UE->lost_sync = 0;
+    }
+
     if (syncRunning) {
       notifiedFIFO_elt_t *res=tryPullTpool(&nf,&(get_nrUE_params()->Tpool));
 
@@ -571,6 +559,7 @@ void *UE_thread(void *arg) {
           decoded_frame_rx=(decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
         }
         delNotifiedFIFO_elt(res);
+        start_rx_stream=0;
       } else {
         readFrame(UE, &timestamp, true);
         trashed_frames+=2;
@@ -734,7 +723,7 @@ void *UE_thread(void *arg) {
       memset(txp[i], 0, writeBlockSize);
 
     nbSlotProcessing++;
-    msgToPush->key=slot_nr;
+    msgToPush->key=1;
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
   } // while !oai_exit
