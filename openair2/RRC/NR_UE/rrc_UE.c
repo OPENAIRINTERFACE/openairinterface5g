@@ -68,7 +68,7 @@
 #include "RRC/NAS/rb_config.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-#if ITTI_SIM
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
 #endif
 
@@ -127,7 +127,6 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 );
 
 mui_t nr_rrc_mui=0;
-uint8_t first_rrcreconfigurationcomplete = 0;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -1364,7 +1363,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   const char *nas_msg;
   int   nas_msg_length;
  if (AMF_MODE_ENABLED) {
-#if ITTI_SIM
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
     as_nas_info_t initialNasMsg;
     generateRegistrationRequest(&initialNasMsg);
     nas_msg = (char*)initialNasMsg.data;
@@ -1793,6 +1792,9 @@ nr_rrc_ue_process_securityModeCommand(
 void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
   uint8_t i=0,rv[6];
 
+  if(IS_SOFTMODEM_NOS1) {
+    AMF_MODE_ENABLED = 1;
+  }
   if(NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
@@ -2256,34 +2258,11 @@ rrc_ue_process_rrcReconfiguration(
       for (list_count = 0; list_count < ie->nonCriticalExtension->dedicatedNAS_MessageList->list.count; list_count++) {
         pdu_length = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->size;
         pdu_buffer = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->buf;
-#ifdef ITTI_SIM
-        uint8_t msg_type = 0;
-        if((pdu_buffer + 1) != NULL){
-          if (*(pdu_buffer + 1) > 0 ) {
-            if((pdu_buffer + 9) != NULL){
-              msg_type = *(pdu_buffer + 9);
-            } else {
-              LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
-              return;
-            }
-          } else {
-            if((pdu_buffer + 2) != NULL){
-              msg_type = *(pdu_buffer + 2);
-            } else {
-              LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
-              return;
-            }
-          }
-        }
-        if(msg_type == REGISTRATION_ACCEPT){
-          LOG_I(NR_RRC, "[UE] Received REGISTRATION ACCEPT message\n");
-        }
-#endif
         msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_CONN_ESTABLI_CNF);
         NAS_CONN_ESTABLI_CNF(msg_p).errCode = AS_SUCCESS;
         NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length = pdu_length;
         NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data = pdu_buffer;
-        itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+        itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
       }
 
       free (ie->nonCriticalExtension->dedicatedNAS_MessageList);
@@ -2380,46 +2359,14 @@ nr_rrc_ue_decode_dcch(
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
             {
-                rrc_ue_process_rrcReconfiguration(ctxt_pP,
-                                                    dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
-                                                    gNB_indexP);
-                nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
-                                            gNB_indexP,
-                                            dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
-
-                if (first_rrcreconfigurationcomplete == 0) {
-                    first_rrcreconfigurationcomplete = 1;
-#ifdef ITTI_SIM
-                  if (AMF_MODE_ENABLED) {
-                    as_nas_info_t initialNasMsg;
-                    memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-                    generateRegistrationComplete(&initialNasMsg, NULL);
-                    if(initialNasMsg.length > 0){
-                        MessageDef *message_p;
-                        message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_UPLINK_DATA_REQ);
-                        NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
-                        itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                        LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
-                    }
-                    as_nas_info_t pduEstablishMsg;
-                    memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-                    generatePduSessionEstablishRequest(&pduEstablishMsg);
-                    if(initialNasMsg.length > 0){
-                        MessageDef *message_p;
-                        message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_UPLINK_DATA_REQ);
-                        NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
-                        itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                        LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
-                    }
-                  }
-#endif
-                }
+              rrc_ue_process_rrcReconfiguration(ctxt_pP,
+                                                  dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
+                                                  gNB_indexP);
+              nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
+                                          gNB_indexP,
+                                          dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+              break;
             }
-                break;
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
             case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
@@ -2465,59 +2412,13 @@ nr_rrc_ue_decode_dcch(
                   /* This message hold a dedicated info NAS payload, forward it to NAS */
                   NR_DedicatedNAS_Message_t *dedicatedNAS_Message =
                       dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message;
-                  uint32_t pdu_length;
-                  uint8_t *pdu_buffer;
-                  pdu_length = dedicatedNAS_Message->size;
-                  pdu_buffer = dedicatedNAS_Message->buf;
-#ifdef ITTI_SIM
-                  LOG_I(NR_RRC, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", ctxt_pP->module_id,  messages_info[NAS_DOWNLINK_DATA_IND].name,
-                        ctxt_pP->module_id, pdu_length, pdu_buffer);
-                  as_nas_info_t initialNasMsg;
-                  uint8_t msg_type = 0;
-                  memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-                  if((pdu_buffer + 1) != NULL){
-                    if (*(pdu_buffer + 1) > 0 ) {
-                      msg_type = *(pdu_buffer + 9);
-                    } else {
-                      msg_type = *(pdu_buffer + 2);
-                    }
-                  }
-                  if((pdu_buffer + 2) == NULL){
-                    LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
-                    return 0;
-                  }
 
-                  switch(msg_type){
-                    case FGS_IDENTITY_REQUEST:
-                       generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3));
-                       break;
-                    case FGS_AUTHENTICATION_REQUEST:
-                       generateAuthenticationResp(&initialNasMsg, pdu_buffer);
-                       break;
-                    case FGS_SECURITY_MODE_COMMAND:
-                      generateSecurityModeComplete(&initialNasMsg);
-                      break;
-                    default:
-                       LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
-                       break;
-                  }
-                  if(initialNasMsg.length > 0){
-                    MessageDef *message_p;
-                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_UPLINK_DATA_REQ);
-                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
-                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message\n");
-                  }
-#else
                   MessageDef *msg_p;
                   msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_DOWNLINK_DATA_IND);
                   NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
-                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
-                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
-                  itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
-#endif
+                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = dedicatedNAS_Message->size;
+                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = dedicatedNAS_Message->buf;
+                  itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
               }
             }
 

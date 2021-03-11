@@ -114,7 +114,7 @@ nr_rrc_data_ind(
 //------------------------------------------------------------------------------
 {
   rb_id_t    DCCH_index = Srb_id;
-  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from eNB %d\n",
+  LOG_I(NR_RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from gNB %d\n",
         ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   {
     MessageDef *message_p;
@@ -509,12 +509,12 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
       netlink_init_tun("ue",num_if);
       //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
-          nas_config(1, 1, 2, "ue");
+          nas_config(1, 0, 1, "ue");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
       start_pdcp_tun_ue();
     } else if(ENB_NAS_USE_TUN) {
       netlink_init_tun("enb",1);
-      nas_config(1, 1, 1, "enb");
+      nas_config(1, 0, 2, "enb");// set the node IP to X.X.0.2 because UE's IP is X.X.0.1
       LOG_I(PDCP, "ENB pdcp will use tun interface\n");
       start_pdcp_tun_enb();
     } else {
@@ -537,7 +537,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id = 0;
   int i;
 
-  if (ENB_NAS_USE_TUN_BIT ||  UE_NAS_USE_TUN_BIT){
+  if (IS_SOFTMODEM_NOS1) {
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
@@ -560,18 +560,28 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                                   size + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
-      AssertFatal(message_p != NULL, "OUT OF MEMORY");
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
-      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
-      //printf("\n");
-      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
-
+      if (NODE_IS_CU(RC.nrrrc[0]->node_type) || (RC.nrrrc[0]->node_type == ngran_gNB)) {
+        message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_GNB_TUNNEL_DATA_REQ);
+        GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer        = gtpu_buffer_p;
+        GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length        = size;
+        GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset        = GTPU_HEADER_OVERHEAD_MAX;
+        GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti          = ue->rnti;
+        GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id = 10;
+        LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d, rnti %d \n", __func__, rb_id, size, ue->rnti);
+        itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+      } else {
+        message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
+        AssertFatal(message_p != NULL, "OUT OF MEMORY");
+        GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
+        GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
+        GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
+        GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
+        GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
+        LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
+        //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
+        //printf("\n");
+        itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+      }
   }
 }
 

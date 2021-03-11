@@ -81,6 +81,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "RRC/NR_UE/rrc_proto.h"
 #include "RRC/NR_UE/rrc_vars.h"
 #include "openair3/NAS/UE/nas_ue_task.h"
+#if ITTI_SIM
+#include "nr_nas_msg_sim.h"
+#endif
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -402,6 +405,12 @@ int create_tasks_nrue(uint32_t ue_nb) {
     printf("create TASK_RRC_NRUE\n");
     if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
+      return -1;
+    }
+
+    printf("create TASK_NAS_NRUE\n");
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
       return -1;
     }
   }
