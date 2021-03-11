@@ -43,7 +43,6 @@
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
-extern const uint8_t slots_per_frame[5];
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
 extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
