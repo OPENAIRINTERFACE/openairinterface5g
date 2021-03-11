@@ -580,8 +580,14 @@ int main( int argc, char **argv )
     init_pdcp();
 
   if (RC.nb_nr_inst > 0)  {
+    nr_read_config_and_init();
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
+    for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
+      NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+    }
   } else {
     printf("No ITTI, Initializing L1\n");
     return 0;

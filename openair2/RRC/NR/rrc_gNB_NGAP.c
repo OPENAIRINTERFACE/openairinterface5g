@@ -819,17 +819,15 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
         LOG_I(NR_RRC, "Send DL NAS message \n");
 #else
-#if(0)
           /* Transfer data to PDCP */
           nr_rrc_data_req (
               &ctxt,
-              ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
+              DCCH,
               (*rrc_gNB_mui)++,
               SDU_CONFIRM_NO,
               length,
               buffer,
               PDCP_TRANSMISSION_MODE_CONTROL);
-#endif
 #endif
         }
           break;
