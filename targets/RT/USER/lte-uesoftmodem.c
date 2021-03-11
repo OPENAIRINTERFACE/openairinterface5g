@@ -86,7 +86,7 @@
 
 #include "lte-softmodem.h"
 
-extern int ue_id_g ; 
+extern int ue_id_g;
 /* temporary compilation wokaround (UE/eNB split */
 
 
@@ -95,7 +95,7 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-uint16_t sf_ahead=1;
+uint16_t sf_ahead=4;
 int tddflag;
 char *emul_iface;
 
@@ -586,6 +586,11 @@ int main( int argc, char **argv ) {
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
 
   get_options ();
+
+  if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
+    sf_ahead = 1;
+  }
+  printf("sf_ahead = %d\n", sf_ahead);
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
