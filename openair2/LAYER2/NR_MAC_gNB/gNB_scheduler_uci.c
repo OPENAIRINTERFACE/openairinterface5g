@@ -460,7 +460,8 @@ bool nr_acknack_scheduling(int mod_id,
               "illegal number of bits in PUCCH of UE %d\n",
               UE_id);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
-  pucch->sr_flag = 1; pucch->dai_c = 1;
+  if (NFAPI_MODE == NFAPI_MODE_VNF)
+    pucch->sr_flag = 1; pucch->dai_c = 1;
   if (pucch->sr_flag + pucch->dai_c == max_acknacks) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
      * the same slot again */

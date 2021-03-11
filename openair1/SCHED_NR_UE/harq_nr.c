@@ -472,7 +472,7 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
     dl_harq->round = 0;
     dl_harq->status = ACTIVE;
     dl_harq->DCINdi = ndi;
-    dl_harq->first_tx = 0;
+    //dl_harq->first_tx = 0;
 
     result_harq = NEW_TRANSMISSION_HARQ;
 

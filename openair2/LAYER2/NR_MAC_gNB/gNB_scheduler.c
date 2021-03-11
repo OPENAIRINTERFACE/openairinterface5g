@@ -394,10 +394,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     // clear last scheduled slot's content (only)!
     const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     const int last_slot = (slot + num_slots - 1) % num_slots;
-    const int two_slots_back = (slot + num_slots - 2) % num_slots;
     uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
     memset(&vrb_map_UL[last_slot * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
-    memset(&vrb_map_UL[two_slots_back * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
 
@@ -448,13 +446,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       gNB->UL_tti_req_ahead[0][9].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 9
       gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
     }
-    //nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
+    nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
   }
   // This schedules the DCI for Downlink and PDSCH
   if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot))
     nr_schedule_ue_spec(module_idP, frame, slot);
 
-  //nr_schedule_pucch(module_idP, frame, slot);
+  nr_schedule_pucch(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

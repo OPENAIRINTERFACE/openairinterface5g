@@ -234,15 +234,15 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       }
     }
 
-  // if(NFAPI_MODE != NFAPI_MONOLITHIC && number_ul_tti_pdu>0)
-  // {
-  //   oai_nfapi_ul_tti_req(UL_tti_req);
-  // }
+  if(NFAPI_MODE != NFAPI_MONOLITHIC && number_ul_tti_pdu>0)
+  {
+    oai_nfapi_ul_tti_req(UL_tti_req);
+  }
   
-  // if (NFAPI_MODE != NFAPI_MONOLITHIC && Sched_INFO->UL_dci_req->numPdus!=0)
-  // {
-  //   oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
-  // } 
+  if (NFAPI_MODE != NFAPI_MONOLITHIC && Sched_INFO->UL_dci_req->numPdus!=0)
+  {
+    oai_nfapi_ul_dci_req(Sched_INFO->UL_dci_req);
+  } 
   
   if (NFAPI_MODE != NFAPI_MONOLITHIC) 
   { 
