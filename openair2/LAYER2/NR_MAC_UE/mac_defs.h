@@ -234,9 +234,12 @@ typedef struct {
 
 typedef enum {
   RA_UE_IDLE = 0,
-  WAIT_RAR = 1,
-  WAIT_CONTENTION_RESOLUTION = 2,
-  RA_SUCCEEDED = 3
+  GENERATE_IDLE = 0,
+  GENERATE_PREAMBLE = 1,
+  WAIT_RAR = 2,
+  WAIT_CONTENTION_RESOLUTION = 3,
+  RA_SUCCEEDED = 4,
+  RA_FAILED = 5
 } RA_state_t;
 
 typedef struct {
@@ -260,7 +263,7 @@ typedef struct {
   /// Random-access preamble index
   int ra_PreambleIndex;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  uint8_t generate_nr_prach;
+  RA_state_t generate_nr_prach;
 
   /// Random-access window counter
   int16_t RA_window_cnt;

@@ -2162,7 +2162,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   }
 
-  if (nr_prach == 1) {
+  if (nr_prach == GENERATE_PREAMBLE) {
 
     if (ue->mac_enabled == 1) {
       int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
@@ -2208,14 +2208,14 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     if (ue->mac_enabled == 1)
       nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
-  } else if (nr_prach == 2) {
-    LOG_W(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);
+  } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
+    LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);
     ue->UE_mode[gNB_id] = RA_WAIT_CR;
-  } else if (nr_prach == 3) {
-    LOG_W(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
+  } else if (nr_prach == RA_SUCCEEDED) {
+    LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
     ue->UE_mode[gNB_id] = PUSCH;
-  } else if(nr_prach == 4){
-    LOG_W(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
+  } else if(nr_prach == RA_FAILED){
+    LOG_D(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
     ue->UE_mode[gNB_id] = PRACH;
   }
 

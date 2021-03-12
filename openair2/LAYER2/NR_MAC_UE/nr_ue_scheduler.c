@@ -1669,7 +1669,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
-  ra->generate_nr_prach = 0; // Reset flag for PRACH generation
+  ra->generate_nr_prach = GENERATE_IDLE; // Reset flag for PRACH generation
 
   if (is_nr_UL_slot(scc, slotP)) {
 
@@ -1686,7 +1686,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
     if (is_nr_prach_slot && ra->ra_state == RA_UE_IDLE) {
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
-      ra->generate_nr_prach = 1;
+      ra->generate_nr_prach = GENERATE_PREAMBLE;
 
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
