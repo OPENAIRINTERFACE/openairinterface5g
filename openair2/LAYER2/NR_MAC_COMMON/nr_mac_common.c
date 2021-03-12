@@ -2342,7 +2342,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
     mcs4 = 28;
 
   if (I_mcs < mcs1) {
-    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    LOG_D(PHY, "PUSH PT-RS is not present.\n");
     return -1;
   } else if (I_mcs >= mcs1 && I_mcs < mcs2)
     return 2;
@@ -2372,7 +2372,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
   if (N_RB < nrb0) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    LOG_D(PHY,"PUSH PT-RS is not present.\n");
     return -1;
   } else if (N_RB >= nrb0 && N_RB < nrb1)
     return 2;

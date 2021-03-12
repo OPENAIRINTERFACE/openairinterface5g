@@ -1037,7 +1037,11 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 
   for (inst=0; inst<RC.nb_nr_L1_inst; inst++) {
 
-    LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
+    if (RC.gNB[inst] == NULL) {
+      RC.gNB[inst] = (PHY_VARS_gNB *) malloc(sizeof(PHY_VARS_gNB));
+      memset((void*)RC.gNB[inst],0,sizeof(PHY_VARS_gNB));
+    }
+    LOG_I(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
     gNB                     = RC.gNB[inst];
     gNB->abstraction_flag   = 0;
     gNB->single_thread_flag = single_thread_flag;
@@ -1067,7 +1071,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
   }
   
 
-  LOG_I(PHY,"[nr-softmodem.c] gNB structure allocated\n");
+  LOG_I(PHY,"[nr-gnb.c] gNB structure allocated\n");
 }
 
 
