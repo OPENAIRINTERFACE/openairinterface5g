@@ -44,9 +44,12 @@ void init_buffers(shared_buffers *s)
   /* in FDD the eNB's first transmitted DL subframe is 4 but the device
    * needs to have subframes 1, 2 and 3 ready. Let's pretend there are ready.
    */
-  s->dl_busy[1] = 0x3fff;
-  s->dl_busy[2] = 0x3fff;
-  s->dl_busy[3] = 0x3fff;
+  s->dl_busy[0][1] = 0x3fff;
+  s->dl_busy[0][2] = 0x3fff;
+  s->dl_busy[0][3] = 0x3fff;
+  s->dl_busy[1][1] = 0x3fff;
+  s->dl_busy[1][2] = 0x3fff;
+  s->dl_busy[1][3] = 0x3fff;
 }
 
 void lock_dl_buffer(shared_buffers *s, int subframe)
