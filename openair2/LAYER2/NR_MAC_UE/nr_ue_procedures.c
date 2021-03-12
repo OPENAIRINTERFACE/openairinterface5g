@@ -73,7 +73,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 
     if (rnti == ra->ra_rnti) {
       rnti_type = NR_RNTI_RA;
-    } else if (rnti == ra->t_crnti && ra->ra_state == WAIT_CONTENTION_RESOLUTION) {
+    } else if (rnti == ra->t_crnti && (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION) ) {
       rnti_type = NR_RNTI_TC;
     } else if (rnti == mac->crnti) {
       rnti_type = NR_RNTI_C;
