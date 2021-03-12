@@ -2291,7 +2291,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       break;
     }
     if (rarh->E == 0) {
-      LOG_W(NR_MAC,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match the intended RAPID (%d)\n", mod_id, rarh->RAPID, preamble_index);
+      LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] Received RAR preamble (%d) doesn't match the intended RAPID (%d)\n", mod_id, frame, slot, rarh->RAPID, preamble_index);
       break;
     } else {
       rarh += sizeof(NR_MAC_RAR) + 1;

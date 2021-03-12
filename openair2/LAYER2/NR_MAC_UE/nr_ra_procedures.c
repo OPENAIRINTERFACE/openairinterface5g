@@ -800,7 +800,7 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
 
-  ra->first_Msg3 = 0;
+  ra->first_Msg3 = 1;
   ra->generate_nr_prach = RA_FAILED;
   ra->ra_state = RA_UE_IDLE;
 
