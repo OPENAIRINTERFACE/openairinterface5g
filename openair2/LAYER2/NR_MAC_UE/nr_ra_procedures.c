@@ -768,6 +768,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
 
     ra->RA_window_cnt = -1;
+    mac->crnti = ra->t_crnti;
 
   } else {
 
@@ -775,6 +776,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
     ra->RA_contention_resolution_cnt = -1;
     ra->RA_contention_resolution_timer_active = 0;
+    mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
 
     LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
