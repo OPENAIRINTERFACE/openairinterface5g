@@ -158,6 +158,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
+    re_offset = k;   /* Initializing the Resource element offset for each Rx antenna */
+
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];

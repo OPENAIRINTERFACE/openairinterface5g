@@ -339,7 +339,6 @@ extern "C" {
   int itti_create_queue(const task_info_t *taskInfo) {
     pthread_mutex_lock (&lock_nb_queues);
     int newQueue=nb_queues++;
-    // cppcheck-suppress memleakOnRealloc
     AssertFatal(tasks=(task_list_t **) realloc(tasks, nb_queues * sizeof(*tasks)),"");
     tasks[newQueue]= new task_list_t;
     pthread_mutex_unlock (&lock_nb_queues);
