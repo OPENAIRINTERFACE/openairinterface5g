@@ -138,8 +138,8 @@ int s1ap_eNB_handle_nas_first_req(
          * identity, selects the MME with the highest capacity.
          */
         mme_desc_p = s1ap_eNB_nnsf_select_mme(
-                         instance_p,
-                         s1ap_nas_first_req_p->establishment_cause);
+                       instance_p,
+                       s1ap_nas_first_req_p->establishment_cause);
 
         if (mme_desc_p) {
             S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
@@ -358,10 +358,18 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
     container = &pdu->choice.initiatingMessage.value.choice.DownlinkNASTransport;
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     mme_ue_s1ap_id = ie->value.choice.MME_UE_S1AP_ID;
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     enb_ue_s1ap_id = ie->value.choice.ENB_UE_S1AP_ID;
 
     if ((ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance,
@@ -416,6 +424,10 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_NAS_PDU, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     /* Forward the NAS PDU to RRC */
     s1ap_eNB_itti_send_nas_downlink_ind(s1ap_eNB_instance->instance,
                                         ue_desc_p->ue_initial_id,
@@ -494,9 +506,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_EUTRAN_CGI;
     MCC_MNC_TO_PLMNID(
-        s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-        s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-        s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+        s1ap_eNB_instance_p->mcc[ue_context_p->mme_ref->broadcast_plmn_index[0]],
+        s1ap_eNB_instance_p->mnc[ue_context_p->mme_ref->broadcast_plmn_index[0]],
+        s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->mme_ref->broadcast_plmn_index[0]],
         &ie->value.choice.EUTRAN_CGI.pLMNidentity);
     //#warning "TODO get cell id from RRC"
     MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
