@@ -273,6 +273,10 @@ install_protobuf_from_source(){
     make -j`nproc`
     $SUDO make install
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        cd /tmp
+        $SUDO rm -rf protobuf*
+    fi
     ) >& $protobuf_install_log
 }
 
@@ -295,6 +299,10 @@ install_protobuf_c_from_source(){
     make -j`nproc`
     $SUDO make install
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        cd /tmp
+        $SUDO rm -rf protobuf*
+    fi
     ) >& $protobuf_c_install_log
 }
 
@@ -831,6 +839,9 @@ install_asn1c_from_source(){
     $SUDO make install
     cd -
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        $SUDO rm -rf /tmp/asn1c
+    fi
     ) > $asn1_install_log 2>&1
 }
 
