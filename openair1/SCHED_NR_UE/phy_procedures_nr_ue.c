@@ -299,19 +299,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
         nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
     }
 
-    if (get_softmodem_params()->usim_test==0) {
-      LOG_D(PHY, "Generating PUCCH\n");
-      pucch_procedures_ue_nr(ue,
-                             gNB_id,
-                             proc,
-                             FALSE);
-    }
-
-    LOG_D(PHY, "Sending Uplink data \n");
-    nr_ue_pusch_common_procedures(ue,
-                                  slot_tx,
-                                  &ue->frame_parms,1);
-
   }
 
   if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) {
@@ -1867,6 +1854,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
 #endif //NR_PDCCH_SCHED
+  
+  // Start PUSCH processing here. It runs in parallel with PDSCH processing
+  notifiedFIFO_elt_t *res;
+  res = pullTpool(ue->txFifo,&(get_nrUE_params()->Tpool));
+  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(res);
+  curMsg->proc = *proc;
+  curMsg->UE = ue;
+  res->key = 1;
+  pushTpool(&(get_nrUE_params()->Tpool), res);
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
@@ -1999,6 +1995,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
  }
+ 
 #if UE_TIMING_TRACE
 start_meas(&ue->generic_stat);
 #endif

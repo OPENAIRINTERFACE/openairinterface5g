@@ -27,6 +27,7 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "executables/softmodem-common.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -316,14 +317,9 @@ static void UE_synch(void *arg) {
   }
 }
 
-typedef struct processingData_s {
-  UE_nr_rxtx_proc_t proc;
-  PHY_VARS_NR_UE    *UE;
-}  processingData_t;
-
 void processSlotTX(void *arg) {
 
-  processingData_t *rxtxD = (processingData_t *) arg;
+  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
@@ -354,12 +350,11 @@ void processSlotTX(void *arg) {
       phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
-  ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
 }
 
 void processSlotRX(void *arg) {
 
-  processingData_t *rxtxD = (processingData_t *) arg;
+  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
@@ -389,14 +384,44 @@ void processSlotRX(void *arg) {
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
     }
-  }
 
-  notifiedFIFO_elt_t *res;
-  res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
-  processingData_t *curMsg=(processingData_t *)NotifiedFifoData(res);
-  *curMsg = *rxtxD;
-  res->key = 1;
-  pushTpool(&(get_nrUE_params()->Tpool), res);
+    // Wait for PUSCH processing to finish
+    notifiedFIFO_elt_t *res;
+    res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
+    pushNotifiedFIFO_nothreadSafe(UE->txFifo, res);
+
+    if (get_softmodem_params()->usim_test==0) {
+      pucch_procedures_ue_nr(UE,
+                             gNB_id,
+                             proc,
+                             FALSE);
+    }
+
+    LOG_D(PHY, "Sending Uplink data \n");
+    nr_ue_pusch_common_procedures(UE,
+                                  proc->nr_slot_tx,
+                                  &UE->frame_parms,1);
+
+    ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
+
+  } else {
+    processSlotTX(rxtxD);
+
+    if (get_softmodem_params()->usim_test==0) {
+      pucch_procedures_ue_nr(UE,
+                             gNB_id,
+                             proc,
+                             FALSE);
+    }
+
+    LOG_D(PHY, "Sending Uplink data \n");
+    nr_ue_pusch_common_procedures(UE,
+                                  proc->nr_slot_tx,
+                                  &UE->frame_parms,1);
+
+    ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
+
+  }
 
 }
 
@@ -524,12 +549,12 @@ void *UE_thread(void *arg) {
   notifiedFIFO_t rxFifo;
   UE->rxFifo = &rxFifo;
   initNotifiedFIFO(&rxFifo);
-  pushNotifiedFIFO_nothreadSafe(&rxFifo, newNotifiedFIFO_elt(sizeof(processingData_t), 1,&rxFifo,processSlotRX));
+  pushNotifiedFIFO_nothreadSafe(&rxFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 1,&rxFifo,processSlotRX));
 
   notifiedFIFO_t txFifo;
   UE->txFifo = &txFifo;
   initNotifiedFIFO(&txFifo);
-  pushNotifiedFIFO_nothreadSafe(&txFifo, newNotifiedFIFO_elt(sizeof(processingData_t), 1,&txFifo,processSlotTX));
+  pushNotifiedFIFO_nothreadSafe(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 1,&txFifo,processSlotTX));
 
   int nbSlotProcessing=0;
   int thread_idx=0;
@@ -612,7 +637,7 @@ void *UE_thread(void *arg) {
     int slot_nr = absolute_slot % nb_slot_frame;
     notifiedFIFO_elt_t *msgToPush;
     AssertFatal((msgToPush=pullTpool(&rxFifo,&(get_nrUE_params()->Tpool))) != NULL,"chained list failure");
-    processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
+    nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
     curMsg->proc.thread_id   = thread_idx;
