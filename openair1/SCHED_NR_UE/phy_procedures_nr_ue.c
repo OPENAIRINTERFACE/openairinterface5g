@@ -132,6 +132,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
   }
 
   switch (pdu_type){
+    case FAPI_NR_RX_PDU_TYPE_SIB:
     case FAPI_NR_RX_PDU_TYPE_DLSCH:
     case FAPI_NR_RX_PDU_TYPE_RAR:
       harq_pid = dlsch0->current_harq_pid;
@@ -1190,7 +1191,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
             nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, eNB_id, ue, dlsch0, number_pdus);
             break;
           case SI_PDSCH:
-            rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, eNB_id, ue, dlsch0, number_pdus);
             break;
           default:
             break;

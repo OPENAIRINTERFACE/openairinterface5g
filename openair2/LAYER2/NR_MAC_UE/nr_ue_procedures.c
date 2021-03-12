@@ -154,13 +154,13 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_decode_sib1(module_id_t module_id,
-                         int cc_id,
-                         unsigned int gNB_index,
-                         uint32_t sibs_mask,
-                         uint8_t *pduP,
-                         uint32_t pdu_len) {
-  LOG_D(MAC, "Decode sib1\n");
+int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
+                                int cc_id,
+                                unsigned int gNB_index,
+                                uint32_t sibs_mask,
+                                uint8_t *pduP,
+                                uint32_t pdu_len) {
+  LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
   nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   return 0;
 }
@@ -814,7 +814,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
+
+    // FIXME: fix number of additional dmrs
+    if(pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition == NULL)
+      pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition=calloc(1,sizeof(*pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
+
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_1 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+
+    dlsch_config_pdu_1_1->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    dlsch_config_pdu_1_1->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    dlsch_config_pdu_1_1->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+
     /* IDENTIFIER_DCI_FORMATS */
     /* CARRIER_IND */
     /* BANDWIDTH_PART_IND */
