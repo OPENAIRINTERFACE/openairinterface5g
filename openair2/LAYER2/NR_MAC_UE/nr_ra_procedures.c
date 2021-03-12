@@ -664,6 +664,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       }
     }
+  } else {
+    return 3;
   }
 
   if (ra->RA_contention_resolution_timer_active){
@@ -779,7 +781,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
-  ra->generate_nr_prach = 2;
+  ra->generate_nr_prach = 3;
   ra->ra_state = RA_SUCCEEDED;
 
 }
@@ -795,7 +797,7 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   RA_config_t *ra = &mac->ra;
 
   ra->first_Msg3 = 0;
-  ra->generate_nr_prach = 3;
+  ra->generate_nr_prach = 4;
   ra->ra_state = RA_UE_IDLE;
 
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
