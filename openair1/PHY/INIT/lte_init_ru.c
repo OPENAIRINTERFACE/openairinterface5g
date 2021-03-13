@@ -45,6 +45,7 @@ int phy_init_RU(RU_t *ru) {
   if (ru->is_slave == 1) {
     generate_ul_ref_sigs_rx();
   }
+  else generate_ul_ref_sigs();
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals
     // Time-domain signals

@@ -1721,7 +1721,7 @@ static void *ru_thread( void *param ) {
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
-    LOG_D(PHY,"RU %d Starting steady-state operation\n",ru->idx);
+    if (ru->state == RU_RUN || ru->state == RU_CHECK_SYNC) LOG_I(PHY,"RU %d Starting steady-state operation\n",ru->idx);
 
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN || ru->state == RU_CHECK_SYNC) {
@@ -1918,7 +1918,7 @@ static void *ru_thread( void *param ) {
 // This thread run the initial synchronization like a UE
 void *ru_thread_synch(void *arg) {
   RU_t *ru = (RU_t *)arg;
-  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp;
   int64_t peak_val, avg;
   static int ru_thread_synch_status = 0;
   int cnt=0;
@@ -1927,6 +1927,8 @@ void *ru_thread_synch(void *arg) {
   // initialize variables for PSS detection
   ru_sync_time_init(ru); //lte_sync_time_init(ru->frame_parms);
 
+  fp = ru->frame_parms;
+  int last_rxoff=0;
   while (!oai_exit) {
     // wait to be woken up
     if (wait_on_condition(&ru->proc.mutex_synch,&ru->proc.cond_synch,&ru->proc.instance_cnt_synch,"ru_thread_synch")<0) break;
@@ -1940,17 +1942,18 @@ void *ru_thread_synch(void *arg) {
                                    &avg);
       LOG_I(PHY,"RU synch cnt %d: %d, val %llu (%d dB,%d dB)\n",cnt,ru->rx_offset,(unsigned long long)peak_val,dB_fixed64(peak_val),dB_fixed64(avg));
       cnt++;
-
-      //if (/*ru->rx_offset >= 0*/dB_fixed(peak_val)>=85 && cnt>10) {
-      if (ru->rx_offset >= 0 && avg>0 && dB_fixed(peak_val/avg)>=15 && cnt>10) {
+      int abs_diff= ru->rx_offset - last_rxoff;
+      if (abs_diff<0) abs_diff=-abs_diff;
+      if (ru->rx_offset >= 0 && abs_diff<6 && avg>0 && dB_fixed(peak_val/avg)>=15 && cnt>10) {
         LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
         ru->in_synch = 1;
-        /*
+       /* 
                 LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
                 LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
                 LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
-          */
-        //exit(-1);
+          
+        exit(-1);
+       */
       } // sync_pos > 0
       else { //AssertFatal(cnt<1000,"Cannot find synch reference\n");
         if (cnt>200) {
@@ -1960,6 +1963,7 @@ void *ru_thread_synch(void *arg) {
           exit(-1);
         }
       }
+      last_rxoff=ru->rx_offset;
     } // ru->in_synch==0
 
     if (release_thread(&ru->proc.mutex_synch,&ru->proc.instance_cnt_synch,"ru_synch_thread") < 0) break;
