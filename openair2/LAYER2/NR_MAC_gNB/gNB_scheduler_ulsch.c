@@ -532,8 +532,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
         nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
 
-        free(ra->preambles.preamble_list);
-
         ra->state = Msg4;
         ra->Msg4_frame = ( frameP +2 ) % 1024;
         ra->Msg4_slot = 1;

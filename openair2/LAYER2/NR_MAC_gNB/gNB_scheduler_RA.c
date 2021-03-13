@@ -1068,27 +1068,52 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint8_t time_domain_assignment = 0;
     uint8_t mcsIndex = 0;
-    uint8_t mac_sdu[30] = {};
-    uint8_t mac_pdu[100] = {};
 
     NR_SearchSpace_t *ss = nr_mac->sched_ctrlCommon->search_space;
     NR_BWP_Downlink_t *bwp = nr_mac->sched_ctrlCommon->active_bwp;
     NR_ControlResourceSet_t *coreset = nr_mac->sched_ctrlCommon->coreset;
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+    NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+
+    int UE_id = find_nr_UE_id(module_idP, ra->rnti);
+    NR_UE_info_t *UE_info = &nr_mac->UE_info;
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
+    int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+    int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slotP / nr_slots_period);
+
+    // HARQ management
+    int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
+    if (current_harq_pid < 0) {
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+      sched_ctrl->dl_harq_pid = current_harq_pid;
+    } else {
+      if (sched_ctrl->harq_processes[current_harq_pid].round == 0)
+        remove_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
+      else
+        remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
+    }
+    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    DevAssert(!harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
+    harq->is_waiting = true;
+    harq->feedback_slot = first_ul_slot_tdd;
+    ra->harq_pid = current_harq_pid;
+
     // Bytes to be transmitted
-    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, mac_sdu);
-    uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, (unsigned char *)mac_pdu, 255, ra->cont_res_id);
-    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->R = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->F = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-    ((NR_MAC_SUBHEADER_SHORT *) &mac_pdu[mac_pdu_length])->L = mac_sdu_length * 8;
-    mac_pdu_length += 2;
-    memcpy(&mac_pdu[mac_pdu_length], mac_sdu, sizeof(uint8_t) * mac_sdu_length);
-    mac_pdu_length += mac_sdu_length;
+    uint8_t *buf = (uint8_t *) harq->tb;
+    uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length * 8;
+    mac_pdu_length = mac_pdu_length + mac_sdu_length + 2;
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
@@ -1124,15 +1149,14 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     int rbStart = 0;
     int rbSize = 0;
-    uint32_t TBS = 0;
     uint8_t tb_scaling = 0;
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     do {
       rbSize++;
-      TBS = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
+      harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                            nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && TBS < mac_pdu_length);
+    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && harq->tb_size < mac_pdu_length);
 
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
       if (vrb_map[rbStart + i]) {
@@ -1212,7 +1236,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
-    pdsch_pdu_rel15->rvIndex[0] = 0;
+    pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round];
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;
@@ -1253,6 +1277,13 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.vrb_to_prb_mapping.val = 0;
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
     dci_payload.tb_scaling = tb_scaling;
+    dci_payload.rv = pdsch_pdu_rel15->rvIndex[0];
+    dci_payload.harq_pid = current_harq_pid;
+    dci_payload.ndi = harq->ndi;
+    dci_payload.dai[0].val = (sched_ctrl->sched_pucch->dai_c-1)&3;
+    dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
+    dci_payload.pucch_resource_indicator = sched_ctrl->sched_pucch->resource_indicator;
+    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = sched_ctrl->sched_pucch->timing_indicator;
 
     LOG_D(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
@@ -1285,11 +1316,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
-    memcpy(&tx_req->TLVs[0].value.direct, mac_pdu, sizeof(uint8_t) * TBS);
-    tx_req->PDU_length =  TBS;
+    memcpy(tx_req->TLVs[0].value.direct, harq->tb, sizeof(uint8_t) * harq->tb_size);
+    tx_req->PDU_length =  harq->tb_size;
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
-    tx_req->TLVs[0].length =  TBS + 2;
+    tx_req->TLVs[0].length =  harq->tb_size + 2;
     nr_mac->TX_req[CC_id].SFN = frameP;
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
@@ -1320,8 +1351,30 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 }
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra) {
-  LOG_W(NR_MAC,"nr_check_Msg4_Ack() is not implemented yet!\n");
-  ra->state = RA_IDLE;
+
+  int UE_id = find_nr_UE_id(module_id, ra->rnti);
+  const int current_harq_pid = ra->harq_pid;
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
+
+  LOG_D(MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
+
+  if (harq->is_waiting == 0)
+  {
+    if (harq->round == 0)
+    {
+      ra->state = RA_IDLE;
+      UE_info->active[UE_id] = true;
+      free(ra->preambles.preamble_list);
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. RA procedure succeeded!\n", UE_id, ra->rnti);
+    }
+    else
+    {
+      ra->state = Msg4;
+    }
+  }
+
 }
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
