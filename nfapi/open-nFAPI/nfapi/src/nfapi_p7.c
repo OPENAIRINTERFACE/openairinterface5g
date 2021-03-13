@@ -2532,6 +2532,7 @@ static uint8_t pack_crc_indication_body_value(void* tlv, uint8_t **ppWritePacked
 
 	uint16_t i = 0;
 	uint16_t total_number_of_pdus = value->number_of_crcs;
+	assert(total_number_of_pdus <= NFAPI_CRC_IND_MAX_PDU);
 	for(; i < total_number_of_pdus; ++i)
 	{
 		nfapi_crc_indication_pdu_t* pdu = &(value->crc_pdu_list[i]);
@@ -6408,7 +6409,8 @@ static uint8_t unpack_crc_indication_body_value(void *tlv, uint8_t **ppReadPacke
 
 	if(value->number_of_crcs > 0)
 	{
-		value->crc_pdu_list = (nfapi_crc_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_crc_indication_pdu_t) * value->number_of_crcs, config);
+		assert(value->number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
+		value->crc_pdu_list = (nfapi_crc_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_crc_indication_pdu_t) * NFAPI_CRC_IND_MAX_PDU, config);
 		if(value->crc_pdu_list == NULL)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate crc ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_crcs);
@@ -6422,6 +6424,7 @@ static uint8_t unpack_crc_indication_body_value(void *tlv, uint8_t **ppReadPacke
 
 	
 	uint8_t i = 0;
+	assert(value->number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
 	for(i = 0; i < value->number_of_crcs; ++i)
 	{
 		nfapi_crc_indication_pdu_t* pdu = &(value->crc_pdu_list[i]);

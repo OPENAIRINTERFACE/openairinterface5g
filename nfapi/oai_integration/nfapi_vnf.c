@@ -735,9 +735,12 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
 
     UL_RCC_INFO.crc_ind[index] = *ind;
 
-    if (ind->crc_indication_body.number_of_crcs > 0)
-      UL_RCC_INFO.crc_ind[index].crc_indication_body.crc_pdu_list = malloc(sizeof(nfapi_crc_indication_pdu_t)*ind->crc_indication_body.number_of_crcs );
+    assert(ind->crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
+    if (ind->crc_indication_body.number_of_crcs > 0) {
+      UL_RCC_INFO.crc_ind[index].crc_indication_body.crc_pdu_list = malloc(sizeof(nfapi_crc_indication_pdu_t) * NFAPI_CRC_IND_MAX_PDU);
+    }
 
+    assert(ind->crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
     for (int i=0; i<ind->crc_indication_body.number_of_crcs; i++) {
       memcpy(&UL_RCC_INFO.crc_ind[index].crc_indication_body.crc_pdu_list[i], &ind->crc_indication_body.crc_pdu_list[i], sizeof(ind->crc_indication_body.crc_pdu_list[0]));
 
@@ -759,6 +762,7 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
     LOG_D(MAC, "%s() NFAPI SFN/SF:%d IND:number_of_crcs:%u UL_INFO:crcs:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->crc_indication_body.number_of_crcs,
           eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs);
 
+  assert(ind->crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
   for (int i=0; i<ind->crc_indication_body.number_of_crcs; i++) {
     memcpy(&dest_ind->crc_indication_body.crc_pdu_list[i], &ind->crc_indication_body.crc_pdu_list[i], sizeof(ind->crc_indication_body.crc_pdu_list[0]));
     LOG_D(MAC, "%s() NFAPI SFN/SF:%d CRC_IND:number_of_crcs:%u UL_INFO:crcs:%d PDU[%d] rnti:%04x UL_INFO:rnti:%04x\n",

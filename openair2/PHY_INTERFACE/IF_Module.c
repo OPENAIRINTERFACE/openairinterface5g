@@ -229,6 +229,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
       if((UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus>0) && (UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs>0)) {
         assert(UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus; i++) {
+          assert(UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
           for (j=0; j<UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs; j++) {
             // find crc_indication j corresponding rx_indication i
             LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].rx_ue_information.rnti:%04x UL_info->rx_ind.rx_indication_body.rx_pdu_list[%d].rx_ue_information.rnti:%04x\n",
@@ -283,6 +284,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
     if (UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->crc_ind.crc_indication_body.number_of_crcs>0) {
       assert(UL_info->rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
       for (i=0; i<UL_info->rx_ind.rx_indication_body.number_of_pdus; i++) {
+        assert(UL_info->crc_ind.crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
         for (j=0; j<UL_info->crc_ind.crc_indication_body.number_of_crcs; j++) {
           // find crc_indication j corresponding rx_indication i
           LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].rx_ue_information.rnti:%04x UL_info->rx_ind.rx_indication_body.rx_pdu_list[%d].rx_ue_information.rnti:%04x\n", j,

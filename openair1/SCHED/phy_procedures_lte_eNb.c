@@ -2088,6 +2088,7 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
 
 void fill_crc_indication (PHY_VARS_eNB *eNB, int UE_id, int frame, int subframe, uint8_t crc_flag) {
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  assert(eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
   nfapi_crc_indication_pdu_t *pdu =   &eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list[eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs];
   eNB->UL_INFO.crc_ind.sfn_sf                         = frame<<4 | subframe;
   eNB->UL_INFO.crc_ind.header.message_id              = NFAPI_CRC_INDICATION;

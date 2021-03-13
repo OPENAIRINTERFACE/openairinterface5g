@@ -1042,7 +1042,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   UL_INFO = (UL_IND_t *)calloc(1, sizeof(UL_IND_t));
   UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = calloc(NFAPI_RX_IND_MAX_PDU, sizeof(nfapi_rx_indication_pdu_t));
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
-  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_crc_indication_pdu_t));
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NFAPI_CRC_IND_MAX_PDU, sizeof(nfapi_crc_indication_pdu_t));
   UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
   UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_harq_indication_pdu_t));
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
