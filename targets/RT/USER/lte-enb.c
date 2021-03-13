@@ -585,7 +585,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int ret;
-  LOG_I(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->tti_rx);
+  LOG_D(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->tti_rx);
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
   AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex)) == 0,"mutex_lock returns %d\n", ret);

@@ -1126,7 +1126,7 @@ void wakeup_L1s(RU_t *ru) {
   PHY_VARS_eNB *eNB       = eNB_list[0];
   L1_proc_t *proc         = &eNB->proc;
   struct timespec t;
-  LOG_I(PHY, "wakeup_L1s (num %d) for RU %d (%d.%d) ru->eNB_top:%p\n", ru->num_eNB, ru->idx, ru->proc.frame_rx, ru->proc.tti_rx, ru->eNB_top);
+  LOG_D(PHY, "wakeup_L1s (num %d) for RU %d (%d.%d) ru->eNB_top:%p\n", ru->num_eNB, ru->idx, ru->proc.frame_rx, ru->proc.tti_rx, ru->eNB_top);
   char string[20];
   sprintf(string, "Incoming RU %d", ru->idx);
 
@@ -1151,7 +1151,7 @@ void wakeup_L1s(RU_t *ru) {
   for (int i=0; i<eNB->num_RU; i++) {
     if (eNB->RU_list[i]->wait_cnt==1 && ru->proc.tti_rx!=9) eNB->RU_list[i]->wait_cnt=0;
 
-    LOG_I(PHY,"RU %d has frame %d and subframe %d, state %s\n",
+    LOG_D(PHY,"RU %d has frame %d and subframe %d, state %s\n",
           eNB->RU_list[i]->idx, eNB->RU_list[i]->proc.frame_rx, eNB->RU_list[i]->proc.tti_rx, ru_states[eNB->RU_list[i]->state]);
 
     if (ru == eNB->RU_list[i] && eNB->RU_list[i]->wait_cnt == 0) {
