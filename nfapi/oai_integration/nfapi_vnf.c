@@ -788,10 +788,15 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
 
     UL_RCC_INFO.rx_ind[index] = *ind;
 
-    if (ind->rx_indication_body.number_of_pdus > 0)
-      UL_RCC_INFO.rx_ind[index].rx_indication_body.rx_pdu_list = malloc(sizeof(nfapi_rx_indication_pdu_t)*ind->rx_indication_body.number_of_pdus );
+    size_t number_of_pdus = ind->rx_indication_body.number_of_pdus;
+    assert(number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 
-    for (int i=0; i<ind->rx_indication_body.number_of_pdus; i++) {
+    if (number_of_pdus > 0) {
+      UL_RCC_INFO.rx_ind[index].rx_indication_body.rx_pdu_list =
+          malloc(sizeof(nfapi_rx_indication_pdu_t) * NFAPI_RX_IND_MAX_PDU);
+    }
+
+    for (int i=0; i<number_of_pdus; i++) {
       nfapi_rx_indication_pdu_t *dest_pdu = &UL_RCC_INFO.rx_ind[index].rx_indication_body.rx_pdu_list[i];
       nfapi_rx_indication_pdu_t *src_pdu = &ind->rx_indication_body.rx_pdu_list[i];
 
@@ -804,9 +809,9 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
         dest_pdu->data = NULL;
       }
 
-      LOG_D(PHY, "%s() NFAPI SFN/SF:%d PDUs:%d [PDU:%d] handle:%d rnti:%04x length:%d offset:%d ul_cqi:%d ta:%d data:%p\n",
+      LOG_D(PHY, "%s() NFAPI SFN/SF:%d PDUs:%zu [PDU:%d] handle:%d rnti:%04x length:%d offset:%d ul_cqi:%d ta:%d data:%p\n",
           __FUNCTION__,
-          NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rx_indication_body.number_of_pdus, i,
+          NFAPI_SFNSF2DEC(ind->sfn_sf), number_of_pdus, i,
           dest_pdu->rx_ue_information.handle,
           dest_pdu->rx_ue_information.rnti,
           dest_pdu->rx_indication_rel8.length,
@@ -822,6 +827,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
   *dest_ind = *ind;
   dest_ind->rx_indication_body.rx_pdu_list = dest_pdu_list;
 
+  assert(ind->rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
   for(int i=0; i<ind->rx_indication_body.number_of_pdus; i++) {
     nfapi_rx_indication_pdu_t *dest_pdu = &dest_ind->rx_indication_body.rx_pdu_list[i];
     nfapi_rx_indication_pdu_t *src_pdu = &ind->rx_indication_body.rx_pdu_list[i];

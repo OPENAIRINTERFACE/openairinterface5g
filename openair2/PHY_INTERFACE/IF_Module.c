@@ -227,6 +227,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
     for(uint8_t k = 0; k < NUM_NFPAI_SUBFRAME; k++) {
       if((UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus>0) && (UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs>0)) {
+        assert(UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus; i++) {
           for (j=0; j<UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs; j++) {
             // find crc_indication j corresponding rx_indication i
@@ -280,6 +281,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
     }
   } else {
     if (UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->crc_ind.crc_indication_body.number_of_crcs>0) {
+      assert(UL_info->rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
       for (i=0; i<UL_info->rx_ind.rx_indication_body.number_of_pdus; i++) {
         for (j=0; j<UL_info->crc_ind.crc_indication_body.number_of_crcs; j++) {
           // find crc_indication j corresponding rx_indication i

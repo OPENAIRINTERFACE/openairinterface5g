@@ -87,6 +87,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   UL_INFO->rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
   UL_INFO->rx_ind.vendor_extension = ul_config_req->vendor_extension;
 
+  assert(UL_INFO->rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
   pdu = &UL_INFO->rx_ind.rx_indication_body
              .rx_pdu_list[UL_INFO->rx_ind.rx_indication_body.number_of_pdus];
   // pdu = &UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[index];
@@ -1538,6 +1539,7 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
   printf("rx_indication_body.tl.length: %u\n", p->rx_indication_body.tl.length);
   printf("rx_indication_body.number_of_pdus: %u\n", p->rx_indication_body.number_of_pdus);
 
+  assert(p->rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
   nfapi_rx_indication_pdu_t *pdu = p->rx_indication_body.rx_pdu_list;
   for (int i = 0; i < p->rx_indication_body.number_of_pdus; i++)
   {

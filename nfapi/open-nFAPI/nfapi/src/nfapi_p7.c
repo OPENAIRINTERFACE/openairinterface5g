@@ -2592,6 +2592,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 	uint16_t total_number_of_pdus = value->number_of_pdus;
         //printf("ULSCH:pdus:%d\n", total_number_of_pdus);
 
+	assert(total_number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
 	{
 		nfapi_rx_indication_pdu_t* pdu = &(value->rx_pdu_list[i]);
@@ -2615,6 +2616,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 	}
 
 	// Now update the structure to include the offset
+	assert(total_number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 	for(i =0; i < total_number_of_pdus; ++i)
 	{
 		nfapi_rx_indication_pdu_t* pdu = &(value->rx_pdu_list[i]);
@@ -2630,6 +2632,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 	}
 	
 	// Write out the pdu
+        assert(total_number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
 	{
 		nfapi_rx_indication_pdu_t* pdu = &(value->rx_pdu_list[i]);
@@ -2640,6 +2643,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 	}
 
 	// Write out the pdu data
+        assert(total_number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
 	{
 		uint16_t length = 0;
@@ -6496,7 +6500,8 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 
 	if (value->number_of_pdus > 0)
 	{
-		value->rx_pdu_list = (nfapi_rx_indication_pdu_t *)nfapi_p7_allocate(sizeof(nfapi_rx_indication_pdu_t) * value->number_of_pdus, config);
+		assert(value->number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
+		value->rx_pdu_list = (nfapi_rx_indication_pdu_t *)nfapi_p7_allocate(sizeof(nfapi_rx_indication_pdu_t) * NFAPI_RX_IND_MAX_PDU, config);
 		if (value->rx_pdu_list == NULL)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate rx ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_pdus);
@@ -6529,6 +6534,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
+		assert(i <= NFAPI_RX_IND_MAX_PDU);
 		nfapi_rx_indication_pdu_t *pdu = &value->rx_pdu_list[i];
 
 		pdu->rx_ue_information.tl = generic_tl;
@@ -6584,6 +6590,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 		}
 	}
 
+        assert(value->number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 	for (int i = 0; i < value->number_of_pdus; ++i)
 	{
 		nfapi_rx_indication_pdu_t *pdu = &value->rx_pdu_list[i];

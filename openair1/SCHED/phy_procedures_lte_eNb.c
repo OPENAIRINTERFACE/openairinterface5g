@@ -1554,6 +1554,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   eNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| subframe;
   eNB->UL_INFO.rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
+  assert(eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
   pdu                                    = &eNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list[eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus];
   //  pdu->rx_ue_information.handle          = eNB->ulsch[UE_id]->handle;
   pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
