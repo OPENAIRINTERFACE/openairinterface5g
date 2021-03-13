@@ -84,7 +84,8 @@ int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->ulsch[%d] is null\n",i);
+    if (eNB->ulsch[i] == NULL)
+      continue;
 
     if ((eNB->ulsch[i]->harq_mask >0) &&
         (eNB->ulsch[i]->rnti==rnti))       return i;
