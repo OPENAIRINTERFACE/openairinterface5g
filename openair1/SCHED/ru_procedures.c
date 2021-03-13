@@ -139,27 +139,26 @@ void feptx0(RU_t *ru,
 	      int num_symb = 7;
 
 	      if (subframe_select(fp,subframe) == SF_S)
-             num_symb = fp->dl_symbols_in_S_subframe+1;
+                num_symb = fp->dl_symbols_in_S_subframe+1;
 
-	      if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
+	      if (ru->generate_dmrs_sync == 1 && slot == 2 && aa==0) {
             //int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
             //int32_t *dmrsp[2] ={dmrs,NULL}; //{&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
-
-            generate_drs_pusch((PHY_VARS_UE *)NULL,
-                               (UE_rxtx_proc_t*)NULL,
-                               fp,
-                               ru->common.txdataF_BF,
-                               0,
-                               AMP,
-                               0,
-                               0,
-                               fp->N_RB_DL,
-                               aa);
+                  generate_drs_pusch((PHY_VARS_UE *)NULL,
+                                     (UE_rxtx_proc_t*)NULL,
+                                     fp,
+                                     ru->common.txdataF_BF,
+                                     0,
+                                     AMP,
+                                     0,
+                                     0,
+                                     fp->N_RB_DL,
+                                     aa);
 	      } 
-          normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
-                            (int*)&ru->common.txdata[aa][slot_offset],
-                            num_symb,
-                            fp);
+              normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                                (int*)&ru->common.txdata[aa][slot_offset],
+                                num_symb,
+                                fp);
       }
     }
 
