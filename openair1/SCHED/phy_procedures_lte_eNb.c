@@ -749,6 +749,7 @@ void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_sr_indication_t       *sr_ind =         &eNB->UL_INFO.sr_ind;
   nfapi_sr_indication_body_t  *sr_ind_body =    &sr_ind->sr_indication_body;
+  assert(sr_ind_body->number_of_srs <= NFAPI_SR_IND_MAX_PDU);
   nfapi_sr_indication_pdu_t *pdu =   &sr_ind_body->sr_pdu_list[sr_ind_body->number_of_srs];
   sr_ind->sfn_sf = frame<<4|subframe;
   sr_ind->header.message_id = NFAPI_RX_SR_INDICATION;
@@ -1796,6 +1797,7 @@ int getM(PHY_VARS_eNB *eNB,int frame,int subframe) {
 
 void fill_ulsch_cqi_indication (PHY_VARS_eNB *eNB, uint16_t frame, uint8_t subframe, LTE_UL_eNB_HARQ_t *ulsch_harq, uint16_t rnti) {
   pthread_mutex_lock (&eNB->UL_INFO_mutex);
+  assert(eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
   nfapi_cqi_indication_pdu_t *pdu         = &eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_pdu_list[eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis];
   nfapi_cqi_indication_raw_pdu_t *raw_pdu = &eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_raw_pdu_list[eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis];
   pdu->instance_length = 0;
@@ -1842,6 +1844,7 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB *eNB, LTE_UL_eNB_HARQ_t *ulsch_har
 
   //AssertFatal(UE_id>=0,"UE_id doesn't exist\n");
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  assert(eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
   nfapi_harq_indication_pdu_t *pdu =   &eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list[eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs];
   int M;
   int i;
@@ -1912,6 +1915,7 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_harq_indication_t *ind       = &eNB->UL_INFO.harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
+  assert(eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
   nfapi_harq_indication_pdu_t *pdu   = &body->harq_pdu_list[eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs];
   ind->sfn_sf = frame<<4|subframe;
   ind->header.message_id = NFAPI_HARQ_INDICATION;

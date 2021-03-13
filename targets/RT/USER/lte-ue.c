@@ -1044,12 +1044,12 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
   UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NFAPI_CRC_IND_MAX_PDU, sizeof(nfapi_crc_indication_pdu_t));
   UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
-  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_harq_indication_pdu_t));
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NFAPI_HARQ_IND_MAX_PDU, sizeof(nfapi_harq_indication_pdu_t));
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
-  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_sr_indication_pdu_t));
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NFAPI_SR_IND_MAX_PDU, sizeof(nfapi_sr_indication_pdu_t));
   UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_cqi_indication_pdu_t));
-  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_cqi_indication_raw_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = calloc(NFAPI_CQI_IND_MAX_PDU, sizeof(nfapi_cqi_indication_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NFAPI_CQI_IND_MAX_PDU, sizeof(nfapi_cqi_indication_raw_pdu_t));
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
   proc->subframe_rx = proc->sub_frame_start;

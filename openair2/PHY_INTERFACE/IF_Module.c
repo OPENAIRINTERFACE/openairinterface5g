@@ -98,6 +98,7 @@ void handle_sr(UL_IND_t *UL_info) {
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
     for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
       if(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs > 0) {
+        assert(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs <= NFAPI_SR_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs; i++) {
           SR_indication(UL_info->module_id,
                         UL_info->CC_id,
@@ -113,6 +114,7 @@ void handle_sr(UL_IND_t *UL_info) {
       }
     }
   } else {
+    assert(UL_info->sr_ind.sr_indication_body.number_of_srs <= NFAPI_SR_IND_MAX_PDU);
     for (i=0; i<UL_info->sr_ind.sr_indication_body.number_of_srs; i++)
       SR_indication(UL_info->module_id,
                     UL_info->CC_id,
@@ -139,6 +141,7 @@ void handle_cqi(UL_IND_t *UL_info) {
   } else if (NFAPI_MODE == NFAPI_MODE_VNF) {
     for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
       if(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis > 0) {
+        assert(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis; i++) {
           cqi_indication(UL_info->module_id,
                          UL_info->CC_id,
@@ -157,6 +160,7 @@ void handle_cqi(UL_IND_t *UL_info) {
       }
     }
   } else {
+    assert(UL_info->cqi_ind.cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
     for (i=0; i<UL_info->cqi_ind.cqi_indication_body.number_of_cqis; i++)
       cqi_indication(UL_info->module_id,
                      UL_info->CC_id,
@@ -184,6 +188,7 @@ void handle_harq(UL_IND_t *UL_info) {
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
     for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
       if(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs > 0) {
+        assert(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
         for (int i=0; i<UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs; i++) {
           harq_indication(UL_info->module_id,
                           UL_info->CC_id,
@@ -198,6 +203,7 @@ void handle_harq(UL_IND_t *UL_info) {
       }
     }
   } else {
+    assert(UL_info->harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
     for (int i=0; i < UL_info->harq_ind.harq_indication_body.number_of_harqs; i++)
       harq_indication(UL_info->module_id,
                       UL_info->CC_id,

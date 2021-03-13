@@ -2480,6 +2480,7 @@ static uint8_t pack_harq_indication_body_value(void *tlv, uint8_t **ppWritePacke
 
 	uint16_t i = 0;
 	uint16_t total_number_of_pdus = value->number_of_harqs;
+	assert(total_number_of_pdus <= NFAPI_HARQ_IND_MAX_PDU);
 	for(; i < total_number_of_pdus; ++i)
 	{
 		nfapi_harq_indication_pdu_t* pdu = &(value->harq_pdu_list[i]);
@@ -2838,6 +2839,7 @@ static uint8_t pack_sr_indication_body_value(void *tlv, uint8_t **ppWritePackedM
 
 	uint16_t i = 0;
 	uint16_t total_number_of_pdus = value->number_of_srs;
+	assert(total_number_of_pdus <= NFAPI_SR_IND_MAX_PDU);
 	for(; i < total_number_of_pdus; ++i)
 	{
 		nfapi_sr_indication_pdu_t* pdu = &(value->sr_pdu_list[i]);
@@ -2905,6 +2907,7 @@ static uint8_t pack_cqi_indication_body_value(void *tlv, uint8_t **ppWritePacked
 	uint16_t i = 0;
 	uint16_t offset = 2; // taking into account the number_of_cqis
 	uint16_t total_number_of_pdus = value->number_of_cqis;
+	assert(total_number_of_pdus <= NFAPI_CQI_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
 	{
 		nfapi_cqi_indication_pdu_t* pdu = &(value->cqi_pdu_list[i]);
@@ -2933,6 +2936,7 @@ static uint8_t pack_cqi_indication_body_value(void *tlv, uint8_t **ppWritePacked
 	}
 
 	// Now update the structure to include the offset
+	assert(total_number_of_pdus <= NFAPI_CQI_IND_MAX_PDU);
 	for(i =0; i < total_number_of_pdus; ++i)
 	{
 		nfapi_cqi_indication_pdu_t* pdu = &(value->cqi_pdu_list[i]);
@@ -2958,6 +2962,7 @@ static uint8_t pack_cqi_indication_body_value(void *tlv, uint8_t **ppWritePacked
 	}
 	
 	// Write out the cqi information
+	assert(total_number_of_pdus <= NFAPI_CQI_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
 	{
 		nfapi_cqi_indication_pdu_t* pdu = &(value->cqi_pdu_list[i]);
@@ -2980,6 +2985,7 @@ static uint8_t pack_cqi_indication_body_value(void *tlv, uint8_t **ppWritePacked
 	}
 
 	// Write out the cqi raw data
+	assert(total_number_of_pdus <= NFAPI_CQI_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
 	{
 		uint16_t length = 0;
@@ -6335,15 +6341,16 @@ static uint8_t unpack_harq_indication_body_value(void* tlv, uint8_t **ppReadPack
 		return 0;		
 	}
 
-	value->harq_pdu_list = (nfapi_harq_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_harq_indication_pdu_t) * value->number_of_harqs, config);
+	assert(value->number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
+	value->harq_pdu_list = (nfapi_harq_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_harq_indication_pdu_t) * NFAPI_HARQ_IND_MAX_PDU, config);
 	if(value->harq_pdu_list == NULL)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate harq ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_harqs);
 		return 0;
 	}
 	
-	uint8_t i = 0;
-	for(i = 0; i < value->number_of_harqs; ++i)
+	assert(value->number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
+	for (size_t i = 0; i < value->number_of_harqs; ++i)
 	{
 		nfapi_harq_indication_pdu_t* pdu = &(value->harq_pdu_list[i]);
 		if(pull16(ppReadPackedMsg, &pdu->instance_length, end) == 0)
@@ -6875,7 +6882,8 @@ static uint8_t unpack_sr_indication_body_value(void *tlv, uint8_t **ppReadPacked
 
 	if(value->number_of_srs > 0)
 	{
-		value->sr_pdu_list = (nfapi_sr_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_sr_indication_pdu_t) * value->number_of_srs, config);
+		assert(value->number_of_srs <= NFAPI_SR_IND_MAX_PDU);
+		value->sr_pdu_list = (nfapi_sr_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_sr_indication_pdu_t) * NFAPI_SR_IND_MAX_PDU, config);
 		if(value->sr_pdu_list == NULL)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate sr ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_srs);
@@ -6888,6 +6896,7 @@ static uint8_t unpack_sr_indication_body_value(void *tlv, uint8_t **ppReadPacked
 	}
 	
 	uint8_t i = 0;
+	assert(value->number_of_srs <= NFAPI_SR_IND_MAX_PDU);
 	for(i = 0; i < value->number_of_srs; ++i)
 	{
 		nfapi_sr_indication_pdu_t* pdu = &(value->sr_pdu_list[i]);
@@ -6984,7 +6993,8 @@ static uint8_t  unpack_cqi_indication_body_value(void* tlv, uint8_t **ppReadPack
 
 	if(value->number_of_cqis > 0)
 	{
-		value->cqi_pdu_list = (nfapi_cqi_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_cqi_indication_pdu_t) * value->number_of_cqis, config);
+		assert(value->number_of_cqis <= NFAPI_SR_IND_MAX_PDU);
+		value->cqi_pdu_list = (nfapi_cqi_indication_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_cqi_indication_pdu_t) * NFAPI_SR_IND_MAX_PDU, config);
 		if(value->cqi_pdu_list == NULL)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate cqi ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_cqis);
@@ -6998,7 +7008,8 @@ static uint8_t  unpack_cqi_indication_body_value(void* tlv, uint8_t **ppReadPack
 
 	if(value->number_of_cqis > 0)
 	{
-		value->cqi_raw_pdu_list = (nfapi_cqi_indication_raw_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_cqi_indication_raw_pdu_t) * value->number_of_cqis, config);
+		assert(value->number_of_cqis <= NFAPI_SR_IND_MAX_PDU);
+		value->cqi_raw_pdu_list = (nfapi_cqi_indication_raw_pdu_t*)nfapi_p7_allocate(sizeof(nfapi_cqi_indication_raw_pdu_t) * NFAPI_SR_IND_MAX_PDU, config);
 		if(value->cqi_raw_pdu_list == NULL)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate raw cqi ind pdu list (count:%d)\n", __FUNCTION__, value->number_of_cqis);
@@ -7011,6 +7022,7 @@ static uint8_t  unpack_cqi_indication_body_value(void* tlv, uint8_t **ppReadPack
 	}
 
 	uint8_t i = 0;
+	assert(value->number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
 	for(i = 0; i < value->number_of_cqis; ++i)
 	{
 		nfapi_cqi_indication_pdu_t* pdu = &(value->cqi_pdu_list[i]);
@@ -7063,6 +7075,7 @@ static uint8_t  unpack_cqi_indication_body_value(void* tlv, uint8_t **ppReadPack
 	}
 
 	uint8_t idx = 0;
+	assert(value->number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
 	for(idx = 0; idx < value->number_of_cqis; ++idx)
 	{
 		if(value->cqi_pdu_list[idx].cqi_indication_rel8.tl.tag == NFAPI_CQI_INDICATION_REL8_TAG)
