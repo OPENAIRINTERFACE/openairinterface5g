@@ -1495,7 +1495,7 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 {
 	uint32_t recv_sfn_slot_dec = NFAPI_SFNSLOT2DEC(sfn,slot);
 	uint32_t current_sfn_slot_dec = NFAPI_SFNSLOT2DEC(phy->sfn,phy->slot);
-	printf("p7_msg_sfn: %d, p7_msg_slot: %d, phy_sfn:%d , phy_slot:%d \n",sfn,slot,phy->sfn,phy->slot);
+	//printf("p7_msg_sfn: %d, p7_msg_slot: %d, phy_sfn:%d , phy_slot:%d \n",sfn,slot,phy->sfn,phy->slot);
 	uint8_t in_window = 0;
 	uint8_t timing_window = phy->_public.slot_buffer_size;
 
@@ -1630,7 +1630,6 @@ void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_dl_tti_request structure\n");
 		return;
 	}
-
 	int unpack_result = nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, req, sizeof(nfapi_nr_dl_tti_request_t), &(pnf_p7->_public.codec_config));
 
 	if(unpack_result == 0)
@@ -2010,7 +2009,7 @@ void pnf_handle_ul_dci_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 	}
 	else
 	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "Failed to unpack hi_dci0_req\n");
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "Failed to unpack UL DCI req\n");
 		deallocate_nfapi_ul_dci_request(req, pnf_p7);
 	}
 }
@@ -2989,13 +2988,11 @@ void pnf_nr_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_tim
 	struct sockaddr_in remote_addr;
 	socklen_t remote_addr_size = sizeof(remote_addr);
 	remote_addr.sin_family = 2; //hardcoded
-
 	do
 	{
 		// peek the header
 		uint8_t header_buffer[NFAPI_P7_HEADER_LENGTH];
 		recvfrom_result = recvfrom(pnf_p7->p7_sock, header_buffer, NFAPI_P7_HEADER_LENGTH, MSG_DONTWAIT | MSG_PEEK, (struct sockaddr*)&remote_addr, &remote_addr_size);
-
 		if(recvfrom_result > 0)
 		{
 			// get the segment size

@@ -88,14 +88,14 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   }
 
   // to set a effective slot number in the half frame where the SSB is supposed to be
-  rel_slot = (n_hf)? (slot-slots_per_hf) : slot; 
+  rel_slot = (n_hf)? (slot-slots_per_hf) : slot;
 
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
   if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
 
     for (int i=0; i<2; i++)  {  // max two SSB per frame
-      
+
       ssb_index = i + SSB_Table[rel_slot]; // computing the ssb_index
 
       if ((ssb_index<64) && ((fp->L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
@@ -104,11 +104,11 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
 
 	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
-	
+
 	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
 	nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	
+
         if (cfg->carrier_config.num_tx_ant.value <= 4)
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
         else
@@ -144,9 +144,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   int offset = gNB->CC_id;
   uint8_t ssb_frame_periodicity = 1;  // every how many frames SSB are generated
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
-  
-  if (cfg->ssb_table.ssb_period.value > 1) 
-    ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ; 
+
+  if (cfg->ssb_table.ssb_period.value > 1)
+    ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ;
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
@@ -161,7 +161,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
+  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) {
     if ((!(frame%ssb_frame_periodicity)))  // generate SSB only for given frames according to SSB periodicity
       nr_common_signal_procedures(gNB,frame, slot);
   }
@@ -178,7 +178,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 	  gNB->Mod_id, frame, slot,
 	  gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
 	  gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
-  
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
     nr_generate_dci_top(gNB,
@@ -196,7 +196,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     if (pdcch_pdu_id >= 0) gNB->pdcch_pdu[pdcch_pdu_id].frame = -1;
     if (ul_pdcch_pdu_id >= 0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
   }
- 
+
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
@@ -208,7 +208,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   //apply the OFDM symbol rotation here
   apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[0][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
@@ -216,7 +216,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 /*
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
+  if ((cfg->subframe_config.duplex_mode.value == TDD) &&
       ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
 
   //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
@@ -235,7 +235,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 	rdata->segment_r, ulsch_harq->processedSegments, rdata->nbSegments);
   gNB->nbDecode--;
   LOG_D(PHY,"remain to decoded in subframe: %d\n", gNB->nbDecode);
-  
+
   if (decodeSuccess) {
     memcpy(ulsch_harq->b+rdata->offset,
            ulsch_harq->c[r],
@@ -254,7 +254,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     }
   }
 
-  // if all segments are done 
+  // if all segments are done
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
@@ -290,7 +290,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 {
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->ulsch_pdu;
-  
+
   uint8_t l, number_dmrs_symbols = 0;
   uint32_t G;
   uint16_t start_symbol, number_symbols, nb_re_dmrs;
@@ -312,7 +312,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);
-  
+
   AssertFatal(G>0,"G is 0 : rb_size %u, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %u, nrOfLayer %u\n",
 	      pusch_pdu->rb_size,
 	      number_symbols,
@@ -547,6 +547,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
   if (gNB->frame_parms.frame_type == TDD)
+    if(NFAPI_MODE != NFAPI_MODE_VNF)
     fill_ul_rb_mask(gNB, frame_rx, slot_rx);
 
   gNB_I0_measurements(gNB);
@@ -651,7 +652,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           }
 #endif
 
-T(T_BENETEL, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], 2048*4*14));
+          //T(T_BENETEL, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], 2048*4*14));
 
           uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
           uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;

@@ -100,6 +100,7 @@ extern "C" {
 /* .log_format = 0x13 uncolored standard messages
  * .log_format = 0x93 colored standard messages */
 /* keep white space in first position; switching it to 0 allows colors to be disabled*/
+#define LOG_WITH_COLORS 1
 #if LOG_WITH_COLORS
 #define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
 #define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
@@ -327,7 +328,7 @@ void flush_mem_to_file(void);
 void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 int logInit_log_mem(void);
 void close_log_mem(void);
-  
+
 typedef struct {
   char* buf_p;
   int buf_index;
@@ -362,7 +363,7 @@ typedef struct {
 #define MATLAB_CSHORT_BRACKET1 13
 #define MATLAB_CSHORT_BRACKET2 14
 #define MATLAB_CSHORT_BRACKET3 15
-  
+
 int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format);
 
 /*----------------macro definitions for reading log configuration from the config module */

@@ -47,6 +47,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
@@ -55,6 +56,9 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
+
+int harq_rounds = 0;
+int harq_pid = 0;
 
 // Compute and write all MAC CEs and subheaders, and return number of written
 // bytes
@@ -716,6 +720,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
+      if (NFAPI_MODE == NFAPI_MODE_VNF)
+        sched_ctrl->available_dl_harq.head = 0;
       current_harq_pid = sched_ctrl->available_dl_harq.head;
       AssertFatal(current_harq_pid >= 0,
                   "no free HARQ process available for UE %d\n",
@@ -732,6 +738,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
     }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    if (NFAPI_MODE == NFAPI_MODE_VNF) {
+      harq->is_waiting = false;
+    }
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
@@ -765,7 +774,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int bwpid = sched_ctrl->active_bwp->bwp_Id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    //nfapi_nr_dl_tti_pdcch_pdu_rel15_t temp;
+    // if(NFAPI_MODE == NFAPI_MODE_VNF){
+    //   memcpy(temp,gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid],sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t));
+    //   pdcch_pdu = temp;
+
+    // }
+
     if (!pdcch_pdu) {
+      printf("creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
@@ -807,6 +824,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
     pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
+    if (NFAPI_MODE == NFAPI_MODE_VNF){ // done since uplink isnt operational yet which means harq structures dont get filled properly
+      pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq_rounds];
+      if (harq_rounds % 5 == 0 && harq_rounds!=0){
+        harq_rounds = 0;
+        harq_pid = (harq_pid + 1) % 16;
+      }      
+      harq_rounds++;
+    }
     pdsch_pdu->TBSize[0] = TBS;
 
     pdsch_pdu->dataScramblingId = *scc->physCellId;
@@ -918,6 +943,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
     const int rnti_type = NR_RNTI_C;
 
+    if (NFAPI_MODE == NFAPI_MODE_VNF){
+      dci_payload.harq_pid = harq_pid;
+      dci_payload.tpc = 2;
+    }
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
                        dci_pdu,

@@ -121,6 +121,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->Nl=1;
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
             dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
+            dlsch0_harq->status = ACTIVE; //Gokul
             if (dlsch0_harq->status != ACTIVE) {
               // dlsch0_harq->status not ACTIVE may be due to false retransmission. Reset the 
               // following flag to skip PDSCH procedures in that case.

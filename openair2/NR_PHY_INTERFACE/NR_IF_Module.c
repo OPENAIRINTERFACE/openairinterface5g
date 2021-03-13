@@ -105,7 +105,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   }
 
   UL_info->uci_ind.num_ucis = 0;
-
+  if(NFAPI_MODE != NFAPI_MODE_PNF)
   // mark corresponding PUCCH resources as free
   // NOTE: we just assume it is BWP ID 1, to be revised for multiple BWPs
   RC.nrmac[mod_id]->pucch_index_used[1][slot] = 0;
@@ -181,6 +181,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
+  nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
@@ -199,8 +200,9 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   }
 
   handle_nr_rach(UL_info);
-  
+
   handle_nr_uci(UL_info);
+
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
@@ -217,7 +219,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       gNB_dlsch_ulsch_scheduler(module_id,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
 				(UL_info->slot+sl_ahead)%spf);
-      
+
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;

@@ -267,7 +267,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
-		if(!push16(value->dci_pdu[i].RNTI, ppWritePackedMsg, end) &&
+		if(!(push16(value->dci_pdu[i].RNTI, ppWritePackedMsg, end) &&
 		push16(value->dci_pdu[i].ScramblingId, ppWritePackedMsg, end) &&
 
 		push16(value->dci_pdu[i].ScramblingRNTI, ppWritePackedMsg, end) &&
@@ -277,9 +277,9 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 		push8(value->dci_pdu[i].powerControlOffsetSS, ppWritePackedMsg, end) &&
 		push16(value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end) &&
-		pusharray8(value->dci_pdu[i].Payload, DCI_PAYLOAD_BYTE_LEN, value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end));
-
+		pusharray8(value->dci_pdu[i].Payload, value->dci_pdu[i].PayloadSizeBits, value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end)))
 		return 0;
+		
 	}
 
 	// TODO: resolve the packaging of array (currently sending a single element)
@@ -307,6 +307,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
+	printf("packing pdsch pdu. \n");
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t* value = (nfapi_nr_dl_tti_pdsch_pdu_rel15_t*)tlv;
 
 	// TODO: resolve the packaging of array (currently sending a single element)
@@ -360,6 +361,7 @@ static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 static uint8_t pack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
+	printf("Packing ssb. \n");
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -2045,7 +2047,7 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
-		if(!push16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI, ppWritePackedMsg, end) &&
+		if(!(push16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI, ppWritePackedMsg, end) &&
 		push16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].ScramblingId, ppWritePackedMsg, end) &&
 
 		push16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].ScramblingRNTI, ppWritePackedMsg, end) &&
@@ -2056,7 +2058,7 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 		push8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].powerControlOffsetSS, ppWritePackedMsg, end) &&
 		push16(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end) &&
 		
-		pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].Payload, DCI_PAYLOAD_BYTE_LEN, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end));
+		pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].Payload, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end)))
 
 		return 0;
 	}
@@ -2076,7 +2078,9 @@ static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg,
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.RegBundleSize, ppWritePackedMsg, end) &&
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.InterleaverSize, ppWritePackedMsg, end) &&
 			push8(value->pdcch_pdu.pdcch_pdu_rel15.CoreSetType, ppWritePackedMsg, end) &&
-			push16(value->pdcch_pdu.pdcch_pdu_rel15.ShiftIndex, ppWritePackedMsg, end));
+			push16(value->pdcch_pdu.pdcch_pdu_rel15.ShiftIndex, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, ppWritePackedMsg, end) &&
+			push16(value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end));
 
 }
 
@@ -3394,6 +3398,7 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 	{
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
 			result = pack_dl_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
+			printf("result of pack dl_tti_req is %d. \n",result);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
@@ -3749,12 +3754,12 @@ static uint8_t unpack_dl_tti_csi_rs_pdu_rel15_value(void* tlv, uint8_t **ppReadP
 
 
 static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-{
+{	
 	nfapi_nr_dl_tti_pdcch_pdu_rel15_t* value = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t*)tlv;
 	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
-		if(!pull16(ppReadPackedMsg, &value->dci_pdu[i].RNTI, end) &&
+		if(!(pull16(ppReadPackedMsg, &value->dci_pdu[i].RNTI, end) &&
 		pull16(ppReadPackedMsg, &value->dci_pdu[i].ScramblingId, end) &&
 
 		pull16(ppReadPackedMsg, &value->dci_pdu[i].ScramblingRNTI, end) &&
@@ -3765,7 +3770,7 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 		pull8(ppReadPackedMsg, &value->dci_pdu[i].powerControlOffsetSS, end) &&
 		pull16(ppReadPackedMsg, &value->dci_pdu[i].PayloadSizeBits, end) &&
 		
-		pullarray8(ppReadPackedMsg, value->dci_pdu[i].Payload, DCI_PAYLOAD_BYTE_LEN, value->dci_pdu[i].PayloadSizeBits, end));
+		pullarray8(ppReadPackedMsg, value->dci_pdu[i].Payload, value->dci_pdu[i].PayloadSizeBits, value->dci_pdu[i].PayloadSizeBits, end)))
 			
 		return 0;
 	}
@@ -3847,7 +3852,8 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 
 static uint8_t unpack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-{
+{	
+	printf("ssb received and unpacked. \n");
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -5830,10 +5836,9 @@ static uint8_t unpack_hi_dci0_request_body_value(void *tlv, uint8_t **ppReadPack
 static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg)
 {
 	nfapi_nr_ul_dci_request_pdus_t* value = (nfapi_nr_ul_dci_request_pdus_t*)msg;
-	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
-		if(!pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI,  end) &&
+		if(!(pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI,  end) &&
 		pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].ScramblingId, end) &&
 
 		pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].ScramblingRNTI, end) &&
@@ -5844,7 +5849,7 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 		pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].powerControlOffsetSS, end) &&
 		pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, end) &&
 		
-		pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].Payload, DCI_PAYLOAD_BYTE_LEN, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, end));
+		pullarray8(ppReadPackedMsg, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].Payload, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].PayloadSizeBits, end)))
 	
 		return 0;
 	}
@@ -5865,7 +5870,6 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.InterleaverSize, end) &&
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CoreSetType, end) &&
 			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.ShiftIndex, end) &&
-
 			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, end) &&
 			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end));
 		  

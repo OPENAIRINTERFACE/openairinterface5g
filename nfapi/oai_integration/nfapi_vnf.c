@@ -241,7 +241,7 @@ void oai_create_gnb(void) {
   int bodge_counter=0;
   PHY_VARS_gNB *gNB = RC.gNB[0];
   RC.nb_nr_CC = (int *)malloc(sizeof(int)); // TODO: find a better function to place this in
-  
+
   gNB->Mod_id  = bodge_counter;
   gNB->CC_id   = bodge_counter;
   gNB->abstraction_flag   = 0;
@@ -251,7 +251,7 @@ void oai_create_gnb(void) {
   if (gNB->if_inst==0) {
     gNB->if_inst = NR_IF_Module_init(bodge_counter);
   }
-  
+
 
   // This will cause phy_config_request to be installed. That will result in RRC configuring the PHY
   // that will result in gNB->configured being set to TRUE.
@@ -587,7 +587,7 @@ int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
   printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
 
   if (sync==1 && nfapi_sync_var!=0) {
-    
+
     printf("[VNF] Signal to OAI main code that it can go\n");
     pthread_mutex_lock(&nfapi_sync_mutex);
     nfapi_sync_var=0;
@@ -1285,7 +1285,7 @@ int nr_param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_resp
       req->num_tlv++;
     }
   }
-//TODO: Assign tag and value for P7 message offsets  
+//TODO: Assign tag and value for P7 message offsets
 req->nfapi_config.dl_tti_timing_offset.tl.tag = NFAPI_NR_NFAPI_DL_TTI_TIMING_OFFSET;
 req->nfapi_config.ul_tti_timing_offset.tl.tag = NFAPI_NR_NFAPI_UL_TTI_TIMING_OFFSET;
 req->nfapi_config.ul_dci_timing_offset.tl.tag = NFAPI_NR_NFAPI_UL_DCI_TIMING_OFFSET;
@@ -1388,7 +1388,7 @@ int start_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_start_response_t
   pnf_info *pnf = vnf->pnfs;
   phy_info *phy = pnf->phys;
   vnf_p7_info *p7_vnf = vnf->p7_vnfs;
-  nfapi_vnf_p7_add_pnf((p7_vnf->config), phy->remote_addr, phy->remote_port, phy->id);
+  nfapi_vnf_p7_add_pnf((p7_vnf->config), phy->remote_addr, htons(phy->remote_port), phy->id);
   return 0;
 }
 
@@ -1486,7 +1486,7 @@ void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   config->vnf_ipv6 = 0;
   config->pnf_list = 0;
   config->phy_list = 0;
-    
+
   config->pnf_nr_connection_indication = &pnf_nr_connection_indication_cb;
   config->pnf_disconnect_indication = &pnf_disconnection_indication_cb;
 
@@ -1709,7 +1709,7 @@ int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req) {
 
   ul_tti_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   ul_tti_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST;
-  
+
   int retval = nfapi_vnf_p7_ul_tti_req(p7_config, ul_tti_req);
 
   if (retval!=0) {

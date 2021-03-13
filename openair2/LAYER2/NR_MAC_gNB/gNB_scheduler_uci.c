@@ -235,6 +235,8 @@ void nr_csi_meas_reporting(int Mod_idP,
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
       NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[2];
+      if(NFAPI_MODE == NFAPI_MODE_VNF)
+        curr_pucch->csi_bits = 0;
       AssertFatal(curr_pucch->csi_bits == 0
                   && !curr_pucch->sr_flag
                   && curr_pucch->dai_c == 0,
@@ -458,11 +460,20 @@ bool nr_acknack_scheduling(int mod_id,
               "illegal number of bits in PUCCH of UE %d\n",
               UE_id);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
+  if (NFAPI_MODE == NFAPI_MODE_VNF)
+    pucch->sr_flag = 1; pucch->dai_c = 1;
   if (pucch->sr_flag + pucch->dai_c == max_acknacks) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
      * the same slot again */
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
+    if(NFAPI_MODE == NFAPI_MODE_VNF){
+      gNB_MAC_INST *gNB = RC.nrmac[mod_id];
+      gNB->UL_tti_req_ahead[0][7].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 7
+      gNB->UL_tti_req_ahead[0][8].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 8
+      gNB->UL_tti_req_ahead[0][9].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 9
+      gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
+    }
     nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
@@ -481,6 +492,7 @@ bool nr_acknack_scheduling(int mod_id,
                   UE_id);
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       pucch->frame = s >= n_slots_frame - 2 ?  (f + 1) % 1024 : f;
+      printf("pucch frame filled. \n");
       pucch->ul_slot = (s + 2) % n_slots_frame;
     }
   }
