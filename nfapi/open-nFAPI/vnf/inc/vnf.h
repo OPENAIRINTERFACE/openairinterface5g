@@ -18,6 +18,7 @@
 #ifndef _VNF_H_
 #define _VNF_H_
 
+#include "pnf_p7.h"
 #include "nfapi_vnf_interface.h"
 
 typedef struct 
