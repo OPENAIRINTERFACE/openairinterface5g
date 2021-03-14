@@ -111,7 +111,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,
 
   switch (N_RB_DL) {
   case 6:
-    bw_scaling =16;
+    bw_scaling = 4;
     break;
 
   case 25:
