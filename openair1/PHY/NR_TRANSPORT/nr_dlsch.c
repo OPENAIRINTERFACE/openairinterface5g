@@ -132,7 +132,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
   time_stats_t *dlsch_interleaving_stats=&gNB->dlsch_interleaving_stats;
   time_stats_t *dlsch_segmentation_stats=&gNB->dlsch_segmentation_stats;
 
-  for (int dlsch_id=0;dlsch_id<NUMBER_OF_NR_DLSCH_MAX;dlsch_id++) {
+  for (int dlsch_id=0;dlsch_id<gNB->number_of_nr_dlsch_max;dlsch_id++) {
     dlsch = gNB->dlsch[dlsch_id][0];
     if (dlsch->slot_tx[slot] == 0) continue;
 
@@ -430,6 +430,6 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 
 void clear_pdsch_stats(PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<NUMBER_OF_NR_DLSCH_MAX;i++)
+  for (int i=0;i<gNB->number_of_nr_dlsch_max;i++)
     memset((void*)&gNB->dlsch_stats[i],0,sizeof(gNB->dlsch_stats[i]));
 }
