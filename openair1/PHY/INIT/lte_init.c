@@ -457,6 +457,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       }
     }
 
+    LOG_I(PHY,"[INIT]SRS allocation\n");
     // Channel estimates for SRS
     for (int srs_id = 0; srs_id < NUMBER_OF_SRS_MAX; srs_id++) {
       srs_vars[srs_id].srs_ch_estimates = (int32_t **) malloc16 (64 * sizeof (int32_t *));
@@ -476,6 +477,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       srs_vars[srs_id].srs = (int32_t *) malloc16_clear (2 * fp->ofdm_symbol_size * sizeof (int32_t));
     }
 
+    LOG_I(PHY,"PRACH allocation\n");
     // PRACH
     prach_vars->prachF = (int16_t *) malloc16_clear (1024 * 2 * sizeof (int16_t));
     // assume maximum of 64 RX antennas for PRACH receiver
@@ -506,26 +508,26 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
       }*/
 
+    printf("NUMBER_OF_ULSCH_MAX %d\n",NUMBER_OF_ULSCH_MAX);
     for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_ULSCH_MAX; ULSCH_id++) {
       //FIXME
       pusch_vars[ULSCH_id] = (LTE_eNB_PUSCH *) malloc16_clear (NUMBER_OF_ULSCH_MAX * sizeof (LTE_eNB_PUSCH));
-      pusch_vars[ULSCH_id]->rxdataF_ext = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[ULSCH_id]->rxdataF_ext2 = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[ULSCH_id]->drs_ch_estimates = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[ULSCH_id]->drs_ch_estimates_time = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[ULSCH_id]->rxdataF_comp = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[ULSCH_id]->ul_ch_mag = (int32_t **) malloc16 (2 * sizeof (int32_t *));
-      pusch_vars[ULSCH_id]->ul_ch_magb = (int32_t **) malloc16 (2 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->rxdataF_ext = (int32_t **) malloc16 (4 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->rxdataF_ext2 = (int32_t **) malloc16 (4 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->drs_ch_estimates = (int32_t **) malloc16 (4 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->drs_ch_estimates_time = (int32_t **) malloc16 (4 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->rxdataF_comp = (int32_t **) malloc16 (4 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->ul_ch_mag = (int32_t **) malloc16 (4 * sizeof (int32_t *));
+      pusch_vars[ULSCH_id]->ul_ch_magb = (int32_t **) malloc16 (4 * sizeof (int32_t *));
       AssertFatal (fp->ofdm_symbol_size > 127, "fp->ofdm_symbol_size %d<128\n", fp->ofdm_symbol_size);
       AssertFatal (fp->symbols_per_tti > 11, "fp->symbols_per_tti %d < 12\n", fp->symbols_per_tti);
       AssertFatal (fp->N_RB_UL > 5, "fp->N_RB_UL %d < 6\n", fp->N_RB_UL);
-
+      AssertFatal (fp->nb_antennas_rx > 0,"fp->nb_antennas_rx = %d\n",fp->nb_antennas_rx);
       for (i = 0; i < fp->nb_antennas_rx; i++) {
         // FIXME We should get rid of this
         pusch_vars[ULSCH_id]->rxdataF_ext[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-
         pusch_vars[ULSCH_id]->drs_ch_estimates[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-        pusch_vars[ULSCH_id]->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
+        pusch_vars[ULSCH_id]->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear( 4*sizeof(int32_t)*fp->ofdm_symbol_size );
         pusch_vars[ULSCH_id]->rxdataF_comp[i]     = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
         pusch_vars[ULSCH_id]->ul_ch_mag[i]  = (int32_t *)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
         pusch_vars[ULSCH_id]->ul_ch_magb[i] = (int32_t *)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
