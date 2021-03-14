@@ -1973,11 +1973,13 @@ int pnf_send_message(pnf_t* pnf, uint8_t *msg, uint32_t len, uint16_t stream)
 
 	if (pnf->sctp)
 	{
+#if 0
 		printf("\nPNF SENDS: \n");
 		for(int i=0; i<len; i++){
 			printf("%d", msg[i]);
 		}
 		printf("\n");
+#endif
 
 		if (sctp_sendmsg(pnf->p5_sock, msg, len, NULL, 0, 42/*config->sctp_stream_number*/, 0, stream/*P5_STREAM_ID*/, 0, 0) < 0)
 		{
@@ -2069,12 +2071,14 @@ int pnf_read_dispatch_message(pnf_t* pnf)
 		}
 		else
 		{
+#if 0
 			// print the received message
 			printf("\n MESSAGE RECEIVED: \n");
 			for(int i=0; i<message_size; i++){
 				printf("%d", read_buffer[i]);
 			}
 			printf("\n");
+#endif
 
 			if (flags & MSG_NOTIFICATION)
 			{
@@ -2198,12 +2202,14 @@ int pnf_nr_read_dispatch_message(pnf_t* pnf)
 		}
 		else
 		{
+#if 0
 			// print the received message
 			printf("\n MESSAGE RECEIVED: \n");
 			for(int i=0; i<message_size; i++){
 				printf("%d", read_buffer[i]);
 			}
 			printf("\n");
+#endif
 
 			if (flags & MSG_NOTIFICATION)
 			{
