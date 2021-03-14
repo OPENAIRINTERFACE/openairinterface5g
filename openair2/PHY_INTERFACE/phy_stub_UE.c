@@ -96,6 +96,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   UL_INFO->rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
   UL_INFO->rx_ind.vendor_extension = ul_config_req->vendor_extension;
 
+  assert(UL_INFO->rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
   pdu = &UL_INFO->rx_ind.rx_indication_body
              .rx_pdu_list[UL_INFO->rx_ind.rx_indication_body.number_of_pdus];
   // pdu = &UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[index];
@@ -143,6 +144,7 @@ void fill_sr_indication_UE_MAC(int Mod_id,
 
   nfapi_sr_indication_t *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t *sr_ind_body = &sr_ind->sr_indication_body;
+  assert(sr_ind_body->number_of_srs <= NFAPI_SR_IND_MAX_PDU);
   nfapi_sr_indication_pdu_t *pdu = &sr_ind_body->sr_pdu_list[sr_ind_body->number_of_srs];
   UL_INFO->sr_ind.vendor_extension = ul_config_req->vendor_extension;
 
@@ -281,6 +283,7 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
   LOG_D(MAC, "num_cqis: %u in fill_ulsch_cqi_indication_UE_MAC\n",
         UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis);
+  assert(UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
   nfapi_cqi_indication_pdu_t *pdu =
       &UL_INFO->cqi_ind.cqi_indication_body
            .cqi_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
@@ -328,6 +331,7 @@ void fill_ulsch_harq_indication_UE_MAC(
     nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
 
+  assert(UL_INFO->harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
   nfapi_harq_indication_pdu_t *pdu =
       &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list
            [UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
@@ -374,6 +378,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 
   nfapi_harq_indication_t *ind = &UL_INFO->harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
+  assert(UL_INFO->harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
   nfapi_harq_indication_pdu_t *pdu =
       &body->harq_pdu_list[UL_INFO->harq_ind.harq_indication_body
                                .number_of_harqs];
@@ -1618,6 +1623,7 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
   printf("rx_indication_body.tl.length: %u\n", p->rx_indication_body.tl.length);
   printf("rx_indication_body.number_of_pdus: %u\n", p->rx_indication_body.number_of_pdus);
 
+  assert(p->rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
   nfapi_rx_indication_pdu_t *pdu = p->rx_indication_body.rx_pdu_list;
   for (int i = 0; i < p->rx_indication_body.number_of_pdus; i++)
   {
