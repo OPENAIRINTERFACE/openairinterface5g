@@ -19,7 +19,12 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 #include "queue.h"
+
+#define NUM_MCS 28
+#define NUM_SINR 100
+#define NUM_BLER_COL 13
 
 // this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
 extern FILL_UL_INFO_MUTEX_t fill_ul_mutex;
@@ -34,6 +39,32 @@ extern UL_IND_t *UL_INFO;
 //module_id_t next_Mod_id;
 eth_params_t         stub_eth_params;
 
+typedef struct
+{
+    uint16_t sfn_sf;
+    float sinr;
+    // Incomplete, need all channel parameters
+} channel_info;
+
+typedef struct 
+{   
+    uint8_t sf;
+    uint16_t rnti[256];
+    uint8_t mcs[256];
+    float sinr;
+    uint16_t pdu_size;
+    bool drop_flag[256];
+    bool latest;
+
+} sf_rnti_mcs_s;
+
+typedef struct
+{
+    uint16_t length;
+    float bler_table[NUM_SINR][NUM_BLER_COL];
+} bler_struct;
+
+extern bler_struct bler_data[NUM_MCS];
 
 
 

@@ -96,8 +96,9 @@ void handle_sr(UL_IND_t *UL_info) {
       oai_nfapi_sr_indication(&UL_info->sr_ind);
     }
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
+    for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs > 0) {
+        assert(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs <= NFAPI_SR_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs; i++) {
           SR_indication(UL_info->module_id,
                         UL_info->CC_id,
@@ -113,6 +114,7 @@ void handle_sr(UL_IND_t *UL_info) {
       }
     }
   } else {
+    assert(UL_info->sr_ind.sr_indication_body.number_of_srs <= NFAPI_SR_IND_MAX_PDU);
     for (i=0; i<UL_info->sr_ind.sr_indication_body.number_of_srs; i++)
       SR_indication(UL_info->module_id,
                     UL_info->CC_id,
@@ -137,8 +139,9 @@ void handle_cqi(UL_IND_t *UL_info) {
       UL_info->cqi_ind.cqi_indication_body.number_of_cqis=0;
     }
   } else if (NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
+    for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis > 0) {
+        assert(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis; i++) {
           cqi_indication(UL_info->module_id,
                          UL_info->CC_id,
@@ -157,6 +160,7 @@ void handle_cqi(UL_IND_t *UL_info) {
       }
     }
   } else {
+    assert(UL_info->cqi_ind.cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
     for (i=0; i<UL_info->cqi_ind.cqi_indication_body.number_of_cqis; i++)
       cqi_indication(UL_info->module_id,
                      UL_info->CC_id,
@@ -182,8 +186,9 @@ void handle_harq(UL_IND_t *UL_info) {
 
     UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t j = 0; j < NUM_NFPAI_SUBFRAME; j++) {
+    for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs > 0) {
+        assert(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
         for (int i=0; i<UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs; i++) {
           harq_indication(UL_info->module_id,
                           UL_info->CC_id,
@@ -198,6 +203,7 @@ void handle_harq(UL_IND_t *UL_info) {
       }
     }
   } else {
+    assert(UL_info->harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
     for (int i=0; i < UL_info->harq_ind.harq_indication_body.number_of_harqs; i++)
       harq_indication(UL_info->module_id,
                       UL_info->CC_id,
@@ -225,9 +231,11 @@ void handle_ulsch(UL_IND_t *UL_info) {
       UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
     }
   } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
-    for(uint8_t k = 0; k < NUM_NFPAI_SUBFRAME; k++) {
+    for(uint8_t k = 0; k < NUM_NFAPI_SUBFRAME; k++) {
       if((UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus>0) && (UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs>0)) {
+        assert(UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
         for (i=0; i<UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus; i++) {
+          assert(UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
           for (j=0; j<UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs; j++) {
             // find crc_indication j corresponding rx_indication i
             LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].rx_ue_information.rnti:%04x UL_info->rx_ind.rx_indication_body.rx_pdu_list[%d].rx_ue_information.rnti:%04x\n",
@@ -280,7 +288,9 @@ void handle_ulsch(UL_IND_t *UL_info) {
     }
   } else {
     if (UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->crc_ind.crc_indication_body.number_of_crcs>0) {
+      assert(UL_info->rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
       for (i=0; i<UL_info->rx_ind.rx_indication_body.number_of_pdus; i++) {
+        assert(UL_info->crc_ind.crc_indication_body.number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
         for (j=0; j<UL_info->crc_ind.crc_indication_body.number_of_crcs; j++) {
           // find crc_indication j corresponding rx_indication i
           LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].rx_ue_information.rnti:%04x UL_info->rx_ind.rx_indication_body.rx_pdu_list[%d].rx_ue_information.rnti:%04x\n", j,

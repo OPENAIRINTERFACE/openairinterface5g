@@ -421,7 +421,8 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
 #endif
       LOG_T(RRC,"%x.",rv[i]);
     }
-    LOG_I(RRC, "%s: random = %02X %02X %02X %02X %02X %02X\n",
+    rv[0] = ctxt_pP->module_id; // Debugging duplicate random values
+    LOG_A(RRC, "%s: random = %02X %02X %02X %02X %02X %02X\n",
           __func__,
           rv[0],
           rv[1],
@@ -5241,11 +5242,18 @@ void *rrc_control_socket_thread_fct(void *arg) {
     LOG_I(RRC,"Listening to incoming connection from ProSe App \n");
     // receive a message from ProSe App
     memset(receive_buf, 0, BUFSIZE);
-    n = recvfrom(ctrl_sock_fd, receive_buf, BUFSIZE, 0,
+    n = recvfrom(ctrl_sock_fd, receive_buf, BUFSIZE, MSG_TRUNC,
                  (struct sockaddr *) &prose_app_addr, (socklen_t *)&prose_addr_len);
 
     if (n < 0) {
       LOG_E(RRC, "ERROR: Failed to receive from ProSe App\n");
+      exit(EXIT_FAILURE);
+    }
+    if (n == 0) {
+      LOG_E(RRC, "%s(%d). EOF for ctrl_sock_fd\n", __FUNCTION__, __LINE__);
+    }
+    if (n > BUFSIZE) {
+      LOG_E(RRC, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, n);
       exit(EXIT_FAILURE);
     }
 

@@ -761,6 +761,7 @@ int main ( int argc, char **argv )
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
 
+  #if 0 //Disable clean up because this tends to crash (and unnecessary)
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
     if(IS_SOFTMODEM_DOFORMS)
       end_forms();
@@ -802,6 +803,7 @@ int main ( int argc, char **argv )
       }
     }
   }
+  #endif
 
   pdcp_module_cleanup();
   terminate_opt();

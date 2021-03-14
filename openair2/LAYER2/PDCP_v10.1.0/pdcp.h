@@ -44,7 +44,7 @@
 #include "LTE_SRB-ToAddModList.h"
 #include "LTE_MBMS-SessionInfoList-r9.h"
 #include "LTE_PMCH-InfoList-r9.h"
-
+#include "common/utils/ocp_itti/intertask_interface.h"
 
 typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
     const srb_flag_t, const MBMS_flag_t,
@@ -54,6 +54,7 @@ typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_fl
     const MBMS_flag_t, const rb_id_t, const sdu_size_t,
     mem_block_t *,const uint32_t *const, const uint32_t *const);
 
+#define MAX_NUMBER_NETIF                 1 //16
 #define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
 #define LINK_ENB_PDCP_TO_IP_DRIVER_BIT  (1<< 13)

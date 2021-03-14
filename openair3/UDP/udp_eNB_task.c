@@ -235,7 +235,7 @@ udp_eNB_send_to(
 
 void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
 {
-  uint8_t                   l_buffer[2048];
+  uint8_t                   l_buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
   int                n;
   socklen_t          from_len;
   struct sockaddr_in addr;
@@ -246,9 +246,12 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
   if (1) {
     from_len = (socklen_t)sizeof(struct sockaddr_in);
 
-    if ((n = recvfrom(udp_sock_pP->sd, l_buffer, sizeof(l_buffer), 0,
+    if ((n = recvfrom(udp_sock_pP->sd, l_buffer, sizeof(l_buffer), MSG_TRUNC,
                       (struct sockaddr *)&addr, &from_len)) < 0) {
       LOG_E(UDP_, "Recvfrom failed %s\n", strerror(errno));
+      return;
+    } else if (n > sizeof(l_buffer)) {
+      LOG_E(UDP_, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, n);
       return;
     } else if (n == 0) {
       LOG_W(UDP_, "Recvfrom returned 0\n");

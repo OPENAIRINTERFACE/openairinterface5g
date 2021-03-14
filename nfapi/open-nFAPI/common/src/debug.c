@@ -1,12 +1,12 @@
 /*
  * Copyright 2017 Cisco Systems, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,7 +37,7 @@ void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...);
 // initialize the trace function to 0
 void (*nfapi_trace_g)(nfapi_trace_level_t level, const char* format, ...) = &nfapi_trace_dbg;
 
-nfapi_trace_level_t nfapi_trace_level_g = NFAPI_TRACE_INFO;
+nfapi_trace_level_t nfapi_trace_level_g = NFAPI_TRACE_ERROR;
 //nfapi_trace_level_t nfapi_trace_level_g = NFAPI_TRACE_WARN;
 
 void nfapi_set_trace_level(nfapi_trace_level_t new_level)
@@ -47,6 +47,8 @@ void nfapi_set_trace_level(nfapi_trace_level_t new_level)
 
 void nfapi_trace_dbg(nfapi_trace_level_t level, const char *format, ...)
 {
+        if (level < nfapi_trace_level_g)
+                return;
 	char trace_buff[MAX_MSG_LENGTH + TRACE_HEADER_LENGTH];
 	va_list p_args;
 	struct timeval tv;

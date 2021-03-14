@@ -91,7 +91,7 @@ extern struct msghdr nas_msg_rx;
 
 
 extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
-uint16_t ue_id_g;// global variable to identify ue id for each ue. Change happens only in main function of lte-uesoftmodem.c 
+uint16_t ue_id_g;// global variable to identify ue id for each ue. Change happens only in main function of lte-uesoftmodem.c
 
 void debug_pdcp_pc5s_sdu(sidelink_pc5s_element *sl_pc5s_msg, char *title) {
   LOG_I(PDCP,"%s: \nPC5S message, header traffic_type: %d)\n", title, sl_pc5s_msg->pc5s_header.traffic_type);
@@ -132,7 +132,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
         }
        else
        {
-	 if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
+	 if( LOG_DEBUGFLAG(DEBUG_PDCP) )
 	   log_dump(PDCP, pdcpData, pdcpHead->data_size, LOG_DUMP_CHAR,
                     "PDCP output to be sent to TUN interface: \n");
 	 ret = write(nas_sock_fd[pdcpHead->inst], pdcpData, pdcpHead->data_size);
@@ -140,7 +140,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
 	       ret,rb_id,nas_sock_fd[pdcpHead->inst], pdcpHead->data_size);
        }
     } else if (ENB_NAS_USE_TUN) {
-      if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
+      if( LOG_DEBUGFLAG(DEBUG_PDCP) )
 	log_dump(PDCP, pdcpData, pdcpHead->data_size, LOG_DUMP_CHAR,
                  "PDCP output to be sent to TUN interface: \n");
       ret = write(nas_sock_fd[0], pdcpData, pdcpHead->data_size);
@@ -152,7 +152,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
-    
+
     AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
 
     if( LOG_DEBUGFLAG(DEBUG_PDCP) )
@@ -215,21 +215,46 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
   pdcp_t *pdcp_p = NULL;
   int len;
   rb_id_t rab_id = DEFAULT_RAB_ID;
+  int sockd;
 
-  do {
+  if (UE_NAS_USE_TUN) {
+    if (ue_id_g == 0) {
+      sockd = nas_sock_fd[ctxt_pP->module_id];
+    }
+    else {
+      sockd = nas_sock_fd[ue_id_g];
+    }
+  }
+  else {
+    sockd = nas_sock_fd[0];
+  }
+
+  for (;;) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
-    if (ue_id_g == 0)
-    {
-      len = read(UE_NAS_USE_TUN?nas_sock_fd[ctxt_pP->module_id]:nas_sock_fd[0], &nl_rx_buf, NL_MAX_PAYLOAD);
-    }
-    else
-    {
-      len = read(UE_NAS_USE_TUN?nas_sock_fd[ue_id_g]:nas_sock_fd[0], &nl_rx_buf, NL_MAX_PAYLOAD);
-    }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 ); 
+    len = read(sockd, &nl_rx_buf, NL_MAX_PAYLOAD);
 
-    if (len<=0) continue;
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
+    if (len == -1) {
+      if (errno == EAGAIN) {
+        LOG_D(PDCP, "Error reading NAS socket: %s\n", strerror(errno));
+      }
+      else {
+        LOG_E(PDCP, "Error reading NAS socket: %s\n", strerror(errno));
+      }
+      break;
+    }
+    /* Check for message truncation. Strictly speaking if the packet is exactly sizeof(nl_rx_buf) bytes
+       that would not be an error. But we cannot distinguish that from a packet > sizeof(nl_rx_buf) */
+    if (len == sizeof(nl_rx_buf))
+    {
+      LOG_E(PDCP, "%s(%d). Message truncated %d\n", __FUNCTION__, __LINE__, len);
+      break;
+    }
+    if (len == 0) {
+      LOG_E(PDCP, "EOF Reading NAS socket\n");
+      break;
+    }
 
     if (UE_NAS_USE_TUN) {
       key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
@@ -271,7 +296,7 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id, key);
     }
-  } while (len > 0);
+  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 0 );
   return len;
@@ -644,9 +669,19 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   //TTN for D2D (PC5S)
   // receive a message from ProSe App
   memset(receive_buf, 0, BUFSIZE);
-  bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, BUFSIZE, 0,
+  bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, BUFSIZE, MSG_TRUNC,
                             (struct sockaddr *) &prose_pdcp_addr, (socklen_t *)&prose_addr_len);
-
+  if (bytes_received == -1) {
+    LOG_E(PDCP, "%s(%d). recvfrom failed. %s\n", __FUNCTION__, __LINE__, strerror(errno));
+    return;
+  }
+  if (bytes_received == 0) {
+    LOG_E(PDCP, "%s(%d). EOF pdcp_pc5_sockfd.\n", __FUNCTION__, __LINE__);
+  }
+  if (bytes_received > BUFSIZE) {
+    LOG_E(PDCP, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, bytes_received);
+    return;
+  }
   if (bytes_received > 0) {
     pc5s_header = calloc(1, sizeof(pc5s_header_t));
     memcpy((void *)pc5s_header, (void *)receive_buf, sizeof(pc5s_header_t));
@@ -865,4 +900,3 @@ pdcp_pc5_socket_init() {
     exit(1);
   }
 }
-

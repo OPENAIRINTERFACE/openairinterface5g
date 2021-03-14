@@ -18,9 +18,8 @@
 #ifndef _PNF_H_
 #define _PNF_H_
 
-#include "nfapi_pnf_interface.h"
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
-#define NFAPI_MAX_PACKED_MESSAGE_SIZE 8192
 
 typedef struct {
 
