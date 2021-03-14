@@ -86,9 +86,8 @@
 
 #include "lte-softmodem.h"
 
-extern int ue_id_g ; 
+extern int ue_id_g;
 /* temporary compilation wokaround (UE/eNB split */
-uint16_t sf_ahead;
 
 
 pthread_cond_t nfapi_sync_cond;
@@ -96,10 +95,7 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-#ifdef UESIM_EXPANSION
-  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
-uint16_t sf_ahead=1;
+uint16_t sf_ahead=4;
 int tddflag;
 char *emul_iface;
 
@@ -119,6 +115,7 @@ unsigned int                    mmapped_dma=0;
 
 uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+
 
 
 int UE_scan = 1;
@@ -170,6 +167,8 @@ extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id,
 extern void get_uethreads_params(void);
 
 int transmission_mode=1;
+
+int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;
@@ -504,7 +503,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -531,7 +530,7 @@ int restart_L1L2(module_id_t enb_id) {
 
 void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
-  // Do we need to include standalone mode here? - Andrew
+
   if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
@@ -542,6 +541,12 @@ void init_pdcp(int ue_id) {
   pdcp_module_init(pdcp_initmask, ue_id);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+}
+
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_msg(void *notUsed) {
+AssertFatal(false,"");
+	return NULL;
 }
 
 int main( int argc, char **argv ) {
@@ -562,9 +567,6 @@ int main( int argc, char **argv ) {
 
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef UESIM_EXPANSION
-  memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
-#endif
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
@@ -586,6 +588,11 @@ int main( int argc, char **argv ) {
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
 
   get_options ();
+
+  if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
+    sf_ahead = 1;
+  }
+  printf("sf_ahead = %d\n", sf_ahead);
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
@@ -617,14 +624,14 @@ int main( int argc, char **argv ) {
   pthread_mutex_init(&sync_mutex, NULL);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
   }
 
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   ue_id_g = (node_number == 0)? 0 : node_number-2 ;//ue_id_g = 0, 1, ...,
   if( node_number == 0 )
@@ -799,7 +806,7 @@ int main( int argc, char **argv ) {
   }
 
   if(IS_SOFTMODEM_DOFORMS)
-    load_softscope("ue");
+    load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);
@@ -836,6 +843,7 @@ int main( int argc, char **argv ) {
   if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
     PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
 
+  pdcp_module_cleanup();
   terminate_opt();
   logClean();
   printf("Bye.\n");

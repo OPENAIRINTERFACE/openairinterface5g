@@ -103,6 +103,7 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
+
 uint16_t sf_ahead=4;
 
 pthread_cond_t sync_cond;
@@ -172,6 +173,7 @@ extern void init_eNB_afterRU(void);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -388,7 +390,7 @@ void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE from task %s (%d) to task %s (%d)\n",
         itti_get_task_name(from), from, itti_get_task_name(to), to);
   MessageDef *msg;
-  msg = itti_alloc_new_message (from, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (from, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (to, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -440,9 +442,6 @@ int restart_L1L2(module_id_t enb_id) {
   }
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this eNB */
-  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
@@ -458,7 +457,7 @@ int restart_L1L2(module_id_t enb_id) {
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
@@ -564,15 +563,17 @@ int main ( int argc, char **argv )
 
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // allows to forward in wireshark L2 protocol for decoding
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
   }
 
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
+  // to make a graceful exit when ctrl-c is pressed
+  set_softmodem_sighandler();
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
@@ -601,6 +602,7 @@ int main ( int argc, char **argv )
   if (RC.nb_inst > 0) {
     /* Start the agent. If it is turned off in the configuration, it won't start */
     for (i = 0; i < RC.nb_inst; i++) {
+      if(NFAPI_MODE != NFAPI_MODE_PNF)
       flexran_agent_start(i);
     }
     
@@ -614,7 +616,7 @@ int main ( int argc, char **argv )
     }
 
     for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
-      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
       RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
@@ -677,6 +679,7 @@ int main ( int argc, char **argv )
          initTpool("n", L1proc->threadPool, true);
       initNotifiedFIFO(L1proc->respEncode);
       initNotifiedFIFO(L1proc->respDecode);
+      RC.eNB[x][CC_id]->proc.L1_proc_tx.threadPool = L1proc->threadPool;
     }
 
 
@@ -729,10 +732,12 @@ int main ( int argc, char **argv )
     sync_var=0;
     pthread_cond_broadcast(&sync_cond);
     pthread_mutex_unlock(&sync_mutex);
+    create_tasks_mbms(1);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
-  log_scheduler("eNB-main");
-  create_tasks_mbms(1);
+  else
+    create_tasks_mbms(1);
+  //create_tasks_mbms(1);
 
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
@@ -742,7 +747,7 @@ int main ( int argc, char **argv )
   // end of CI modifications
   //getchar();
   if(IS_SOFTMODEM_DOFORMS)
-     load_softscope("enb");
+     load_softscope("enb",NULL);
   itti_wait_tasks_end();
 
 #if USING_GPROF
@@ -800,6 +805,7 @@ int main ( int argc, char **argv )
   }
   #endif
 
+  pdcp_module_cleanup();
   terminate_opt();
   logClean();
   printf("Bye.\n");

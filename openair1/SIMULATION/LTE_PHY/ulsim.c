@@ -80,6 +80,9 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
+static int cmpdouble(const void *p1, const void *p2) {
+  return *(double *)p1 > *(double *)p2;
+}
 
 
 int split73=0;
@@ -345,7 +348,7 @@ int main(int argc, char **argv) {
   unsigned short input_buffer_length;
   unsigned int ret;
   unsigned int coded_bits_per_codeword,nsymb;
-  unsigned int tx_lev=0,tx_lev_dB,trials,errs[4]= {0,0,0,0},round_trials[4]= {0,0,0,0};
+  unsigned int tx_lev=0,tx_lev_dB,trials,errs[5]= {0,0,0,0,0},round_trials[4]= {0,0,0,0};
   FILE *bler_fd=NULL;
   char bler_fname[512];
   FILE *time_meas_fd=NULL;
@@ -406,7 +409,6 @@ int main(int argc, char **argv) {
   // enable these lines if you need debug info
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
-  //  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   //  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
   //  set_glog(LOG_DEBUG,LOG_HIGH);
   //hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF
@@ -729,6 +731,7 @@ int main(int argc, char **argv) {
                                 channel_model,
                                 N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
+                                30e-9,
                                 forgetting_factor,
                                 delay,
                                 0);
@@ -1086,7 +1089,7 @@ int main(int argc, char **argv) {
           if (awgn_flag == 0) {
             if (UE2eNB->max_Doppler == 0) {
               multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                eNB->frame_parms.samples_per_tti,hold_channel);
+                                eNB->frame_parms.samples_per_tti,hold_channel,0);
             } else {
               multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
                                    2*eNB->frame_parms.samples_per_tti,hold_channel);

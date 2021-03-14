@@ -21,7 +21,10 @@
 
 #include <time.h>
 #include <stdlib.h>
-#include "SIMULATION/TOOLS/sim.h"
+#include <fcntl.h>
+#include <unistd.h>
+//#include "SIMULATION/TOOLS/sim.h"
+
 
 static unsigned int s0, s1, s2;
 

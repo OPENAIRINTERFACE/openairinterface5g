@@ -1,5 +1,5 @@
-#ifndef _TRACER_DEFS_H_
-#define _TRACER_DEFS_H_
+#ifndef _COMMON_UTILS_T_DEFS_H_
+#define _COMMON_UTILS_T_DEFS_H_
 
 /* types of plots */
 #define PLOT_VS_TIME   0
@@ -27,4 +27,4 @@ void *forwarder(char *ip, int port);
 void forward(void *forwarder, char *buf, int size);
 void forward_start_client(void *forwarder, int socket);
 
-#endif /* _TRACER_DEFS_H_ */
+#endif /* _COMMON_UTILS_T_DEFS_H_ */

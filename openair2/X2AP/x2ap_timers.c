@@ -28,11 +28,17 @@
 #include "x2ap_eNB_management_procedures.h"
 #include "x2ap_eNB_generate_messages.h"
 
-void x2ap_timers_init(x2ap_timers_t *t, int t_reloc_prep, int tx2_reloc_overall)
+void x2ap_timers_init(x2ap_timers_t *t,
+    int t_reloc_prep,
+    int tx2_reloc_overall,
+    int t_dc_prep,
+    int t_dc_overall)
 {
   t->tti               = 0;
   t->t_reloc_prep      = t_reloc_prep;
   t->tx2_reloc_overall = tx2_reloc_overall;
+  t->t_dc_prep         = t_dc_prep;
+  t->t_dc_overall      = t_dc_overall;
 }
 
 void x2ap_check_timers(instance_t instance)
@@ -59,14 +65,17 @@ void x2ap_check_timers(instance_t instance)
 
   for (i = 0; i < X2AP_MAX_IDS; i++) {
     if (m->ids[i].rnti == -1) continue;
-    x2_ongoing++;
+
+    if (m->ids[i].state == X2ID_STATE_SOURCE_PREPARE ||
+        m->ids[i].state == X2ID_STATE_SOURCE_OVERALL)
+      x2_ongoing++;
 
     if (m->ids[i].state == X2ID_STATE_SOURCE_PREPARE &&
         t->tti > m->ids[i].t_reloc_prep_start + t->t_reloc_prep) {
       LOG_I(X2AP, "X2 timeout reloc prep\n");
       /* t_reloc_prep timed out */
       cause = X2AP_T_RELOC_PREP_TIMEOUT;
-      goto timeout;
+      goto lte_handover_timeout;
     }
 
     if (m->ids[i].state == X2ID_STATE_SOURCE_OVERALL &&
@@ -74,19 +83,68 @@ void x2ap_check_timers(instance_t instance)
       LOG_I(X2AP, "X2 timeout reloc overall\n");
       /* tx2_reloc_overall timed out */
       cause = X2AP_TX2_RELOC_OVERALL_TIMEOUT;
-      goto timeout;
+      goto lte_handover_timeout;
+    }
+
+    if (m->ids[i].state == X2ID_STATE_NSA_ENB_PREPARE &&
+        t->tti > m->ids[i].t_dc_prep_start + t->t_dc_prep) {
+      int id_source;
+      int id_target;
+
+      LOG_I(X2AP, "X2 timeout DC prep\n");
+      /* t_dc_prep timed out */
+      target = x2ap_id_get_target(m, i);
+      id_source = x2ap_id_get_id_source(m, i);
+      id_target = x2ap_id_get_id_target(m, i);
+      x2ap_eNB_generate_ENDC_x2_SgNB_release_request(instance_p, target,
+                                                     id_source, id_target,
+                                                     X2AP_CAUSE_T_DC_PREP_TIMEOUT);
+
+      /* inform RRC of timeout */
+      msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_DC_PREP_TIMEOUT);
+      X2AP_ENDC_DC_PREP_TIMEOUT(msg).rnti  = x2ap_id_get_rnti(m, i);
+      itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+      /* remove UE from X2AP */
+      x2ap_release_id(m, i);
+
+      continue;
+    }
+
+    if (m->ids[i].state == X2ID_STATE_NSA_GNB_OVERALL &&
+        t->tti > m->ids[i].t_dc_overall_start + t->t_dc_overall) {
+      int id_source;
+      int id_target;
+
+      LOG_I(X2AP, "X2 timeout DC overall\n");
+      /* t_dc_overall timed out */
+      target = x2ap_id_get_target(m, i);
+      id_source = x2ap_id_get_id_source(m, i);
+      id_target = x2ap_id_get_id_target(m, i);
+      x2ap_eNB_generate_ENDC_x2_SgNB_release_required(instance_p, target,
+              id_source, id_target, X2AP_CAUSE_T_DC_OVERALL_TIMEOUT);
+
+      /* inform RRC of timeout */
+      msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_ENDC_DC_OVERALL_TIMEOUT);
+      X2AP_ENDC_DC_OVERALL_TIMEOUT(msg).rnti  = x2ap_id_get_rnti(m, i);
+      itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
+
+      /* remove UE from X2AP */
+      x2ap_release_id(m, i);
+
+      continue;
     }
 
     /* no timeout -> check next UE */
     continue;
 
-timeout:
+lte_handover_timeout:
     /* inform target about timeout */
     target = x2ap_id_get_target(m, i);
     x2ap_eNB_generate_x2_handover_cancel(instance_p, target, i, cause);
 
     /* inform RRC of cancellation */
-    msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_CANCEL);
+    msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_HANDOVER_CANCEL);
     X2AP_HANDOVER_CANCEL(msg).rnti  = x2ap_id_get_rnti(m, i);
     X2AP_HANDOVER_CANCEL(msg).cause = cause;
     itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);

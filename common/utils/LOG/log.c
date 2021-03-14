@@ -90,15 +90,18 @@ int write_file_matlab(const char *fname,
 					  void *data,
 					  int length,
 					  int dec,
-					  char format)
+					  unsigned int format)
 {
   FILE *fp=NULL;
   int i;
+
+  AssertFatal((format&~MATLAB_RAW) <16,"");
 
   if (data == NULL)
     return -1;
 
   //printf("Writing %d elements of type %d to %s\n",length,format,fname);
+
 
   if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14) {
     fp = fopen(fname,"a+");
@@ -110,6 +113,32 @@ int write_file_matlab(const char *fname,
     printf("[OPENAIR][FILE OUTPUT] Cannot open file %s\n",fname);
     return(-1);
   }
+
+  if ( (format&MATLAB_RAW) == MATLAB_RAW ) {
+    int sz[16]={sizeof(short), 2*sizeof(short),
+		sizeof(int), 2*sizeof(int),
+		sizeof(char), 2*sizeof(char),
+		sizeof(long long), 
+		sizeof(double), 2*sizeof(double),
+		sizeof(unsigned char),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short)
+    };
+    int eltSz= sz[format&~MATLAB_RAW];
+    if (dec==1) 
+      fwrite(data, eltSz, length, fp);
+    else 
+      for (i=0; i<length; i+=dec)
+	fwrite(data+i*eltSz, eltSz, 1, fp);
+    
+    fclose(fp);
+    return(0);	
+  }
+
 
   if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14)
     fprintf(fp,"%s = [",vname);
@@ -216,6 +245,8 @@ int write_file_matlab(const char *fname,
     case 12 : // case eren for log2_maxh real unsigned 8 bit
       fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
       break;
+  default:
+    AssertFatal(false, "unknown dump format: %u\n", format);
   }
 
   if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
@@ -447,6 +478,7 @@ int logInit (void)
   register_log_component("NR_RRC","log",NR_RRC);
   register_log_component("NR_MAC","log",NR_MAC);
   register_log_component("NR_PHY","log",NR_PHY);
+  register_log_component("NGAP","",NGAP);
 
   for (int i=0 ; log_level_names[i].name != NULL ; i++)
     g_log->level2string[i]           = toupper(log_level_names[i].name[0]); // uppercased first letter of level name
@@ -478,6 +510,7 @@ char *log_getthreadname(char *threadname,
 }
 
 #if LOG_MINIMAL
+#include <sys/syscall.h>
 void logMinimal(int comp, int level, const char *format, ...)
 {
     struct timespec ts;
@@ -485,9 +518,10 @@ void logMinimal(int comp, int level, const char *format, ...)
         abort();
 
     char buf[MAX_LOG_TOTAL];
-    int n = snprintf(buf, sizeof(buf), "%lu.%06lu [%s] %c ",
+    int n = snprintf(buf, sizeof(buf), "%lu.%06lu %08lx [%s] %c ",
                      ts.tv_sec,
                      ts.tv_nsec / 1000,
+                     syscall(__NR_gettid),
                      g_log->log_component[comp].name,
                      level);
     if (n < 0 || n >= sizeof(buf))
@@ -523,12 +557,12 @@ void logMinimal(int comp, int level, const char *format, ...)
 #endif // LOG_MINIMAL
 
 static int log_header(char *log_buffer,
-                      int buffsize,
-                      int comp,
-                      int level,
-                      const char *format)
+		              int buffsize,
+					  int comp,
+					  int level,
+					  const char *format)
 {
-    char threadname[PR_SET_NAME];
+  char threadname[PR_SET_NAME];
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
         abort();
@@ -545,24 +579,24 @@ static int log_header(char *log_buffer,
 }
 
 void logRecord_mt(const char *file,
-                  const char *func,
-                  int line,
-                  int comp,
-                  int level,
-                  const char *format,
-                  ... )
+		          const char *func,
+				  int line,
+				  int comp,
+				  int level,
+				  const char *format,
+				  ... )
 {
-    char log_buffer[MAX_LOG_TOTAL]= {0};
-    va_list args;
-    va_start(args,format);
-    if (log_mem_flag == 1) {
-        log_output_memory(file,func,line,comp,level,format,args);
-    } else {
-        log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
-        g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
-        fflush(g_log->log_component[comp].stream);
-    }
-    va_end(args);
+  char log_buffer[MAX_LOG_TOTAL]= {0};
+  va_list args;
+  va_start(args,format);
+  if (log_mem_flag == 1) {
+    log_output_memory(file,func,line,comp,level,format,args);
+  } else {
+  log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
+  g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
+  fflush(g_log->log_component[comp].stream);
+  }
+  va_end(args);
 }
 
 void vlogRecord_mt(const char *file,

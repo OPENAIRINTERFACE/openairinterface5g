@@ -114,7 +114,7 @@
 *********************************************************************/
 
 void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted,
-		                   NR_UE_DLSCH_t **dlsch, NR_UE_ULSCH_t *ulsch, uint8_t nr_tti_rx, uint8_t tx_offset)
+		                   NR_UE_DLSCH_t **dlsch, NR_UE_ULSCH_t *ulsch, uint8_t slot, uint8_t tx_offset)
 {
   if (nr_dci_info_extracted->identifier_dci_formats == DL_DCI) {
 
@@ -124,14 +124,14 @@ void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_i
 
     dl_harq->harq_ack.vDAI_DL = nr_dci_info_extracted->dai+1;
     dl_harq->harq_ack.pucch_resource_indicator = nr_dci_info_extracted->pucch_resource_ind;
-    dl_harq->harq_ack.slot_for_feedback_ack = (nr_tti_rx + nr_dci_info_extracted->pdsch_to_harq_feedback_time_ind)%ue->frame_parms.ttis_per_subframe;
+    dl_harq->harq_ack.slot_for_feedback_ack = (slot + nr_dci_info_extracted->pdsch_to_harq_feedback_time_ind)%ue->frame_parms.slots_per_subframe;
     dl_harq->harq_ack.harq_id = nr_dci_info_extracted->harq_process_number;
     dl_harq->harq_ack.rx_status = downlink_harq_process(dl_harq, dlsch[0]->current_harq_pid, nr_dci_info_extracted->ndi, dlsch[0]->rnti_type);
   }
   else if (nr_dci_info_extracted->identifier_dci_formats == UL_DCI) {
 
 	/* store harq id for which pusch should be transmitted at rx_slot + tx_offset */
-	set_tx_harq_id(ulsch, nr_dci_info_extracted->harq_process_number, (nr_tti_rx + tx_offset)%ue->frame_parms.ttis_per_subframe);
+	set_tx_harq_id(ulsch, nr_dci_info_extracted->harq_process_number, (slot + tx_offset)%ue->frame_parms.slots_per_subframe);
     ulsch->harq_processes[nr_dci_info_extracted->harq_process_number]->tx_status = uplink_harq_process(ulsch, nr_dci_info_extracted->harq_process_number, nr_dci_info_extracted->ndi, ulsch->rnti_type);
   }
 }
@@ -295,14 +295,14 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
   /* 38.321 5.4.2.1  2>  if the uplink grant was received on PDCCH for the C-RNTI and the HARQ buffer of the identified process is empty */
   if ((ulsch->harq_processes[harq_pid]->first_tx == 1) && (rnti_type == _C_RNTI_)) {  /* no transmission yet on this process so consider its harq buffer as empty */
-    ulsch->harq_processes[harq_pid]->first_tx = 0;
+   ulsch->harq_processes[harq_pid]->first_tx = 0;
     ulsch->harq_processes[harq_pid]->pusch_pdu.pusch_data.new_data_indicator = ndi;             /* store first value of ndi */
     ulsch->harq_processes[harq_pid]->round = 0;
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-UL-PUSCH harqId : %d] first new transmission \n", harq_pid);
+    LOG_D(PHY, "[HARQ-UL-PUSCH harqId : %d] first new transmission \n", harq_pid);
   }
   /* 38.321 5.4.2.1  2> if the received grant was not addressed to a Temporary C-RNTI on PDCCH, and the NDI provided in the associated HARQ */
   /* information has been toggled compared to the value in the previous transmission of this TB of this HARQ process */
@@ -313,7 +313,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-UL-PUSCH harqId : %d] new transmission due to toogle of ndi \n", harq_pid);
+    LOG_D(PHY, "[HARQ-UL-PUSCH harqId : %d] new transmission due to toogle of ndi \n", harq_pid);
    }
    /* 38.321 5.4.2.1 2> else (i.e. retransmission): */
    else {
@@ -322,7 +322,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
      result_harq = RETRANSMISSION_HARQ;
 
-     NR_TST_PHY_PRINTF("[HARQ-UL-PUSCH harqId : %d] retransmission \n", harq_pid);
+     LOG_D(PHY, "[HARQ-UL-PUSCH harqId : %d] retransmission \n", harq_pid);
    }
 
   return (result_harq);
@@ -476,7 +476,7 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] first new reception \n", harq_pid);
+    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] first new reception \n", harq_pid);
   }
   else if (dl_harq->DCINdi != ndi) {
     dl_harq->round = 0;
@@ -485,15 +485,17 @@ harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int 
 
     result_harq = NEW_TRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] new reception due to toogle of ndi \n", harq_pid);
+    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] new reception due to toogle of ndi \n", harq_pid);
   }
   else {
 
     dl_harq->round++;
 
+    if (dl_harq->harq_ack.ack) dl_harq->status = SCH_IDLE;
+
     result_harq = RETRANSMISSION_HARQ;
 
-    NR_TST_PHY_PRINTF("[HARQ-DL-PDSCH harqId : %d] reception of a retransmission \n", harq_pid);
+    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] reception of a retransmission \n", harq_pid);
   }
 
   return (result_harq);

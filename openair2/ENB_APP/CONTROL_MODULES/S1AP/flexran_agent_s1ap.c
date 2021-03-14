@@ -125,6 +125,63 @@ void flexran_agent_s1ap_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
   }
 }
 
+void flexran_agent_handle_mme_update(mid_t mod_id,
+                                     size_t n_mme,
+                                     Protocol__FlexS1apMme **mme) {
+  if (n_mme == 0 || n_mme > 1) {
+    LOG_E(FLEXRAN_AGENT, "cannot handle %lu MMEs yet\n", n_mme);
+    return;
+  }
+
+  if (!mme[0]->s1_ip) {
+    LOG_E(FLEXRAN_AGENT, "no S1 IP present, cannot handle request\n");
+    return;
+  }
+
+  if (mme[0]->has_state
+      && mme[0]->state == PROTOCOL__FLEX_MME_STATE__FLMMES_DISCONNECTED) {
+    int rc = flexran_remove_s1ap_mme(mod_id, 1, &mme[0]->s1_ip);
+    if (rc == 0)
+      LOG_I(FLEXRAN_AGENT, "remove MME at IP %s\n", mme[0]->s1_ip);
+    else
+      LOG_W(FLEXRAN_AGENT,
+            "could not remove MME: flexran_remove_s1ap_mme() returned %d\n",
+            rc);
+  } else {
+    int rc = flexran_add_s1ap_mme(mod_id, 1, &mme[0]->s1_ip);
+    if (rc == 0)
+      LOG_I(FLEXRAN_AGENT, "add MME at IP %s\n", mme[0]->s1_ip);
+    else
+      LOG_W(FLEXRAN_AGENT,
+            "could not add MME: flexran_add_s1ap_mme() returned %d\n",
+            rc);
+  }
+}
+
+void flexran_agent_handle_plmn_update(mid_t mod_id,
+                                      int CC_id,
+                                      size_t n_plmn,
+                                      Protocol__FlexPlmn **plmn_id) {
+  if (n_plmn < 1 || n_plmn > 6) {
+    LOG_E(FLEXRAN_AGENT, "cannot handle %lu PLMNs\n", n_plmn);
+    return;
+  }
+
+  /* We assume the controller has checked all the parameters within each
+   * plmn_id */
+  int rc = flexran_set_new_plmn_id(mod_id, CC_id, n_plmn, plmn_id);
+  if (rc == 0) {
+    LOG_I(FLEXRAN_AGENT, "set %lu new PLMNs:\n", n_plmn);
+    for (int i = 0; i < (int)n_plmn; ++i)
+      LOG_I(FLEXRAN_AGENT, "    MCC %d MNC %d MNC length %d\n",
+            plmn_id[i]->mcc, plmn_id[i]->mnc, plmn_id[0]->mnc_length);
+  } else {
+    LOG_W(FLEXRAN_AGENT,
+          "could not set new PLMN configuration: flexran_set_new_plmn_id() returned %d\n",
+          rc);
+  }
+}
+
 int flexran_agent_register_s1ap_xface(mid_t mod_id) {
   if (agent_s1ap_xface[mod_id]) {
     LOG_E(FLEXRAN_AGENT, "S1AP agent CM for eNB %d is already registered\n", mod_id);

@@ -33,7 +33,10 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
-#include <assert.h>
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
+#include "openair1/PHY/defs_gNB.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_common.h"
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,
@@ -47,6 +50,8 @@ UL_IND_t *UL_INFO = NULL;
 queue_t dl_config_req_tx_req_queue;
 queue_t ul_config_req_queue;
 queue_t hi_dci0_req_queue;
+
+FILL_UL_INFO_MUTEX_t fill_ul_mutex;
 
 int current_sfn_sf;
 sem_t sfn_semaphore;
@@ -104,6 +109,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   pdu->rx_indication_rel9.tl.tag = NFAPI_RX_INDICATION_REL9_TAG;
   pdu->rx_indication_rel9.timing_advance_r9 = 0;
 
+  // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
   LOG_I(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
@@ -123,6 +129,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
 
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   UL_INFO->rx_ind.sfn_sf = frame << 4 | subframe;
+
   pthread_mutex_unlock(&fill_ul_mutex.rx_mutex);
 }
 
@@ -162,6 +169,7 @@ void fill_sr_indication_UE_MAC(int Mod_id,
 
   // UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   sr_ind_body->number_of_srs++;
+
   pthread_mutex_unlock(&fill_ul_mutex.sr_mutex);
 }
 
@@ -176,6 +184,7 @@ void fill_crc_indication_UE_MAC(int Mod_id,
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
   LOG_D(MAC, "fill crc_indication num_crcs: %u\n",
         UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
+  assert(UL_INFO->crc_ind.crc_indication_body.number_of_crcs < NUMBER_OF_UE_MAX);
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
            .crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
@@ -209,8 +218,6 @@ void fill_rach_indication_UE_MAC(int Mod_id,
                                  UL_IND_t *UL_INFO,
                                  uint8_t ra_PreambleIndex,
                                  uint16_t ra_RNTI) {
-  LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
-
   pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
 
   UL_INFO->rach_ind.rach_indication_body.number_of_preambles = 1;
@@ -352,6 +359,7 @@ void fill_ulsch_harq_indication_UE_MAC(
   }
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
+
   pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 }
 
@@ -456,6 +464,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   LOG_D(PHY,
         "Incremented eNB->UL_INFO.harq_ind.number_of_harqs:%d\n",
         UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
+
   pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 }
 
@@ -516,7 +525,9 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ul_config_req);
       }
     }
-  } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
+  }
+
+  else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
     // AssertFatal((UE_id =
     // find_ulsch(ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
     //            "No available UE ULSCH for rnti
@@ -799,7 +810,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
   if (rnti_type == 1) { // C-RNTI (Normal DLSCH case)
     for (int ue_id = 0; ue_id < num_ue; ue_id++) {
       if (UE_mac_inst[ue_id].crnti == rnti) {
-        LOG_I(MAC,
+        LOG_D(MAC,
               "%s() Received data: sfn/sf:%d.%d "
               "size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n",
               __func__,
@@ -870,7 +881,37 @@ void dl_config_req_UE_MAC_dci(int sfn,
           UE_mac_inst[ue_id].first_ULSCH_Tx = 1;
         }
       }
-    } else {
+    }
+    //else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE) {
+    //  // BCH case: Last parameter is 1 if first time synchronization and zero
+    //  // otherwise.  Not sure which value to put for our case.
+    //  if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED){
+    //    dl_phy_sync_success(Mod_id, sfn, 0, 1);
+    //    LOG_E(MAC,
+    //          "%s(): Received MIB: UE_mode: %d, sfn/sf: %d.%d\n",
+    //          __func__,
+    //          UE_mac_inst[Mod_id].UE_mode[0],
+    //          sfn,
+    //          sf);
+    //    UE_mac_inst[Mod_id].UE_mode[0] = PRACH;
+    //  } else {
+    //    dl_phy_sync_success(Mod_id, sfn, 0, 0);
+    //  }
+    //} else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE){
+    //    if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED) {
+    //       /* this check is in the code before refactoring, but I don't know
+    //        * why. Leave it in here for the moment */
+    //       continue;
+    //    }
+    //    nfapi_dl_config_request_pdu_t *dl_config_pdu_tmp = &dl_config_pdu_list[i];
+    //    const int pdu_index = dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
+    //    ue_send_mch_sdu(Mod_id, 0, sfn,
+    //        tx_request_pdu_list[pdu_index].segments[0].segment_data,
+    //        tx_request_pdu_list[pdu_index].segments[0].segment_length,
+    //        0,0);
+
+    //}
+    else {
       LOG_W(MAC, "can not handle special RNTI %x\n", rnti);
     }
   }
@@ -952,35 +993,6 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
-			nfapi_pnf_p7_config_t *pnf_p7,
-                         nfapi_dl_config_request_t *req) {
-
-  nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
-
-  // UE_mac_inst[Mod_id].p->header = req->header;
-  p->sfn_sf = req->sfn_sf;
-
-  p->vendor_extension = req->vendor_extension;
-
-  p->dl_config_request_body.number_dci = req->dl_config_request_body.number_dci;
-  p->dl_config_request_body.number_pdcch_ofdm_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
-  p->dl_config_request_body.number_pdsch_rnti = req->dl_config_request_body.number_pdsch_rnti;
-  p->dl_config_request_body.number_pdu = req->dl_config_request_body.number_pdu;
-
-  p->dl_config_request_body.tl.tag = req->dl_config_request_body.tl.tag;
-  p->dl_config_request_body.tl.length = req->dl_config_request_body.tl.length;
-
-  p->dl_config_request_body.dl_config_pdu_list =
-      calloc(req->dl_config_request_body.number_pdu,
-             sizeof(nfapi_dl_config_request_pdu_t));
-  for (int i = 0; i < p->dl_config_request_body.number_pdu; i++) {
-    p->dl_config_request_body.dl_config_pdu_list[i] =
-        req->dl_config_request_body.dl_config_pdu_list[i];
-  }
-
-  return 0;
-}
 
 static bool is_my_ul_config_req(nfapi_ul_config_request_t *req)
 {
@@ -1056,33 +1068,6 @@ void nfapi_free_tx_req_pdu_list(nfapi_tx_req_pdu_list_t *list)
     }
   }
   free(list);
-}
-
-int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
-
-  int num_pdus = req->tx_request_body.number_of_pdus;
-
-  nfapi_tx_req_pdu_list_t *list = calloc(1, sizeof(nfapi_tx_req_pdu_list_t) + num_pdus * sizeof(nfapi_tx_request_pdu_t));
-  list->num_pdus = num_pdus;
-  nfapi_tx_request_pdu_t *p = list->pdus;
-
-  for (int i = 0; i < num_pdus; i++) {
-    p[i].num_segments = req->tx_request_body.tx_pdu_list[i].num_segments;
-    p[i].pdu_index = req->tx_request_body.tx_pdu_list[i].pdu_index;
-    p[i].pdu_length = req->tx_request_body.tx_pdu_list[i].pdu_length;
-    for (int j = 0; j < req->tx_request_body.tx_pdu_list[i].num_segments; j++) {
-      p[i].segments[j].segment_length = req->tx_request_body.tx_pdu_list[i].segments[j].segment_length;
-      if (p[i].segments[j].segment_length > 0) {
-        p[i].segments[j].segment_data = calloc(
-            p[i].segments[j].segment_length, sizeof(uint8_t));
-        memcpy(p[i].segments[j].segment_data,
-               req->tx_request_body.tx_pdu_list[i].segments[j].segment_data,
-               p[i].segments[j].segment_length);
-      }
-    }
-  }
-
-  return 0;
 }
 
 static bool is_my_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req)
@@ -1295,6 +1280,10 @@ void *ue_standalone_pnf_task(void *context)
       continue;
     }
 
+    /* First we'll check for possible messages from the proxy. We do this by checking
+       the length of the message. This works because sizeof(uint16_t) < sizeof(nfapi_p7_message_header_t)
+       and sizeof(phy_channel_params_t) < sizeof(nfapi_p7_message_header_t) and
+       sizeof(uint16_t) != sizeof(phy_channel_params_t). */
     if (len == sizeof(uint16_t))
     {
       uint16_t sfn_sf = 0;
@@ -1326,6 +1315,19 @@ void *ue_standalone_pnf_task(void *context)
         }
         sf_rnti_mcs[sf].sinr = ch_info->sinr;
         LOG_D(MAC, "Received_SINR = %f\n",ch_info->sinr);
+    }
+    else if (len == sizeof(phy_channel_params_t))
+    {
+      phy_channel_params_t ch_info;
+      memcpy(&ch_info, buffer, sizeof(phy_channel_params_t));
+      current_sfn_sf = ch_info.sfn_sf;
+      if (sem_post(&sfn_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
+      uint16_t sf = ch_info.sfn_sf & 15;
+      assert(sf < 10);
     }
     else
     {
@@ -1600,30 +1602,6 @@ void enqueue_dl_config_req_tx_req(nfapi_dl_config_request_t *dl_config_req, nfap
   }
 }
 
-const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len)
-{
-    char *p = out;
-    char *endp = out + out_len;
-    const uint8_t *q = data;
-    snprintf(p, endp - p, "[%zu]", data_len);
-    p += strlen(p);
-    for (size_t i = 0; i < data_len; ++i)
-    {
-        if (p >= endp)
-        {
-            static const char ellipses[] = "...";
-            char *s = endp - sizeof(ellipses);
-            if (s >= p)
-            {
-                strcpy(s, ellipses);
-            }
-            break;
-        }
-        snprintf(p, endp - p, " %02X", *q++);
-        p += strlen(p);
-    }
-    return out;
-}
 
 __attribute__((unused))
 static void print_rx_ind(nfapi_rx_indication_t *p)

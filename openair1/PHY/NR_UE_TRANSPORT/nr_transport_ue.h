@@ -42,9 +42,8 @@
 #include "UTIL/LISTS/list.h"
 #endif
 
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
-//#include "../LTE_TRANSPORT/transport_common.h"
+
 
 // structures below implement 36-211 and 36-212
 
@@ -140,6 +139,10 @@ typedef struct {
   uint32_t num_of_mod_symbols;
   // decode phich
   uint8_t decode_phich;
+  // Encoder BG
+  uint8_t BG;
+  // LDPC lifting size
+  uint32_t Z;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
@@ -178,9 +181,9 @@ typedef struct {
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  uint32_t d_mod[MAX_NUM_NR_RE];
+  int32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
-  uint32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
+  int32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /*
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
@@ -293,6 +296,8 @@ typedef struct {
   uint16_t dlDmrsSymbPos;
   /// DMRS Configuration Type
   uint8_t dmrsConfigType;
+  // Number of DMRS CDM groups with no data
+  uint8_t n_dmrs_cdm_groups;
   /// Starting Symbol number
   uint16_t start_symbol;
   /// Current subband PMI allocation
@@ -313,6 +318,19 @@ typedef struct {
   uint8_t codeword;
   /// HARQ-ACKs
   NR_UE_HARQ_STATUS_t harq_ack;
+  /// PTRS Frequency Density
+  uint8_t PTRSFreqDensity;
+  /// PTRS Time Density
+  uint8_t PTRSTimeDensity;
+  uint8_t PTRSPortIndex ;
+  uint8_t nEpreRatioOfPDSCHToPTRS;
+  uint8_t PTRSReOffset;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
+  // PTRS symbol index, to be updated every PTRS symbol within a slot.
+  uint8_t ptrs_symbol_index;
+  /// PDU BITMAP 
+  uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;
 
 typedef struct {

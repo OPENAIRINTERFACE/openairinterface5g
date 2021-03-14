@@ -53,6 +53,7 @@
 #include <sys/resource.h>
 #include "common/utils/load_module_shlib.h"
 #include "common/config/config_userapi.h"
+#include "common/utils/threadPool/thread-pool.h"
 #include "executables/softmodem-common.h"
 #include <readline/history.h>
 
@@ -507,12 +508,22 @@ int process_command(char *buf) {
         }
 
         rt= CMDSTATUS_FOUND;
-      } else if (strncasecmp(cmd,"get",3) == 0 || strncasecmp(cmd,"set",3) == 0) {
+      } else if (strcasecmp(cmd,"get") == 0 || strcasecmp(cmd,"set") == 0) {
         rt= setgetvar(i,cmd[0],cmdb);
       } else {
         for (k=0 ; telnetparams.CmdParsers[i].cmd[k].cmdfunc != NULL ; k++) {
           if (strncasecmp(cmd, telnetparams.CmdParsers[i].cmd[k].cmdname,sizeof(telnetparams.CmdParsers[i].cmd[k].cmdname)) == 0) {
-            telnetparams.CmdParsers[i].cmd[k].cmdfunc(cmdb, telnetparams.telnetdbg, client_printf);
+          	if (telnetparams.CmdParsers[i].cmd[k].qptr != NULL) {
+          		notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(telnetsrv_qmsg_t),0,NULL,NULL);
+          		telnetsrv_qmsg_t *cmddata=NotifiedFifoData(msg);
+          		cmddata->cmdfunc=(qcmdfunc_t)telnetparams.CmdParsers[i].cmd[k].cmdfunc;
+          	    cmddata->prnt=client_printf;
+          	    cmddata->debug=telnetparams.telnetdbg;
+          		cmddata->cmdbuff=strdup(cmdb);
+          		pushNotifiedFIFO(telnetparams.CmdParsers[i].cmd[k].qptr, msg);
+          	} else {
+              telnetparams.CmdParsers[i].cmd[k].cmdfunc(cmdb, telnetparams.telnetdbg, client_printf);
+            }
             rt= CMDSTATUS_FOUND;
           }
         } /* for k */
@@ -673,6 +684,16 @@ void run_telnetsrv(void) {
   return;
 }
 
+void poll_telnetcmdq(void *qid, void *arg) {
+	notifiedFIFO_elt_t *msg = pollNotifiedFIFO((notifiedFIFO_t *)qid);
+	
+	if (msg != NULL) {
+	  telnetsrv_qmsg_t *msgdata=NotifiedFifoData(msg);
+	  msgdata->cmdfunc(msgdata->cmdbuff,msgdata->debug,msgdata->prnt,arg);
+	  free(msgdata->cmdbuff);
+	  delNotifiedFIFO_elt(msg);
+	}
+}
 /*------------------------------------------------------------------------------------------------*/
 /* load the commands delivered with the telnet server
  *
@@ -758,6 +779,7 @@ int telnetsrv_autoinit(void) {
 */
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd) {
   int i;
+  notifiedFIFO_t *afifo=NULL;
 
   if( modulename == NULL || var == NULL || cmd == NULL) {
     fprintf(stderr,"[TELNETSRV] Telnet server, add_telnetcmd: invalid parameters\n");
@@ -769,6 +791,13 @@ int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmdde
       strncpy(telnetparams.CmdParsers[i].module,modulename,sizeof(telnetparams.CmdParsers[i].module)-1);
       telnetparams.CmdParsers[i].cmd = cmd;
       telnetparams.CmdParsers[i].var = var;
+      if (cmd->cmdflags & TELNETSRV_CMDFLAG_PUSHINTPOOLQ) {
+      	  if (afifo == NULL) {
+      	  	  afifo = malloc(sizeof(notifiedFIFO_t));
+      	  	  initNotifiedFIFO(afifo);
+      	  }
+      	  cmd->qptr = afifo;
+      }
       printf("[TELNETSRV] Telnet server: module %i = %s added to shell\n",
              i,telnetparams.CmdParsers[i].module);
       break;
@@ -797,8 +826,10 @@ int  telnetsrv_checkbuildver(char *mainexec_buildversion, char **shlib_buildvers
 }
 
 int telnetsrv_getfarray(loader_shlibfunc_t  **farray) {
-  *farray=malloc(sizeof(loader_shlibfunc_t));
+  *farray=malloc(sizeof(loader_shlibfunc_t)*2);
   (*farray)[0].fname=TELNET_ADDCMD_FNAME;
   (*farray)[0].fptr=(int (*)(void) )add_telnetcmd;
-  return 1;
+  (*farray)[1].fname=TELNET_POLLCMDQ_FNAME;
+  (*farray)[1].fptr=(int (*)(void) )poll_telnetcmdq; 
+  return ( 2);
 }

@@ -1094,5 +1094,4 @@ static inline int release_thread(pthread_mutex_t *mutex,
   return(0);
 }
 
-
 #endif //  __PHY_DEFS_COMMON_H__

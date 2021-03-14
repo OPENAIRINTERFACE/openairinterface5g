@@ -22,7 +22,7 @@
 /*! \file config_ue.c
  * \brief This includes FeMBMS UE Channel Estimation Procedures for FeMBMS 1.25KHz Carrier Spacing
  * \author Javier Morgade
- * \date 2019
+ * \date 2020
  * \version 0.1
  * \email: javier.morgade@ieee.org
  * @ingroup _phy
@@ -768,8 +768,8 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
     module_id_t eNB_id,
     uint8_t eNB_offset,
     int subframe) {
-  int pilot_khz_1dot25[600] __attribute__((aligned(16)));
-  unsigned char aarx/*,aa*/;
+  int pilot_khz_1dot25[2*2*600] __attribute__((aligned(16)));
+  unsigned char aarx,aa;
   //unsigned int rb;
   int16_t ch[2];
   short *pil,*rxF,*dl_ch/*,*ch0,*ch1,*ch11,*chp,*ch_prev*/;
@@ -783,7 +783,7 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
   ch_offset     = 0;//(l*(ue->frame_parms.ofdm_symbol_size));
   symbol_offset = 0;//ch_offset;//phy_vars_ue->lte_frame_parms.ofdm_symbol_size*l;
-  AssertFatal( ue->frame_parms.N_RB_DL==25,"OFDM symbol size %d not yet supported for FeMBMS\n",ue->frame_parms.N_RB_DL);
+  //AssertFatal( ue->frame_parms.N_RB_DL==25,"OFDM symbol size %d not yet supported for FeMBMS\n",ue->frame_parms.N_RB_DL);
 
   if( (subframe&0x1) == 0) {
     f=filt24_0_khz_1dot25;
@@ -823,7 +823,7 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
       k=3;
     }
 
-    if(ue->frame_parms.N_RB_DL==25) {
+    if(1/*ue->frame_parms.N_RB_DL==25*/) {
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
       multadd_real_vector_complex_scalar(fl,
@@ -843,7 +843,7 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
       rxF+=12;
       dl_ch+=16;
 
-      for(pilot_cnt=2; pilot_cnt<299; pilot_cnt+=2) {
+      for(pilot_cnt=2; pilot_cnt<ue->frame_parms.N_RB_DL*12-1/*299*/; pilot_cnt+=2) {
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
         multadd_real_vector_complex_scalar(f,
@@ -866,7 +866,7 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
 
       rxF   = (int16_t *)&rxdataF[aarx][((symbol_offset+1+k))]; //Skip DC offset
 
-      for(pilot_cnt=0; pilot_cnt<297; pilot_cnt+=2) {
+      for(pilot_cnt=0; pilot_cnt<ue->frame_parms.N_RB_DL*12-3/*297*/; pilot_cnt+=2) {
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
         multadd_real_vector_complex_scalar(f,
@@ -904,6 +904,32 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
                                          24);
     }
   }
+
+ // do ifft of channel estimate
+  for (aa=0; aa<ue->frame_parms.nb_antennas_rx*ue->frame_parms.nb_antennas_tx; aa++) {
+    if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[0][aa]) {
+      switch (ue->frame_parms.N_RB_DL) {
+      case 25:
+        idft(IDFT_6144,(int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[0][aa][8],
+                (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[0][aa],
+                1);
+        break;
+      case 50:
+        idft(IDFT_12288,(int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[0][aa][8],
+                (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[0][aa],
+                1);
+        break;
+     case 100:
+        idft(IDFT_24576,(int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[0][aa][8],
+                (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[0][aa],
+                1);
+        break;
+      default:
+        break;
+      }
+    }
+  }
+
 
   return(0);
 }

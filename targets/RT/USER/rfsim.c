@@ -337,6 +337,7 @@ void init_ue_devices(PHY_VARS_UE *UE) {
 void init_ocm(void) {
   module_id_t UE_id, ru_id;
   int CC_id;
+  double DS_TDL = .03;
   randominit(0);
   set_taus_seed(0);
   init_channelmod();
@@ -357,6 +358,7 @@ void init_ocm(void) {
                                AWGN,
                                N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_DL),
                                N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_DL),
+                               DS_TDL,
                                0.0,
                                0,
                                0);
@@ -369,6 +371,7 @@ void init_ocm(void) {
                                AWGN,
                                N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_UL),
                                N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_UL),
+                               DS_TDL,
                                0.0,
                                0,
                                0);

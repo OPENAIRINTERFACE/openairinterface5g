@@ -302,7 +302,13 @@ void ue_ip_change_rx_flags(struct net_device *dev_pP, int flagsP) {
 }
 
 //---------------------------------------------------------------------------
-void ue_ip_tx_timeout(struct net_device *dev_pP) {
+
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
+void ue_ip_tx_timeout(struct net_device *dev_pP, unsigned int txqueue)
+#else
+void ue_ip_tx_timeout(struct net_device *dev_pP)
+#endif
+{
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.
   ue_ip_priv_t *priv_p =  netdev_priv(dev_pP);

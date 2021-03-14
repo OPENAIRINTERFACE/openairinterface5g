@@ -2006,11 +2006,6 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 	  return;
   }
 
-  //AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb>0,"nb_rb = 0\n");
-  if(ulsch->harq_processes[harq_pid]->nb_rb == 0) {
-    LOG_E(PHY, "fill_ulsch UE_id %d nb_rb = 0\n", UE_id);
-  }
-
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
   ulsch->harq_processes[harq_pid]->subframe                              = subframe;
   ulsch->harq_processes[harq_pid]->handled                               = 0;
@@ -2076,6 +2071,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
     ulsch->harq_processes[harq_pid]->round++;
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
+    ulsch->harq_processes[harq_pid]->Or1           = 0;
+    ulsch->harq_processes[harq_pid]->Or2           = 0;
   }
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;

@@ -155,7 +155,7 @@ int nr_beam_precoding(int32_t **txdataF,
   memset(&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
 
   for (p=0; p<nb_antenna_ports; p++) {
-    if ((frame_parms->L_ssb >> p) & 0x01)  {
+    if ((frame_parms->L_ssb >> (63-p)) & 0x01)  {
       multadd_cpx_vector((int16_t*)&txdataF[p][symbol*frame_parms->ofdm_symbol_size],
 			 (int16_t*)beam_weights[p][aa], 
 			 (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+    enb_mono_fdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: prod-enb-mono-fdd
+        environment:
+            USE_FDD_MONO: 'yes'
+            USE_B2XX: 'yes'
+            ENB_NAME: eNB-in-docker
+            MCC: '222'
+            MNC: '01'
+            MNC_LENGTH: 2
+            TAC: 1
+            UTRA_BAND_ID: 7
+            DL_FREQUENCY_IN_MHZ: 2680
+            UL_FREQUENCY_OFFSET_IN_MHZ: 120
+            NID_CELL: 10
+            NB_PRB: 25
+            MME_S1C_IP_ADDRESS: CI_MME_IP_ADDR
+            ENB_S1C_IF_NAME: eth0
+            ENB_S1C_IP_ADDRESS: 192.168.61.30
+            ENB_S1U_IF_NAME: eth0
+            ENB_S1U_IP_ADDRESS: 192.168.61.30
+            ENB_X2_IP_ADDRESS: 192.168.61.30
+            FLEXRAN_ENABLED: 'no'
+            FLEXRAN_INTERFACE_NAME: eth0
+            FLEXRAN_IPV4_ADDRESS: CI_FLEXRAN_CTL_IP_ADDR
+            USE_ADDITIONAL_OPTIONS: '--RUs.[0].max_rxgain 115 --RUs.[0].max_pdschReferenceSignalPower -27 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96'
+        volumes:
+            - /dev:/dev
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.30
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: prod-oai-public-net
+        ipam:
+            config:
+                - subnet: 192.168.61.0/26
+

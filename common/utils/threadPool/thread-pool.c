@@ -92,7 +92,7 @@ void *one_thread(void *arg) {
   } while (true);
 }
 
-void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
+void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name) {
   memset(pool,0,sizeof(*pool));
   char *measr=getenv("threadPoolMeasurements");
   pool->measurePerf=performanceMeas;
@@ -111,10 +111,12 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   pool->activated=true;
   initNotifiedFIFO(&pool->incomingFifo);
   char *saveptr, * curptr;
+  char *parms_cpy=strdup(params);
   pool->nbThreads=0;
   pool->restrictRNTI=false;
-  curptr=strtok_r(params,",",&saveptr);
+  curptr=strtok_r(parms_cpy,",",&saveptr);
   struct one_thread * ptr;
+  char *tname = (name == NULL ? "Tpool" : name);
   while ( curptr!=NULL ) {
     int c=toupper(curptr[0]);
 
@@ -128,7 +130,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         break;
 
       default:
-	ptr=pool->allthreads;
+        ptr=pool->allthreads;
         pool->allthreads=(struct one_thread *)malloc(sizeof(struct one_thread));
         pool->allthreads->next=ptr;
         printf("create a thread for core %d\n", atoi(curptr));
@@ -137,7 +139,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         pool->allthreads->pool=pool;
         //Configure the thread scheduler policy for Linux
         // set the thread name for debugging
-        sprintf(pool->allthreads->name,"Tpool_%d",pool->allthreads->coreID);
+        sprintf(pool->allthreads->name,"%s%d_%d",tname,pool->nbThreads,pool->allthreads->coreID);
         threadCreate(&pool->allthreads->threadID, one_thread, (void *)pool->allthreads,
                      pool->allthreads->name, pool->allthreads->coreID, OAI_PRIORITY_RT);
         pool->nbThreads++;
@@ -145,7 +147,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
 
     curptr=strtok_r(NULL,",",&saveptr);
   }
-
+  free(parms_cpy);
   if (pool->activated && pool->nbThreads==0) {
     printf("No servers created in the thread pool, exit\n");
     exit(1);

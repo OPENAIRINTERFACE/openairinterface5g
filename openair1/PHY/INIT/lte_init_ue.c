@@ -137,7 +137,7 @@ void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         fp->MBSFN_config[i].fourFrames_flag = 0;
         fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
-        LOG_I(PHY, "[CONFIG] LTE_MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
+        LOG_I(PHY, "[CONFIG] LTE_MBSFN_SubframeConfig[%d] oneFrame pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
@@ -145,7 +145,7 @@ void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
           mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
-        LOG_I(PHY, "[CONFIG]  LTE_MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
+        LOG_I(PHY, "[CONFIG]  LTE_MBSFN_SubframeConfig[%d] fourFrame pattern is  %x\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -212,7 +212,7 @@ void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
   LTE_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
   if (nonMBSFN_SubframeConfig != NULL) {
-    fp->NonMBSFN_config_flag = 0;
+    fp->NonMBSFN_config_flag = 1;
     fp->NonMBSFN_config.radioframeAllocationPeriod=nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
     fp->NonMBSFN_config.radioframeAllocationOffset=nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
     fp->NonMBSFN_config.non_mbsfn_SubframeConfig=(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]>>7);

@@ -33,11 +33,13 @@
 *
 **************************************************************************/
 
+#include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 #ifndef NO_RAT_NR
 
@@ -55,12 +57,50 @@
 
 uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+
+long
+binary_search_float_nr(
+  float elements[],
+  long numElem,
+  float value
+)
+//-----------------------------------------------------------------------------
+{
+  long first, last, middle;
+  first = 0;
+  last = numElem-1;
+  middle = (first+last)/2;
+
+  if(value < elements[0]) {
+    return first;
+  }
+
+  if(value >= elements[last]) {
+    return last;
+  }
+
+  while (last - first > 1) {
+    if (elements[middle] > value) {
+      last = middle;
+    } else {
+      first = middle;
+    }
+
+    middle = (first+last)/2;
+  }
+
+  if (first < 0 || first >= numElem) {
+    LOG_E(RRC,"\n Error in binary search float!");
+  }
+
+  return first;
+}
 /*
 void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
@@ -71,7 +111,7 @@ void nr_generate_pucch1(int32_t **txdataF,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB,
@@ -84,7 +124,7 @@ void nr_generate_pucch2(int32_t **txdataF,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
+                        int nr_slot_tx,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint8_t nrofPRB,
@@ -97,7 +137,7 @@ void nr_generate_pucch3_4(int32_t **txdataF,
                          PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                          uint64_t payload,
                          int16_t amp,
-                         int nr_tti_tx,
+                         int nr_slot_tx,
                          uint8_t nrofSymbols,
                          uint8_t startingSymbolIndex,
                          uint8_t nrofPRB,
@@ -169,7 +209,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   uint64_t  pucch_payload = 0;
   uint32_t  csi_payload = 0;
   int       frame_tx = proc->frame_tx;
-  int       nr_tti_tx = proc->nr_tti_tx;
+  int       nr_slot_tx = proc->nr_slot_tx;
   int       Mod_id = ue->Mod_id;
   int       CC_id = ue->CC_id;
 
@@ -186,23 +226,30 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       pucch_resource_id = MAX_NB_OF_PUCCH_RESOURCES;
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
   int       n_HARQ_ACK;
-  uint16_t crnti=0x1234;
+
   int dmrs_scrambling_id=0,data_scrambling_id=0;
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  NR_PUCCH_Resource_t *pucch_resource;
+  uint16_t crnti = mac->crnti;
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* update current context */
 
-  int subframe_number = (proc->nr_tti_rx)/(ue->frame_parms.ttis_per_subframe);
+  int subframe_number = proc->nr_slot_rx / ue->frame_parms.slots_per_subframe;
   nb_pucch_format_4_in_subframes[subframe_number] = 0; /* reset pucch format 4 counter at current rx position */
 
-  int dl_harq_pid = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->current_harq_pid;
+  int dl_harq_pid = ue->dlsch[proc->thread_id][gNB_id][0]->current_harq_pid;
 
-  if (dl_harq_pid < ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch) {
+  if (dl_harq_pid < ue->dlsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pdsch) {
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
-    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
+    pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
 
+  LOG_D(PHY, "PUCCH: %d.%d dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, dl_harq_pid, pucch_resource_indicator);
+
   /* Part - I
-   * Collect feedback that should be transmitted at this nr_tti_tx :
+   * Collect feedback that should be transmitted at this nr_slot_tx :
    * - ACK/NACK, SR, CSI (CQI, RI, ...)
    */
 
@@ -214,11 +261,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
       sr_payload = nr_ue_get_SR(Mod_id,
-				CC_id,
-				frame_tx,
-				gNB_id,
-				0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
-				nr_tti_tx); // nr_tti_rx used for meas gap
+                                CC_id,
+                                frame_tx,
+                                gNB_id,
+                                0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
+                                nr_slot_tx); // nr_slot_rx used for meas gap
     }
     else {
       sr_payload = 1;
@@ -234,7 +281,17 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
-  csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
+  
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  
+  uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+
+  //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+	  if (report_slot_csi == proc->nr_slot_tx)
+		csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
+	  else
+	    csi_status = 0;
+  //}
 
   O_CSI = cqi_status + ri_status + csi_status;
 
@@ -244,16 +301,16 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   if(O_ACK == 0) {
     N_UCI = O_SR + O_CSI;
     if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
-      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
-      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       return (FALSE);
     }
     else {
       /* a resource set and a resource should be find according to payload size */
-      pucch_resource_set = find_pucch_resource_set( ue, gNB_id, N_UCI);
+      pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
       if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
         pucch_resource_indicator = 0;
-        pucch_resource_id = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[pucch_resource_set]->pucch_resource_id[pucch_resource_indicator];  /* get the first resource of the set */
+        pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0]; /* get the first resource of the set */
       }
       else {
         LOG_W(PHY,"PUCCH no resource set found for CSI at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
@@ -297,9 +354,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_length = 0;
   int occ_Index = 0;
 
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
 
-  if (select_pucch_resource(ue, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
+  if (select_pucch_resource(ue, mac, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
     /* use of initial pucch configuration provided by system information 1 */
     /***********************************************************************/
@@ -332,7 +389,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       if ((ue->UE_mode[gNB_id] != PUSCH) && (O_ACK > 1)) {
         O_ACK = 1;
         pucch_ack_payload &= 0x1; /* take only first ack */
-        LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+        LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       }
       NR_TST_PHY_PRINTF("PUCCH common configuration with index %d \n", initial_pucch_id);
     }
@@ -340,33 +397,43 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /**********************************************/
     else if ((pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) && (pucch_resource_id != MAX_NB_OF_PUCCH_RESOURCES)) {
       /* check that current configuration is supported */
-      if ((ue->cell_group_config.physicalCellGroupConfig.harq_ACK_SpatialBundlingPUCCH != FALSE)
-         || (ue->cell_group_config.physicalCellGroupConfig.pdsch_HARQ_ACK_Codebook != dynamic)) {
+      if ((mac->scg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL)
+         || (mac->scg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
         LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         return(FALSE);
       }
-      else if (ue->PDSCH_ServingCellConfig.codeBlockGroupTransmission != NULL) {
+      else if (mac->scg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
         LOG_E(PHY,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         return(FALSE);
       }
-      format = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.format;
-      nb_symbols_total = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols;
-      starting_symbol_index = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex;
-      starting_prb = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->startingPRB;
+      pucch_resource = select_resource_by_id(pucch_resource_id, mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup);
+      format = pucch_resource->format.present;
+      nb_symbols_total = get_nb_symbols_pucch(pucch_resource, format);
+      starting_symbol_index = get_starting_symb_idx(pucch_resource, format);
+      starting_prb = pucch_resource->startingPRB;
       second_hop = starting_prb;
-      time_domain_occ = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC; /* format 1 only */
-      occ_length = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length; /* format 4 only */
-      occ_Index = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index;   /* format 4 only */
-
-      if ((format == pucch_format0_nr) ||  (format == pucch_format1_nr)) {
-        m_0 = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift;
+      if (format==pucch_format1_nr)
+        time_domain_occ = pucch_resource->format.choice.format1->timeDomainOCC;
+      if (format==pucch_format4_nr) {
+        occ_length = pucch_resource->format.choice.format4->occ_Length;
+        occ_Index  = pucch_resource->format.choice.format4->occ_Index;
       }
-      else if ((format == pucch_format3_nr) ||  (format == pucch_format4_nr)) {
-        if (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format-1]->additionalDMRS == enable_feature) {
+
+      m_0 = get_ics_pucch(pucch_resource, format);
+      AssertFatal(m_0 >= 0, "Invalid m_0\n");
+      if (format == pucch_format3_nr) {
+        if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->additionalDMRS[0] == 1) {
           index_additional_dmrs = I_PUCCH_ADDITIONAL_DMRS;
         }
+      }
+      else if (format == pucch_format4_nr) {
+        if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4->choice.setup->additionalDMRS[0] == 1) {
+          index_additional_dmrs = I_PUCCH_ADDITIONAL_DMRS;
+        }
+      }
 
-        if (ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping == feature_enabled) {
+      if ((format == pucch_format3_nr) || (format == pucch_format4_nr)) {
+        if (pucch_resource->intraSlotFrequencyHopping[0] == 1) {
           index_hopping = I_PUCCH_HOPING;
         }
       }
@@ -375,16 +442,17 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
   }
   else {
-    LOG_W(PHY,"PUCCH No PUCCH resource found at AbsSubframe %d.%d \n", frame_tx%1024, nr_tti_tx);
+    LOG_W(PHY,"PUCCH No PUCCH resource found at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
     return (FALSE);
   }
 
-  int max_code_rate = 0;
-  int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
+  //int max_code_rate = 0;
+  //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
 
   nb_symbols = nb_symbols_total; /* by default, it can be reduced due to symbols reserved for dmrs */
+  pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[pucch_resource_id];
 
   switch(format) {
     case pucch_format0_nr:
@@ -401,28 +469,28 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
     case pucch_format2_nr:
     {
-      nb_of_prbs = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs;
+      nb_of_prbs = pucch_resource->format.choice.format2->nrofPRBs;
       N_sc_ctrl_RB = N_SC_RB - 4;
       break;
     }
     case pucch_format3_nr:
     {
-      nb_of_prbs = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs;
-      if (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format-1]->pi2PBSK == feature_enabled) {
-        Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
-      }
+      nb_of_prbs = pucch_resource->format.choice.format3->nrofPRBs;
+      //if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->pi2BPSK[0] == 1) {
+      //  Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
+      //}
       N_sc_ctrl_RB = N_SC_RB;
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       break;
     }
     case pucch_format4_nr:
     {
-      if (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format-1]->pi2PBSK == feature_enabled) {
-        Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
-      }
+      //if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4->choice.setup->pi2BPSK[0] == 1) {
+      //  Q_m = BITS_PER_SYMBOL_BPSK; /* set bpsk modulation type with 1 bit per modulation symbol */
+      //}
       nb_symbols = nb_symbols_excluding_dmrs[nb_symbols_total-4][index_additional_dmrs][index_hopping];
       nb_of_prbs = 1;
-      subframe_number = nr_tti_tx/(ue->frame_parms.ttis_per_subframe);
+      subframe_number = nr_slot_tx / ue->frame_parms.slots_per_subframe;
       nb_pucch_format_4_in_subframes[subframe_number]++; /* increment number of transmit pucch 4 in current subframe */
       NR_TST_PHY_PRINTF("PUCCH Number of pucch format 4 in subframe %d is %d \n", subframe_number, nb_pucch_format_4_in_subframes[subframe_number]);
       N_sc_ctrl_RB = N_SC_RB/(nb_pucch_format_4_in_subframes[subframe_number]);
@@ -434,10 +502,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   /* drop CSI report if simultaneous HARQ-ACK/SR and periodic/semi-periodic CSI cannot be transmitted at the same time */
   if (format !=  pucch_format0_nr) {
 
-    if (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format-1] != NULL) {
-      max_code_rate = code_rate_r_time_100[ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format-1]->maxCodeRate]; /* it is code rate * 10 */
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL) {
+      //max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
 
-      if ((O_ACK != 0) && (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format-1]->simultaneousHARQ_ACK_CSI == disable_feature)) {
+      if ((O_ACK != 0) && (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->simultaneousHARQ_ACK_CSI[0] == 0)) {
         N_UCI = N_UCI - O_CSI;
         O_CSI = cqi_status = ri_status = 0;
         csi_payload = 0; /* csi should be dropped in this case */
@@ -446,26 +514,27 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
     /* TS 38.212 6.3.1.2  Code block segmentation and CRC attachment */
     /* crc attachment can be done depending of payload size */
-    if (N_UCI < 11) {
-      O_CRC = 0;  /* no additional crc bits */
-    }
-    else if ((N_UCI >= 12) && (N_UCI <= 19)) {
-      O_CRC = 6;  /* number of additional crc bits */
-    }
-    else if (N_UCI >= 20) {
-      O_CRC = 11; /* number of additional crc bits */
-    }
+//    if (N_UCI < 11) {
+//      O_CRC = 0;  /* no additional crc bits */
+//    }
+//    else if ((N_UCI >= 12) && (N_UCI <= 19)) {
+//      O_CRC = 6;  /* number of additional crc bits */
+//    }
+//   else if (N_UCI >= 20) {
+//      O_CRC = 11; /* number of additional crc bits */
+//    }
 
     N_UCI = N_UCI + O_CRC;
 
     /* for format 2 and 3, number of prb should be adjusted to minimum value which cope to information size */
-    if (nb_of_prbs > 1 ) {
+    /*if (nb_of_prbs > 1 ) {
       int nb_prb_min = 0;
       int payload_in_bits;
       do {
         nb_prb_min++;
-        payload_in_bits = (nb_prb_min * N_sc_ctrl_RB * nb_symbols * Q_m * max_code_rate)/100; /* code rate has been multiplied by 100 */
-        NR_TST_PHY_PRINTF("PUCCH Adjust number of prb : (N_UCI : %d ) (payload_in_bits : %d) (N_sc_ctrl_RB : %d) (nb_symbols : %d) (Q_m : %d) (max_code_rate*100 : %d) \n",
+        payload_in_bits = (nb_prb_min * N_sc_ctrl_RB * nb_symbols * Q_m * max_code_rate)/100; */ /* code rate has been multiplied by 100 */
+        
+        /*NR_TST_PHY_PRINTF("PUCCH Adjust number of prb : (N_UCI : %d ) (payload_in_bits : %d) (N_sc_ctrl_RB : %d) (nb_symbols : %d) (Q_m : %d) (max_code_rate*100 : %d) \n",
                                                N_UCI,        payload_in_bits,       N_sc_ctrl_RB,       nb_symbols,       Q_m,       max_code_rate);
       } while (N_UCI > payload_in_bits);
 
@@ -476,7 +545,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       else {
         nb_of_prbs = nb_prb_min;
       }
-    }
+    }*/
 
     /* TS 38.213 9.2.4 for a positive SR transmission, payload b(0) = 0 */
     if ((O_SR == 1) && (format ==  pucch_format1_nr)) {
@@ -526,7 +595,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   pucch_payload = pucch_payload | (csi_payload << (O_ACK + O_SR)) |  (sr_payload << O_ACK) | pucch_ack_payload;
 
   NR_TST_PHY_PRINTF("PUCCH ( AbsSubframe : %d.%d ) ( total payload size %d data 0x%02x ) ( ack length %d data 0x%02x ) ( sr length %d value %d ) ( csi length %d data : 0x%02x ) \n",
-                         frame_tx%1024, nr_tti_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
+                         frame_tx%1024, nr_slot_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
 
   NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols total: %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
                              format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
@@ -543,8 +612,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                   O_CRC, n_HARQ_ACK);
 
   /* set tx power */
-  ue->tx_power_dBm[nr_tti_tx] = pucch_tx_power;
-  ue->tx_total_RE[nr_tti_tx] = nb_of_prbs*N_SC_RB;
+  ue->tx_power_dBm[nr_slot_tx] = pucch_tx_power;
+  ue->tx_total_RE[nr_slot_tx] = nb_of_prbs*N_SC_RB;
 
   int tx_amp;
 
@@ -563,9 +632,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     {
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
-                         &ue->pucch_config_dedicated[gNB_id],
+                         mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,
+                         mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0],
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          (uint8_t)m_CS,
                          nb_symbols_total,
@@ -580,7 +650,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          (uint8_t)m_0,
                          nb_symbols_total,
                          starting_symbol_index,
@@ -601,7 +671,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
-                         nr_tti_tx,
+                         nr_slot_tx,
                          nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
@@ -613,14 +683,14 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format4_nr:
     {
       nr_generate_pucch3_4(ue,
-                           0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
                            &ue->pucch_config_dedicated[gNB_id],
                            pucch_payload,
                            tx_amp,
-                           nr_tti_tx,
+                           nr_slot_tx,
                            nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
@@ -673,14 +743,17 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int number_harq_feedback = 0;
   uint32_t dai_current = 0;
   uint32_t dai_max = 0;
-  int number_pid_dl = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch;
+  int number_pid_dl = ue->dlsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pdsch;
   bool two_transport_blocks = FALSE;
   int number_of_code_word = 1;
   int U_DAI_c = 0;
   int N_m_c_rx = 0;
   int V_DAI_m_DL = 0;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-  if (ue->PDSCH_Config.maxNrofCodeWordsScheduledByDCI == nb_code_n2) {
+  if (mac->DLbwp[0] == NULL) return 0;
+
+  if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
     two_transport_blocks = TRUE;
     number_of_code_word = 2;
   }
@@ -688,7 +761,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
     number_of_code_word = 1;
   }
 
-  if (ue->n_connected_eNB > 1) {
+  if (ue->n_connected_gNB > 1) {
     LOG_E(PHY,"PUCCH ACK feedback is not implemented for mutiple gNB cells : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (0);
   }
@@ -698,45 +771,46 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
 
     for (int dl_harq_pid = 0; dl_harq_pid < number_pid_dl; dl_harq_pid++) {
 
-      harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]->harq_ack;
+      for (int thread_idx = 0; thread_idx < RX_NB_TH; thread_idx++) {
 
-      /* check if current tx slot should transmit downlink acknowlegment */
-      if (harq_status->slot_for_feedback_ack == proc->nr_tti_tx) {
+        harq_status = &ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]->harq_ack;
 
-        if (harq_status->ack == DL_ACKNACK_NO_SET) {
-          LOG_E(PHY,"PUCCH Downlink acknowledgment has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-          return (0);
-        }
-        else if (harq_status->vDAI_DL == DL_DAI_NO_SET) {
-          LOG_E(PHY,"PUCCH Downlink DAI has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-          return (0);
-        }
-        else if (harq_status->vDAI_DL > NR_DL_MAX_DAI) {
-          LOG_E(PHY,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-          return (0);
-        }
-        else if (harq_status->send_harq_status == 0) {
-          LOG_E(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-          return(0);
-        }
-        else {
+        /* check if current tx slot should transmit downlink acknowlegment */
+        if (harq_status->slot_for_feedback_ack == proc->nr_slot_tx) {
 
-          dai_current = harq_status->vDAI_DL;
-
-          if (dai_current == 0) {
-            LOG_E(PHY,"PUCCH Downlink dai is invalid : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-            return(0);
-          } else if (dai_current > dai_max) {
-            dai_max = dai_current;
+          if (harq_status->ack == DL_ACKNACK_NO_SET) {
+            LOG_E(PHY,"PUCCH Downlink acknowledgment has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
           }
+          else if (harq_status->vDAI_DL == DL_DAI_NO_SET) {
+            LOG_E(PHY,"PUCCH Downlink DAI has not been set : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+          }
+          else if (harq_status->vDAI_DL > NR_DL_MAX_DAI) {
+            LOG_E(PHY,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+          }
+          else if (harq_status->send_harq_status == 0) {
+            LOG_D(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+          }
+          else {
 
-          number_harq_feedback++;
-          ack_data[code_word][dai_current - 1] = harq_status->ack;
-          dai[code_word][dai_current - 1] = dai_current;
+            dai_current = harq_status->vDAI_DL+1; // DCI DAI to counter DAI conversion
+
+            if (dai_current == 0) {
+              LOG_E(PHY,"PUCCH Downlink dai is invalid : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+              return(0);
+            } else if (dai_current > dai_max) {
+              dai_max = dai_current;
+            }
+
+            number_harq_feedback++;
+            ack_data[code_word][dai_current - 1] = harq_status->ack;
+            dai[code_word][dai_current - 1] = dai_current;
+            harq_status->slot_for_feedback_ack = NR_MAX_SLOTS_PER_FRAME;
+            harq_status->send_harq_status = 0;
+          }
+          if (do_reset == TRUE) {
+            init_downlink_harq_status(ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]);
+          }
         }
-      }
-      if (do_reset == TRUE) {
-        init_downlink_harq_status(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]);
       }
     }
   }
@@ -756,8 +830,8 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
    U_DAI_c = number_harq_feedback/number_of_code_word;
    N_m_c_rx = number_harq_feedback;
    int N_SPS_c = 0; /* FFS TODO_NR multicells and SPS are not supported at the moment */
-   if (ue->cell_group_config.physicalCellGroupConfig.harq_ACK_SpatialBundlingPUCCH == FALSE) {
-     int N_TB_max_DL = ue->PDSCH_Config.maxNrofCodeWordsScheduledByDCI;
+   if (mac->scg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH == NULL) {
+     int N_TB_max_DL = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
      *n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
      NR_TST_PHY_PRINTF("PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", *n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
    }
@@ -853,7 +927,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
 *
 *********************************************************************/
 
-boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
+boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
                                 int *initial_pucch_id, int *resource_set_id, int *resource_id, NR_UE_HARQ_STATUS_t *harq_status)
 {
   boolean_t resource_set_found = FALSE;
@@ -861,18 +935,20 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
   int current_resource_id = MAX_NB_OF_PUCCH_RESOURCES;
   pucch_format_nr_t format_pucch;
   int ready_pucch_resource_id = FALSE; /* in the case that it is already given */
+  NR_PUCCH_Resource_t *pucch_resource;
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* ini values to unset */
   *initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
   //*resource_set_id = MAX_NB_OF_PUCCH_RESOURCE_SETS;
   //*resource_id = MAX_NB_OF_PUCCH_RESOURCES;
 
-  if (ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[0] == NULL) {
+  if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[0] == NULL) {
 
     /* No resource set has been already configured so pucch_configCommon from Sib1 should be used in this case */
 
     if (ue->UE_mode[gNB_id] != PUSCH) {
-      *initial_pucch_id = ue->pucch_config_common_nr[gNB_id].pucch_ResourceCommon;
+      *initial_pucch_id = mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon[0];
       if (*initial_pucch_id >= NB_INITIAL_PUCCH_RESOURCE) {
         LOG_E(PHY,"PUCCH Invalid initial resource index : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         *initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
@@ -897,7 +973,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
     }
     nb_symbols_for_tx = initial_pucch_resource[*initial_pucch_id].nrofSymbols;
     format_pucch = initial_pucch_resource[*initial_pucch_id].format;
-    if (check_pucch_format(ue, gNB_id, format_pucch, nb_symbols_for_tx, uci_size) == TRUE) {
+    if (check_pucch_format(mac, gNB_id, format_pucch, nb_symbols_for_tx, uci_size) == TRUE) {
       return (TRUE);
     }
     else {
@@ -917,7 +993,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
         -- This field can take integer values that are multiples of 4. Corresponds to L1 parameter 'N_2' or 'N_3' (see 38.213, section 9.2)
       */
       /* look for the first resource set which supports uci_size number of bits for payload */
-      pucch_resource_set_id = find_pucch_resource_set( ue, gNB_id, uci_size);
+      pucch_resource_set_id = find_pucch_resource_set(mac, gNB_id, uci_size);
       if (pucch_resource_set_id != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
         resource_set_found = TRUE;
       }
@@ -931,14 +1007,20 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
 
     if (resource_set_found == TRUE) {
       if (pucch_resource_indicator < MAX_PUCCH_RESOURCE_INDICATOR) {
+        // Verify that the value of pucch_resource_indicator is valid
+        if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.count <= pucch_resource_indicator)
+        {
+          LOG_E(PHY, "Value of pucch_resource_indicator is out of bounds! Possibly due to a false DCI. \n");
+          return (FALSE);
+        }
         /* check if resource indexing by pucch_resource_indicator of this set is compatible */
-        if ((ready_pucch_resource_id == TRUE) || (ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[pucch_resource_set_id]->pucch_resource_id[pucch_resource_indicator] != MAX_NB_OF_PUCCH_RESOURCES)) {
+        if ((ready_pucch_resource_id == TRUE) || (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0] != MAX_NB_OF_PUCCH_RESOURCES)) {
 
           if (ready_pucch_resource_id == TRUE) {
             current_resource_id = *resource_id;
           }
           else {
-            int R_PUCCH = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[pucch_resource_set_id]->first_resources_set_R_PUCCH;
+            int R_PUCCH = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.count;
             /* is it the first resource and its size exceeds 8 */
             if ((pucch_resource_set_id == 0)
              && (R_PUCCH > MAX_NB_OF_PUCCH_RESOURCES_PER_SET_NOT_0)) {
@@ -960,15 +1042,25 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
               current_resource_id = r_PUCCH;
             }
             else {
-              current_resource_id = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[pucch_resource_set_id]->pucch_resource_id[pucch_resource_indicator];
+		if (pucch_resource_set_id !=0 )
+			current_resource_id = 3; //TBC mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
+		else
+			current_resource_id = 1;
             }
           }
-          if (ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[current_resource_id] != NULL) {
 
-            nb_symbols_for_tx = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[current_resource_id]->format_parameters.nrofSymbols;
-            format_pucch = ue->pucch_config_dedicated_nr[gNB_id].PUCCH_Resource[current_resource_id]->format_parameters.format;
+          /*uint8_t pucch_resource_count = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList.list.count;
+          for (uint8_t i=0; i<pucch_resource_count; i++) {
+            if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList.list.array[i]->pucch_ResourceId == current_resource_id)
+              pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList.list.array[i];
+          }*/
 
-            if (check_pucch_format(ue, gNB_id, format_pucch, nb_symbols_for_tx, uci_size) == TRUE) {
+          pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[current_resource_id];
+          if (pucch_resource != NULL) {
+            format_pucch = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[current_resource_id]->format.present;
+            nb_symbols_for_tx = get_nb_symbols_pucch(pucch_resource, format_pucch);
+
+            if (check_pucch_format(mac, gNB_id, format_pucch, nb_symbols_for_tx, uci_size) == TRUE) {
               *resource_set_id = pucch_resource_set_id;
               *resource_id = current_resource_id;
               return (TRUE);
@@ -1014,9 +1106,12 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
 *
 *********************************************************************/
 
-int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size)
+int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 {
   int pucch_resource_set_id = 0;
+  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
+
+  //long *pucch_max_pl_bits = NULL;
 
   /* from TS 38.331 field maxPayloadMinus1
     -- Maximum number of payload bits minus 1 that the UE may transmit using this PUCCH resource set. In a PUCCH occurrence, the UE
@@ -1027,9 +1122,16 @@ int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size)
   */
   /* look for the first resource set which supports uci_size number of bits for payload */
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
-    if (ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[pucch_resource_set_id] != NULL) {
-      if (uci_size <= ue->pucch_config_dedicated_nr[gNB_id].PUCCH_ResourceSet[pucch_resource_set_id]->maxPayloadMinus1 + 1) {
-        NR_TST_PHY_PRINTF("PUCCH found resource set %d \n",  pucch_resource_set_id);
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
+      //pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1;
+      if (uci_size <= 2) { //TBC rrc (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
+        //NR_TST_PHY_PRINTF("PUCCH found resource set %d max bits %d\n",  pucch_resource_set_id, pucch_max_pl_bits);
+        pucch_resource_set_id = 0;
+        return (pucch_resource_set_id);
+        break;
+      }
+      else {
+        pucch_resource_set_id = 1;
         return (pucch_resource_set_id);
         break;
       }
@@ -1057,19 +1159,41 @@ int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size)
 *
 *********************************************************************/
 
-boolean_t check_pucch_format(PHY_VARS_NR_UE *ue, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, int uci_size)
+boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, int uci_size)
 {
   pucch_format_nr_t selected_pucch_format;
   pucch_format_nr_t selected_pucch_format_second;
+  /*NR_SetupRelease_PUCCH_FormatConfig_t *identified_format = NULL;
 
-  if (format_pucch != pucch_format0_nr) {
-    if (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format_pucch-1] != NULL) {
-      if (ue->pucch_config_dedicated_nr[gNB_id].formatConfig[format_pucch-1]->nrofSlots != 1) {
-        LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-        return (FALSE);
-      }
-    }
-  }
+  switch (format_pucch) {
+    case pucch_format1_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1;
+    break;
+
+    case pucch_format2_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format2 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format2;
+    break;
+
+    case pucch_format3_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3;
+    break;
+
+    case pucch_format4_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4;
+    break;
+
+    default:
+    break;
+  }*/
+
+ /* if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
+    LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+    return (FALSE);
+  }*/
 
   if (nb_symbols_for_tx <= 2) {
     if (uci_size <= 2) {
@@ -1160,8 +1284,8 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
     return (1); /* period is slot */
   }
 
-  int16_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * ue->frame_parms.ttis_per_subframe;
-  if (((proc->frame_tx * N_slot_frame) + proc->nr_tti_tx - SR_offset)%SR_periodicity == 0) {
+  int16_t N_slot_frame = ue->frame_parms.slots_per_frame;
+  if (((proc->frame_tx * N_slot_frame) + proc->nr_slot_tx - SR_offset)%SR_periodicity == 0) {
     return (1);
   }
   else {
@@ -1190,19 +1314,68 @@ uint32_t dummy_csi_payload = 0;
 
 /* FFS TODO_NR code that should be developed */
 
-int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
+uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac) {
+
+  uint16_t csi_bitlen =0;
+  uint16_t rsrp_bitlen = 0;
+  uint16_t diff_rsrp_bitlen = 0;
+  uint16_t nb_ssbri_cri = 0; 
+  uint16_t cri_ssbri_bitlen = 0;
+  
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList__nzp_CSI_RS_SSB * nzp_CSI_RS_SSB = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[0]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB;
+
+  uint16_t nb_csi_ssb_report = nzp_CSI_RS_SSB->csi_SSB_ResourceSetList!=NULL ? nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.count:0;
+  
+  if (0 != nb_csi_ssb_report){
+	  uint8_t nb_ssb_resources =0;
+	  
+  if (NULL != csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
+      nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+  else
+      nb_ssbri_cri = 1;
+  
+  nb_ssb_resources = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[0]->csi_SSB_ResourceList.list.count;
+  
+  if (nb_ssb_resources){
+	cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
+	rsrp_bitlen = 7;
+	diff_rsrp_bitlen = 4;
+	}
+  else{
+	cri_ssbri_bitlen =0;
+	rsrp_bitlen = 0;
+	diff_rsrp_bitlen = 0;
+	}
+  
+  csi_bitlen = ((cri_ssbri_bitlen * nb_ssbri_cri) + rsrp_bitlen +(diff_rsrp_bitlen *(nb_ssbri_cri -1 ))) *nb_csi_ssb_report;
+               
+  //printf("get csi bitlen %d nb_ssbri_cri %d nb_csi_report %d nb_resources %d\n", csi_bitlen,nb_ssbri_cri ,nb_csi_ssb_report, nb_ssb_resources);
+  }
+  return csi_bitlen;
+}
+
+int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
 {
   VOID_PARAMETER ue;
   VOID_PARAMETER gNB_id;
+  float rsrp_db[7];
+  int nElem = 98;
+  int rsrp_offset = 17;
+  int csi_status = 0;
+  
+  csi_status = get_nr_csi_bitlen(mac);
+  rsrp_db[0] = get_nr_RSRP(0,0,0);
 
-  if (dummy_csi_status == 0) {
+
+  if (csi_status == 0) {
     *csi_payload = 0;
   }
   else {
-    *csi_payload = dummy_csi_payload;
+    *csi_payload = binary_search_float_nr(RSRP_meas_mapping_nr,nElem, rsrp_db[0]) + rsrp_offset;
   }
 
-  return (dummy_csi_status);
+  return (csi_status);
 }
 
 /* FFS TODO_NR code that should be removed */
@@ -1219,4 +1392,77 @@ void set_csi_nr(int csi_status, uint32_t csi_payload)
   }
 }
 
+uint8_t get_nb_symbols_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type)
+{
+  switch (format_type) {
+    case pucch_format0_nr:
+      return pucch_resource->format.choice.format0->nrofSymbols;
+
+    case pucch_format1_nr:
+      return pucch_resource->format.choice.format1->nrofSymbols;
+
+    case pucch_format2_nr:
+      return pucch_resource->format.choice.format2->nrofSymbols;
+
+    case pucch_format3_nr:
+      return pucch_resource->format.choice.format3->nrofSymbols;
+
+    case pucch_format4_nr:
+      return pucch_resource->format.choice.format4->nrofSymbols;
+  }
+  return 0;
+}
+
+uint16_t get_starting_symb_idx(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type)
+{
+  switch (format_type) {
+    case pucch_format0_nr:
+      return pucch_resource->format.choice.format0->startingSymbolIndex;
+
+    case pucch_format1_nr:
+      return pucch_resource->format.choice.format1->startingSymbolIndex;
+
+    case pucch_format2_nr:
+      return pucch_resource->format.choice.format2->startingSymbolIndex;
+
+    case pucch_format3_nr:
+      return pucch_resource->format.choice.format3->startingSymbolIndex;
+
+    case pucch_format4_nr:
+      return pucch_resource->format.choice.format4->startingSymbolIndex;
+  }
+  return 0;
+}
+
+int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type)
+{
+  switch (format_type) {
+    case pucch_format0_nr:
+      return pucch_resource->format.choice.format0->initialCyclicShift;
+
+    case pucch_format1_nr:
+      return pucch_resource->format.choice.format1->initialCyclicShift;
+      
+    case pucch_format2_nr:
+      return 0;
+
+    default:
+      return -1;
+  }
+  return -1;
+}
+
+NR_PUCCH_Resource_t *select_resource_by_id(int resource_id, NR_PUCCH_Config_t *pucch_config)
+{
+  int n_list = pucch_config->resourceToAddModList->list.count; 
+  NR_PUCCH_Resource_t *pucchres;
+  AssertFatal(n_list>0,"PUCCH resourceToAddModList is empty\n");
+
+  for (int i=0; i<n_list; i++) {
+    pucchres = pucch_config->resourceToAddModList->list.array[i];
+    if (pucchres->pucch_ResourceId == resource_id)
+      return pucchres;
+  }
+  return NULL;
+}
 

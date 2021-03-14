@@ -57,6 +57,7 @@
 #define CONFIG_HLP_DLSHIFT       "dynamic shift for LLR compuation for TM3/4 (default 0)\n"
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
+#define CONFIG_HLP_DORA          "test gNB  and UE with RA procedures\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
 #define CONFIG_HLP_EXCCLK        "tells hardware to use a clock reference (0:internal(default), 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
@@ -76,6 +77,7 @@
 #define CONFIG_HLP_UE            "Set the lte softmodem as a UE\n"
 #define CONFIG_HLP_L2MONW        "Enable L2 wireshark messages on localhost \n"
 #define CONFIG_HLP_L2MONP        "Enable L2 pcap  messages on localhost \n"
+#define CONFIG_HLP_MAC           "Disable the MAC procedures at UE side (default is enabled)\n"
 #define CONFIG_HLP_VCD           "Enable VCD (generated file will is named openair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n"
 #define CONFIG_HLP_TQFS          "Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n"
 #define CONFIG_HLP_TPORT         "tracer port\n"
@@ -89,6 +91,7 @@
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
+#define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
@@ -142,6 +145,10 @@ extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
+
+extern int emulate_rf;
+extern int numerology;
+extern int usrp_tx_thread;
 
 extern volatile int start_eNB;
 extern volatile int start_UE;

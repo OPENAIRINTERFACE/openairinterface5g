@@ -16,7 +16,7 @@ This page is valid on tags starting from **`2019.w09`**.
 
 # Soft Modem Build Script
 
-oai EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-cn/wiki) , it is not described here.
+The OAI EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-epc-fed/wiki) , it is not described here.
 
 OAI softmodem sources, which aim to implement 3GPP compliant UEs, eNodeB and gNodeB can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
 
@@ -34,7 +34,7 @@ The main oai binaries, which are tested by the Continuous Integration process ar
 
 Running the  [build_oai](../cmake_targets/build_oai) script also generates some utilities required to build and/or run the oai softmodem binaries:
 
-- `con2uedata`: a binary used to build the UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
+- `conf2uedata`: a binary used to build the UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
 - `nvram`: a binary used to build UE (IMEI...) and EMM (IMSI, registered PLMN) non volatile data. 
 - `rb_tool`: radio bearer utility 
 - `genids` T Tracer utility, used at build time to generate T_IDs.h include file. This binary is located in the [T Tracer source file directory](../common/utils/T) .
@@ -50,6 +50,19 @@ The oai softmodem supports many use cases, and new ones are regularly added. Mos
 Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the [table](BUILD.md "# `build_oai` options") At the end of this page to know the status of `buid_oai` options which are not described hereafter.
 
 # Building PHY Simulators
+
+The PHY layer simulators (LTE and NR) can be built as follows:  
+
+```
+cd <your oai installation directory>/openairinterface5g/
+source oaienv
+cd cmake_targets/
+./build_oai -I --phy_simulators
+```
+
+After completing the build, the binaries are available in the cmake_targets/phy_simulators/build directory.  
+A copy is also available in the target/bin directory, with all binaries suffixed by the 3GPP release number, today **.Rel15**.  
+
 
 Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 

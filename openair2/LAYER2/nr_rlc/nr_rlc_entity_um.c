@@ -588,9 +588,10 @@ static void check_t_reassembly(nr_rlc_entity_um_t *entity)
   cur = entity->rx_list;
   while (cur != NULL &&
          sn_compare_rx(entity, cur->sn, entity->rx_next_reassembly) < 0) {
-    nr_rlc_free_pdu(cur);
+    nr_rlc_pdu_t *p = cur;
     cur = cur->next;
     entity->rx_list = cur;
+    nr_rlc_free_pdu(p);
   }
 
   if (sn_compare_rx(entity, entity->rx_next_highest,

@@ -59,6 +59,29 @@ The RF simulator is using the configuration module, and its parameters are defin
         
 Setting the env variable RFSIMULATOR can be used instead of using the serveraddr parameter; it is to preserve compatibility with previous version.
 
+## How to use the RF simulator options
+
+Add the following options to the command line to enable the channel model and the IQ samples saving for future replay:
+```bash
+--rfsimulator.options chanmod,saviq
+```
+or just:
+```bash
+--rfsimulator.options chanmod
+```
+to enable the channel model. 
+
+set the model with:
+```bash
+--rfsimulator.modelname AWGN
+```
+
+Example run:
+
+```bash
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test --rfsimulator.options chanmod --rfsimulator.modelname AWGN 
+```
+
 ## 4G case
 
 For the UE, it should be set to the IP address of the eNB. For example:
@@ -96,11 +119,19 @@ sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-
 ### Launch UE in another window
 
 ```bash
-sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path ../../../ci-scripts/rrc-files 
+sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path .
 ```
-Note:
+
+Notes:
+
 1. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts
-2. the --rrc_config_path parameter can be omitted (but not necessarily) if the gNB and nrUE run on the same host, in which case the gNB provides the nrUE with the necessary rrc configuration
+2. the --rrc_config_path parameter SHALL specify where the 2 RAW files are located (`rbconfig.raw` and `reconfig.raw`).
+   - If you are running on the same machine and launched the 2 executables (`nr-softmodem` and `nr-uesoftmodem`) from the same directory, nothing has to be done.
+   - If you launched the 2 executables from 2 different folders, just point to the location where you launched the `nr-softmodem`:
+     * `sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path /the/path/where/you/launched/nr-softmodem`
+   - If you are not running on the same machine or launched the 2 executables from 2 different folders, you need to **COPY** the 2 raw files
+     * `scp usera@machineA:/the/path/where/you/launched/nr-softmodem/r*config.raw userb@machineB:/the/path/where/you/will/launch/nr-uesoftmodem/`
+     * Obviously this operation SHALL be done before launching the `nr-uesoftmodem` executable.
 3. to enable the noS1 mode --noS1 and --nokrnmod 1 options should be added to the command line
 
 
@@ -157,5 +188,50 @@ Only the input noise can be changed on command line with the `-s` parameter.
 
 With path loss = 0 set `-s 5` to see a little noise. `-s` is a shortcut to `channelmod.s`. It is expected to enhance the channel modelization flexibility by the addition of more parameters in the channelmod section.
 
+Example to add a very small noise:
+```bash
+-s 30
+```
+to add a lot of noise:
+```bash
+-s 5
+```
+
+Example run commands:
+```bash
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test --rfsimulator.options chanmod --rfsimulator.modelname AWGN 
+
+```
+# Real time control and monitoring
+
+Add the `--telnetsrv` option to the command line. Then in a new shell, connect to the telnet server, example:
+```bash
+telnet 127.0.0.1 9090
+```
+once connected it is possible to monitor the current status:
+```bash
+channelmod show current
+```
+
+see the available channel models:
+```bash
+channelmod show predef
+```
+
+or modify the channel model, for example setting a new model:
+```bash
+rfsimu setmodel AWGN
+```
+setting the pathloss, etc...:
+```bash
+channelmod modify <channelid> <param> <value>
+channelmod modify 0 ploss 15
+```
+where:
+```bash
+<param name> can be one of "riceanf", "aoa", "randaoa", "ploss", "offset", "forgetf"
+```
+
 # Caveats
 Still issues in power control: txgain, rxgain are not used.
+

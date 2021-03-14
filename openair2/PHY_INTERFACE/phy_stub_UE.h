@@ -27,7 +27,7 @@
 #define NUM_BLER_COL 13
 
 // this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
-FILL_UL_INFO_MUTEX_t fill_ul_mutex;
+extern FILL_UL_INFO_MUTEX_t fill_ul_mutex;
 //below 2 difinitions move to phy_stub_UE.c to add initialization when difinition.
 extern UL_IND_t *UL_INFO;
 // New
@@ -128,6 +128,13 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present, int index,
                          nfapi_ul_config_request_t *ul_config_req);
 
+typedef struct phy_channel_params_t
+{
+    uint16_t sfn_sf;
+    float sinr;
+    // Incomplete, need all channel parameters
+} phy_channel_params_t;
+
 typedef struct nfapi_tx_req_pdu_list_t
 {
     int num_pdus;                  /* number .pdus[] objects */
@@ -169,11 +176,7 @@ void hi_dci0_req_UE_MAC(int sfn,
 // The following set of memcpy functions should be getting called as callback functions from
 // pnf_p7_subframe_ind.
 
-int memcpy_dl_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_dl_config_request_t* req);
-
 int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req);
-
-int memcpy_tx_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_tx_request_t* req);
 
 int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req);
 

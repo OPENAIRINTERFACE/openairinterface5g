@@ -38,7 +38,6 @@ Last point, this documentation is valid for all CI-supported branches:
 
 *  `master`
 *  `develop`
-*  `develop-nr`
 
 But the feature set may not be aligned. **The principles still apply.**
 

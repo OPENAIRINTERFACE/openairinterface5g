@@ -20,12 +20,12 @@
  */
 
 /*! \file phy_procedures_lte_eNB.c
- * \brief Implementation of eNB procedures from 36.213 LTE specifications
- * \author R. Knopp, F. Kaltenberger, N. Nikaein, X. Foukas
+ * \brief Implementation of eNB procedures from 36.213 LTE specifications / FeMBMS 36.231 LTE procedures v14.2
+ * \author R. Knopp, F. Kaltenberger, N. Nikaein, X. Foukas, J. Morgade
  * \date 2011
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,navid.nikaein@eurecom.fr, x.foukas@sms.ed.ac.uk
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,navid.nikaein@eurecom.fr, x.foukas@sms.ed.ac.uk, javier.morgade@ieee.org
  * \note
  * \warning
  */
@@ -87,9 +87,9 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint16_t UE_id,uint8_t 
     // This is the formula from Section 5.1.1.1 in 36.213 10*log10(deltaIF_PUSCH = (2^(MPR*Ks)-1)*beta_offset_pusch)
     if (bw_factor == 1) {
       uint8_t nb_rb = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
-      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_x10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
     } else
-      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3));
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_x10((beta_offset_pusch)>>3));
   } else {
     return(0);
   }
@@ -122,12 +122,32 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
 }
 
 #ifdef MBMS_NFAPI_SCHEDULER
-void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, int fembms_flag) {
   int subframe = proc->subframe_tx;
   // This is DL-Cell spec pilots in Control region
-  generate_pilots_slot (eNB, eNB->common_vars.txdataF, AMP, subframe << 1, 1);
-  if(eNB->dlsch_MCH->active==1)
-  	generate_mch (eNB, proc,NULL/*, eNB->dlsch_MCH->harq_processes[0]->pdu*/);
+  if(!fembms_flag){
+  	generate_pilots_slot (eNB, eNB->common_vars.txdataF, AMP, subframe << 1, 1);
+ 	generate_mbsfn_pilot(eNB,proc,
+                       eNB->common_vars.txdataF,
+                       AMP);
+  }else
+	generate_mbsfn_pilot_khz_1dot25(eNB,proc,
+                       eNB->common_vars.txdataF,
+                       AMP);
+
+  if(eNB->dlsch_MCH->active==1){
+	if(!fembms_flag){
+  	  generate_mch (eNB, proc,NULL/*, eNB->dlsch_MCH->harq_processes[0]->pdu*/);
+        }
+        else{
+ 	  generate_mch_khz_1dot25 (eNB, proc,NULL/*, eNB->dlsch_MCH->harq_processes[0]->pdu*/);
+        }
+
+    	  LOG_D(PHY,"[eNB%"PRIu8"] Frame %d subframe %d : Got MCH pdu for MBSFN (TBS %d) fembms %d \n",
+          eNB->Mod_id,proc->frame_tx,subframe,
+          eNB->dlsch_MCH->harq_processes[0]->TBS>>3,fembms_flag);
+
+  }
   eNB->dlsch_MCH->active = 0;
 }
 #else
@@ -170,6 +190,87 @@ void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   }
 }
 #endif
+
+void common_signal_procedures_fembms (PHY_VARS_eNB *eNB,int frame, int subframe) {
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int **txdataF = eNB->common_vars.txdataF;
+  uint8_t *pbch_pdu=&eNB->pbch_pdu[0];
+
+  if((frame&3)!=0 /*&& subframe != 0*/)
+	  return;
+
+  LOG_I(PHY,"common_signal_procedures: frame %d, subframe %d fdd:%s dir:%s index:%d\n",frame,subframe,fp->frame_type == FDD?"FDD":"TDD", subframe_select(fp,subframe) == SF_DL?"DL":"UL?",(frame&15)/4);
+  // generate Cell-Specific Reference Signals for both slots
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_RS_TX,1);
+
+
+  if(subframe_select(fp,subframe) == SF_S)
+    generate_pilots_slot(eNB,
+                         txdataF,
+                         AMP,
+                         subframe<<1,1);
+  else
+    generate_pilots_slot(eNB,
+                         txdataF,
+                         AMP,
+                         subframe<<1,0);
+
+  // check that 2nd slot is for DL
+  if (subframe_select (fp, subframe) == SF_DL)
+    generate_pilots_slot (eNB, txdataF, AMP, (subframe << 1) + 1, 0);
+
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME (VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_RS_TX, 0);
+
+  // First half of PSS/SSS (FDD, slot 0)
+  if (subframe == 0) {
+    //if (fp->frame_type == FDD) {
+      generate_pss (txdataF, AMP, fp, (fp->Ncp == NORMAL) ? 6 : 5, 0);
+      generate_sss (txdataF, AMP, fp, (fp->Ncp == NORMAL) ? 5 : 4, 0);
+    //}
+
+    /// First half of SSS (TDD, slot 1)
+
+    //if (fp->frame_type == TDD) {
+      generate_sss (txdataF, AMP, fp, (fp->Ncp == NORMAL) ? 6 : 5, 1);
+    //}
+
+    // generate PBCH (Physical Broadcast CHannel) info
+
+    /// generate PBCH
+    if ((frame&15)==0) {
+      //AssertFatal(eNB->pbch_configured==1,"PBCH was not configured by MAC\n");
+      if (eNB->pbch_configured!=1) return;
+
+      eNB->pbch_configured=0;
+    }
+
+    if (T_ACTIVE(T_ENB_PHY_MIB)) {
+      /* MIB is stored in reverse in pbch_pdu, reverse it for properly logging */
+      uint8_t mib[3];
+      mib[0] = pbch_pdu[2];
+      mib[1] = pbch_pdu[1];
+      mib[2] = pbch_pdu[0];
+      T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+        T_BUFFER(mib, 3));
+    }
+    generate_pbch_fembms (&eNB->pbch, txdataF, AMP, fp, pbch_pdu, (frame & 15)/4);
+  } //else if ((subframe == 1) && (fp->frame_type == TDD)) {
+    //generate_pss (txdataF, AMP, fp, 2, 2);
+ // }
+  // Second half of PSS/SSS (FDD, slot 10)
+  else if ((subframe == 5) && (fp->frame_type == FDD) && is_fembms_nonMBSFN_subframe(frame,subframe,fp)) {
+     generate_pss (txdataF, AMP, &eNB->frame_parms, (fp->Ncp == NORMAL) ? 6 : 5, 10);
+     generate_sss (txdataF, AMP, &eNB->frame_parms, (fp->Ncp == NORMAL) ? 5 : 4, 10);
+  }
+  //  Second-half of SSS (TDD, slot 11)
+ // else if ((subframe == 5) && (fp->frame_type == TDD)) {
+ //   generate_sss (txdataF, AMP, fp, (fp->Ncp == NORMAL) ? 6 : 5, 11);
+ // }
+  // Second half of PSS (TDD, slot 12)
+ // else if ((subframe == 6) && (fp->frame_type == TDD)) {
+ //   generate_pss (txdataF, AMP, fp, 2, 12);
+ // }
+}
 
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
@@ -219,8 +320,15 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
       eNB->pbch_configured=0;
     }
 
-    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-      T_BUFFER(pbch_pdu, 3));
+    if (T_ACTIVE(T_ENB_PHY_MIB)) {
+      /* MIB is stored in reverse in pbch_pdu, reverse it for properly logging */
+      uint8_t mib[3];
+      mib[0] = pbch_pdu[2];
+      mib[1] = pbch_pdu[1];
+      mib[2] = pbch_pdu[0];
+      T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+        T_BUFFER(mib, 3));
+    }
     generate_pbch (&eNB->pbch, txdataF, AMP, fp, pbch_pdu, frame & 3);
   } else if ((subframe == 1) && (fp->frame_type == TDD)) {
     generate_pss (txdataF, AMP, fp, 2, 2);
@@ -417,12 +525,30 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    if (is_fembms_pmch_subframe(frame,subframe,fp)) {
+#ifdef MBMS_NFAPI_SCHEDULER	    
+      pmch_procedures(eNB,proc,1);
+      LOG_D(MAC,"frame %d, subframe %d -> PMCH\n",frame,subframe);
+      return;
+#endif
+    }else if(is_fembms_cas_subframe(frame,subframe,fp) || is_fembms_nonMBSFN_subframe(frame,subframe,fp)){
+         LOG_D(MAC,"frame %d, subframe %d -> CAS\n",frame,subframe);
+	common_signal_procedures_fembms(eNB,proc->frame_tx, proc->subframe_tx);
+	//return;
+    }
+
+  if((!is_fembms_cas_subframe(frame,subframe,fp)) && (!is_fembms_nonMBSFN_subframe(frame,subframe,fp))){
     if (is_pmch_subframe(frame,subframe,fp)) {
+#ifdef MBMS_NFAPI_SCHEDULER	    
+      pmch_procedures(eNB,proc,0);
+#else
       pmch_procedures(eNB,proc);
+#endif
     } else {
       // this is not a pmch subframe, so generate PSS/SSS/PBCH
       common_signal_procedures(eNB,proc->frame_tx, proc->subframe_tx);
     }
+   }
   }
 
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
@@ -507,6 +633,18 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
 
   if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
+
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    if (is_fembms_pmch_subframe(frame,subframe,fp)) {
+#ifdef MBMS_NFAPI_SCHEDULER	    
+      pmch_procedures(eNB,proc,1);
+      return;
+#endif
+    }else if(is_fembms_cas_subframe(frame,subframe,fp)){
+	common_signal_procedures_fembms(eNB,proc->frame_tx, proc->subframe_tx);
+    }
+  }
+
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
@@ -619,8 +757,8 @@ void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int 
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.tl.tag                       = NFAPI_RX_UE_INFORMATION_TAG;
   pdu->rx_ue_information.rnti                         = rnti;
-  int SNRtimes10 = dB_fixed_times10(stat) - 10 * eNB->measurements.n0_subband_power_dB[0][0];
-  LOG_D(PHY,"stat %d subbandpower %d, SNRtimes10 %d\n", stat, eNB->measurements.n0_subband_power_dB[0][0], SNRtimes10);
+  int SNRtimes10 = dB_fixed_x10(stat) - 10 * eNB->measurements.n0_pucch_dB;
+  LOG_D(PHY,"stat %d n0 %d, SNRtimes10 %d\n", stat, eNB->measurements.n0_subband_power_dB[0][0], SNRtimes10);
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
 
   if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
@@ -653,6 +791,8 @@ uci_procedures(PHY_VARS_eNB *eNB,
   LTE_eNB_UCI *uci = NULL;
   LTE_DL_FRAME_PARMS *fp = &(eNB->frame_parms);
 
+  calc_pucch_1x_interference(eNB, frame, subframe, 0);
+  
   for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++) {
     uci = &(eNB->uci_vars[i]);
 
@@ -1211,6 +1351,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
       }
 	
       if (!decodeSucess) {
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
+          T_INT(rdata->harq_pid));
 	fill_crc_indication(eNB,i,rdata->frame,rdata->subframe,1); // indicate NAK to MAC
 	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
@@ -1239,6 +1381,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
 	ulsch_harq->status = SCH_IDLE;
 	ulsch->harq_mask &= ~(1 << rdata->harq_pid);
+        T (T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
+           T_INT(rdata->harq_pid));
       }  // ulsch not in error
 	
       if (ulsch_harq->O_ACK>0)
@@ -1419,7 +1563,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
   pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
   // estimate timing advance for MAC
-  sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
+  sync_pos                               = lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check
 
   //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
@@ -1462,8 +1606,8 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
     timing_advance_update = 63;
 
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
-  // estimate UL_CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - 10 * eNB->measurements.n0_subband_power_dB[0][0];
+  // estimate UL_CQI for MAC 
+  int SNRtimes10 = dB_fixed_x10(eNB->pusch_vars[UE_id]->ulsch_power[0] + ((eNB->frame_parms.nb_antennas_rx>1) ?eNB->pusch_vars[UE_id]->ulsch_power[1] : 0 ) ) - dB_fixed_x10(eNB->pusch_vars[UE_id]->ulsch_interference_power[0]+((eNB->frame_parms.nb_antennas_rx>1) ?eNB->pusch_vars[UE_id]->ulsch_interference_power[1] : 0 ) );
 
   if (SNRtimes10 < -640)
     pdu->rx_indication_rel8.ul_cqi = 0;
@@ -1472,8 +1616,8 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   else
     pdu->rx_indication_rel8.ul_cqi = (640 + SNRtimes10) / 5;
 
-  LOG_D(PHY,"[PUSCH %d] Frame %d Subframe %d Filling RX_indication with SNR %d (%d), timing_advance %d (update %d)\n",
-        harq_pid,frame,subframe,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
+  LOG_D(PHY,"[PUSCH %d] Frame %d Subframe %d Filling RX_indication with SNR %d (%d,%d), timing_advance %d (update %d)\n",
+        harq_pid,frame,subframe,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,eNB->measurements.n0_subband_power_avg_dB,pdu->rx_indication_rel8.timing_advance,
         timing_advance_update);
   eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus++;
   eNB->UL_INFO.rx_ind.sfn_sf = frame<<4 | subframe;
@@ -1777,7 +1921,7 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
   pdu->rx_ue_information.rnti                         = uci->rnti;
   // estimate UL_CQI for MAC (from antenna port 0 only)
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
-  int SNRtimes10 = dB_fixed_times10(uci->stat) - 10 * eNB->measurements.n0_subband_power_dB[0][0];
+  int SNRtimes10 = dB_fixed_x10(uci->stat) - 10 * eNB->measurements.n0_pucch_dB;
 
   if (SNRtimes10 < -100)
     LOG_I (PHY, "uci->stat %d \n", uci->stat);
@@ -1990,17 +2134,17 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
   lte_eNB_I0_measurements (eNB, subframe, 0, eNB->first_run_I0_measurements);
   int min_I0=1000,max_I0=0;
-
-  if ((frame==0) && (subframe==4)) {
+  int amin=0,amax=0;
+  if ((frame==0) && (subframe==3)) {
     for (int i=0; i<eNB->frame_parms.N_RB_UL; i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
 
-      if (eNB->measurements.n0_subband_power_tot_dB[i]<min_I0) min_I0 = eNB->measurements.n0_subband_power_tot_dB[i];
+      if (eNB->measurements.n0_subband_power_tot_dB[i]<min_I0) {min_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amin=i;}
 
-      if (eNB->measurements.n0_subband_power_tot_dB[i]>max_I0) max_I0 = eNB->measurements.n0_subband_power_tot_dB[i];
+      if (eNB->measurements.n0_subband_power_tot_dB[i]>max_I0) {max_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amax=i;}
     }
 
-    LOG_I (PHY, "max_I0 %d, min_I0 %d\n", max_I0, min_I0);
+    LOG_I (PHY, "max_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", max_I0, amax, min_I0, amin, eNB->measurements.n0_subband_power_avg_dB);
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );

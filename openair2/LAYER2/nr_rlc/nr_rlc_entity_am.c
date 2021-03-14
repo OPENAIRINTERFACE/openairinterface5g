@@ -109,7 +109,8 @@ static void consider_retransmission(nr_rlc_entity_am_t *entity,
    * upper layers should deal with this condition, internally it's better
    * for the RLC code to keep going with this segment (we only remove
    * a segment that was ACKed)
-   */
+   */ 
+  LOG_D(RLC, "RLC segment to be added at the ReTx list \n"); 
   nr_rlc_sdu_segment_list_append(&entity->retransmit_list,
                                  &entity->retransmit_end,
                                  cur);
@@ -921,6 +922,7 @@ static missing_data_t next_missing(nr_rlc_entity_am_t *entity,
        */
       ret.sn_start = entity->rx_next;
       ret.so_start = 0;
+      ret.next = cur;
       goto set_end_different_sdu;
     }
   }
@@ -1283,7 +1285,7 @@ static int missing_size(nr_rlc_entity_am_t *entity, missing_data_t *m,
   missing_data_t m_nack;
 
   /* be careful to limit a range to 255 SNs, that is: cut if needed */
-  sn_count = m->sn_end - m->sn_start;
+  sn_count = m->sn_end - m->sn_start + 1;
   if (sn_count < 0)
     sn_count += entity->sn_modulus;
 
@@ -1579,7 +1581,7 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   }
 
   if (entity->tx_size + size > entity->tx_maxsize) {
-    LOG_D(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
+    LOG_E(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
           __FILE__, __LINE__, __FUNCTION__);
     return;
   }
@@ -1587,6 +1589,8 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   entity->tx_size += size;
 
   sdu = nr_rlc_new_sdu(buffer, size, sdu_id);
+
+  LOG_D(RLC, "Created new RLC SDU and append it to the RLC list \n");
 
   nr_rlc_sdu_segment_list_append(&entity->tx_list, &entity->tx_end, sdu);
 }

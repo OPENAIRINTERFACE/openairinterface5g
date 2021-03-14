@@ -180,7 +180,7 @@ void do_DL_sig(sim_t *sim,
     
     //RU2UE[eNB_id][UE_id]->path_loss_dB = 0;
     multipath_channel(sim->RU2UE[ru_id][UE_id][CC_id],s_re,s_im,r_re0,r_im0,
-		      length,hold_channel);
+		      length,hold_channel,0);
 #ifdef DEBUG_SIM
     rx_pwr = signal_energy_fp2(sim->RU2UE[ru_id][UE_id][CC_id]->ch[0],
 			       sim->RU2UE[ru_id][UE_id][CC_id]->channel_length)*sim->RU2UE[ru_id][UE_id][CC_id]->channel_length;
@@ -394,7 +394,7 @@ void do_UL_sig(sim_t *sim,
       
       
       multipath_channel(sim->UE2RU[UE_id][ru_id][CC_id],s_re,s_im,r_re0,r_im0,
-			frame_parms->samples_per_tti,hold_channel);
+			frame_parms->samples_per_tti,hold_channel,0);
       
       
       rx_pwr = signal_energy_fp2(sim->UE2RU[UE_id][ru_id][CC_id]->ch[0],

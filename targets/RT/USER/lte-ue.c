@@ -804,10 +804,10 @@ static void *UE_thread_rxn_txnp4(void *arg)
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
     CPU_SET(threads.one, &cpuset);
 
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
+  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
     CPU_SET(threads.two, &cpuset);
 
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
+  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
     CPU_SET(threads.three, &cpuset);
 
   //CPU_SET(threads.three, &cpuset);
@@ -1040,16 +1040,16 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   UE = rtd->UE;
 
   UL_INFO = (UL_IND_t *)calloc(1, sizeof(UL_IND_t));
-  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_rx_indication_pdu_t));
+  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_rx_indication_pdu_t));
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
-  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_crc_indication_pdu_t));
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_crc_indication_pdu_t));
   UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
-  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_harq_indication_pdu_t));
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_harq_indication_pdu_t));
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
-  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_sr_indication_pdu_t));
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_sr_indication_pdu_t));
   UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_pdu_t));
-  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_raw_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_cqi_indication_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NUMBER_OF_UE_MAX, sizeof(nfapi_cqi_indication_raw_pdu_t));
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
   proc->subframe_rx = proc->sub_frame_start;
@@ -1388,7 +1388,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
 static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 {
-#if 0 // TODO: doesn't currently compile
+#if 0 // TODO: doesn't currently compile, obviated by multi-ue proxy
   thread_top_init("UE_phy_stub_thread_rxn_txnp4",1,870000L,1000000L,1000000L);
   // for multipule UE's L2-emulator
   //module_id_t Mod_id = 0;
@@ -2020,7 +2020,7 @@ void *UE_thread(void *arg)
   wait_sync("UE thread");
 #ifdef NAS_UE
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, INITIALIZE_MESSAGE);
   itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
   int sub_frame=-1;
@@ -2402,7 +2402,7 @@ void init_UE_single_thread_stub(int nb_inst)
     if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
 #ifdef NAS_UE
       MessageDef *message_p;
-      message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+      message_p = itti_alloc_new_message(TASK_NAS_UE, 0, INITIALIZE_MESSAGE);
       itti_send_msg_to_task (TASK_NAS_UE, i + NB_eNB_INST, message_p);
 #endif
     }

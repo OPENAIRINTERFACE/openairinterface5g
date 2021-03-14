@@ -163,6 +163,7 @@ extern "C" {
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
 #define DEBUG_RLC          (1<<13)
+#define DEBUG_DLSCH_DECOD  (1<<14)
 #define UE_TIMING          (1<<20)
 
 
@@ -181,6 +182,7 @@ extern "C" {
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
     {"RLC",         DEBUG_RLC},\
+    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -241,6 +243,7 @@ typedef enum {
   X2AP,
   M2AP,
   M3AP,
+  NGAP,
   GNB_APP,
   NR_RRC,
   NR_MAC,
@@ -348,7 +351,25 @@ typedef struct {
 @param dec    decimation level
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
 */
-int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
+#define MATLAB_RAW (1<<31)
+#define MATLAB_SHORT 0
+#define MATLAB_CSHORT 1
+#define MATLAB_INT 2
+#define MATLAB_CINT 3
+#define MATLAB_INT8 4
+#define MATLAB_CINT8 5
+#define MATLAB_LLONG 6
+#define MATLAB_DOUBLE 7
+#define MATLAB_CDOUBLE 8
+#define MATLAB_UINT8 9
+#define MATLEB_EREN1 10
+#define MATLEB_EREN2 11
+#define MATLEB_EREN3 12
+#define MATLAB_CSHORT_BRACKET1 13
+#define MATLAB_CSHORT_BRACKET2 14
+#define MATLAB_CSHORT_BRACKET3 15
+  
+int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format);
 
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"
@@ -431,19 +452,25 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 /* bitmask dependent macros, to generate debug file such as matlab file or message dump */
 #    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
+/* define variable only used in LOG macro's */
+#    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
-#    define LOG_I(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)/* */
-#    define LOG_W(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ; } while(0)/* */
-#    define LOG_A LOG_I
-#    define LOG_E(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x) ; } while(0)/* */
-#    define LOG_D(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x) ; } while(0)/* */
-#    define LOG_T(c, x...) /* */
 
-#    define LOG_DUMPMSG(c, b, s, x...) /* */
+#    define LOG_E(c, x...) do { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;}  while (0)
+#    define LOG_W(c, x...) do { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;}  while (0)
+#    define LOG_I(c, x...) do { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;}  while (0)
+#    define LOG_A LOG_I
+#    define LOG_D(c, x...) do { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;}  while (0)
+#    define LOG_T(c, x...) do { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;}  while (0)
+#    define VLOG(c,l, f, args) do { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ; } while (0)
+
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
-#    define LOG_DEBUGFLAG(D)  ( 0 )
-#    define LOG_DUMPFLAG(D) ( 0 )
+#    define LOG_DEBUGFLAG(D)  (g_log->dump_mask & D)
+#    define LOG_DUMPFLAG(D) (g_log->debug_mask & D)
+#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
+
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
+#    define LOG_VAR(A,B) A B
 #  endif /* T_TRACER */
 #endif // LOG_MINIMAL
 

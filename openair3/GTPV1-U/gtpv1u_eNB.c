@@ -135,7 +135,7 @@ static int gtpv1u_eNB_send_init_udp(const Gtpv1uS1Req *req) {
   // Create and alloc new message
   MessageDef *message_p;
   struct in_addr addr= {0};
-  message_p = itti_alloc_new_message(TASK_GTPV1_U, UDP_INIT);
+  message_p = itti_alloc_new_message(TASK_GTPV1_U, 0, UDP_INIT);
 
   if (message_p == NULL) {
     return -1;
@@ -184,7 +184,7 @@ NwGtpv1uRcT gtpv1u_eNB_send_udp_msg(
   // Create and alloc new message
   MessageDef     *message_p       = NULL;
   udp_data_req_t *udp_data_req_p  = NULL;
-  message_p = itti_alloc_new_message(TASK_GTPV1_U, UDP_DATA_REQ);
+  message_p = itti_alloc_new_message(TASK_GTPV1_U, 0, UDP_DATA_REQ);
 
   if (message_p) {
 #if defined(LOG_GTPU) && LOG_GTPU > 0
@@ -285,7 +285,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
               //ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
               MessageDef *msg;
               // Configure end marker
-              msg = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_ENB_END_MARKER_REQ);
+              msg = itti_alloc_new_message(TASK_GTPV1_U, 0, GTPV1U_ENB_END_MARKER_REQ);
               GTPV1U_ENB_END_MARKER_REQ(msg).buffer = itti_malloc(TASK_GTPV1_U, TASK_GTPV1_U, GTPU_HEADER_OVERHEAD_MAX + buffer_len);
               memcpy(&GTPV1U_ENB_END_MARKER_REQ(msg).buffer[GTPU_HEADER_OVERHEAD_MAX], buffer, buffer_len);
               GTPV1U_ENB_END_MARKER_REQ(msg).length = buffer_len;
@@ -358,7 +358,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
               if (ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
                 MessageDef *msg;
                 // Configure target
-                msg = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_ENB_DATA_FORWARDING_REQ);
+                msg = itti_alloc_new_message(TASK_GTPV1_U, 0, GTPV1U_ENB_DATA_FORWARDING_REQ);
                 GTPV1U_ENB_DATA_FORWARDING_REQ(msg).buffer = itti_malloc(TASK_GTPV1_U, TASK_GTPV1_U, GTPU_HEADER_OVERHEAD_MAX + buffer_len);
                 memcpy(&GTPV1U_ENB_DATA_FORWARDING_REQ(msg).buffer[GTPU_HEADER_OVERHEAD_MAX], buffer, buffer_len);
                 GTPV1U_ENB_DATA_FORWARDING_REQ(msg).length = buffer_len;
@@ -943,6 +943,8 @@ gtpv1u_create_s1u_tunnel(
       memcpy(&create_tunnel_resp_pP->enb_addr.buffer,
              &RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up,
              sizeof (in_addr_t));
+     
+      LOG_I(GTPU,"Configured GTPu address : %x\n",RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
       create_tunnel_resp_pP->enb_addr.length = sizeof (in_addr_t);
       addrs_length_in_bytes = create_tunnel_req_pP->sgw_addr[i].length / 8;
       AssertFatal((addrs_length_in_bytes == 4) ||
@@ -971,6 +973,15 @@ gtpv1u_create_s1u_tunnel(
       gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_sgw               = create_tunnel_req_pP->sgw_S1u_teid[i];
       gtpv1u_ue_data_p->num_bearers++;
       create_tunnel_resp_pP->enb_S1u_teid[i] = s1u_teid;
+
+      LOG_I(GTPU,"Copied to create_tunnel_resp tunnel: index %d target gNB ip %d.%d.%d.%d length %d gtp teid %u\n",
+    		  i,
+    		  create_tunnel_resp_pP->enb_addr.buffer[0],
+    		  create_tunnel_resp_pP->enb_addr.buffer[1],
+    		  create_tunnel_resp_pP->enb_addr.buffer[2],
+    		  create_tunnel_resp_pP->enb_addr.buffer[3],
+    		  create_tunnel_resp_pP->enb_addr.length,
+    		  create_tunnel_resp_pP->enb_S1u_teid[i]);
     } else {
       create_tunnel_resp_pP->enb_S1u_teid[i] = 0;
       create_tunnel_resp_pP->status         = 0xFF;
@@ -1111,7 +1122,7 @@ int gtpv1u_delete_s1u_tunnel(
   hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
   teid_t                   teid_eNB             = 0;
   int                      erab_index           = 0;
-  message_p = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_ENB_DELETE_TUNNEL_RESP);
+  message_p = itti_alloc_new_message(TASK_GTPV1_U, 0, GTPV1U_ENB_DELETE_TUNNEL_RESP);
   GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).rnti     = req_pP->rnti;
   GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).status       = 0;
   hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, req_pP->rnti, (void **)&gtpv1u_ue_data_p);
@@ -1173,7 +1184,10 @@ int gtpv1u_delete_s1u_tunnel(
     "0 GTPV1U_ENB_DELETE_TUNNEL_RESP rnti %x teid %x",
     GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).rnti,
     teid_eNB);
-  return itti_send_msg_to_task(TASK_RRC_ENB, instanceP, message_p);
+  if (req_pP->from_gnb)
+    return itti_send_msg_to_task(TASK_RRC_GNB, instanceP, message_p);
+  else
+    return itti_send_msg_to_task(TASK_RRC_ENB, instanceP, message_p);
 }
 
 
@@ -1275,7 +1289,7 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
   itti_receive_msg(TASK_GTPV1_U, &received_message_p);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_ENB_TASK, VCD_FUNCTION_IN);
   DevAssert(received_message_p != NULL);
-  instance = ITTI_MSG_INSTANCE(received_message_p);
+  instance = ITTI_MSG_DESTINATION_INSTANCE(received_message_p);
   //msg_name_p = ITTI_MSG_NAME(received_message_p);
 
   switch (ITTI_MSG_ID(received_message_p)) {

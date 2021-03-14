@@ -179,7 +179,7 @@ void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_r
     ru=eNB->RU_list[i];
 
     for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[0][ru_aa];
       int ce_level;
 
       for (ce_level=0; ce_level<4; ce_level++)
@@ -401,7 +401,7 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   hULUE(newUDPheader)->O_ACK=eNB->ulsch[UE_id]->harq_processes[harq_pid]->O_ACK;
   memcpy(hULUE(newUDPheader)->o_ACK, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
-  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
+  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o));
@@ -435,7 +435,7 @@ void pusch_procedures_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-        ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
+        ((ulsch_harq->frame == frame)     || (ulsch_harq->repetition_number >1) ) &&
         ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
         (ulsch_harq->handled == 0)) {
       // UE has ULSCH scheduling
@@ -917,7 +917,7 @@ void phy_procedures_eNB_TX_fromsplit(uint8_t *bufferZone, int nbBlocks, PHY_VARS
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     if (is_pmch_subframe(frame,subframe,fp)) {
-      pmch_procedures(eNB,proc);
+      pmch_procedures(eNB,proc,0);
     } else {
       // this is not a pmch subframe, so generate PSS/SSS/PBCH
       common_signal_procedures(eNB,frame, subframe);
@@ -1520,7 +1520,7 @@ void *cu_fs6(void *arg) {
       remoteIP[i]=0;
       break;
     }
-    
+
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, port_def, &sockFS6), "");
   L1_rxtx_proc_t L1proc= {0};
   // We pick the global thread pool from the legacy code global vars

@@ -78,6 +78,11 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+double DS_TDL = .03;
+static int cmpdouble(const void *p1, const void *p2) {
+  return *(double *)p1 > *(double *)p2;
+}
+
 int emulate_rf = 0;
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
@@ -161,7 +166,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
   // Multipath channel
   if (awgn_flag == 0) {
     multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
-                      2*UE->frame_parms.samples_per_tti,hold_channel);
+                      2*UE->frame_parms.samples_per_tti,hold_channel,0);
 
     //      printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
     if(abstx==1 && num_rounds>1)
@@ -482,7 +487,7 @@ int n_ch_rlz = 1;
 int rx_sample_offset = 0;
 int xforms=0;
 int dump_table=0;
-int loglvl=OAILOG_WARNING;
+int loglvl=OAILOG_INFO;
 int mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0;
 int two_thread_flag=0;
 int num_rounds = 4;//,fix_rounds=0;
@@ -665,7 +670,7 @@ int main(int argc, char **argv) {
     { "XForms", "Display the soft scope", PARAMFLAG_BOOL, iptr:&xforms,  defintval:0, TYPE_INT, 0 },
     { "Yperfect_ce","Perfect CE", PARAMFLAG_BOOL, iptr:&perfect_ce,  defintval:0, TYPE_INT, 0 },
     { "Zdump", "dump table",PARAMFLAG_BOOL,  iptr:&dump_table, defintval:0, TYPE_INT, 0 },
-    { "Loglvl", "log level",0, iptr:&loglvl,  defintval:OAILOG_DEBUG, TYPE_INT, 0 },
+    { "Loglvl", "log level",0, iptr:&loglvl,  defintval:OAILOG_INFO, TYPE_INT, 0 },
     { "zn_rx", "Number of RX antennas used in UE",0, iptr:NULL,  defintval:2, TYPE_INT, 0 },
     { "gchannel", "[A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'),  Rice8('L'), Rice1('M')",0, strptr:NULL,  defstrval:NULL, TYPE_STRING, 0 },
     { "verbose", "display debug text", PARAMFLAG_BOOL,  iptr:&verbose, defintval:0, TYPE_INT, 0 },
@@ -900,7 +905,6 @@ int main(int argc, char **argv) {
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
-  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   T_stdout = 1;
 
   if (common_flag == 0) {
@@ -1172,6 +1176,7 @@ int main(int argc, char **argv) {
                                    channel_model,
                                    N_RB2sampling_rate(eNB->frame_parms.N_RB_DL),
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
+                                   DS_TDL,
                                    forgetting_factor,
                                    rx_sample_offset,
                                    0);
@@ -1185,6 +1190,7 @@ int main(int argc, char **argv) {
                                        channel_model,
                                        N_RB2sampling_rate(eNB->frame_parms.N_RB_DL),
                                        N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
+                                       DS_TDL,
                                        forgetting_factor,
                                        rx_sample_offset,
                                        0);

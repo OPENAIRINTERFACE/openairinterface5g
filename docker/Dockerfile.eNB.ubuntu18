@@ -1,0 +1,126 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for Ubuntu 18.04
+#
+#---------------------------------------------------------------------
+
+FROM ran-build:latest AS enb-build 
+
+WORKDIR /oai-ran
+
+#run build_oai to build the target image
+RUN /bin/sh oaienv && \ 
+    cd cmake_targets && \
+    rm -Rf log && \
+    mkdir -p log && \
+    ./build_oai --eNB --ninja -w USRP
+
+RUN apt-get install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
+
+# debug
+#RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15
+#RUN ls -ls /oai-ran/targets/bin
+#RUN ls -ls /oai-ran/cmake_targets/ran_build/build/*.so
+
+#start from scratch for target executable
+FROM ubuntu:bionic as oai-enb
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        software-properties-common \
+        libsctp1 \
+        libnettle6 \
+        libblas3 \
+        libatlas3-base \
+        libconfig9 \
+        openssl \
+        net-tools \
+        iputils-ping \
+        iproute2 \
+        libyaml-0-2 && \
+    # Install UHD driver from ettus ppa 
+    # At time of writing, it is 3.14
+    add-apt-repository ppa:ettusresearch/uhd --yes && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        python \
+        libusb-1.0-0 \
+        libuhd003 \
+        uhd-host && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/oai-enb/bin
+COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
+COPY --from=enb-build /oai-ran/docker/scripts/enb_entrypoint.sh entrypoint.sh
+
+WORKDIR /usr/local/lib/
+COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/libcoding.so .
+COPY --from=enb-build /oai-ran/targets/bin/libparams_libconfig.so .
+COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
+COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
+RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
+
+COPY --from=enb-build /usr/local/lib/libprotobuf-c.so.1 .
+
+RUN ldconfig
+
+#debug
+#RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
+#RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
+#RUN ldd /usr/local/lib/librfsimulator.so.Rel15
+#RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
+#RUN ldd /usr/local/lib/libcoding.so
+#RUN ldd /usr/local/lib/libparams_libconfig.so
+#RUN ldd /usr/local/lib/libdfts.so
+#RUN ldd /usr/local/lib/liboai_iqplayer.so
+#RUN ldd /opt/oai-enb/bin/lte-softmodem.Rel15
+
+# Copy the relevant configuration files for eNB
+WORKDIR /opt/oai-enb/etc
+COPY --from=enb-build /oai-ran/docker/etc .
+
+WORKDIR /opt/oai-enb
+
+# 2152 --> S1U, GTP/UDP
+# 36412 --> S1C, SCTP/UDP
+# 36422 --> X2C, SCTP/UDP
+EXPOSE 2152/udp 36412/udp 36422/udp
+#EXPOSE 22100/tcp # ?
+#EXPOSE 50000/udp # IF5 / ORI (control)
+#EXPOSE 50001/udp # IF5 / ECPRI (data)
+
+ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["/opt/oai-enb/bin/lte-softmodem.Rel15", "-O", "/opt/oai-enb/etc/enb.conf"]

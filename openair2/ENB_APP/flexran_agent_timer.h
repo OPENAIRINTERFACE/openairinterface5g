@@ -61,9 +61,6 @@ err_code_t flexran_agent_create_timer(mid_t    mod_id,
                                       flexran_agent_timer_callback_t cb,
                                       Protocol__FlexranMessage *msg);
 
-/* Destroy all existing timers */
-err_code_t flexran_agent_destroy_timers(mid_t mod_id);
-
 /* Destroy the timer for task with id xid */
 err_code_t flexran_agent_destroy_timer(mid_t mod_id, xid_t xid);
 

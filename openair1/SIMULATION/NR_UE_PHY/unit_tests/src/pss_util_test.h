@@ -69,12 +69,6 @@ typedef struct {
   int number_of_fail;
 } test_t;
 
-typedef struct {
-  uint16_t ofdm_symbol_size;
-  uint32_t samples_per_tti;
-  uint32_t samples_per_subframe;
-} save_frame_parms_t;
-
 /*************** GLOBAL VARIABLES***********************************/
 
 EXTERN PHY_VARS_eNB *PHY_vars_eNB;

@@ -297,7 +297,11 @@ int nas_change_mtu(struct net_device *dev, int mtu)
 }
 
 //---------------------------------------------------------------------------
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
+void nas_tx_timeout(struct net_device *dev, unsigned int txqueue)
+#else
 void nas_tx_timeout(struct net_device *dev)
+#endif
 {
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.
@@ -324,7 +328,7 @@ static const struct net_device_ops nasmesh_netdev_ops = {
   .ndo_set_mac_address  = NULL,
   .ndo_set_config     = nas_set_config,
   .ndo_do_ioctl       = nas_CTL_ioctl,
-#if  (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE>=1797)
+#if (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE>=1797 && LINUX_VERSION_CODE <= KERNEL_VERSION(3,11,0))
   .extended.ndo_change_mtu   = nas_change_mtu,
 #else
   .ndo_change_mtu   = nas_change_mtu,
