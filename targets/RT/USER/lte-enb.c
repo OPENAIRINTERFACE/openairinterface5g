@@ -1170,7 +1170,7 @@ void init_eNB_afterRU(void) {
       LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
       eNB->frame_parms.nb_antennas_rx       = 0;
       LOG_I(PHY,"eNB->num_RU:%d\n", eNB->num_RU);     
-      AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is      zero\n",eNB->Mod_id);
+      if (NFAPI_MODE==NFAPI_MODE_PNF) AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is      zero\n",eNB->Mod_id);
       for (int ru_id=0; ru_id<eNB->num_RU; ru_id++) 
          eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
       phy_init_lte_eNB(eNB,0,0);
