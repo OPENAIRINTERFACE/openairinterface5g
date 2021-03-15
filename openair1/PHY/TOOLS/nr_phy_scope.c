@@ -282,30 +282,6 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
   graph->iteration++;
 }
 
-static void genericLogPowerPerAntena(OAIgraph_t *graph, const int nb_ant, const scopeSample_t **data, const int len) {
-  float *values, *time;
-  oai_xygraph_getbuff(graph, &time, &values, len, 0);
-
-  for (int ant=0; ant<nb_ant; ant++) {
-    if (data[ant] != NULL) {
-      float *values, *time;
-      oai_xygraph_getbuff(graph, &time, &values, len, ant);
-
-      for (int i=0; i<len; i+=8) {
-        float *vals=values+i;
-        const scopeSample_t *in=&(data[ant][i]);
-
-        // TRY AUTOMATIC simd BY GCC
-        for (int k=0; k<8; k++ ) {
-          vals[k] = 10*log10(1.0+SquaredNorm(in[k]));
-        }
-      }
-
-      oai_xygraph(graph,time,values, len, ant, 10);
-    }
-  }
-}
-
 static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const scopeSample_t **data, const int len) {
   float *values, *time;
   oai_xygraph_getbuff(graph, &time, &values, len, 0);

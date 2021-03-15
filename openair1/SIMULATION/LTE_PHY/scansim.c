@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");
