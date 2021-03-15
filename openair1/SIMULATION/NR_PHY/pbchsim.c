@@ -111,7 +111,7 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
 
   nr_init_frame_parms(gNB_config, fp);
 
-  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+  init_symbol_rotation(fp);
 
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
@@ -539,6 +539,8 @@ int main(int argc, char **argv)
   // generate signal
   if (input_fd==NULL) {
 
+    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
+
     for (i=0; i<frame_parms->Lmax; i++) {
       if((SSB_positions >> i) & 0x01) {
 
@@ -724,9 +726,9 @@ int main(int argc, char **argv)
  
 	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)));
+	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == ((gNB->ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
 	  } 
-	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->pbch_vars[0]->xtra_byte);
 	  //printf("ret %d\n", payload_ret);
 	  if (payload_ret!=4) 
 	    n_errors_payload++;

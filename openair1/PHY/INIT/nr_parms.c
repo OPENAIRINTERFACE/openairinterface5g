@@ -346,9 +346,8 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->N_RB_UL = config->carrier_config.ul_grid_size[fp->numerology_index];
   fp->N_RB_DL = config->carrier_config.dl_grid_size[fp->numerology_index];
 
-  int32_t uplink_frequency_offset = 0;
-  get_delta_duplex(fp->nr_band, fp->numerology_index, &uplink_frequency_offset);
-  get_frame_type(fp->nr_band, fp->numerology_index, &fp->frame_type);
+  fp->frame_type = get_frame_type(fp->nr_band, fp->numerology_index);
+  int32_t uplink_frequency_offset = get_delta_duplex(fp->nr_band, fp->numerology_index);
   uplink_frequency_offset *= 1000;
 
   LOG_I(PHY, "Initializing frame parms: DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, uplink_frequency_offset);

@@ -327,7 +327,8 @@ struct NR_DL_FRAME_PARMS {
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// sequence which is computed based on carrier frequency and numerology to rotate/derotate each OFDM symbol according to Section 5.3 in 38.211
-  int16_t symbol_rotation[224*2];
+  /// First dimension is for the direction of the link (0 DL, 1 UL)
+  int16_t symbol_rotation[2][224*2];
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
@@ -367,21 +368,5 @@ struct NR_DL_FRAME_PARMS {
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)
-
-typedef struct nr_bandentry_s {
-  int16_t band;
-  uint64_t ul_min;
-  uint64_t ul_max;
-  uint64_t dl_min;
-  uint64_t dl_max;
-  uint64_t step_size;
-  uint64_t N_OFFs_DL;
-  uint8_t deltaf_raster;
-} nr_bandentry_t;
-
-typedef struct nr_band_info_s {
-  int nbands;
-  nr_bandentry_t band_info[100];
-} nr_band_info_t;
 
 #endif
