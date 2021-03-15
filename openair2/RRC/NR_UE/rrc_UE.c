@@ -1710,7 +1710,6 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
     AMF_MODE_ENABLED = 1;
   }
   if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
-  if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
     for (i=0; i<6; i++) {
@@ -1740,6 +1739,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
     /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
     UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
 
+    /*
     log_dump(RRC,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
     LOG_DUMP_CHAR,"RRCSetupRequest :\n");
     rrc_data_req_ue (
@@ -1750,6 +1750,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
       NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
       (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
       PDCP_TRANSMISSION_MODE_CONTROL);
+      */
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
