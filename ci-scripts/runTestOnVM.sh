@@ -379,7 +379,7 @@ function check_iperf {
     local LOC_IS_DL=`echo $LOC_BASE_LOG | grep -c _dl`
     local LOC_IS_BASIC_SIM=`echo $LOC_BASE_LOG | grep -c basic_sim`
     local LOC_IS_RF_SIM=`echo $LOC_BASE_LOG | grep -c rf_sim`
-    local LOC_IS_NR=`echo $LOC_BASE_LOG | grep -c tdd_106prb`
+    local LOC_IS_NR=`echo $LOC_BASE_LOG | grep -c _106prb`
     if [ -f ${LOC_BASE_LOG}_client.txt ]
     then
         local FILE_COMPLETE=`egrep -c "Server Report" ${LOC_BASE_LOG}_client.txt`
@@ -2189,39 +2189,50 @@ function run_test_on_vm {
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
     then
-        CN_CONFIG="noS1"
-        CONF_FILE=gnb.band78.tm1.106PRB.usrpn300.conf
-        S1_NOS1_CFG=0
-        PRB=106
-        FREQUENCY=3510
-
         if [ ! -d $ARCHIVES_LOC ]
         then
             mkdir --parents $ARCHIVES_LOC
         fi
 
-        local try_cnt=0
-        NR_STATUS=0
+        CN_CONFIG="noS1"
+        S1_NOS1_CFG=0
 
         ######### start of RA TEST loop
-        while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
+        # for the moment only TDD
+        TRANS_MODES=("tdd")
+        for TMODE in ${TRANS_MODES[@]}
         do
+          if [[ $TMODE =~ .*fdd.* ]]
+          then
+            CONF_FILE=gnb.band66.tm1.106PRB.usrpn300.conf
+            PRB=106
+            FREQUENCY=37000
+          else
+            CONF_FILE=gnb.band78.tm1.106PRB.usrpn300.conf
+            PRB=106
+            FREQUENCY=3510
+          fi
 
+          local try_cnt=0
+          NR_STATUS=0
+          while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
+
+          do
             SYNC_STATUS=0
             RA_STATUS=0
-            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}*ra_test.log
+            rm -f $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}*ra_test.log
 
             echo "############################################################"
-            echo "${CN_CONFIG} : Starting the gNB"
+            echo "${CN_CONFIG} : Starting the gNB in ${TMODE} mode (RA TEST)"
             echo "############################################################"
-            CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb_ra_test.log
+            CURRENT_GNB_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_gnb_ra_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 1
 
             echo "############################################################"
-            echo "${CN_CONFIG} : Starting the NR-UE"
+            echo "${CN_CONFIG} : Starting the NR-UE in ${TMODE} mode (RA TEST)"
             echo "############################################################"
-            CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_ra_test.log
+            CURRENT_NR_UE_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_ue_ra_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
             if [ $NR_UE_SYNC -eq 0 ]
@@ -2260,35 +2271,47 @@ function run_test_on_vm {
             else
                 try_cnt=$((try_cnt+10))
             fi
+          done
         done
         ########### end RA test
         
         sleep 30
 
-
         ######### start of PHY TEST loop
-        try_cnt=0
-        while [ $try_cnt -lt 4 ]
+        SYNC_STATUS=0
+        PING_STATUS=0
+        IPERF_STATUS=0
+        TRANS_MODES=("fdd tdd")
+        for TMODE in ${TRANS_MODES[@]}
         do
+          if [[ $TMODE =~ .*fdd.* ]]
+          then
+            CONF_FILE=gnb.band66.tm1.106PRB.usrpn300.conf
+            PRB=106
+            FREQUENCY=37000
+          else
+            CONF_FILE=gnb.band78.tm1.106PRB.usrpn300.conf
+            PRB=106
+            FREQUENCY=3510
+          fi
 
-
-            SYNC_STATUS=0
-            PING_STATUS=0
-            IPERF_STATUS=0
-            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_gnb.log $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_ue.log 
-            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
-            rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_iperf_dl*txt $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}_iperf_ul*txt
+          try_cnt=0
+          while [ $try_cnt -lt 4 ]
+          do
+            rm -f $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_gnb.log $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_ue.log
+            rm -f $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
+            rm -f $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_iperf_dl*txt $ARCHIVES_LOC/${TMODE}_${PRB}prb_${CN_CONFIG}_iperf_ul*txt
 
             echo "############################################################"
-            echo "${CN_CONFIG} : Starting the gNB"
+            echo "${CN_CONFIG} : Starting the gNB in ${TMODE} mode (PHY TEST)"
             echo "############################################################"
-            CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb.log
+            CURRENT_GNB_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_gnb.log
             start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 0
 
             echo "############################################################"
-            echo "${CN_CONFIG} : Starting the NR-UE"
+            echo "${CN_CONFIG} : Starting the NR-UE in ${TMODE} mode (PHY TEST)"
             echo "############################################################"
-            CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue.log
+            CURRENT_NR_UE_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_ue.log
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 0
             if [ $NR_UE_SYNC -eq 0 ]
             then
@@ -2306,7 +2329,7 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : Pinging the gNB from NR-UE"
             echo "############################################################"
             get_enb_noS1_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR
-            PING_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log
+            PING_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_ping_gnb_from_nrue.log
             ping_epc_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $ENB_IP_ADDR $PING_LOG_FILE 1 0
             scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
             check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
@@ -2315,7 +2338,7 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : Pinging the NR-UE from gNB"
             echo "############################################################"
             get_ue_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 1
-            PING_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
+            PING_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_ping_from_gnb_nrue.log
             ping_enb_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
             scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
             check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
@@ -2324,7 +2347,7 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : iperf DL -- NR-UE is server and gNB is client"
             echo "############################################################"
             THROUGHPUT="30K"
-            CURR_IPERF_LOG_BASE=tdd_${PRB}prb_${CN_CONFIG}_iperf_dl
+            CURR_IPERF_LOG_BASE=${TMODE}_${PRB}prb_${CN_CONFIG}_iperf_dl
             get_enb_noS1_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR
             get_ue_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 1
             generic_iperf $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $UE_IP_ADDR $GNB_VM_CMDS $GNB_VM_IP_ADDR $ENB_IP_ADDR $THROUGHPUT $CURR_IPERF_LOG_BASE 1 0 
@@ -2346,7 +2369,7 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : iperf UL -- gNB is server and NR-UE is client"
             echo "############################################################"
             THROUGHPUT="30K"
-            CURR_IPERF_LOG_BASE=tdd_${PRB}prb_${CN_CONFIG}_iperf_ul
+            CURR_IPERF_LOG_BASE=${TMODE}_${PRB}prb_${CN_CONFIG}_iperf_ul
             get_enb_noS1_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR
             get_ue_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 1
             generic_iperf $GNB_VM_CMDS $GNB_VM_IP_ADDR $ENB_IP_ADDR $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $UE_IP_ADDR $THROUGHPUT $CURR_IPERF_LOG_BASE 1 0
@@ -2368,6 +2391,7 @@ function run_test_on_vm {
             else
                 try_cnt=$((try_cnt+10))
             fi
+          done
         done
         ######### end of loop
         full_l2_sim_destroy

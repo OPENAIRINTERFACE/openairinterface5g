@@ -245,7 +245,8 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[0][slotP];
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
-  if (is_nr_UL_slot(scc,slotP)) {
+  if (is_nr_UL_slot(scc, slotP, cc->frame_type)) {
+
     uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
     uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
     uint16_t RA_sfn_index = -1;
@@ -647,7 +648,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_RA_t *ra) {
 
   // msg3 is schedulend in mixed slot in the following TDD period
-  // for now we consider a TBS of 18 bytes
+
+  uint16_t msg3_nb_rb = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // sdu has 6 or 8 bytes
 
   int mu = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
   int StartSymbolIndex, NrOfSymbols, startSymbolAndLength, temp_slot;
@@ -677,21 +679,22 @@ void nr_get_Msg3alloc(module_id_t module_id,
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
   const uint16_t bwpSize = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  /* search 18 free RBs */
+
+  /* search msg3_nb_rb free RBs */
   int rbSize = 0;
   int rbStart = 0;
-  while (rbSize < 18) {
+  while (rbSize < msg3_nb_rb) {
     rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
     rbSize = 0;
     while (rbStart < bwpSize && vrb_map_UL[rbStart])
       rbStart++;
-    AssertFatal(rbStart < bwpSize - 18, "no space to allocate Msg 3 for RA!\n");
+    AssertFatal(rbStart < bwpSize - msg3_nb_rb, "no space to allocate Msg 3 for RA!\n");
     while (rbStart + rbSize < bwpSize
            && !vrb_map_UL[rbStart + rbSize]
-           && rbSize < 18)
+           && rbSize < msg3_nb_rb)
       rbSize++;
   }
-  ra->msg3_nb_rb = 18;
+  ra->msg3_nb_rb = msg3_nb_rb;
   ra->msg3_first_rb = rbStart;
 }
 
