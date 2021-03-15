@@ -1876,19 +1876,19 @@ void nr_csirs_scheduling(int Mod_idP,
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
             csirs_pdu_rel15->row = 2;
-            csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row1.buf[1]>>4)&0x0f) |
-                                           ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0]<<8)&0xf0));
+            csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
+                                           ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xf0));
             for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
               vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
             csirs_pdu_rel15->row = 4;
-            csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>5)&0x0f;
+            csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row4.buf[0])>>5)&0x0f;
             for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
               vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
-            csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>2)&0x0f;
+            csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.other.buf[0])>>2)&0x0f;
             // determining the row of table 7.4.1.5.3-1 in 38.211
             switch(resourceMapping.nrofPorts){
               case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
