@@ -79,8 +79,8 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 
-int sf_ahead=4 ;
-int sl_ahead=0;
+uint16_t sf_ahead=4 ;
+uint16_t sl_ahead=0;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
@@ -93,6 +93,21 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 			      const int8_t          channel,
 			      const uint8_t*        pduP,
 			      const sdu_size_t      pdu_len)
+{
+  return 0;
+}
+
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
 {
   return 0;
 }
@@ -185,10 +200,6 @@ int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
 int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
-  return 0;
-}
-
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
@@ -248,7 +259,10 @@ int main(int argc, char **argv)
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
-  float roundStats[50];
+  double roundStats[500] = {0};
+  double blerStats[500] = {0};
+  double berStats[500] = {0};
+  double snrStats[500] = {0};
   float effRate;
   //float psnr;
   float eff_tp_check = 0.7;
@@ -1114,7 +1128,9 @@ int main(int argc, char **argv)
       if (UE_harq_process->harq_ack.ack==1) effRate += ((float)TBS)/round;
     } // noise trials
 
+    blerStats[snrRun] = (float) n_errors / (float) n_trials;
     roundStats[snrRun]/=((float)n_trials);
+    berStats[snrRun] = (double)errors_scrambling/available_bits/n_trials;
     effRate /= n_trials;
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
@@ -1122,7 +1138,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
     dump_pdsch_stats(gNB);
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, BLER %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],berStats[snrRun],blerStats[snrRun],effRate,effRate/TBS*100,TBS);
     printf("\n");
 
     if (print_perf==1) {
@@ -1187,15 +1203,19 @@ int main(int argc, char **argv)
       break;
     }
 
-    //if ((float)n_errors/(float)n_trials <= target_error_rate) {
     if (effRate > (eff_tp_check*TBS)) {
       printf("PDSCH test OK\n");
       break;
     }
 
+    snrStats[snrRun] = SNR;
     snrRun++;
   } // NSR
 
+  LOG_M("dlsimStats.m","SNR",snrStats,snrRun,1,7);
+  LOG_MM("dlsimStats.m","BLER",blerStats,snrRun,1,7);
+  LOG_MM("dlsimStats.m","BER",berStats,snrRun,1,7);
+  LOG_MM("dlsimStats.m","rounds",roundStats,snrRun,1,7);
   /*if (n_trials>1) {
     printf("HARQ stats:\nSNR\tRounds\n");
     psnr = snr0;

@@ -147,19 +147,18 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint16_t n_dmrs;
     if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
       nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
-      n_dmrs = ((rel15->rbSize+rel15->rbStart)*6)<<1;
     }
     else {
       nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
-      n_dmrs = ((rel15->rbSize+rel15->rbStart)*4)<<1;
     }
+    n_dmrs = (rel15->rbSize+rel15->rbStart)*nb_re_dmrs;
 
     uint16_t dmrs_symbol_map = rel15->dlDmrsSymbPos;//single DMRS: 010000100 Double DMRS 110001100
     uint8_t dmrs_len = get_num_dmrs(rel15->dlDmrsSymbPos);
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
-    int16_t mod_dmrs[14][n_dmrs] __attribute__ ((aligned(16)));
+    int16_t mod_dmrs[14][n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
     uint16_t beta_ptrs = 1;
@@ -271,10 +270,10 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     /// DMRS QPSK modulation
     for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
       if (rel15->dlDmrsSymbPos & (1 << l)) {
-        nr_modulation(pdsch_dmrs[l][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs[l]); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+        nr_modulation(pdsch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs[l]); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_DLSCH
-        printf("DMRS modulation (symbol %d, %d symbols, type %d):\n", l, n_dmrs>>1, dmrs_Type);
+        printf("DMRS modulation (symbol %d, %d symbols, type %d):\n", l, n_dmrs, dmrs_Type);
         for (int i=0; i<n_dmrs>>4; i++) {
           for (int j=0; j<8; j++) {
             printf("%d %d\t", mod_dmrs[l][((i<<3)+j)<<1], mod_dmrs[l][(((i<<3)+j)<<1)+1]);
