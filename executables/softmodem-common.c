@@ -95,10 +95,11 @@ void get_common_options(uint32_t execmask) {
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
   check_execmask(execmask);
   config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
-                            sizeof(cmdline_logparams)/sizeof(paramdef_t));
-  config_get( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-
+  
+  int numparams=sizeof(cmdline_logparams)/sizeof(paramdef_t);
+  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,numparams);
+  config_get( cmdline_logparams,numparams,NULL);
+  
   if(config_isparamset(cmdline_logparams,config_paramidx_fromname(cmdline_logparams,numparams, CONFIG_FLOG_OPT))) {
     set_glog_onlinelog(online_log_messages);
   }
