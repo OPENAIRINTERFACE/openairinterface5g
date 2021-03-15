@@ -757,7 +757,7 @@ int main(int argc, char **argv)
 				30e-9,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (gNB2UE==NULL) {
     printf("Problem generating channel model. Exiting.\n");
