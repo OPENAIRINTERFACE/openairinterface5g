@@ -539,12 +539,10 @@ int main(int argc, char **argv)
   // generate signal
   if (input_fd==NULL) {
 
-    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
-
     for (i=0; i<frame_parms->Lmax; i++) {
       if((SSB_positions >> i) & 0x01) {
 
-        gNB->ssb[i].ssb_pdu.ssb_pdu_rel15.bchPayload = 0;
+        gNB->ssb[i].ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
         gNB->ssb[i].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = i;
 
         start_symbol = nr_get_ssb_start_symbol(frame_parms,i);
