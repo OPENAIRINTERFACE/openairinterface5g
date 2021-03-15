@@ -164,12 +164,12 @@ nr_rrc_data_req(
 //------------------------------------------------------------------------------
 {
   if(sdu_sizeP == 255) {
-    LOG_I(RRC,"sdu_sizeP == 255");
+    LOG_I(NR_RRC,"sdu_sizeP == 255");
     return FALSE;
   }
 
   MSC_LOG_TX_MESSAGE(
-    ctxt_pP->enb_flag ? MSC_RRC_ENB : MSC_RRC_UE,
+    ctxt_pP->enb_flag ? MSC_RRC_GNB : MSC_RRC_UE,
     ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,
     buffer_pP,
     sdu_sizeP,
@@ -182,11 +182,11 @@ nr_rrc_data_req(
   // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
   uint8_t *message_buffer;
   message_buffer = itti_malloc (
-                     ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
+                     ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_UE,
                      ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
                      sdu_sizeP);
   memcpy (message_buffer, buffer_pP, sdu_sizeP);
-  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
+  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
   RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
   RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
   RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;
@@ -194,7 +194,7 @@ nr_rrc_data_req(
   RRC_DCCH_DATA_REQ (message_p).confirmp  = confirmP;
   RRC_DCCH_DATA_REQ (message_p).sdu_size  = sdu_sizeP;
   RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
-  //memcpy (RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
+  //memcpy (NR_RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
   RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
   RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
   RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
@@ -203,12 +203,12 @@ nr_rrc_data_req(
     ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
     ctxt_pP->instance,
     message_p);
-  LOG_I(RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
+  LOG_I(NR_RRC,"send RRC_DCCH_DATA_REQ to PDCP\n");
 
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
-  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
+  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type))
     pdcp_run(ctxt_pP);
 
   return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.

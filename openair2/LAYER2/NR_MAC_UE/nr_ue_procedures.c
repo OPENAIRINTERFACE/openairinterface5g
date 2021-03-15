@@ -101,7 +101,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         void *pduP,
                         uint16_t cell_id)
 {
-  LOG_I(MAC,"[L2][MAC] decode mib\n");
+  LOG_D(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -2008,8 +2008,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                     LOG_T(MAC, "\n");
                 #endif
 
-                if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
+//                if (IS_SOFTMODEM_NOS1){
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
 
                     mac_rlc_data_ind(module_idP,
                                      mac->crnti,
@@ -2025,7 +2025,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                   } else {
                     LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
                   }
-                }
+//                }
 
             break;
         }

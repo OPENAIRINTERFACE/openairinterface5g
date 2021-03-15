@@ -49,7 +49,7 @@ extern unsigned char NB_gNB_INST;
 extern RAN_CONTEXT_t RC;
 
 #define GNB_REGISTER_RETRY_DELAY 10
-
+#if 0
 /*------------------------------------------------------------------------------*/
 static void configure_nr_rrc(uint32_t gnb_id)
 {
@@ -68,7 +68,7 @@ static void configure_nr_rrc(uint32_t gnb_id)
   }
   else AssertFatal(0,"NRRRC context for gNB %d not allocated\n",gnb_id);
 }
-
+#endif
 /*------------------------------------------------------------------------------*/
 
 
@@ -80,24 +80,34 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      if(NGAP_CONF_MODE){
-        ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
-        
-        // note:  there is an implicit relationship between the data structure and the message name 
-        msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
+      if (NODE_IS_DU(RC.nrrrc[gnb_id]->node_type)) { // F1AP registration
+        // configure F1AP here for F1C
+        LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
+        msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_SETUP_REQ);
+        RCconfig_NR_DU_F1(msg_p, gnb_id);
 
-        RCconfig_NR_NG(msg_p, gnb_id);
-		
-        ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
+        LOG_I(GNB_APP,"[gNB %d] gNB_app_register via F1AP for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
+        itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+        // configure GTPu here for F1U
+      } else {
+        if(NGAP_CONF_MODE){
+          ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
+          
+          // note:  there is an implicit relationship between the data structure and the message name 
+          msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
 
-		LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
+          RCconfig_NR_NG(msg_p, gnb_id);
 
-		itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-	  }
+          ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
 
-      if (gnb_id == 0) RCconfig_nr_gtpu();
+          LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
 
-	  LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
+          itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+        }
+        if (gnb_id == 0) RCconfig_nr_gtpu();
+      }
+
+      LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
 
       register_gnb_pending++;
     }
@@ -126,7 +136,6 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
   return register_gnb_x2_pending;
 }
 
-
 /*------------------------------------------------------------------------------*/
 void *gNB_app_task(void *args_p)
 {
@@ -134,6 +143,9 @@ void *gNB_app_task(void *args_p)
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
+  uint32_t                        registered_gnb = 0;
+  uint32_t                        register_gnb_pending;
+  long                            gnb_register_retry_timer_id;
 
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
@@ -147,30 +159,6 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
-  RCconfig_NR_L1();
-
-  RCconfig_nr_macrlc();
-
-  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
-
-  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
-
-  AssertFatal (gnb_nb <= RC.nb_nr_inst,
-               "Number of gNB is greater than gNB defined in configuration file (%d/%d)!",
-               gnb_nb, RC.nb_nr_inst);
-
-  LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
-
-  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
-
-  for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
-    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
-    memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
-    configure_nr_rrc(gnb_id);
-  }
-
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
@@ -179,11 +167,24 @@ void *gNB_app_task(void *args_p)
   if (AMF_MODE_ENABLED) {
   /* Try to register each gNB */
   //registered_gnb = 0;
-  __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
+  register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
   } else {
-  /* Start L2L1 task */
-    msg_p = itti_alloc_new_message(TASK_GNB_APP, 0, INITIALIZE_MESSAGE);
-    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+    // for test
+    register_gnb_pending = 1;
+    for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
+      if (!NODE_IS_DU(RC.nrrrc[gnb_id]->node_type)) {
+        /* Start L2L1 task */
+        msg_p = itti_alloc_new_message(TASK_GNB_APP, 0, INITIALIZE_MESSAGE);
+        itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+      } else {
+        // configure F1AP here for F1C
+        LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
+        msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_SETUP_REQ);
+        RCconfig_NR_DU_F1(msg_p, gnb_id);
+
+        itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+      }
+    }
   }
 
   do {
@@ -245,6 +246,50 @@ void *gNB_app_task(void *args_p)
         }
       }
 */
+      break;
+
+    case F1AP_SETUP_RESP:
+      AssertFatal(NODE_IS_DU(RC.nrrrc[0]->node_type), "Should not have received F1AP_SETUP_RESP in CU/gNB\n");
+
+      LOG_I(GNB_APP, "Received %s: associated ngran_gNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
+      F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
+      
+      gNB_app_handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
+
+      DevAssert(register_gnb_pending > 0);
+      register_gnb_pending--;
+
+      /* Check if at least gNB is registered with one AMF */
+      if (F1AP_SETUP_RESP(msg_p).num_cells_to_activate > 0) {
+        registered_gnb++;
+      }
+
+      /* Check if all register gNB requests have been processed */
+      if (register_gnb_pending == 0) {
+        if (registered_gnb == gnb_nb) {
+          /* If all gNB cells are registered, start L2L1 task */
+          MessageDef *msg_init_p;
+
+          msg_init_p = itti_alloc_new_message (TASK_GNB_APP, 0, INITIALIZE_MESSAGE);
+          itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
+
+        } else {
+          LOG_W(GNB_APP, " %d gNB not associated with a AMF, retrying registration in %d seconds ...\n",
+                gnb_nb - registered_gnb,  GNB_REGISTER_RETRY_DELAY);
+
+          /* Restart the gNB registration process in GNB_REGISTER_RETRY_DELAY seconds */
+          if (timer_setup (GNB_REGISTER_RETRY_DELAY, 0, TASK_GNB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
+                           NULL, &gnb_register_retry_timer_id) < 0) {
+            LOG_E(GNB_APP, " Can not start gNB register retry timer, use \"sleep\" instead!\n");
+
+            sleep(GNB_REGISTER_RETRY_DELAY);
+            /* Restart the registration process */
+            registered_gnb = 0;
+            register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
+          }
+        }
+      }
+
       break;
 
     case NGAP_DEREGISTERED_GNB_IND:

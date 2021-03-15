@@ -87,6 +87,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+#include "nr_nas_msg_sim.h"
+#endif
+
 extern const char *duplex_mode[];
 
 // Thread variables
@@ -179,7 +183,6 @@ struct timespec clock_difftime(struct timespec start, struct timespec end) {
 void print_difftimes(void) {
   LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 }
-
 int create_tasks_nrue(uint32_t ue_nb) {
   LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
   itti_wait_ready(1);
@@ -191,6 +194,10 @@ int create_tasks_nrue(uint32_t ue_nb) {
       return -1;
     }
 
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
+      return -1;
+    }
   }
 
   itti_wait_ready(0);
@@ -517,6 +524,10 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
+  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
+  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+  RC.nrrrc[0]->node_type = ngran_gNB;
+
   init_NR_UE(1,rrc_config_path);
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
@@ -568,7 +579,7 @@ int main( int argc, char **argv ) {
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
  
-  if(IS_SOFTMODEM_DOSCOPE) { 
+  if(IS_SOFTMODEM_DOSCOPE) {
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
 
@@ -578,6 +589,14 @@ int main( int argc, char **argv ) {
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
+  protocol_ctxt_t ctxt_pP = {0};
+  ctxt_pP.enb_flag = ENB_FLAG_NO;
+  ctxt_pP.rnti = 0x1234;
+  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
+  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+  RC.nrrrc[0]->node_type = ngran_gNB;
+  rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
 
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");

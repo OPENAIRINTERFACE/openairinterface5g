@@ -65,6 +65,9 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   gNB_RrcConfigurationReq *configuration
                   );
 
+uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
+                    gNB_RrcConfigurationReq *configuration);
+
 void do_RLC_BEARER(uint8_t Mod_id,
                     int CC_id,
                     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,

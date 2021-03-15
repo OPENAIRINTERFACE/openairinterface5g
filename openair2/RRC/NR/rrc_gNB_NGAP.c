@@ -57,6 +57,7 @@
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 #include "NR_UERadioAccessCapabilityInformation.h"
 #include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "f1ap_messages_types.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -424,57 +425,57 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   NGAP_NAS_FIRST_REQ(message_p).selected_plmn_identity = selected_plmn_identity;
 
   if (rrcSetupComplete->registeredAMF != NULL) {
-    NR_RegisteredAMF_t *r_amf = rrcSetupComplete->registeredAMF;
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask |= NGAP_UE_IDENTITIES_guami;
+      NR_RegisteredAMF_t *r_amf = rrcSetupComplete->registeredAMF;
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.presenceMask |= NGAP_UE_IDENTITIES_guami;
 
-    if (r_amf->plmn_Identity != NULL) {
-      if ((r_amf->plmn_Identity->mcc != NULL) && (r_amf->plmn_Identity->mcc->list.count > 0)) {
-        /* Use first indicated PLMN MCC if it is defined */
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc = *r_amf->plmn_Identity->mcc->list.array[selected_plmn_identity];
-        LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
-            ctxt_pP->module_id,
-            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mcc,
-            ue_context_pP->ue_context.rnti);
+      if (r_amf->plmn_Identity != NULL) {
+          if ((r_amf->plmn_Identity->mcc != NULL) && (r_amf->plmn_Identity->mcc->list.count > 0)) {
+              /* Use first indicated PLMN MCC if it is defined */
+              NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc = *r_amf->plmn_Identity->mcc->list.array[selected_plmn_identity];
+              LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
+                  ctxt_pP->module_id,
+                  NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mcc,
+                  ue_context_pP->ue_context.rnti);
+          }
+
+          if (r_amf->plmn_Identity->mnc.list.count > 0) {
+              /* Use first indicated PLMN MNC if it is defined */
+              NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
+              LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
+                  ctxt_pP->module_id,
+                  NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
+                  ue_context_pP->ue_context.rnti);
+          }
+      } else {
+          /* TODO */
       }
 
-      if (r_amf->plmn_Identity->mnc.list.count > 0) {
-        /* Use first indicated PLMN MNC if it is defined */
-        NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc = *r_amf->plmn_Identity->mnc.list.array[selected_plmn_identity];
-        LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
+      /* amf_Identifier */
+      uint32_t amf_Id = BIT_STRING_to_uint32(&r_amf->amf_Identifier);
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id = amf_Id >> 16;
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id    = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id;
+      NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer   = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer;
+
+      ue_context_pP->ue_context.ue_guami.mcc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc;
+      ue_context_pP->ue_context.ue_guami.mnc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc;
+      ue_context_pP->ue_context.ue_guami.mnc_len = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc_len;
+      ue_context_pP->ue_context.ue_guami.amf_region_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id;
+      ue_context_pP->ue_context.ue_guami.amf_set_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id;
+      ue_context_pP->ue_context.ue_guami.amf_pointer = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer;
+
+      MSC_LOG_TX_MESSAGE(MSC_NGAP_GNB,
+                          MSC_NGAP_AMF,
+                          (const char *)&message_p->ittiMsg.ngap_nas_first_req,
+                          sizeof(ngap_nas_first_req_t),
+                          MSC_AS_TIME_FMT" NGAP_NAS_FIRST_REQ gNB %u UE %x",
+                          MSC_AS_TIME_ARGS(ctxt_pP),
+                          ctxt_pP->module_id,
+                          ctxt_pP->rnti);
+      LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUAMI amf_set_id %u amf_region_id %u ue %x\n",
             ctxt_pP->module_id,
-            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.mnc,
+            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_set_id,
+            NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_region_id,
             ue_context_pP->ue_context.rnti);
-      }
-    } else {
-      /* TODO */
-    }
-
-    /* amf_Identifier */
-    uint32_t amf_Id = BIT_STRING_to_uint32(&r_amf->amf_Identifier);
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id = amf_Id >> 16;
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id    = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id;
-    NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer   = ue_context_pP->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer;
-
-    ue_context_pP->ue_context.ue_guami.mcc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mcc;
-    ue_context_pP->ue_context.ue_guami.mnc = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc;
-    ue_context_pP->ue_context.ue_guami.mnc_len = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.mnc_len;
-    ue_context_pP->ue_context.ue_guami.amf_region_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_region_id;
-    ue_context_pP->ue_context.ue_guami.amf_set_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id;
-    ue_context_pP->ue_context.ue_guami.amf_pointer = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer;
-
-    MSC_LOG_TX_MESSAGE(MSC_NGAP_GNB,
-                        MSC_NGAP_AMF,
-                        (const char *)&message_p->ittiMsg.ngap_nas_first_req,
-                        sizeof(ngap_nas_first_req_t),
-                        MSC_AS_TIME_FMT" NGAP_NAS_FIRST_REQ gNB %u UE %x",
-                        MSC_AS_TIME_ARGS(ctxt_pP),
-                        ctxt_pP->module_id,
-                        ctxt_pP->rnti);
-    LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUAMI amf_set_id %u amf_region_id %u ue %x\n",
-          ctxt_pP->module_id,
-          NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_set_id,
-          NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_region_id,
-          ue_context_pP->ue_context.rnti);
   }
 
   itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, message_p);
@@ -718,6 +719,8 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     struct rrc_gNB_ue_context_s *ue_context_p = NULL;
     protocol_ctxt_t              ctxt;
     memset(&ctxt, 0, sizeof(protocol_ctxt_t));
+    MessageDef *message_p;
+
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
     ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
@@ -784,8 +787,28 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         /*
         * switch UL or DL NAS message without RRC piggybacked to SRB2 if active.
         */
+       switch (RC.nrrrc[ctxt.module_id]->node_type) {
+        case ngran_gNB_CU:
+          /* Transfer data to PDCP */
+          nr_rrc_data_req (
+              &ctxt,
+              DCCH, // ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
+              (*rrc_gNB_mui)++,
+              SDU_CONFIRM_NO,
+              length,
+              buffer,
+              PDCP_TRANSMISSION_MODE_CONTROL);
+          break;
+
+        case ngran_gNB_DU:
+          // nothing to do for DU
+          AssertFatal(1==0,"nothing to do for DU\n");
+          break;
+
+        case ngran_gNB:
+        {
+          // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
-        MessageDef *message_p;
         uint8_t *message_buffer;
         message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
         memcpy (message_buffer, buffer, length);
@@ -796,16 +819,22 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
         LOG_I(NR_RRC, "Send DL NAS message \n");
 #else
-        /* Transfer data to PDCP */
-        nr_rrc_data_req (
-            &ctxt,
-            ue_context_p->ue_context.Srb2.Srb_info.Srb_id,
-            (*rrc_gNB_mui)++,
-            SDU_CONFIRM_NO,
-            length,
-            buffer,
-            PDCP_TRANSMISSION_MODE_CONTROL);
+          /* Transfer data to PDCP */
+          nr_rrc_data_req (
+              &ctxt,
+              DCCH,
+              (*rrc_gNB_mui)++,
+              SDU_CONFIRM_NO,
+              length,
+              buffer,
+              PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+        }
+          break;
+
+        default :
+            LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt.module_id]->node_type);
+      }
         return (0);
     }
 }

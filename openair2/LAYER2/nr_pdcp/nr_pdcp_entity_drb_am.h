@@ -23,6 +23,7 @@
 #define _NR_PDCP_ENTITY_DRB_AM_H_
 
 #include "nr_pdcp_entity.h"
+#include "platform_types.h"
 
 typedef struct {
   nr_pdcp_entity_t common;

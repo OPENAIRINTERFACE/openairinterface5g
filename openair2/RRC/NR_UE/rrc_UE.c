@@ -68,7 +68,7 @@
 #include "RRC/NAS/rb_config.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-#if ITTI_SIM
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
 #endif
 
@@ -127,7 +127,6 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 );
 
 mui_t nr_rrc_mui=0;
-uint8_t first_rrcreconfigurationcomplete = 0;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -199,7 +198,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_srb_bearer2add_list,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_drb_bearer2add_list);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -1312,7 +1312,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   const char *nas_msg;
   int   nas_msg_length;
  if (AMF_MODE_ENABLED) {
-#if ITTI_SIM
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
     as_nas_info_t initialNasMsg;
     generateRegistrationRequest(&initialNasMsg);
     nas_msg = (char*)initialNasMsg.data;
@@ -1354,86 +1354,85 @@ static void rrc_ue_generate_RRCSetupComplete(
 }
 
 int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB_INFO *const Srb_info, const uint8_t gNB_index ){
-    NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
-    asn_dec_rval_t dec_rval;
-    int rval=0;
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
-    //    LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",ue_mod_idP,Srb_info->Rx_buffer.payload_size,
-    //    NR_UE_rrc_inst[ue_mod_idP].Info[gNB_index].State);
-    dec_rval = uper_decode(NULL,
-                           &asn_DEF_NR_DL_CCCH_Message,
-                           (void **)&dl_ccch_msg,
-                           (uint8_t *)Srb_info->Rx_buffer.Payload,
-                           100,0,0);
-    
-    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-      xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
-    // }
-    
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-      LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
-      return -1;
-    }
-    
-    if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
-      if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_SI_RECEIVED) {
-        switch (dl_ccch_msg->message.choice.c1->present) {
-          case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
-            LOG_I(NR_RRC, "[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",
-                  ctxt_pP->module_id,
-                  ctxt_pP->frame);
-            rval = 0;
-            break;
-    
-          case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
-            LOG_I(NR_RRC,
-                  "[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",
-                  ctxt_pP->module_id,
-                  ctxt_pP->frame);
-            rval = 0;
-            break;
-    
-          case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
-            LOG_I(NR_RRC,
-                  "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n",
-                  ctxt_pP->module_id,
-                  ctxt_pP->frame,
-                  ctxt_pP->rnti);
+  NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
+  asn_dec_rval_t dec_rval;
+  int rval=0;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
+  //    LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",ue_mod_idP,Srb_info->Rx_buffer.payload_size,
+  //    NR_UE_rrc_inst[ue_mod_idP].Info[gNB_index].State);
+  dec_rval = uper_decode(NULL,
+                         &asn_DEF_NR_DL_CCCH_Message,
+                         (void **)&dl_ccch_msg,
+                         (uint8_t *)Srb_info->Rx_buffer.Payload,
+                         100,0,0);
 
-            // Get configuration
-            // Release T300 timer
-            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
-            
-            nr_rrc_ue_process_masterCellGroup(
-              ctxt_pP,
-              gNB_index,
-              &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
-            nr_sa_rrc_ue_process_radioBearerConfig(
-              ctxt_pP,
-              gNB_index,
-              &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
-            nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
-            nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
-            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
-            rrc_ue_generate_RRCSetupComplete(
-              ctxt_pP,
-              gNB_index,
-              dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier,
-              NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
-            rval = 0;
-            break;
-    
-          default:
-            LOG_E(NR_RRC, "[UE%d] Frame %d : Unknown message\n",
-                  ctxt_pP->module_id,
-                  ctxt_pP->frame);
-            rval = -1;
-            break;
-        }
+  // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
+  // }
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+    LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
+    return -1;
+  }
+
+  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_SI_RECEIVED;
+  if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
+    if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_SI_RECEIVED) {
+      switch (dl_ccch_msg->message.choice.c1->present) {
+        case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
+          LOG_I(NR_RRC, "[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",
+                ctxt_pP->module_id,
+                ctxt_pP->frame);
+          rval = 0;
+          break;
+
+        case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
+          LOG_I(NR_RRC,
+                "[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",
+                ctxt_pP->module_id,
+                ctxt_pP->frame);
+          rval = 0;
+          break;
+
+        case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
+          LOG_I(NR_RRC,
+                "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n",
+                ctxt_pP->module_id,
+                ctxt_pP->frame,
+                ctxt_pP->rnti);
+          // Get configuration
+          // Release T300 timer
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
+
+          // nr_rrc_ue_process_masterCellGroup(
+          //   ctxt_pP,
+          //   gNB_index,
+          //   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
+          // nr_sa_rrc_ue_process_radioBearerConfig(
+          //   ctxt_pP,
+          //   gNB_index,
+          //   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+          nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
+          nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
+          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
+          rrc_ue_generate_RRCSetupComplete(
+            ctxt_pP,
+            gNB_index,
+            dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier,
+            NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
+          rval = 0;
+          break;
+
+        default:
+          LOG_E(NR_RRC, "[UE%d] Frame %d : Unknown message\n",
+                ctxt_pP->module_id,
+                ctxt_pP->frame);
+          rval = -1;
+          break;
       }
     }
-  
+  }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
   return rval;
 }
@@ -1561,29 +1560,34 @@ nr_rrc_ue_process_securityModeCommand(
       securityMode = NR_CipheringAlgorithm_spare1;
       break;
   }
+  NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm =
+  securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm;
 
-  switch (*securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm) {
-    case NR_IntegrityProtAlgorithm_nia1:
-      LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia1\n",ctxt_pP->module_id);
-      securityMode |= 1 << 5;
-      break;
+  if (securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm != NULL)
+  {
+    switch (*securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm) {
+      case NR_IntegrityProtAlgorithm_nia1:
+        LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia1\n",ctxt_pP->module_id);
+        securityMode |= 1 << 5;
+        break;
 
-    case NR_IntegrityProtAlgorithm_nia2:
-      LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia2\n",ctxt_pP->module_id);
-      securityMode |= 1 << 6;
-      break;
+      case NR_IntegrityProtAlgorithm_nia2:
+        LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia2\n",ctxt_pP->module_id);
+        securityMode |= 1 << 6;
+        break;
 
-    default:
-      LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to none\n",ctxt_pP->module_id);
-      securityMode |= 0x70 ;
-      break;
+      default:
+        LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to none\n",ctxt_pP->module_id);
+        securityMode |= 0x70 ;
+        break;
+    }
+
+    NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
+    *securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm;
+
   }
 
   LOG_D(NR_RRC,"[UE %d] security mode is %x \n",ctxt_pP->module_id, securityMode);
-  NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm =
-    securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm;
-  NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
-    *securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm;
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   //memset((void *)&SecurityModeCommand,0,sizeof(SecurityModeCommand_t));
   ul_dcch_msg.message.present           = NR_UL_DCCH_MessageType_PR_c1;
@@ -1595,6 +1599,7 @@ nr_rrc_ue_process_securityModeCommand(
   } else {
     LOG_I(NR_RRC, "rrc_ue_process_securityModeCommand, security mode failure case \n");
     ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeFailure;
+    ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeComplete;
   }
 
   uint8_t *kRRCenc = NULL;
@@ -1660,9 +1665,9 @@ nr_rrc_ue_process_securityModeCommand(
                  enc_rval.failed_type->name, enc_rval.encoded);
 
    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-      xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+     xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
    }
-
+    log_dump(MAC, buffer, 16, LOG_DUMP_CHAR, "securityModeComplete payload: ");
     LOG_D(NR_RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
 
     for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
@@ -1683,7 +1688,7 @@ nr_rrc_ue_process_securityModeCommand(
     GNB_RRC_DCCH_DATA_IND (message_p).size    = (enc_rval.encoded + 7) / 8;
     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-    rrc_data_req (
+    rrc_data_req_ue (
       ctxt_pP,
       DCCH,
       nr_rrc_mui++,
@@ -1701,6 +1706,10 @@ nr_rrc_ue_process_securityModeCommand(
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index) {
   uint8_t i=0,rv[6];
 
+  if(IS_SOFTMODEM_NOS1) {
+    AMF_MODE_ENABLED = 1;
+  }
+  if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
   if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
@@ -1730,6 +1739,17 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
     LOG_T(NR_RRC,"\n");
     /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
     UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
+
+    log_dump(RRC,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
+    LOG_DUMP_CHAR,"RRCSetupRequest :\n");
+    rrc_data_req_ue (
+      ctxt_pP,
+      DCCH,
+      nr_rrc_mui++,
+      SDU_CONFIRM_NO,
+      NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
+      (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+      PDCP_TRANSMISSION_MODE_CONTROL);
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
@@ -2135,12 +2155,12 @@ rrc_ue_process_rrcReconfiguration(
     ie = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration;
     if (ie->measConfig != NULL) {
       LOG_I(NR_RRC, "Measurement Configuration is present\n");
-      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
+//      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
     }
 
     if (ie->radioBearerConfig != NULL) {
       LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
-      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+//      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
     }
 
     /* Check if there is dedicated NAS information to forward to NAS */
@@ -2153,34 +2173,11 @@ rrc_ue_process_rrcReconfiguration(
       for (list_count = 0; list_count < ie->nonCriticalExtension->dedicatedNAS_MessageList->list.count; list_count++) {
         pdu_length = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->size;
         pdu_buffer = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->buf;
-#ifdef ITTI_SIM
-        uint8_t msg_type = 0;
-        if((pdu_buffer + 1) != NULL){
-          if (*(pdu_buffer + 1) > 0 ) {
-            if((pdu_buffer + 9) != NULL){
-                msg_type = *(pdu_buffer + 9);
-            } else {
-              LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
-              return;
-            }
-          } else {
-            if((pdu_buffer + 2) != NULL){
-              msg_type = *(pdu_buffer + 2);
-            } else {
-                LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
-                return;
-            }
-          }
-        }
-        if(msg_type == REGISTRATION_ACCEPT){
-          LOG_I(NR_RRC, "[UE] Received REGISTRATION ACCEPT message\n");
-        }
-#endif
         msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_CONN_ESTABLI_CNF);
         NAS_CONN_ESTABLI_CNF(msg_p).errCode = AS_SUCCESS;
         NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length = pdu_length;
         NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data = pdu_buffer;
-        itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+        itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
       }
 
       free (ie->nonCriticalExtension->dedicatedNAS_MessageList);
@@ -2277,46 +2274,14 @@ nr_rrc_ue_decode_dcch(
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
             {
-                rrc_ue_process_rrcReconfiguration(ctxt_pP,
-                                                    dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
-                                                    gNB_indexP);
-                nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
-                                            gNB_indexP,
-                                            dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
-
-                if (first_rrcreconfigurationcomplete == 0) {
-                    first_rrcreconfigurationcomplete = 1;
-#ifdef ITTI_SIM
-                  if (AMF_MODE_ENABLED) {
-                    as_nas_info_t initialNasMsg;
-                    memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-                    generateRegistrationComplete(&initialNasMsg, NULL);
-                    if(initialNasMsg.length > 0){
-                        MessageDef *message_p;
-                        message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_UPLINK_DATA_REQ);
-                        NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
-                        itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                        LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
-                    }
-                    as_nas_info_t pduEstablishMsg;
-                    memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-                    generatePduSessionEstablishRequest(&pduEstablishMsg);
-                    if(initialNasMsg.length > 0){
-                        MessageDef *message_p;
-                        message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_UPLINK_DATA_REQ);
-                        NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
-                        NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
-                        itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                        LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
-                    }
-                  }
-#endif
-                }
+              rrc_ue_process_rrcReconfiguration(ctxt_pP,
+                                                  dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
+                                                  gNB_indexP);
+              nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
+                                          gNB_indexP,
+                                          dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+              break;
             }
-                break;
 
             case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
             case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
@@ -2362,59 +2327,13 @@ nr_rrc_ue_decode_dcch(
                   /* This message hold a dedicated info NAS payload, forward it to NAS */
                   NR_DedicatedNAS_Message_t *dedicatedNAS_Message =
                       dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message;
-                  uint32_t pdu_length;
-                  uint8_t *pdu_buffer;
-                  pdu_length = dedicatedNAS_Message->size;
-                  pdu_buffer = dedicatedNAS_Message->buf;
-#ifdef ITTI_SIM
-                  LOG_I(NR_RRC, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", ctxt_pP->module_id,  messages_info[NAS_DOWNLINK_DATA_IND].name,
-                        ctxt_pP->module_id, pdu_length, pdu_buffer);
-                  as_nas_info_t initialNasMsg;
-                  uint8_t msg_type = 0;
-                  memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-                  if((pdu_buffer + 1) != NULL){
-                    if (*(pdu_buffer + 1) > 0 ) {
-                      msg_type = *(pdu_buffer + 9);
-                    } else {
-                      msg_type = *(pdu_buffer + 2);
-                    }
-                  }
-                  if((pdu_buffer + 2) == NULL){
-                    LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
-                    return 0;
-                  }
 
-                  switch(msg_type){
-                    case FGS_IDENTITY_REQUEST:
-                       generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3));
-                       break;
-                    case FGS_AUTHENTICATION_REQUEST:
-                       generateAuthenticationResp(&initialNasMsg, pdu_buffer);
-                       break;
-                    case FGS_SECURITY_MODE_COMMAND:
-                      generateSecurityModeComplete(&initialNasMsg);
-                      break;
-                    default:
-                       LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
-                       break;
-                  }
-                  if(initialNasMsg.length > 0){
-                    MessageDef *message_p;
-                    message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_UPLINK_DATA_REQ);
-                    NAS_UPLINK_DATA_REQ(message_p).UEid          = ctxt_pP->module_id;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
-                    NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
-                    itti_send_msg_to_task(TASK_RRC_NRUE, ctxt_pP->instance, message_p);
-                    LOG_I(NR_RRC, " Send NAS_UPLINK_DATA_REQ message\n");
-                  }
-#else
                   MessageDef *msg_p;
                   msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_DOWNLINK_DATA_IND);
                   NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
-                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
-                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
-                  itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
-#endif
+                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = dedicatedNAS_Message->size;
+                  NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = dedicatedNAS_Message->buf;
+                  itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
               }
             }
 
@@ -2482,7 +2401,7 @@ void *rrc_nrue_task( void *args_p ) {
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
 
       case NR_RRC_MAC_CCCH_DATA_IND:
-        LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
+        LOG_I(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
               ue_mod_id,
               NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
               ITTI_MSG_NAME (msg_p),
@@ -2502,7 +2421,7 @@ void *rrc_nrue_task( void *args_p ) {
       /* PDCP messages */
       case NR_RRC_DCCH_DATA_IND:
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, NR_RRC_DCCH_DATA_IND (msg_p).module_id, GNB_FLAG_NO, NR_RRC_DCCH_DATA_IND (msg_p).rnti, NR_RRC_DCCH_DATA_IND (msg_p).frame, 0,NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
-        LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
+        LOG_I(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
               NR_RRC_DCCH_DATA_IND (msg_p).module_id,
               ITTI_MSG_NAME (msg_p),
               NR_RRC_DCCH_DATA_IND (msg_p).frame,

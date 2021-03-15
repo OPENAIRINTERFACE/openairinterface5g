@@ -787,12 +787,12 @@ add_dependencies(X2AP_ENB X2AP_LIB rrc_flag x2_flag)
 
 # F1AP
 ##############
-add_list1_option(F1AP_RELEASE R15 "F1AP ASN.1 grammar version" R15)
+add_list1_option(F1AP_RELEASE R16 "F1AP ASN.1 grammar version" R16)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
-if (${F1AP_RELEASE} STREQUAL "R15")
-  make_version(F1AP_VERSION 15 2 1)
-  set (ASN1RELDIR R15.2.1)
-endif(${F1AP_RELEASE} STREQUAL "R15")
+if (${F1AP_RELEASE} STREQUAL "R16")
+  make_version(F1AP_VERSION 16 3 1)
+  set (ASN1RELDIR R16.3.1)
+endif(${F1AP_RELEASE} STREQUAL "R16")
 add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
 set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
 set(F1AP_ASN_FILES
@@ -987,7 +987,7 @@ add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION w
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 add_boolean_option(ITTI_SIM                 False         "enable itti simulator")
-
+add_boolean_option(RFSIM_NAS                False         "enable rfsim nas")
 ########################
 # Include order
 ##########################
@@ -1970,6 +1970,7 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_drb_am.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_srb.c
   )
 
 set(L2_SRC
@@ -1987,6 +1988,7 @@ set(L2_SRC
   ${RRC_DIR}/rrc_eNB_S1AP.c
   ${RRC_DIR}/rrc_eNB_M2AP.c
   ${RRC_DIR}/rrc_eNB_UE_context.c
+  ${NR_RRC_DIR}/rrc_gNB_UE_context.c
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface.c
   ${RRC_DIR}/L2_interface_common.c
@@ -2530,7 +2532,7 @@ if(NAS_UE)
 endif()
 
 
-if(ITTI_SIM)
+if(ITTI_SIM OR RFSIM_NAS)
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -3140,9 +3142,7 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
-  NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
-  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
+  NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB} ${NAS_SIM_LIB}
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB
   -Wl,--end-group z dl)
 

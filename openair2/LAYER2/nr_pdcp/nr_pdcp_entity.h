@@ -23,6 +23,7 @@
 
 #ifndef _NR_PDCP_ENTITY_H_
 #define _NR_PDCP_ENTITY_H_
+#include "platform_types.h"
 
 typedef struct nr_pdcp_entity_t {
   /* functions provided by the PDCP module */

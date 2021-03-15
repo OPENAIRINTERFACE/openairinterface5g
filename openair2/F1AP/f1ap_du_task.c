@@ -103,10 +103,10 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
 
   /* setup parameters for F1U and start the server */
   const cudu_params_t params = {
-    .local_ipv4_address  = RC.mac[instance]->eth_params_n.my_addr,
-    .local_port          = RC.mac[instance]->eth_params_n.my_portd,
-    .remote_ipv4_address = RC.mac[instance]->eth_params_n.remote_addr,
-    .remote_port         = RC.mac[instance]->eth_params_n.remote_portd
+    .local_ipv4_address  = RC.nrmac[instance]->eth_params_n.my_addr,
+    .local_port          = RC.nrmac[instance]->eth_params_n.my_portd,
+    .remote_ipv4_address = RC.nrmac[instance]->eth_params_n.remote_addr,
+    .remote_port         = RC.nrmac[instance]->eth_params_n.remote_portd
   };
   AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
@@ -175,10 +175,24 @@ void *F1AP_DU_task(void *arg) {
                                     &received_msg->ittiMsg.sctp_data_ind);
         break;
 
+      case F1AP_INITIAL_UL_RRC_MESSAGE: // to rrc
+        LOG_I(F1AP, "DU Task Received F1AP_INITIAL_UL_RRC_MESSAGE\n");
+
+        f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(received_msg);
+        DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,msg->crnti,
+                                                msg->rrc_container,
+                                                msg->rrc_container_length);
+        break;
+
      case F1AP_UL_RRC_MESSAGE: // to rrc
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                        &F1AP_UL_RRC_MESSAGE(received_msg));
+        if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+          DU_send_UL_NR_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                                             &F1AP_UL_RRC_MESSAGE(received_msg));
+        } else {
+          DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                                          &F1AP_UL_RRC_MESSAGE(received_msg));
+        }
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC

@@ -179,6 +179,7 @@ eth_params_t *eth_params;
 double cpuf;
 
 int oaisim_flag=0;
+uint8_t proto_agent_flag = 0;
 
 
 /* forward declarations */

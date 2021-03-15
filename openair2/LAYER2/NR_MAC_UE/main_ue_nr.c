@@ -39,6 +39,7 @@
 #include "PHY/defs_UE.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
@@ -52,9 +53,11 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t),NB_NR_UE_MAC_INST);
     if (rrc_inst) {
       nr_rrc_mac_config_req_ue(0,0,0,NULL,rrc_inst->cell_group_config);
-      if (IS_SOFTMODEM_NOS1){
+      
+      // if (IS_SOFTMODEM_NOS1){
+      if (1) {
         AssertFatal(rlc_module_init(0) == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
-        pdcp_layer_init();
+        nr_pdcp_layer_init_ue();
         nr_DRB_preconfiguration(nr_ue_mac_inst->crnti);
       }
 

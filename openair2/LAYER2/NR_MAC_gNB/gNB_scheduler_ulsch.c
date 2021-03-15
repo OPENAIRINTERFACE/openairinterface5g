@@ -227,11 +227,30 @@ void nr_process_mac_pdu(
         	//  end of MAC PDU, can ignore the rest.
         	break;
 
-        // MAC SDUs
         case UL_SCH_LCID_SRB1:
-              // todo
-              break;
-        case UL_SCH_LCID_SRB2:
+          if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+            //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+            mac_subheader_len = 3;
+            mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1 & 0x7f) << 8)
+                | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
+          } else {
+            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+            mac_subheader_len = 2;
+          }
+          LOG_I(MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
+          mac_rlc_data_ind(module_idP,
+              rnti,
+              module_idP,
+              frameP,
+              ENB_FLAG_YES,
+              MBMS_FLAG_NO,
+              rx_lcid,
+              (char *) (pdu_ptr + mac_subheader_len),
+              mac_sdu_len,
+              1,
+              NULL);
+          break;
+       case UL_SCH_LCID_SRB2:
               // todo
               break;
         case UL_SCH_LCID_SRB3:

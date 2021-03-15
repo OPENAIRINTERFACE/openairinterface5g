@@ -19,31 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file       nr_rlc_oai_api.h
- * \brief       Header file for nr_rlc_oai_api
- * \author      Guido Casati
- * \date        2020
- * \email:      guido.casati@iis.fraunhofe.de
- * \version     1.0
- * @ingroup     _rlc
+#include <stdint.h>
 
- */
+#ifndef _NR_PDCP_H_
+#define _NR_PDCP_H_
 
-#include "NR_RLC-BearerConfig.h"
-#include "NR_RLC-Config.h"
-#include "NR_LogicalChannelIdentity.h"
-#include "NR_RadioBearerConfig.h"
-#include "NR_CellGroupConfig.h"
-#include "openair2/RRC/NR/nr_rrc_proto.h"
+void pdcp_layer_init_for_CU(void);
+void nr_pdcp_layer_init_ue(void);
+void nr_DRB_preconfiguration(uint16_t crnti);
 
-/* from OAI */
-#include "pdcp.h"
-
-struct NR_RLC_Config;
-struct NR_LogicalChannelConfig;
-
-void nr_rlc_bearer_init(NR_RLC_BearerConfig_t *RLC_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR rb_type);
-
-void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config_pr);
-
-void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChannelConfig);
+#endif /* _NR_PDCP_H_ */

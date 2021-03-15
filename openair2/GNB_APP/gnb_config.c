@@ -77,7 +77,12 @@
 #include "NR_ControlResourceSet.h"
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
+#include "RRC/NR/MESSAGES/asn1_msg.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
+
 extern uint16_t sf_ahead;
+int macrlc_has_f1 = 0;
+extern ngran_node_t node_type;
 
 extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
@@ -475,6 +480,17 @@ void RCconfig_nr_macrlc() {
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
   // check number of instances is same as RRC/PDCP
   
+      }else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
+        printf("Configuring F1 interfaces for MACRLC\n");
+        RC.nrmac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
+        RC.nrmac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
+        RC.nrmac[j]->eth_params_n.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
+        RC.nrmac[j]->eth_params_n.my_portc                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTC_IDX].iptr);
+        RC.nrmac[j]->eth_params_n.remote_portc             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
+        RC.nrmac[j]->eth_params_n.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
+        RC.nrmac[j]->eth_params_n.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);;
+        RC.nrmac[j]->eth_params_n.transp_preference        = ETH_UDP_MODE;
+        macrlc_has_f1                                      = 1;
       }else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "cudu") == 0) {
         RC.nrmac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         RC.nrmac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
@@ -510,7 +526,8 @@ void RCconfig_nr_macrlc() {
       } 
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
-    AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
+    printf("No %s configuration found \n", CONFIG_STRING_MACRLC_LIST);
+    // AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
   }
 
 }
@@ -615,7 +632,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int                    num_gnbs                                                      = 0;
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   int32_t                gnb_id                                                        = 0;
-  int k;
+  int                    k                                                             = 0;
+
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   ////////// Identification parameters
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
@@ -701,6 +719,41 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       fix_scc(scc,ssb_bitmap);
     }
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
+
+    if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+      paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+      char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+      sprintf(aprefix,"%s.[%u].%s",GNB_CONFIG_STRING_GNB_LIST,i,GNB_CONFIG_STRING_SCTP_CONFIG);
+      config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+      rrc->node_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+      LOG_I(GNB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
+      rrc->node_name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
+      LOG_I(GNB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
+      rrc->eth_params_s.local_if_name            = strdup(*(GNBParamList.paramarray[i][GNB_LOCAL_S_IF_NAME_IDX].strptr));
+      rrc->eth_params_s.my_addr                  = strdup(*(GNBParamList.paramarray[i][GNB_LOCAL_S_ADDRESS_IDX].strptr));
+      rrc->eth_params_s.remote_addr              = strdup(*(GNBParamList.paramarray[i][GNB_REMOTE_S_ADDRESS_IDX].strptr));
+      rrc->eth_params_s.my_portc                 = *(GNBParamList.paramarray[i][GNB_LOCAL_S_PORTC_IDX].uptr);
+      rrc->eth_params_s.remote_portc             = *(GNBParamList.paramarray[i][GNB_REMOTE_S_PORTC_IDX].uptr);
+      rrc->eth_params_s.my_portd                 = *(GNBParamList.paramarray[i][GNB_LOCAL_S_PORTD_IDX].uptr);
+      rrc->eth_params_s.remote_portd             = *(GNBParamList.paramarray[i][GNB_REMOTE_S_PORTD_IDX].uptr);
+      rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
+      rrc->node_type                             = ngran_gNB_CU;
+      rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+      rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+    } else {
+      // set to ngran_gNB for now, it will get set to ngran_gNB_DU if macrlc entity which uses F1 is present
+      // Note: we will have to handle the case of ngran_ng_gNB_DU
+      if (macrlc_has_f1 == 0) {
+        rrc->node_type = ngran_gNB;
+        LOG_I(NR_RRC,"Setting node_type to ngran_gNB\n");
+      } else {
+        rrc->node_type = ngran_gNB_DU;
+        LOG_I(NR_RRC,"Setting node_type to ngran_gNB_DU\n");
+      }
+    }
+
+    rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
+
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -774,6 +827,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	  
       }//
     }//End for (k=0; k <num_gnbs ; k++)
+    memcpy(&rrc->configuration, &NRRRC_CONFIGURATION_REQ(msg_p), sizeof(NRRRC_CONFIGURATION_REQ(msg_p)));
   }//End if (num_gnbs>0)
 
   config_security(rrc);
@@ -1348,3 +1402,403 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
   return 0;
 }
 
+int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
+  int k;
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL);
+  int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal (i < num_gnbs,
+               "Failed to parse config file no %uth element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
+
+  if (num_gnbs > 0) {
+    // Output a list of all eNBs.
+    config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
+    AssertFatal(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr != NULL,
+                "gNB id %u is not defined in configuration file\n",i);
+    F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
+
+    for (k=0; k <num_gnbs ; k++) {
+      if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[k], *(GNBParamList.paramarray[i][GNB_GNB_NAME_IDX].strptr)) == 0) {
+        char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+        sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
+        paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
+        paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+        /* map parameter checking array instances to parameter definition array instances */
+        checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+        for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+          PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
+        config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+        paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+        F1AP_SETUP_REQ (msg_p).num_cells_available++;
+        F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+        LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
+        F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
+        LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
+        F1AP_SETUP_REQ (msg_p).tac[k]              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
+        F1AP_SETUP_REQ (msg_p).mcc[k]              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
+        F1AP_SETUP_REQ (msg_p).mnc[k]              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
+        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
+        AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
+                    (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
+                    "BAD MNC DIGIT LENGTH %d",
+                    F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
+        F1AP_SETUP_REQ (msg_p).nr_cellid[k] = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
+        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
+        LOG_I(GNB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.remote_addr);
+        LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
+        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
+        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4 = 1;
+        //strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6_address, "");
+        strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.remote_addr);
+        LOG_I(GNB_APP,"F1AP: DU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.my_addr);
+        LOG_I(GNB_APP,"FIAP: DU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.my_addr));
+        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
+        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
+        //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
+        strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.my_addr);
+        //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
+        sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
+        config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+        F1AP_SETUP_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+        F1AP_SETUP_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+        gNB_RRC_INST *rrc = RC.nrrrc[k];
+        // wait until RRC cell information is configured
+        int cell_info_configured = 0;
+
+        do {
+          LOG_I(GNB_APP,"ngran_gNB_DU: Waiting for basic cell configuration\n");
+          usleep(100000);
+          pthread_mutex_lock(&rrc->cell_info_mutex);
+          cell_info_configured = rrc->cell_info_configured;
+          pthread_mutex_unlock(&rrc->cell_info_mutex);
+        } while (cell_info_configured == 0);
+
+        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).mcc[k];
+        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
+        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
+        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
+        // F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier.physCellId;
+        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = 0;
+        F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
+
+        if (0) {
+          LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
+          F1AP_SETUP_REQ (msg_p).fdd_flag = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn = 26200UL;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0] = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active = 0;
+        } else {
+          /***************** for test *****************/
+          LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
+          F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_arfcn             = 26200UL;
+          // For LTE use scs field to carry prefix type and number of antennas
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_scs                  = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_scs                  = 0;
+          // use nrb field to hold LTE N_RB_DL (0...5)
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = 3;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = 3;
+          // RK: we need to check there value for FDD's frequency_bands DL/UL
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_band[0]           = 7;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_band[0]           = 7;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_sul_band[0]           = 7;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
+          /***************** for test *****************/
+        }
+
+        F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = "0";
+        F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
+        F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier.MIB;
+        F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier.SIB1;
+        F1AP_SETUP_REQ (msg_p).mib_length[k]                                 = rrc->carrier.sizeof_MIB;
+        F1AP_SETUP_REQ (msg_p).sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
+        break;
+      }
+    }
+  }
+  return 0;
+}
+
+int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t mnc,uint8_t mnc_digit_length) {
+  NR_SIB1_t *sib1 = carrier->siblock1->message.choice.c1->choice.systemInformationBlockType1;
+  AssertFatal(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->plmn_IdentityList.list.count > 0,
+              "plmn info isn't there\n");
+  AssertFatal(mnc_digit_length == 2 || mnc_digit_length == 3,
+              "impossible mnc_digit_length %d\n", mnc_digit_length);
+  NR_PLMN_Identity_t *plmn_Identity = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]
+                                            ->plmn_IdentityList.list.array[0];
+
+  // check if mcc is different and return failure if so
+  if (mcc !=
+      ((*plmn_Identity->mcc->list.array[0])*100)+
+      ((*plmn_Identity->mcc->list.array[1])*10) +
+      (*plmn_Identity->mcc->list.array[2])) {
+    LOG_E(GNB_APP, "mcc in F1AP_SETUP_RESP message is different from mcc in DU \n");
+    return(0);
+  }
+
+  // check that mnc digit length is different and return failure if so
+  if (mnc_digit_length != plmn_Identity->mnc.list.count) {
+    LOG_E(GNB_APP, "mnc(length: %d) in F1AP_SETUP_RESP message is different from mnc(length: %d) in DU \n",
+                    mnc_digit_length, plmn_Identity->mnc.list.count);
+    return 0;
+  }
+
+  // check that 2 digit mnc is different and return failure if so
+  if (mnc_digit_length == 2 &&
+      (mnc !=
+       (*plmn_Identity->mnc.list.array[0]*10) +
+       (*plmn_Identity->mnc.list.array[1]))) {
+    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%ld%ld) in DU \n",
+                    mnc, *plmn_Identity->mnc.list.array[0], *plmn_Identity->mnc.list.array[1]);
+    return(0);
+  }
+  else if (mnc_digit_length == 3 &&
+           (mnc !=
+            (*plmn_Identity->mnc.list.array[0]*100) +
+            (*plmn_Identity->mnc.list.array[1]*10) +
+            (*plmn_Identity->mnc.list.array[2]))) {
+    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%ld%ld%ld) in DU \n",
+                    mnc, *plmn_Identity->mnc.list.array[0], *plmn_Identity->mnc.list.array[1], *plmn_Identity->mnc.list.array[2]);
+    return(0);
+  }
+
+  // if we're here, the mcc/mnc match so return success
+  return(1);
+}
+
+void du_extract_and_decode_SI(int inst, int si_ind, uint8_t *si_container, int si_container_length) {
+  gNB_RRC_INST *rrc = RC.nrrrc[inst];
+  rrc_gNB_carrier_data_t *carrier = &rrc->carrier;
+  NR_BCCH_DL_SCH_Message_t *bcch_message ;
+  AssertFatal(si_ind == 0, "Can only handle a single SI block for now\n");
+  LOG_I(GNB_APP, "rrc inst %d: Trying to decode SI block %d @ %p, length %d\n", inst, si_ind, si_container, si_container_length);
+  // point to first SI block
+  bcch_message = &carrier->systemInformation;
+  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+                            &asn_DEF_NR_BCCH_DL_SCH_Message,
+                            (void **)&bcch_message,
+                            (const void *)si_container,
+                            si_container_length);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    AssertFatal(1==0, "[GNB_APP][NR_RRC inst %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
+                inst,
+                dec_rval.consumed );
+  }
+
+  if (bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1) {
+    switch (bcch_message->message.choice.c1->present) {
+      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
+        AssertFatal(1 == 0, "Should have received SIB1 from CU\n");
+        break;
+
+      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
+      {
+        NR_SystemInformation_t *si = bcch_message->message.choice.c1->choice.systemInformation;
+
+        if (si->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_systemInformation) {
+          for (int i = 0; i < si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count; i++) {
+            LOG_I(GNB_APP, "Extracting SI %d/%d\n", i, si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count);
+            SystemInformation_IEs__sib_TypeAndInfo__Member *typeAndInfo;
+            typeAndInfo = si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.array[i];
+
+            switch(typeAndInfo->present) {
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_NOTHING:
+                AssertFatal(0, "Should have received SIB2 SIB3 from CU\n");
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib2:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB2 in CU F1AP_SETUP_RESP message\n", inst);
+                carrier->sib2 = typeAndInfo->choice.sib2;
+                carrier->SIB23 = (uint8_t *)malloc(64);
+                memcpy((void *)carrier->SIB23, (void *)si_container, si_container_length);
+                carrier->sizeof_SIB23 = si_container_length;
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3:
+                carrier->sib3 = typeAndInfo->choice.sib3;
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB3 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib4:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB4 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib5:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB5 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib6:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB6 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib7:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB7 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib8:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB8 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib9:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB9 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib10_v1610:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB10 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib11_v1610:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB11 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib12_v1610:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB12 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib13_v1610:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB13 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib14_v1610:
+                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB14 in CU F1AP_SETUP_RESP message\n", inst);
+                break;
+              default:
+                AssertFatal(1 == 0,"Shouldn't have received this SI %d\n", typeAndInfo->present);
+                break;
+            }
+          }
+        }
+
+        break;
+      }
+
+      case NR_BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
+        AssertFatal(0, "Should have received SIB1 from CU\n");
+        break;
+    }
+  } else AssertFatal(1 == 0, "No SI messages\n");
+}
+
+void configure_gnb_du_mac(int inst) {
+  gNB_RRC_INST *rrc = RC.nrrrc[inst];
+  // LOG_I(GNB_APP,"Configuring MAC/L1 %d, carrier->sib2 %p\n", inst, &carrier->sib2->radioResourceConfigCommon);
+  LOG_I(GNB_APP,"Configuring gNB DU MAC/L1 %d \n", inst);
+  rrc_mac_config_req_gNB(rrc->module_id,
+                        rrc->configuration.ssb_SubcarrierOffset,
+                        rrc->configuration.pdsch_AntennaPorts,
+                        rrc->configuration.pusch_TargetSNRx10,
+                        rrc->configuration.pucch_TargetSNRx10,
+                        rrc->configuration.scc,
+                        0,
+                        0, // rnti
+                        (NR_CellGroupConfig_t *)NULL
+                        );
+}
+
+void gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
+  int i, j, si_ind;
+  LOG_I(GNB_APP, "cells_to_activated %d, RRC instances %d\n",
+        resp->num_cells_to_activate, RC.nb_nr_inst);
+
+  for (j = 0; j < resp->num_cells_to_activate; j++) {
+    for (i = 0; i < RC.nb_nr_inst; i++) {
+      rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
+      // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
+      LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
+            j, i, RC.nrrrc[i]->nr_cellid, resp->nr_cellid[j]);
+
+      if (RC.nrrrc[i]->nr_cellid == resp->nr_cellid[j] &&
+          (du_check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
+           resp->nrpci[j] == carrier->physCellId)) {
+        // copy system information and decode it
+        for (si_ind=0; si_ind<resp->num_SI[j]; si_ind++)  {
+
+          du_extract_and_decode_SI(i,
+                                   si_ind,
+                                   resp->SI_container[j][si_ind],
+                                   resp->SI_container_length[j][si_ind]);
+        }
+
+        // perform MAC/L1 common configuration
+        configure_gnb_du_mac(i);
+      } else {
+        LOG_E(GNB_APP, "F1 Setup Response not matching\n");
+      }
+    }
+  }
+}
+
+void set_node_type(void) {
+  int               j;
+  paramdef_t        MacRLC_Params[] = MACRLCPARAMS_DESC;
+  paramlist_def_t   MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
+  paramdef_t        GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t   GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+
+  config_getlist( &MacRLC_ParamList,MacRLC_Params,sizeof(MacRLC_Params)/sizeof(paramdef_t), NULL);   
+  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);  
+
+  if ( MacRLC_ParamList.numelt > 0) {
+    RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt; 
+    for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
+      if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
+        macrlc_has_f1 = 1;
+      }
+    }
+  }
+
+  if (strcmp(*(GNBParamList.paramarray[0][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+      node_type = ngran_gNB_CU;
+    } else {
+      if (macrlc_has_f1 == 0) {
+        node_type = ngran_gNB;
+        LOG_I(NR_RRC,"Setting node_type to ngran_gNB\n");
+      } else {
+        node_type = ngran_gNB_DU;
+        LOG_I(NR_RRC,"Setting node_type to ngran_gNB_DU\n");
+      }
+    }
+}
+
+void nr_read_config_and_init(void) {
+  MessageDef *msg_p = NULL;
+  uint32_t    gnb_id;
+  uint32_t    gnb_nb = RC.nb_nr_inst;
+
+  RCconfig_NR_L1();
+  set_node_type();
+  RCconfig_nr_macrlc();
+
+  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
+
+  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
+
+  AssertFatal (gnb_nb <= RC.nb_nr_inst,
+               "Number of gNB is greater than gNB defined in configuration file (%d/%d)!",
+               gnb_nb, RC.nb_nr_inst);
+
+  LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
+
+  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
+
+  for (gnb_id = 0; gnb_id < RC.nb_nr_inst ; gnb_id++) {
+    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, RC.nb_nr_inst);
+    memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
+    msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
+    RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
+  }
+
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    pdcp_layer_init_for_CU();
+    nr_DRB_preconfiguration(0x1234);
+    rrc_init_nr_global_param();
+  }
+}

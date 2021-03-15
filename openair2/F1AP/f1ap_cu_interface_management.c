@@ -37,6 +37,7 @@
 #include "f1ap_cu_interface_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
+extern RAN_CONTEXT_t RC;
 
 int CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
@@ -102,8 +103,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_SETUP_REQ); 
-  
+  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+
   /* assoc_id */
   F1AP_SETUP_REQ(message_p).assoc_id = assoc_id;
   
@@ -139,10 +140,11 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     served_celles_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->value.choice.GNB_DU_Served_Cells_Item);
     
     /* tac */
-    OCTET_STRING_TO_INT16(&(served_celles_item_p->served_Cell_Information.fiveGS_TAC), F1AP_SETUP_REQ(message_p).tac[i]);
-    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n",
-          i, F1AP_SETUP_REQ(message_p).tac[i]);
-
+    if (served_celles_item_p->served_Cell_Information.fiveGS_TAC) {
+      OCTET_STRING_TO_INT16(served_celles_item_p->served_Cell_Information.fiveGS_TAC, F1AP_SETUP_REQ(message_p).tac[i]);
+      LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n",
+            i, F1AP_SETUP_REQ(message_p).tac[i]);
+    }
     /* - nRCGI */
     TBCD_TO_MCC_MNC(&(served_celles_item_p->served_Cell_Information.nRCGI.pLMN_Identity), F1AP_SETUP_REQ(message_p).mcc[i],
                     F1AP_SETUP_REQ(message_p).mnc[i],
@@ -245,10 +247,18 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   );
 
   if (num_cells_available > 0) {
-    itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
+    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+      itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
+    } else {
+      itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
+    }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
-    itti_free(TASK_RRC_ENB,message_p);
+    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+      itti_free(TASK_RRC_GNB,message_p);
+    } else {
+      itti_free(TASK_RRC_ENB,message_p);
+    }
     return -1;
   }
   return 0;
@@ -356,20 +366,31 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
       //for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
       //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
       //printf("\n");
-      OCTET_STRING_fromBuf(&gNB_CUSystemInformation->sImessage,
-                           (const char*)f1ap_setup_resp->SI_container[i][0], 
-                           f1ap_setup_resp->SI_container_length[i][0]);
 
-      LOG_D(F1AP, "f1ap_setup_resp->SI_container_length = %d \n", f1ap_setup_resp->SI_container_length[0][0]);
+      // for (int sIBtype=2;sIBtype<33;sIBtype++) { //21 ? 33 ?
+      for (int sIBtype=2;sIBtype<21;sIBtype++) {
+        if (f1ap_setup_resp->SI_container[i][sIBtype]!=NULL) {
+          AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
+          F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
+          memset((void*)sib_item,0,sizeof(*sib_item));
+          sib_item->sIBtype = sIBtype;
+          OCTET_STRING_fromBuf(&sib_item->sIBmessage,
+                              (const char*)f1ap_setup_resp->SI_container[i][sIBtype], 
+                              f1ap_setup_resp->SI_container_length[i][sIBtype]);
+        
+          LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->SI_container_length[i][sIBtype]);
+          ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
+        }
+      }
       cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
 
 
-      F1AP_ProtocolExtensionContainer_160P9_t p_160P9_t;
-      memset((void *)&p_160P9_t, 0, sizeof(F1AP_ProtocolExtensionContainer_160P9_t));
+      F1AP_ProtocolExtensionContainer_154P112_t p_154P112_t;
+      memset((void *)&p_154P112_t, 0, sizeof(F1AP_ProtocolExtensionContainer_154P112_t));
 
-      ASN_SEQUENCE_ADD(&p_160P9_t.list,
+      ASN_SEQUENCE_ADD(&p_154P112_t.list,
                       cells_to_be_activated_list_itemExtIEs);
-      cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_160P9_t;
+      cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_154P112_t;
 
       free(gNB_CUSystemInformation);
       gNB_CUSystemInformation = NULL;
@@ -383,7 +404,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup response\n");
     return -1;
   }
 
@@ -469,7 +490,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup failure\n");
     return -1;
   }
 
@@ -829,17 +850,13 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
        protected_eutra_resources_item_ies = (F1AP_Protected_EUTRA_Resources_ItemIEs_t *)calloc(1, sizeof(F1AP_Protected_EUTRA_Resources_ItemIEs_t));
        protected_eutra_resources_item_ies->id = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
        protected_eutra_resources_item_ies->criticality = F1AP_Criticality_reject;
-       protected_eutra_resources_item_ies->value.present = F1AP_Protected_EUTRA_Resources_ItemIEs__value_PR_SpectrumSharingGroupID;
-       protected_eutra_resources_item_ies->value.choice.SpectrumSharingGroupID = 1L;
-
+       protected_eutra_resources_item_ies->value.present = F1AP_Protected_EUTRA_Resources_ItemIEs__value_PR_Protected_EUTRA_Resources_Item;
+       ((F1AP_Protected_EUTRA_Resources_Item_t*)&protected_eutra_resources_item_ies->value.choice.Protected_EUTRA_Resources_Item)->spectrumSharingGroupID = 123L;
+       memset(&protected_eutra_resources_item_ies->value.choice.Protected_EUTRA_Resources_Item,0,
+	      sizeof(F1AP_Protected_EUTRA_Resources_Item_t));
        ASN_SEQUENCE_ADD(&ie->value.choice.Protected_EUTRA_Resources_List.list, protected_eutra_resources_item_ies);
 
-       /* 8.2 ListofEUTRACellsinGNBDUCoordination */
-       protected_eutra_resources_item_ies = (F1AP_Protected_EUTRA_Resources_ItemIEs_t *)calloc(1, sizeof(F1AP_Protected_EUTRA_Resources_ItemIEs_t));
-       protected_eutra_resources_item_ies->id = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
-       protected_eutra_resources_item_ies->criticality = F1AP_Criticality_reject;
-       protected_eutra_resources_item_ies->value.present = F1AP_Protected_EUTRA_Resources_ItemIEs__value_PR_ListofEUTRACellsinGNBDUCoordination;
-
+/*
        F1AP_Served_EUTRA_Cells_Information_t served_eutra_cells_information;
        memset((void *)&served_eutra_cells_information, 0, sizeof(F1AP_Served_EUTRA_Cells_Information_t));
 
@@ -870,13 +887,14 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
        ASN_SEQUENCE_ADD(&protected_eutra_resources_item_ies->value.choice.ListofEUTRACellsinGNBDUCoordination.list, &served_eutra_cells_information);
 
        ASN_SEQUENCE_ADD(&ie->value.choice.Protected_EUTRA_Resources_List.list, protected_eutra_resources_item_ies);
+*/
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 gNB-CU CONFIGURATION UPDATE\n");
     return -1;
   }
 
