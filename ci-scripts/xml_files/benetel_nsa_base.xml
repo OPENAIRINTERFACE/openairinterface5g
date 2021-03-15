@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-FR1-TM1</htmlTabRef>
+	<htmlTabRef>BENETEL TEST-FR1-TM1</htmlTabRef>
 	<htmlTabName>FR1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
