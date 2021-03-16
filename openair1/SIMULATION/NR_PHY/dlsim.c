@@ -297,7 +297,7 @@ int main(int argc, char **argv)
 
   //uint8_t frame_mod4,num_pdcch_symbols = 0;
 
-  SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
+  SCM_t channel_model=Rayleigh1;//AWGN Rayleigh1 Rayleigh1_anticorr;
 
   NB_UE_INST = 1;
   //double pbch_sinr;
@@ -753,7 +753,7 @@ int main(int argc, char **argv)
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
- 				fs,
+                                fs/1e6,//sampling frequency in MHz
 				bw,
 				30e-9,
                                 0,
@@ -1030,7 +1030,6 @@ int main(int argc, char **argv)
           if (n_trials==1) printf("txlev[%d] = %d (%f dB) txlev_sum %d\n",aa,txlev[aa],10*log10((double)txlev[aa]),txlev_sum);
         }
         
-        
         for (i=(frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)); 
              i<(frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0)); 
              i++) {
@@ -1040,27 +1039,43 @@ int main(int argc, char **argv)
             s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
           }
         }
+
         double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size); 
-        //AWGN
+        //Compute AWGN variance
         sigma2_dB = 10 * log10((double)txlev_sum * ((double)UE->frame_parms.ofdm_symbol_size/(12*rel15->rbSize))) - SNR;
         sigma2    = pow(10, sigma2_dB/10);
         if (n_trials==1) printf("sigma2 %f (%f dB), txlev_sum %f (factor %f)\n",sigma2,sigma2_dB,10*log10((double)txlev_sum),(double)(double)UE->frame_parms.ofdm_symbol_size/(12*rel15->rbSize));
+
         for (aa=0; aa<n_rx; aa++) {
           bzero(r_re[aa],frame_length_complex_samples*sizeof(double));
           bzero(r_im[aa],frame_length_complex_samples*sizeof(double));
         }
         
+        // Apply MIMO Channel
+        if (channel_model != AWGN) multipath_tv_channel(gNB2UE,
+                             s_re,
+                             s_im,
+                             r_re,
+                             r_im,
+                             frame_length_complex_samples,
+                             0);
+
         for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
              i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);
              i++) {
 
           for (int aa_rx=0; aa_rx<n_rx; aa_rx++) {
-            // Apply MIMO Channel and then add noise
-            // sum up signals from different Tx antennas
-            for (aa=0; aa<n_tx; aa++) {
-              r_re[aa_rx][i] += s_re[aa][i];
-              r_im[aa_rx][i] += s_im[aa][i];
+
+            if (channel_model == AWGN) {
+              // sum up signals from different Tx antennas
+              r_re[aa_rx][i] = 0;
+              r_im[aa_rx][i] = 0;
+              for (aa=0; aa<n_tx; aa++) {
+                r_re[aa_rx][i] += s_re[aa][i];
+                r_im[aa_rx][i] += s_im[aa][i];
+              }
             }
+            // Add Gaussian noise
             ((short*) UE->common_vars.rxdata[aa_rx])[2*i]   = (short) ((r_re[aa_rx][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             ((short*) UE->common_vars.rxdata[aa_rx])[2*i+1] = (short) ((r_im[aa_rx][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
@@ -1245,6 +1260,8 @@ int main(int argc, char **argv)
       psnr+=0.2;
     }
   }*/
+
+  free_channel_desc_scm(gNB2UE);
 
   for (i = 0; i < n_tx; i++) {
     free(s_re[i]);
