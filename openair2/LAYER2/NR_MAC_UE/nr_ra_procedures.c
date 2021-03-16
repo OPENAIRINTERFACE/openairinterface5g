@@ -48,6 +48,8 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
+#include <executables/softmodem-common.h>
+
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 
 // Random Access procedure initialization as per 5.1.1 and initialization of variables specific
