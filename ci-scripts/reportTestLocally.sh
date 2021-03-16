@@ -749,7 +749,7 @@ function report_test {
         echo "      </tr>" >> ./test_simulator_results.html
 
         EPC_CONFIGS=("noS1")
-        TRANS_MODES=("tdd")
+        TRANS_MODES=("fdd" "tdd")
         BW_CASES=(106)
         for CN_CONFIG in ${EPC_CONFIGS[@]}
         do

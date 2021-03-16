@@ -77,6 +77,30 @@ typedef struct OAI_NR_UECapability_s {
   NR_UE_NR_Capability_t *UE_NR_Capability;
 } OAI_NR_UECapability_t;
 
+typedef enum requested_SI_List_e {
+  SIB2  = 1,
+  SIB3  = 2,
+  SIB4  = 4,
+  SIB5  = 8,
+  SIB6  = 16,
+  SIB7  = 32,
+  SIB8  = 64,
+  SIB9  = 128
+} requested_SI_List_t;
+
+// 3GPP TS 38.300 Section 9.2.6
+typedef enum RA_trigger_e {
+  RA_NOT_RUNNING,
+  INITIAL_ACCESS_FROM_RRC_IDLE,
+  RRC_CONNECTION_REESTABLISHMENT,
+  DURING_HANDOVER,
+  NON_SYNCHRONISED,
+  TRANSITION_FROM_RRC_INACTIVE,
+  TO_ESTABLISH_TA,
+  REQUEST_FOR_OTHER_SI,
+  BEAM_FAILURE_RECOVERY,
+} RA_trigger_t;
+
 typedef struct NR_UE_RRC_INST_s {
 
     NR_MeasConfig_t        *meas_config;
@@ -99,9 +123,12 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     uint8_t                        MBMS_flag;
-	OAI_NR_UECapability_t          *UECap;
-    uint8_t 					   *UECapability;
+	  OAI_NR_UECapability_t          *UECap;
+    uint8_t 					             *UECapability;
     uint8_t                        UECapability_size;
+
+    RA_trigger_t                   ra_trigger;
+    BIT_STRING_t                   requested_SI_List;
 
     NR_SystemInformation_t         *si[NB_CNX_UE];
     NR_SIB1_t                      *sib1[NB_CNX_UE];

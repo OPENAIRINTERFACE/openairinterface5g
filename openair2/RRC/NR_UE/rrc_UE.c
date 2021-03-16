@@ -414,6 +414,18 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
     for(nr_ue=0;nr_ue<NB_NR_UE_INST;nr_ue++){
       // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
       NR_UE_rrc_inst[nr_ue].selected_plmn_identity = 1;
+
+      // TODO: Put the appropriate list of SIBs
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.buf = CALLOC(1,4);
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[0] = SIB2 | SIB3 | SIB5;  // SIB2 - SIB9
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[1] = 0;                   // SIB10 - SIB17
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[2] = 0;                   // SIB18 - SIB25
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.buf[3] = 0;                   // SIB26 - SIB32
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.size= 4;
+      NR_UE_rrc_inst[nr_ue].requested_SI_List.bits_unused= 0;
+
+      NR_UE_rrc_inst[nr_ue].ra_trigger = RA_NOT_RUNNING;
+
       //  init RRC lists
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RLC_Bearer_Config_list, NR_maxLC_ID);
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SchedulingRequest_list, NR_maxNrofSR_ConfigPerCellGroup);
@@ -835,7 +847,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
           // After SI is received, prepare RRCConnectionRequest
           if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
             if (AMF_MODE_ENABLED) {
-              rrc_ue_generate_RRCSetupRequest( ctxt_pP, gNB_index );
+              nr_rrc_ue_generate_RRCSetupRequest( ctxt_pP->module_id, gNB_index );
             }
 
           if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_IDLE) {
@@ -1029,205 +1041,120 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
   return 0;
 }
 
-int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index, const uint8_t rsrq, const uint8_t rsrp ) {
-  NR_SIB1_t *sib1 = NR_UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index];
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_IN );
-  LOG_I( RRC, "[UE %d] : Dumping SIB 1\n", ctxt_pP->module_id );
-  const int n = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count;
-  for (int i = 0; i < n; ++i) {
-    NR_PLMN_Identity_t *PLMN_identity = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[i]->plmn_IdentityList.list.array[0];
-    int mccdigits = PLMN_identity->mcc->list.count;
-    int mncdigits = PLMN_identity->mnc.list.count;
+int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_List, NR_SIB1_t sib1) {
 
-    int mcc;
-    if (mccdigits == 2) {
-      mcc = *PLMN_identity->mcc->list.array[0]*10 + *PLMN_identity->mcc->list.array[1];
-    } else {
-      mcc = *PLMN_identity->mcc->list.array[0]*100 + *PLMN_identity->mcc->list.array[1]*10 + *PLMN_identity->mcc->list.array[2];
+  if(sib1.si_SchedulingInfo) {
+
+    bool SIB_to_request[32] = {};
+
+    LOG_D(RRC, "SIBs broadcasting: ");
+    for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
+      printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
     }
+    printf("\n");
 
-    int mnc;
-    if (mncdigits == 2) {
-      mnc = *PLMN_identity->mnc.list.array[0]*10 + *PLMN_identity->mnc.list.array[1];
-    } else {
-      mnc = *PLMN_identity->mnc.list.array[0]*100 + *PLMN_identity->mnc.list.array[1]*10 + *PLMN_identity->mnc.list.array[2];
-    }
+    LOG_D(RRC, "SIBs needed by UE: ");
+    for(int j = 0; j < 8*requested_SI_List.size; j++) {
+      if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
 
-    LOG_I( RRC, "PLMN %d MCC %0*d, MNC %0*d\n", i + 1, mccdigits, mcc, mncdigits, mnc);
-    // search internal table for provider name
-    int plmn_ind = 0;
+        printf("SIB%i  ", j + 2);
 
-    while (plmn_data[plmn_ind].mcc > 0) {
-      if ((plmn_data[plmn_ind].mcc == mcc) && (plmn_data[plmn_ind].mnc == mnc)) {
-        LOG_I( RRC, "Found %s (name from internal table)\n", plmn_data[plmn_ind].oper_short );
-        break;
-      }
-
-      plmn_ind++;
-    }
-  }
-  LOG_I( RRC, "TAC 0x%04x\n",
-         ((sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->size == 2)?((sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->buf[0]<<8) + sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode->buf[1]):0));
-  LOG_I( RRC, "cellReservedForOperatorUse                 : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse,
-         nr_SIBreserved(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse) );
-
-  LOG_I( RRC, "cellAccessRelatedInfo.cellIdentity         : raw:%"PRIu32" decoded:%02x.%02x.%02x.%02x\n",
-         BIT_STRING_to_uint32( &sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity ),
-         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[0],
-         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[1],
-         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[2],
-         sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.buf[3] >> sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity.bits_unused);
-  //LOG_I( RRC, "cellAccessRelatedInfo.cellBarred           : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.cellBarred, SIBbarred(sib1->cellAccessRelatedInfo.cellBarred) );
-  //LOG_I( RRC, "cellAccessRelatedInfo.intraFreqReselection : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.intraFreqReselection, SIBallowed(sib1->cellAccessRelatedInfo.intraFreqReselection) );
-  //LOG_I( RRC, "cellAccessRelatedInfo.csg_Indication       : %d\n", sib1->cellAccessRelatedInfo.csg_Indication );
-
-  //if (sib1->cellAccessRelatedInfo.csg_Identity)
-  //  LOG_I( RRC, "cellAccessRelatedInfo.csg_Identity         : %"PRIu32"\n", BIT_STRING_to_uint32(sib1->cellAccessRelatedInfo.csg_Identity) );
-  //else
-  //  LOG_I( RRC, "cellAccessRelatedInfo.csg_Identity         : not defined\n" );
-
-  LOG_I( RRC, "cellSelectionInfo.q_RxLevMin               : %ld\n", sib1->cellSelectionInfo->q_RxLevMin );
-
-  if (sib1->cellSelectionInfo->q_RxLevMinOffset)
-    LOG_I( RRC, "cellSelectionInfo.q_RxLevMinOffset         : %ld\n", *sib1->cellSelectionInfo->q_RxLevMinOffset );
-  else
-    LOG_I( RRC, "cellSelectionInfo.q_RxLevMinOffset         : not defined\n" );
-
-  //if (sib1->p_Max)
-  //  LOG_I( RRC, "p_Max                                      : %ld\n", *sib1->p_Max );
-  //else
-  //  LOG_I( RRC, "p_Max                                      : not defined\n" );
-
-  //LOG_I( RRC, "freqBandIndicator                          : %ld\n", sib1->freqBandIndicator );
-
-  if (sib1->si_SchedulingInfo->schedulingInfoList.list.count > 0) {
-    for (int i=0; i<sib1->si_SchedulingInfo->schedulingInfoList.list.count; i++) {
-      LOG_I( RRC, "si_Periodicity[%d]                          : %s\n", i, SIBPeriod[min(sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->si_Periodicity,7)]);
-
-      if (sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count > 0) {
-        char temp[32 * sizeof(SIBType[0])] = {0}; // maxSIB==32
-
-        for (int j=0; j<sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count; j++) {
-          sprintf( temp + j*sizeof(SIBType[0]), "%*s ", (int)sizeof(SIBType[0])-1, SIBType[min(sib1->si_SchedulingInfo->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0]->type,11)] );
+        SIB_to_request[j] = true;
+        for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
+          if(sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type == j) {
+            SIB_to_request[j] = false;
+            break;
+          }
         }
 
-        LOG_I( RRC, "siSchedulingInfoSIBType[%d]                 : %s\n", i, temp );
+      }
+    }
+    printf("\n");
+
+    LOG_D(RRC, "SIBs to request by UE: ");
+    bool do_ra = false;
+    for(int j = 0; j < 8*requested_SI_List.size; j++) {
+      if(SIB_to_request[j]) {
+        printf("SIB%i  ", j + 2);
+        do_ra = true;
+      }
+    }
+    printf("\n");
+
+    if(do_ra) {
+
+      NR_UE_rrc_inst[module_id].ra_trigger = REQUEST_FOR_OTHER_SI;
+      get_softmodem_params()->do_ra = 1;
+
+      if(sib1.si_SchedulingInfo->si_RequestConfig) {
+        LOG_D(RRC, "Trigger contention-free RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
       } else {
-        LOG_I( RRC, "mapping list %d is null\n", i );
+        LOG_D(RRC, "Trigger contention-based RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
       }
+
     }
-  } else {
-    LOG_E( RRC, "siSchedulingInfoPeriod[0]                  : PROBLEM!!!\n" );
-    return -1;
+
   }
 
-  if (sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon) {
-      //TODO
-  }
-
-  LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1->si_SchedulingInfo->si_WindowLength,8)] );
-  //LOG_I( RRC, "systemInfoValueTag                         : %ld\n", sib1->systemInfoValueTag );
-  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIperiod     = siPeriod_int[sib1->si_SchedulingInfo->schedulingInfoList.list.array[0]->si_Periodicity];
-  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIwindowsize = siWindowLength_int[sib1->si_SchedulingInfo->si_WindowLength];
-  LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
-         ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
-  //rrc_mac_config_req_ue
-  LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
-  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus = 1;
-  //NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
-
-  if (AMF_MODE_ENABLED) {
-    int cell_valid = 0;
-
-    //if (sib1->cellAccessRelatedInfo.cellBarred == LTE_SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred) {
-      /* Cell is not barred */
-      int plmn;
-      int plmn_number;
-      plmn_number = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count;
-
-      /* Compare requested PLMN and PLMNs from SIB1*/
-      for (plmn = 0; plmn < plmn_number; plmn++) {
-        NR_PLMN_Identity_t *plmn_Identity;
-        plmn_Identity = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[plmn]->plmn_IdentityList.list.array[0];
-
-        if (
-          (
-            (plmn_Identity->mcc == NULL)
-            ||
-            (
-              (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MCCdigit1 == *(plmn_Identity->mcc->list.array[0])) &&
-              (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MCCdigit2 == *(plmn_Identity->mcc->list.array[1])) &&
-              (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MCCdigit3 == *(plmn_Identity->mcc->list.array[2]))
-            )
-          )
-          &&
-          (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit1 == *(plmn_Identity->mnc.list.array[0]))
-          &&
-          (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit2 == *(plmn_Identity->mnc.list.array[1]))
-          &&
-          (
-            ((NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit3 == 0xf) && (plmn_Identity->mnc.list.count == 2))
-            ||
-            (NR_UE_rrc_inst[ctxt_pP->module_id].plmnID.MNCdigit3 == *(plmn_Identity->mnc.list.array[2]))
-          )
-        ) {
-          /* PLMN match, send a confirmation to NAS */
-          MessageDef  *msg_p;
-          msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_CELL_SELECTION_CNF);
-          NAS_CELL_SELECTION_CNF (msg_p).errCode = AS_SUCCESS;
-          NAS_CELL_SELECTION_CNF (msg_p).cellID = BIT_STRING_to_uint32(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity);
-          NAS_CELL_SELECTION_CNF (msg_p).tac = BIT_STRING_to_uint16(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode);
-          NAS_CELL_SELECTION_CNF (msg_p).rat = 0xFF;
-          NAS_CELL_SELECTION_CNF (msg_p).rsrq = rsrq;
-          NAS_CELL_SELECTION_CNF (msg_p).rsrp = rsrp;
-          itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
-          cell_valid = 1;
-          NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity = plmn + 1;
-          break;
-        }
-      }
-    //}
-
-    if (cell_valid == 0) {
-      /* Cell can not be used, ask PHY to try the next one */
-      MessageDef  *msg_p;
-      msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, PHY_FIND_NEXT_CELL_REQ);
-      itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
-      LOG_E(RRC,
-            "Synched with a cell, but PLMN doesn't match our SIM "
-            "(selected_plmn_identity %ld), the message PHY_FIND_NEXT_CELL_REQ "
-            "is sent but lost in current UE implementation!\n",
-            NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
-    }
-  }
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_OUT );
   return 0;
 }
 
-int nr_decode_BCCH_DLSCH_Message(
-  const protocol_ctxt_t *const ctxt_pP,
-  const uint8_t                gNB_index,
-  uint8_t               *const Sdu,
-  const uint8_t                Sdu_len,
-  const uint8_t                rsrq,
-  const uint8_t                rsrp ) {
+int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
+
+  switch(NR_UE_rrc_inst[module_id].ra_trigger){
+    case INITIAL_ACCESS_FROM_RRC_IDLE:
+      // After SIB1 is received, prepare RRCConnectionRequest
+      nr_rrc_ue_generate_RRCSetupRequest(module_id,gNB_index);
+      break;
+    case RRC_CONNECTION_REESTABLISHMENT:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case DURING_HANDOVER:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case NON_SYNCHRONISED:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case TRANSITION_FROM_RRC_INACTIVE:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case TO_ESTABLISH_TA:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case REQUEST_FOR_OTHER_SI:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    case BEAM_FAILURE_RECOVERY:
+      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      break;
+    default:
+      AssertFatal(1==0, "Invalid ra_trigger value!\n");
+      break;
+  }
+
+  return 0;
+}
+
+int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
+    module_id_t module_id,
+    const uint8_t gNB_index,
+    uint8_t *const Sdu,
+    const uint8_t Sdu_len,
+    const uint8_t rsrq,
+    const uint8_t rsrp) {
+
   NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
-  NR_SIB1_t *sib1 = NR_UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index];
+  NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN );
 
-  if (((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&1) == 1) &&  // SIB1 received
-      (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)) {
+  if (((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) &&  // SIB1 received
+      (NR_UE_rrc_inst[module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)) {
     // to prevent memory bloating
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
     return 0;
   }
 
-  nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_RECEIVING_SIB_NR );
-
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_NR_BCCH_DL_SCH_Message,(void *)bcch_message );
-  }
+  nr_rrc_set_sub_state( module_id, RRC_SUB_STATE_IDLE_RECEIVING_SIB_NR );
 
   asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                             &asn_DEF_NR_BCCH_DL_SCH_Message,
@@ -1235,11 +1162,15 @@ int nr_decode_BCCH_DLSCH_Message(
                             (const void *)Sdu,
                             Sdu_len );
 
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_BCCH_DL_SCH_Message,(void *)bcch_message );
+  }
+
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E( RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
-           ctxt_pP->module_id,
+    LOG_E( NR_RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
+           module_id,
            dec_rval.consumed );
-    log_dump(RRC, Sdu, Sdu_len, LOG_DUMP_CHAR,"   Received bytes:\n" );
+    log_dump(NR_RRC, Sdu, Sdu_len, LOG_DUMP_CHAR,"   Received bytes:\n" );
     // free the memory
     SEQUENCE_free( &asn_DEF_LTE_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
@@ -1249,35 +1180,53 @@ int nr_decode_BCCH_DLSCH_Message(
   if (bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1) {
     switch (bcch_message->message.choice.c1->present) {
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-        if ((ctxt_pP->frame % 2) == 0) {
-          // even frame
-          if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&1) == 0) {
-            NR_SIB1_t *sib1 = NR_UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index];
-            memcpy( (void *)sib1,
-                    (void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1,
-                    sizeof(NR_SIB1_t) );
-            LOG_D( RRC, "[UE %"PRIu8"] Decoding First SIB1\n", ctxt_pP->module_id );
-            nr_decode_SIB1( ctxt_pP, gNB_index, rsrq, rsrp );
+        if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 0) {
+          NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+          if(sib1 != NULL){
+            SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
+          }
+
+          sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+          if (*(int64_t*)sib1 != 1) {
+            NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
+            if( g_log->log_component[NR_RRC].level >= OAILOG_DEBUG ) {
+              xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) NR_UE_rrc_inst[module_id].sib1[gNB_index]);
+            }
+            LOG_I(NR_RRC, "SIB1 decoded\n");
+
+            // FIXME: improve condition for the RA trigger
+            // Check for on-demand not broadcasted SI
+            check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
+            if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
+              NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
+              // TODO: remove flag after full RA procedures implemented
+              get_softmodem_params()->do_ra = 1;
+            }
+            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+          } else {
+            LOG_E(NR_RRC, "SIB1 not decoded\n");
           }
         }
-
         break;
 
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&1) == 1) {
+        if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) {
+          LOG_W(NR_RRC, "Decoding SI not implemented yet\n");
+          // TODO: Decode SI
+          /*
           // SIB1 with schedulingInfoList is available
-          NR_SystemInformation_t *si = NR_UE_rrc_inst[ctxt_pP->module_id].si[gNB_index];
+          NR_SystemInformation_t *si = NR_UE_rrc_inst[module_id].si[gNB_index];
+
           memcpy( si,
                   bcch_message->message.choice.c1->choice.systemInformation,
                   sizeof(NR_SystemInformation_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
-                 ctxt_pP->module_id,
-                 ctxt_pP->frame );
+          LOG_I(NR_RRC, "[UE %"PRIu8"] Decoding SI\n", module_id);
           nr_decode_SI( ctxt_pP, gNB_index );
-          //if (nfapi_mode == 3)
-          //UE_mac_inst[ctxt_pP->module_id].SI_Decoded = 1;
-        }
 
+          if (nfapi_mode == 3)
+            UE_mac_inst[ctxt_pP->module_id].SI_Decoded = 1;
+           */
+        }
         break;
 
       case NR_BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
@@ -1286,10 +1235,10 @@ int nr_decode_BCCH_DLSCH_Message(
     }
   }
 
-  if (nr_rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
+  if (nr_rrc_get_sub_state(module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
     //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!AMF_MODE_ENABLED)) {
-      rrc_ue_generate_RRCSetupRequest(ctxt_pP, 0);
-      nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
+      nr_rrc_ue_generate_RRCSetupRequest(module_id, 0);
+      nr_rrc_set_sub_state( module_id, RRC_SUB_STATE_IDLE_CONNECTING );
     //}
   }
 
@@ -1488,41 +1437,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
   return rval;
 }
-
-/*brief decode SIB1 message*/
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
-
-  NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
-
-  asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                                                  &asn_DEF_NR_BCCH_DL_SCH_Message,
-                                                  (void **)&bcch_message,
-                                                  (const void *)bufferP,
-                                                  buffer_len);
-
-  if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-    LOG_D(RRC,"NR_BCCH_DL_SCH decode error\n");
-    SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
-    return -1;
-  }
-  else {
-    NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
-    if(sib1 != NULL){
-      SEQUENCE_free(&asn_DEF_NR_BCCH_BCH_Message, (void *)sib1, 1 );
-    }
-    sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-    if (*(int64_t*)sib1 != 1) {
-      LOG_I(RRC, "SIB1 decoded\n");
-      if( g_log->log_component[RRC].level >= OAILOG_DEBUG  )
-        xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void*)sib1);
-    }
-    else
-       LOG_E(PHY, "sib1 is starting by 8 times 0\n");
-  }
-
-  return 0;
-}
-
 
 // from NR SRB3
 int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
@@ -1784,10 +1698,10 @@ nr_rrc_ue_process_securityModeCommand(
 }
 
 //-----------------------------------------------------------------------------
-void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index) {
   uint8_t i=0,rv[6];
 
-  if(NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
+  if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
     for (i=0; i<6; i++) {
@@ -1801,16 +1715,16 @@ void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, cons
     }
 
     LOG_T(NR_RRC,"\n");
-    NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
-      do_RRCSetupRequest(
-        ctxt_pP->module_id,
-        (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-        rv);
-    LOG_I(NR_RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, eNB %d)\n",
-          ctxt_pP->module_id, ctxt_pP->frame, NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
+    NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size =
+       do_RRCSetupRequest(
+         module_id,
+         (uint8_t *)NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,
+         rv);
+    LOG_I(NR_RRC,"[UE %d] : Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, gNB %d)\n",
+          module_id, NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
 
-    for (i=0; i<NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
-      LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
+    for (i=0; i<NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
+      LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
     }
 
     LOG_T(NR_RRC,"\n");
@@ -2560,7 +2474,7 @@ void *rrc_nrue_task( void *args_p ) {
               NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
         //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-        nr_decode_BCCH_DLSCH_Message (&ctxt,
+        nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,

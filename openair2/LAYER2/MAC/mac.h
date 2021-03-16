@@ -493,7 +493,7 @@ typedef struct {
 
 /*! \brief Uplink SCH PDU Structure */
 typedef struct {
-  int8_t payload[SCH_PAYLOAD_SIZE_MAX]; /*!< \brief SACH payload */
+  uint8_t payload[SCH_PAYLOAD_SIZE_MAX]; /*!< \brief SACH payload */
   uint16_t Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
 
