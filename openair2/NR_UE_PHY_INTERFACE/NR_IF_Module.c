@@ -62,7 +62,7 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
 
 //  L2 Abstraction Layer
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
-  return nr_ue_decode_sib1(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
+  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
 }
 
 //  L2 Abstraction Layer
@@ -90,7 +90,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx, mac->frame_type) && get_softmodem_params()->do_ra)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){

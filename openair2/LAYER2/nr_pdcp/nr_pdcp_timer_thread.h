@@ -19,13 +19,14 @@
  *      contact@openairinterface.org
  */
 
-#ifndef SCTP_DEFAULT_VALUES_H_
-#define SCTP_DEFAULT_VALUES_H_
+#ifndef _NR_PDCP_TIMER_THREAD_H_
+#define _NR_PDCP_TIMER_THREAD_H_
 
-#define SCTP_OUT_STREAMS        (16)
-#define SCTP_IN_STREAMS         (16)
-#define SCTP_MAX_ATTEMPTS       (8)
-#define SCTP_TIMEOUT            (60000)
-#define SCTP_RECV_BUFFER_SIZE   (8192)
+#include "nr_pdcp_ue_manager.h"
 
-#endif /* SCTP_DEFAULT_VALUES_H_ */
+#include <stdint.h>
+
+void nr_pdcp_init_timer_thread(nr_pdcp_ue_manager_t *nr_pdcp_ue_manager);
+void nr_pdcp_wakeup_timer_thread(uint64_t time);
+
+#endif /* _NR_PDCP_TIMER_THREAD_H_ */

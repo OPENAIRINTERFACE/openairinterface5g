@@ -108,7 +108,7 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
 		       int nsymb,
 		       int length);
 
-void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq);
+void init_symbol_rotation(NR_DL_FRAME_PARMS *fp);
 
 void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 			  int32_t *rxdataF,

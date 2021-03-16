@@ -132,6 +132,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
   }
 
   switch (pdu_type){
+    case FAPI_NR_RX_PDU_TYPE_SIB:
     case FAPI_NR_RX_PDU_TYPE_DLSCH:
     case FAPI_NR_RX_PDU_TYPE_RAR:
       harq_pid = dlsch0->current_harq_pid;
@@ -231,33 +232,15 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
       uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
       uint16_t bw_scaling = get_bw_scaling(ofdm_symbol_size);
 
-      LOG_D(PHY, "In %s: applying timing advance -- frame %d -- slot %d -- UE_mode %d\n", __FUNCTION__, frame_tx, slot_tx, ue->UE_mode[gNB_id]);
+      ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      if (ue->UE_mode[gNB_id] == RA_RESPONSE){
-
-        ue->timing_advance += ul_time_alignment->ta_command * bw_scaling;
-
-        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Received (RAR) timing advance command %u new value is %d\n",
-          __FUNCTION__,
-          ue->Mod_id,
-          frame_tx,
-          slot_tx,
-          ul_time_alignment->ta_command,
-          ue->timing_advance);
-
-      } else if (ue->UE_mode[gNB_id] == PUSCH){
-
-        ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
-
-        LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
-          __FUNCTION__,
-          ue->Mod_id,
-          frame_tx,
-          slot_tx,
-          ul_time_alignment->ta_command,
-          ue->timing_advance);
-
-      }
+      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+        __FUNCTION__,
+        ue->Mod_id,
+        frame_tx,
+        slot_tx,
+        ul_time_alignment->ta_command,
+        ue->timing_advance);
 
       ul_time_alignment->ta_frame = -1;
       ul_time_alignment->ta_slot = -1;
@@ -1188,7 +1171,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
             nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, eNB_id, ue, dlsch0, number_pdus);
             break;
           case SI_PDSCH:
-            rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, eNB_id, ue, dlsch0, number_pdus);
             break;
           default:
             break;

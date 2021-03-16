@@ -443,14 +443,14 @@ static int _emm_as_data_ind(nas_user_t *user, const emm_as_data_t *msg, int *emm
                    EPS_MOBILITY_MANAGEMENT_MESSAGE) {
           /* Process EMM data */
           rc = _emm_as_recv(user, plain_msg, bytes, emm_cause);
+          free(plain_msg);
         } else if (header.protocol_discriminator ==
                    EPS_SESSION_MANAGEMENT_MESSAGE) {
           const OctetString data = {bytes, (uint8_t *)plain_msg};
           /* Foward ESM data to EPS session management */
           rc = lowerlayer_data_ind(user, &data);
+          free(plain_msg);
         }
-
-        free(plain_msg);
       }
     } else {
       /* Process successfull lower layer transfer indication */

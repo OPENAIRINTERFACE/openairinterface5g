@@ -122,6 +122,10 @@ int s1ap_eNB_handle_trace_start(uint32_t         assoc_id,
     ue_desc_p = s1ap_eNB_get_ue_context(mme_ref_p->s1ap_eNB_instance,
                                         ie->value.choice.ENB_UE_S1AP_ID);
   }
+  else
+  {
+    return -1;
+  }
     if (ue_desc_p == NULL) {
         /* Could not find context associated with this eNB_ue_s1ap_id -> generate
          * trace failure indication.
