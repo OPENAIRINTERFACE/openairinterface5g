@@ -975,8 +975,8 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
     //rho[aarx][nb_aatx*nb_aatx] = [cov(H_aarx_0,H_aarx_0) cov(H_aarx_0,H_aarx_1)
     //                              cov(H_aarx_1,H_aarx_0) cov(H_aarx_1,H_aarx_1)], aarx=0,...,nb_antennas_rx-1
 
-    int avg_rho_re[frame_parms->nb_antennas_rx][nb_aatx];
-    int avg_rho_im[frame_parms->nb_antennas_rx][nb_aatx];
+    int avg_rho_re[frame_parms->nb_antennas_rx][nb_aatx*nb_aatx];
+    int avg_rho_im[frame_parms->nb_antennas_rx][nb_aatx*nb_aatx];
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
@@ -1085,7 +1085,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
             //measurements->rx_correlation[0][0][aarx] = signal_energy(&rho[aarx][aatx*nb_aatx+atx][symbol*nb_rb*12],rb*12);
             avg_rho_re[aarx][aatx*nb_aatx+atx] = 16*avg_rho_re[aarx][aatx*nb_aatx+atx]/(nb_rb*12);
             avg_rho_im[aarx][aatx*nb_aatx+atx] = 16*avg_rho_im[aarx][aatx*nb_aatx+atx]/(nb_rb*12);
-            printf("rho[rx]%d tx%d tx%d = Re: %d Im: %d\n",aarx, aatx,atx, avg_rho_re[aatx*nb_aatx+atx], avg_rho_im[aatx*nb_aatx+atx]);
+            printf("rho[rx]%d tx%d tx%d = Re: %d Im: %d\n",aarx, aatx,atx, avg_rho_re[aarx][aatx*nb_aatx+atx], avg_rho_im[aarx][aatx*nb_aatx+atx]);
           }
         }
       }
@@ -2247,7 +2247,7 @@ unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
 }
 
 void nr_dlsch_detection_mrc(int **rxdataF_comp,
-                            int **rho,
+                            int ***rho,
                             int **dl_ch_mag,
                             int **dl_ch_magb,
                             short n_tx,

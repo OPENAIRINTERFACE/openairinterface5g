@@ -448,6 +448,15 @@ typedef struct {
 //---------------------------------------------------
 
 
+typedef struct {
+  /* nea0 = 0, nea1 = 1, ... */
+  int ciphering_algorithms[4];
+  int ciphering_algorithms_count;
+
+  /* nia0 = 0, nia1 = 1, ... */
+  int integrity_algorithms[4];
+  int integrity_algorithms_count;
+} nr_security_configuration_t;
 
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
@@ -480,6 +489,8 @@ typedef struct gNB_RRC_INST_s {
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
 
+  // security configuration (preferred algorithms)
+  nr_security_configuration_t security;
 } gNB_RRC_INST;
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error

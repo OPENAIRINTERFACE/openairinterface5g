@@ -531,7 +531,8 @@ int main( int argc, char **argv ) {
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
 
     nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
-    init_symbol_rotation(&UE[CC_id]->frame_parms, UE[CC_id]->frame_parms.dl_CarrierFreq);
+
+    init_symbol_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
     #ifdef FR2_TEST
@@ -557,11 +558,14 @@ int main( int argc, char **argv ) {
 
   
   init_NR_UE_threads(1);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+  // Sleep a while before checking all parameters have been used
+  // Some are used directly in external threads, asynchronously
+  sleep(20);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   while(true)
     sleep(3600);

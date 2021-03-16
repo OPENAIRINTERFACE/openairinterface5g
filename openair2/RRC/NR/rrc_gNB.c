@@ -103,7 +103,8 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc
+    uint8_t                  *const kUPenc,
+    uint8_t                  *const kUPint
   #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
   #endif
@@ -888,6 +889,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               kRRCenc,
                               kRRCint,
                               kUPenc,
+                              NULL,
                               NULL,
                               NULL,
                               NULL);
@@ -1700,6 +1702,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           //                         NULL,
           //                         NULL,
           //                         0xff,
+          //                         NULL,
           //                         NULL,
           //                         NULL,
           //                         NULL,

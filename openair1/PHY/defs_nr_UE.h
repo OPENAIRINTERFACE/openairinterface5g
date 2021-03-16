@@ -335,9 +335,7 @@ typedef struct {
   /// \brief Cross-correlation Matrix of the gNB Tx channel signals.
   /// - first index: aatx*n_rx+aarx for all aatx=[0..n_tx[ and aarx=[0..nb_rx[
   /// - second index: symbol [0..]
-  int32_t **rho;
-  /// never used... always send dl_ch_rho_ext instead...
-  int32_t **rho_i;
+  int32_t ***rho;
   /// \brief Pointers to llr vectors (2 TBs).
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)

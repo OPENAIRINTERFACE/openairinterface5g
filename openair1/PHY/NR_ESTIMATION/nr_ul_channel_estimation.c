@@ -61,8 +61,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   debug_ch_est = fopen("debug_ch_est.txt","w");
 #endif
 
-  //uint16_t Nid_cell = (eNB_offset == 0) ? gNB->frame_parms.Nid_cell : gNB->measurements.adj_cell_id[eNB_offset-1];
-
   uint8_t nushift;
   int **ul_ch_estimates  = gNB->pusch_vars[ul_id]->ul_ch_estimates;
   int **rxdataF = gNB->common_vars.rxdataF;
@@ -79,12 +77,17 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   uint16_t nb_rb_pusch = pusch_pdu->rb_size;
 
-/*
 #ifdef DEBUG_CH
-  printf("PUSCH Channel Estimation : ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", ,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
-         gNB->frame_parms.Ncp,l,Ns,k, symbol);
+  LOG_D(PHY, "In %s: ch_offset %d, symbol_offset %d OFDM size %d, Ns = %d, k = %d symbol %d\n",
+        __FUNCTION__,
+        ch_offset,
+        symbol_offset,
+        gNB->frame_parms.ofdm_symbol_size,
+        Ns,
+        k,
+        symbol);
 #endif
-*/
+
   switch (nushift) {
    case 0:
          fl = filt8_l0;
@@ -124,9 +127,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   //------------------generate DMRS------------------//
 
-  if (pusch_pdu->transform_precoding == transform_precoder_disabled) 
+  if (pusch_pdu->transform_precoding == transform_precoder_disabled) {
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
-  
+  }
   else {  // if transform precoding or SC-FDMA is enabled in Uplink
 
     // NR_SC_FDMA supports type1 DMRS so only 6 DMRS REs per RB possible
@@ -151,12 +154,18 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //------------------------------------------------//
 
 
-
 #ifdef DEBUG_PUSCH
-  for (int i=0;i<(6*nb_rb_pusch);i++)
-    printf("%d+j*(%d)\n",((int16_t*)pilot)[2*i],((int16_t*)pilot)[1+(2*i)]);
+  for (int i = 0; i < (6 * nb_rb_pusch); i++) {
+    LOG_I(PHY, "In %s: %d + j*(%d)\n",
+      __FUNCTION__,
+      ((int16_t*)pilot)[2 * i],
+      ((int16_t*)pilot)[1 + (2 * i)]);
+  }
 #endif
+
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
+
+    re_offset = k;   /* Initializing the Resource element offset for each Rx antenna */
 
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
@@ -166,11 +175,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PUSCH
-    printf("symbol_offset %d, nushift %d\n",symbol_offset,nushift);
-    printf("ch est pilot addr %p RB_DL %d\n",&pilot[0], gNB->frame_parms.N_RB_UL);
-    printf("bwp_start_subcarrier %d, k %d, first_carrier %d, nb_rb_pusch %d\n",bwp_start_subcarrier,k,gNB->frame_parms.first_carrier_offset,nb_rb_pusch);
-    printf("rxF addr %p p %d\n", rxF,p);
-    printf("ul_ch addr %p nushift %d\n",ul_ch,nushift);
+    LOG_I(PHY, "In %s symbol_offset %d, nushift %d\n", __FUNCTION__, symbol_offset, nushift);
+    LOG_I(PHY, "In %s ch est pilot addr %p, N_RB_UL %d\n", __FUNCTION__, &pilot[0], gNB->frame_parms.N_RB_UL);
+    LOG_I(PHY, "In %s bwp_start_subcarrier %d, k %d, first_carrier %d, nb_rb_pusch %d\n", __FUNCTION__, bwp_start_subcarrier, k, gNB->frame_parms.first_carrier_offset, nb_rb_pusch);
+    LOG_I(PHY, "In %s rxF addr %p p %d\n", __FUNCTION__, rxF, p);
+    LOG_I(PHY, "In %s ul_ch addr %p nushift %d\n", __FUNCTION__, ul_ch, nushift);
 #endif
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
@@ -181,9 +190,18 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
 #ifdef DEBUG_PUSCH
-      printf("ch 0 %d\n",((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
-      printf("pilot 0 : rxF - > (%d,%d) (%d)  ch -> (%d,%d) (%d), pil -> (%d,%d) \n",rxF[0],rxF[1],dBc(rxF[0],rxF[1]),ch[0],ch[1],dBc(ch[0],ch[1]),pil[0],pil[1]);
-      printf("data 0 : rxF - > (%d,%d) (%d)\n",rxF[2],rxF[3],dBc(rxF[2],rxF[3]));
+      LOG_I(PHY, "In %s ch 0 %d\n", __FUNCTION__, ((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
+      LOG_I(PHY, "In %s pilot 0 : rxF - > (%d,%d) (%d)  ch -> (%d,%d) (%d), pil -> (%d,%d) \n",
+        __FUNCTION__,
+        rxF[0],
+        rxF[1],
+        dBc(rxF[0],rxF[1]),
+        ch[0],
+        ch[1],
+        dBc(ch[0],ch[1]),
+        pil[0],
+        pil[1]);
+      LOG_I(PHY, "In %s data 0 : rxF - > (%d,%d) (%d)\n", __FUNCTION__, rxF[2], rxF[3], dBc(rxF[2],rxF[3]));
 #endif
 
       multadd_real_vector_complex_scalar(fl,
@@ -200,9 +218,23 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
 #ifdef DEBUG_PUSCH
-      printf("pilot 1 : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",rxF[0],rxF[1],dBc(rxF[0],rxF[1]),ch[0],ch[1],dBc(ch[0],ch[1]),pil[0],pil[1]);
-      printf("data 1 : rxF - > (%d,%d) (%d)\n",rxF[2],rxF[3],dBc(rxF[2],rxF[3]));
+      LOG_I(PHY, "In %s pilot 1 : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",
+        __FUNCTION__,
+        rxF[0],
+        rxF[1],
+        dBc(rxF[0],rxF[1]),
+        ch[0],
+        ch[1],
+        dBc(ch[0],ch[1]),
+        pil[0],
+        pil[1]);
+      LOG_I(PHY, "In %s data 1 : rxF - > (%d,%d) (%d)\n",
+        __FUNCTION__,
+        rxF[2],
+        rxF[3],
+        dBc(rxF[2],rxF[3]));
 #endif
+
       multadd_real_vector_complex_scalar(fml,
                                          ch,
                                          ul_ch,
@@ -216,9 +248,23 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
 #ifdef DEBUG_PUSCH
-      printf("pilot 2 : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",rxF[0],rxF[1],dBc(rxF[0],rxF[1]),ch[0],ch[1],dBc(ch[0],ch[1]),pil[0],pil[1]);
-      printf("data 2 : rxF - > (%d,%d) (%d)\n",rxF[2],rxF[3],dBc(rxF[2],rxF[3]));
+      LOG_I(PHY, "In %s pilot 2 : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",
+        __FUNCTION__,
+        rxF[0],
+        rxF[1],
+        dBc(rxF[0],rxF[1]),
+        ch[0],
+        ch[1],
+        dBc(ch[0],ch[1]),
+        pil[0],
+        pil[1]);
+      LOG_I(PHY, "In %s data 2 : rxF - > (%d,%d) (%d)\n",
+        __FUNCTION__,
+        rxF[2],
+        rxF[3],
+        dBc(rxF[2],rxF[3]));
 #endif
+
       multadd_real_vector_complex_scalar(fmm,
                                          ch,
                                          ul_ch,

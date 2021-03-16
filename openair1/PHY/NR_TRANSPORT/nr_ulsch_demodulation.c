@@ -16,10 +16,10 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i idft_in128[1][1200], idft_out128[1][1200];
+  __m128i idft_in128[1][3240], idft_out128[1][3240];
   __m128i norm128;
 #elif defined(__arm__)
-  int16x8_t idft_in128[1][1200], idft_out128[1][1200];
+  int16x8_t idft_in128[1][3240], idft_out128[1][3240];
   int16x8_t norm128;
 #endif
   int16_t *idft_in0 = (int16_t*)idft_in128[0], *idft_out0 = (int16_t*)idft_out128[0];
@@ -28,19 +28,18 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 
   LOG_T(PHY,"Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
-  // conjugate input
-  for (i = 0; i < (Msc_PUSCH>>2); i++) {
+  if ((Msc_PUSCH % 1536) > 0) {
+    // conjugate input
+    for (i = 0; i < (Msc_PUSCH>>2); i++) {
 #if defined(__x86_64__)||defined(__i386__)
-    *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
+      *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
 #elif defined(__arm__)
-    *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
 #endif
+    }
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      ((uint32_t*)idft_in0)[ip+0] = z[i];
   }
-
-  for (i=0,ip=0; i<Msc_PUSCH; i++, ip+=4) {
-    ((int32_t*)idft_in0)[ip+0] = z[i];
-  }
-
 
   switch (Msc_PUSCH) {
     case 12:
@@ -194,25 +193,102 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
       dft(DFT_1200,idft_in0, idft_out0, 1);
       break;
 
+    case 1296:
+      dft(DFT_1296,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1440:
+      dft(DFT_1440,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1500:
+      dft(DFT_1500,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1536:
+      //dft(DFT_1536,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      idft(IDFT_1536,(int16_t*)z, (int16_t*)z, 1);
+      break;
+
+    case 1620:
+      dft(DFT_1620,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1728:
+      dft(DFT_1728,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1800:
+      dft(DFT_1800,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1920:
+      dft(DFT_1920,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1944:
+      dft(DFT_1944,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2160:
+      dft(DFT_2160,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2304:
+      dft(DFT_2304,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2400:
+      dft(DFT_2400,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2592:
+      dft(DFT_2592,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2700:
+      dft(DFT_2700,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2880:
+      dft(DFT_2880,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2916:
+      dft(DFT_2916,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 3000:
+      dft(DFT_3000,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 3072:
+      //dft(DFT_3072,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      idft(IDFT_3072,(int16_t*)z, (int16_t*)z, 1);
+      break;
+
+    case 3240:
+      dft(DFT_3240,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
     default:
       // should not be reached
       LOG_E( PHY, "Unsupported Msc_PUSCH value of %"PRIu16"\n", Msc_PUSCH );
       return;
   }
 
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      z[i] = ((uint32_t*)idft_out0)[ip];
 
-
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = ((int32_t*)idft_out0)[ip];
-  }
-
-  // conjugate output
-  for (i = 0; i < (Msc_PUSCH>>2); i++) {
+    // conjugate output
+    for (i = 0; i < (Msc_PUSCH>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-    ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
+      ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
 #elif defined(__arm__)
-    *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
 #endif
+    }
   }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -221,6 +297,7 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 #endif
 
 }
+
 
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,

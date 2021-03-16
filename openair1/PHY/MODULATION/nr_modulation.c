@@ -418,10 +418,10 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
 
 void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 {
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i dft_in128[1][1200], dft_out128[1][1200];
+#if defined(__x86_64__) || +defined(__i386__)
+  __m128i dft_in128[1][3240], dft_out128[1][3240];
 #elif defined(__arm__)
-  int16x8_t dft_in128[1][1200], dft_out128[1][1200];
+  int16x8_t dft_in128[1][3240], dft_out128[1][3240];
 #endif
   uint32_t *dft_in0 = (uint32_t*)dft_in128[0], *dft_out0 = (uint32_t*)dft_out128[0];
 
@@ -433,8 +433,10 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
   int16x8_t norm128;
 #endif
 
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    dft_in0[ip] = d[i];
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
+      dft_in0[ip] = d[i];
+    }
   }
 
   switch (Msc_PUSCH) {
@@ -573,7 +575,7 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
       break;
 
     case 972:
-      dft(DFT_960,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_972,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
 
     case 1080:
@@ -587,44 +589,159 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
     case 1200:
       dft(DFT_1200,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
       break;
+
+    case 1296:
+      dft(DFT_1296,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1440:
+      dft(DFT_1440,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1500:
+      dft(DFT_1500,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1536:
+      //dft(DFT_1536,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_1536,(int16_t*)d, (int16_t*)z, 1);
+      break;
+
+    case 1620:
+      dft(DFT_1620,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1728:
+      dft(DFT_1728,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1800:
+      dft(DFT_1800,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1920:
+      dft(DFT_1920,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1944:
+      dft(DFT_1944,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2160:
+      dft(DFT_2160,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2304:
+      dft(DFT_2304,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2400:
+      dft(DFT_2400,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2592:
+      dft(DFT_2592,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2700:
+      dft(DFT_2700,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2880:
+      dft(DFT_2880,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 2916:
+      dft(DFT_2916,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 3000:
+      dft(DFT_3000,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 3072:
+      //dft(DFT_3072,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      dft(DFT_3072,(int16_t*)d, (int16_t*)z, 1);
+      break;
+
+    case 3240:
+      dft(DFT_3240,(int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    default:
+      // should not be reached
+      LOG_E( PHY, "Unsupported Msc_PUSCH value of %"PRIu16"\n", Msc_PUSCH );
+      return;
+
   }
 
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = dft_out0[ip];
+
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      z[i] = dft_out0[ip];
   }
+
 }
 
 
-void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq)
-{
+void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
+
+  uint64_t dl_CarrierFreq = fp->dl_CarrierFreq;
+  uint64_t ul_CarrierFreq = fp->ul_CarrierFreq;
+  double f[2] = {(double)dl_CarrierFreq, (double)ul_CarrierFreq};
+
   const int nsymb = fp->symbols_per_slot * fp->slots_per_frame/10;
   const double Tc=(1/480e3/4096);
   const double Nu=2048*64*(1/(float)(1<<fp->numerology_index));
-  const double f0= (double)CarrierFreq;
   const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
   const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
-  double tl=0,poff,exp_re,exp_im;
-  double Ncp,Ncpm1=Ncp0;
 
-  poff = 2*M_PI*((Ncp0*Tc))*f0;
-  exp_re = cos(poff);
-  exp_im = sin(-poff);
-  fp->symbol_rotation[0]=(int16_t)floor(exp_re*32767);
-  fp->symbol_rotation[1]=(int16_t)floor(exp_im*32767);
-  LOG_I(PHY,"Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n",f0,nsymb);
-  LOG_I(PHY,"Symbol rotation %d/%d => (%d,%d)\n",0,nsymb,fp->symbol_rotation[0],fp->symbol_rotation[1]);
+  for (uint8_t ll = 0; ll < 2; ll++){
 
-  for (int l=1; l<nsymb; l++) {
-    if (l==(7*(1<<fp->numerology_index))) Ncp=Ncp0;
-    else Ncp=Ncp1;
-    tl += (Nu+Ncpm1)*Tc;
-    poff = 2*M_PI*(tl + (Ncp*Tc))*f0;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
-    fp->symbol_rotation[l<<1]=(int16_t)floor(exp_re*32767);
-    fp->symbol_rotation[1+(l<<1)]=(int16_t)floor(exp_im*32767);
-    LOG_I(PHY,"Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n", l, nsymb, tl, fp->symbol_rotation[l<<1], fp->symbol_rotation[1+(l<<1)], (poff/2/M_PI)-floor(poff/2/M_PI));
-    Ncpm1=Ncp;
+    double f0 = f[ll];
+    double Ncpm1 = Ncp0;
+    int16_t *symbol_rotation = fp->symbol_rotation[ll];
+
+    double tl = 0;
+    double poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
+    double exp_re = cos(poff);
+    double exp_im = sin(-poff);
+    symbol_rotation[0] = (int16_t)floor(exp_re * 32767);
+    symbol_rotation[1] = (int16_t)floor(exp_im * 32767);
+    LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
+    LOG_I(PHY, "Symbol rotation %d/%d => (%d,%d)\n",
+      0,
+      nsymb,
+      symbol_rotation[0],
+      symbol_rotation[1]);
+
+    for (int l = 1; l < nsymb; l++) {
+
+      double Ncp;
+      if (l == (7 * (1 << fp->numerology_index))) {
+        Ncp = Ncp0;
+      } else {
+        Ncp = Ncp1;
+      }
+
+      tl += (Nu + Ncpm1) * Tc;
+      poff = 2 * M_PI * (tl + (Ncp * Tc)) * f0;
+      exp_re = cos(poff);
+      exp_im = sin(-poff);
+      symbol_rotation[l<<1] = (int16_t)floor(exp_re * 32767);
+      symbol_rotation[1 + (l<<1)] = (int16_t)floor(exp_im * 32767);
+
+      LOG_I(PHY, "Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",
+        l,
+        nsymb,
+        tl,
+        symbol_rotation[l<<1],
+        symbol_rotation[1 + (l<<1)],
+        (poff / 2 / M_PI) - floor(poff / 2 / M_PI));
+
+      Ncpm1 = Ncp;
+
+    }
   }
 }
 

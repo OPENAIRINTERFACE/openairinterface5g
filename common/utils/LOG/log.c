@@ -88,17 +88,20 @@ int write_file_matlab(const char *fname,
 					  void *data,
 					  int length,
 					  int dec,
-					  char format)
+					  unsigned int format,
+            int multiVec)
 {
   FILE *fp=NULL;
   int i;
+
+  AssertFatal((format&~MATLAB_RAW) <16,"");
 
   if (data == NULL)
     return -1;
 
   //printf("Writing %d elements of type %d to %s\n",length,format,fname);
 
-  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14) {
+  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14 || multiVec) {
     fp = fopen(fname,"a+");
   } else if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14) {
     fp = fopen(fname,"w+");
@@ -109,7 +112,32 @@ int write_file_matlab(const char *fname,
     return(-1);
   }
 
-  if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14)
+  if ( (format&MATLAB_RAW) == MATLAB_RAW ) {
+    int sz[16]={sizeof(short), 2*sizeof(short),
+		sizeof(int), 2*sizeof(int),
+		sizeof(char), 2*sizeof(char),
+		sizeof(long long), 
+		sizeof(double), 2*sizeof(double),
+		sizeof(unsigned char),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short),
+		sizeof(short)
+    };
+    int eltSz= sz[format&~MATLAB_RAW];
+    if (dec==1) 
+      fwrite(data, eltSz, length, fp);
+    else 
+      for (i=0; i<length; i+=dec)
+	fwrite(data+i*eltSz, eltSz, 1, fp);
+    
+    fclose(fp);
+    return(0);	
+  }
+
+  if ((format != 10 && format !=11  && format != 12 && format != 13 && format != 14) || multiVec)
     fprintf(fp,"%s = [",vname);
 
   switch (format) {
@@ -214,9 +242,11 @@ int write_file_matlab(const char *fname,
     case 12 : // case eren for log2_maxh real unsigned 8 bit
       fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
       break;
+  default:
+    AssertFatal(false, "unknown dump format: %d\n", format);
   }
 
-  if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
+  if ((format != 10 && format !=11 && format !=12 && format != 13 && format != 15) || multiVec) {
     fprintf(fp,"];\n");
     fclose(fp);
     return(0);

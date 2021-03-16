@@ -20,6 +20,7 @@
  */
 
 #include "executables/nr-softmodem-common.h"
+#include "common/utils/nr/nr_common.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
@@ -45,10 +46,42 @@
 
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
-/*
-extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
-extern openair0_config_t openair0_cfg[MAX_CARDS];
-*/
+static
+uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
+{
+  const uint64_t dl_freq_khz = downlink_frequency / 1000;
+  const int32_t  delta_duplex_khz = delta_duplex / 1000;
+
+  uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
+  uint16_t current_band = 0;
+
+  for (int ind = 0; ind < nr_bandtable_size; ind++) {
+
+    LOG_D(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min, nr_bandtable[ind].ul_min);
+
+    if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
+      continue;
+
+    int32_t current_offset_khz = nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min;
+
+    if (current_offset_khz != delta_duplex_khz)
+      continue;
+
+    uint64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
+
+    if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+      current_band = nr_bandtable[ind].band;
+      center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+    }
+  }
+
+  LOG_I(PHY, "DL frequency %"PRIu64": band %d, UL frequency %"PRIu64"\n",
+        downlink_frequency, current_band, downlink_frequency+delta_duplex);
+
+  AssertFatal(current_band != 0, "Can't find EUTRA band for frequency %"PRIu64" and duplex_spacing %u\n", downlink_frequency, delta_duplex);
+
+  return current_band;
+}
 
 int l1_north_init_gNB() {
 
@@ -381,6 +414,13 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
 
 }
+
+//Adding nr_schedule_handler
+void install_nr_schedule_handlers(NR_IF_Module_t *if_inst)
+{
+  if_inst->NR_PHY_config_req = nr_phy_config_request;
+  if_inst->NR_Schedule_response = nr_schedule_response;
+}
 /*
 void install_schedule_handlers(IF_Module_t *if_inst)
 {
@@ -448,7 +488,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   uint8_t short_sequence, num_sequences, rootSequenceIndex, fd_occasion;
   NR_DL_FRAME_PARMS *fp = &RC.gNB[Mod_id]->frame_parms;
   nfapi_nr_config_request_scf_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
-  int32_t dlul_offset = 0;
 
   memcpy((void*)gNB_config,phy_config->cfg,sizeof(*phy_config->cfg));
   RC.gNB[Mod_id]->mac_enabled     = 1;
@@ -459,13 +498,9 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   uint64_t ul_bw_khz = (12*gNB_config->carrier_config.ul_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
   fp->ul_CarrierFreq = ((ul_bw_khz>>1) + gNB_config->carrier_config.uplink_frequency.value)*1000 ;
 
-  fp->nr_band = *RC.nrmac[Mod_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  int32_t dlul_offset = fp->ul_CarrierFreq - fp->dl_CarrierFreq;
+  fp->nr_band = get_band(fp->dl_CarrierFreq, dlul_offset);
 
-  get_delta_duplex(fp->nr_band, gNB_config->ssb_config.scs_common.value, &dlul_offset);
-  dlul_offset *= 1000;
-
-  AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + dlul_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + dlul_offset);
-  
   LOG_I(PHY, "DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, dlul_offset);
 
   fp->threequarter_fs = openair0_cfg[0].threequarter_fs;
@@ -494,10 +529,11 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 //  }
   RC.gNB[Mod_id]->configured     = 1;
 
-  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+  init_symbol_rotation(fp);
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
+
 
 void init_nr_transport(PHY_VARS_gNB *gNB) {
   int i;

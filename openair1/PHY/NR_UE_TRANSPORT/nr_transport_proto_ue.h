@@ -891,7 +891,7 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
                                 int start_point);
 
 void nr_dlsch_detection_mrc(int **rxdataF_comp,
-		int **rho,
+        int ***rho,
         int **dl_ch_mag,
         int **dl_ch_magb,
         short n_tx,

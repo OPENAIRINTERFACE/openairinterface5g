@@ -39,9 +39,9 @@
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
-void get_frame_type(uint16_t nr_bandP, uint8_t scs_index, lte_frame_type_t *current_type);
+lte_frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
 
-void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex);
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index);
 
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
@@ -51,7 +51,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 
 int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slotP, lte_frame_type_t frame_type);
 
 uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
                      const NR_CellGroupConfig_t *secondaryCellGroup,

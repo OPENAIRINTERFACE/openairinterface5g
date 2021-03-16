@@ -395,7 +395,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -403,7 +403,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           slotP,
           current_rnti,
           UE_id,
-          ul_cqi);
+          ul_cqi,
+          sduP);
 
     // if not missed detection (10dB threshold for now)
     if (UE_scheduling_control->ul_rssi < (100+rssi)) {
@@ -411,7 +412,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (timing_advance != 0xffff)
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->ul_rssi = rssi;
-      LOG_D(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
     }
     else{
       UE_scheduling_control->tpc0 = 1;
@@ -430,9 +431,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      LOG_D(MAC, "Received PDU at MAC gNB \n");
+      LOG_D(NR_MAC, "Received PDU at MAC gNB \n");
 
-      UE_scheduling_control->sched_ul_bytes -= UE_info->mac_stats[UE_id].ulsch_current_bytes;
+      const uint32_t tb_size = UE_scheduling_control->ul_harq_processes[harq_pid].sched_pusch.tb_size;
+      UE_scheduling_control->sched_ul_bytes -= tb_size;
       if (UE_scheduling_control->sched_ul_bytes < 0)
         UE_scheduling_control->sched_ul_bytes = 0;
 
@@ -442,7 +444,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       NR_UE_ul_harq_t *cur_harq = &UE_scheduling_control->ul_harq_processes[harq_pid];
       /* reduce sched_ul_bytes when cur_harq->round == 3 */
       if (cur_harq->round == 3){
-        UE_scheduling_control->sched_ul_bytes -= UE_info->mac_stats[UE_id].ulsch_current_bytes;
+        const uint32_t tb_size = UE_scheduling_control->ul_harq_processes[harq_pid].sched_pusch.tb_size;
+        UE_scheduling_control->sched_ul_bytes -= tb_size;
         if (UE_scheduling_control->sched_ul_bytes < 0)
           UE_scheduling_control->sched_ul_bytes = 0;
       }
@@ -465,7 +468,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       // random access pusch with TC-RNTI
       if (ra->rnti != current_rnti) {
-        LOG_W(MAC,
+        LOG_W(NR_MAC,
               "expected TC-RNTI %04x to match current RNTI %04x\n",
               ra->rnti,
               current_rnti);
@@ -473,19 +476,25 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
-      LOG_I(MAC,
+      LOG_I(NR_MAC,
             "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
             "adding UE MAC Context UE_id %d/RNTI %04x\n",
             gnb_mod_idP,
             current_rnti,
             UE_id,
             ra->rnti);
+
+      LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
+      for (int k = 0; k < sdu_lenP; k++) {
+        LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+      }
+
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
       free(ra->preambles.preamble_list);
       ra->state = RA_IDLE;
-      LOG_I(MAC,
+      LOG_I(NR_MAC,
             "reset RA state information for RA-RNTI %04x/index %d\n",
             ra->rnti,
             i);
@@ -862,7 +871,7 @@ void nr_schedule_ulsch(module_id_t module_id,
   /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
    * allocated PDCCH so we can easily allocate UE's DCIs independent of any
    * CORESET order */
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_bwp_coreset[MAX_NUM_BWP][MAX_NUM_CORESET] = {0};
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_bwp_coreset[MAX_NUM_BWP][MAX_NUM_CORESET] = {{0}};
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
@@ -916,6 +925,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       /* Save information on MCS, TBS etc for the current initial transmission
        * so we have access to it when retransmitting */
       cur_harq->sched_pusch = *sched_pusch;
+      sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
     } else {
       LOG_D(MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
@@ -929,7 +939,6 @@ void nr_schedule_ulsch(module_id_t module_id,
             cur_harq->ndi);
     }
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
-    sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
 
     LOG_D(MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",

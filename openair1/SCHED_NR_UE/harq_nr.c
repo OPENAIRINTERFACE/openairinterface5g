@@ -295,7 +295,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
   /* 38.321 5.4.2.1  2>  if the uplink grant was received on PDCCH for the C-RNTI and the HARQ buffer of the identified process is empty */
   if ((ulsch->harq_processes[harq_pid]->first_tx == 1) && (rnti_type == _C_RNTI_)) {  /* no transmission yet on this process so consider its harq buffer as empty */
-    ulsch->harq_processes[harq_pid]->first_tx = 0;
+   ulsch->harq_processes[harq_pid]->first_tx = 0;
     ulsch->harq_processes[harq_pid]->pusch_pdu.pusch_data.new_data_indicator = ndi;             /* store first value of ndi */
     ulsch->harq_processes[harq_pid]->round = 0;
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;

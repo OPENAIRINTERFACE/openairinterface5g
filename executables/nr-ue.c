@@ -703,16 +703,23 @@ void *UE_thread(void *arg) {
 
     int flags = 0;
     int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
-    uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-    uint8_t num_UL_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots +
-                           (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
-    uint8_t first_tx_slot = tdd_period - num_UL_slots;
-    if (slot_tx_usrp%tdd_period==first_tx_slot)
-      flags=2;
-    else     if (slot_tx_usrp%tdd_period==first_tx_slot+num_UL_slots-1)
-      flags = 3;
-    else     if (slot_tx_usrp%tdd_period>first_tx_slot)
+
+    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
+
+      uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+      int   nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
+      uint8_t first_tx_slot = tdd_period - num_UL_slots;
+
+      if (slot_tx_usrp % tdd_period == first_tx_slot)
+        flags = 2;
+      else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
+        flags = 3;
+      else if (slot_tx_usrp % tdd_period > first_tx_slot)
+        flags = 1;
+    } else {
       flags = 1;
+    }
 
     if (flags || IS_SOFTMODEM_RFSIM)
       AssertFatal( writeBlockSize ==
