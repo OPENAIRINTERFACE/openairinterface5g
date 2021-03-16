@@ -513,26 +513,37 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               UE_id,
               ra->rnti);
 
-        LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received\n");
-        LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
-        for (int k = 0; k < sdu_lenP; k++) {
-          LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+        if(ra->cfra) {
+
+          LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
+          nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+          free(ra->preambles.preamble_list);
+          UE_info->active[UE_id] = true;
+
+        } else {
+
+          LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received\n");
+          LOG_I(NR_MAC,"[RAPROC] Received Msg3:\n");
+          for (int k = 0; k < sdu_lenP; k++) {
+            LOG_I(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+          }
+
+          // UE Contention Resolution Identity
+          // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
+          // First byte corresponds to R/LCID MAC sub-header
+          memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
+
+          // re-initialize ta update variables afrer RA procedure completion
+          UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
+          nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
+
+          ra->state = Msg4;
+          ra->Msg4_frame = ( frameP +2 ) % 1024;
+          ra->Msg4_slot = 1;
+          LOG_I(MAC, "Scheduling RA-Msg4 for TC-RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+
         }
-
-        // UE Contention Resolution Identity
-        // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
-        // First byte corresponds to R/LCID MAC sub-header
-        memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
-
-        // re-initialize ta update variables afrer RA procedure completion
-        UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
-
-        nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
-
-        ra->state = Msg4;
-        ra->Msg4_frame = ( frameP +2 ) % 1024;
-        ra->Msg4_slot = 1;
-        LOG_I(MAC, "Scheduling RA-Msg4 for TC-RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
         return;
 
       }
