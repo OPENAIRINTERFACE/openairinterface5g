@@ -394,10 +394,10 @@ void processSlotRX(void *arg) {
     // under the assumption that no two slots with same slot index of different frames are processed at the same time
       res = pullTpool(UE->respPdsch,&(get_nrUE_params()->Tpool));
       if (res->key == proc->nr_slot_rx) check_rx_finish = false;
-      pushNotifiedFIFO(UE->respPdsch, res);
+      pushNotifiedFIFO_nothreadSafe(UE->respPdsch, res);
       res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
       if (res->key == proc->nr_slot_tx) check_tx_finish = false;
-      pushNotifiedFIFO(UE->txFifo, res);
+      pushNotifiedFIFO_nothreadSafe(UE->txFifo, res);
     }
 
   } else {
@@ -565,9 +565,9 @@ void *UE_thread(void *arg) {
   int absolute_slot=0, decoded_frame_rx=-1, trashed_frames=0;
 
   for (int i=0; i<RX_NB_TH; i++) {
-    pushNotifiedFIFO(&rxFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&rxFifo,processSlotRX));
-    pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 1,&txFifo,processSlotTX));
-    pushNotifiedFIFO(&respPdsch, newNotifiedFIFO_elt(sizeof(pdsch_rx_thread_data_t), 1,&respPdsch,processPdsch));
+    pushNotifiedFIFO_nothreadSafe(&rxFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&rxFifo,processSlotRX));
+    pushNotifiedFIFO_nothreadSafe(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 1,&txFifo,processSlotTX));
+    pushNotifiedFIFO_nothreadSafe(&respPdsch, newNotifiedFIFO_elt(sizeof(pdsch_rx_thread_data_t), 1,&respPdsch,processPdsch));
   }
 
   while (!oai_exit) {
