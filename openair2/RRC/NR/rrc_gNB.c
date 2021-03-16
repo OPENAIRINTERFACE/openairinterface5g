@@ -1496,6 +1496,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           rrc_gNB_generate_RRCSetup(ctxt_pP,
                                     rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
                                     CC_id);
+
+          // FIXME: Check the best place to perform this DRB configuration
+          nr_DRB_preconfiguration(ctxt_pP->rnti);
         }
         break;
 

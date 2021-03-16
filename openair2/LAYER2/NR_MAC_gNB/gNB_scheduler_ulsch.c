@@ -492,10 +492,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       if(no_sig) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
-        ra->state = RA_IDLE;
-        ra->timing_offset = 0;
-        ra->RRC_timer = 20;
-        ra->msg3_round = 0;
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
       } else {
 
         // random access pusch with TC-RNTI
@@ -547,10 +544,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         continue;
 
       LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
-      ra->state = RA_IDLE;
-      ra->timing_offset = 0;
-      ra->RRC_timer = 20;
-      ra->msg3_round = 0;
+      nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
     }
   }
 }

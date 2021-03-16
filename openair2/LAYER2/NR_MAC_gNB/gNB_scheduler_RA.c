@@ -575,8 +575,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
       LOG_D(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
 
-      // TODO: Configure RRC with the new RNTI of the following commented lines
-      /*
       int loop = 0;
       if (!ra->cfra) {
         do {
@@ -590,7 +588,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           abort();
         }
       }
-      */
 
       ra->RA_rnti = ra_rnti;
       ra->preamble_index = preamble_index;
@@ -1364,9 +1361,9 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   {
     if (harq->round == 0)
     {
-      ra->state = RA_IDLE;
-      UE_info->active[UE_id] = true;
+      nr_clear_ra_proc(module_id, CC_id, frame, ra);
       free(ra->preambles.preamble_list);
+      UE_info->active[UE_id] = true;
       LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. RA procedure succeeded!\n", UE_id, ra->rnti);
     }
     else
@@ -1377,9 +1374,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
 
 }
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
-  
-  NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[0];
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra){
   LOG_D(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
   ra->state = RA_IDLE;
   ra->timing_offset = 0;
