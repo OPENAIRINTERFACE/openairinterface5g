@@ -645,93 +645,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
- //bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
-
-#if 0
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
-
- NR_TCI_State_t*tcid0=calloc(1,sizeof(*tcid0));
- tcid0->tci_StateId=0;
- tcid0->qcl_Type1.cell=NULL;
- tcid0->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid0->qcl_Type1.bwp_Id));
- *tcid0->qcl_Type1.bwp_Id=1;
- tcid0->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid0->qcl_Type1.referenceSignal.choice.csi_rs = 2;
- tcid0->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid0);
-
- NR_TCI_State_t*tcid1=calloc(1,sizeof(*tcid1));
- tcid1->tci_StateId=0;
- tcid1->qcl_Type1.cell=NULL;
- tcid1->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid1->qcl_Type1.bwp_Id));
- *tcid1->qcl_Type1.bwp_Id=1;
- tcid1->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid1->qcl_Type1.referenceSignal.choice.csi_rs = 6;
- tcid1->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid1);
-
- NR_TCI_State_t*tcid2=calloc(1,sizeof(*tcid2));
- tcid2->tci_StateId=2;
- tcid2->qcl_Type1.cell=NULL;
- tcid2->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid2->qcl_Type1.bwp_Id));
- *tcid2->qcl_Type1.bwp_Id=1;
- tcid2->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid2->qcl_Type1.referenceSignal.choice.csi_rs = 10;
- tcid2->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid2);
-
- NR_TCI_State_t*tcid3=calloc(1,sizeof(*tcid3));
- tcid3->tci_StateId=3;
- tcid3->qcl_Type1.cell=NULL;
- tcid3->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid3->qcl_Type1.bwp_Id));
- *tcid3->qcl_Type1.bwp_Id=1;
- tcid3->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid3->qcl_Type1.referenceSignal.choice.csi_rs = 14;
- tcid3->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid3);
-
- NR_TCI_State_t*tcid4=calloc(1,sizeof(*tcid4));
- tcid4->tci_StateId=4;
- tcid4->qcl_Type1.cell=NULL;
- tcid4->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid4->qcl_Type1.bwp_Id));
- *tcid4->qcl_Type1.bwp_Id=1;
- tcid4->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid4->qcl_Type1.referenceSignal.choice.csi_rs = 18;
- tcid4->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid4);
-
- NR_TCI_State_t*tcid5=calloc(1,sizeof(*tcid5));
- tcid5->tci_StateId=5;
- tcid5->qcl_Type1.cell=NULL;
- tcid5->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid5->qcl_Type1.bwp_Id));
- *tcid5->qcl_Type1.bwp_Id=1;
- tcid5->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid5->qcl_Type1.referenceSignal.choice.csi_rs = 22;
- tcid5->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid5);
-
- NR_TCI_State_t*tcid6=calloc(1,sizeof(*tcid6));
- tcid6->tci_StateId=6;
- tcid6->qcl_Type1.cell=NULL;
- tcid6->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid6->qcl_Type1.bwp_Id));
- *tcid6->qcl_Type1.bwp_Id=1;
- tcid6->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid6->qcl_Type1.referenceSignal.choice.csi_rs = 26;
- tcid6->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid6);
-
- NR_TCI_State_t*tcid7=calloc(1,sizeof(*tcid7));
- tcid7->tci_StateId=7;
- tcid7->qcl_Type1.cell=NULL;
- tcid7->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid7->qcl_Type1.bwp_Id));
- *tcid7->qcl_Type1.bwp_Id=1;
- tcid7->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
- tcid7->qcl_Type1.referenceSignal.choice.csi_rs = 30;
- tcid7->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid7);
-#endif
-
 
  n_ssb = 0;
  NR_TCI_State_t *tcid[64];
@@ -903,7 +817,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pusch_Config->tp_pi2BPSK=NULL;
 
  /*------------------------------TRANSFORM PRECODING- -----------------------------------------------------------------------*/
- 
+
  uint8_t transform_precoding = NR_PUSCH_Config__transformPrecoder_disabled;
 
  // TBD: configure this from .conf file, Dedicated params cannot yet be configured in .conf file.
@@ -918,20 +832,20 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder != NULL)
     transform_precoding = NR_PUSCH_Config__transformPrecoder_enabled;
  }
- else 
+ else
     transform_precoding = *pusch_Config->transformPrecoder;
-    
- 
+
+
  if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled ) {
     /* Enable DMRS uplink config for transform precoding enabled */
     NR_DMRS_UplinkConfig->transformPrecodingEnabled = calloc(1,sizeof(*NR_DMRS_UplinkConfig->transformPrecodingEnabled));
     NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity = NULL;
-    NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping = NULL; 
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping = NULL;
     NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping = NULL;
-    NR_DMRS_UplinkConfig->transformPrecodingEnabled->ext1 = NULL; 
+    NR_DMRS_UplinkConfig->transformPrecodingEnabled->ext1 = NULL;
 
     LOG_I(RRC,"TRANSFORM PRECODING ENABLED......\n");
- 
+
   }
  /*----------------------------------------------------------------------------------------------------------------------------*/ 
 
@@ -1300,6 +1214,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->servingCellMO=NULL;
 
 }
+
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
