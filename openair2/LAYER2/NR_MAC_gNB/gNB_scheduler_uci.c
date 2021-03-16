@@ -318,13 +318,15 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
                              sub_frame_t slot,
                              const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
-{
+{ NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  UE_info->active[0] = 1;
+  UE_info->rnti[0] = uci_01->rnti;
   int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
     return;
   }
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  //NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)
@@ -332,51 +334,55 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                                 uci_01->ul_cqi,
                                 30);
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  if (((uci_01->pduBitmap >> 1) & 0x01)) {
-    // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-      const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
-      const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
-      }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      DevAssert(harq->is_waiting);
-      handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
-    }
-  }
+  // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int num_slots = 20;
+  
+  // if (((uci_01->pduBitmap >> 1) & 0x01)) {
+  //   // iterate over received harq bits
+  //   for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
+  //     const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
+  //     const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
+  //     const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+  //     /* In case of realtime problems: we can only identify a HARQ process by
+  //      * timing. If the HARQ process's feedback_slot is not the one we
+  //      * expected, we assume that processing has been aborted and we need to
+  //      * skip this HARQ process, which is what happens in the loop below. If
+  //      * you don't experience real-time problems, you might simply revert the
+  //      * commit that introduced these changes. */
+  //     int8_t pid = sched_ctrl->feedback_dl_harq.head;
+  //     DevAssert(pid >= 0);
+  //     while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
+  //       LOG_W(MAC,
+  //             "expected feedback slot %d, but found %d instead\n",
+  //             sched_ctrl->harq_processes[pid].feedback_slot,
+  //             feedback_slot);
+  //       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+  //       handle_dl_harq(mod_id, UE_id, pid, 0);
+  //       pid = sched_ctrl->feedback_dl_harq.head;
+  //       DevAssert(pid >= 0);
+  //     }
+  //     remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+  //     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+  //     DevAssert(harq->is_waiting);
+  //     handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
+  //   }
+  // }
 }
 
 void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                frame_t frame,
                                sub_frame_t slot,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
-{
+{ NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  UE_info->active[0] = 1;
+  UE_info->rnti[0] = uci_234->rnti;
   int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
     return;
   }
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  //NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)
@@ -384,37 +390,38 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                 uci_234->ul_cqi,
                                 30);
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  if ((uci_234->pduBitmap >> 1) & 0x01) {
-    // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
-      const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
-      }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      DevAssert(harq->is_waiting);
-      handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
-    }
-  }
+  // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int num_slots = 20;
+  // if ((uci_234->pduBitmap >> 1) & 0x01) {
+  //   // iterate over received harq bits
+  //   for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
+  //     const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
+  //     const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+  //     /* In case of realtime problems: we can only identify a HARQ process by
+  //      * timing. If the HARQ process's feedback_slot is not the one we
+  //      * expected, we assume that processing has been aborted and we need to
+  //      * skip this HARQ process, which is what happens in the loop below. If
+  //      * you don't experience real-time problems, you might simply revert the
+  //      * commit that introduced these changes. */
+  //     int8_t pid = sched_ctrl->feedback_dl_harq.head;
+  //     DevAssert(pid >= 0);
+  //     while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
+  //       LOG_W(MAC,
+  //             "expected feedback slot %d, but found %d instead\n",
+  //             sched_ctrl->harq_processes[pid].feedback_slot,
+  //             feedback_slot);
+  //       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+  //       handle_dl_harq(mod_id, UE_id, pid, 0);
+  //       pid = sched_ctrl->feedback_dl_harq.head;
+  //       DevAssert(pid >= 0);
+  //     }
+  //     remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+  //     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+  //     DevAssert(harq->is_waiting);
+  //     handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
+  //   }
+  // }
 }
 
 

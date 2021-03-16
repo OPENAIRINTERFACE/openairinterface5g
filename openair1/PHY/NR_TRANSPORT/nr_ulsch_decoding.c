@@ -430,14 +430,14 @@ void nr_processULSegment(void* arg) {
                                      p_procTime);
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
-#ifdef PRINT_CRC_CHECK
+// #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "Segment %d CRC OK\n",r);
-#endif
+// #endif
     rdata->decodeIterations = no_iteration_ldpc;
   } else {
-#ifdef PRINT_CRC_CHECK
+// #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "CRC NOK\n");
-#endif
+// #endif
     rdata->decodeIterations = max_ldpc_iterations + 1;
   }
 

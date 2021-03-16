@@ -253,25 +253,33 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   
   // RX processing
   int tx_slot_type; int rx_slot_type;
-  if(NFAPI_MODE == NFAPI_MODE_VNF) {
-  if ((slot_tx==8) || (slot_rx==8) || (slot_tx==9) || (slot_rx==9) || (slot_tx==18) || (slot_rx==18) || (slot_tx==19) || (slot_rx==19)) {
-    tx_slot_type         = NR_UPLINK_SLOT;
-    rx_slot_type         = NR_UPLINK_SLOT;
-  }
-  else if ((slot_tx==7) || (slot_rx==7) || (slot_tx==17) || (slot_rx==17)) {
-    tx_slot_type         = NR_MIXED_SLOT;
-    rx_slot_type         = NR_MIXED_SLOT;
-  }
-  else {
-    tx_slot_type         = NR_DOWNLINK_SLOT;
-    rx_slot_type         = NR_DOWNLINK_SLOT;
-  }
+  if(NFAPI_MODE != NFAPI_MONOLITHIC) { //slot selection routines not working properly in nfapi, so temporarily hardcoding
+    if ((slot_tx==8) || (slot_tx==9) || (slot_tx==18) ||  (slot_tx==19)) { //tx slot config
+      tx_slot_type         = NR_UPLINK_SLOT;
+    }
+    else if ((slot_tx==7) || (slot_tx==17)) {
+      tx_slot_type         = NR_MIXED_SLOT;
+    }
+    else {
+      tx_slot_type         = NR_DOWNLINK_SLOT;;
+    }
+
+    if ((slot_rx==8) || (slot_rx==9) || (slot_rx==18) ||  (slot_rx==19)) { // rx slot config
+      rx_slot_type         = NR_UPLINK_SLOT; 
+    }
+    else if ((slot_rx==7) || (slot_rx==17)) {
+      rx_slot_type         = NR_MIXED_SLOT;
+    }
+    else {
+      rx_slot_type         = NR_DOWNLINK_SLOT;;
+    }
+
+
   }
   else {
   tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
   }
-
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT

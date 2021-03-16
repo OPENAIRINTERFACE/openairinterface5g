@@ -47,6 +47,7 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 #include "T.h"
 
@@ -86,7 +87,8 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
                    nfapi_nr_pucch_pdu_t *pucch_pdu) {
-
+  if (NFAPI_MODE == NFAPI_MODE_PNF)
+    gNB->pucch[0]->active = 0; //check if ture in monolithic mode 
   int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
   AssertFatal( (id>=0) && (id<NUMBER_OF_NR_PUCCH_MAX),
               "invalid id found for pucch !!! rnti %04x id %d\n",pucch_pdu->rnti,id);
@@ -164,10 +166,15 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
-
+  printf("Inside nr_decode_pucch0. \n"); 
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-
+  //Gokul
+  // printf("rxdataf buff: \n");
+  // for(int i = 1;i<=5*7*14*512;++i){
+  //   if(gNB->RU_list[0]->common.rxdataF[0][i] != 0)
+  //     printf("%d ",gNB->RU_list[0]->common.rxdataF[0][i]);
+  // }
   int nr_sequences;
   const uint8_t *mcs;
 
@@ -1085,7 +1092,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
-
+  printf("Inside nr_decode_pucch2. \n");                     
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
@@ -1465,7 +1472,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     } // cw loop
     corr_dB = dB_fixed64((uint64_t)corr);
-    LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
+    LOG_I(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
     decodedPayload[0]=(uint64_t)cw_ML;
   }
   else { // polar coded case

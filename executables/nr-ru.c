@@ -1607,7 +1607,13 @@ void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
 
-    int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
+    //int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
+    //if (NFAPI_MODE == NFAPI_MODE_PNF)
+    int slot_type;
+    if (slot ==7) 
+      slot_type = NR_MIXED_SLOT;
+    if (slot == 8)
+      slot_type = NR_UPLINK_SLOT;
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
     //if (proc->tti_rx==8) {
 

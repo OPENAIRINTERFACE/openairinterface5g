@@ -1007,36 +1007,34 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		// if(tx_slot_buffer->slot == slot_tx && tx_slot_buffer->sfn == sfn_tx)
 		// {	
 			
-			if(tx_slot_buffer->tx_data_req != 0)
-			{
+		if(tx_slot_buffer->tx_data_req != 0)
+		{
 				
-				if(pnf_p7->_public.tx_data_req_fn)
-					{						
-						(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), tx_slot_buffer->tx_data_req);
-					}
+			if(pnf_p7->_public.tx_data_req_fn)
+			{						
+				(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), tx_slot_buffer->tx_data_req);
 			}
-			else 
+		}
+		else 
+		{
+			// send dummy
+			if(pnf_p7->_public.tx_data_req_fn && pnf_p7->_public.dummy_slot.tx_data_req)
 			{
-				// send dummy
-				if(pnf_p7->_public.tx_data_req_fn && pnf_p7->_public.dummy_slot.tx_data_req)
-				{
-					pnf_p7->_public.dummy_slot.tx_data_req->SFN = sfn_tx;
-					pnf_p7->_public.dummy_slot.tx_data_req->Slot = slot_tx; 
+				pnf_p7->_public.dummy_slot.tx_data_req->SFN = sfn_tx;
+				pnf_p7->_public.dummy_slot.tx_data_req->Slot = slot_tx; 
 					
-					(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), pnf_p7->_public.dummy_slot.tx_data_req);
-				}
+				(pnf_p7->_public.tx_data_req_fn)(&(pnf_p7->_public), pnf_p7->_public.dummy_slot.tx_data_req);
 			}
-		//} 
+		}
+		 
 
-		if( tx_slot_buffer->dl_tti_req != 0) // ADDED & TO BYPASS ERROR
+		if(tx_slot_buffer->dl_tti_req != 0) 
 		{
 			if(pnf_p7->_public.dl_tti_req_fn)
 			{
 				(pnf_p7->_public.dl_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->dl_tti_req);
 			}
 		}
-
-
 		else
 		{
 			// send dummy
@@ -1047,6 +1045,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				(pnf_p7->_public.dl_tti_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.dl_tti_req);
 			}
 		}
+
 
 		if(tx_slot_buffer->ul_dci_req!= 0)
 		{
@@ -1063,6 +1062,23 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				pnf_p7->_public.dummy_slot.ul_dci_req->SFN = sfn_tx;
 				pnf_p7->_public.dummy_slot.ul_dci_req->Slot = slot_tx;
 				(pnf_p7->_public.ul_dci_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_dci_req);
+			}
+		}
+		if(tx_slot_buffer->ul_tti_req != 0)
+		{
+			if(pnf_p7->_public.ul_tti_req_fn)
+			{ 
+				(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->ul_tti_req);
+			}
+		}
+		else
+		{
+			// send dummy
+			if(pnf_p7->_public.ul_tti_req_fn && pnf_p7->_public.dummy_slot.ul_tti_req)
+			{
+				pnf_p7->_public.dummy_slot.ul_tti_req->SFN = sfn_tx;
+				pnf_p7->_public.dummy_slot.ul_tti_req->Slot = slot_tx;
+				(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_tti_req);
 			}
 		}
 		if(tx_slot_buffer->dl_tti_req != 0)
@@ -1101,7 +1117,6 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				{ 
 					(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), slot_buffer->ul_tti_req);
 				}
-				//deallocate_nfapi_ul_config_request(subframe_buffer->ul_config_req, pnf_p7);
 			}
 			else
 			{
