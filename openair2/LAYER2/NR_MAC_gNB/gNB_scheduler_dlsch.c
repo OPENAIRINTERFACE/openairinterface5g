@@ -1045,7 +1045,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           size += 3;
         }
       }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
+      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
         /* we will need the large header, phy-test typically allocates all
          * resources and fills to the last byte below */
         NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;

@@ -368,14 +368,22 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   /* send tick to RLC and RRC every ms */
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);
+    void nr_pdcp_tick(int frame, int subframe);
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+    nr_pdcp_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
 #define BIT(x) (1 << (x))
   const uint64_t dlsch_in_slot_bitmap = BIT( 1) | BIT( 2) | BIT( 3) | BIT( 4) | BIT( 5) | BIT( 6)
                                       | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
-  const uint64_t ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
+
+  uint8_t prach_config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint64_t ulsch_in_slot_bitmap;
+  if (prach_config_index==4) //this is the PRACH config used in the Benetel RRU. TODO: make this generic for any PRACH config. 
+    ulsch_in_slot_bitmap = BIT( 8) | BIT( 9);
+  else
+    ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1

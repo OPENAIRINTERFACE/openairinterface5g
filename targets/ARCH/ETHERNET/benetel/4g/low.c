@@ -27,37 +27,36 @@
 
 void store_ul(benetel_t *bs, ul_packet_t *ul)
 {
-  /* only antenna 0 for the moment */
-  if (ul->antenna != 0)
-    return;
+  int a = ul->antenna;
 
-  if (ul->subframe != bs->next_subframe ||
-      ul->symbol != bs->next_symbol) {
-    printf("%s: fatal, expected frame.sf.symbol %d.%d.%d, got %d.%d.%d\n",
+  if (ul->subframe != bs->next_subframe[a] ||
+      ul->symbol != bs->next_symbol[a]) {
+    printf("%s: fatal, antenna %d expected frame.sf.symbol %d.%d.%d, got %d.%d.%d\n",
            __FUNCTION__,
-           bs->expected_benetel_frame, bs->next_subframe, bs->next_symbol,
+           a,
+           bs->expected_benetel_frame[a], bs->next_subframe[a], bs->next_symbol[a],
            ul->frame, ul->subframe, ul->symbol);
     exit(1);
   }
 
-  lock_ul_buffer(bs->buffers, bs->next_subframe);
-  if (bs->buffers->ul_busy[bs->next_subframe] & (1 << bs->next_symbol)) {
+  lock_ul_buffer(bs->buffers, bs->next_subframe[a]);
+  if (bs->buffers->ul_busy[a][bs->next_subframe[a]] & (1 << bs->next_symbol[a])) {
     printf("%s: warning, UL overflow (sf.symbol %d.%d)\n", __FUNCTION__,
-           bs->next_subframe, bs->next_symbol);
+           bs->next_subframe[a], bs->next_symbol[a]);
   }
-  memcpy(bs->buffers->ul[bs->next_subframe] + bs->next_symbol * 1200*4,
+  memcpy(bs->buffers->ul[a][bs->next_subframe[a]] + bs->next_symbol[a] * 1200*4,
          ul->iq, 1200*4);
-  bs->buffers->ul_busy[bs->next_subframe] |= (1 << bs->next_symbol);
-  signal_ul_buffer(bs->buffers, bs->next_subframe);
-  unlock_ul_buffer(bs->buffers, bs->next_subframe);
+  bs->buffers->ul_busy[a][bs->next_subframe[a]] |= (1 << bs->next_symbol[a]);
+  signal_ul_buffer(bs->buffers, bs->next_subframe[a]);
+  unlock_ul_buffer(bs->buffers, bs->next_subframe[a]);
 
-  bs->next_symbol++;
-  if (bs->next_symbol == 14) {
-    bs->next_symbol = 0;
-    bs->next_subframe = (bs->next_subframe + 1) % 10;
-    if (bs->next_subframe == 0) {
-      bs->expected_benetel_frame++;
-      bs->expected_benetel_frame &= 255;
+  bs->next_symbol[a]++;
+  if (bs->next_symbol[a] == 14) {
+    bs->next_symbol[a] = 0;
+    bs->next_subframe[a] = (bs->next_subframe[a] + 1) % 10;
+    if (bs->next_subframe[a] == 0) {
+      bs->expected_benetel_frame[a]++;
+      bs->expected_benetel_frame[a] &= 255;
     }
   }
 }
