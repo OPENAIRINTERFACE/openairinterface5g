@@ -497,13 +497,19 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   for(ap = 0; ap < Nl; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
-      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
-	    s,s+symb_offset,frame_parms->symbol_rotation[2*(s+symb_offset)],frame_parms->symbol_rotation[1+(2*(s+symb_offset))]);
-      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
-			&frame_parms->symbol_rotation[2*(s+symb_offset)],
-			(int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
-			frame_parms->ofdm_symbol_size,
-			15);
+
+      LOG_D(PHY,"In %s: rotating txdataF symbol %d (%d) => (%d.%d)\n",
+        __FUNCTION__,
+        s,
+        s + symb_offset,
+        frame_parms->symbol_rotation[1][2 * (s + symb_offset)],
+        frame_parms->symbol_rotation[1][1 + (2 * (s + symb_offset))]);
+
+      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                        &frame_parms->symbol_rotation[1][2 * (s + symb_offset)],
+                        (int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                        frame_parms->ofdm_symbol_size,
+                        15);
     }
   }
 

@@ -335,6 +335,7 @@ typedef struct {
 @param length length of data vector to output
 @param dec    decimation level
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
+@param multiVec create new file or append to existing (useful for writing multiple vectors to same file. Just call the function multiple times with same file name and with this parameter set to 1)
 */
 #define MATLAB_RAW (1<<31)
 #define MATLAB_SHORT 0
@@ -354,7 +355,7 @@ typedef struct {
 #define MATLAB_CSHORT_BRACKET2 14
 #define MATLAB_CSHORT_BRACKET3 15
   
-int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format);
+int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format, int multiVec);
 
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"
@@ -414,7 +415,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 /* bitmask dependent macros, to generate debug file such as matlab file or message dump */
 #    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
-#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
+#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)/* */
 /* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
@@ -431,7 +432,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_DUMPFLAG(D) (g_log->debug_mask & D)
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
 
-#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
+#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)
 #    define LOG_VAR(A,B) A B
 #  endif /* T_TRACER */
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
@@ -439,9 +440,10 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_USEDINLOG_VAR(A,B) GCC_NOTUSED A B
 
 /* unfiltered macros, useful for simulators or messages at init time, before log is configured */
-#define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
+#define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)
 #define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
 #define LOG_UDUMPMSG(c, b, s, f, x...) do { log_dump(c, b, s, f, x)  ;}   while (0)  /* */
+#    define LOG_MM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 1);} while(0)
 /* @}*/
 
 

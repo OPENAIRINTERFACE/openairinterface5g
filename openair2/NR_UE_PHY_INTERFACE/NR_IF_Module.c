@@ -90,7 +90,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx, mac->frame_type) && get_softmodem_params()->do_ra)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){

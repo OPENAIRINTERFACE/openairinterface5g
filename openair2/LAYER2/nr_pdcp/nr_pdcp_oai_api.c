@@ -24,6 +24,7 @@
 #endif
 #include "asn1_utils.h"
 #include "nr_pdcp_ue_manager.h"
+#include "nr_pdcp_timer_thread.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
 #include "NR_RLC-Config.h"
@@ -40,6 +41,11 @@
   } while (0)
 
 static nr_pdcp_ue_manager_t *nr_pdcp_ue_manager;
+
+/* TODO: handle time a bit more properly */
+static uint64_t nr_pdcp_current_time;
+static int      nr_pdcp_current_time_last_frame;
+static int      nr_pdcp_current_time_last_subframe;
 
 /* necessary globals for OAI, not used internally */
 hash_table_t  *pdcp_coll_p;
@@ -339,6 +345,8 @@ void pdcp_layer_init(void)
 
   nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
   init_nr_rlc_data_req_queue();
+
+  nr_pdcp_init_timer_thread(nr_pdcp_ue_manager);
 }
 
 #include "nfapi/oai_integration/vendor_ext.h"
@@ -625,11 +633,11 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity_drb_am(is_gnb, drb_id,
-                                         deliver_sdu_drb, ue, deliver_pdu_drb, ue,
-                                         sn_size_dl, t_reordering, discard_timer,
-                                         ciphering_algorithm, integrity_algorithm,
-                                         ciphering_key, integrity_key);
+    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,
+                                  deliver_sdu_drb, ue, deliver_pdu_drb, ue,
+                                  sn_size_dl, t_reordering, discard_timer,
+                                  ciphering_algorithm, integrity_algorithm,
+                                  ciphering_key, integrity_key);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -977,4 +985,15 @@ void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req)
 void
 pdcp_mbms_run ( const protocol_ctxt_t *const  ctxt_pP){
   /* nothing to do */
+}
+
+void nr_pdcp_tick(int frame, int subframe)
+{
+  if (frame != nr_pdcp_current_time_last_frame ||
+      subframe != nr_pdcp_current_time_last_subframe) {
+    nr_pdcp_current_time_last_frame = frame;
+    nr_pdcp_current_time_last_subframe = subframe;
+    nr_pdcp_current_time++;
+    nr_pdcp_wakeup_timer_thread(nr_pdcp_current_time);
+  }
 }
