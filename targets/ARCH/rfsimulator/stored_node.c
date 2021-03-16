@@ -200,7 +200,10 @@ int main(int argc, char *argv[]) {
   int bufSize=100000;
   void *buff=malloc(bufSize);
   uint64_t timestamp=0;
-  const int blockSize=1000;
+  const int blockSize=1920;
+
+  // If fileSize is not multiple of blockSize*4 then discard remaining samples
+  fileSize = (fileSize/(blockSize<<2))*(blockSize<<2);
 
   while (1) {
     //Rewind the file to loop on the samples

@@ -164,6 +164,9 @@ function build_on_vm {
     echo "cd tmp" >> $VM_CMDS
     echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
     echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
+    # Trying to make some room on filesystem before building
+    echo "rm ../localZip.zip" >> $VM_CMDS
+    echo "export CI_ENV=True" >> $VM_CMDS
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         echo "mkdir cmake_targets/log" >> $VM_CMDS
