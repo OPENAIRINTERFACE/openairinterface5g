@@ -1741,8 +1741,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
 
 void *dlsch_thread(void *arg);
-
-void processPdsch(void *arg);
 /**@}*/
 #endif
 

@@ -1068,7 +1068,6 @@ typedef struct {
 #endif
   notifiedFIFO_t *rxFifo;
   notifiedFIFO_t *txFifo;
-  notifiedFIFO_t *respPdsch;
   
   int dl_stats[5];
 
@@ -1082,10 +1081,5 @@ typedef struct nr_rxtx_thread_data_s {
   PHY_VARS_NR_UE    *UE;
 }  nr_rxtx_thread_data_t;
 
-typedef struct pdsch_rx_thread_data_s {
-  nr_rxtx_thread_data_t rxtxD;
-  int                   gNB_id;
-  uint8_t               dlsch_parallel;
-}  pdsch_rx_thread_data_t;
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif

@@ -75,7 +75,6 @@
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
-#define RX_NB_TH_PL 2 //number of parallel jobs per slot
 #define RX_NB_TH_DL 14
 
 #define LTE_SLOTS_PER_SUBFRAME 2
