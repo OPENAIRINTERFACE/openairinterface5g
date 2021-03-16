@@ -276,6 +276,7 @@ void schedule_control_sib1(module_id_t module_id,
                            int time_domain_allocation,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
+                           uint8_t candidate_idx,
                            int num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
@@ -307,13 +308,10 @@ void schedule_control_sib1(module_id_t module_id,
                                                           gNB_mac->sched_ctrlCommon->coreset,
                                                           gNB_mac->sched_ctrlCommon->aggregation_level,
                                                           0,
-                                                          0,
+                                                          candidate_idx,
                                                           nr_of_candidates);
 
-  if (gNB_mac->sched_ctrlCommon->cce_index < 0) {
-    LOG_E(MAC, "%s(): could not find CCE for coreset0\n", __func__);
-    return;
-  }
+  AssertFatal(gNB_mac->sched_ctrlCommon->cce_index >= 0, "Could not find CCE for coreset0\n");
 
   const uint16_t bwpSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
   int rbStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
@@ -342,9 +340,7 @@ void schedule_control_sib1(module_id_t module_id,
     TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                          nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
-
-    // FIXME: Something is not working in nr_modulation() for TBS = 84, so we need to skip it
-  } while ( (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes) || (TBS==84) );
+  } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
@@ -508,6 +504,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
   int time_domain_allocation = 0;
   uint8_t mcsTableIdx = 0;
   uint8_t mcs = 6;
+  uint8_t candidate_idx = 0;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
 
@@ -523,7 +520,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     for (int i=0;i<sib1_sdu_length;i++) LOG_D(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
 
     // Configure sched_ctrlCommon for SIB1
-    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, sib1_sdu_length);
+    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, candidate_idx, sib1_sdu_length);
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
