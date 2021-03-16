@@ -2472,7 +2472,6 @@ void *rrc_nrue_task( void *args_p ) {
       case NR_RRC_MAC_BCCH_DATA_IND:
         LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
               NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-        //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
         nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
@@ -2480,6 +2479,7 @@ void *rrc_nrue_task( void *args_p ) {
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+        break;
 
       case NR_RRC_MAC_CCCH_DATA_IND:
         LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
