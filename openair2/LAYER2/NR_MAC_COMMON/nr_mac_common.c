@@ -2999,7 +2999,12 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
     valid = false;
     return valid;
   }
-  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+
+  /* Moved below check from scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
   return valid;
 }
 
@@ -3373,3 +3378,79 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
   return 0;
 }
+
+/* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 6.2.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 6.2.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.count < 3) {
+    *L_ptrs = 0;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[1],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  
+  *reOffset  = *ul_ptrs_config->transformPrecoderDisabled->resourceElementOffset;
+  *maxNumPorts = ul_ptrs_config->transformPrecoderDisabled->maxNrofPorts;
+  *ulPower = ul_ptrs_config->transformPrecoderDisabled->ptrs_Power;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 6.2.3.1-1 and Table 6.2.3.1-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PUSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PUSCH with allocation duration of 2 symbols as defined in Clause 6.4.1.2.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+
+  /* Moved below check from nr_ue_scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
+  return valid;
+}
+

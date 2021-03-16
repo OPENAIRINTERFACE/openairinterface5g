@@ -82,6 +82,7 @@ double cpuf;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
+extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
@@ -638,6 +639,7 @@ int main(int argc, char **argv)
   rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
 
   NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
   prepare_scc(rrc.carrier.servingcellconfigcommon);
   uint64_t ssb_bitmap;
@@ -645,7 +647,10 @@ int main(int argc, char **argv)
 
   fix_scc(scc,ssb_bitmap);
 
+  prepare_scd(scd);
+
   fill_default_secondaryCellGroup(scc,
+                                  scd,
 				  secondaryCellGroup,
 				  0,
 				  1,
@@ -653,6 +658,9 @@ int main(int argc, char **argv)
 				  0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+
+  /* RRC parameter validation for secondaryCellGroup */
+  fix_scd(scd);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
 
