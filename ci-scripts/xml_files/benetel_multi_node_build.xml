@@ -26,7 +26,6 @@
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
  000001 000002
- 000003 000004
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -36,15 +35,8 @@
 		<Build_eNB_args>--eNB -t benetel4g -w None</Build_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
-		<backgroundBuild>True</backgroundBuild>
 	</testCase>
 
-	<testCase id="000004">
-		<class>WaitEndBuild_eNB</class>
-		<desc>Wait for end of Build eNB</desc>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-	</testCase>
 
 	<testCase id="000002">
 		<class>Build_eNB</class>
@@ -52,15 +44,9 @@
 		<Build_eNB_args>--gNB -t benetel5g -w None</Build_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
-		<backgroundBuild>True</backgroundBuild>
 	</testCase>
 
-	<testCase id="000003">
-		<class>WaitEndBuild_eNB</class>
-		<desc>Wait for end of Build gNB</desc>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
-	</testCase>
+
 
 
 </testCaseList>
