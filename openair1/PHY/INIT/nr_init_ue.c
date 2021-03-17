@@ -74,7 +74,7 @@ void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
   pdsch->rxdataF_ext            = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
   pdsch->rxdataF_uespec_pilots  = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
   pdsch->rxdataF_comp0          = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*fp->nb_antennas_rx*sizeof(int32_t *) );
-  pdsch->rho                    = (int32_t ***)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
+  pdsch->rho                    = (int32_t ***)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t **) );
   pdsch->dl_ch_estimates        = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*fp->nb_antennas_rx*sizeof(int32_t *) );
   pdsch->dl_ch_estimates_ext    = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*fp->nb_antennas_rx*sizeof(int32_t *) );
   pdsch->dl_bf_ch_estimates     = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*fp->nb_antennas_rx*sizeof(int32_t *) );
@@ -90,17 +90,20 @@ void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
   // the allocated memory size is fixed:
   AssertFatal( fp->nb_antennas_rx <= 4, "nb_antennas_rx > 4" );//Extend the max number of UE Rx antennas to 4
 
+  const size_t num = 7*2*fp->N_RB_DL*12;
   for (int i=0; i<fp->nb_antennas_rx; i++) {
-    pdsch->rho[i]     = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*NR_MAX_NB_LAYERS*sizeof(int32_t) );
+    pdsch->rxdataF_ext[i]              = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
+    pdsch->rxdataF_uespec_pilots[i]    = (int32_t *)malloc16_clear( sizeof(int32_t) * fp->N_RB_DL*12);
+    pdsch->ptrs_phase_per_slot[i]      = (int32_t *)malloc16_clear( sizeof(int32_t) * 14 );
+    pdsch->ptrs_re_per_slot[i]         = (int32_t *)malloc16_clear( sizeof(int32_t) * 14);
+    pdsch->dl_ch_ptrs_estimates_ext[i] = (int32_t *)malloc16_clear( sizeof(int32_t) * num);
+    pdsch->rho[i]                      = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*NR_MAX_NB_LAYERS*sizeof(int32_t *) );
 
     for (int j=0; j<NR_MAX_NB_LAYERS; j++) {
       const int idx = (j*fp->nb_antennas_rx)+i;
-      const size_t num = 7*2*fp->N_RB_DL*12;
       for (int k=0; k<NR_MAX_NB_LAYERS; k++) {
-        pdsch->rho[i][j*NR_MAX_NB_LAYERS+k]     = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
+        pdsch->rho[i][j*NR_MAX_NB_LAYERS+k] = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
       }
-      pdsch->rxdataF_ext[idx]             = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->rxdataF_uespec_pilots[idx]   = (int32_t *)malloc16_clear( sizeof(int32_t) * fp->N_RB_DL*12);
       pdsch->rxdataF_comp0[idx]           = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_estimates[idx]         = (int32_t *)malloc16_clear( sizeof(int32_t) * fp->ofdm_symbol_size*7*2);
       pdsch->dl_ch_estimates_ext[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
@@ -111,9 +114,6 @@ void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
       pdsch->dl_ch_mag0[idx]              = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_magb0[idx]             = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
       pdsch->dl_ch_magr0[idx]             = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->ptrs_re_per_slot[idx]        = (int32_t *)malloc16_clear(sizeof(int32_t) * 14);
-      pdsch->ptrs_phase_per_slot[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t) * 14 );
-      pdsch->dl_ch_ptrs_estimates_ext[idx]= (int32_t *)malloc16_clear( sizeof(int32_t) * num);
     }
   }
 }
