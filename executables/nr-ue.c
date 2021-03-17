@@ -91,6 +91,8 @@
 #else
   #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
 #endif
+#define RX_JOB_ID 0x1010
+#define TX_JOB_ID 100
 
 typedef enum {
   pss = 0,
@@ -130,10 +132,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
  * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
  */
 
-typedef struct syncData_s {
-  UE_nr_rxtx_proc_t proc;
-  PHY_VARS_NR_UE *UE;
-} syncData_t;
+typedef nr_rxtx_thread_data_t syncData_t;
 
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
@@ -359,6 +358,8 @@ void processSlotRX(void *arg) {
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_slot_rx);
+  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
+  bool isTxRunning = true;
   uint8_t gNB_id = 0;
 
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
@@ -386,27 +387,21 @@ void processSlotRX(void *arg) {
     }
 
     // Wait for PUSCH processing to finish
-    notifiedFIFO_elt_t *res;
-    res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
-    pushNotifiedFIFO_nothreadSafe(UE->txFifo, res);
-
-    if (get_softmodem_params()->usim_test==0) {
-      pucch_procedures_ue_nr(UE,
-                             gNB_id,
-                             proc,
-                             FALSE);
+    while (isTxRunning) {
+      notifiedFIFO_elt_t *res;
+      res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
+      if (res->key == proc->nr_slot_tx) {
+        isTxRunning = false;
+        res->key = TX_JOB_ID;
+      }
+      pushNotifiedFIFO(UE->txFifo, res);
     }
-
-    LOG_D(PHY, "Sending Uplink data \n");
-    nr_ue_pusch_common_procedures(UE,
-                                  proc->nr_slot_tx,
-                                  &UE->frame_parms,1);
-
-    ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
 
   } else {
     processSlotTX(rxtxD);
+  }
 
+  if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
     if (get_softmodem_params()->usim_test==0) {
       pucch_procedures_ue_nr(UE,
                              gNB_id,
@@ -546,15 +541,12 @@ void *UE_thread(void *arg) {
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
 
-  notifiedFIFO_t rxFifo;
-  UE->rxFifo = &rxFifo;
-  initNotifiedFIFO(&rxFifo);
-  pushNotifiedFIFO_nothreadSafe(&rxFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 1,&rxFifo,processSlotRX));
+  notifiedFIFO_t freeBlocks;
+  initNotifiedFIFO_nothreadSafe(&freeBlocks);
 
   notifiedFIFO_t txFifo;
   UE->txFifo = &txFifo;
   initNotifiedFIFO(&txFifo);
-  pushNotifiedFIFO_nothreadSafe(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 1,&txFifo,processSlotTX));
 
   int nbSlotProcessing=0;
   int thread_idx=0;
@@ -565,9 +557,16 @@ void *UE_thread(void *arg) {
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
+  for (int i=0; i<RX_NB_TH+1; i++) {// RX_NB_TH working + 1 we are making to be pushed
+    pushNotifiedFIFO_nothreadSafe(&freeBlocks, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX));
+    pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), TX_JOB_ID,&txFifo,processSlotTX));
+  }
+
+
+
   while (!oai_exit) {
     if (UE->lost_sync) {
-      abortTpool(&(get_nrUE_params()->Tpool),0);
+      abortTpool(&(get_nrUE_params()->Tpool),RX_JOB_ID);
       UE->is_synchronized = 0;
       UE->lost_sync = 0;
     }
@@ -636,7 +635,7 @@ void *UE_thread(void *arg) {
     thread_idx = absolute_slot % RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
     notifiedFIFO_elt_t *msgToPush;
-    AssertFatal((msgToPush=pullTpool(&rxFifo,&(get_nrUE_params()->Tpool))) != NULL,"chained list failure");
+    AssertFatal((msgToPush=pullTpool(&freeBlocks,&(get_nrUE_params()->Tpool))) != NULL,"chained list failure");
     nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
@@ -706,7 +705,20 @@ void *UE_thread(void *arg) {
                                 UE->frame_parms.get_samples_slot_timestamp(slot_nr,
                                 &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp;
 
-    decoded_frame_rx=-1;
+    notifiedFIFO_elt_t *res;
+
+    while (nbSlotProcessing >= RX_NB_TH) {
+      res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
+      nbSlotProcessing--;
+      nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
+
+      if (tmp->proc.decoded_frame_rx != -1)
+        decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+      else
+         decoded_frame_rx=-1;
+
+      pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
+    }
 
     if (  decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
@@ -748,7 +760,6 @@ void *UE_thread(void *arg) {
       memset(txp[i], 0, writeBlockSize);
 
     nbSlotProcessing++;
-    msgToPush->key=1;
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
   } // while !oai_exit

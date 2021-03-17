@@ -74,7 +74,7 @@
 #include "nfapi_interface.h"
 
 #define RX_NB_TH_MAX 2
-#define RX_NB_TH 2
+#define RX_NB_TH 1
 #define RX_NB_TH_DL 14
 
 #define LTE_SLOTS_PER_SUBFRAME 2
