@@ -140,16 +140,24 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
   int      sn;
   int      header_size;
   char     buf[size+3+4];
+  int      dc_bit;
 
   count = entity->tx_next;
   sn = entity->tx_next & entity->sn_max;
 
+  /* D/C bit is only to be set for DRBs */
+  if (entity->type == NR_PDCP_DRB_AM || entity->type == NR_PDCP_DRB_UM) {
+    dc_bit = 0x80;
+  } else {
+    dc_bit = 0;
+  }
+
   if (entity->sn_size == 12) {
-    buf[0] = 0x80 | ((sn >> 8) & 0xf);
+    buf[0] = dc_bit | ((sn >> 8) & 0xf);
     buf[1] = sn & 0xff;
     header_size = 2;
   } else {
-    buf[0] = 0x80 | ((sn >> 16) & 0x3);
+    buf[0] = dc_bit | ((sn >> 16) & 0x3);
     buf[1] = (sn >> 8) & 0xff;
     buf[2] = sn & 0xff;
     header_size = 3;
