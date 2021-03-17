@@ -428,7 +428,11 @@ static void *gNB_L1_thread( void *param ) {
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     int frame_rx          = L1_proc->frame_rx;
-    int slot_rx           = L1_proc->slot_rx;
+    int slot_rx;
+    if (NFAPI_MODE == NFAPI_MODE_PNF)
+      slot_rx = (L1_proc->slot_rx) + 1;
+    else 
+      slot_rx = L1_proc->slot_rx;
     int frame_tx          = L1_proc->frame_tx;
     int slot_tx           = L1_proc->slot_tx;
     uint64_t timestamp_tx = L1_proc->timestamp_tx;

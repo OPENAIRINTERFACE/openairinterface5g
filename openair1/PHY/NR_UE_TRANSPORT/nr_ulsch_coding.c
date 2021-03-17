@@ -275,13 +275,13 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
 ///////////////////////// a---->| add CRC |---->b /////////////////////////
 ///////////
-    /*
-    int i;
-    printf("ulsch (tx): \n");
-    for (i=0;i<(A>>3);i++)
-      printf("%02x.",a[i]);
-    printf("\n");
-    */
+    
+    // int i;
+    // printf("ulsch (tx): \n");
+    // for (i=0;i<(A>>3);i++)
+    //   printf("%x ",harq_process->a[i]);
+    // printf("\n");
+    
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
