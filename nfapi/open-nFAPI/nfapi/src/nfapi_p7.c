@@ -6487,11 +6487,11 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 {
 	nfapi_rx_indication_body_t *value = (nfapi_rx_indication_body_t *)tlv;
 
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s value->tl.length in unpack: %u \n", __FUNCTION__,
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s value->tl.length in unpack: %u \n", __FUNCTION__,
 				value->tl.length);
 	uint8_t *rxBodyEnd = *ppReadPackedMsg + value->tl.length;
 
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
 				rxBodyEnd, end);
 	if (rxBodyEnd > end)
 	{
@@ -6523,10 +6523,10 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 		value->rx_pdu_list = 0;
 	}
 
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s number_of_pdus = %u\n", __FUNCTION__, value->number_of_pdus);
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s number_of_pdus = %u\n", __FUNCTION__, value->number_of_pdus);
 	for (int i = 0; i < value->number_of_pdus; i++)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s i = %u\n", __FUNCTION__, i);
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s i = %u\n", __FUNCTION__, i);
 		nfapi_tl_t generic_tl;
 
 		// NFAPI_RX_UE_INFORMATION_TAG
@@ -6536,7 +6536,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
 
 		if (generic_tl.tag != NFAPI_RX_UE_INFORMATION_TAG)
 		{
@@ -6561,7 +6561,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
 
 		if (generic_tl.tag != NFAPI_RX_INDICATION_REL8_TAG)
 		{
@@ -6585,7 +6585,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
 
 		if (generic_tl.tag != NFAPI_RX_INDICATION_REL9_TAG)
 		{
