@@ -767,6 +767,7 @@ void *UE_thread(void *arg) {
       memset(txp[i], 0, writeBlockSize);
 
     nbSlotProcessing++;
+    LOG_D(PHY,"Number of slots being processed at the moment: %d\n",nbSlotProcessing);
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
   } // while !oai_exit
