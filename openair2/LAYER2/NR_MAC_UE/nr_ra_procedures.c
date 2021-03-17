@@ -35,6 +35,7 @@
 
 /* RRC */
 #include "NR_RACH-ConfigCommon.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 /* PHY */
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
@@ -514,7 +515,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, mac_ce_len;
+  int num_sdus = 0;
+  int offset = 0;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
@@ -532,35 +534,26 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       LOG_D(MAC, "RA not active. Checking for data to transmit from upper layers...\n");
 
-      payload = (uint8_t*) &mac->CCCH_pdu.payload;
-      mac_ce_len = 0;
+      uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
+      payload = (uint8_t*) mac->CCCH_pdu.payload;
+
       num_sdus = 1;
       post_padding = 1;
+      sdu_lcids[0] = lcid;
 
-      if (0){
-        // initialisation by RRC
-        // CCCH PDU
-        // size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
-        //                                           CC_id,
-        //                                           frame,
-        //                                           CCCH,
-        //                                           1,
-        //                                           mac_sdus,
-        //                                           gNB_id,
-        //                                           0);
-        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
-      } else {
-        // fill ulsch_buffer with random data
-        for (int i = 0; i < TBS_bytes; i++){
-          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
-        }
-        //Sending SDUs with size 1
-        //Initialize elements of sdu_lcids and sdu_lengths
-        sdu_lcids[0] = lcid;
-        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
-        header_length_total += 2 + (sdu_lengths[0] >= 128);
-        size_sdu += sdu_lengths[0];
+      // initialisation by RRC
+
+      // TODO: To be removed after RA procedures fully implemented
+      if(get_softmodem_params()->do_ra) {
+        nr_rrc_ue_generate_RRCSetupRequest(mod_id,gNB_id);
       }
+
+      // CCCH PDU
+      size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
+
+      sdu_lengths[0] = size_sdu;
+
+      LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
 
       if (size_sdu > 0) {
 
@@ -589,12 +582,27 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                                        post_padding,
                                        0);
 
+        AssertFatal(TBS_max > offset, "Frequency resources are not enough for Msg3!\n");
+
         // Padding: fill remainder with 0
         if (post_padding > 0){
-          for (int j = 0; j < (TBS_bytes - offset); j++)
-            payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
+          for (int j = 0; j < (TBS_max - offset); j++)
+            payload[offset + j] = 0;
         }
-      } 
+      }
+
+      LOG_D(MAC,"size_sdu = %i\n", size_sdu);
+      LOG_D(MAC,"offset = %i\n", offset);
+      for(int k = 0; k < TBS_max; k++) {
+        LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+      }
+
+      // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
+      // receiving Msg2 (which contains the Msg3 resource reserve).
+      // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
+      mac->ulsch_pdu.Pdu_size = TBS_max;
+      memcpy(mac->ulsch_pdu.payload, prach_resources->Msg3, TBS_max);
+
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 
       LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, ra->RA_window_cnt, ra->RA_backoff_cnt);

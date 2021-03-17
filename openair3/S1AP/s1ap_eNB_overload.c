@@ -62,8 +62,16 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
                  S1AP_OverloadResponse_PR_overloadAction,
                  S1AP_OverloadResponse_PR_overloadAction, 0, 0);
     }
+    else
+    {
+        return -1;
+    }
     /* Non UE-associated signalling -> stream 0 */
-    DevCheck(stream == 0, stream, 0, 0);
+    if (stream != 0) {
+      S1AP_ERROR("[SCTP %d] Received s1 overload start on stream != 0 (%d)\n",
+                 assoc_id, stream);
+      return -1;
+    }
 
     if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
         /* No MME context associated */
@@ -93,7 +101,11 @@ int s1ap_eNB_handle_overload_stop(uint32_t         assoc_id,
     s1ap_eNB_mme_data_t *mme_desc_p;
 
     /* Non UE-associated signalling -> stream 0 */
-    DevCheck(stream == 0, stream, 0, 0);
+    if (stream != 0) {
+      S1AP_ERROR("[SCTP %d] Received s1 overload stop on stream != 0 (%d)\n",
+                 assoc_id, stream);
+      return -1;
+    }
 
     if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
         /* No MME context associated */
