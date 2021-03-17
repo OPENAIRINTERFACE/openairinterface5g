@@ -364,7 +364,8 @@ int config_libconfig_init(char *cfgP[], int numP) {
   const char *incp = config_get_include_dir (&(libconfig_privdata.cfg)) ;
  
   printf("[LIBCONFIG] Path for include directive set to: %s\n", (incp!=NULL)?incp:"libconfig defaults");
-  
+  /* set convertion option to allow integer to float conversion*/
+   config_set_auto_convert (&(libconfig_privdata.cfg), CONFIG_TRUE);
   /* Read the file. If there is an error, report it and exit. */
   if( config_read_file(&(libconfig_privdata.cfg), libconfig_privdata.configfile) == CONFIG_FALSE) {
     fprintf(stderr,"[LIBCONFIG] %s %d file %s - line %d: %s\n",__FILE__, __LINE__,
