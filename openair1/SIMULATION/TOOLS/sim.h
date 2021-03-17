@@ -269,7 +269,7 @@ typedef enum {
     {CHANNELMOD_MODEL_NAME_PNAME, "name of the model\n",               0,  strptr:NULL ,             defstrval:"",                    TYPE_STRING,    0 },\
     {CHANNELMOD_MODEL_TYPE_PNAME, "name of the model type\n",          0,  strptr:NULL ,             defstrval:"AWGN",                TYPE_STRING,    0 },\
     {CHANNELMOD_MODEL_PL_PNAME,   "channel path loss in dB\n",         0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {CHANNELMOD_MODEL_NP_PNAME,   "channel noise in dB\n",             0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {CHANNELMOD_MODEL_NP_PNAME,   "channel noise in dB\n",             0,  dblptr:NULL,              defdblval:-50,                     TYPE_DOUBLE,    0 },\
     {CHANNELMOD_MODEL_FF_PNAME,   "channel forget factor ((0 to 1)\n", 0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
     {CHANNELMOD_MODEL_CO_PNAME,   "channel offset in samps\n",         0,  iptr:NULL,                defintval:0,                     TYPE_INT,       0 },\
     {CHANNELMOD_MODEL_DT_PNAME,    "delay spread for TDL models\n",    0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 }\
