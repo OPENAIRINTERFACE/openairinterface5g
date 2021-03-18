@@ -297,7 +297,7 @@ int main(int argc, char **argv)
 
   //uint8_t frame_mod4,num_pdcch_symbols = 0;
 
-  SCM_t channel_model=Rayleigh1;//AWGN Rayleigh1 Rayleigh1_anticorr;
+  SCM_t channel_model = AWGN; // AWGN Rayleigh1 Rayleigh1_anticorr;
 
   NB_UE_INST = 1;
   //double pbch_sinr;
@@ -601,7 +601,8 @@ int main(int argc, char **argv)
   InitSinLUT();
 
   get_softmodem_params()->phy_test = 1;
-  
+  get_softmodem_params()->do_ra = 0;
+
   if (snr1set==0)
     snr1 = snr0+10;
   init_dlsch_tpool(dlsch_threads);
@@ -874,7 +875,7 @@ int main(int argc, char **argv)
   scheduled_response.CC_id     = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
-  scheduled_response.thread_id = UE_proc.thread_id;
+  scheduled_response.thread_id = 0;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
