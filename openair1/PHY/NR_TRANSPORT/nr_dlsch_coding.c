@@ -155,7 +155,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     }
 
     dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
-    dlsch->txdataF_precoding[layer] = (int32_t *)malloc16((14*frame_parms->ofdm_symbol_size)*sizeof(int32_t));
+    dlsch->txdataF_precoding[layer] = (int32_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int32_t));
   }
 
   for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
