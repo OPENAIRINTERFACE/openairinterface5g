@@ -124,7 +124,7 @@ class Containerize():
 			self.cli = 'docker'
 			self.dockerfileprefix = '.ubuntu18'
 		elif self.host == 'Red Hat':
-			self.cli = 'podman'
+			self.cli = 'sudo podman'
 			self.dockerfileprefix = '.rhel8.2'
 
 		imageNames = []
