@@ -110,6 +110,8 @@ pipeline {
         }
       }
     }
+    // Build Stages are Mandatory
+    // Later we will add a Ubuntu20 build
     stage ("Image Building Processes") {
       parallel {
         stage ("Ubuntu18 Build") {
