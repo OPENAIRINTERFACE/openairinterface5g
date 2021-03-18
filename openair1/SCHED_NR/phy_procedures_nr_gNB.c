@@ -560,6 +560,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
+      if (NFAPI_MODE == NFAPI_MODE_PNF)
+        pucch->frame = frame_rx;
       if ((pucch->active == 1) &&
 	  (pucch->frame == frame_rx) &&
 	  (pucch->slot == slot_rx) ) {
@@ -620,12 +622,15 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
 	ulsch_harq = ulsch->harq_processes[harq_pid];
     	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+      //printf("ulsch_harq->frame = %d, frame_rx = %d \n", ulsch_harq->frame, frame_rx);
+      if (NFAPI_MODE == NFAPI_MODE_PNF)
+        ulsch_harq->frame = frame_rx;
     	if ((ulsch_harq->status == NR_ACTIVE) &&
           (ulsch_harq->frame == frame_rx) &&
           (ulsch_harq->slot == slot_rx) &&
           (ulsch_harq->handled == 0)){
 
-          LOG_D(PHY, "PUSCH detection started in frame %d slot %d\n",
+          LOG_I(PHY, "PUSCH detection started in frame %d slot %d\n",
                 frame_rx,slot_rx);
 
 #ifdef DEBUG_RXDATA

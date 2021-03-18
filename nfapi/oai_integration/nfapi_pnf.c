@@ -1475,6 +1475,7 @@ int pnf_phy_ul_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     switch (ul_tti_pdu_list[i].pdu_type) {
       case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
         //LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUSCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+        //curr_sfn = curr_sfn + 3; //Gokul
         nr_fill_ulsch(gNB,curr_sfn, curr_slot, &ul_tti_pdu_list[i].pusch_pdu);
         break;
       case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:

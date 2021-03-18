@@ -139,17 +139,18 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
               crc->tb_crc_status);
 
         /* if CRC passes, pass PDU, otherwise pass NULL as error indication */
-        nr_rx_sdu(UL_info->module_id,
-                  UL_info->CC_id,
-                  UL_info->rx_ind.sfn,
-                  UL_info->rx_ind.slot,
-                  rx->rnti,
-                  crc->tb_crc_status ? NULL : rx->pdu,
-                  rx->pdu_length,
-                  rx->timing_advance,
-                  rx->ul_cqi,
-                  rx->rssi);
-        handle_nr_ul_harq(UL_info->module_id, UL_info->frame, UL_info->slot, crc);
+        //Gokul
+        // nr_rx_sdu(UL_info->module_id,
+        //           UL_info->CC_id,
+        //           UL_info->rx_ind.sfn,
+        //           UL_info->rx_ind.slot,
+        //           rx->rnti,
+        //           crc->tb_crc_status ? NULL : rx->pdu,
+        //           rx->pdu_length,
+        //           rx->timing_advance,
+        //           rx->ul_cqi,
+        //           rx->rssi);
+        //handle_nr_ul_harq(UL_info->module_id, UL_info->frame, UL_info->slot, crc);
         break;
       } //    for (j=0;j<UL_info->crc_ind.number_crcs;j++)
     } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++)
