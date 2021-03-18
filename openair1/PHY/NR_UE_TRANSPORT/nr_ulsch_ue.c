@@ -137,7 +137,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     uint8_t mod_order         = pusch_pdu->qam_mod_order;
     uint16_t rnti             = pusch_pdu->rnti;
     uint8_t cdm_grps_no_data  = pusch_pdu->num_dmrs_cdm_grps_no_data;
-    uint16_t start_sc         = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
+    uint16_t start_sc         = frame_parms->first_carrier_offset + (start_rb+pusch_pdu->bwp_start)*NR_NB_SC_PER_RB;
 
     if (start_sc >= frame_parms->ofdm_symbol_size)
       start_sc -= frame_parms->ofdm_symbol_size;
@@ -196,7 +196,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
   uint32_t ***pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
-  uint16_t n_dmrs = (start_rb+nb_rb)*((dmrs_type == pusch_dmrs_type1) ? 6:4);
+  uint16_t n_dmrs = (pusch_pdu->bwp_start + start_rb + nb_rb)*((dmrs_type == pusch_dmrs_type1) ? 6:4);
   int16_t mod_dmrs[n_dmrs<<1] __attribute((aligned(16)));
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -356,16 +356,17 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         if (pusch_pdu->transform_precoding == transform_precoder_disabled){ 
         
           if (dmrs_type == pusch_dmrs_type1)
-            dmrs_idx = start_rb*6;
+            dmrs_idx = (pusch_pdu->bwp_start + start_rb)*6;
           else
-            dmrs_idx = start_rb*4;
-       
-          // Perform this on gold sequence, not required when SC FDMA operation is done,         
+            dmrs_idx = (pusch_pdu->bwp_start + start_rb)*4;
+
+          // TODO: performance improvement, we can skip the modulation of DMRS symbols outside the bandwidth part
+          // Perform this on gold sequence, not required when SC FDMA operation is done,
           nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
         
         } else {
-            dmrs_idx = 0;
-          }
+          dmrs_idx = 0;
+        }
        
        
       } else if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {       

@@ -302,7 +302,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
-int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda) {
+void getStartNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda, int *startSymbol, int *nrOfSymbols) {
   struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
     bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(tda < tdaList->list.count,
@@ -311,9 +311,7 @@ int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda) {
               tdaList->list.count);
 
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
-  int startSymbolIndex, nrOfSymbols;
-  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-  return nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, startSymbol, nrOfSymbols);
 }
 
 nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp) {
@@ -500,8 +498,12 @@ void pf_dl(module_id_t module_id,
       sched_ctrl->numDmrsCdmGrpsNoData = 1;
       uint8_t N_PRB_DMRS =
               getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
-      int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
-                                       sched_ctrl->time_domain_allocation);
+      int startSymbol;
+      int nrOfSymbols;
+      getStartNrOfSymbols(sched_ctrl->active_bwp,
+                                       sched_ctrl->time_domain_allocation,
+                                       &startSymbol,
+                                       &nrOfSymbols);
       uint32_t tbs = nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                                     nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                                     1,  // rbSize
@@ -587,13 +589,18 @@ void pf_dl(module_id_t module_id,
 
     const uint8_t N_PRB_DMRS =
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
-    const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
-        sched_ctrl->time_domain_allocation);
+    int startSymbol;
+    int nrOfSymbols;
+    getStartNrOfSymbols(sched_ctrl->active_bwp,
+        sched_ctrl->time_domain_allocation,
+        &startSymbol,
+        &nrOfSymbols);
     const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
     const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
         sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
         scc->dmrs_TypeA_Position,
-        nrOfSymbols);
+        nrOfSymbols,
+        startSymbol);
 
     int rbSize = 0;
     uint32_t TBS = 0;
@@ -710,7 +717,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
     uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                                                RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
-                                               nrOfSymbols);
+                                               nrOfSymbols,
+                                               startSymbolIndex);
     const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
     const int nrOfLayers = 1;
     const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
@@ -831,7 +839,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->dlDmrsSymbPos =
         fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                        scc->dmrs_TypeA_Position,
-                       nrOfSymbols);
+                       nrOfSymbols,
+                       startSymbolIndex);
     pdsch_pdu->dmrsConfigType = dmrsConfigType;
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
@@ -1058,7 +1067,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           size += 3;
         }
       }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
+      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
         /* we will need the large header, phy-test typically allocates all
          * resources and fills to the last byte below */
         NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;

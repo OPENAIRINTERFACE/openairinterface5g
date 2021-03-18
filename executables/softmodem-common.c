@@ -140,7 +140,7 @@ void get_common_options(uint32_t execmask) {
   }
 
   if (do_forms) {
-    set_softmodem_optmask(SOFTMODEM_DOFORMS_BIT);
+    set_softmodem_optmask(SOFTMODEM_DOSCOPE_BIT);
   }
 
   if(parallel_config != NULL) set_parallel_conf(parallel_config);

@@ -89,7 +89,7 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 
 #include "T.h"
@@ -1593,7 +1593,8 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-
+      if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData) 
+         ((scopeData_t*)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
       // Do PRACH RU processing
 
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);

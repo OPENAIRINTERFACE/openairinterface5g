@@ -87,6 +87,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+#include "nr_nas_msg_sim.h"
+#endif
+
 extern const char *duplex_mode[];
 
 // Thread variables
@@ -189,11 +193,17 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
+
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
+      return -1;
+    }
   }
 
   itti_wait_ready(0);
   return 0;
 }
+
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int CC_id;
 
@@ -569,7 +579,7 @@ int main( int argc, char **argv ) {
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
  
-  if(IS_SOFTMODEM_DOFORMS) { 
+  if(IS_SOFTMODEM_DOSCOPE) {
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
 
@@ -584,7 +594,10 @@ int main( int argc, char **argv ) {
   protocol_ctxt_t ctxt_pP = {0};
   ctxt_pP.enb_flag = ENB_FLAG_NO;
   ctxt_pP.rnti = 0x1234;
-  rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
+  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
+  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+  RC.nrrrc[0]->node_type = ngran_gNB;
+  nr_rrc_ue_generate_RRCSetupRequest(ctxt_pP.module_id, 0);
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode

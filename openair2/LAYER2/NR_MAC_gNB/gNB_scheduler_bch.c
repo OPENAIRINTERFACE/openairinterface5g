@@ -113,7 +113,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
       dl_tti_request = &gNB->DL_req[CC_id];
       dl_req = &dl_tti_request->dl_tti_request_body;
 
-      mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]);
+      mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 0, 1, &cc->MIB_pdu.payload[0]);
 
       LOG_D(MAC, "Frame %d, slot %d: BCH PDU length %d\n", frameP, slotP, mib_sdu_length);
 
@@ -235,6 +235,7 @@ void schedule_control_sib1(module_id_t module_id,
                            int time_domain_allocation,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
+                           uint8_t candidate_idx,
                            int num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
@@ -242,9 +243,9 @@ void schedule_control_sib1(module_id_t module_id,
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
+    LOG_D(MAC,"schedule_control_common: Filling nr_mca->sched_ctrlCommon\n");
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
-    gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
     gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
     fill_default_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space);
@@ -266,13 +267,10 @@ void schedule_control_sib1(module_id_t module_id,
                                                           gNB_mac->sched_ctrlCommon->coreset,
                                                           gNB_mac->sched_ctrlCommon->aggregation_level,
                                                           0,
-                                                          0,
+                                                          candidate_idx,
                                                           nr_of_candidates);
 
-  if (gNB_mac->sched_ctrlCommon->cce_index < 0) {
-    LOG_E(MAC, "%s(): could not find CCE for coreset0\n", __func__);
-    return;
-  }
+  AssertFatal(gNB_mac->sched_ctrlCommon->cce_index >= 0, "Could not find CCE for coreset0\n");
 
   const uint16_t bwpSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
   int rbStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
@@ -291,7 +289,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   // Calculate number of PRB_DMRS
   uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
-  uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, startSymbolIndex+nrOfSymbols);
+  uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex);
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
   int rbSize = 0;
@@ -301,9 +299,7 @@ void schedule_control_sib1(module_id_t module_id,
     TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                          nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
-
-    // FIXME: Something is not working in nr_modulation() for TBS = 84, so we need to skip it
-  } while ( (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes) || (TBS==84) );
+  } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
@@ -343,6 +339,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
                      bwp);
+
+  // TODO: This assignment should be done in function nr_configure_pdcch()
+  pdcch_pdu_rel15->BWPSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
+  pdcch_pdu_rel15->BWPStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -392,7 +392,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
-  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->StartSymbolIndex+pdsch_pdu_rel15->NrOfSymbols);
+  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols, pdsch_pdu_rel15->StartSymbolIndex);
 
   LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
@@ -467,6 +467,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
   int time_domain_allocation = 0;
   uint8_t mcsTableIdx = 0;
   uint8_t mcs = 6;
+  uint8_t candidate_idx = 0;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
 
@@ -476,13 +477,13 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
     // Get SIB1
     uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];
-    uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, 1, sib1_payload);
+    uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, 0, 1, sib1_payload);
     LOG_D(MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
     LOG_D(MAC,"SIB1: \n");
     for (int i=0;i<sib1_sdu_length;i++) LOG_D(MAC,"byte %d : %x\n",i,((uint8_t*)sib1_payload)[i]);
 
     // Configure sched_ctrlCommon for SIB1
-    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, sib1_sdu_length);
+    schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, candidate_idx, sib1_sdu_length);
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
@@ -492,7 +493,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
     // Calculate number of PRB_DMRS
     uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
-    uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, startSymbolIndex+nrOfSymbols);
+    uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex);
     uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
     const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),

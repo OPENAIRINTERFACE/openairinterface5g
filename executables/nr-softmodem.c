@@ -378,6 +378,30 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
+  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==1)){
+    if (gnb_nb > 0) {
+      if(NGAP_CONF_MODE){
+        if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
+          LOG_E(NGAP, "Create task for NGAP failed\n");
+          return -1;
+        }
+      } else {
+          LOG_E(NGAP, "Ngap task not created\n");
+      }
+
+      if(!emulate_rf){
+        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
+          LOG_E(UDP_, "Create task for UDP failed\n");
+          return -1;
+        }
+      }
+
+      if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
+        LOG_E(GTPU, "Create task for GTPV1U failed\n");
+        return -1;
+      }
+    }
+  }
 
   if (gnb_nb > 0) {
     if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
@@ -829,9 +853,6 @@ if(!IS_SOFTMODEM_NOS1)
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-//  if(IS_SOFTMODEM_NOS1)
-//    init_pdcp();
-
   if (RC.nb_nr_inst > 0)  {
     nr_read_config_and_init();
   } else {
@@ -840,9 +861,7 @@ if(!IS_SOFTMODEM_NOS1)
   }
 
   if (RC.nb_nr_inst > 0)  {
-
-    if(IS_SOFTMODEM_NOS1)
-      init_pdcp();
+    init_pdcp();
 
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
@@ -942,8 +961,8 @@ if(!IS_SOFTMODEM_NOS1)
     printf("RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
     printf("ALL RUs ready - init gNBs\n");
-    if(IS_SOFTMODEM_DOFORMS) {
-      sleep(1);	
+    if(IS_SOFTMODEM_DOSCOPE) {
+      sleep(1);
       scopeParms_t p;
       p.argc=&argc;
       p.argv=argv;

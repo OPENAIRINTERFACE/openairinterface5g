@@ -130,11 +130,11 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
            ccch_sdu_len);
   }
 
-  //LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__,
-  //      ie->value.choice.RRCContainer.size);
-  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-  //  printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  //printf("\n");
+  LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__,
+        ie->value.choice.RRCContainer.size);
+  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+    printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  printf("\n");
 
   // Find instance from nr_cellid
   int rrc_inst = -1;
@@ -169,39 +169,13 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   f1ap_cu_inst[rrc_inst].f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
 
   if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
-    if(0) {
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0; 
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance 
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id; 
-      itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
-    }
-
-    protocol_ctxt_t ctxt;
-    ctxt.module_id = instance;
-    ctxt.instance = instance;
-    ctxt.rnti = 0x1234; //f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], cu_ue_f1ap_id);
-    ctxt.enb_flag = 1;
-    ctxt.eNB_index = 0;
-    ctxt.configured = 1;
-    mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
-    memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
-    LOG_I(F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %d with size %ld (DCCH) \n", ctxt.rnti, 1, ie->value.choice.RRCContainer.size);
-
-    LOG_I(F1AP, "%s() RRCContainer size %lu: ", __func__, ie->value.choice.RRCContainer.size);
-    for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-     printf("%02x ", mb->data[i]);
-    printf("\n");
-
-    pdcp_data_ind (&ctxt,
-      1, // srb_flag
-      0, // embms_flag
-      1,
-      ie->value.choice.RRCContainer.size,
-      mb);
-    return 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0; 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id; 
+    itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
   } else {
     RRC_MAC_CCCH_DATA_IND (message_p).frame      = 0; 
     RRC_MAC_CCCH_DATA_IND (message_p).sub_frame  = 0;

@@ -1243,31 +1243,14 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                                 RC.nrrrc[ctxt.module_id],
                                                 ctxt.rnti);
 
-  NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
-  asn_dec_rval_t dec_rval;
-  if (du_ccch_flag) {
-    /* for rfsim */
-    dec_rval = uper_decode(NULL,
-          &asn_DEF_NR_DL_CCCH_Message,
-          (void**)&dl_ccch_msg,
-          &ie->value.choice.RRCContainer.buf[2],
-          rrc_dl_sdu_len-6,0,0);
-    if (dec_rval.code == RC_OK) {
-      srb_id = 0;
-      du_ccch_flag = 0;
-    } else {
-      srb_id = 1;
-    }
-  }
-  
   if (srb_id == 0) {
-    // NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
-    // asn_dec_rval_t dec_rval;
-    // dec_rval = uper_decode(NULL,
-    //      &asn_DEF_NR_DL_CCCH_Message,
-    //      (void**)&dl_ccch_msg,
-    //      ie->value.choice.RRCContainer.buf,
-    //      rrc_dl_sdu_len,0,0);
+    NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    dec_rval = uper_decode(NULL,
+                           &asn_DEF_NR_DL_CCCH_Message,
+			   (void**)&dl_ccch_msg,
+			   ie->value.choice.RRCContainer.buf,
+			   rrc_dl_sdu_len,0,0);
     AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
     switch (dl_ccch_msg->message.choice.c1->present) {
 
@@ -1349,7 +1332,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         "Unknown message\n");
         break;
     }// switch case
-
+    return(0);
   } else if (srb_id == 1) { 
 
     NR_DL_DCCH_Message_t* dl_dcch_msg=NULL;
@@ -1479,6 +1462,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   }
 
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
+
 
 //   rlc_op_status_t    rlc_status;
 //   boolean_t          ret             = TRUE;

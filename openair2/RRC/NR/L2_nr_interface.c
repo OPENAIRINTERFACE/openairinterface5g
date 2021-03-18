@@ -42,6 +42,7 @@
 
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"
+#include "rrc_gNB_UE_context.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -217,28 +218,21 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                            const int         CC_id,
                            const frame_t     frameP,
                            const rb_id_t     Srb_id,
+                           const rnti_t      rnti,
                            const uint8_t     Nb_tb,
                            uint8_t *const    buffer_pP ){
 
-  asn_enc_rval_t enc_rval;
-  uint8_t Sdu_size = 0;
-  uint8_t sfn_msb = (uint8_t)((frameP>>4)&0x3f);
-  
 #ifdef DEBUG_RRC
   LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
 #endif
 
-    rrc_gNB_carrier_data_t *carrier;
-    NR_BCCH_BCH_Message_t *mib;
-    NR_SRB_INFO *srb_info;
-    char payload_size, *payload_pP;
-
-    carrier = &RC.nrrrc[Mod_idP]->carrier;
-    mib = &carrier->mib;
-    srb_info = &carrier->Srb0;
-
-    /* MIBCH */
+    // MIBCH
     if ((Srb_id & RAB_OFFSET) == MIBCH) {
+
+      asn_enc_rval_t enc_rval;
+      uint8_t sfn_msb = (uint8_t)((frameP>>4)&0x3f);
+      rrc_gNB_carrier_data_t *carrier = &RC.nrrrc[Mod_idP]->carrier;
+      NR_BCCH_BCH_Message_t *mib = &carrier->mib;
 
         // Currently we are getting the pdcch_ConfigSIB1 from the configuration file.
         // Uncomment this function for a dynamic pdcch_ConfigSIB1.
@@ -269,7 +263,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
         return (3);
     }
 
-  /* TODO BCCH SIB1 SIBs */
+  // TODO BCCH SIB1 SIBs
   if ((Srb_id & RAB_OFFSET ) == BCCH) {
     memcpy(&buffer_pP[0],
            RC.nrrrc[Mod_idP]->carrier.SIB1,
@@ -278,29 +272,69 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     return RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1;
   }
 
-  /* CCCH */
+  // CCCH
   if( (Srb_id & RAB_OFFSET ) == CCCH) {
-    //struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[Mod_idP],rnti);
-    //if (ue_context_p == NULL) return(0);
-    //eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-    LOG_D(RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
 
-    // srb_info=&ue_p->Srb0;
+    char *payload_pP;
+    uint8_t Sdu_size = 0;
+    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_idP], rnti);
 
-    payload_size = srb_info->Tx_buffer.payload_size;
+    LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
+
+    char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
 
     // check if data is there for MAC
     if (payload_size > 0) {
-      payload_pP = srb_info->Tx_buffer.Payload;
-      LOG_D(RRC,"[gNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n", Mod_idP, srb_info, payload_size, buffer_pP, payload_pP);
+      payload_pP = ue_context_p->ue_context.Srb0.Tx_buffer.Payload;
+      LOG_D(NR_RRC,"[gNB %d] CCCH has %d bytes (dest: %p, src %p)\n", Mod_idP, payload_size, buffer_pP, payload_pP);
       // Fill buffer
       memcpy((void *)buffer_pP, (void*)payload_pP, payload_size);
       Sdu_size = payload_size;
-      srb_info->Tx_buffer.payload_size = 0;
+      ue_context_p->ue_context.Srb0.Tx_buffer.payload_size = 0;
     }
     return Sdu_size;
   }
 
   return(0);
 
+}
+
+int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
+                           const int             CC_id,
+                           const frame_t         frameP,
+                           const sub_frame_t     sub_frameP,
+                           const int             UE_id,
+                           const rnti_t          rntiP,
+                           const rb_id_t         srb_idP,
+                           const uint8_t        *sduP,
+                           const sdu_size_t      sdu_lenP,
+                           const boolean_t   brOption) {
+
+  if (NODE_IS_DU(RC.nrrrc[module_idP]->node_type)) {
+    LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",
+          module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
+    /* do ITTI message */
+    DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
+      module_idP,
+      CC_id,
+      UE_id,
+      rntiP,
+      sduP,
+      sdu_lenP
+    );
+    return(0);
+  }
+
+  protocol_ctxt_t ctxt;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP,0);
+
+  if((srb_idP & RAB_OFFSET) == CCCH) {
+    LOG_D(NR_RRC, "[gNB %d] Received SDU for CCCH on SRB %ld\n", module_idP, srb_idP);
+    ctxt.brOption = brOption;
+    if (sdu_lenP > 0) {
+      nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
+    }
+  }
+
+  return 0;
 }

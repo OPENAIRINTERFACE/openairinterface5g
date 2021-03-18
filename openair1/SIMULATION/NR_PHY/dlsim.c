@@ -87,12 +87,30 @@ uint64_t downlink_frequency[MAX_NUM_CCs][4];
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
+{
+  return 0;
+}
+
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
 {
   return 0;
 }
@@ -184,10 +202,6 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0); 
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
 int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
-
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
-  return 0;
-}
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];

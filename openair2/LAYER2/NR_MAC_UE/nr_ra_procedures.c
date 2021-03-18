@@ -35,6 +35,7 @@
 
 /* RRC */
 #include "NR_RACH-ConfigCommon.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 /* PHY */
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
@@ -63,6 +64,8 @@ void init_RA(module_id_t mod_id,
 
   RA_config_t *ra          = &mac->ra;
   ra->RA_active            = 1;
+  ra->ra_PreambleIndex     = -1;
+  ra->RA_usedGroupA        = 1;
   ra->RA_RAPID_found       = 0;
   ra->preambleTransMax     = 0;
   ra->first_Msg3           = 1;
@@ -78,8 +81,8 @@ void init_RA(module_id_t mod_id,
 
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
-      LOG_I(MAC, "Initialization of 4-step contention-free random access procedure\n");
-      prach_resources->RA_TYPE = RA_4STEP;
+      LOG_I(MAC, "Initialization of 2-step contention-free random access procedure\n");
+      prach_resources->RA_TYPE = RA_2STEP;
       ra->cfra = 1;
     } else if (rach_ConfigDedicated->ext1){
       if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
@@ -92,6 +95,10 @@ void init_RA(module_id_t mod_id,
     } else {
       LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
     }
+  } else if (nr_rach_ConfigCommon){
+    LOG_I(MAC, "Initialization of 4-step contention-based random access procedure\n");
+    prach_resources->RA_TYPE = RA_4STEP;
+    ra->cfra = 0;
   } else {
     LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
   }
@@ -246,7 +253,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   int messageSizeGroupA = 0;
   int sizeOfRA_PreamblesGroupA = 0;
   int messagePowerOffsetGroupB = 0;
-  int PLThreshold;
+  int PLThreshold = 0;
   long deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0;
   RA_config_t *ra = &mac->ra;
@@ -349,31 +356,34 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   }
   /* Msg3 has not been transmitted yet */
   if (ra->first_Msg3) {
-    if (noGroupB) {
-      // use Group A preamble
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
-      ra->RA_usedGroupA = 1;
-    } else if ((ra->Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
-      // Group B is configured and RA preamble Group A is used
-      // - todo add condition on CCCH_sdu_size for initiation by CCCH
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
-      ra->RA_usedGroupA = 1;
-    } else {
-      // Group B preamble is configured and used
-      // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
-      // the remaining belong to RA Preambles Group B
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
-      ra->RA_usedGroupA = 0;
+    if(ra->ra_PreambleIndex < 0 || ra->ra_PreambleIndex > 63) {
+      if (noGroupB) {
+        // use Group A preamble
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
+        ra->RA_usedGroupA = 1;
+      } else if ((ra->Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
+        // Group B is configured and RA preamble Group A is used
+        // - todo add condition on CCCH_sdu_size for initiation by CCCH
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
+        ra->RA_usedGroupA = 1;
+      } else {
+        // Group B preamble is configured and used
+        // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
+        // the remaining belong to RA Preambles Group B
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+        ra->RA_usedGroupA = 0;
+      }
     }
   } else { // Msg3 is being retransmitted
     if (ra->RA_usedGroupA && noGroupB) {
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % ra->cb_preambles_per_ssb);
     } else if (ra->RA_usedGroupA && !noGroupB){
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + ((taus()) % sizeOfRA_PreamblesGroupA);
     } else {
-      prach_resources->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + ((taus()) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
     }
   }
+  prach_resources->ra_PreambleIndex = ra->ra_PreambleIndex;
 }
 
 // RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
@@ -471,6 +481,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
   // start contention resolution timer
   ra->RA_contention_resolution_cnt = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1) * 8;
   ra->RA_contention_resolution_timer_active = 1;
+  ra->ra_state = WAIT_CONTENTION_RESOLUTION;
 
 }
 
@@ -502,7 +513,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
-  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload;
+  uint8_t lcid = UL_SCH_LCID_CCCH;
+  uint8_t *payload;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
@@ -513,12 +525,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
 
-  int prach_genarate = 0;
-  // int32_t frame_diff = 0;
-
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, mac_ce_len;
+  int num_sdus = 0;
+  int offset = 0;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
@@ -529,44 +539,40 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     }
   }
 
-  if (prach_resources->init_msg1) {
+  if (prach_resources->init_msg1 && ra->ra_state != RA_SUCCEEDED) {
 
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
       LOG_D(MAC, "RA not active. Checking for data to transmit from upper layers...\n");
 
-      payload = (uint8_t*) &mac->CCCH_pdu.payload;
-      mac_ce_len = 0;
+      uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
+      payload = (uint8_t*) mac->CCCH_pdu.payload;
+
       num_sdus = 1;
       post_padding = 1;
+      sdu_lcids[0] = lcid;
 
-      if (0){
-        // initialisation by RRC
-        // CCCH PDU
-        // size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
-        //                                           CC_id,
-        //                                           frame,
-        //                                           CCCH,
-        //                                           1,
-        //                                           mac_sdus,
-        //                                           gNB_id,
-        //                                           0);
-        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
-      } else {
-        // fill ulsch_buffer with random data
-        for (int i = 0; i < TBS_bytes; i++){
-          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
-        }
-        //Sending SDUs with size 1
-        //Initialize elements of sdu_lcids and sdu_lengths
-        sdu_lcids[0] = lcid;
-        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
-        header_length_total += 2 + (sdu_lengths[0] >= 128);
-        size_sdu += sdu_lengths[0];
+      // initialisation by RRC
+
+      // TODO: To be removed after RA procedures fully implemented
+      if(get_softmodem_params()->do_ra) {
+        nr_rrc_ue_generate_RRCSetupRequest(mod_id,gNB_id);
       }
 
+      // CCCH PDU
+      size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
+
+      sdu_lengths[0] = size_sdu;
+
+      LOG_I(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
+
       if (size_sdu > 0) {
+
+        // UE Contention Resolution Identity
+        // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to determine whether or not the
+        // Random Access Procedure has been successful after reception of Msg4
+        memcpy(ra->cont_res_id, mac_sdus, sizeof(uint8_t) * 6);
 
         LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
@@ -577,10 +583,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         nr_get_RA_window(mac);
 
         // Fill in preamble and PRACH resources
-        if (ra->generate_nr_prach == 1)
-        {
+        if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-          prach_genarate = 1;
         }
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -595,12 +599,27 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                                        post_padding,
                                        0);
 
+        AssertFatal(TBS_max > offset, "Frequency resources are not enough for Msg3!\n");
+
         // Padding: fill remainder with 0
         if (post_padding > 0){
-          for (int j = 0; j < (TBS_bytes - offset); j++)
-            payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
+          for (int j = 0; j < (TBS_max - offset); j++)
+            payload[offset + j] = 0;
         }
-      } 
+      }
+
+      LOG_D(MAC,"size_sdu = %i\n", size_sdu);
+      LOG_D(MAC,"offset = %i\n", offset);
+      for(int k = 0; k < TBS_max; k++) {
+        LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+      }
+
+      // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
+      // receiving Msg2 (which contains the Msg3 resource reserve).
+      // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
+      mac->ulsch_pdu.Pdu_size = TBS_max;
+      memcpy(mac->ulsch_pdu.payload, prach_resources->Msg3, TBS_max);
+
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 
       LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, ra->RA_window_cnt, ra->RA_backoff_cnt);
@@ -612,9 +631,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       }
 
       if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1) {
-        // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-        nr_ra_succeeded(mod_id, frame, nr_slot_tx);
 
+        if(ra->cfra) {
+          // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
+          nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+        } else {
+          ra->generate_nr_prach = GENERATE_IDLE;
+        }
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 
         LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
@@ -627,10 +650,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         ra->RA_window_cnt--;
-        if (ra->generate_nr_prach == 1)
-        {
+        if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-          prach_genarate = 1;
         }
       } else if (ra->RA_backoff_cnt > 0) {
 
@@ -638,9 +659,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         ra->RA_backoff_cnt--;
 
-        if ((ra->RA_backoff_cnt > 0 && ra->generate_nr_prach == 1) || ra->RA_backoff_cnt == 0){
+        if ((ra->RA_backoff_cnt > 0 && ra->generate_nr_prach == GENERATE_PREAMBLE) || ra->RA_backoff_cnt == 0) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-          prach_genarate = 1;
         }
 
       }
@@ -651,8 +671,12 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
 
-  // return ra->generate_nr_prach;
-  return prach_genarate;
+  if(ra->generate_nr_prach != GENERATE_IDLE) {
+    return ra->generate_nr_prach;
+  } else {
+    return ra->ra_state;
+  }
+
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
@@ -745,6 +769,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
 
     ra->RA_window_cnt = -1;
+    mac->crnti = ra->t_crnti;
 
   } else {
 
@@ -752,6 +777,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
     ra->RA_contention_resolution_cnt = -1;
     ra->RA_contention_resolution_timer_active = 0;
+    mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
 
     LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
@@ -760,7 +786,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
-  ra->generate_nr_prach = 2;
+  ra->generate_nr_prach = GENERATE_IDLE;
   ra->ra_state = RA_SUCCEEDED;
 
 }
@@ -775,8 +801,9 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
 
-  ra->first_Msg3 = 0;
-  ra->generate_nr_prach = 3;
+  ra->first_Msg3 = 1;
+  ra->ra_PreambleIndex     = -1;
+  ra->generate_nr_prach = RA_FAILED;
   ra->ra_state = RA_UE_IDLE;
 
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;

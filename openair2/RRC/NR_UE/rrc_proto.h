@@ -86,12 +86,14 @@ int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_beare
    \param sdu_len       length of buffer*/
 int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len);
 
-/**\brief decode NR SIB1 message
+/**\brief decode NR BCCH-DLSCH (SI) messages
    \param module_idP    module id
    \param gNB_index     gNB index
-   \param sduP          pointer to buffer of ASN message
-   \param sdu_len       length of buffer*/
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len);
+   \param sduP          pointer to buffer of ASN message BCCH-DLSCH
+   \param sdu_len       length of buffer
+   \param rsrq          RSRQ
+   \param rsrp          RSRP*/
+int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(const module_id_t module_id, const uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len, const uint8_t rsrq, const uint8_t rsrp);
 
 /**\brief Decode NR DCCH from gNB, sent from lower layer through SRB3
    \param module_id  module id
@@ -107,29 +109,38 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(const module_id_t module_id, const ui
    \param channel    indicator for channel of the pdu
    \param pduP       pointer to pdu
    \param pdu_len    data length of pdu*/
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const channel_t channel, const uint8_t* pduP, const sdu_size_t pdu_len);
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len);
 
 /**\brief
    \param module_id  module id
    \param CC_id      component carrier id
+   \param gNB_index  gNB index
    \param frame_t    frameP
    \param rb_id_t    SRB id
    \param buffer_pP  pointer to buffer*/
-int8_t mac_rrc_nr_data_req_ue(const module_id_t Mod_idP,
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
                               const int         CC_id,
+                              const uint8_t     gNB_id,
                               const frame_t     frameP,
                               const rb_id_t     Srb_id,
-                              uint8_t *const    buffer_pP);
-
+                              uint8_t           *buffer_pP);
 
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
 
 /**\brief RRC UE generate RRCSetupRequest message.
-   \param ctxt_pP    protocol context 
+   \param module_id  module id
    \param gNB_index  gNB index  */
-void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index );
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index);
 
 /** @}*/
 #endif

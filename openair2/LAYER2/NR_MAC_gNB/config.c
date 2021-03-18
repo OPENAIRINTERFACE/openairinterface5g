@@ -433,6 +433,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
             }
           }
         }
+      } else {
+        ra->cfra = false;
+        ra->rnti = rnti;
+        ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+        ra->preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
+        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+          ra->preambles.preamble_list[i] = i;
       }
       LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);
     } else { // secondaryCellGroup has been updated
