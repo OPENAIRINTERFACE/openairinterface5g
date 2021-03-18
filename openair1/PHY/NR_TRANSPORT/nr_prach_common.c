@@ -127,6 +127,8 @@ void compute_nr_prach_seq(uint8_t short_sequence,
 
   LOG_D( PHY, "compute_prach_seq: done init prach_tables\n" );
 
+  int16_t *x_u_time = calloc(1, sizeof(int32_t)*N_ZC);
+
   for (i=0; i<num_sequences; i++) {
     int index = (rootSequenceIndex+i) % (N_ZC-1);
 
@@ -147,9 +149,30 @@ void compute_nr_prach_seq(uint8_t short_sequence,
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
 
     for (k=0; k<N_ZC; k++) {
-      // multiply by inverse of 2 (required since ru is exp[j 2\pi n])
-      X_u[i][k] = ((uint32_t*)nr_ru)[(((k*(1+(inv_u*k)))%N_ZC)*nr_ZC_inv[2])%N_ZC];
+      int nr_ru_index = N_ZC*((u*k*(k+1)+(N_ZC<<1)-1)/(N_ZC<<1))-((u*k*(k+1))>>1);
+      x_u_time[k<<1]     = (int16_t)nr_ru[nr_ru_index<<1];
+      x_u_time[1+(k<<1)] = (int16_t)nr_ru[1+(nr_ru_index<<1)];
     }
+
+    int16_t *x_u_freq = (int16_t*)X_u[i];
+    bzero(x_u_freq,sizeof(int32_t)*N_ZC);
+    for (int line=0; line<N_ZC; line++) {
+      for (int col=0; col<N_ZC; col++) {
+        int32_t re = x_u_time[col<<1]*prach_fft139_re[col][line] - x_u_time[1+(col<<1)]*prach_fft139_im[col][line];
+        int32_t im = x_u_time[col<<1]*prach_fft139_im[col][line] + x_u_time[1+(col<<1)]*prach_fft139_re[col][line];
+        x_u_freq[line<<1]  = x_u_freq[line<<1] + (re>>19);
+        x_u_freq[1+(line<<1)] = x_u_freq[1+(line<<1)] + (im>>19);
+      }
+    }
+
+#ifdef PRACH_DEBUG
+    for (k=0; k<N_ZC; k++) {
+      LOG_I(NR_PHY," x_u_time[%i][%i] = (%i) + (%i)i\n", i,k, x_u_time[k<<1],x_u_time[1+(k<<1)]);
+    }
+    for (k=0; k<N_ZC; k++) {
+      LOG_I(NR_PHY," x_u_freq[%i][%i] = (%i) + (%i)i\n", i,k, (int16_t)X_u[i][k],(int16_t)(X_u[i][k]>>16));
+    }
+#endif
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_OUT);

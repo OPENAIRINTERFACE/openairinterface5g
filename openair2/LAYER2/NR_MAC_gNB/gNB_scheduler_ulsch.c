@@ -523,9 +523,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         } else {
 
           LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received\n");
-          LOG_I(NR_MAC,"[RAPROC] Received Msg3:\n");
+          LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
           for (int k = 0; k < sdu_lenP; k++) {
-            LOG_I(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+            LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
           }
 
           // UE Contention Resolution Identity
