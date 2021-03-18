@@ -252,6 +252,17 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
 }
 
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
 
 int main(int argc, char **argv)
 {
@@ -841,6 +852,11 @@ int main(int argc, char **argv)
   unsigned int errors_bit    = 0;
   uint32_t errors_scrambling = 0;
 
+  initTpool("N", &(nrUE_params.Tpool), false);
+  notifiedFIFO_t txFifo;
+  UE->txFifo = &txFifo;
+  initNotifiedFIFO(&txFifo);
+  pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&txFifo,NULL));
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
