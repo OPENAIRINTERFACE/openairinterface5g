@@ -678,7 +678,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     memcpy(harq_process->b+offset,
 	   harq_process->c[r],
-	   Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
+	   Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
