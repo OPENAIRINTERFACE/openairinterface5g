@@ -264,6 +264,9 @@ nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
 
+void do_nothing(void *args) {
+}
+
 int main(int argc, char **argv)
 {
   char c;
@@ -856,7 +859,7 @@ int main(int argc, char **argv)
   notifiedFIFO_t txFifo;
   UE->txFifo = &txFifo;
   initNotifiedFIFO(&txFifo);
-  pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&txFifo,NULL));
+  pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&txFifo,do_nothing));
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
