@@ -1391,7 +1391,7 @@ int setup_RU_buffers(RU_t *ru) {
     else if (frame_parms->N_RB_DL == 50)  ru->N_TA_offset = 624/2;
     else if (frame_parms->N_RB_DL == 25)  ru->N_TA_offset = 624/4;
 
-    if(ru->basicsim)
+    if(IS_SOFTMODEM_BASICSIM)
       /* this is required for the basic simulator in TDD mode
        * TODO: find a proper cleaner solution
        */
