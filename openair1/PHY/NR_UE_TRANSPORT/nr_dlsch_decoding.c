@@ -261,7 +261,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams = &decParams;
-  t_nrLDPC_time_stats procTime;
+  t_nrLDPC_time_stats procTime = {0};
   t_nrLDPC_time_stats* p_procTime =&procTime ;
   
   if (!harq_process) {
