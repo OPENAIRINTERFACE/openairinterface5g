@@ -837,6 +837,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int rbSize = 8;
 
     if (nr_mac->sched_ctrlCommon == NULL){
+      LOG_D(NR_MAC,"generate_Msg2: Filling nr_mac->sched_ctrlCommon\n");
       nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
       nr_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->search_space));
       nr_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->coreset));
@@ -890,6 +891,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
+    if (nrOfSymbols == 2) {
+      nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 1;
+    } else {
+      nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 2;
+    }
+
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
     const int bwpid = bwp->bwp_Id;
@@ -939,6 +946,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         mcsTableIdx = 2;
     }
 
+    AssertFatal(nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 1 || nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 2,
+                "nr_mac->schedCtrlCommon->numDmrsCdmGrpsNoData %d is not possible",
+                nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData);
+
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = ra->RA_rnti;
     pdsch_pdu_rel15->pduIndex = pduindex;
@@ -959,7 +970,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
-    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 2;
+    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData;
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = rbStart;
@@ -1108,12 +1119,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
     uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+    LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
     uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
     ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
     ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
     ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length * 8;
-    mac_pdu_length = mac_pdu_length + mac_sdu_length + 2;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+    mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
+
+    LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + 2 bytes), mac_pdu_length %d\n",mac_sdu_length,mac_pdu_length);
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
@@ -1130,6 +1144,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     long dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
     uint8_t N_PRB_DMRS = 0;
+
+    AssertFatal(nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 1 || nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 2,
+                "nr_mac->schedCtrlCommon->numDmrsCdmGrpsNoData %d is not possible",
+                nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData);
+
     if (dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
       N_PRB_DMRS = nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
     }
@@ -1153,6 +1172,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     do {
       rbSize++;
+      LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                            nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;

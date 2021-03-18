@@ -243,6 +243,7 @@ void schedule_control_sib1(module_id_t module_id,
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
+    LOG_D(NR_MAC,"schedule_control_common: Filling nr_mac->sched_ctrlCommon\n");
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
