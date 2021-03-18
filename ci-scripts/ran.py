@@ -465,7 +465,7 @@ class RANManagement():
 				self.prematureExit = True
 				return
 			else:
-				mySSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
+				mySSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting|Started"', '\$', 4)
 				if rruCheck:
 					result = re.search('wait RUs', mySSH.getBefore())
 				else:
