@@ -110,6 +110,48 @@ pipeline {
         }
       }
     }
+    stage ("Image Building Processes") {
+      parallel {
+        stage ("Ubuntu18 Build") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-Ubuntu18-Image-Builder', 'Ubuntu18-Images-Build')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-Ubuntu18-Image-Builder')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("RHEL8 Build") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RHEL8-Image-Builder', 'RHEL8-Images-Build')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RHEL8-Image-Builder')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
   }
   post {
     always {
