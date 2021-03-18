@@ -557,7 +557,7 @@ void *UE_thread(void *arg) {
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
-  for (int i=0; i<RX_NB_TH+1; i++) {// RX_NB_TH working + 1 we are making to be pushed
+  for (int i=0; i<NR_RX_NB_TH+1; i++) {// NR_RX_NB_TH working + 1 we are making to be pushed
     pushNotifiedFIFO_nothreadSafe(&freeBlocks, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX));
     pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), TX_JOB_ID,&txFifo,processSlotTX));
   }
@@ -630,9 +630,9 @@ void *UE_thread(void *arg) {
 
     // whatever means thread_idx
     // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
-    // Slot 3 will overlap if RX_NB_TH is 2
+    // Slot 3 will overlap if NR_RX_NB_TH is 2
     // this is general failure in UE !!!
-    thread_idx = absolute_slot % RX_NB_TH;
+    thread_idx = absolute_slot % NR_RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
     notifiedFIFO_elt_t *msgToPush;
     AssertFatal((msgToPush=pullTpool(&freeBlocks,&(get_nrUE_params()->Tpool))) != NULL,"chained list failure");
@@ -664,18 +664,18 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
-               ((slot_nr + DURATION_RX_TO_TX - RX_NB_TH)%nb_slot_frame),&UE->frame_parms,0)];
+               ((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - RX_NB_TH) % nb_slot_frame, &UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH) % nb_slot_frame, &UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - RX_NB_TH) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;
+      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;
     }
 
     AssertFatal(readBlockSize ==
@@ -707,7 +707,7 @@ void *UE_thread(void *arg) {
 
     notifiedFIFO_elt_t *res;
 
-    while (nbSlotProcessing >= RX_NB_TH) {
+    while (nbSlotProcessing >= NR_RX_NB_TH) {
       res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
       nbSlotProcessing--;
       nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
@@ -725,7 +725,7 @@ void *UE_thread(void *arg) {
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
     // use previous timing_advance value to compute writeTimestamp
-    writeTimestamp = timestamp + UE->frame_parms.get_samples_slot_timestamp(slot_nr, &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) -
+    writeTimestamp = timestamp + UE->frame_parms.get_samples_slot_timestamp(slot_nr, &UE->frame_parms,DURATION_RX_TO_TX - NR_RX_NB_TH) -
                      firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - timing_advance;
 
     // but use current UE->timing_advance value to compute writeBlockSize
@@ -735,7 +735,7 @@ void *UE_thread(void *arg) {
     }
 
     int flags = 0;
-    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
+    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH;
 
     if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 

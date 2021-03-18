@@ -220,8 +220,8 @@ void init_tpools(uint8_t nun_dlsch_threads) {
     memcpy(params,"N",1);
   }
   else {
-    params = calloc(1,(RX_NB_TH*NB_TH_SLOT*3)+1);
-    for (int i=0; i<RX_NB_TH*NB_TH_SLOT; i++) {
+    params = calloc(1,(NR_RX_NB_TH*NR_NB_TH_SLOT*3)+1);
+    for (int i=0; i<NR_RX_NB_TH*NR_NB_TH_SLOT; i++) {
       memcpy(params+(i*3),"-1,",3);
     }
   }
