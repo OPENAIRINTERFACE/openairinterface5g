@@ -189,8 +189,6 @@ class Containerize():
 			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
 			
-		#mySSH.close()
-		#return 0
 		sharedimage = 'ran-build'
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 5)
@@ -214,7 +212,6 @@ class Containerize():
 				danglingShaOnes.append((image, result.group('imageShaOne')))
 			previousImage = image + ':' + imageTag
 
-		imageTag = 'ci-temp'
 		# First verify if images were properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + imageTag, '\$', 5)
@@ -286,14 +283,16 @@ class Containerize():
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		#mySSH.close()
 	
-		mySSH.command('cd /tmp/CI-eNB/cmake_targets', '\$', 5)
+		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
+		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip || true', '\$', 5)
 		if (os.path.isfile('./build_log_' + self.testCase_id + '.zip')):
 			os.remove('./build_log_' + self.testCase_id + '.zip')
+		if (os.path.isdir('./build_log_' + self.testCase_id)):
+			shutil.rmtree('./build_log_' + self.testCase_id)
 		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
-		#mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
+		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
 		mySSH.close()
 		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
 	

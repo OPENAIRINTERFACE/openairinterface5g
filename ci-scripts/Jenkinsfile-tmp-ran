@@ -518,7 +518,7 @@ pipeline {
         // Making sure that we really shutdown every thing before leaving
         failure {
             script {
-                if ((!termStatusArray[termUE]) && (params.ADBIPAddress != "none")) {
+                if ((!termStatusArray[termUE]) && (params.ADB_IPAddress != "none")) {
                     withCredentials([
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                     ]) {
