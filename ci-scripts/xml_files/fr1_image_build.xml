@@ -31,7 +31,7 @@
 
 	<testCase id="000001">
 		<class>Build_Image</class>
-		<desc>Build eNB Image</desc>
+		<desc>Build all Images</desc>
 		<kind>all</kind>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>

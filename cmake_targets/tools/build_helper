@@ -359,10 +359,10 @@ check_install_usrp_uhd_driver(){
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         if [ $IS_CONTAINER -eq 0 ]
         then
-            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils $CMAKE
             $SUDO -H pip install requests
         else
-            $SUDO $INSTALLER -y install boost boost-devel cmake3
+            $SUDO $INSTALLER -y install boost boost-devel $CMAKE
             $SUDO pip3 install mako requests
         fi
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -488,7 +488,7 @@ install_soapy_from_source(){
     #git checkout tags/release_003_010_001_001
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyRemote"
     make -j`nproc`
     $SUDO make install
@@ -507,7 +507,7 @@ install_soapy_iris_from_source(){
     cd sklk-soapyiris
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyIris"
     make -j`nproc`
     $SUDO make install
@@ -684,7 +684,7 @@ check_install_oai_software() {
 	automake  \
 	bison  \
 	build-essential \
-	cmake \
+	$CMAKE \
 	cmake-curses-gui  \
         ninja-build \
 	doxygen \

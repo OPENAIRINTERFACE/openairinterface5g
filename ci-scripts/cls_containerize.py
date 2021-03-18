@@ -35,6 +35,7 @@ import sys              # arg
 import re               # reg
 import logging
 import os
+import shutil
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 from zipfile import ZipFile
@@ -215,7 +216,7 @@ class Containerize():
 		# First verify if images were properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + imageTag, '\$', 5)
-		if mySSH.getBefore().count('No such object') != 0:
+		if (mySSH.getBefore().count('No such object') != 0) or (mySSH.getBefore().count('no such image') != 0):
 			logging.error('Could not build properly ran-build')
 			status = False
 		else:
@@ -239,7 +240,7 @@ class Containerize():
 				logging.debug('ran-build size is unknown')
 		for image,pattern in imageNames:
 			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
-			if mySSH.getBefore().count('No such object') != 0:
+			if (mySSH.getBefore().count('No such object') != 0) or (mySSH.getBefore().count('no such image') != 0):
 				logging.error('Could not build properly ' + image)
 				status = False
 			else:
