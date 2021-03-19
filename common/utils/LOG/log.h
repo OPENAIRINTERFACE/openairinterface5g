@@ -334,7 +334,7 @@ void flush_mem_to_file(void);
 void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 int logInit_log_mem(void);
 void close_log_mem(void);
-
+  
 typedef struct {
   char* buf_p;
   int buf_index;
@@ -369,7 +369,7 @@ typedef struct {
 #define MATLAB_CSHORT_BRACKET1 13
 #define MATLAB_CSHORT_BRACKET2 14
 #define MATLAB_CSHORT_BRACKET3 15
-
+  
 int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format);
 
 /*----------------macro definitions for reading log configuration from the config module */
@@ -424,7 +424,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 # define LOG_E(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'E', __VA_ARGS__); while (0)
 # define LOG_W(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'W', __VA_ARGS__); while (0)
 # define LOG_A(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'A', __VA_ARGS__); while (0) /* logs intended for analysis */
-# define LOG_I(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'I', __VA_ARGS__); while (0)
+# define LOG_I(COMPONENT, ...) do if (0) logMinimal(COMPONENT, 'I', __VA_ARGS__); while (0)
 # define LOG_D(COMPONENT, ...) do if (0) logMinimal(COMPONENT, 'D', __VA_ARGS__); while (0)
 # define LOG_T(COMPONENT, ...) do if (0) logMinimal(COMPONENT, 'T', __VA_ARGS__); while (0)
 
