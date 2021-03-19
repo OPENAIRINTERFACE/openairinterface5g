@@ -807,12 +807,11 @@ if(!IS_SOFTMODEM_NOS1)
   if(IS_SOFTMODEM_NOS1)
     init_pdcp();
 
+  if (RC.nb_nr_L1_inst > 0)
+    RCconfig_NR_L1();
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
-    RCconfig_NR_L1();
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
-  } else {
-    AssertFatal(1==0,"RC.nb_nr_inst should have been already initialized in get_options()");
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */

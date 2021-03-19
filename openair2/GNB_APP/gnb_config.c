@@ -430,7 +430,11 @@ void RCconfig_NR_L1(void) {
 
         mac_top_init_gNB();
 
-        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
+        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr,
+                               RC.gNB[j]->eth_params_n.remote_portc,
+                               RC.gNB[j]->eth_params_n.my_addr,
+                               RC.gNB[j]->eth_params_n.my_portd,
+                               RC.gNB[j]->eth_params_n.remote_portd);
       }else { // other midhaul
       } 
     }// for (j = 0; j < RC.nb_nr_L1_inst; j++)
