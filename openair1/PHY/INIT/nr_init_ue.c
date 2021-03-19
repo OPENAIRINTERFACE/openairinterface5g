@@ -502,50 +502,36 @@ void init_N_TA_offset(PHY_VARS_NR_UE *ue){
   if (fp->frame_type == FDD) {
     ue->N_TA_offset = 0;
   } else {
-    int N_RB = fp->N_RB_DL;
     int N_TA_offset = fp->ul_CarrierFreq < 6e9 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
-    double factor = 1;
+
+    double factor = 1.0;
     switch (fp->numerology_index) {
       case 0: //15 kHz scs
         AssertFatal(N_TA_offset == 400, "scs_common 15kHz only for FR1\n");
-        if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
-        else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
-        else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
-        else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
-        else AssertFatal(1==0, "Too many PRBS for mu=0\n");
+        factor = fp->samples_per_subframe / 30720.0;
         break;
       case 1: //30 kHz sc
         AssertFatal(N_TA_offset == 400, "scs_common 30kHz only for FR1\n");
-        if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
-        else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
+        factor = fp->samples_per_subframe / 30720.0;
         break;
       case 2: //60 kHz scs
         AssertFatal(1==0, "scs_common should not be 60 kHz\n");
         break;
       case 3: //120 kHz scs
         AssertFatal(N_TA_offset == 431, "scs_common 120kHz only for FR2\n");
+        factor = fp->samples_per_subframe / 61440.0;
         break;
       case 4: //240 kHz scs
-        AssertFatal(1==0, "scs_common should not be 60 kHz\n");
-        if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
-        else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
-        else AssertFatal(1==0, "N_RB %d is too big for curretn FR2 implementation\n", N_RB);
+        AssertFatal(N_TA_offset == 431, "scs_common 240kHz only for FR2\n");
+        factor = fp->samples_per_subframe / 61440.0;
         break;
-
-      if (N_RB == 100)
-        ue->N_TA_offset = 624;
-      else if (N_RB == 50)
-        ue->N_TA_offset = 624/2;
-      else if (N_RB == 25)
-        ue->N_TA_offset = 624/4;
+      default:
+        AssertFatal(1==0, "Invalid scs_common!\n");
     }
-
-    if (fp->threequarter_fs == 1)
-      factor = factor*.75;
 
     ue->N_TA_offset = (int)(N_TA_offset * factor);
 
-    LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", ue->Mod_id, ue->N_TA_offset, factor, fp->ul_CarrierFreq, N_RB);
+    LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d, mu %d)\n", ue->Mod_id, ue->N_TA_offset, factor, fp->ul_CarrierFreq, fp->N_RB_DL, fp->numerology_index);
   }
 }
 
