@@ -89,8 +89,6 @@ static int s1ap_eNB_decode_initiating_message(S1AP_S1AP_PDU_t *pdu) {
     default:
       S1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
                  (int)pdu->choice.initiatingMessage.procedureCode);
-      AssertFatal( 0, "Unknown procedure ID (%d) for initiating message\n",
-                   (int)pdu->choice.initiatingMessage.procedureCode);
       return -1;
   }
 

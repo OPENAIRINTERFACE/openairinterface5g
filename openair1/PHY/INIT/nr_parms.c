@@ -75,9 +75,8 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
   return symbol;
 }
 
-void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
+void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
 {
-
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
@@ -99,108 +98,17 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
 	else
 	  AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
       }
-
-      switch(bw){
-        case 5:
-        case 15:
-        case 20:
-        case 25:
-        case 30:
-        case 40: //40 MHz
-          if (fp->threequarter_fs) {
-            fp->ofdm_symbol_size = 1536;
-            fp->first_carrier_offset = 900; //1536 - ( (106*12) / 2 )
-            fp->nb_prefix_samples0 = 132;
-            fp->nb_prefix_samples = 108;
-          }
-          else {
-            fp->ofdm_symbol_size = 2048;
-            fp->first_carrier_offset = 1412; //2048 - ( (106*12) / 2 )
-            fp->nb_prefix_samples0 = 176;
-            fp->nb_prefix_samples = 144;
-          }
-          break;
-
-        case 50:
-        case 60:
-        case 70:
-
-        case 80: //80 MHz
-          if (fp->threequarter_fs) {
-            fp->ofdm_symbol_size = 3072;
-            fp->first_carrier_offset = 1770; //3072 - ( (217*12) / 2 )
-            fp->nb_prefix_samples0 = 264;
-            fp->nb_prefix_samples = 216;
-          }
-	  else {
-	    fp->ofdm_symbol_size = 4096;
-	    fp->first_carrier_offset = 2794; //4096 - ( (217*12) / 2 )
-	    fp->nb_prefix_samples0 = 352;
-	    fp->nb_prefix_samples = 288;
-	  }
-          break;
-
-        case 90:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for %d MHz band and MU %d\n",bw,mu); 
-	  fp->ofdm_symbol_size = 4096;
-	  fp->first_carrier_offset = 2626; //4096 - ( (245*12) / 2 )
-	  fp->nb_prefix_samples0 = 352;
-	  fp->nb_prefix_samples = 288;
-	  break;
-        case 100:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for %d MHz band and MU %d\n",bw,mu); 
-	  fp->ofdm_symbol_size = 4096;
-	  fp->first_carrier_offset = 2458; //4096 - ( (273*12) / 2 )
-	  fp->nb_prefix_samples0 = 352;
-	  fp->nb_prefix_samples = 288;
-	  break;
-      default:
-        AssertFatal(1==0,"%d MHz band undefined for mu %d, frame parms = %p\n", bw, mu, fp);
-      }
       break;
 
     case NR_MU_2: //60kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_2];
-
-      switch(bw){ //FR1 bands only
-        case 10:
-        case 15:
-        case 20:
-        case 25:
-        case 30:
-        case 40:
-        case 50:
-        case 60:
-        case 70:
-        case 80:
-        case 90:
-        case 100:
-      default:
-        AssertFatal(1==0,"%d MHz band undefined for mu %d, frame parms = %p\n", bw, mu, fp);
-      }
       break;
 
     case NR_MU_3:
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
       fp->ssb_type = nr_ssb_type_D;
-      switch(bw){
-        case 100:
-          fp->ofdm_symbol_size = 1024;
-          fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
-          fp->nb_prefix_samples0 = 136;
-          fp->nb_prefix_samples = 72;
-          break;
-        case 50:
-          fp->ofdm_symbol_size = 512;
-          fp->first_carrier_offset = 320; //1024 - ( (66*12) / 2 )
-          fp->nb_prefix_samples0 = 68;
-          fp->nb_prefix_samples = 36;
-          break;
-      default:
-        AssertFatal(1==0,"%d MHz band undefined for mu %d, frame parms = %p\n", bw, mu, fp);
-      }
       break;
 
     case NR_MU_4:
@@ -209,9 +117,21 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
       fp->ssb_type = nr_ssb_type_E;
       break;
 
-  default:
-    AssertFatal(1==0,"Invalid numerology index %d", mu);
+    default:
+      AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
+
+  if(fp->threequarter_fs)
+    fp->ofdm_symbol_size = 3 * 128;
+  else
+    fp->ofdm_symbol_size = 4 * 128;
+
+  while(fp->ofdm_symbol_size < N_RB_DL * 12)
+    fp->ofdm_symbol_size <<= 1;
+
+  fp->first_carrier_offset = fp->ofdm_symbol_size - (N_RB_DL * 12 / 2);
+  fp->nb_prefix_samples    = fp->ofdm_symbol_size / 128 * 9;
+  fp->nb_prefix_samples0   = fp->ofdm_symbol_size / 128 * (9 + (1 << mu));
 }
 
 uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
@@ -280,7 +200,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   fp->half_frame_bit = 0;  // half frame bit initialized to 0 here
   fp->numerology_index = mu;
 
-  set_scs_parameters(fp, mu, cfg->carrier_config.dl_bandwidth.value);
+  set_scs_parameters(fp, mu, fp->N_RB_DL);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
@@ -352,9 +272,8 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->N_RB_UL = config->carrier_config.ul_grid_size[fp->numerology_index];
   fp->N_RB_DL = config->carrier_config.dl_grid_size[fp->numerology_index];
 
-  int32_t uplink_frequency_offset = 0;
-  get_delta_duplex(fp->nr_band, fp->numerology_index, &uplink_frequency_offset);
-  get_frame_type(fp->nr_band, fp->numerology_index, &fp->frame_type);
+  fp->frame_type = get_frame_type(fp->nr_band, fp->numerology_index);
+  int32_t uplink_frequency_offset = get_delta_duplex(fp->nr_band, fp->numerology_index);
   uplink_frequency_offset *= 1000;
 
   LOG_I(PHY, "Initializing frame parms: DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, uplink_frequency_offset);
@@ -374,7 +293,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   fp->Ncp = Ncp;
 
-  set_scs_parameters(fp,fp->numerology_index,config->carrier_config.dl_bandwidth);
+  set_scs_parameters(fp, fp->numerology_index, fp->N_RB_DL);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats

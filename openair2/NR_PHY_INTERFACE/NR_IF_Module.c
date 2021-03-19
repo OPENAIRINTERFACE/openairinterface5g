@@ -43,7 +43,6 @@
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
-
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
 extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
@@ -96,6 +95,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
         handle_nr_uci_pucch_0_1(mod_id, frame, slot, uci_pdu);
         break;
       }
+
       case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
         const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
         handle_nr_uci_pucch_2_3_4(mod_id, frame, slot, uci_pdu);

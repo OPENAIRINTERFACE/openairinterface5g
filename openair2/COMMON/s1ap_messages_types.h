@@ -398,6 +398,11 @@ typedef struct s1ap_register_enb_req_s {
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
+  uint16_t s1_setuprsp_wait_timer;
+  uint16_t s1_setupreq_wait_timer;
+  uint16_t s1_setupreq_count;
+  uint16_t sctp_req_timer;
+  uint16_t sctp_req_count;
 } s1ap_register_enb_req_t;
 
 //-------------------------------------------------------------------------------------------//

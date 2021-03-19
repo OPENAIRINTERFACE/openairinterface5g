@@ -74,7 +74,6 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
 \param symbol symbol within slot (0..12/14)
 \param Ns Slot number (0..19)
 \param sample_offset offset within rxdata (points to beginning of subframe)
-\param no_prefix if 1 prefix is removed by HW
 */
 
 int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
@@ -82,8 +81,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
                    int32_t *rxdataF,
                    unsigned char symbol,
                    unsigned char Ns,
-                   int sample_offset,
-                   int no_prefix);
+                   int sample_offset);
 
 /*!
 \brief This function implements the dft transform precoding in PUSCH
@@ -110,7 +108,7 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
 		       int nsymb,
 		       int length);
 
-void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq);
+void init_symbol_rotation(NR_DL_FRAME_PARMS *fp);
 
 void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 			  int32_t *rxdataF,
