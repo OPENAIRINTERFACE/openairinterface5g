@@ -335,12 +335,17 @@ endif ()
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
+if (build_sanitize)
+   set(linkasan -lasan)
+   set(gccasan --sanitize=address)
+endif()
+
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR} ${linkasan}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -O0 -DMALLOC_CHECK_=3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} ${gccasan} -g3 -O0 -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3 -O2 -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
 
@@ -2905,7 +2910,7 @@ target_link_libraries (lte-softmodem
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
   PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB LFDS7
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
   
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
@@ -2946,7 +2951,7 @@ target_link_libraries (ocp-enb
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
   PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7 SIMU_COMMON
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
 target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${LIB_LMS_LIBRARIES} ${T_LIB})
 
 add_executable(cu_test
@@ -3016,7 +3021,7 @@ target_link_libraries (lte-uesoftmodem
   GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU LFDS L2_UE L2_LTE LFDS7 SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ATLAS_LIBRARIES}
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
@@ -3059,7 +3064,7 @@ target_link_libraries (nr-softmodem
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
 
 target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (nr-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
@@ -3099,7 +3104,7 @@ target_link_libraries (ocp-gnb
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB SIMU_COMMON
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
 
 target_link_libraries (ocp-gnb ${LIBXML2_LIBRARIES} )
 target_link_libraries (ocp-gnb pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
@@ -3145,7 +3150,7 @@ target_link_libraries (nr-uesoftmodem
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (nr-uesoftmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
@@ -3171,7 +3176,7 @@ add_executable(dlsim_tm4
   )
 target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
-  pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES} ${T_LIB}
+  pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES} ${T_LIB} ${linkasan}
   )
 
 add_executable(polartest 
@@ -3184,7 +3189,7 @@ add_executable(polartest
   )
 target_link_libraries(polartest
   -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
+  m pthread ${ATLAS_LIBRARIES} dl ${linkasan}
   )
 
 add_executable(smallblocktest 
@@ -3199,7 +3204,7 @@ add_executable(smallblocktest
 
 target_link_libraries(smallblocktest
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
+  m pthread ${ATLAS_LIBRARIES} dl ${linkasan}
   )
 
 
@@ -3228,7 +3233,7 @@ if (CUDA_FOUND)
       -Wl,--start-group 
       LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB 
       -Wl,--end-group
-      m pthread ${ATLAS_LIBRARIES} dl
+      m pthread ${ATLAS_LIBRARIES} dl ${linkasan}
       )
 
 else (CUDA_FOUND)
@@ -3254,7 +3259,7 @@ add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 
 target_link_libraries(ldpctest
   -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
+  m pthread ${ATLAS_LIBRARIES} dl ${linkasan}
   )
 
 add_executable(nr_dlschsim  
@@ -3269,7 +3274,7 @@ add_executable(nr_dlschsim
   )
 target_link_libraries(nr_dlschsim 
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan}
   )
 
 add_executable(nr_pbchsim  
@@ -3284,7 +3289,7 @@ add_executable(nr_pbchsim
   )
 target_link_libraries(nr_pbchsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan}
   )
 
 #PUCCH ---> Prashanth
@@ -3301,7 +3306,7 @@ add_executable(nr_pucchsim
   )
 target_link_libraries(nr_pucchsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan}
   )
 
 add_executable(nr_dlsim
@@ -3320,7 +3325,7 @@ add_executable(nr_dlsim
   )   
 target_link_libraries(nr_dlsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan}
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 
@@ -3339,7 +3344,7 @@ add_executable(nr_prachsim
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan})
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
@@ -3353,7 +3358,7 @@ add_executable(nr_ulschsim
   )
 target_link_libraries(nr_ulschsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan}
   )
 
 add_executable(nr_ulsim
@@ -3372,7 +3377,7 @@ add_executable(nr_ulsim
   )
 target_link_libraries(nr_ulsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl ${linkasan}
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)
 
@@ -3392,7 +3397,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     )
   target_link_libraries (${myExe}
     -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
-    pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl
+    pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl ${linkasan}
     )
    
 endforeach(myExe)
@@ -3406,7 +3411,7 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CONFIG_LIB}
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CONFIG_LIB} ${linkasan}
   )
 
 add_executable(test_epc_play_scenario
@@ -3425,7 +3430,7 @@ add_executable(test_epc_play_scenario
   )
 target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
 target_link_libraries (test_epc_play_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB PHY_NR_COMMON PHY_COMMON PHY PHY_UE LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CONFIG_LIB}
+  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB PHY_NR_COMMON PHY_COMMON PHY PHY_UE LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CONFIG_LIB} ${linkasan}
   )
 
 
@@ -3445,7 +3450,7 @@ foreach(myExe s1ap
     ${OPENAIR3_DIR}/TEST/test_${myExe}.c
     )
   target_link_libraries (test_${myExe}
-    -Wl,--start-group SECU_CN UTIL LFDS -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CONFIG_LIB}
+    -Wl,--start-group SECU_CN UTIL LFDS -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CONFIG_LIB} ${linkasan}
     )
 endforeach(myExe)
 
@@ -3583,7 +3588,7 @@ target_link_libraries (nr-ittisim
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   PHY_NR_UE SCHED_NR_UE_LIB NR_L2_UE
-  -Wl,--end-group z dl)
+  -Wl,--end-group z dl ${linkasan})
 
 target_link_libraries (nr-ittisim ${LIBXML2_LIBRARIES})
 target_link_libraries (nr-ittisim pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})

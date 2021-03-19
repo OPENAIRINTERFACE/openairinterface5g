@@ -416,6 +416,10 @@ function main() {
         CMAKE_CMD="$CMAKE_CMD -GNinja"
 	MAKE_CMD=ninja
 	shift;;
+      --sanitize)
+        CMAKE_CMD="$CMAKE_CMD -Dbuild_sanitize=1"
+        MAKE_CMD=ninja
+        shift;;
       --ittiSIM)
             ittiSIM=1
             ITTI_SIM="True"

@@ -278,7 +278,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
     graph->initDone=true;
   }
 
-  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, sqrt(avg));
+  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, 0/*sqrt(avg)*/);
   graph->iteration++;
 }
 
