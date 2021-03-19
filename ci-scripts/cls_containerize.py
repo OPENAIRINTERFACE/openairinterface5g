@@ -246,11 +246,11 @@ class Containerize():
 			# we need to update them with proper tag
 			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			mySSH.command(self.cli + ' build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
-			# checking the status of the build
-			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
+			# checking the status of the build
+			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
 			if (mySSH.getBefore().count('No such object') != 0) or (mySSH.getBefore().count('no such image') != 0):
 				logging.error('Could not build properly ' + image)
 				status = False
@@ -279,6 +279,7 @@ class Containerize():
 
 		# Analyzing the logs
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
+		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
@@ -332,8 +333,8 @@ class Containerize():
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
 			HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
-            HTML.CreateHtmlTabFooter(False)
-            sys.exit(1)
+			HTML.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
