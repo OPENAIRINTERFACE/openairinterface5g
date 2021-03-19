@@ -33,6 +33,7 @@
 		<class>Build_eNB</class>
 		<desc>Build eNB</desc>
 		<Build_eNB_args>--eNB -t benetel4g -w None</Build_eNB_args>
+		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 	</testCase>
@@ -42,6 +43,7 @@
 		<class>Build_eNB</class>
 		<desc>Build gNB</desc>
 		<Build_eNB_args>--gNB -t benetel5g -w None</Build_eNB_args>
+		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>
