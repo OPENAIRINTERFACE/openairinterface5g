@@ -106,7 +106,7 @@ extern "C" {
 /* .log_format = 0x13 uncolored standard messages
  * .log_format = 0x93 colored standard messages */
 /* keep white space in first position; switching it to 0 allows colors to be disabled*/
-#define LOG_WITH_COLORS 1
+#define LOG_WITH_COLORS 0
 #if LOG_WITH_COLORS
 #define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
 #define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
