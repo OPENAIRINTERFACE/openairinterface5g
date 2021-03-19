@@ -75,13 +75,14 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-int sf_ahead=4 ;
+uint16_t sf_ahead=4 ;
 int slot_ahead=6 ;
-int sl_ahead=0;
+uint16_t sl_ahead=0;
 double cpuf;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
+extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
@@ -155,15 +156,27 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
-//nFAPI P7 dummy functions 
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
+{
+  return 0;
+}
+
+//nFAPI P7 dummy functions
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
 int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
-  return 0;
-}
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
@@ -607,8 +620,8 @@ int main(int argc, char **argv)
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
 
-  frame_parms->nb_antennas_tx = n_tx;
-  frame_parms->nb_antennas_rx = n_rx;
+  //frame_parms->nb_antennas_tx = n_tx;
+  //frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
@@ -626,6 +639,7 @@ int main(int argc, char **argv)
   rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
 
   NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
   prepare_scc(rrc.carrier.servingcellconfigcommon);
   uint64_t ssb_bitmap;
@@ -633,7 +647,10 @@ int main(int argc, char **argv)
 
   fix_scc(scc,ssb_bitmap);
 
+  prepare_scd(scd);
+
   fill_default_secondaryCellGroup(scc,
+                                  scd,
 				  secondaryCellGroup,
 				  0,
 				  1,
@@ -642,11 +659,14 @@ int main(int argc, char **argv)
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
+  /* RRC parameter validation for secondaryCellGroup */
+  fix_scd(scd);
+
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0,1,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
+  rrc_mac_config_req_gNB(0,0,n_rx,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
   // UE dedicated configuration
   rrc_mac_config_req_gNB(0,0,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
@@ -1053,70 +1073,69 @@ int main(int argc, char **argv)
       }
 
 
-      nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
+      //nr_fill_ulsch(gNB,frame,slot,pusch_pdu); // Not needed as its its already filled as apart of "nr_schedule_response(Sched_INFO);"
 
       for (int i=0;i<(TBS/8);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
       if (input_fd == NULL) {
 
-	  // set FAPI parameters for UE, put them in the scheduled response and call
-	  nr_ue_scheduled_response(&scheduled_response);
-	  
-	  
-	  /////////////////////////phy_procedures_nr_ue_TX///////////////////////
-	  ///////////
-	  
-	  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
-	  
-	  
-	  if (n_trials==1) {
-	    LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
-	    LOG_M("txsig0F.m","txs0F", UE->common_vars.txdataF[0],frame_parms->ofdm_symbol_size*14,1,1);
-	  }
-	  ///////////
-	  ////////////////////////////////////////////////////
-	  tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
-	  
-	  txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-				frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+        // set FAPI parameters for UE, put them in the scheduled response and call
+        nr_ue_scheduled_response(&scheduled_response);
+
+
+        /////////////////////////phy_procedures_nr_ue_TX///////////////////////
+        ///////////
+
+        phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
+
+
+        if (n_trials==1) {
+          LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
+          LOG_M("txsig0F.m","txs0F", UE->common_vars.txdataF[0],frame_parms->ofdm_symbol_size*14,1,1);
+        }
+        ///////////
+        ////////////////////////////////////////////////////
+        tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
+
+        txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+                              frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
       }	
       else n_trials = 1;
 
       if (input_fd == NULL ) {
 
-	sigma_dB = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
-	sigma    = pow(10,sigma_dB/10);
+        sigma_dB = 10 * log10((double)txlev * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
+        sigma    = pow(10,sigma_dB/10);
 
 
-	if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)frame_parms->ofdm_symbol_size/(12*nb_rb));
+        if(n_trials==1) printf("sigma %f (%f dB), txlev %f (factor %f)\n",sigma,sigma_dB,10*log10((double)txlev),(double)(double)
+                                frame_parms->ofdm_symbol_size/(12*nb_rb));
 
-	for (i=0; i<slot_length; i++) {
-	  for (int aa=0; aa<1; aa++) {
-	    s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
-	    s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
-	  }
-	}
-	
+        for (i=0; i<slot_length; i++) {
+          for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+            s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
+            s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
+          }
+        }
 
-	if (UE2gNB->max_Doppler == 0) {
-	  multipath_channel(UE2gNB,s_re,s_im,r_re,r_im,
-			    slot_length,0,(n_trials==1)?1:0);
-	} else {
-	  multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
-			       2*slot_length,0);
-	}
-	for (i=0; i<slot_length; i++) {
-	  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+
+        if (UE2gNB->max_Doppler == 0) {
+          multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
+        } else {
+          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
+        }
+        for (i=0; i<slot_length; i++) {
+          for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
+            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
                           &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1]);
             }
-	  }
-	}
+          }
+        }
 
-      }
+      } /*End input_fd */
 
 
       if(pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
