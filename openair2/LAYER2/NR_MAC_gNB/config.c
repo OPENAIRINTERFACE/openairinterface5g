@@ -310,8 +310,6 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 
 }
 
-
-
 extern uint16_t sl_ahead;
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
