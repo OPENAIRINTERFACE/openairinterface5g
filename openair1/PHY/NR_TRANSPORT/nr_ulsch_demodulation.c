@@ -345,6 +345,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
     n = 0;
     k_prime = 0;
+    rxF_ext_index = ul_ch0_ext_index = ul_ch0_index = 0; /* In RX Antenna(aarx) loop, Reset the index */
 
     if (is_dmrs_symbol == 0) {
       //

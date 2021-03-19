@@ -39,22 +39,20 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
 {
-  int temp, i, aa, max_pos = 0, max_val = 0;
-  short Re, Im;
-  uint8_t cyclic_shift = 0;
+  int i, aa, max_pos = 0, max_val = 0;
   
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_PUSCH *gNB_pusch_vars   = gNB->pusch_vars[UE_id];
   int32_t **ul_ch_estimates_time = gNB_pusch_vars->ul_ch_estimates_time;
   
-  int sync_pos = (frame_parms->ofdm_symbol_size - cyclic_shift*frame_parms->ofdm_symbol_size/12) % (frame_parms->ofdm_symbol_size);
+  int sync_pos = frame_parms->nb_prefix_samples / 8;
 
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
-    temp = 0;
+    int temp = 0;
 
     for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ul_ch_estimates_time[aa])[(i<<1)];
-      Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<1)];
+      short Re = ((int16_t*)ul_ch_estimates_time[aa])[(i<<1)];
+      short Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);      
     }
 

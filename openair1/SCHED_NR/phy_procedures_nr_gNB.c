@@ -367,7 +367,6 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   int timing_advance_update, cqi;
   int sync_pos;
-  uint16_t mu = gNB->frame_parms.numerology_index;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
 
@@ -375,18 +374,10 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   //  pdu->data                              = gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->b;
   sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
-  timing_advance_update                  = sync_pos * (1 << mu);                    // scale by the used scs numerology
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-  switch (gNB->frame_parms.N_RB_DL) {
-    case 106: timing_advance_update /= 16; break;
-    case 217: timing_advance_update /= 32; break;
-    case 245: timing_advance_update /= 32; break;
-    case 273: timing_advance_update /= 32; break;
-    case 66:  timing_advance_update /= 12; break;
-    case 32:  timing_advance_update /= 12; break;
-    default: AssertFatal(0==1,"No case defined for PRB %d to calculate timing_advance_update\n",gNB->frame_parms.N_RB_DL);
-  }
+  uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
+  timing_advance_update = sync_pos / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
@@ -517,15 +508,12 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   unsigned char aa;
 
   for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
-    // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
-
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
       nr_slot_fep_ul(&gNB->frame_parms,
                      gNB->common_vars.rxdata[aa],
                      gNB->common_vars.rxdataF[aa],
                      symbol,
                      slot_rx,
-                     0,
                      0);
     }
   }
@@ -542,6 +530,9 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 }
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
+  /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
+  int pucch_decode_done = 0;
+  int pusch_decode_done = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
@@ -562,6 +553,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       if ((pucch->active == 1) &&
 	  (pucch->frame == frame_rx) &&
 	  (pucch->slot == slot_rx) ) {
+
+        pucch_decode_done = 1;
 
         nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
         uint16_t num_ucis;
@@ -651,7 +644,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           }
 #endif
 
-T(T_BENETEL, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], 2048*4*14));
+          pusch_decode_done = 1;
 
           uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
           uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
@@ -679,6 +672,10 @@ T(T_BENETEL, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF
   }
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
   if ((frame_rx&127) == 0 && slot_rx==19) dump_pusch_stats(gNB);
+
+  if (pucch_decode_done || pusch_decode_done) {
+    T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
+  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
 }

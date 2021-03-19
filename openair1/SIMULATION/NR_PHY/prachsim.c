@@ -64,7 +64,7 @@ double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
-int sl_ahead = 0;
+uint16_t sl_ahead = 0;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
@@ -132,13 +132,24 @@ nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
-// Dummy function to avoid linking error at compilation of nr-prachsim
-int is_x2ap_enabled(void)
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
 {
   return 0;
 }
 
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+// Dummy function to avoid linking error at compilation of nr-prachsim
+int is_x2ap_enabled(void)
+{
   return 0;
 }
 
@@ -454,7 +465,10 @@ int main(int argc, char **argv){
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  uint64_t absoluteFrequencyPointA = (mu==1 ? 640000 : 2070833);
+  uint64_t absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
+				       frame_parms->dl_CarrierFreq,
+				       frame_parms->numerology_index,
+				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
 
   uint8_t subframe = slot/frame_parms->slots_per_subframe;
   
