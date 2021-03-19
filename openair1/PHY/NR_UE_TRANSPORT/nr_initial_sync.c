@@ -289,8 +289,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
                               proc,
                               i,
                               0,
-                              is*fp->samples_per_frame+ue->ssb_offset,
-                              0);
+                              is*fp->samples_per_frame+ue->ssb_offset);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");

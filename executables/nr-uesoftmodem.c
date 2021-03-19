@@ -145,7 +145,6 @@ int          chain_offset = 0;
 int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
-int            numerology = 0;
 int        usrp_tx_thread = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
@@ -333,92 +332,10 @@ void init_openair0(void) {
 
   for (card=0; card<MAX_CARDS; card++) {
     uint64_t dl_carrier, ul_carrier;
-    openair0_cfg[card].configFilename = NULL;
-    openair0_cfg[card].threequarter_fs = frame_parms->threequarter_fs;
-    numerology = frame_parms->numerology_index;
-
-    if(frame_parms->N_RB_DL == 66) {
-      if (numerology==3) {
-          openair0_cfg[card].sample_rate=122.88e6;
-          openair0_cfg[card].samples_per_frame = 1228800;
-        } else {
-          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
-          exit(-1);
-        }
-    }else if(frame_parms->N_RB_DL == 32) {
-      if (numerology==3) {
-          openair0_cfg[card].sample_rate=61.44e6;
-          openair0_cfg[card].samples_per_frame = 614400;
-        } else {
-          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
-          exit(-1);
-        }
-    }else if(frame_parms->N_RB_DL == 217) {
-      if (numerology==1) {
-        if (frame_parms->threequarter_fs) {
-          openair0_cfg[card].sample_rate=92.16e6;
-          openair0_cfg[card].samples_per_frame = 921600;
-        }
-        else {
-          openair0_cfg[card].sample_rate=122.88e6;
-          openair0_cfg[card].samples_per_frame = 1228800;
-        }
-      } else {
-        LOG_E(PHY,"Unsupported numerology!\n");
-        exit(-1);
-      }
-    } else if(frame_parms->N_RB_DL == 273) {
-      if (numerology==1) {
-        if (frame_parms->threequarter_fs) {
-          AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
-        }
-        else {
-          openair0_cfg[card].sample_rate=122.88e6;
-          openair0_cfg[card].samples_per_frame = 1228800;
-        }
-      } else {
-        LOG_E(PHY,"Unsupported numerology!\n");
-        exit(-1);
-      }
-    } else if(frame_parms->N_RB_DL == 106) {
-      if (numerology==0) {
-        if (frame_parms->threequarter_fs) {
-          openair0_cfg[card].sample_rate=23.04e6;
-          openair0_cfg[card].samples_per_frame = 230400;
-        } else {
-          openair0_cfg[card].sample_rate=30.72e6;
-          openair0_cfg[card].samples_per_frame = 307200;
-        }
-      } else if (numerology==1) {
-        if (frame_parms->threequarter_fs) {
-          openair0_cfg[card].sample_rate=46.08e6;
-          openair0_cfg[card].samples_per_frame = 460800;
-	}
-	else {
-          openair0_cfg[card].sample_rate=61.44e6;
-          openair0_cfg[card].samples_per_frame = 614400;
-        }
-      } else if (numerology==2) {
-        openair0_cfg[card].sample_rate=122.88e6;
-        openair0_cfg[card].samples_per_frame = 1228800;
-      } else {
-        LOG_E(PHY,"Unsupported numerology!\n");
-        exit(-1);
-      }
-    } else if(frame_parms->N_RB_DL == 50) {
-      openair0_cfg[card].sample_rate=15.36e6;
-      openair0_cfg[card].samples_per_frame = 153600;
-    } else if (frame_parms->N_RB_DL == 25) {
-      openair0_cfg[card].sample_rate=7.68e6;
-      openair0_cfg[card].samples_per_frame = 76800;
-    } else if (frame_parms->N_RB_DL == 6) {
-      openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_frame = 19200;
-    }
-    else {
-      LOG_E(PHY,"Unknown NB_RB %d!\n",frame_parms->N_RB_DL);
-      exit(-1);
-    }
+    openair0_cfg[card].configFilename    = NULL;
+    openair0_cfg[card].threequarter_fs   = frame_parms->threequarter_fs;
+    openair0_cfg[card].sample_rate       = frame_parms->samples_per_subframe * 1e3;
+    openair0_cfg[card].samples_per_frame = frame_parms->samples_per_frame;
 
     if (frame_parms->frame_type==TDD)
       openair0_cfg[card].duplex_mode = duplex_mode_TDD;
@@ -432,8 +349,9 @@ void init_openair0(void) {
     openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
     openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
 
-    LOG_I(PHY, "HW: Configuring card %d, tx/rx num_channels %d/%d, duplex_mode %s\n",
+    LOG_I(PHY, "HW: Configuring card %d, sample_rate %f, tx/rx num_channels %d/%d, duplex_mode %s\n",
       card,
+      openair0_cfg[card].sample_rate,
       openair0_cfg[card].tx_num_channels,
       openair0_cfg[card].rx_num_channels,
       duplex_mode[openair0_cfg[card].duplex_mode]);

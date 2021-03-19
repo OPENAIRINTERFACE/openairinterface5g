@@ -37,7 +37,6 @@
  060001
  000001
  070000
- 070001
  010002
  000001
  080001
@@ -109,16 +108,16 @@
 
 	<testCase id="060000">
 		<class>Iperf</class>
-		<desc>iperf (DL/2.5Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 2.5M -t 60 -i 1</iperf_args>
+		<desc>iperf (DL/3Mbps/UDP)(20 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 3M -t 20 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
 	<testCase id="060001">
 		<class>Iperf</class>
-		<desc>iperf (UL/1.5Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 1.5M -t 60 -i 1 -R</iperf_args>
+		<desc>iperf (UL/1Mbps/UDP)(20 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 1M -t 20 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>

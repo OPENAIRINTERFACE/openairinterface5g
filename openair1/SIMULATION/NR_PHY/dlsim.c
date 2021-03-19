@@ -207,6 +207,7 @@ int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
 void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
+extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration 
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
@@ -676,6 +677,7 @@ int main(int argc, char **argv)
   rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
 
   NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
   prepare_scc(rrc.carrier.servingcellconfigcommon);
   uint64_t ssb_bitmap;
@@ -683,13 +685,18 @@ int main(int argc, char **argv)
 
   fix_scc(scc,ssb_bitmap);
 
-  fill_default_secondaryCellGroup(scc,
-				  secondaryCellGroup,
-				  0,
-				  1,
-				  n_tx,
-				  0);
+  prepare_scd(scd);
 
+  fill_default_secondaryCellGroup(scc,
+                                  scd,
+                                  secondaryCellGroup,
+                                  0,
+                                  1,
+                                  n_tx,
+                                  0);
+
+  /* RRC parameter validation for secondaryCellGroup */
+  fix_scd(scd);
   /* -U option modify DMRS */
   if(modify_dmrs) {
     update_dmrs_config(secondaryCellGroup, NULL,dmrs_arg);

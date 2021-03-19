@@ -277,6 +277,8 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
       parse_CG_ConfigInfo(rrc,CG_ConfigInfo,NULL);
     } else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+      ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = configuration->scd;
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
       rrc_add_nsa_user(rrc,ue_context_p,NULL);
     }
@@ -631,7 +633,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   DRB_config->pdcp_Config = calloc(1, sizeof(*DRB_config->pdcp_Config));
   DRB_config->pdcp_Config->drb = calloc(1,sizeof(*DRB_config->pdcp_Config->drb));
   DRB_config->pdcp_Config->drb->discardTimer = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->discardTimer));
-  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_ms30;
+  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
   DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL));
   *DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
   DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL));

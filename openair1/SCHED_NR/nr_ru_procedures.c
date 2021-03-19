@@ -520,8 +520,7 @@ void nr_fep0(RU_t *ru, int first_half) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     ru->N_TA_offset,
-                     0);
+                     ru->N_TA_offset);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 0);
@@ -657,8 +656,7 @@ void nr_fep_full(RU_t *ru, int slot) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     ru->N_TA_offset,
-                     0);
+                     ru->N_TA_offset);
     }
   }
 

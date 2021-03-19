@@ -575,7 +575,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
 
     }
-
     break;
   }
 
@@ -1025,6 +1024,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                             &dlsch_config_pdu_1_1->PTRSReOffset, dlsch_config_pdu_1_1->number_symbols);
       if(valid_ptrs_setup==true) {
         dlsch_config_pdu_1_1->pduBitmap |= 0x1;
+        LOG_D(MAC, "DL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", dlsch_config_pdu_1_1->PTRSTimeDensity, dlsch_config_pdu_1_1->PTRSFreqDensity);
       }
     }
 
