@@ -402,22 +402,27 @@ void processSlotRX(void *arg) {
   }
 
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
-    if (get_softmodem_params()->usim_test==0) {
-      pucch_procedures_ue_nr(UE,
-                             gNB_id,
-                             proc,
-                             FALSE);
+    if (UE->UE_mode[gNB_id] <= PUSCH) {
+      if (get_softmodem_params()->usim_test==0) {
+        pucch_procedures_ue_nr(UE,
+                               gNB_id,
+                               proc,
+                               FALSE);
+      }
+
+      LOG_D(PHY, "Sending Uplink data \n");
+      nr_ue_pusch_common_procedures(UE,
+                                    proc->nr_slot_tx,
+                                    &UE->frame_parms,1);
     }
 
-    LOG_D(PHY, "Sending Uplink data \n");
-    nr_ue_pusch_common_procedures(UE,
-                                  proc->nr_slot_tx,
-                                  &UE->frame_parms,1);
-
-    ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
-
+    if (UE->UE_mode[gNB_id] > NOT_SYNCHED && UE->UE_mode[gNB_id] < PUSCH) {
+      nr_ue_prach_procedures(UE, proc, gNB_id);
+    }
+    LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
   }
 
+  ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
 }
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {

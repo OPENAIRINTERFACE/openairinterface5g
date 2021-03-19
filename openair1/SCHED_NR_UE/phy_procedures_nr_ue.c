@@ -284,11 +284,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   }
 
-  if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) {
-    nr_ue_prach_procedures(ue, proc, gNB_id);
-  }
-  LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
   stop_meas(&ue->phy_proc_tx);
