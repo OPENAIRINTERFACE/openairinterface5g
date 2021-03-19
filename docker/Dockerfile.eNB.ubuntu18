@@ -35,7 +35,7 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --eNB --ninja -w USRP
+    ./build_oai --eNB --ninja -w USRP --verbose-ci
 
 RUN apt-get install -y python3-pip && \
     pip3 install --ignore-installed pyyaml && \

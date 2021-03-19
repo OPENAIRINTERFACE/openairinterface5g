@@ -35,7 +35,7 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --nrUE --ninja -w USRP
+    ./build_oai --nrUE --ninja -w USRP --verbose-ci
 
 # debug
 #RUN ldconfig -v

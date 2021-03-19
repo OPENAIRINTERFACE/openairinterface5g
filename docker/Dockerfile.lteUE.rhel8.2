@@ -35,7 +35,7 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --UE --ninja -w USRP
+    ./build_oai --UE --ninja -w USRP --verbose-ci
 
 # debug
 #RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15

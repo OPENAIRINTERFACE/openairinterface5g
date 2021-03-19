@@ -189,7 +189,7 @@ class Containerize():
 			mySSH.command('mkdir -p tmp/entitlement/', '\$', 5) 
 			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
-			
+
 		sharedimage = 'ran-build'
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 5)
@@ -198,22 +198,7 @@ class Containerize():
 			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag, '\$', 5)
 		# Build the shared image
 		mySSH.command(self.cli + ' build --target ' + sharedimage + ' --tag ' + sharedimage + ':' + imageTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
-		# Build the target image(s)
-		previousImage = sharedimage + ':' + imageTag
-		danglingShaOnes=[]
-		for image,pattern in imageNames:
-			# the archived Dockerfiles have "ran-build:latest" as base image
-			# we need to update them with proper tag
-			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
-			mySSH.command(self.cli + ' build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
-			# Retrieving the dangling image(s) for the log collection
-			mySSH.command(self.cli + ' images --filter "dangling=true" --filter "since=' + previousImage + '" -q | sed -e "s#^#sha=#"', '\$', 5)
-			result = re.search('sha=(?P<imageShaOne>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
-			if result is not None:
-				danglingShaOnes.append((image, result.group('imageShaOne')))
-			previousImage = image + ':' + imageTag
-
-		# First verify if images were properly created.
+		# First verify if the shared image was properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + imageTag, '\$', 5)
 		if (mySSH.getBefore().count('No such object') != 0) or (mySSH.getBefore().count('no such image') != 0):
@@ -238,7 +223,29 @@ class Containerize():
 						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Gbytes'
 			else:
 				logging.debug('ran-build size is unknown')
+		# If the shared image failed, no need to continue
+		if not status:
+			mySSH.close()
+			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
+			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTabFooter(False)
+			sys.exit(1)
+
+		# Build the target image(s)
+		previousImage = sharedimage + ':' + imageTag
+		danglingShaOnes=[]
 		for image,pattern in imageNames:
+			# the archived Dockerfiles have "ran-build:latest" as base image
+			# we need to update them with proper tag
+			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
+			mySSH.command(self.cli + ' build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+			# Retrieving the dangling image(s) for the log collection
+			mySSH.command(self.cli + ' images --filter "dangling=true" --filter "since=' + previousImage + '" -q | sed -e "s#^#sha=#"', '\$', 5)
+			result = re.search('sha=(?P<imageShaOne>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+			if result is not None:
+				danglingShaOnes.append((image, result.group('imageShaOne')))
+			previousImage = image + ':' + imageTag
+			# checking the status of the build
 			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + image + ':' + imageTag, '\$', 5)
 			if (mySSH.getBefore().count('No such object') != 0) or (mySSH.getBefore().count('no such image') != 0):
 				logging.error('Could not build properly ' + image)

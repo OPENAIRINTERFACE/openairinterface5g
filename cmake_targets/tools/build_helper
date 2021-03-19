@@ -221,6 +221,11 @@ compilations() {
     ret=$?
   } > $dlog/$2.$REL.txt 2>&1
   set -e
+  if [ "$VERBOSE_CI" == "1" ]; then
+     echo_info "====== Start of log for $2.$REL.txt ======"
+     cat $dlog/$2.$REL.txt
+     echo_info "====== End of log for $2.$REL.txt ======"
+  fi
   if [[ $ret -ne 0 ]]; then
      check_warnings "$dlog/$2.$REL.txt"
      check_errors "$dlog/$2.$REL.txt"
