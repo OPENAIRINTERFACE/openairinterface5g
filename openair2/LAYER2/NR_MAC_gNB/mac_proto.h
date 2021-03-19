@@ -329,7 +329,7 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
 
-void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t *UE_info, int UE_id);
+void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
