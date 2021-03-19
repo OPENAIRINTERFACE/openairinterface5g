@@ -37,6 +37,7 @@
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<backgroundBuild>True</backgroundBuild>
+		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 
 	<testCase id="000004">
@@ -53,6 +54,7 @@
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<backgroundBuild>True</backgroundBuild>
+		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 
 	<testCase id="000003">
