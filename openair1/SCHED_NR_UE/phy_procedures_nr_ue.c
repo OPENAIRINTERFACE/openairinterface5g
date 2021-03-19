@@ -881,7 +881,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   int harq_pid = dlsch0->current_harq_pid;
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
-  int ret=0, ret1=0;
+  uint32_t ret = UINT32_MAX, ret1 = UINT32_MAX;
   NR_UE_PDSCH *pdsch_vars;
   uint16_t dmrs_len = get_num_dmrs(dlsch0->harq_processes[dlsch0->current_harq_pid]->dlDmrsSymbPos);
   nr_downlink_indication_t dl_indication;
