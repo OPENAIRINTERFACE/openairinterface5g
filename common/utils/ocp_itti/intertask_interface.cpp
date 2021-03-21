@@ -339,7 +339,9 @@ extern "C" {
   int itti_create_queue(const task_info_t *taskInfo) {
     pthread_mutex_lock (&lock_nb_queues);
     int newQueue=nb_queues++;
-    AssertFatal(tasks=(task_list_t **) realloc(tasks, nb_queues * sizeof(*tasks)),"");
+    task_list_t **tmp=(task_list_t **) realloc(tasks, nb_queues * sizeof(*tasks));
+    AssertFatal(tmp!=NULL,"");
+    tasks=tmp;
     tasks[newQueue]= new task_list_t;
     pthread_mutex_unlock (&lock_nb_queues);
     LOG_I(TMR,"Starting itti queue: %s as task %d\n", taskInfo->name, newQueue);

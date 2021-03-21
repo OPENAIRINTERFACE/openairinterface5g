@@ -62,7 +62,7 @@ static double snr_dB=25;
 static double sinr_dB=0;
 static unsigned int max_chan;
 static channel_desc_t **defined_channels;
-static char modellist_name[MAX_OPTNAME_SIZE]="";  
+static char modellist_name[MAX_OPTNAME_SIZE]={0};  
 
 
 void fill_channel_desc(channel_desc_t *chan_desc,
@@ -227,7 +227,6 @@ double tdl_a_amps_dB[] = {-13.4,
 			  -16.6,
 			  -19.9,
 			  -29.7};
-#define TDL_A_PATHS 23
 
 double tdl_b_delays[] = {0.0000,
 			 0.1072,
@@ -276,7 +275,6 @@ double tdl_b_amps_dB[] = {0,
 			  -14.9,
 			  -9.2,
 			  -11.3};
-#define TDL_B_PATHS 23
 
 double tdl_c_delays[] = {0,
 			 0.2099,
@@ -327,7 +325,6 @@ double tdl_c_amps_dB[] = {-4.4,
 			  -15.7,
 			  -21.6,
 			  -22.8};
-#define TDL_C_PATHS 24
 
 double tdl_d_delays[] = {//0,
 			 0,
@@ -360,7 +357,6 @@ double tdl_d_amps_dB[] = {//-0.2,
 			  -30.0,
 			  -27.7};
 
-#define TDL_D_PATHS 13
 #define TDL_D_RICEAN_FACTOR .046774
 
 double tdl_e_delays[] = {0,
@@ -395,7 +391,6 @@ double tdl_e_amps_dB[] = {//-0.03,
 			  -29.8,
 			  -29.2};
 
-#define TDL_E_PATHS 14
 #define TDL_E_RICEAN_FACTOR 0.0063096
 
 double epa_delays[] = { 0,.03,.07,.09,.11,.19,.41};
@@ -540,7 +535,6 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
 
   int tdl_paths=0;
-  double tdl_ricean_factor = 1;
   double *tdl_amps_dB;
   double *tdl_delays;
 
@@ -676,36 +670,32 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       break;
       
 /*  tapped delay line (TDL)  channel model from TR 38.901 Section 7.7.2 */    
+#define tdl_m(MoDel)\
+    DevAssert(sizeof(tdl_ ## MoDel ## _amps_dB) == sizeof(tdl_ ## MoDel ## _delays)); \
+    tdl_paths=sizeof(tdl_ ## MoDel ## _amps_dB)/sizeof(*tdl_ ## MoDel ## _amps_dB);\
+    tdl_delays=tdl_ ## MoDel ## _delays;\
+    tdl_amps_dB=tdl_ ## MoDel ## _amps_dB
+
     case TDL_A:
     case TDL_B:
     case TDL_C:  
     case TDL_D:  
     case TDL_E:
+      chan_desc->ricean_factor  = 1;
       if (channel_model == TDL_A) {  
-	tdl_paths=TDL_A_PATHS;
-	tdl_delays=tdl_a_delays;
-	tdl_amps_dB=tdl_a_amps_dB;
+        tdl_m(a);
       }else if (channel_model == TDL_B) {
-	  tdl_paths=TDL_B_PATHS;
-	tdl_delays=tdl_b_delays;
-	tdl_amps_dB=tdl_b_amps_dB;      
+        tdl_m(b);
       }
       else if (channel_model == TDL_C) {
-	tdl_paths=TDL_C_PATHS;
-	tdl_delays=tdl_c_delays;
-	tdl_amps_dB=tdl_c_amps_dB;
-	printf("Initializing TDL_C channel with %d paths\n",TDL_C_PATHS);
+        tdl_m(c);
       } else if (channel_model == TDL_D) {
-	tdl_paths=TDL_D_PATHS;
-	tdl_delays=tdl_d_delays;
-	tdl_amps_dB=tdl_d_amps_dB;
-	tdl_ricean_factor = TDL_D_RICEAN_FACTOR;
+        tdl_m(d);
+	chan_desc->ricean_factor = TDL_D_RICEAN_FACTOR;
       } else if (channel_model == TDL_E) {
-	tdl_paths=TDL_E_PATHS-1;
-	tdl_delays=tdl_e_delays+1;
-	tdl_amps_dB=tdl_e_amps_dB;
-	tdl_ricean_factor = TDL_E_RICEAN_FACTOR;
-      }
+        tdl_m(e);
+	chan_desc->ricean_factor = TDL_E_RICEAN_FACTOR;
+      } 
 
       int tdl_pathsby3 = tdl_paths/3;
       if ((tdl_paths%3)>0) tdl_pathsby3++;
@@ -728,7 +718,6 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 	tdl_delays[i] *= DS_TDL;
       }
       chan_desc->delays         = tdl_delays;
-      chan_desc->ricean_factor  = tdl_ricean_factor;
       chan_desc->aoa            = 0;
       chan_desc->random_aoa     = 0;
       chan_desc->ch             = (struct complex **) malloc(nb_tx*nb_rx*sizeof(struct complex *));
@@ -2034,7 +2023,7 @@ int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double 
   paramdef_t achannel_params[] = CHANNELMOD_MODEL_PARAMS_DESC;
   paramlist_def_t channel_list;
   memset(&channel_list,0,sizeof(paramlist_def_t));
-  strncpy(channel_list.listname,modellist_name,MAX_OPTNAME_SIZE-1);
+  memcpy(channel_list.listname,modellist_name,sizeof(channel_list.listname)-1);
 
   int numparams = sizeof(achannel_params)/sizeof(paramdef_t);
   config_getlist( &channel_list,achannel_params,numparams, CHANNELMOD_SECTION);
