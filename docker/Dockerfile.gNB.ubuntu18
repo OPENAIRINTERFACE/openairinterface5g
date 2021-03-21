@@ -27,14 +27,15 @@
 
 FROM ran-build:latest AS gnb-build 
 
+RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
+COPY . .
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
-    rm -Rf log && \
     mkdir -p log && \
-    ./build_oai --gNB --ninja -w USRP
+    ./build_oai --gNB --ninja -w USRP --verbose-ci
 
 #debug
 RUN ldconfig -v
