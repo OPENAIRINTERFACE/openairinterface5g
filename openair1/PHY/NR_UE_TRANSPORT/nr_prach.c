@@ -71,7 +71,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im;
-  int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k, prachStartSymbol, sample_offset_slot;
+  int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, k1, prachStartSymbol, sample_offset_slot;
   //int restricted_Type;
 
   prach                   = prach_tmp;
@@ -83,7 +83,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   mu                      = nrUE_config->prach_config.prach_sub_c_spacing;
   restricted_set          = prach_pdu->restricted_set;
   rootSequenceIndex       = prach_pdu->root_seq_id;
-  n_ra_prb                = prach_pdu->freq_msg1;
   NCS                     = prach_pdu->num_cs;
   prach_fmt_id            = prach_pdu->prach_format;
   preamble_index          = prach_resources->ra_PreambleIndex;
@@ -93,7 +92,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   first_nonzero_root_idx  = 0;
   kbar                    = 1;
   K                       = 24;
-  k                       = 12*n_ra_prb - 6*fp->N_RB_UL;
+  k1                       = (int16_t)prach_pdu->freq_msg1;
   prachStartSymbol        = prach_pdu->prach_start_symbol;
   //restricted_Type         = 0;
 
@@ -185,7 +184,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   // now generate PRACH signal
 #ifdef NR_PRACH_DEBUG
     if (NCS>0)
-      LOG_I(PHY, "PRACH [UE %d] generate PRACH in slot %d for RootSeqIndex %d, Preamble Index %d, PRACH Format %s, NCS %d (N_ZC %d): Preamble_offset %d, Preamble_shift %d msg1 frequency start %d\n",
+      LOG_I(PHY, "PRACH [UE %d] generate PRACH in slot %d for RootSeqIndex %d, Preamble Index %d, PRACH Format %s, NCS %d (N_ZC %d): Preamble_offset %d, Preamble_shift %dn",
         Mod_id,
         slot,
         rootSequenceIndex,
@@ -194,8 +193,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         NCS,
         N_ZC,
         preamble_offset,
-        preamble_shift,
-        n_ra_prb);
+        preamble_shift);
   #endif
 
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -209,17 +207,16 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
     kbar = 2;
   }
 
-  if (k<0)
-    k += fp->ofdm_symbol_size;
+  if (k1<0)
+    k1 += fp->ofdm_symbol_size;
 
-  k *= K;
-  k += kbar;
-  k *= 2;
+  k1 *= K;
+  k1 += kbar;
+  k1 *= 2;
 
-  LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, msg1 frequency start %d, preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
+  LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
     slot,
-    k,
-    n_ra_prb,
+    k1,
     preamble_offset,
     first_nonzero_root_idx);
 
@@ -344,10 +341,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
     Xu_re = (((int32_t)Xu[offset<<1]*amp)>>15);
     Xu_im = (((int32_t)Xu[1+(offset<<1)]*amp)>>15);
-    prachF[k++]= ((Xu_re*nr_ru[offset2<<1]) - (Xu_im*nr_ru[1+(offset2<<1)]))>>15;
-    prachF[k++]= ((Xu_im*nr_ru[offset2<<1]) + (Xu_re*nr_ru[1+(offset2<<1)]))>>15;
+    prachF[k1++]= ((Xu_re*nr_ru[offset2<<1]) - (Xu_im*nr_ru[1+(offset2<<1)]))>>15;
+    prachF[k1++]= ((Xu_im*nr_ru[offset2<<1]) + (Xu_re*nr_ru[1+(offset2<<1)]))>>15;
 
-    if (k==dftlen) k=0;
+    if (k1==dftlen) k1=0;
   }
 
   #if defined (PRACH_WRITE_OUTPUT_DEBUG)

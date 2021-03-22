@@ -171,9 +171,6 @@ void rx_nr_prach_ru(RU_t *ru,
 
   int16_t *prach[ru->nb_rx];
   int prach_sequence_length = ru->config.prach_config.prach_sequence_length.value;
-
-  int msg1_frequencystart   = ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
-
   int sample_offset_slot = (prachStartSymbol==0?0:fp->ofdm_symbol_size*prachStartSymbol+fp->nb_prefix_samples0+fp->nb_prefix_samples*(prachStartSymbol-1));
   //to be checked for mu=0;
 
@@ -195,8 +192,7 @@ void rx_nr_prach_ru(RU_t *ru,
   int16_t *prach2;
 
   if (prach_sequence_length == 0) {
-    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d, msg1_frequencyStart %d\n",
-	  ru->idx,frame,slot2,prachFormat,msg1_frequencystart);
+    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d\n", ru->idx,frame,slot2,prachFormat);
     AssertFatal(prachFormat<4,"Illegal prach format %d for length 839\n",prachFormat);
     switch (prachFormat) {
     case 0:
@@ -218,8 +214,8 @@ void rx_nr_prach_ru(RU_t *ru,
     }
   }
   else {
-    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %s, msg1_frequencyStart %d,startSymbol %d\n",
-	  ru->idx,frame,slot,prachfmt[prachFormat],msg1_frequencystart,prachStartSymbol);
+    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %s,startSymbol %d\n",
+          ru->idx,frame,slot,prachfmt[prachFormat],prachStartSymbol);
 
     switch (prachFormat) {
     case 4: //A1
@@ -284,15 +280,15 @@ void rx_nr_prach_ru(RU_t *ru,
     K=1;
     kbar=2;
   }
-  int n_ra_prb            = msg1_frequencystart;
-  int k                   = (12*n_ra_prb) - 6*fp->N_RB_UL;
+
+  int k1 = (int16_t)ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
 
   int N_ZC = (prach_sequence_length==0)?839:139;
 
-  if (k<0) k+=(fp->ofdm_symbol_size);
-  
-  k*=K;
-  k+=kbar;
+  if (k1<0) k1+=(fp->ofdm_symbol_size);
+
+  k1*=K;
+  k1+=kbar;
 
   int reps=1;
 
@@ -653,7 +649,7 @@ void rx_nr_prach_ru(RU_t *ru,
     int16_t rxsigF_tmp[N_ZC<<1];
     //    if (k+N_ZC > dftlen) { // PRACH signal is split around DC 
     int16_t *rxsigF2=rxsigF[aa];
-    int k2=k<<1;
+    int k2=k1<<1;
 
     for (int j=0;j<N_ZC<<1;j++,k2++) {
       if (k2==(dftlen<<1)) k2=0;
@@ -684,8 +680,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   uint16_t           rootSequenceIndex;  
   int                numrootSequenceIndex;
-  uint8_t            restricted_set;      
-  uint8_t            n_ra_prb=0xFF;
+  uint8_t            restricted_set;
   int16_t            *prachF=NULL;
   int                nb_rx;
 
@@ -720,7 +715,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].num_root_sequences.value;
   NCS          = prach_pdu->num_cs;//cfg->num_prach_fd_occasions_list[0].prach_zero_corr_conf.value;
   int prach_sequence_length = cfg->prach_sequence_length.value;
-  int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].k1.value;
   //  int num_unused_root_sequences = cfg->num_prach_fd_occasions_list[0].num_unused_root_sequences.value;
   // cfg->num_prach_fd_occasions_list[0].unused_root_sequences_list
 
@@ -734,7 +728,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;
   if (LOG_DEBUGFLAG(PRACH)){
-    if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, msg1_frequencystart %d, rootSequenceIndex %d\n", subframe,msg1_frequencystart,rootSequenceIndex);
+    if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, rootSequenceIndex %d\n",
+                                 subframe, rootSequenceIndex);
   }
 
   start_meas(&gNB->rx_prach);
@@ -936,14 +931,13 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   if (LOG_DUMPFLAG(PRACH)) {
     //int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     //    if (en>60) {
-      int k = (12*n_ra_prb) - 6*fp->N_RB_UL;
+      int k1 = (int16_t)cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].k1.value;
       
-      if (k<0) k+=fp->ofdm_symbol_size;
+      if (k1<0) k1+=fp->ofdm_symbol_size;
       
-      k*=12;
-      k+=13;
-      k*=2;
-      
+      k1*=12;
+      k1+=13;
+      k1*=2;
 
       LOG_M("rxsigF.m","prach_rxF",&rxsigF[0][0],12288,1,1);
       LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
