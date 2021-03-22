@@ -41,7 +41,7 @@
 *
 * OUTPUT:        table of uplink symbol for each slot for 2 frames
 *
-* RETURN :       0 if tdd has been properly configurated
+* RETURN :       nb_periods_per_frame if tdd has been properly configurated
 *                -1 tdd configuration can not be done
 *
 * DESCRIPTION :  generate bit map for uplink symbol for each slot for several frames
