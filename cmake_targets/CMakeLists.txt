@@ -2805,6 +2805,7 @@ include_directories("${OPENAIR_DIR}/common/utils/T")
 
 if (${T_TRACER})
   set(T_SOURCE
+      ${OPENAIR_DIR}/common/utils/T/T_IDs.h
       ${OPENAIR_DIR}/common/utils/T/T.c
       ${OPENAIR_DIR}/common/utils/T/local_tracer.c)
   set(T_LIB "rt")
