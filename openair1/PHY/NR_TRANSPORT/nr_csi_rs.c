@@ -24,7 +24,7 @@
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 
-#define NR_CSIRS_DEBUG
+//#define NR_CSIRS_DEBUG
 
 
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,

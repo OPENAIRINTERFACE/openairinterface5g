@@ -890,7 +890,7 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
     /*reportQuantity must be considered according to the current scheduled
       CSI-ReportConfig if multiple CSI-ReportConfigs present*/
     reportQuantity_type = UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
-    LOG_D(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
+    LOG_D(PHY,"SFN/SF:%d/%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
 
     if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type || 
         NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type) {
@@ -944,7 +944,10 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
         *payload >>= 4;
       }
       UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
-      LOG_D(MAC,"csi_payload size = %d, rsrp_id = %d\n",payload_size, sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
+      LOG_I(MAC,"csi_payload size = %d, rsrp_id = %d rsrp = %d\n",
+            payload_size,
+            sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP,
+            get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP));
     }
   }
 
