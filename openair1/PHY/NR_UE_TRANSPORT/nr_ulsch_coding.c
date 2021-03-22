@@ -202,7 +202,6 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
       for (i=0; i<number_of_harq_pids; i++) {
         ulsch->harq_processes[i]->round=0;
       }
-
       return(ulsch);
     }
   }
@@ -259,7 +258,6 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
-  harq_process->round = nr_rv_round_map_ue[harq_process->pusch_pdu.pusch_data.rv_index];
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
@@ -269,8 +267,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
-  //  if (harq_process->Ndi == 1) {  // this is a new packet
-  if (harq_process->round == 0) {  // this is a new packet
+  if (harq_process->ndi != harq_process->pusch_pdu.pusch_data.new_data_indicator) {  // this is a new packet
 #ifdef DEBUG_ULSCH_CODING
   printf("encoding thinks this is a new packet \n");
 #endif
@@ -411,7 +408,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
 ///////////
 ///////////////////////////////////////////////////////////////////////////////
-
+    harq_process->ndi = harq_process->pusch_pdu.pusch_data.new_data_indicator;
   }
   F = harq_process->F;
   Kr = harq_process->K;
