@@ -42,7 +42,7 @@
 
 #include "T.h"
 
-#define NR_PRACH_DEBUG 1
+//#define NR_PRACH_DEBUG 1
 
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
