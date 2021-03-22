@@ -50,6 +50,7 @@ REL="Rel15"
 HW="None"
 TP="None"
 EPC=0
+VERBOSE_CI=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
@@ -323,6 +324,10 @@ function main() {
        --HWLAT_TEST)
             HWLAT_TEST=1
             echo_info "Will compile hw latency test program"
+            shift;;
+       --verbose-ci)
+	        VERBOSE_CI=1
+            echo_info "Will compile with verbose instructions in CI Docker env"
             shift;;
        --verbose-compile)
 	        VERBOSE_COMPILE=1
