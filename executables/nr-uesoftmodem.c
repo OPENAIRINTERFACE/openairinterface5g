@@ -438,13 +438,17 @@ int main( int argc, char **argv ) {
 
     set_options(CC_id, UE[CC_id]);
 
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-      mac->if_module->phy_config_request(&mac->phy_config);
+    if (get_softmodem_params()->sa)
+      nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
+    else{
+      NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+        mac->if_module->phy_config_request(&mac->phy_config);
 
-    fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+      fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
 
-    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+    }
 
     init_symbol_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);

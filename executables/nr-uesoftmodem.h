@@ -56,7 +56,8 @@
     {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL,  iptr:&(UE->UE_fo_compensation),     defintval:0,           TYPE_INT,   0}, \
     {"ue-max-power",             NULL,                   0,               iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,   0}, \
     {"A" ,                       CONFIG_HLP_TADV,        0,               iptr:&(UE->timing_advance),         defintval:0,           TYPE_INT,   0}, \
-    {"C" ,                       CONFIG_HLP_DLF,         0,               u64ptr:&(downlink_frequency[0][0]), defuintval:DEFAULT_DLF,TYPE_UINT64,0}, \
+    {"D" ,                       CONFIG_HLP_DLF,         0,               u64ptr:&(downlink_frequency[0][0]), defuintval:DEFAULT_DLF,TYPE_UINT64,0}, \
+    {"U" ,                       CONFIG_HLP_ULOFF,       0,               iptr:&(uplink_frequency_offset[0][0]), defuintval:0,       TYPE_INT,   0}, \
     {"E" ,                       CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,  u8ptr:&(fp->threequarter_fs),       defintval:0,           TYPE_UINT8, 0}, \
     {"m" ,                       CONFIG_HLP_MUSSB,       0,               u8ptr:&(fp->numerology_index),      defintval:0,           TYPE_UINT8, 0}, \
     {"r"  ,                      CONFIG_HLP_PRB,         0,               iptr:&(fp->N_RB_DL),                defintval:106,         TYPE_UINT,  0}, \
