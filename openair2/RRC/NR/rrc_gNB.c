@@ -381,9 +381,11 @@ rrc_gNB_get_next_transaction_identifier(
 //-----------------------------------------------------------------------------
 void
 rrc_gNB_generate_RRCSetup(
-    const protocol_ctxt_t    *const ctxt_pP,
-    rrc_gNB_ue_context_t     *const ue_context_pP,
-    const int                CC_id
+    const protocol_ctxt_t        *const ctxt_pP,
+    rrc_gNB_ue_context_t         *const ue_context_pP,
+    OCTET_STRING_t               *masterCellGroup_from_DU,
+    NR_ServingCellConfigCommon_t *scc,
+    const int                    CC_id
 )
 //-----------------------------------------------------------------------------
 {
@@ -397,13 +399,11 @@ rrc_gNB_generate_RRCSetup(
   //   T_INT(ctxt_pP->subframe),
   //   T_INT(ctxt_pP->rnti));
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  SRB_configList = &ue_p->SRB_configList;
-  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ctxt_pP,
-              ue_context_pP,
-              CC_id,
-              (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-              rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-              SRB_configList);
+  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
+						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+						  masterCellGroup_from_DU,
+						  scc);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -504,17 +504,17 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   NR_SRB_ToAddModList_t        **SRB_configList = NULL;
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST                 *rrc_instance_p = RC.nrrrc[ctxt_pP->module_id];
+  NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
 
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   SRB_configList = &ue_p->SRB_configList;
-  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ctxt_pP,
-              ue_context_pP,
-              CC_id,
-              (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-              rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-              SRB_configList);
+  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
+						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+						  NULL,
+						  scc);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -1475,6 +1475,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
+			   OCTET_STRING_t     *du_to_cu_rrc_container,
                            const int          CC_id)
 {
   module_id_t                                       Idx;
@@ -1599,9 +1600,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                   LOG_E(RRC, "%s:%d:%s: rrc_gNB_get_next_free_ue_context returned NULL\n", __FILE__, __LINE__, __FUNCTION__);
               }
 
-       if (ue_context_p != NULL) {
-                  ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence = TRUE;
-                  ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
+	      if (ue_context_p != NULL) {
+		ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence = TRUE;
+		ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
               }
             }
           } else {
@@ -1624,7 +1625,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
 
           rrc_gNB_generate_RRCSetup(ctxt_pP,
                                     rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
-                                    CC_id);
+                                    du_to_cu_rrc_container,
+				    gnb_rrc_inst->carrier.servingcellconfigcommon,
+				    CC_id);
         }
         break;
 
@@ -2568,9 +2571,14 @@ void *rrc_gnb_task(void *args_p) {
       }
 
       nr_rrc_gNB_decode_ccch(&ctxt,
-                          (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
-                          NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
-                          NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
+			     (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
+			     NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
+			     NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container,
+			     NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
+      if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container) {
+	free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container->buf);
+	free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container);
+      }
       break;
 
       /* Messages from PDCP */

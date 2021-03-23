@@ -798,7 +798,9 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             int             UE_id,
                                             rnti_t          rntiP,
                                             const uint8_t   *sduP,
-                                            sdu_size_t      sdu_lenP) {
+                                            sdu_size_t      sdu_lenP,
+					    const uint8_t   *sdu2P,
+					    sdu_size_t      sdu2_lenP) {
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
@@ -868,15 +870,17 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
   /* optional */
   /* c5. DUtoCURRCContainer */
-  if (0) {
+  if (sdu2P) {
     ie = (F1AP_InitialULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_InitialULRRCMessageTransferIEs_t));
     ie->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCContainer;
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
-    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer, "dummy_val",
-                       strlen("dummy_val"));
+    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer, 
+			 sdu2P,
+			 sdu2_lenP);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
+  }    
+
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {

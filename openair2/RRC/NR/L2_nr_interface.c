@@ -313,6 +313,25 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
   if (NODE_IS_DU(RC.nrrrc[module_idP]->node_type)) {
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",
           module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
+
+    // Generate DUtoCURRCContainer
+    // call do_RRCSetup like full procedure and extract masterCellGroup
+    NR_CellGroupConfig_t cellGroupConfig;
+    NR_ServingCellConfigCommon_t *scc=RC.nrrrc[module_idP]->carrier.servingcellconfigcommon;
+    uint8_t sdu2[100];
+    memset(&cellGroupConfig,0,sizeof(cellGroupConfig));
+    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc);
+    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+						    NULL,
+						    (void *)&cellGroupConfig,
+						    sdu2,
+						    100);
+
+    int sdu2_len = (enc_rval.encoded+7)/8;
+    if (enc_rval.encoded == -1) {
+      LOG_I(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
+      exit(-1);
+    }
     /* do ITTI message */
     DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
       module_idP,
@@ -320,7 +339,9 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
       UE_id,
       rntiP,
       sduP,
-      sdu_lenP
+      sdu_lenP,
+      sdu2,
+      sdu2_len
     );
     return(0);
   }
@@ -332,7 +353,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     LOG_D(NR_RRC, "[gNB %d] Received SDU for CCCH on SRB %ld\n", module_idP, srb_idP);
     ctxt.brOption = brOption;
     if (sdu_lenP > 0) {
-      nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
+      nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, NULL, CC_id);
     }
   }
 

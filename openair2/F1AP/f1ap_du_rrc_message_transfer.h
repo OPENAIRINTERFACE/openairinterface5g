@@ -49,6 +49,8 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             int             UE_id,
                                             rnti_t          rntiP,
                                             const uint8_t   *sduP,
-                                            sdu_size_t      sdu_lenP);
+                                            sdu_size_t      sdu_lenP,
+					    const uint8_t   *sdu2P,
+					    sdu_size_t      sdu2_lenP);
 
 #endif /* F1AP_DU_RRC_MESSAGE_TRANSFER_H_ */

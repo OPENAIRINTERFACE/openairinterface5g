@@ -102,6 +102,14 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 		       NR_RRCReconfiguration_t *reconfig,
 		       NR_RadioBearerConfig_t *rbconfig);
 
+void
+rrc_gNB_generate_RRCSetup(
+    const protocol_ctxt_t        *const ctxt_pP,
+    rrc_gNB_ue_context_t         *const ue_context_pP,
+    OCTET_STRING_t               *masterCellGroup_from_DU,
+    NR_ServingCellConfigCommon_t *scc,
+    const int                    CC_id);
+
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m);
 
 void
@@ -173,7 +181,8 @@ int8_t nr_mac_rrc_data_ind(
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
-                           const int          CC_id);
+                           OCTET_STRING_t     *du_to_cu_rrc_container,
+			   const int          CC_id);
 
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(
