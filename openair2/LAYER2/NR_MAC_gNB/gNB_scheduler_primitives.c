@@ -1756,10 +1756,20 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
     if (rnti_to_remove_count == 10) exit(1);
     rnti_to_remove[rnti_to_remove_count] = rnti;
-    LOG_W(MAC, "to remove in mac rnti_to_remove[%d]=%d\n", rnti_to_remove_count, rnti);
+    LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
     rnti_to_remove_count++;
     if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
   }
+}
+
+void nr_mac_remove_ra_rnti_ue(module_id_t mod_id, rnti_t rnti) {
+  // Hack to remove UE in the phy (following the same procedure as in function mac_remove_nr_ue)
+  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+  if (rnti_to_remove_count == 10) exit(1);
+  rnti_to_remove[rnti_to_remove_count] = rnti;
+  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
+  rnti_to_remove_count++;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 }
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {

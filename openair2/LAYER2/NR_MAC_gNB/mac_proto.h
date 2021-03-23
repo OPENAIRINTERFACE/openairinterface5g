@@ -312,6 +312,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
+void nr_mac_remove_ra_rnti_ue(module_id_t mod_id, rnti_t rnti);
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,

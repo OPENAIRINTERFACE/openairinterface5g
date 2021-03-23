@@ -1378,7 +1378,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
 
-  LOG_D(MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
+  LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
   if (harq->is_waiting == 0)
   {
