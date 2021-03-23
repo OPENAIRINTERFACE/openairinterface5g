@@ -522,11 +522,9 @@ typedef struct {
   int cce_index;
   uint8_t aggregation_level;
 
-  /// PUCCH scheduling information. Array of three, we assume for the moment:
-  /// HARQ in the first field, SR in second, CSI in third (as fixed by RRC
-  /// conf., i.e. if actually present).  The order is important for
-  /// nr_acknack_scheduling()!
-  NR_sched_pucch_t sched_pucch[3];
+  /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
+  /// CSI in second.  This order is important for nr_acknack_scheduling()!
+  NR_sched_pucch_t sched_pucch[2];
 
   /// PUSCH semi-static configuration: is not cleared across TTIs
   NR_pusch_semi_static_t pusch_semi_static;
