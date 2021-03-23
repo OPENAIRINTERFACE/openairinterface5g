@@ -149,7 +149,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int scg_id,
                                      int servCellIndex,
                                      int n_physical_antenna_ports,
-                                     int initial_csi_index) {
+                                     int initial_csi_index,
+                                     int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
@@ -251,7 +252,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
       if ((bitmap>>(63-i))&0x01){
         ssbElem[n_ssb] = calloc(1,sizeof(struct NR_CFRA_SSB_Resource));
         ssbElem[n_ssb]->ssb = i;
-        ssbElem[n_ssb]->ra_PreambleIndex = 63;
+        ssbElem[n_ssb]->ra_PreambleIndex = 63 - (uid % 64);
         ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list,ssbElem[n_ssb]);
         n_ssb++;
       }
@@ -975,7 +976,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
  NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
  pucchres0->pucch_ResourceId=1;
- pucchres0->startingPRB=8;
+ pucchres0->startingPRB= (8 + uid) % curr_bwp;
  pucchres0->intraSlotFrequencyHopping=NULL;
  pucchres0->secondHopPRB=NULL;
  pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -986,7 +987,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
 
  pucchres1->pucch_ResourceId=2;
- pucchres1->startingPRB=8;
+ pucchres1->startingPRB= (8 + uid) % curr_bwp;
  pucchres1->intraSlotFrequencyHopping=NULL;
  pucchres1->secondHopPRB=NULL;
  pucchres1->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -1177,7 +1178,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
  csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
  csirep1->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
- csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 49;
+ csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 9 + (10 * uid) % 320;
  NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
  pucchcsires1->uplinkBandwidthPartId=1;
  pucchcsires1->pucch_Resource=3;
@@ -1241,14 +1242,22 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int n_physical_antenna_ports,
-                           int initial_csi_index) {
+                           int initial_csi_index,
+                           int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(reconfig!=NULL,"reconfig is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
   // radioBearerConfig
   reconfig->radioBearerConfig=NULL;
   // secondaryCellGroup
-  fill_default_secondaryCellGroup(servingcellconfigcommon,servingcellconfigdedicated,secondaryCellGroup,1,1,n_physical_antenna_ports,initial_csi_index);
+  fill_default_secondaryCellGroup(servingcellconfigcommon,
+                                  servingcellconfigdedicated,
+                                  secondaryCellGroup,
+                                  1,
+                                  1,
+                                  n_physical_antenna_ports,
+                                  initial_csi_index,
+                                  uid);
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   char scg_buffer[1024];

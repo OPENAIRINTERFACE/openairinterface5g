@@ -245,14 +245,16 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[ue_context_p->local_uid + 1]);
+                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
+                        ue_context_p->local_uid);
   } else {
     fill_default_reconfig(carrier->servingcellconfigcommon,
                         NULL,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[ue_context_p->local_uid + 1]);
+                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
+                        ue_context_p->local_uid);
   }
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
