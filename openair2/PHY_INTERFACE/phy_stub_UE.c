@@ -822,7 +822,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
               sfn, sf, dci->pdu_size,
               dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
               tx_req_pdu_list->num_pdus);
-        if (!should_drop_transport_block(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
+        if (node_number > 0 || !should_drop_transport_block(sf, dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti))
         {
           ue_send_sdu(ue_id, 0, sfn, sf,
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
