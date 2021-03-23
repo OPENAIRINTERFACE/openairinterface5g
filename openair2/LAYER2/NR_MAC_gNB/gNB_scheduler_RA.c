@@ -577,7 +577,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       LOG_D(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
 
       int loop = 0;
-      if (!ra->cfra) {
+      // This condition allows for the usage of a preconfigured rnti for the first UE
+      if (!ra->cfra || ra->rnti == 0) {
         do {
           ra->rnti = (taus() % 65518) + 1;
           loop++;
@@ -1385,7 +1386,6 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
     if (harq->round == 0)
     {
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
-      free(ra->preambles.preamble_list);
       UE_info->active[UE_id] = true;
       LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
     }

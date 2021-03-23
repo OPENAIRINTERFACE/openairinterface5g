@@ -519,7 +519,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
           nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
-          free(ra->preambles.preamble_list);
           UE_info->active[UE_id] = true;
 
         } else {
