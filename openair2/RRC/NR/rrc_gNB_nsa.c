@@ -152,7 +152,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_context.reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
-  carrier->initial_csi_index[rrc->Nb_ue] = 0;
+  carrier->initial_csi_index[ue_context_p->local_uid + 1] = 0;
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
     fill_default_rbconfig(ue_context_p->ue_context.rb_config,
@@ -245,14 +245,14 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[rrc->Nb_ue]);
+                        carrier->initial_csi_index[ue_context_p->local_uid + 1]);
   } else {
     fill_default_reconfig(carrier->servingcellconfigcommon,
                         NULL,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[rrc->Nb_ue]);
+                        carrier->initial_csi_index[ue_context_p->local_uid + 1]);
   }
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
