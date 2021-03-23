@@ -1109,10 +1109,7 @@ bool nr_acknack_scheduling(int mod_id,
    * * we do not multiplex with CSI, which is always in pucch_sched[2]
    * * SR uses format 0 and is allocated in the first UL (mixed) slot (and not
    *   later)
-   * * that the PUCCH resource set 0 (for up to 2 bits) points to the first N
-   *   PUCCH resources, where N is the number of resources in the PUCCH
-   *   resource set. This is used in pucch_index_used, which counts the used
-   *   resources by index, and not by their ID! */
+   * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
   AssertFatal(pucch->csi_bits == 0,
@@ -1198,12 +1195,6 @@ bool nr_acknack_scheduling(int mod_id,
 
   /* we need to find a new PUCCH occasion */
 
-  NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-  DevAssert(pucch_Config->resourceToAddModList->list.count > 0);
-  DevAssert(pucch_Config->resourceSetToAddModList->list.count > 0);
-  const int n_res = pucch_Config->resourceSetToAddModList->list.array[0]->resourceList.list.count;
-  int *pucch_index_used = RC.nrmac[mod_id]->pucch_index_used[sched_ctrl->active_ubwp->bwp_Id];
-
   /* if time information is outdated (e.g., last PUCCH occasion in last frame),
    * set to first possible UL occasion in this frame. Note that if such UE is
    * scheduled a lot and used all AckNacks, pucch->frame might have been
@@ -1215,22 +1206,6 @@ bool nr_acknack_scheduling(int mod_id,
                 __func__);
     pucch->frame = frame;
     pucch->ul_slot = first_ul_slot_tdd;
-  }
-
-  // increase to first slot in which PUCCH resources are available
-  while (pucch_index_used[pucch->ul_slot] >= n_res) {
-    pucch->ul_slot++;
-    /* if there is no free resource anymore, abort search */
-    if ((pucch->frame == frame
-         && pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots)
-        || (pucch->frame == frame + 1)) {
-      LOG_E(MAC,
-            "%4d.%2d no free PUCCH resources anymore while searching for UE %d\n",
-            frame,
-            slot,
-            UE_id);
-      return false;
-    }
   }
 
   // advance ul_slot if it is not reachable by UE
@@ -1279,22 +1254,13 @@ bool nr_acknack_scheduling(int mod_id,
   pucch->timing_indicator = i; // index in the list of timing indicators
 
   pucch->dai_c++;
-  const int pucch_res = pucch_index_used[pucch->ul_slot];
-  pucch->resource_indicator = pucch_res;
-  pucch_index_used[pucch->ul_slot] += 1;
-  AssertFatal(pucch_index_used[pucch->ul_slot] <= n_res,
-              "UE %d in %4d.%2d: pucch_index_used is %d (%d available)\n",
-              UE_id,
-              pucch->frame,
-              pucch->ul_slot,
-              pucch_index_used[pucch->ul_slot],
-              n_res);
+  pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
 
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
-  const NR_PUCCH_Resource_t *resource =
-      pucch_Config->resourceToAddModList->list.array[pucch_res];
+  const NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+  const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
   DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
   if (resource->format.choice.format0->initialCyclicShift == 0) {
     uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];

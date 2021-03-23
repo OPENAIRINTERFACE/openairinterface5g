@@ -705,10 +705,6 @@ typedef struct gNB_MAC_INST_s {
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
   /// list of allocated beams per period
   int16_t *tdd_beam_association;
-  /// PUCCH: keep track of the resources has already been used by saving the
-  /// highest index not yet been used in a given slot. Dynamically allocated
-  /// so we can have it for every slot as a function of the numerology
-  int *pucch_index_used[MAX_NUM_BWP];
 
   /// bitmap of DLSCH slots, can hold up to 160 slots
   uint64_t dlsch_slot_bitmap[3];
