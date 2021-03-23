@@ -295,14 +295,10 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
   // Set FP variables
 
-
-  
   if (tddflag){
     fp->frame_type = TDD;
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
-
-  LOG_I(PHY, "Set UE N_RB_DL %d\n", fp->N_RB_DL);
 
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
