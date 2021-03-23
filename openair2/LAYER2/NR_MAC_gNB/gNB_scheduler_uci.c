@@ -118,8 +118,13 @@ int diff_rsrp_ssb_csi_meas_10_1_6_1_2[16] = {
 
 void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
-                       sub_frame_t slotP) {
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+                       sub_frame_t slotP)
+{
+  gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
+  if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slotP / 64], slotP))
+    return;
+
+  NR_UE_info_t *UE_info = &nrmac->UE_info;
   const NR_list_t *UE_list = &UE_info->list;
 
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
