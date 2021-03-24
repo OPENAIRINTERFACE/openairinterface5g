@@ -100,7 +100,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
                 *tdaP_Mi->k0);
     int start, len;
     SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
-    const uint16_t symb_tda = ((1 << start) - 1) << start;
+    const uint16_t symb_tda = ((1 << len) - 1) << start;
     // check whether coreset and TDA overlap: then, we cannot use it. Also,
     // check whether TDA is entirely within mixed slot DL. Note that
     // here we assume that the coreset is scheduled every slot (which it
@@ -685,6 +685,11 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* Get bwpSize from the first UE */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
+  if (tda < 0)
+    return;
+
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
