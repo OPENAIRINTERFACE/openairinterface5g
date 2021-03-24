@@ -677,7 +677,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
       NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
   if (tda == retInfo->time_domain_allocation) {
     /* Check the resource is enough for retransmission */
     while (rbStart < bwpSize && !rballoc_mask[rbStart])
