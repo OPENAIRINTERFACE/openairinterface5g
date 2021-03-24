@@ -37,6 +37,7 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -815,8 +816,7 @@ int main(int argc, char **argv){
 			   ru->common.rxdataF[aa],
 			   l,
 			   slot,
-			   ru->N_TA_offset,
-			   0);
+			   ru->N_TA_offset);
 	  }
 	}
 	
