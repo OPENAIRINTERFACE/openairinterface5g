@@ -41,6 +41,7 @@ void set_cset_offset(uint16_t);
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
+                   int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
@@ -70,6 +71,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
 void schedule_control_sib1(module_id_t module_id,
                            int CC_id,
+                           NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                            int time_domain_allocation,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
@@ -361,7 +363,7 @@ int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
 
-void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id);
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, uint16_t symStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.
