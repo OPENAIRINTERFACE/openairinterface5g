@@ -1117,12 +1117,8 @@ bool nr_acknack_scheduling(int mod_id,
               __func__,
               pucch->csi_bits);
 
-  const int max_acknacks = 2;
-  AssertFatal(pucch->dai_c + pucch->sr_flag <= max_acknacks,
-              "illegal number of bits in PUCCH of UE %d\n",
-              UE_id);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
-  if (pucch->sr_flag + pucch->dai_c == max_acknacks) {
+  if (pucch->dai_c == 2) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
      * the same slot again */
     const int f = pucch->frame;
@@ -1132,7 +1128,7 @@ bool nr_acknack_scheduling(int mod_id,
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     pucch->ul_slot = (s + 1) % n_slots_frame;
     // we assume that only two indices over the array sched_pucch exist
-    const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[1];
+    NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[1];
     // skip the CSI PUCCH if it is present and if in the next frame/slot
     if (csi_pucch->csi_bits > 0
         && csi_pucch->frame == pucch->frame
@@ -1144,6 +1140,7 @@ bool nr_acknack_scheduling(int mod_id,
                   pucch->ul_slot,
                   UE_id);
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
+      memset(csi_pucch, 0, sizeof(*csi_pucch));
       pucch->frame = s >= n_slots_frame - 2 ?  (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 2) % n_slots_frame;
     }
@@ -1162,9 +1159,8 @@ bool nr_acknack_scheduling(int mod_id,
   uint8_t pdsch_to_harq_feedback[8];
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
-  /* there is a scheduled SR or HARQ. Check whether we can use it for this
-   * ACKNACK */
-  if (pucch->sr_flag + pucch->dai_c > 0) {
+  /* there is a HARQ. Check whether we can use it for this ACKNACK */
+  if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
     DevAssert(pucch->frame == frame);
 
@@ -1200,7 +1196,9 @@ bool nr_acknack_scheduling(int mod_id,
    * scheduled a lot and used all AckNacks, pucch->frame might have been
    * wrapped around to next frame */
   if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
-    DevAssert(pucch->sr_flag + pucch->dai_c == 0);
+    AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
+                "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
+                UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     AssertFatal(frame + 1 != pucch->frame,
                 "frame wrap around not handled in %s() yet\n",
                 __func__);
@@ -1212,7 +1210,7 @@ bool nr_acknack_scheduling(int mod_id,
   pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
 
   // is there already CSI in this slot?
-  const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[1];
+  NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[1];
   // skip the CSI PUCCH if it is present and if in the next frame/slot
   if (csi_pucch->csi_bits > 0
       && csi_pucch->frame == pucch->frame
@@ -1224,6 +1222,7 @@ bool nr_acknack_scheduling(int mod_id,
                 pucch->ul_slot,
                 UE_id);
     nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
+    memset(csi_pucch, 0, sizeof(*csi_pucch));
     /* advance the UL slot information in PUCCH by one so we won't schedule in
      * the same slot again */
     const int f = pucch->frame;
@@ -1265,9 +1264,8 @@ bool nr_acknack_scheduling(int mod_id,
   if (resource->format.choice.format0->initialCyclicShift == 0) {
     uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
     const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
-    AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
-                "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
-                symb, resource->startingPRB, pucch->ul_slot);
+    if ((vrb_map_UL[resource->startingPRB] & symb) != 0)
+      LOG_W(MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
     vrb_map_UL[resource->startingPRB] |= symb;
   }
   return true;
