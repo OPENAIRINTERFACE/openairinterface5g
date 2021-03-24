@@ -238,6 +238,7 @@ void nr_process_mac_pdu(
               // todo
               break;
         case UL_SCH_LCID_CCCH:
+        case UL_SCH_LCID_CCCH1:
           mac_subheader_len = 1;
           nr_mac_rrc_data_ind(module_idP,
                               CC_id,
