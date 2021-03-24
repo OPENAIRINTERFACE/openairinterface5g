@@ -348,7 +348,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
     }
   }
   else {
-	  ret = -1;
+    ret = -1;
   }
 
   /* Consider this is a false detection if the offset is > 1000 Hz 

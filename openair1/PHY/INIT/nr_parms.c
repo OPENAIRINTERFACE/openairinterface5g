@@ -320,7 +320,6 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
     sco = config->ssb_table.ssb_subcarrier_offset;
 
   fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco);
-
   set_Lmax(fp);
 
   fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[0].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
@@ -343,7 +342,7 @@ void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink
   frame_parms->dl_CarrierFreq = downlink_frequency;
   frame_parms->ul_CarrierFreq = downlink_frequency + delta_duplex;
   frame_parms->freq_range = (frame_parms->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
-  frame_parms->N_RB_UL = frame_parms->N_RB_UL;
+  frame_parms->N_RB_UL = frame_parms->N_RB_DL;
 
   frame_parms->nr_band = get_band(downlink_frequency, delta_duplex);
   frame_parms->frame_type = get_frame_type(frame_parms->nr_band, frame_parms->numerology_index);
@@ -365,8 +364,8 @@ void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink
   frame_parms->get_samples_slot_timestamp = &get_samples_slot_timestamp;
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
 
-  exit(1);
-
+  // setting initial ssb start subcarrier to have SSBs at BW center
+  frame_parms->ssb_start_subcarrier = ((frame_parms->N_RB_DL>>1)-10)*12;
 }
 
 
