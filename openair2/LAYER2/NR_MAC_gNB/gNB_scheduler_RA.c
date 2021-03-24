@@ -1294,6 +1294,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                                                     pdsch_pdu_rel15->rbStart,
                                                                                     pdsch_pdu_rel15->BWPSize);
 
+    dci_payload.format_indicator = 1;
     dci_payload.time_domain_assignment.val = time_domain_assignment;
     dci_payload.vrb_to_prb_mapping.val = 0;
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
