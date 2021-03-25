@@ -101,6 +101,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         uint32_t ssb_length,
                         uint32_t ssb_index,
                         void *pduP,
+                        uint16_t ssb_start_subcarrier,
                         uint16_t cell_id)
 {
   LOG_D(MAC,"[L2][MAC] decode mib\n");
@@ -152,13 +153,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     // TODO these values shouldn't be taken from SCC in SA
     uint8_t scs_ssb = get_softmodem_params()->numerology;
     uint32_t band   = get_softmodem_params()->band;
-    int scs_scaling = 1<<scs_ssb;
-    if (downlink_frequency[0][0] < 3e9)
-      scs_scaling = scs_scaling*3;
-    else
-      scs_scaling = scs_scaling>>2;
-
     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
 
     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
                                           frame,
@@ -169,7 +165,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                                           scs_ssb,
                                           frequency_range,
                                           ssb_index,
-                                          (N_RB_DL-20)>>1);
+                                          ssb_offset_point_a);
 
 
     mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
@@ -721,7 +717,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
 
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
-    if (mac->cg && mac->ULbwp[mac->UL_BWP_Id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK
+    if (mac->cg && mac->ULbwp[mac->UL_BWP_Id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK)
 	dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = mac->ULbwp[mac->UL_BWP_Id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
     else // take direct offset for format 1_0
       dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_timing_indicator.val;
