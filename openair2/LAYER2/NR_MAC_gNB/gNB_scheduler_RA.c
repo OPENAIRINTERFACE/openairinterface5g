@@ -849,13 +849,24 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
     nr_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
 
-    NR_SearchSpace_t *ss = nr_mac->sched_ctrlCommon->search_space;
-    NR_BWP_Downlink_t *bwp = nr_mac->sched_ctrlCommon->active_bwp;
-    NR_ControlResourceSet_t *coreset = nr_mac->sched_ctrlCommon->coreset;
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+    long BWPStart = 0;
+    NR_SearchSpace_t *ss = NULL;
+    NR_BWP_Downlink_t *bwp = NULL;
+    NR_ControlResourceSet_t *coreset = NULL;
+    if (get_softmodem_params()->sa) {
+      bwp = nr_mac->sched_ctrlCommon->active_bwp;
+      BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      ss = nr_mac->sched_ctrlCommon->search_space;
+      coreset = nr_mac->sched_ctrlCommon->coreset;
+    } else { // NSA mode is not using the Initial BWP
+      bwp =  ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+      BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      ss = ra->ra_ss;
+      coreset = get_coreset(bwp, ss, 0);
+    }
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
