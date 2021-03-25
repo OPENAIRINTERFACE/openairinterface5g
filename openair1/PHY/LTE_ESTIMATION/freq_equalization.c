@@ -21,6 +21,7 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/sse_intrin.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 // This is 4096/(1:4096) in __m128i format
 __m128i inv_ch[4096];/* = {512,512,512,512,512,512,512,512,
