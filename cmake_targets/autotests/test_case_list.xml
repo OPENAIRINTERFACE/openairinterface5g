@@ -1294,7 +1294,8 @@
                                  (Test10: SC-FDMA, 75 PRBs),
                                  (Test11: SC-FDMA, 216 PRBs),
                                  (Test12: SC-FDMA, 273 PRBs),
-                                 (Test13: SC-FDMA, 3 DMRS)</desc>
+                                 (Test13: SC-FDMA, 3 DMRS),
+                                 (Test14: MCS 16 50 PRBs 2 RX_Antenna)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1313,9 +1314,10 @@
                       -n100 -s2 -Z -r75
                       -n100 -s2 -Z -r216 -R217
                       -n100 -s2 -Z -r270 -R273
-                      -n100 -s2 -Z -U 2 0 2</main_exec_args>
+                      -n100 -s2 -Z -U 2 0 2
+                      -n100 -m16 -s10 -z2</main_exec_args>
 
-      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13</tags>
+      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

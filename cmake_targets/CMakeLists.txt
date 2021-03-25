@@ -948,6 +948,9 @@ set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidd
 # Benetel 4G library
 ######################################################################
 
+
+include_directories ("/usr/include/dpdk")
+
 set(HWLIB_BENETEL_4G_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/benetel.c
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/shared_buffers.c

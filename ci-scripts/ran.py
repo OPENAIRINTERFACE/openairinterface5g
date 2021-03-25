@@ -243,6 +243,7 @@ class RANManagement():
 		while (count > 0) and buildOAIprocess:
 			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
+			print(result)
 			if result is None:
 				buildOAIprocess = False
 			else:
@@ -468,7 +469,7 @@ class RANManagement():
 				self.prematureExit = True
 				return
 			else:
-				mySSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
+				mySSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting|Started"', '\$', 4)
 				if rruCheck:
 					result = re.search('wait RUs', mySSH.getBefore())
 				else:

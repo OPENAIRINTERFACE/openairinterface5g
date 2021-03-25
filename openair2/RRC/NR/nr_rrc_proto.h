@@ -79,17 +79,19 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
 void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0);
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-				     NR_CellGroupConfig_t *secondaryCellGroup,
-				     int scg_id,
-				     int servCellIndex,
-				     int n_physical_antenna_ports,
-				     int initial_csi_index);
+                                     NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                     NR_CellGroupConfig_t *secondaryCellGroup,
+                                     int scg_id,
+                                     int servCellIndex,
+                                     int n_physical_antenna_ports,
+                                     int initial_csi_index);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-			   NR_RRCReconfiguration_IEs_t *reconfig,
-			   NR_CellGroupConfig_t *secondaryCellGroup,
-			   int n_physical_antenna_ports,
-			   int initial_csi_index);
+                           NR_ServingCellConfig_t *servingcellconfigdedicated,
+                           NR_RRCReconfiguration_IEs_t *reconfig,
+                           NR_CellGroupConfig_t *secondaryCellGroup,
+                           int n_physical_antenna_ports,
+                           int initial_csi_index);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            int eps_bearer_id, int rb_id,

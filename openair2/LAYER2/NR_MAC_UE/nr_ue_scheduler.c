@@ -563,19 +563,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   } else if (dci) {
 
     int target_ss;
-    uint8_t  ptrs_time_density;
-    uint8_t  ptrs_freq_density;
-    nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
+    bool valid_ptrs_setup = 0;
     uint16_t n_RB_ULBWP = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
     NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
-
-    // These should come from RRC config!!!
-    uint8_t  ptrs_mcs1          = 2;
-    uint8_t  ptrs_mcs2          = 4;
-    uint8_t  ptrs_mcs3          = 10;
-    uint16_t n_rb0              = 25;
-    uint16_t n_rb1              = 75;
 
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dci->mcs > 28) {
@@ -692,12 +683,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->absolute_delta_PUSCH = 4;
     }
 
-    ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
-    ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, pusch_config_pdu->rb_size);
-    // PTRS ports configuration
-    // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
-    ptrs_ports_list.ptrs_re_offset = 0;
-
     /* DMRS */
     l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
     if (pusch_config_pdu->transform_precoding == transform_precoder_disabled)
@@ -711,12 +696,20 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* PTRS */
-    pusch_config_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
-    pusch_config_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-    pusch_config_pdu->pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
-
-    if (1 << pusch_config_pdu->pusch_ptrs.ptrs_time_density >= pusch_config_pdu->nr_of_symbols) {
-      pusch_config_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+    if (mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS != NULL) {
+      if (pusch_config_pdu->transform_precoding == transform_precoder_disabled) {
+        nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
+        pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
+        valid_ptrs_setup = set_ul_ptrs_values(mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
+                                              pusch_config_pdu->rb_size, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,&pusch_config_pdu->pusch_ptrs.ptrs_time_density,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
+                                              &pusch_config_pdu->pusch_ptrs.ul_ptrs_power, pusch_config_pdu->nr_of_symbols);
+        if(valid_ptrs_setup==true) {
+          pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
+        }
+        LOG_D(MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);
+      }
     }
 
   }
