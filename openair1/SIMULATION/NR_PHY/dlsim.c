@@ -402,6 +402,10 @@ int main(int argc, char **argv)
         channel_model=ETU;
         break;
 
+      case 'R':
+        channel_model=Rayleigh1;
+        break;
+
       default:
         printf("Unsupported channel model!\n");
         exit(-1);
@@ -573,7 +577,7 @@ int main(int argc, char **argv)
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-t Delay spread for multipath channel\n");
-      printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+      printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
       //printf("-i Relative strength of first intefering gNB (in dB) - cell_id mod 3 = 1\n");
