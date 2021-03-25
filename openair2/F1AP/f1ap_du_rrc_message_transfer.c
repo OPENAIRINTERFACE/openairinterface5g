@@ -473,35 +473,35 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     }
 
                     rrc_mac_config_req_eNB(
-                      ctxt.module_id,
-                      0,0,0,0,0,0,
-                   0,
-                   ue_context_p->ue_context.rnti,
-                   (LTE_BCCH_BCH_Message_t *) NULL,
-                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                   physicalConfigDedicated,
-                   (LTE_SCellToAddMod_r10_t *)NULL,
-                   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
-                   (LTE_MeasObjectToAddMod_t **) NULL,
-                   mac_MainConfig,
-                   DRB2LCHAN[i],
-                   DRB_configList->list.array[i]->logicalChannelConfig,
-                   measGapConfig,
-                   (LTE_TDD_Config_t *) NULL,
-                   NULL,
-                   (LTE_SchedulingInfoList_t *) NULL,
-                   0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
-                   , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-                   (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-                         0,
-                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                         (LTE_MBSFNAreaConfiguration_r9_t*) NULL
-                   );
+					   ctxt.module_id,
+					   0,0,0,0,0,0,
+					   0,
+					   ue_context_p->ue_context.rnti,
+					   (LTE_BCCH_BCH_Message_t *) NULL,
+					   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+					   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+					   physicalConfigDedicated,
+					   (LTE_SCellToAddMod_r10_t *)NULL,
+					   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+					   (LTE_MeasObjectToAddMod_t **) NULL,
+					   mac_MainConfig,
+					   DRB2LCHAN[i],
+					   DRB_configList->list.array[i]->logicalChannelConfig,
+					   measGapConfig,
+					   (LTE_TDD_Config_t *) NULL,
+					   NULL,
+					   (LTE_SchedulingInfoList_t *) NULL,
+					   0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+					   , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
+					   (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
+					   0,
+					   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+					   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+					   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+					   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+					   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+					   (LTE_MBSFNAreaConfiguration_r9_t*) NULL
+					   );
                   }
 
                 } else {        // remove LCHAN from MAC/PHY
@@ -1243,10 +1243,11 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   ctxt.instance  = instance;
   ctxt.enb_flag  = 1;
 
- struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_get_ue_context(
-                                                RC.nrrrc[ctxt.module_id],
-                                                ctxt.rnti);
+  struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_get_ue_context(
+								     RC.nrrrc[ctxt.module_id],
+								     ctxt.rnti);
 
+  gNB_RRC_INST *rrc = &RC.nrrrc[ctxt.module_id];
   if (srb_id == 0) {
     NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
@@ -1279,25 +1280,33 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         AssertFatal(rrcSetup!=NULL, "rrcSetup is null\n");
         NR_RRCSetup_IEs_t *rrcSetup_ies = rrcSetup->criticalExtensions.choice.rrcSetup;
 
-        // get SRB logical channel information
-        // NR_SRB_ToAddModList_t       *SRB_configList;
-        // NR_SRB_ToAddMod_t           *SRB1_config;
-        NR_CellGroupConfig_t        *cellGroupConfig      = NULL;
-        // NR_LogicalChannelConfig_t   *logicalChannelConfig = NULL;
-
+	ue_context_p->ue_context.SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
         AssertFatal(rrcSetup_ies->masterCellGroup.buf!=NULL,"masterCellGroup is null\n");
-        cellGroupConfig = (NR_CellGroupConfig_t *)rrcSetup_ies->masterCellGroup.buf;
+	asn_dec_rval_t dec_rval;
+	dec_rval = uper_decode(NULL,
+			       &asn_DEF_NR_CellGroupConfig,
+			       (void**)&ue_context_p->ue_context.masterCellGroup,
+			       rrcSetup_ies->masterCellGroup.buf,
+			       rrcSetup_ies->masterCellGroup.size,0,0);
+	AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
 
-        // SRB_configList                 = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
-        // AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
-        for (int cnt = 0; cnt < cellGroupConfig->rlc_BearerToAddModList->list.count; cnt++) {
-          if (cellGroupConfig->rlc_BearerToAddModList->list.array[cnt]) {
-            // logicalChannelConfig = (NR_LogicalChannelConfig_t *)cellGroupConfig->rlc_BearerToAddModList->list.array[cnt];
-          }
-        } // for
-
+      // configure MAC
+	rrc_mac_config_req_gNB(ctxt.module_id,
+			       rrc->carrier.ssb_SubcarrierOffset,
+			       rrc->carrier.pdsch_AntennaPorts,
+			       (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			       0,
+			       ue_context_p->ue_context.rnti,
+			       ue_context_p->ue_context.masterCellGroup
+			       );
         // rrc_rlc_config_asn1_req
-
+	nr_rrc_rlc_config_asn1_req(&ctxt,
+				   ue_context_p->ue_context.SRB_configList, 
+				   NULL,
+				   NULL,
+				   NULL,
+				   NULL,
+				   NULL);
       // This should be somewhere in the f1ap_cudu_ue_inst_t
       /*int macrlc_instance = 0; 
 

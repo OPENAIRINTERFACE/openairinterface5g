@@ -54,7 +54,7 @@
 
 //#include "L1_paramdef.h"
 #include "L1_nr_paramdef.h"
-#include "MACRLC_paramdef.h"
+#include "MACRLC_nr_paramdef.h"
 #include "common/config/config_userapi.h"
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
@@ -516,7 +516,8 @@ void RCconfig_nr_macrlc() {
         RC.nrmac[j]->eth_params_s.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
-
+	RC.nrmac[j]->pusch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCHTARGETPOWX1_IDX].iptr);
+	RC.nrmac[j]->pucch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCHTARGETPOWX1_IDX].iptr);
         //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.nrmac[j]->eth_params_s.my_portc);
@@ -1692,8 +1693,6 @@ void configure_gnb_du_mac(int inst) {
   rrc_mac_config_req_gNB(rrc->module_id,
                         rrc->configuration.ssb_SubcarrierOffset,
                         rrc->configuration.pdsch_AntennaPorts,
-                        rrc->configuration.pusch_TargetSNRx10,
-                        rrc->configuration.pucch_TargetSNRx10,
                         rrc->configuration.scc,
                         0,
                         0, // rnti

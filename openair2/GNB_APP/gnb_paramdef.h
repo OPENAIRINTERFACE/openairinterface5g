@@ -115,8 +115,6 @@ typedef enum {
 #define GNB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
 #define GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET           "ssb_SubcarrierOffset"
 #define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
-#define GNB_CONFIG_STRING_PUSCHTARGETPOWX10             "pusch_TargetSNRx10"
-#define GNB_CONFIG_STRING_PUCCHTARGETPOWX10             "pucch_TargetSNRx10"
 #define GNB_CONFIG_STRING_NR_CELLID                     "nr_cellid"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
@@ -140,8 +138,6 @@ typedef enum {
 {GNB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,          NULL,   0,            iptr:NULL,   defintval:31,                TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_PDSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_PUSCHTARGETPOWX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_PUCCHTARGETPOWX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_NR_CELLID,                    NULL,   0,            u64ptr:NULL, defint64val:0,               TYPE_UINT64,    0},  \
 }															     	
 
