@@ -528,7 +528,6 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
-  LOG_D(MAC,"Schedule_nr_sib1: frameP = %i, slotP = %i\n", frameP, slotP);
 
   // TODO: Get these values from RRC
   const int CC_id = 0;
@@ -565,7 +564,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
        (type0_PDCCH_CSS_config->num_rbs > 0) &&
        (type0_PDCCH_CSS_config->active == true)) {
 
-      LOG_D(MAC,"> SIB1 transmission\n");
+      LOG_D(MAC,"Schedule_nr_sib1: frameP = %i, slotP = %i\n", frameP, slotP);
 
       // Get SIB1
       uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];

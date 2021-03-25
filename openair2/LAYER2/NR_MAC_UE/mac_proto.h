@@ -53,7 +53,8 @@ int8_t nr_ue_decode_mib(
     uint8_t extra_bits, 
     uint32_t ssb_length, 
     uint32_t ssb_index,
-    void *pduP, 
+    void *pduP,
+    uint16_t ssb_start_subcarrier,
     uint16_t cell_id );
 
 /**\brief decode SIB1 and other SIs pdus in NR_UE, from if_module dl_ind

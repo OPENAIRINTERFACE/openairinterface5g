@@ -99,6 +99,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         uint32_t ssb_length,
                         uint32_t ssb_index,
                         void *pduP,
+                        uint16_t ssb_start_subcarrier,
                         uint16_t cell_id)
 {
   LOG_I(MAC,"[L2][MAC] decode mib\n");
@@ -149,14 +150,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     // TODO these values shouldn't be taken from SCC in SA
     uint8_t scs_ssb = *scc->ssbSubcarrierSpacing;
     uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-    int scs_scaling = 1<<scs_ssb;
-    if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
-      scs_scaling = scs_scaling*3;
-    if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
-      scs_scaling = scs_scaling>>2;
-    uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-
     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
 
     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
                                           frame,
@@ -167,7 +162,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                                           scs_ssb,
                                           frequency_range,
                                           ssb_index,
-                                          absolute_diff/(12*scs_scaling)-10);
+                                          ssb_offset_point_a);
 
 
     mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
