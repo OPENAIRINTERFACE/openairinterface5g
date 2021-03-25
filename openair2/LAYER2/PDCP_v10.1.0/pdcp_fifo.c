@@ -78,7 +78,6 @@ extern int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
 extern int nas_sock_mbms_fd;
 
-extern int mbms_rab_id;
 
 
 extern struct msghdr nas_msg_tx;
@@ -113,8 +112,6 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
      * PDCP packet to pick the right socket below */
 
     int rb_id = pdcpHead->rb_id;
-    int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
-      pdcpHead->data_size;
     void * pdcpData=(void*)(pdcpHead+1);
     if (rb_id == 10) { //hardcoded for PC5-Signaling
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
@@ -128,24 +125,25 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     } else if (UE_NAS_USE_TUN) {
       //ret = write(nas_sock_fd[pdcpHead->inst], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        if(rb_id == mbms_rab_id){
-       ret = write(nas_sock_mbms_fd, pdcpData,sizeToWrite );
+       ret = write(nas_sock_mbms_fd, pdcpData, pdcpHead->data_size );
        LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d sizeToWrite %d\n",
-	     ret,rb_id,nas_sock_fd[pdcpHead->inst],sizeToWrite);
+	     ret,rb_id,nas_sock_fd[pdcpHead->inst],pdcpHead->data_size);
         }
        else
        {
 	 if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
-	   log_dump(PDCP, pdcpData, sizeToWrite, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
-	 ret = write(nas_sock_fd[pdcpHead->inst], pdcpData,sizeToWrite );
+	   log_dump(PDCP, pdcpData, pdcpHead->data_size, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
+	 ret = write(nas_sock_fd[pdcpHead->inst], pdcpData,pdcpHead->data_size );
 	 LOG_T(PDCP,"[UE PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",
-	       ret,rb_id,nas_sock_fd[pdcpHead->inst],sizeToWrite);
+	       ret,rb_id,nas_sock_fd[pdcpHead->inst],pdcpHead->data_size);
        }
     } else if (ENB_NAS_USE_TUN) {
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
-	log_dump(PDCP, pdcpData, sizeToWrite, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
-      ret = write(nas_sock_fd[0], pdcpData, sizeToWrite);
-       LOG_T(PDCP,"[NB PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[0],sizeToWrite);
+	log_dump(PDCP, pdcpData, pdcpHead->data_size, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
+      ret = write(nas_sock_fd[0], pdcpData, pdcpHead->data_size);
+       LOG_T(PDCP,"[NB PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[0],pdcpHead->data_size);
     } else if (PDCP_USE_NETLINK) {
+      int sizeToWrite= sizeof (pdcp_data_ind_header_t) + pdcpHead->data_size;
       memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) pdcpHead,  sizeToWrite);
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
@@ -154,7 +152,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
 
     if( LOG_DEBUGFLAG(DEBUG_PDCP) )
-      log_dump(PDCP, pdcpData, min(sizeToWrite,30) , LOG_DUMP_CHAR,
+      log_dump(PDCP, pdcpData, min(pdcpHead->data_size,30) , LOG_DUMP_CHAR,
 	       "Printing first bytes of PDCP SDU before removing it from the list: \n");
     delNotifiedFIFO_elt (sdu_p);
     pdcp_nb_sdu_sent ++;
@@ -384,6 +382,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
     len = recvmsg(nas_sock_fd[0], &nas_msg_rx, 0);
+    printf("recev: %d\n", len);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
 
     if (len > 0) {

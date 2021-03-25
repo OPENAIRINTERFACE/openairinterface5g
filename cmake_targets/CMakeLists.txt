@@ -45,6 +45,8 @@ include_directories(${CONFIG_INCLUDE_DIRS})
 pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
+#uhd 4.0 and iris installs by default in /usr/local
+include_directories("/usr/local/include/")
 #use native cmake method as this package is not in pkg-config
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
@@ -52,7 +54,7 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
 
 elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
     include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
-    include_directories("/usr/local/include/")
+
     set(HW_SOURCE ${HW_SOURCE}
             ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp)
     LINK_DIRECTORIES("/usr/local/lib")
@@ -336,11 +338,11 @@ endif ()
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} --sanitize=address -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -O0 -DMALLOC_CHECK_=3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -O0 --sanitize=address -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3 -O2 -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
 
@@ -3088,6 +3090,7 @@ add_executable(ocp-gnb
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
   ${GTPU_need_ITTI}
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}

@@ -153,7 +153,6 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t **chest_t;
   int16_t **chest_f;
   int16_t *pusch_llr;
-  int32_t *pusch_comp;
   int32_t *pucch1_comp;
   int32_t *pucch1_thres;
   int32_t *pucch1ab_comp;
@@ -189,7 +188,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_t = (int16_t **) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates;
   chest_f = (int16_t **) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates;
   pusch_llr = (int16_t *) phy_vars_enb->pusch_vars[UE_id]->llr;
-  pusch_comp = (int32_t *) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
+  int16_t *pusch_comp= (int16_t *) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
   pucch1_comp = (int32_t *) phy_vars_enb->pucch1_stats[UE_id];
   pucch1_thres = (int32_t *) phy_vars_enb->pucch1_stats_thres[UE_id];
   pucch1ab_comp = (int32_t *) phy_vars_enb->pucch1ab_stats[UE_id];
@@ -684,7 +683,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (frame_parms->N_RB_DL != 100) {
       fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
     } else {
-      LOG_D(PHY,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+      LOG_D(HW,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
@@ -698,7 +697,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (frame_parms->N_RB_DL != 100) {
       fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
     } else {
-      LOG_D(PHY,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
+      LOG_D(HW,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
@@ -714,7 +713,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (frame_parms->N_RB_DL != 100) {
       fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
     } else {
-      LOG_D(PHY,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+      LOG_D(HW,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 

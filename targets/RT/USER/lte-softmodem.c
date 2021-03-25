@@ -56,6 +56,8 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
+#include <openair1/PHY/phy_extern_ue.h>
+
 #include "PHY/phy_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "LAYER2/MAC/mac_vars.h"

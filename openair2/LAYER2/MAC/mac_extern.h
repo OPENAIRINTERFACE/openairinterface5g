@@ -65,6 +65,7 @@ extern const int cqi_to_mcs[16];
 extern uint32_t RRC_CONNECTION_FLAG;
 
 extern uint8_t rb_table[34];
+extern rb_id_t mbms_rab_id;
 
 
 #if defined(PRE_SCD_THREAD)

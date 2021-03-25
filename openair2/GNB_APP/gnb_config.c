@@ -175,7 +175,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble              = CALLOC(1,sizeof(long));
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant             = CALLOC(1,sizeof(long));
   
-  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon                                                = CALLOC(1,sizeof(struct NR_SetupRelease_PUCCH_ConfigCommon)); 
+  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon                                                = CALLOC(1,sizeof(*scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon)); 
   scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->present= NR_SetupRelease_PUCCH_ConfigCommon_PR_setup;
   scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup                                  = CALLOC(1,sizeof(struct NR_PUCCH_ConfigCommon));
   scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal                      = CALLOC(1,sizeof(long));
@@ -297,7 +297,7 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 void prepare_scd(NR_ServingCellConfig_t *scd) {
   // Allocate downlink structures
 
-  scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(scd->downlinkBWP_ToAddModList));
+  scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->downlinkBWP_ToAddModList));
 
   // Downlink bandwidth part
   NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
@@ -318,14 +318,14 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_DMRS_DownlinkCfg->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
   NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup));
   NR_PTRS_DownlinkConfig_t *NR_PTRS_DownlinkCfg = NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup;
-  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->frequencyDensity));
+  AssertFatal( NULL!= (NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity))), "");
   int *dl_rbs[2];
   for (int i=0;i<2;i++) {
     dl_rbs[i] = CALLOC(1, sizeof(*dl_rbs[i]));
     *dl_rbs[i] = 0;
     ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, dl_rbs[i]);
   }
-  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->timeDensity));
+  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
   int *dl_mcs[3];
   for (int i=0;i<3;i++) {
     dl_mcs[i] = CALLOC(1, sizeof(*dl_mcs[i]));
