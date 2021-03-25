@@ -336,7 +336,7 @@ int main(int argc, char **argv)
   int8_t enable_ptrs = 0;
   int8_t modify_dmrs = 0;
 
-  int8_t dmrs_arg[2] = {-1,-1};// Invalid values
+  int8_t dmrs_arg[3] = {-1,-1,-1};// Invalid values
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
   int8_t ptrs_arg[2] = {-1,-1};// Invalid values
 
@@ -594,7 +594,7 @@ int main(int argc, char **argv)
       printf("-q Use 2nd MCS table (256 QAM table) for PDSCH\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
-      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2}, e.g. -U 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
       printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
@@ -1359,6 +1359,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
 {
   int8_t  mapping_type = typeA;//default value
   int8_t  add_pos = pdsch_dmrs_pos0;//default value
+  int8_t  dmrs_config_type = pdsch_dmrs_type1;//default value
   if(dmrs_arg[0] == 0) {
     mapping_type = typeA;
   }
@@ -1369,10 +1370,17 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
   if(dmrs_arg[1] >= 0 && dmrs_arg[1] <3 ) {
     add_pos = dmrs_arg[1];
   }
+  /* DMRS Conf Type 1 or 2 */
+  if(dmrs_arg[2] >= 1 && dmrs_arg[2] <3 ) {
+    dmrs_config_type = dmrs_arg[2]-1;
+  }
 
   if(scg != NULL) {
     NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
     *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = add_pos;
+    if (dmrs_config_type == pdsch_dmrs_type2)
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
+    else bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type = NULL;
     for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
       bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
     }
@@ -1382,6 +1390,9 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
       ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = mapping_type;
     }
     ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = add_pos;
+    if (dmrs_config_type == pdsch_dmrs_type2)
+      ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type2;
+    else ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
   }
-  printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d \n", dmrs_arg[0], dmrs_arg[1] );
+  printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d Config. Type %d \n", dmrs_arg[0], add_pos, dmrs_arg[2] );
 }

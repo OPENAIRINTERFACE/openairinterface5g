@@ -777,7 +777,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 
     for (m = s0; m < (s0 +s1); m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
-        for (uint8_t aatx=0; aatx<dlsch0->harq_processes[harq_pid]->Nl; aatx++) {//for MIMO Config: it shall loop over no_layers
+        ue->dmrs_DownlinkConfig.pdsch_dmrs_type = dlsch0_harq->dmrsConfigType;//DL channel estimation uses ue->dmrs_DownlinkConfig.pdsch_dmrs_type
+        for (uint8_t aatx=0; aatx<dlsch0_harq->Nl; aatx++) {//for MIMO Config: it shall loop over no_layers
           nr_pdsch_channel_estimation(ue,
                                       proc,
                                       0 /*eNB_id*/,
@@ -808,7 +809,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     uint16_t first_symbol_with_data = s0;
     uint32_t dmrs_data_re;
 
-    if (ue->dmrs_DownlinkConfig.pdsch_dmrs_type == pdsch_dmrs_type1)
+    if (dlsch0_harq->dmrsConfigType == pdsch_dmrs_type1)
       dmrs_data_re = 12 - 6 * dlsch0_harq->n_dmrs_cdm_groups;
     else
       dmrs_data_re = 12 - 4 * dlsch0_harq->n_dmrs_cdm_groups;
