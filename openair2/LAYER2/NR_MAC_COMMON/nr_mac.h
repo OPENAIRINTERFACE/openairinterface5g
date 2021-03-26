@@ -148,10 +148,10 @@ typedef struct {
 // single Entry PHR MAC CE
 // TS 38.321 ch. 6.1.3.8
 typedef struct {
-  uint8_t PH: 6;
-  uint8_t R1: 2;
-  uint8_t PCMAX: 6;
-  uint8_t R2: 6;
+  uint8_t PH: 6;    // octet 1 [5:0]
+  uint8_t R1: 2;    // octet 1 [7:6]
+  uint8_t PCMAX: 6; // octet 2 [5:0]
+  uint8_t R2: 2;    // octet 2 [7:6]
 } __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
 
 

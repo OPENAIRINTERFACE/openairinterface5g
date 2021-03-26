@@ -295,9 +295,9 @@ void schedule_control_sib1(module_id_t module_id,
   }
   gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
 
-  gNB_mac->sched_ctrlCommon->time_domain_allocation = time_domain_allocation;
-  gNB_mac->sched_ctrlCommon->mcsTableIdx = mcsTableIdx;
-  gNB_mac->sched_ctrlCommon->mcs = mcs;
+  gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation = time_domain_allocation;
+  gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx = mcsTableIdx;
+  gNB_mac->sched_ctrlCommon->sched_pdsch.mcs = mcs;
   gNB_mac->sched_ctrlCommon->num_total_bytes = num_total_bytes;
 
   uint8_t nr_of_candidates;
@@ -318,18 +318,19 @@ void schedule_control_sib1(module_id_t module_id,
 
   // Calculate number of symbols
   struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-  const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
+  const int startSymbolAndLength =
+      tdaList->list.array[gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
   if (nrOfSymbols == 2) {
-    gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 1;
+    gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 1;
   } else {
-    gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 2;
+    gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 2;
   }
 
   // Calculate number of PRB_DMRS
-  uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
+  uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
   uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, startSymbolIndex+nrOfSymbols);
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
@@ -337,22 +338,24 @@ void schedule_control_sib1(module_id_t module_id,
   uint32_t TBS = 0;
   do {
     rbSize++;
-    TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
-                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
+    TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
+                                      gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
+                                             gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
   } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
-  gNB_mac->sched_ctrlCommon->rbSize = rbSize;
-  gNB_mac->sched_ctrlCommon->rbStart = 0;
+  gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize = rbSize;
+  gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart = 0;
 
   LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
   LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
   LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
-  LOG_D(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
+  LOG_D(MAC, "rbSize = %i\n", gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize);
   LOG_D(MAC,"TBS = %i\n", TBS);
 
   // Mark the corresponding RBs as used
-  for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->rbSize; rb++) {
+  for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
     vrb_map[rb + rbStart] = 1;
   }
 }
@@ -405,9 +408,9 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   }
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
-  pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs,0);
+  pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, 0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
-  pdsch_pdu_rel15->mcsIndex[0] = gNB_mac->sched_ctrlCommon->mcs;
+  pdsch_pdu_rel15->mcsIndex[0] = gNB_mac->sched_ctrlCommon->sched_pdsch.mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
   pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[0];
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
@@ -417,15 +420,16 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->dmrsConfigType = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
-  pdsch_pdu_rel15->numDmrsCdmGrpsNoData = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData;
+  pdsch_pdu_rel15->numDmrsCdmGrpsNoData = gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData;
   pdsch_pdu_rel15->dmrsPorts = 1;
   pdsch_pdu_rel15->resourceAlloc = 1;
-  pdsch_pdu_rel15->rbStart = gNB_mac->sched_ctrlCommon->rbStart;
-  pdsch_pdu_rel15->rbSize = gNB_mac->sched_ctrlCommon->rbSize;
+  pdsch_pdu_rel15->rbStart = gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart;
+  pdsch_pdu_rel15->rbSize = gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 0;
-  pdsch_pdu_rel15->qamModOrder[0] = nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx);
+  pdsch_pdu_rel15->qamModOrder[0] = nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
+                                                 gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx);
   pdsch_pdu_rel15->TBSize[0] = TBS;
-  pdsch_pdu_rel15->mcsTable[0] = gNB_mac->sched_ctrlCommon->mcsTableIdx;
+  pdsch_pdu_rel15->mcsTable[0] = gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx;
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
@@ -454,8 +458,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(
       pdsch_pdu_rel15->rbSize, pdsch_pdu_rel15->rbStart, gNB_mac->type0_PDCCH_CSS_config.num_rbs);
 
-  dci_payload.time_domain_assignment.val = gNB_mac->sched_ctrlCommon->time_domain_allocation;
-  dci_payload.mcs = gNB_mac->sched_ctrlCommon->mcs;
+  dci_payload.time_domain_assignment.val = gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation;
+  dci_payload.mcs = gNB_mac->sched_ctrlCommon->sched_pdsch.mcs;
   dci_payload.rv = pdsch_pdu_rel15->rvIndex[0];
   dci_payload.harq_pid = 0;
   dci_payload.ndi = 0;
@@ -525,17 +529,26 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
     struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
+    const int startSymbolAndLength =
+        tdaList->list.array[gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
     // Calculate number of PRB_DMRS
-    uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
+    uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
     uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, startSymbolIndex+nrOfSymbols);
     uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
-    const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
-                                        nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
-                                        gNB_mac->sched_ctrlCommon->rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0 ,0 ,1 ) >> 3;
+    const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
+                                                     gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+                                        nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
+                                                            gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+                                        gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize,
+                                        nrOfSymbols,
+                                        N_PRB_DMRS * dmrs_length,
+                                        0,
+                                        0,
+                                        1)
+                         >> 3;
 
     nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
     nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, TBS, startSymbolIndex, nrOfSymbols);
