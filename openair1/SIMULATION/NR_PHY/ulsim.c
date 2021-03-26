@@ -904,8 +904,8 @@ int main(int argc, char **argv)
 				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
 				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
 
-    mod_order = nr_get_Qm_ul(Imcs, 0);
-    code_rate = nr_get_code_rate_ul(Imcs, 0);
+    mod_order = nr_get_Qm_ul(Imcs, mcs_table);
+    code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
   }
   
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
