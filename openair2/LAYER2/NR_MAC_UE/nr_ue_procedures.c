@@ -1816,9 +1816,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
             //  MAC CE
 
             case DL_SCH_LCID_CCCH:
-              //  MSG4 RRC Connection Setup 38.331
+              //  MSG4 RRC Setup 38.331
               //  variable length
-
               if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
                 mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
                               | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
@@ -1828,7 +1827,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 mac_subheader_len = 2;
               }
 
-              if ( mac_sdu_len > 0) {
+              if ( mac_sdu_len > 0 ) {
 
                 LOG_D(NR_MAC,"DL_SCH_LCID_CCCH with payload len %d: bits\n", mac_sdu_len);
 

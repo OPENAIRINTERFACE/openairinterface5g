@@ -247,14 +247,11 @@ void nr_process_mac_pdu(
             // RRCResumeRequest1 message includes the full I-RNTI and has a size of 8 bytes
             mac_sdu_len = 8;
 
-            // FIXME: Need to handle properly MAC PDU with all 00's
-            //[MAC]   nr_process_mac_pdu() residual mac pdu length < 0!, pdu_len: -2
-            //[MAC]   MAC PDU 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+            // Check if it is a valid CCCH1 message, we get all 00's messages very often
             if (pdu_len != 9) {
               //LOG_E(MAC, "%s() Invalid CCCH1 message!, pdu_len: %d\n", __func__, pdu_len);
               return;
             }
-
           } else {
             // fixed length of 6 bytes
             mac_sdu_len = 6;
@@ -525,8 +522,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 current_rnti);
           continue;
         }
+
         const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
         UE_info->UE_beam_index[UE_id] = ra->beam_id;
+
+        // re-initialize ta update variables after RA procedure completion
+        UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
         LOG_I(NR_MAC,
               "[gNB %d][RAPROC] PUSCH with TC-RNTI %x received correctly, "
               "adding UE MAC Context UE_id %d/RNTI %04x\n",
@@ -554,9 +556,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
           // First byte corresponds to R/LCID MAC sub-header
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
-
-          // re-initialize ta update variables afrer RA procedure completion
-          UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
           nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
 
