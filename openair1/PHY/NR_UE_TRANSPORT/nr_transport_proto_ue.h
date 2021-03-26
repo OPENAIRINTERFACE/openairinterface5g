@@ -471,7 +471,7 @@ int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param beamforming_mode beamforming mode
 */
 int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
-                   int32_t **rxdataF_comp,
+                   int32_t *rxdataF_comp,
                    int16_t *dlsch_llr,
                    uint8_t symbol,
 				   uint32_t len,
@@ -505,14 +505,13 @@ int32_t nr_dlsch_qpsk_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                            uint32_t rb_alloc);
 
 void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
+                     int32_t *rxdataF_comp,
                      int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
+                     int32_t *dl_ch_mag,
                      uint8_t symbol,
-					 uint32_t len,
+                     uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
-                     int16_t **llr32p,
                      uint8_t beamforming_mode);
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -553,28 +552,26 @@ void dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                          uint32_t rb_alloc);
 
 void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
+                     int32_t *rxdataF_comp,
                      int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
-                     int32_t **dl_ch_magb,
-                     uint8_t symbol,
-					 uint32_t len,
-                     uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint32_t llr_offset,
-                     uint8_t beamforming_mode);
-
-void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
-                     int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
-                     int32_t **dl_ch_magb,
-                     int32_t **dl_ch_magr,
+                     int32_t *dl_ch_mag,
+                     int32_t *dl_ch_magb,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
-                     uint32_t llr_offset,
+                     uint8_t beamforming_mode);
+
+void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+                     int32_t *rxdataF_comp,
+                     int16_t *dlsch_llr,
+                     int32_t *dl_ch_mag,
+                     int32_t *dl_ch_magb,
+                     int32_t *dl_ch_magr,
+                     uint8_t symbol,
+                     uint32_t len,
+                     uint8_t first_symbol_flag,
+                     uint16_t nb_rb,
                      uint8_t beamforming_mode);
 
 /** \fn dlsch_siso(NR_DL_FRAME_PARMS *frame_parms,
