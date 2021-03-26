@@ -237,9 +237,29 @@ void nr_process_mac_pdu(
         case UL_SCH_LCID_SRB3:
               // todo
               break;
+
         case UL_SCH_LCID_CCCH:
         case UL_SCH_LCID_CCCH1:
+          // fixed length
           mac_subheader_len = 1;
+
+          if ( rx_lcid == UL_SCH_LCID_CCCH1 ) {
+            // RRCResumeRequest1 message includes the full I-RNTI and has a size of 8 bytes
+            mac_sdu_len = 8;
+
+            // FIXME: Need to handle properly MAC PDU with all 00's
+            //[MAC]   nr_process_mac_pdu() residual mac pdu length < 0!, pdu_len: -2
+            //[MAC]   MAC PDU 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+            if (pdu_len != 9) {
+              //LOG_E(MAC, "%s() Invalid CCCH1 message!, pdu_len: %d\n", __func__, pdu_len);
+              return;
+            }
+
+          } else {
+            // fixed length of 6 bytes
+            mac_sdu_len = 6;
+          }
+
           nr_mac_rrc_data_ind(module_idP,
                               CC_id,
                               frameP,
@@ -248,7 +268,7 @@ void nr_process_mac_pdu(
                               rnti,
                               CCCH,
                               pdu_ptr+mac_subheader_len,
-                              pdu_len-mac_subheader_len,
+                              mac_sdu_len,
                               0);
           break;
 
