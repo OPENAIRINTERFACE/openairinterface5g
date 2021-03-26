@@ -239,7 +239,6 @@ class RANManagement():
 		while (count > 0) and buildOAIprocess:
 			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
-			print(result)
 			if result is None:
 				buildOAIprocess = False
 			else:
