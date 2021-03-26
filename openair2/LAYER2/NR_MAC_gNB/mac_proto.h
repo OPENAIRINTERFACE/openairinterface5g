@@ -86,11 +86,7 @@ void schedule_control_sib1(module_id_t module_id,
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
-void schedule_nr_mib(module_id_t module_idP,
-                     frame_t frameP,
-                     sub_frame_t subframeP,
-                     uint8_t slots_per_frame,
-                     int nb_periods_per_frame);
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
 /* \brief main UL scheduler function. Calls a preprocessor to decide on
  * resource allocation, then "post-processes" resource allocation (nFAPI

@@ -58,12 +58,8 @@ uint8_t SSB_Slot[64]={0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,
                       20,20,21,21,22,22,23,23,24,24,25,25,26,26,27,27,
                       30,30,31,31,32,32,33,33,34,34,35,35,36,36,37,37};
 
-void schedule_nr_mib(module_id_t module_idP,
-                     frame_t frameP,
-                     sub_frame_t slotP,
-                     uint8_t slots_per_frame,
-                     int nb_periods_per_frame){
-
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+{
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
   
@@ -78,6 +74,7 @@ void schedule_nr_mib(module_id_t module_idP,
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     cc = &gNB->common_channels[CC_id];
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+    const int slots_per_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     const long band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
     const uint32_t ssb_offset0 = *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
     int ratio;
@@ -244,6 +241,9 @@ void schedule_nr_mib(module_id_t module_idP,
       AssertFatal(0,"SSB bitmap size value %d undefined (allowed values 1,2,3)\n",
                   scc->ssb_PositionsInBurst->present);
     }
+    const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
     // For FR2 beam ssb association at the beginning of every SSB period
     if((scc->ssb_PositionsInBurst->present==3) && (abs_slot%slot_per_period == 0)){
       uint8_t i_ssb,num_tdd_period;
@@ -251,7 +251,7 @@ void schedule_nr_mib(module_id_t module_idP,
       for (int i=0; i<64; i++){
         i_ssb=((longBitmap->buf[i/8])>>(7-(i%8)))&1;
         if(i_ssb==1){
-          num_tdd_period = SSB_Slot[i]/(slots_per_frame/nb_periods_per_frame);
+          num_tdd_period = SSB_Slot[i]/nr_slots_period;
           gNB->tdd_beam_association[num_tdd_period]=num_ssb;
           num_ssb++;
         }

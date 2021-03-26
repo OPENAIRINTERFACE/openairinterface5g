@@ -331,6 +331,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
+    const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+    const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+    const int nb_periods_per_frame = n / nr_slots_period;
     // re-initialization of tdd_beam_association at beginning of frame (only for FR2)
     for (int i=0; i<nb_periods_per_frame; i++)
       gNB->tdd_beam_association[i] = -1;
@@ -374,7 +379,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   // This schedules MIB
-  schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing],nb_periods_per_frame);
+  schedule_nr_mib(module_idP, frame, slot);
 
   // This schedules SIB1
   if ( get_softmodem_params()->sa == 1 )
