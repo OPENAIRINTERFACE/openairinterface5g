@@ -33,6 +33,7 @@
 //#include "common/utils/threadPool/thread-pool.h"
 #include "common/utils/load_module_shlib.h"
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
+#include "common/utils/nr/nr_common.h"
 
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
@@ -431,17 +432,23 @@ int main( int argc, char **argv ) {
 
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
     set_options(CC_id, UE[CC_id]);
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-    if (get_softmodem_params()->sa)
-      nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
+    if (get_softmodem_params()->sa) {
+      uint16_t nr_band = get_band(downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
+      mac->nr_band = nr_band;
+      nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,
+                                downlink_frequency[CC_id][0],
+                                uplink_frequency_offset[CC_id][0],
+                                get_softmodem_params()->numerology,
+                                nr_band);
+    }
     else{
-      NR_UE_MAC_INST_t *mac = get_mac_inst(0);
       if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
         mac->if_module->phy_config_request(&mac->phy_config);
 

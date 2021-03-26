@@ -327,20 +327,21 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   return 0;
 }
 
-void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink_frequency, int32_t delta_duplex) {
+void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink_frequency, int32_t delta_duplex, uint8_t mu, uint16_t nr_band) {
 
   LOG_I(PHY,"SA init parameters. DL freq %lu UL offset %d SSB numerology %d N_RB_DL %d\n",
         downlink_frequency,
         delta_duplex,
-        frame_parms->numerology_index,
+        mu,
         frame_parms->N_RB_DL);
 
+  frame_parms->numerology_index = mu;
   frame_parms->dl_CarrierFreq = downlink_frequency;
   frame_parms->ul_CarrierFreq = downlink_frequency + delta_duplex;
   frame_parms->freq_range = (frame_parms->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
   frame_parms->N_RB_UL = frame_parms->N_RB_DL;
 
-  frame_parms->nr_band = get_band(downlink_frequency, delta_duplex);
+  frame_parms->nr_band = nr_band;
   frame_parms->frame_type = get_frame_type(frame_parms->nr_band, frame_parms->numerology_index);
 
   frame_parms->Ncp = NORMAL;

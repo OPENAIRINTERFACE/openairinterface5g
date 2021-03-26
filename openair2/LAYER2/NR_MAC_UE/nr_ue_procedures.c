@@ -105,7 +105,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_I(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  NR_ServingCellConfigCommon_t    *scc = mac->scc;
   frequency_range_t frequency_range;
   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
@@ -147,9 +146,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   if (get_softmodem_params()->sa == 1) {
 
-    // TODO these values shouldn't be taken from SCC in SA
-    uint8_t scs_ssb = *scc->ssbSubcarrierSpacing;
-    uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    uint8_t scs_ssb = get_softmodem_params()->numerology;
+    uint32_t band = mac->nr_band;
     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
     uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
 
@@ -170,8 +168,10 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
   }
 
-  mac->dl_config_request.sfn = mac->type0_PDCCH_CSS_config.frame;
+  //TODO is this needed?
+  mac->dl_config_request.sfn = frame;
   mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
+
 
   return 0;
 }

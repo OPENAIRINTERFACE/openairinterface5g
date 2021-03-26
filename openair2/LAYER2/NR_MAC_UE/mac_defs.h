@@ -352,6 +352,7 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
 
@@ -373,6 +374,8 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
+
+  uint16_t nr_band;
 
 } NR_UE_MAC_INST_t;
 
