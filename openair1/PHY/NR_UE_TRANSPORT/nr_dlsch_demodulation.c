@@ -679,7 +679,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                                        dmrs_len,
                                                        dlsch[0]->harq_processes[harq_pid]->Qm,
                                                        dlsch[0]->harq_processes[harq_pid]->Nl);
-      printf("nr_dlsch_layer_demapping Nl%d G %d\n",dlsch[0]->harq_processes[harq_pid]->Nl,dlsch[0]->harq_processes[harq_pid]->G);
       nr_dlsch_layer_demapping(pdsch_vars[gNB_id]->llr,
                                dlsch[0]->harq_processes[harq_pid]->Nl,
                                dlsch[0]->harq_processes[harq_pid]->Qm,
