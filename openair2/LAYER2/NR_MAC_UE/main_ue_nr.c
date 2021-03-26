@@ -42,8 +42,8 @@
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
-NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
-{
+NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
+
     //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 
     //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
@@ -55,7 +55,8 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
       if (IS_SOFTMODEM_NOS1){
         AssertFatal(rlc_module_init(0) == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
         pdcp_layer_init();
-        nr_DRB_preconfiguration(nr_ue_mac_inst->crnti);
+        if(get_softmodem_params()->sa == 0) //TODO this needs to be done in SA after knowing the crnti
+          nr_DRB_preconfiguration(nr_ue_mac_inst->crnti);
       }
 
       // Allocate memory for ul_config_request in the mac instance. This is now a pointer and will
