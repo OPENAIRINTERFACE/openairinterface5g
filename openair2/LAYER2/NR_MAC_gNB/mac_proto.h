@@ -69,7 +69,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot);
+                         sub_frame_t slot,
+                         uint8_t nrOfLayers);
 
 void schedule_control_sib1(module_id_t module_id,
                            int CC_id,

@@ -292,7 +292,7 @@ int main(int argc, char **argv)
   //  char fname[40], vname[40];
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
   //int n_errors2, n_alamouti;
-  uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
+  uint8_t nrOfLayers = 1,n_tx=1,n_rx=1;
   uint8_t round;
   uint8_t num_rounds = 4;
 
@@ -455,12 +455,11 @@ int main(int argc, char **argv)
       break;
       */
     case 'x':
-      transmission_mode=atoi(optarg);
+      nrOfLayers=atoi(optarg);
 
-      if ((transmission_mode!=1) &&
-          (transmission_mode!=2) &&
-          (transmission_mode!=6)) {
-        printf("Unsupported transmission mode %d\n",transmission_mode);
+      if ((nrOfLayers!=1) &&
+          (nrOfLayers!=2)) {
+        printf("Unsupported nr Of Layers %d\n",nrOfLayers);
         exit(-1);
       }
 
@@ -967,7 +966,7 @@ int main(int argc, char **argv)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
       
         if (css_flag == 0) {
-          nr_schedule_ue_spec(0, frame, slot);
+          nr_schedule_ue_spec(0, frame, slot, nrOfLayers);
         } else {
           nr_schedule_css_dlsch_phytest(0,frame,slot);
         }
@@ -1108,6 +1107,7 @@ int main(int argc, char **argv)
         }
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+        UE_harq_process->Nl = nrOfLayers;
         nr_ue_scheduled_response(&scheduled_response);
         
         phy_procedures_nrUE_RX(UE,

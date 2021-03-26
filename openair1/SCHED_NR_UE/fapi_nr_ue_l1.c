@@ -120,7 +120,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
             dlsch0_harq->harq_ack.slot_for_feedback_ack = (slot+dlsch_config_pdu->pdsch_to_harq_feedback_time_ind)%frame_parms.slots_per_frame;
-            dlsch0_harq->Nl=1;
+            if ((dlsch0_harq->Nl > 2)||(dlsch0_harq->Nl <= 0)) dlsch0_harq->Nl = 1;
+            //printf("no of layers Nl %d\n",dlsch0_harq->Nl);
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
             dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
             if (dlsch0_harq->status != ACTIVE) {

@@ -315,6 +315,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   int nb_periods_per_frame;
 
   const int bwp_id = 1;
+  uint8_t nrOfLayers = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
@@ -458,7 +459,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedules the DCI for Downlink and PDSCH
   if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot))
-    nr_schedule_ue_spec(module_idP, frame, slot);
+    nr_schedule_ue_spec(module_idP, frame, slot, nrOfLayers);
 
 
   nr_schedule_pucch(module_idP, frame, slot);

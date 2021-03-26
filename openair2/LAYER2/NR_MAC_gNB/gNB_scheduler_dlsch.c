@@ -656,7 +656,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot) {
+                         sub_frame_t slot,
+                         uint8_t nrOfLayers) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
   /* PREPROCESSOR */
@@ -707,7 +708,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                nrOfSymbols,
                                                startSymbolIndex);
     const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
-    const int nrOfLayers = 1;
     const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
     const uint8_t Qm = nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
     const uint32_t TBS =
