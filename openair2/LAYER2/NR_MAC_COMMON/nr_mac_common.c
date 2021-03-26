@@ -1010,7 +1010,7 @@ int get_format0(uint8_t index,
                 uint8_t unpaired,
 		frequency_range_t frequency_range){
 
-  uint16_t format;
+  uint16_t format=0;
   if (unpaired) {
     if (frequency_range==FR1)
       format = table_6_3_3_2_3_prachConfig_Index[index][0];
