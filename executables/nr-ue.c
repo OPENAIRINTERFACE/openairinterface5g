@@ -237,43 +237,6 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        // reconfigure for potentially different bandwidth
-        switch(UE->frame_parms.N_RB_DL) {
-          case 6:
-            openair0_cfg[UE->rf_map.card].sample_rate =1.92e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =.96e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =.96e6;
-            //            openair0_cfg[0].rx_gain[0] -= 12;
-            break;
-
-          case 25:
-            openair0_cfg[UE->rf_map.card].sample_rate =7.68e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =2.5e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =2.5e6;
-            //            openair0_cfg[0].rx_gain[0] -= 6;
-            break;
-
-          case 50:
-            openair0_cfg[UE->rf_map.card].sample_rate =15.36e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =5.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =5.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 3;
-            break;
-
-          case 100:
-            openair0_cfg[UE->rf_map.card].sample_rate=30.72e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=10.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=10.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 0;
-            break;
-
-          case 66:
-            openair0_cfg[UE->rf_map.card].sample_rate=122.88e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=100.e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=100.e6;
-            break;
-        }
-
         if (UE->mode != loop_through_memory) {
           UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
@@ -703,16 +666,23 @@ void *UE_thread(void *arg) {
 
     int flags = 0;
     int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
-    uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-    uint8_t num_UL_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots +
-                           (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
-    uint8_t first_tx_slot = tdd_period - num_UL_slots;
-    if (slot_tx_usrp%tdd_period==first_tx_slot)
-      flags=2;
-    else     if (slot_tx_usrp%tdd_period==first_tx_slot+num_UL_slots-1)
-      flags = 3;
-    else     if (slot_tx_usrp%tdd_period>first_tx_slot)
+
+    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
+
+      uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+      int   nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
+      uint8_t first_tx_slot = tdd_period - num_UL_slots;
+
+      if (slot_tx_usrp % tdd_period == first_tx_slot)
+        flags = 2;
+      else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
+        flags = 3;
+      else if (slot_tx_usrp % tdd_period > first_tx_slot)
+        flags = 1;
+    } else {
       flags = 1;
+    }
 
     if (flags || IS_SOFTMODEM_RFSIM)
       AssertFatal( writeBlockSize ==

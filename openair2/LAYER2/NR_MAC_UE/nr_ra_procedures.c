@@ -103,150 +103,137 @@ void init_RA(module_id_t mod_id,
     LOG_E(MAC, "In %s: config not handled\n", __FUNCTION__);
   }
 
-  if (prach_resources->RA_TYPE == RA_2STEP){
-    LOG_E(MAC, "Missing implementation of initialization of 2-step RA specific variables...\n");
-  } else if (prach_resources->RA_TYPE == RA_4STEP){
-    LOG_D(MAC, "Initialization of 4-step RA specific variables...\n");
-    switch (rach_ConfigGeneric->powerRampingStep){ // in dB
-      case 0:
+  switch (rach_ConfigGeneric->powerRampingStep){ // in dB
+    case 0:
       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 0;
       break;
-      case 1:
+    case 1:
       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 2;
       break;
-      case 2:
+    case 2:
       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 4;
       break;
-      case 3:
+    case 3:
       prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 6;
       break;
-    }
-
-    switch (rach_ConfigGeneric->preambleTransMax) {
-      case 0:
-      ra->preambleTransMax = 3;
-      break;
-      case 1:
-      ra->preambleTransMax = 4;
-      break;
-      case 2:
-      ra->preambleTransMax = 5;
-      break;
-      case 3:
-      ra->preambleTransMax = 6;
-      break;
-      case 4:
-      ra->preambleTransMax = 7;
-      break;
-      case 5:
-      ra->preambleTransMax = 8;
-      break;
-      case 6:
-      ra->preambleTransMax = 10;
-      break;
-      case 7:
-      ra->preambleTransMax = 20;
-      break;
-      case 8:
-      ra->preambleTransMax = 50;
-      break;
-      case 9:
-      ra->preambleTransMax = 100;
-      break;
-      case 10:
-      ra->preambleTransMax = 200;
-      break;
-    }
-    if (nr_rach_ConfigCommon->ext1) {
-      if (nr_rach_ConfigCommon->ext1->ra_PrioritizationForAccessIdentity){
-        LOG_D(MAC, "In %s:%d: Missing implementation for Access Identity initialization procedures\n", __FUNCTION__, __LINE__);
-      }
-    }
   }
 
-  return;
+  switch (rach_ConfigGeneric->preambleTransMax) {
+    case 0:
+      ra->preambleTransMax = 3;
+      break;
+    case 1:
+      ra->preambleTransMax = 4;
+      break;
+    case 2:
+      ra->preambleTransMax = 5;
+      break;
+    case 3:
+      ra->preambleTransMax = 6;
+      break;
+    case 4:
+      ra->preambleTransMax = 7;
+      break;
+    case 5:
+      ra->preambleTransMax = 8;
+      break;
+    case 6:
+      ra->preambleTransMax = 10;
+      break;
+    case 7:
+      ra->preambleTransMax = 20;
+      break;
+    case 8:
+      ra->preambleTransMax = 50;
+      break;
+    case 9:
+      ra->preambleTransMax = 100;
+      break;
+    case 10:
+      ra->preambleTransMax = 200;
+      break;
+  }
 
+  if (nr_rach_ConfigCommon->ext1) {
+    if (nr_rach_ConfigCommon->ext1->ra_PrioritizationForAccessIdentity){
+      LOG_D(MAC, "In %s:%d: Missing implementation for Access Identity initialization procedures\n", __FUNCTION__, __LINE__);
+    }
+  }
 }
 
 void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon, fapi_nr_ul_config_prach_pdu *prach_pdu){
 
   // Determine the SSB to RACH mapping ratio
   // =======================================
-  if (prach_resources->RA_TYPE == RA_4STEP){
-    NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
-    boolean_t multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
-    uint8_t ssb_rach_ratio; // Nb of SSBs per RACH or RACHs per SSB
-    int total_preambles_per_ssb;
-    uint8_t ssb_nb_in_ro;
-    int numberOfRA_Preambles = 64;
 
-    switch (ssb_perRACH_config){
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
-        multiple_ssb_per_ro = false;
-        ssb_rach_ratio = 8;
-        ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneEighth + 1);
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth:
-        multiple_ssb_per_ro = false;
-        ssb_rach_ratio = 4;
-        ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneFourth + 1);
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf:
-        multiple_ssb_per_ro = false;
-        ssb_rach_ratio = 2;
-        ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneHalf + 1);
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one:
-        multiple_ssb_per_ro = true;
-        ssb_rach_ratio = 1;
-        ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.one + 1);
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two:
-        multiple_ssb_per_ro = true;
-        ssb_rach_ratio = 2;
-        ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.two + 1);
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four:
-        multiple_ssb_per_ro = true;
-        ssb_rach_ratio = 4;
-        ra->cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.four;
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight:
-        multiple_ssb_per_ro = true;
-        ssb_rach_ratio = 8;
-        ra->cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.eight;
-        break;
-      case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen:
-        multiple_ssb_per_ro = true;
-        ssb_rach_ratio = 16;
-        ra->cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.sixteen;
-        break;
-      default:
-        AssertFatal(1 == 0, "Unsupported ssb_perRACH_config %d\n", ssb_perRACH_config);
-        break;
-    }
+  NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
+  boolean_t multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
+  uint8_t ssb_rach_ratio; // Nb of SSBs per RACH or RACHs per SSB
+  int total_preambles_per_ssb;
+  uint8_t ssb_nb_in_ro;
+  int numberOfRA_Preambles = 64;
 
-    if (nr_rach_ConfigCommon->totalNumberOfRA_Preambles)
-      numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
+  switch (ssb_perRACH_config){
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
+      multiple_ssb_per_ro = false;
+      ssb_rach_ratio = 8;
+      ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneEighth + 1);
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth:
+      multiple_ssb_per_ro = false;
+      ssb_rach_ratio = 4;
+      ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneFourth + 1);
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf:
+      multiple_ssb_per_ro = false;
+      ssb_rach_ratio = 2;
+      ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneHalf + 1);
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one:
+      multiple_ssb_per_ro = true;
+      ssb_rach_ratio = 1;
+      ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.one + 1);
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two:
+      multiple_ssb_per_ro = true;
+      ssb_rach_ratio = 2;
+      ra->cb_preambles_per_ssb = 4 * (nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.two + 1);
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four:
+      multiple_ssb_per_ro = true;
+      ssb_rach_ratio = 4;
+      ra->cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.four;
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight:
+      multiple_ssb_per_ro = true;
+      ssb_rach_ratio = 8;
+      ra->cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.eight;
+      break;
+    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen:
+      multiple_ssb_per_ro = true;
+      ssb_rach_ratio = 16;
+      ra->cb_preambles_per_ssb = nr_rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.sixteen;
+      break;
+    default:
+      AssertFatal(1 == 0, "Unsupported ssb_perRACH_config %d\n", ssb_perRACH_config);
+  }
 
-    // Compute the proper Preamble selection params according to the selected SSB and the ssb_perRACH_OccasionAndCB_PreamblesPerSSB configuration
-    if ((true == multiple_ssb_per_ro) &&
-        (ssb_rach_ratio > 1)) {
-      total_preambles_per_ssb = numberOfRA_Preambles / ssb_rach_ratio;
+  if (nr_rach_ConfigCommon->totalNumberOfRA_Preambles)
+    numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
 
-      ssb_nb_in_ro = prach_pdu->ssb_nb_in_ro;
-      ra->starting_preamble_nb = total_preambles_per_ssb * ssb_nb_in_ro;
-    }
-    else {
-      total_preambles_per_ssb = numberOfRA_Preambles;
-      ra->starting_preamble_nb = 0;
-    }
+  // Compute the proper Preamble selection params according to the selected SSB and the ssb_perRACH_OccasionAndCB_PreamblesPerSSB configuration
+  if ((true == multiple_ssb_per_ro) && (ssb_rach_ratio > 1)) {
+    total_preambles_per_ssb = numberOfRA_Preambles / ssb_rach_ratio;
+
+    ssb_nb_in_ro = prach_pdu->ssb_nb_in_ro;
+    ra->starting_preamble_nb = total_preambles_per_ssb * ssb_nb_in_ro;
   } else {
-    LOG_E(MAC, "In %s:%d: missing implementation for 2-step RA...\n", __FUNCTION__, __LINE__);
+    total_preambles_per_ssb = numberOfRA_Preambles;
+    ra->starting_preamble_nb = 0;
   }
 }
 
-// This routine implements RA premable configuration according to
+// This routine implements RA preamble configuration according to
 // section 5.1 (Random Access procedure) of 3GPP TS 38.321 version 16.2.1 Release 16
 void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t *mac, int16_t dl_pathloss){
 
@@ -261,23 +248,21 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
 
-  if (prach_resources->RA_TYPE == RA_4STEP){
+  if (scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble){
+    deltaPreamble_Msg3 = (*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble) * 2; // dB
+    LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
+  }
 
-    if (scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble){
-      deltaPreamble_Msg3 = (*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble) * 2; // dB
-      LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
-    }
-
-    if (!nr_rach_ConfigCommon->groupBconfigured) {
-      noGroupB = 1;
-      LOG_D(MAC, "In %s:%d: preambles group B is not configured...\n", __FUNCTION__, __LINE__);
-    } else {
-      // RA preambles group B is configured 
-      // - Random Access Preambles group B is configured for 4-step RA type
-      // - Defining the number of RA preambles in RA Preamble Group A for each SSB
-      LOG_D(MAC, "In %s:%d: preambles group B is configured...\n", __FUNCTION__, __LINE__);
-      sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
-      switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
+  if (!nr_rach_ConfigCommon->groupBconfigured) {
+    noGroupB = 1;
+    LOG_D(MAC, "In %s:%d: preambles group B is not configured...\n", __FUNCTION__, __LINE__);
+  } else {
+    // RA preambles group B is configured
+    // - Random Access Preambles group B is configured for 4-step RA type
+    // - Defining the number of RA preambles in RA Preamble Group A for each SSB
+    LOG_D(MAC, "In %s:%d: preambles group B is configured...\n", __FUNCTION__, __LINE__);
+    sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
+    switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
       /* - Threshold to determine the groups of RA preambles */
       case 0:
       messageSizeGroupA = 56;
@@ -343,17 +328,12 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
       break;
       default:
       AssertFatal(1 == 0,"Unknown messagePowerOffsetGroupB %lu\n", nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB);
-      }
-
-      PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
-
     }
-  } else {
-    // todo:
-    // - groupB-ConfiguredTwoStepRA
-    // - msgA-DeltaPreamble
-    LOG_E(MAC, "In %s:%d: missing implementation for 2-step RA...\n", __FUNCTION__, __LINE__);
+
+    PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
+
   }
+
   /* Msg3 has not been transmitted yet */
   if (ra->first_Msg3) {
     if(ra->ra_PreambleIndex < 0 || ra->ra_PreambleIndex > 63) {

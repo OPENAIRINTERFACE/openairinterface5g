@@ -296,14 +296,14 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
     else {
       /* Setup EMM cause code */
       emm_cause = EMM_CAUSE_SECURITY_MODE_REJECTED;
-
-      /* Release security mode control internal data */
-      if (security_data->kenb.value) {
-        free(security_data->kenb.value);
-        security_data->kenb.value = NULL;
-        security_data->kenb.length = 0;
-      }
     }
+  }
+
+  /* Release security mode control internal data */
+  if (security_data->kenb.value) {
+    free(security_data->kenb.value);
+    security_data->kenb.value = NULL;
+    security_data->kenb.length = 0;
   }
 
   /* Setup EMM procedure handler to be executed upon receiving

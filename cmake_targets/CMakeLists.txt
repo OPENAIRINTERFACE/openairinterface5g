@@ -926,6 +926,9 @@ set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidd
 # Benetel 4G library
 ######################################################################
 
+
+include_directories ("/usr/include/dpdk")
+
 set(HWLIB_BENETEL_4G_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/benetel.c
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/shared_buffers.c
@@ -1967,10 +1970,10 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_oai_api.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_ue_manager.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity.c
-  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_drb_am.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_sdu.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_timer_thread.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
-  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_srb.c
   )
 
 set(L2_SRC
@@ -2532,7 +2535,7 @@ if(NAS_UE)
 endif()
 
 
-if(ITTI_SIM OR RFSIM_NAS)
+#if(ITTI_SIM OR RFSIM_NAS)
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -2658,7 +2661,7 @@ if(ITTI_SIM OR RFSIM_NAS)
   include_directories(${NAS_SRC}UE/EMM/SAP)
   include_directories(${NAS_SRC}UE/ESM)
   include_directories(${NAS_SRC}UE/ESM/SAP)
-endif()
+#endif()
 
 # nbiot
 add_definitions("-DNUMBER_OF_UE_MAX_NB_IoT=16")
@@ -3142,8 +3145,8 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
-  NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB} ${NAS_SIM_LIB}
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB
+  NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})

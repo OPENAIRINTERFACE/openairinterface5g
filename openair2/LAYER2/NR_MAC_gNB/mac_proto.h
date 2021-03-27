@@ -112,7 +112,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP,
                          uint16_t preamble_index, uint8_t freq_index, uint8_t symbol, int16_t timing_offset);
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
@@ -310,6 +310,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
+void nr_mac_remove_ra_rnti_ue(module_id_t mod_id, rnti_t rnti);
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
@@ -327,7 +329,7 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
 
-void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t *UE_info, int UE_id);
+void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 

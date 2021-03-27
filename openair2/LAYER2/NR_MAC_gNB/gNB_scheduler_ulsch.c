@@ -256,6 +256,7 @@ void nr_process_mac_pdu(
               // todo
               break;
         case UL_SCH_LCID_CCCH:
+        case UL_SCH_LCID_CCCH1:
           mac_subheader_len = 1;
           nr_mac_rrc_data_ind(module_idP,
                               CC_id,
@@ -510,10 +511,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       if(no_sig) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
-        ra->state = RA_IDLE;
-        ra->timing_offset = 0;
-        ra->RRC_timer = 20;
-        ra->msg3_round = 0;
+        nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
       } else {
 
         // random access pusch with TC-RNTI
@@ -534,26 +533,37 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               UE_id,
               ra->rnti);
 
-        LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received (len sdu_lenP %d)\n",sdu_lenP);
-        LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
-        for (int k = 0; k < sdu_lenP; k++) {
-	  LOG_I(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+        if(ra->cfra) {
+
+          LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
+          nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
+          nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+          UE_info->active[UE_id] = true;
+
+        } else {
+
+          LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
+          LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
+          for (int k = 0; k < sdu_lenP; k++) {
+            LOG_I(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+          }
+
+          // UE Contention Resolution Identity
+          // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
+          // First byte corresponds to R/LCID MAC sub-header
+          memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
+
+          // re-initialize ta update variables afrer RA procedure completion
+          UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
+          nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
+
+          ra->state = Msg4;
+          ra->Msg4_frame = ( frameP +2 ) % 1024;
+          ra->Msg4_slot = 1;
+          LOG_I(MAC, "Scheduling RA-Msg4 for TC-RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+
         }
-
-        // UE Contention Resolution Identity
-        // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
-        // First byte corresponds to R/LCID MAC sub-header
-        memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
-
-        // re-initialize ta update variables afrer RA procedure completion
-        UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
-
-        nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
-
-        ra->state = Msg4;
-        ra->Msg4_frame = ( frameP +2 ) % 1024;
-        ra->Msg4_slot = 1;
-        LOG_I(MAC, "Scheduling RA-Msg4 for TC-RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
         return;
 
       }
@@ -565,10 +575,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         continue;
 
       LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
-      ra->state = RA_IDLE;
-      ra->timing_offset = 0;
-      ra->RRC_timer = 20;
-      ra->msg3_round = 0;
+      nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
+      nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
     }
   }
 }
@@ -1133,18 +1141,16 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* PUSCH PTRS */
     if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
-      // TODO to be fixed from RRC config
-      uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
-      pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
-      pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+      bool valid_ptrs_setup = false;
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
-      pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
-
-      pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      valid_ptrs_setup = set_ul_ptrs_values(ps->NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup,
+                                            pusch_pdu->rb_size, pusch_pdu->mcs_index, pusch_pdu->mcs_table,
+                                            &pusch_pdu->pusch_ptrs.ptrs_freq_density,&pusch_pdu->pusch_ptrs.ptrs_time_density,
+                                            &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_pdu->pusch_ptrs.num_ptrs_ports,
+                                            &pusch_pdu->pusch_ptrs.ul_ptrs_power, pusch_pdu->nr_of_symbols);
+      if (valid_ptrs_setup==true) {
+        pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      }
     }
     else{
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS

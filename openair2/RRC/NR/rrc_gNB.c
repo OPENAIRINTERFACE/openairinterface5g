@@ -220,7 +220,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
   }
 
-  if((get_softmodem_params()->sa) || (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type))) {
+    if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
     rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier,configuration);
   }
 
@@ -295,6 +295,8 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
       parse_CG_ConfigInfo(rrc,CG_ConfigInfo,NULL);
     } else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+      ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = configuration->scd;
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
       if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
         rrc_add_nsa_user(rrc,ue_context_p,NULL);
@@ -766,7 +768,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   DRB_config->pdcp_Config = calloc(1, sizeof(*DRB_config->pdcp_Config));
   DRB_config->pdcp_Config->drb = calloc(1,sizeof(*DRB_config->pdcp_Config->drb));
   DRB_config->pdcp_Config->drb->discardTimer = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->discardTimer));
-  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_ms30;
+  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
   DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL));
   *DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
   DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL));
@@ -1663,6 +1665,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                     du_to_cu_rrc_container,
 				    gnb_rrc_inst->carrier.servingcellconfigcommon,
 				    CC_id);
+
+          // FIXME: Check the best place to perform this DRB configuration
+          //nr_DRB_preconfiguration(ctxt_pP->rnti);
         }
         break;
 

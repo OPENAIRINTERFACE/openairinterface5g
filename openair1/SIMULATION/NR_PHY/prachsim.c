@@ -37,6 +37,7 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -65,7 +66,7 @@ double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
-int sl_ahead = 0;
+uint16_t sl_ahead = 0;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
@@ -177,7 +178,7 @@ int main(int argc, char **argv){
 
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs, bw;
-  int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
+  int i, l, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
   uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format=0;
   uint8_t frame = 1, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
@@ -477,7 +478,10 @@ int main(int argc, char **argv){
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  uint64_t absoluteFrequencyPointA = (mu==1 ? 640000 : 2070833);
+  uint64_t absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
+				       frame_parms->dl_CarrierFreq,
+				       frame_parms->numerology_index,
+				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
 
   uint8_t subframe = slot/frame_parms->slots_per_subframe;
   
@@ -805,7 +809,17 @@ int main(int argc, char **argv){
 	  }
 	}
 
-
+	for (l = 0; l < frame_parms->symbols_per_slot; l++) {
+	  for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+	    nr_slot_fep_ul(frame_parms,
+			   ru->common.rxdata[aa],
+			   ru->common.rxdataF[aa],
+			   l,
+			   slot,
+			   ru->N_TA_offset);
+	  }
+	}
+	
         rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, prachOccasion, frame, slot);
 
         gNB->prach_vars.rxsigF = ru->prach_rxsigF[prachOccasion];
@@ -828,7 +842,8 @@ int main(int argc, char **argv){
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
             LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
-            LOG_M("ru_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
+            LOG_M("ru_rxsigF0.m","rxsF0", ru->common.rxdataF[0], frame_parms->ofdm_symbol_size*frame_parms->symbols_per_slot, 1, 1);
+            LOG_M("ru_prach_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
             LOG_M("prach_preamble.m","prachp", &gNB->X_u[0], N_ZC, 1, 1);
             LOG_M("ue_prach_preamble.m","prachp", &UE->X_u[0], N_ZC, 1, 1);
           #endif

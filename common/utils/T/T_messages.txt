@@ -1,7 +1,3 @@
-ID = BENETEL
-  GROUP = ALL
-  FORMAT = int,frame : int,slot : buffer,rxdataF
-
 #general logs
 ID = ENB_MASTER_TICK
     DESC = eNodeB master tick - one tick per ms, to be used as "reference clock", mostly for ticktime view
@@ -93,6 +89,14 @@ ID = GNB_PHY_MIB
     DESC = NR MIB data
     GROUP = ALL:PHY:GNB:WIRESHARK
     FORMAT = int,gNB_ID : int,frame : int,slot : buffer,data
+ID = GNB_PHY_PUCCH_PUSCH_IQ
+    DESC = gNodeB input data in the frequency domain for a slot where some PUCCH or PUSCH detection was done
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
+    FORMAT = int,frame : int,slot : buffer,rxdataF
+ID = GNB_PHY_PRACH_INPUT_SIGNAL
+    DESC = gNodeB input data in the time domain for slots with PRACH detection
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
+    FORMAT = int,frame : int,slot : int,antenna : buffer,rxdata
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU

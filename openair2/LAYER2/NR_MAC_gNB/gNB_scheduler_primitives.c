@@ -646,6 +646,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   int res_found = 0;
 
   pucch_pdu->bit_len_harq = O_ack;
+  pucch_pdu->bit_len_csi_part1 = O_csi;
 
   uint16_t O_uci = O_csi + O_ack;
 
@@ -697,6 +698,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
     n_set = pucch_Config->resourceSetToAddModList->list.count; 
     AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
+
+    LOG_D(MAC, "UCI n_set= %d\n", n_set);
 
     N2 = 2;
     // procedure to select pucch resource id from resource sets according to 
@@ -1654,7 +1657,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
     set_Y(UE_info->Y[UE_id], rntiP);
-    compute_csi_bitlen(secondaryCellGroup, UE_info, UE_id);
+    compute_csi_bitlen (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->ta_frame = 0;
@@ -1753,10 +1756,20 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
     if (rnti_to_remove_count == 10) exit(1);
     rnti_to_remove[rnti_to_remove_count] = rnti;
-    LOG_W(MAC, "to remove in mac rnti_to_remove[%d]=%d\n", rnti_to_remove_count, rnti);
+    LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
     rnti_to_remove_count++;
     if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
   }
+}
+
+void nr_mac_remove_ra_rnti_ue(module_id_t mod_id, rnti_t rnti) {
+  // Hack to remove UE in the phy (following the same procedure as in function mac_remove_nr_ue)
+  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+  if (rnti_to_remove_count == 10) exit(1);
+  rnti_to_remove[rnti_to_remove_count] = rnti;
+  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
+  rnti_to_remove_count++;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 }
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {

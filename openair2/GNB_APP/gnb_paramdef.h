@@ -157,9 +157,7 @@ typedef enum {
 #define GNB_REMOTE_S_PORTD_IDX          13
 #define GNB_SSB_SUBCARRIEROFFSET_IDX    14
 #define GNB_PDSCH_ANTENNAPORTS_IDX      15
-#define GNB_PUSCH_TARGETPOW_X10_IDX     16
-#define GNB_PUCCH_TARGETPOW_X10_IDX     17
-#define GNB_NRCELLID_IDX                18
+#define GNB_NRCELLID_IDX                16
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \
