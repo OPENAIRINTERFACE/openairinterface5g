@@ -1096,7 +1096,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_BWP_Downlink_t *bwp = nr_mac->sched_ctrlCommon->active_bwp;
     NR_ControlResourceSet_t *coreset = nr_mac->sched_ctrlCommon->coreset;
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-    NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
 
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
@@ -1104,10 +1103,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
-    int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-    int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slotP / nr_slots_period);
 
     // HARQ management
     int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
@@ -1125,8 +1120,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     harq->is_waiting = true;
-    harq->feedback_slot = first_ul_slot_tdd;
     ra->harq_pid = current_harq_pid;
+
+    nr_acknack_scheduling(module_idP, UE_id, frameP, slotP);
+    harq->feedback_slot = sched_ctrl->sched_pucch->ul_slot;
 
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
@@ -1397,9 +1394,9 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   {
     if (harq->round == 0)
     {
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
       UE_info->active[UE_id] = true;
-      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
     }
     else
     {
