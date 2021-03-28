@@ -530,6 +530,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
         LOG_I(NR_MAC,
+              "reset RA state information for RA-RNTI %04x/index %d\n",
+              ra->rnti,
+              i);
+
+        LOG_I(NR_MAC,
               "[gNB %d][RAPROC] PUSCH with TC-RNTI %x received correctly, "
               "adding UE MAC Context UE_id %d/RNTI %04x\n",
               gnb_mod_idP,
