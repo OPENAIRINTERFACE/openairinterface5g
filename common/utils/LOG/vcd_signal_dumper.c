@@ -302,6 +302,9 @@ const char* eurecomFunctionsNames[] = {
   /* PHY signals  */
   "ue_synch",
   "ue_slot_fep",
+  "ue_slot_fep_pdcch",
+  "ue_slot_fep_pbch",
+  "ue_slot_fep_pdsch",
   "ue_slot_fep_mbsfn",
   "ue_slot_fep_mbsfn_khz_1dot25",
   "ue_rrc_measurements",
@@ -390,6 +393,8 @@ const char* eurecomFunctionsNames[] = {
   "rx_pmch",
   "rx_pmch_khz_1dot25",
   "pdsch_procedures",
+  "pdsch_procedures_crnti",
+  //"dlsch_procedures_crnti",
   "pdsch_procedures_si",
   "pdsch_procedures_p",
   "pdsch_procedures_ra",
