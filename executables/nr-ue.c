@@ -28,6 +28,7 @@
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "executables/softmodem-common.h"
+#include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -569,7 +570,6 @@ void *UE_thread(void *arg) {
 
   while (!oai_exit) {
     if (UE->lost_sync) {
-      notifiedFIFO_elt_t *res;
       int nb = abortTpool(&(get_nrUE_params()->Tpool),RX_JOB_ID);
       nb += abortNotifiedFIFO(&nf, RX_JOB_ID);
       LOG_I(PHY,"Number of aborted slots %d\n",nb);
