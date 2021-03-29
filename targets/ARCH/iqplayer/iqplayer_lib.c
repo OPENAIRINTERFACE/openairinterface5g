@@ -25,7 +25,6 @@
  */
 #define _LARGEFILE_SOURCE
 #define _FILE_OFFSET_BITS 64
-#define NB_ANTENNAS_RX  2
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
