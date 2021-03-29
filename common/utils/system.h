@@ -47,8 +47,8 @@ void configure_linux(void);
 
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority);
 #define OAI_PRIORITY_RT_LOW sched_get_priority_min(SCHED_FIFO)
-#define OAI_PRIORITY_RT sched_get_priority_max(SCHED_FIFO)-10
-#define OAI_PRIORITY_RT_MAX sched_get_priority_max(SCHED_FIFO)
+#define OAI_PRIORITY_RT sched_get_priority_min(SCHED_FIFO+10)
+#define OAI_PRIORITY_RT_MAX sched_get_priority_min(SCHED_FIFO+20)
 
 void thread_top_init(char *thread_name,
                      int affinity,

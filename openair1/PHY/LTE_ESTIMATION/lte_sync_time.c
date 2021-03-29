@@ -74,8 +74,8 @@ static void copyPrimary( struct complex16 *out, struct complex16 *in, int ofdmSi
   int k=ofdmSize-36;
 
   for (int i=0; i<72; i++) {
-    out[k].r = in[i].r>>2;  //we need to shift input to avoid overflow in fft
-    out[k].i = in[i].i>>2;
+    out[k].r = in[i].r>>1;  //we need to shift input to avoid overflow in fft
+    out[k].i = in[i].i>>1;
     k++;
 
     if (k >= ofdmSize) {
