@@ -535,7 +535,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               i);
 
         LOG_I(NR_MAC,
-              "[gNB %d][RAPROC] PUSCH with TC-RNTI %x received correctly, "
+              "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
               "adding UE MAC Context UE_id %d/RNTI %04x\n",
               gnb_mod_idP,
               current_rnti,
