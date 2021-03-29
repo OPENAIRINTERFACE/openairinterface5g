@@ -249,7 +249,7 @@ void nr_process_mac_pdu(
 
             // Check if it is a valid CCCH1 message, we get all 00's messages very often
             if (pdu_len != 9) {
-              //LOG_E(MAC, "%s() Invalid CCCH1 message!, pdu_len: %d\n", __func__, pdu_len);
+              LOG_D(NR_MAC, "%s() Invalid CCCH1 message!, pdu_len: %d\n", __func__, pdu_len);
               return;
             }
           } else {
@@ -517,7 +517,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         // random access pusch with TC-RNTI
         if (ra->rnti != current_rnti) {
           LOG_W(NR_MAC,
-                "expected TC-RNTI %04x to match current RNTI %04x\n",
+                "expected TC_RNTI %04x to match current RNTI %04x\n",
                 ra->rnti,
                 current_rnti);
           continue;
@@ -554,7 +554,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
           LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
           for (int k = 0; k < sdu_lenP; k++) {
-            LOG_I(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+            LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
           }
 
           // UE Contention Resolution Identity
@@ -567,7 +567,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           ra->state = Msg4;
           ra->Msg4_frame = ( frameP +2 ) % 1024;
           ra->Msg4_slot = 1;
-          LOG_I(MAC, "Scheduling RA-Msg4 for TC-RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+          LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
 
         }
         return;

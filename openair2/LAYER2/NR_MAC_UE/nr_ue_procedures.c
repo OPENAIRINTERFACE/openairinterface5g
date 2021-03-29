@@ -2372,7 +2372,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       rnti = mac->crnti;
     }
 
-    // FIXME: To be removed
+#ifdef DEBUG_RAR
     LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
     LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
     LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
@@ -2390,20 +2390,19 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
     LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 
-  //#ifdef DEBUG_RAR
-  LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
-    __FUNCTION__,
-    frame,
-    slot,
-    mod_id,
-    rar_grant.Msg3_t_alloc,
-    rar_grant.Msg3_f_alloc,
-    ul_time_alignment->ta_command,
-    rar_grant.mcs,
-    rar_grant.freq_hopping,
-    tpc_command,
-    ra->t_crnti);
-  //#endif
+    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
+      __FUNCTION__,
+      frame,
+      slot,
+      mod_id,
+      rar_grant.Msg3_t_alloc,
+      rar_grant.Msg3_f_alloc,
+      ul_time_alignment->ta_command,
+      rar_grant.mcs,
+      rar_grant.freq_hopping,
+      tpc_command,
+      ra->t_crnti);
+#endif
 
     // Schedule Msg3
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, rar_grant.Msg3_t_alloc);

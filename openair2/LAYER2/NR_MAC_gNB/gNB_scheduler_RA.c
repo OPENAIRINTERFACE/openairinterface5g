@@ -1519,7 +1519,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_3 = (uint8_t) (ul_grant >> 8) & 0xff;
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
-  // FIXME: To be removed
+#ifdef DEBUG_RAR
   //LOG_I(NR_MAC, "rarbi->E = 0x%x\n", rarbi->E);
   //LOG_I(NR_MAC, "rarbi->T = 0x%x\n", rarbi->T);
   //LOG_I(NR_MAC, "rarbi->R = 0x%x\n", rarbi->R);
@@ -1541,6 +1541,7 @@ void nr_fill_rar(uint8_t Mod_idP,
 
   LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
   LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
+#endif
 
   int mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
   // time alloc
