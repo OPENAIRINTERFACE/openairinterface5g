@@ -144,11 +144,14 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;
 
-  if (get_softmodem_params()->sa == 1) {
+  uint8_t scs_ssb;
+  uint32_t band;
+  uint16_t ssb_start_symbol;
 
-    uint8_t scs_ssb = get_softmodem_params()->numerology;
-    uint32_t band = mac->nr_band;
-    uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+  if (get_softmodem_params()->sa == 1) {
+    scs_ssb = get_softmodem_params()->numerology;
+    band = mac->nr_band;
+    ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
     uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
 
     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
@@ -167,11 +170,15 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
     mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
   }
+  else {
+    NR_ServingCellConfigCommon_t *scc = mac->scc;
+    scs_ssb = *scc->ssbSubcarrierSpacing;
+    band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+  }
 
-  //TODO is this needed?
   mac->dl_config_request.sfn = frame;
-  mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
-
+  mac->dl_config_request.slot = ssb_start_symbol/14;
 
   return 0;
 }
