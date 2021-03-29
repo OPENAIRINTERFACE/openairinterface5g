@@ -41,7 +41,7 @@
 *
 * OUTPUT:        table of uplink symbol for each slot for 2 frames
 *
-* RETURN :       0 if tdd has been properly configurated
+* RETURN :       nb_periods_per_frame if tdd has been properly configurated
 *                -1 tdd configuration can not be done
 *
 * DESCRIPTION :  generate bit map for uplink symbol for each slot for several frames
@@ -179,7 +179,7 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
     LOG_E(PHY,"set_tdd_configuration_nr: additionnal tdd configuration 2 is not supported for tdd configuration \n");
     return (-1);
   }*/
-  return (0);
+  return (nb_periods_per_frame);
 }
 
 /*******************************************************************
