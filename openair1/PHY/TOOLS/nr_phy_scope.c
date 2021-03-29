@@ -226,7 +226,8 @@ static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int laye
 
 static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const int datasize, const int divisions, const char *label) {
   if ( values == NULL )
-     return;
+    return;
+
   fl_winset(FL_ObjWin(graph->graph));
   const int samplesPerPixel=datasize/graph->w;
   int displayPart=graph->waterFallh-ScaleZone;
