@@ -686,13 +686,13 @@ void *UE_thread(void *arg) {
 
     if (flags || IS_SOFTMODEM_RFSIM)
       AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-					       writeTimestamp,
-					       txp,
-					       writeBlockSize,
-					       UE->frame_parms.nb_antennas_tx,
-					       flags),"");
-    
+                   UE->rfdevice.trx_write_func(&UE->rfdevice,
+                       writeTimestamp,
+                       txp,
+                       writeBlockSize,
+                       UE->frame_parms.nb_antennas_tx,
+                       flags),"");
+
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
 

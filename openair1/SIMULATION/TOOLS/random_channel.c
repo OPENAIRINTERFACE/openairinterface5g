@@ -1222,11 +1222,11 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                         1);
       break;
 
-    case Rayleigh1:
+    case Rayleigh1://MIMO Test uses Rayleigh1
       nb_taps = 1;
       Td = 0;
       channel_length = 1;
-      ricean_factor = 1;
+      ricean_factor = 0.0;
       aoa = .03;
       maxDoppler = 0;
       fill_channel_desc(chan_desc,nb_tx,
