@@ -412,101 +412,106 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
     ///Layer Precoding and Antenna port mapping
     // tx_layers 1-8 are mapped on antenna ports 1000-1007
-    // The precoding info is supported by nfapi such as numPRGs, prgSize, and PMIdx
-    // The same precoding matrix is applied on prgSize RBs, Thus
-    //        pmi = PMIdx[rbidx/prgSize], rbidx =0,...,rbSize-1
+    // The precoding info is supported by nfapi such as num_prgs, prg_size, prgs_list and pm_idx
+    // The same precoding matrix is applied on prg_size RBs, Thus
+    //        pmi = prgs_list[rbidx/prg_size].pm_idx, rbidx =0,...,rbSize-1
     // The Precoding matrix:
     // The Codebook Type I and Type II are not supported yet.
     // We adopt the precoding matrices of PUSCH for 4 layers.
-    if ((frame_parms->nb_antennas_tx == 1 && rel15->nrOfLayers == 1) || rel15->precodingAndBeamforming.prgSize == 0) {//No precoding if precoding info is not available
-      for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {//frame_parms->nb_antennas_tx rel15->nrOfLayers
-        if(ap<rel15->nrOfLayers)
-          memcpy((void*)&txdataF[ap][rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset],
-                 (void*)&txdataF_precoding[ap][2*(rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset)],
-                 rel15->NrOfSymbols*frame_parms->ofdm_symbol_size*sizeof(int32_t));
-        else
-          memset((void*)&txdataF[ap][rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset],
-                 0,
-                 rel15->NrOfSymbols*frame_parms->ofdm_symbol_size*sizeof(int32_t));
-      }
-    } else {//apply precoding
-      uint8_t pmi;
-      for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
+    for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
 
-        for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
-          uint16_t k = start_sc;
+      for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
+        uint16_t k = start_sc;
 
-          for (int rb=0; rb<rel15->rbSize; rb++) {
-            //get pmi info
-            if (rel15->precodingAndBeamforming.prgSize > 0)
-              pmi = rel15->precodingAndBeamforming.PMIdx[(int)rb/rel15->precodingAndBeamforming.prgSize];
+        for (int rb=0; rb<rel15->rbSize; rb++) {
+          //get pmi info
+          uint8_t pmi;
+          if (rel15->precodingAndBeamforming.prg_size > 0)
+            pmi = rel15->precodingAndBeamforming.prgs_list[(int)rb/rel15->precodingAndBeamforming.prg_size].pm_idx;
+          else
+            pmi = 0;//no precoding
+
+          if (pmi == 0) {//unitary Precoding
+            if(ap<rel15->nrOfLayers)
+              memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                     (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + txdataF_offset+ k)],
+                     NR_NB_SC_PER_RB*sizeof(int32_t));
             else
-              pmi = 0;//no precoding
-
+              memset((void*)&txdataF[ap][rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset +k],
+                     0,
+                     NR_NB_SC_PER_RB*sizeof(int32_t));
+            k += NR_NB_SC_PER_RB;
+            if (k >= frame_parms->ofdm_symbol_size) {
+              k -= frame_parms->ofdm_symbol_size;
+            }
+          }
+          else {
             //get the precoding matrix weights:
             char *W_prec;
             switch (frame_parms->nb_antennas_tx) {
               case 1://1 antenna port
                 W_prec = nr_W_1l_2p[pmi][ap];
                 break;
-                case 2://2 antenna ports
-                  if (rel15->nrOfLayers == 1)//1 layer
-                    W_prec = nr_W_1l_2p[pmi][ap];
-                  else//2 layers
-                    W_prec = nr_W_2l_2p[pmi][ap];
-                  break;
-                  case 4://4 antenna ports
-                    if (rel15->nrOfLayers == 1)//1 layer
-                      W_prec = nr_W_1l_4p[pmi][ap];
-                    else if (rel15->nrOfLayers == 2)//2 layers
-                      W_prec = nr_W_2l_4p[pmi][ap];
-                    else if (rel15->nrOfLayers == 3)//3 layers
-                      W_prec = nr_W_3l_4p[pmi][ap];
-                    else//4 layers
-                      W_prec = nr_W_4l_4p[pmi][ap];
-                    break;
-                  default:
-                    LOG_D(PHY,"Precoding 1,2, or 4 antenna ports are currently supported\n");
-                    W_prec = nr_W_1l_2p[pmi][ap];
-                    break;
+              case 2://2 antenna ports
+                if (rel15->nrOfLayers == 1)//1 layer
+                  W_prec = nr_W_1l_2p[pmi][ap];
+                else//2 layers
+                  W_prec = nr_W_2l_2p[pmi][ap];
+                break;
+              case 4://4 antenna ports
+                if (rel15->nrOfLayers == 1)//1 layer
+                  W_prec = nr_W_1l_4p[pmi][ap];
+                else if (rel15->nrOfLayers == 2)//2 layers
+                  W_prec = nr_W_2l_4p[pmi][ap];
+                else if (rel15->nrOfLayers == 3)//3 layers
+                  W_prec = nr_W_3l_4p[pmi][ap];
+                else//4 layers
+                  W_prec = nr_W_4l_4p[pmi][ap];
+                break;
+              default:
+                LOG_D(PHY,"Precoding 1,2, or 4 antenna ports are currently supported\n");
+                W_prec = nr_W_1l_2p[pmi][ap];
+                break;
             }
-            if (pmi == 0) {//unitary Precoding
-              if(ap<rel15->nrOfLayers)
-                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
-                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + txdataF_offset+ k)],
-                       NR_NB_SC_PER_RB*sizeof(int32_t));
-              else
-                memset((void*)&txdataF[ap][rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset +k],
-                       0,
-                       NR_NB_SC_PER_RB*sizeof(int32_t));
-              k += NR_NB_SC_PER_RB;
-              if (k >= frame_parms->ofdm_symbol_size) {
+            for (int i=0; i<NR_NB_SC_PER_RB; i++) {
+              int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
+              int32_t precodatatx_F = nr_layer_precoder(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset+txdataF_offset);
+              ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
+              ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
+#ifdef DEBUG_DLSCH_MAPPING
+              printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
+                     ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
+                     ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
+#endif
+              if (++k >= frame_parms->ofdm_symbol_size) {
                 k -= frame_parms->ofdm_symbol_size;
               }
             }
-            else {
-              for (int i=0; i<NR_NB_SC_PER_RB; i++) {
-                int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
-                int32_t precodatatx_F = nr_layer_precoder(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset+txdataF_offset);
-                ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
-                ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
-#ifdef DEBUG_DLSCH_MAPPING
-          printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
-                 ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
-                 ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
-#endif
-                if (++k >= frame_parms->ofdm_symbol_size) {
-                  k -= frame_parms->ofdm_symbol_size;
-                }
-              }
-            }
-          } //RB loop
-        } // symbol loop
-      }// port loop
-    }
+          }
+        } //RB loop
+      } // symbol loop
+    }// port loop
 
     dlsch->slot_tx[slot]=0;
+
+    // TODO: handle precoding
+    // this maps the layers onto antenna ports
+    
+    // handle beamforming ID
+    // each antenna port is assigned a beam_index
+    // since PHY can only handle BF on slot basis we set the whole slot
+
+    // first check if this slot has not already been allocated to another beam
+    if (gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot]==255) {
+      for (int j=0;j<frame_parms->symbols_per_slot;j++) 
+	gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
+    }
+    else {
+      LOG_W(PHY,"beam index for PDSCH allocation already taken\n");
+    }
   }// dlsch loop
+
+  
   return 0;
 }
 
