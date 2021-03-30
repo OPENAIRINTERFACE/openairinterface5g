@@ -47,7 +47,7 @@
 #endif
 #define LOG_DCI_PARM(a...) LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci)" a)
 
-// #define DEBUG_DCI
+//#define DEBUG_DCI
 
 dci_pdu_rel15_t *def_dci_pdu_rel15;
 
@@ -73,11 +73,22 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   uint8_t coreset_id = 1;
   int sps = 0;
   def_dci_pdu_rel15 = calloc(1,2*sizeof(dci_pdu_rel15_t));
-  AssertFatal(mac->scc != NULL, "scc is null\n");
+
+  AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
+  
   NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_BWP_DownlinkCommon_t *bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
-  NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
+  NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
+  NR_BWP_DownlinkCommon_t *bwp_Common=NULL;
+  NR_BWP_DownlinkCommon_t *initialDownlinkBWP=NULL;
+  NR_BWP_UplinkCommon_t *initialUplinkBWP=NULL;
+
+  if (scc!=NULL || scc_SIB != NULL) {
+    initialDownlinkBWP =  scc!=NULL ? scc->downlinkConfigCommon->initialDownlinkBWP : &scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
+    initialUplinkBWP = scc!=NULL ? scc->uplinkConfigCommon->initialUplinkBWP : &scc_SIB->uplinkConfigCommon->initialUplinkBWP;
+
+    bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
+  }
 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
@@ -104,8 +115,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     struct NR_ControlResourceSet__cce_REG_MappingType__interleaved *interleaved = coreset->cce_REG_MappingType.choice.interleaved;
     rel15->coreset.RegBundleSize = (interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2 + interleaved->reg_BundleSize);
     rel15->coreset.InterleaverSize = (interleaved->interleaverSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2 + interleaved->interleaverSize);
-    AssertFatal(scc->physCellId != NULL, "mac->scc->physCellId is null\n");
-    rel15->coreset.ShiftIndex = interleaved->shiftIndex != NULL ? *interleaved->shiftIndex : *scc->physCellId;
+    rel15->coreset.ShiftIndex = interleaved->shiftIndex != NULL ? *interleaved->shiftIndex : mac->physCellId;
   } else {
     rel15->coreset.RegBundleSize = 0;
     rel15->coreset.InterleaverSize = 0;
@@ -119,7 +129,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->coreset.pdcch_dmrs_scrambling_id = *coreset->pdcch_DMRS_ScramblingID;
     rel15->coreset.scrambling_rnti = mac->crnti;
   } else {
-    rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
+    rel15->coreset.pdcch_dmrs_scrambling_id = mac->physCellId;
     rel15->coreset.scrambling_rnti = 0;
   }
 
@@ -139,7 +149,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
     for (int i = 0; i < rel15->num_dci_options; i++) {
-      rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15+i, rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
+      rel15->dci_length_options[i] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15+i, rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
     }
     break;
     case NR_RNTI_RA:
@@ -150,7 +160,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-    rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
+    rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
     break;
     case NR_RNTI_P:
     break;
@@ -164,13 +174,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-      rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
+      rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
     break;
     case NR_RNTI_SP_CSI:
     break;
     case NR_RNTI_SI:
       // we use DL BWP dedicated
-      sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+      if (bwp_Common) sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+      else sps=14; // note: normally this would be found with SSS detection
 
       // for SPS=14 8 MSBs in positions 13 down to 6
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
@@ -181,7 +192,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
 
       for (int i = 0; i < rel15->num_dci_options; i++) {
-        rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, 0);
+        rel15->dci_length_options[i] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15, rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, 0);
       }
     break;
     case NR_RNTI_SFI:
@@ -237,7 +248,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
     NR_BWP_DownlinkCommon_t *bwp_Common = bwp->bwp_Common;
     NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
-    struct NR_PhysicalCellGroupConfig *phy_cgc = mac->scg->physicalCellGroupConfig;
+    struct NR_PhysicalCellGroupConfig *phy_cgc = mac->cg->physicalCellGroupConfig;
     switch (ss->searchSpaceType->present){
       case NR_SearchSpace__searchSpaceType_PR_common:
       // this is for CSSs, we use BWP common and pdcch_ConfigCommon

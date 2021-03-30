@@ -227,8 +227,8 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
             return -1;
     }
 
-    if(NR_UE_rrc_inst[module_id].cell_group_config == NULL){
-        NR_UE_rrc_inst[module_id].cell_group_config = cell_group_config;
+    if(NR_UE_rrc_inst[module_id].scell_group_config == NULL){
+        NR_UE_rrc_inst[module_id].scell_group_config = cell_group_config;
         nr_rrc_ue_process_scg_config(module_id,cell_group_config);
     }else{
         nr_rrc_ue_process_scg_config(module_id,cell_group_config);
@@ -559,38 +559,34 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     if(mib != NULL){
         SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)mib, 1 );
     }
-
-
-    //for(i=0; i<buffer_len; ++i){
-    //    printf("[RRC] MIB PDU : %d\n", bufferP[i]);
-    //}
-
-    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-                                                    &asn_DEF_NR_BCCH_BCH_Message,
-                                                   (void **)&bcch_message,
-                                                   (const void *)bufferP,
-                                                   buffer_len );
-
-    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-      printf("NR_BCCH_BCH decode error\n");
-      for (i=0; i<buffer_len; i++){
-    printf("%02x ",bufferP[i]);
-      }
-      printf("\n");
-      // free the memory
-      SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-      return -1;
-    }
     else {
-      //  link to rrc instance
-      mib = bcch_message->message.choice.mib;
-      //memcpy( (void *)mib,
-      //    (void *)&bcch_message->message.choice.mib,
-      //    sizeof(NR_MIB_t) );
       
-      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL);
-    }
-    
+      //for(i=0; i<buffer_len; ++i){
+      //    printf("[RRC] MIB PDU : %d\n", bufferP[i]);
+      //}
+      
+      asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+						      &asn_DEF_NR_BCCH_BCH_Message,
+						      (void **)&bcch_message,
+						      (const void *)bufferP,
+						      buffer_len );
+      
+      if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+	LOG_I(NR_RRC,"NR_BCCH_BCH decode error\n");
+	// free the memory
+	SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+	return -1;
+      }
+      else {
+	//  link to rrc instance
+	mib = bcch_message->message.choice.mib;
+	//memcpy( (void *)mib,
+	//    (void *)&bcch_message->message.choice.mib,
+	//    sizeof(NR_MIB_t) );
+	LOG_I(NR_RRC,"Configuring MAC for first MIB reception\n");
+	nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
+      }
+    }    
     return 0;
 }
 
@@ -1185,7 +1181,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
           if(sib1 != NULL){
             SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
           }
-
+	  NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
           sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
           if (*(int64_t*)sib1 != 1) {
             NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
@@ -1194,15 +1190,20 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
             }
             LOG_I(NR_RRC, "SIB1 decoded\n");
 
+	    ///	    dump_SIB1();
             // FIXME: improve condition for the RA trigger
             // Check for on-demand not broadcasted SI
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
               // TODO: remove flag after full RA procedures implemented
-              get_softmodem_params()->do_ra = 1;
+	      //              get_softmodem_params()->do_ra = 1;
             }
-            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+	    // take ServingCellConfigCommon and configure L1/L2
+	    NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
+	    nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
+	    nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+	    AssertFatal(1==0,"Exiting here\n");
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
           }

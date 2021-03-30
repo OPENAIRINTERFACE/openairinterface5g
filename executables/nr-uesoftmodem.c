@@ -475,8 +475,20 @@ int main( int argc, char **argv ) {
       mac->if_module->phy_config_request(&mac->phy_config);
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+    if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
+      nrUE_config->ssb_config.scs_common = get_softmodem_params()->numerology;
+      nrUE_config->carrier_config.dl_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
+      nrUE_config->carrier_config.ul_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
+      nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
+      nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
+      nrUE_config->cell_config.frame_duplex_type = TDD; 
+      nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
 
-    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+
+    }
+    
+    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, 
+			   mac->scc == NULL ? 78 : *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
     init_symbol_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);

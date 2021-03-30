@@ -282,7 +282,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
   
-  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   
   uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
 
@@ -397,12 +397,12 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /**********************************************/
     else if ((pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) && (pucch_resource_id != MAX_NB_OF_PUCCH_RESOURCES)) {
       /* check that current configuration is supported */
-      if ((mac->scg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL)
-         || (mac->scg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
+      if ((mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL)
+         || (mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
         LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         return(FALSE);
       }
-      else if (mac->scg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
+      else if (mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
         LOG_E(PHY,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         return(FALSE);
       }
@@ -830,7 +830,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
    U_DAI_c = number_harq_feedback/number_of_code_word;
    N_m_c_rx = number_harq_feedback;
    int N_SPS_c = 0; /* FFS TODO_NR multicells and SPS are not supported at the moment */
-   if (mac->scg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH == NULL) {
+   if (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH == NULL) {
      int N_TB_max_DL = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
      *n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
      NR_TST_PHY_PRINTF("PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", *n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
@@ -1322,7 +1322,7 @@ uint16_t get_nr_csi_bitlen(NR_UE_MAC_INST_t *mac) {
   uint16_t nb_ssbri_cri = 0; 
   uint16_t cri_ssbri_bitlen = 0;
   
-  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList__nzp_CSI_RS_SSB * nzp_CSI_RS_SSB = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[0]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB;
 
   uint16_t nb_csi_ssb_report = nzp_CSI_RS_SSB->csi_SSB_ResourceSetList!=NULL ? nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.count:0;

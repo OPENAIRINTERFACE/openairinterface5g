@@ -670,7 +670,11 @@ void *UE_thread(void *arg) {
     if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 
       uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-      int   nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      int   nrofUplinkSlots = 0;
+      if (mac->scc_SIB)
+	nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      else if (mac->scc)
+	nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
       uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
 
@@ -733,6 +737,9 @@ void init_NR_UE(int nb_inst, char* rrc_config_path) {
     AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
 
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+
+    if (mac_inst->ULbwp[0]==NULL) continue;
+
     if (mac_inst->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
       pusch_TimeDomainAllocationList = mac_inst->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
     }

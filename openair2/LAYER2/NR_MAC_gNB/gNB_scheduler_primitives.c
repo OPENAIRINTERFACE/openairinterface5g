@@ -923,7 +923,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   uint8_t fsize = 0, pos = 0;
 
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
-  int dci_size = nr_dci_size(scc, secondaryCellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
+  int dci_size = nr_dci_size(scc->uplinkConfigCommon->initialUplinkBWP, secondaryCellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
 
