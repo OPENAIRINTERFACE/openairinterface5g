@@ -465,10 +465,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
     else
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
-
-    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
+    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = NRRIV2PRBOFFSET(scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE) + scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart + (get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing, scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing ) * i);
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup, nb_preambles, frame_type,frequency_range);
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup, nb_preambles, mac->frame_type, frequency_range);
     //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
   }
 

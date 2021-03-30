@@ -849,13 +849,24 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
     nr_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
 
-    NR_SearchSpace_t *ss = nr_mac->sched_ctrlCommon->search_space;
-    NR_BWP_Downlink_t *bwp = nr_mac->sched_ctrlCommon->active_bwp;
-    NR_ControlResourceSet_t *coreset = nr_mac->sched_ctrlCommon->coreset;
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+    long BWPStart = 0;
+    NR_SearchSpace_t *ss = NULL;
+    NR_BWP_Downlink_t *bwp = NULL;
+    NR_ControlResourceSet_t *coreset = NULL;
+    if (get_softmodem_params()->sa) {
+      bwp = nr_mac->sched_ctrlCommon->active_bwp;
+      BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      ss = nr_mac->sched_ctrlCommon->search_space;
+      coreset = nr_mac->sched_ctrlCommon->coreset;
+    } else { // NSA mode is not using the Initial BWP
+      bwp =  ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+      BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      ss = ra->ra_ss;
+      coreset = get_coreset(bwp, ss, 0);
+    }
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
@@ -1085,7 +1096,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_BWP_Downlink_t *bwp = nr_mac->sched_ctrlCommon->active_bwp;
     NR_ControlResourceSet_t *coreset = nr_mac->sched_ctrlCommon->coreset;
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-    NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
 
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
@@ -1093,10 +1103,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
-    int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-    int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slotP / nr_slots_period);
 
     // HARQ management
     int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
@@ -1114,8 +1120,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     harq->is_waiting = true;
-    harq->feedback_slot = first_ul_slot_tdd;
     ra->harq_pid = current_harq_pid;
+
+    nr_acknack_scheduling(module_idP, UE_id, frameP, slotP);
+    harq->feedback_slot = sched_ctrl->sched_pucch->ul_slot;
 
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
@@ -1385,9 +1393,9 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   {
     if (harq->round == 0)
     {
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
       UE_info->active[UE_id] = true;
-      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
     }
     else
     {
@@ -1510,7 +1518,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_3 = (uint8_t) (ul_grant >> 8) & 0xff;
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
-  // FIXME: To be removed
+#ifdef DEBUG_RAR
   //LOG_I(NR_MAC, "rarbi->E = 0x%x\n", rarbi->E);
   //LOG_I(NR_MAC, "rarbi->T = 0x%x\n", rarbi->T);
   //LOG_I(NR_MAC, "rarbi->R = 0x%x\n", rarbi->R);
@@ -1532,6 +1540,7 @@ void nr_fill_rar(uint8_t Mod_idP,
 
   LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
   LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
+#endif
 
   int mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
   // time alloc

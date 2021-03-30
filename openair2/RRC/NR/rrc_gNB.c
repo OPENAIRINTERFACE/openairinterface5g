@@ -233,15 +233,17 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   }
 
   LOG_I(NR_RRC,"Done init_NR_SI\n");
+
   if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
-                          rrc->carrier.ssb_SubcarrierOffset,
-                          rrc->carrier.pdsch_AntennaPorts,
-                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
-                          0,
-                          0, // WIP hardcoded rnti
-                          (NR_CellGroupConfig_t *)NULL
-                          );
+			   rrc->carrier.ssb_SubcarrierOffset,
+			   rrc->carrier.pdsch_AntennaPorts,
+			   rrc->carrier.pusch_AntennaPorts,
+			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			   0,
+			   0, // WIP hardcoded rnti
+			   (NR_CellGroupConfig_t *)NULL
+			   );
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -328,7 +330,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
-  /// System Information INIT
+  rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+   /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
   rrc->cell_info_configured = 0;
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
@@ -497,6 +500,7 @@ rrc_gNB_generate_RRCSetup(
       rrc_mac_config_req_gNB(rrc->module_id,
 			     rrc->carrier.ssb_SubcarrierOffset,
 			     rrc->carrier.pdsch_AntennaPorts,
+			     rrc->carrier.pusch_AntennaPorts,
 			     (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			     0,
 			     ue_context_pP->ue_context.rnti,
@@ -567,6 +571,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   rrc_mac_config_req_gNB(rrc_instance_p->module_id,
                          rrc_instance_p->carrier.ssb_SubcarrierOffset,
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
+                         rrc_instance_p->carrier.pusch_AntennaPorts,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
                          0,
                          ue_context_pP->ue_context.rnti,

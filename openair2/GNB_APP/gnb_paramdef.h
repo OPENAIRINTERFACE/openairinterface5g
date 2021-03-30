@@ -115,7 +115,8 @@ typedef enum {
 #define GNB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
 #define GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET           "ssb_SubcarrierOffset"
 #define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
-#define GNB_CONFIG_STRING_NR_CELLID                     "nr_cellid"
+#define GNB_CONFIG_STRING_PUSCHANTENNAPORTS             "pusch_AntennaPorts"
+#define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
@@ -138,7 +139,8 @@ typedef enum {
 {GNB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,          NULL,   0,            iptr:NULL,   defintval:31,                TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_PDSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_NR_CELLID,                    NULL,   0,            u64ptr:NULL, defint64val:0,               TYPE_UINT64,    0},  \
+{GNB_CONFIG_STRING_PUSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_NRCELLID         ,            NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,       0},  \
 }															     	
 
 #define GNB_GNB_ID_IDX                  0
@@ -157,7 +159,8 @@ typedef enum {
 #define GNB_REMOTE_S_PORTD_IDX          13
 #define GNB_SSB_SUBCARRIEROFFSET_IDX    14
 #define GNB_PDSCH_ANTENNAPORTS_IDX      15
-#define GNB_NRCELLID_IDX                16
+#define GNB_PUSCH_ANTENNAPORTS_IDX      16
+#define GNB_NRCELLID_IDX                17
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \

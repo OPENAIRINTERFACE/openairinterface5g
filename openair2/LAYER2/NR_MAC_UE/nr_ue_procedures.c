@@ -655,8 +655,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
       if( (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti) || (rnti == ra->t_crnti) ) {
         dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
+        if (get_softmodem_params()->sa) {
+          dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
+        } else { // NSA mode is not using the Initial BWP
+          dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          if(pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition == NULL)
+            pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition=calloc(1,sizeof(*pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
+        }
       } else {
         dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -749,8 +755,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
 
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
-    dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_timing_indicator.val;
-
+    if (mac->scc || mac->scc_SIB) {
+      dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = mac->ULbwp[mac->UL_BWP_Id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
+    }
     LOG_D(MAC,"(nr_ue_procedures.c) rnti = %x dl_config->number_pdus = %d\n",
 	  dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
 	  dl_config->number_pdus);
@@ -1340,7 +1347,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	  
       } //end else
       break;
-    	
+
     case NR_RNTI_P:
       /*
       // Short Messages Indicator  E2 bits
@@ -1806,7 +1813,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     return;
   }
 
-  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, dl_info->rx_ind->number_pdus);
+  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
 
     while (!done && pdu_len > 0){
         mac_ce_len = 0x0000;
@@ -1819,9 +1826,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
             //  MAC CE
 
             case DL_SCH_LCID_CCCH:
-              //  MSG4 RRC Connection Setup 38.331
+              //  MSG4 RRC Setup 38.331
               //  variable length
-
               if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
                 mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
                               | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
@@ -1831,7 +1837,13 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 mac_subheader_len = 2;
               }
 
-	      if ( mac_sdu_len > 0) {
+              // Check if it is a valid CCCH message, we get all 00's messages very often
+              if ( pdu_len != (mac_subheader_len+mac_sdu_len) ) {
+                LOG_D(NR_MAC, "%s() Invalid CCCH message!, pdu_len: %d\n", __func__, pdu_len);
+                return;
+              }
+
+              if ( mac_sdu_len > 0 ) {
 
                 LOG_D(NR_MAC,"DL_SCH_LCID_CCCH with payload len %d\n", mac_sdu_len);
 
@@ -2041,7 +2053,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         if (pdu_len < 0)
-          LOG_E(MAC, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", pdu_len);
+          LOG_E(MAC, "[UE %d][%d.%d] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", module_idP, frameP, slot, pdu_len);
     }
 }
 
@@ -2376,7 +2388,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       rnti = mac->crnti;
     }
 
-    // FIXME: To be removed
+#ifdef DEBUG_RAR
     LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
     LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
     LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
@@ -2394,20 +2406,19 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
     LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 
-  //#ifdef DEBUG_RAR
-  LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
-    __FUNCTION__,
-    frame,
-    slot,
-    mod_id,
-    rar_grant.Msg3_t_alloc,
-    rar_grant.Msg3_f_alloc,
-    ul_time_alignment->ta_command,
-    rar_grant.mcs,
-    rar_grant.freq_hopping,
-    tpc_command,
-    ra->t_crnti);
-  //#endif
+    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
+      __FUNCTION__,
+      frame,
+      slot,
+      mod_id,
+      rar_grant.Msg3_t_alloc,
+      rar_grant.Msg3_f_alloc,
+      ul_time_alignment->ta_command,
+      rar_grant.mcs,
+      rar_grant.freq_hopping,
+      tpc_command,
+      ra->t_crnti);
+#endif
 
     // Schedule Msg3
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, rar_grant.Msg3_t_alloc);

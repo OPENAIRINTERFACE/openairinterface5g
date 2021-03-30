@@ -303,7 +303,7 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 void prepare_scd(NR_ServingCellConfig_t *scd) {
   // Allocate downlink structures
 
-  scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(scd->downlinkBWP_ToAddModList));
+  scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->downlinkBWP_ToAddModList));
 
   // Downlink bandwidth part
   NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
@@ -324,29 +324,25 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_DMRS_DownlinkCfg->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
   NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup));
   NR_PTRS_DownlinkConfig_t *NR_PTRS_DownlinkCfg = NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup;
-  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->frequencyDensity));
-  int *dl_rbs[2];
+  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
+  long *dl_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
-    dl_rbs[i] = CALLOC(1, sizeof(*dl_rbs[i]));
-    *dl_rbs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, dl_rbs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
   }
-  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->timeDensity));
-  int *dl_mcs[3];
+  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
+  long *dl_mcs = CALLOC(3, sizeof(long));
   for (int i=0;i<3;i++) {
-    dl_mcs[i] = CALLOC(1, sizeof(*dl_mcs[i]));
-    *dl_mcs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, dl_mcs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, &dl_mcs[i]);
   }
-  NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->epre_Ratio));
-  NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->resourceElementOffset));
+  NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->epre_Ratio));
+  NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->resourceElementOffset));
   *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
   ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
 
   // Allocate uplink structures
 
-  scd->uplinkConfig = CALLOC(1, sizeof(NR_UplinkConfig_t));
-  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(scd->uplinkConfig->uplinkBWP_ToAddModList));
+  scd->uplinkConfig = CALLOC(1, sizeof(*scd->uplinkConfig));
+  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->uplinkConfig->uplinkBWP_ToAddModList));
 
   NR_PUSCH_Config_t *pusch_Config = CALLOC(1, sizeof(*pusch_Config));
 
@@ -361,20 +357,16 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_PTRS_UplinkConfig_t *NR_PTRS_UplinkConfig = NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup;
   NR_PTRS_UplinkConfig->transformPrecoderDisabled = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled));
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
-  int *n_rbs[2];
+  long *n_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
-    n_rbs[i] = CALLOC(1, sizeof(*n_rbs[i]));
-    *n_rbs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, n_rbs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
   }
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
-  int *ptrs_mcs[3];
+  long *ptrs_mcs = CALLOC(3, sizeof(long));
   for (int i = 0; i < 3; i++) {
-    ptrs_mcs[i] = CALLOC(1, sizeof(*ptrs_mcs[i]));
-    *ptrs_mcs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, ptrs_mcs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, &ptrs_mcs[i]);
   }
-  NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
+  NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
   *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
 
   // UL bandwidth part
@@ -1009,6 +1001,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
         printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
+        printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
         NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;
 
@@ -1879,6 +1873,7 @@ void configure_gnb_du_mac(int inst) {
   rrc_mac_config_req_gNB(rrc->module_id,
                         rrc->configuration.ssb_SubcarrierOffset,
                         rrc->configuration.pdsch_AntennaPorts,
+                        rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.scc,
                         0,
                         0, // rnti
