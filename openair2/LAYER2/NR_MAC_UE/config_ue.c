@@ -347,7 +347,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   cfg->carrier_config.uplink_bandwidth = config_bandwidth(scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                                           scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
-                                                          *scc_SIB->uplinkConfigCommon->frequencyInfoUL.frequencyBandList->list.array[0]->freqBandIndicatorNR);
+                                                          scc_SIB->uplinkConfigCommon->frequencyInfoUL.frequencyBandList==NULL ? *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR : *scc_SIB->uplinkConfigCommon->frequencyInfoUL.frequencyBandList->list.array[0]->freqBandIndicatorNR);
 
 
   if (scc_SIB->uplinkConfigCommon->frequencyInfoUL.absoluteFrequencyPointA == NULL)
@@ -708,6 +708,7 @@ int nr_rrc_mac_config_req_ue(
 
       mac->scc_SIB=sccP;
       LOG_I(MAC,"Keeping ServingCellConfigCommonSIB\n");
+      config_common_ue(mac,module_id,cc_idP);
     }
     if(scell_group_config != NULL ){
       mac->cg = cell_group_config;

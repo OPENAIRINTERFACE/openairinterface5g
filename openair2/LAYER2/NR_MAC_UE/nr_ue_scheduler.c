@@ -833,7 +833,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 	  fill_dci_search_candidates(ss0, rel15);
 	
 	  dl_config->number_pdus = 1;
-	  LOG_I(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+	  LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
 	  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
 	  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
 	    mac->if_module->scheduled_response(&scheduled_response);

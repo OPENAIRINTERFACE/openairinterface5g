@@ -1143,7 +1143,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
   NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN );
 
-  if (((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) &&  // SIB1 received
+  if (((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) && sib1->si_SchedulingInfo &&// SIB1 received
       (NR_UE_rrc_inst[module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)) {
     // to prevent memory bloating
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
@@ -1194,16 +1194,16 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
             // FIXME: improve condition for the RA trigger
             // Check for on-demand not broadcasted SI
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
-            if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
+            if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
               // TODO: remove flag after full RA procedures implemented
 	      //              get_softmodem_params()->do_ra = 1;
+	      nr_rrc_set_state (module_id, RRC_STATE_IDLE_NR);
             }
 	    // take ServingCellConfigCommon and configure L1/L2
 	    NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
 	    nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
 	    nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
-	    AssertFatal(1==0,"Exiting here\n");
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
           }

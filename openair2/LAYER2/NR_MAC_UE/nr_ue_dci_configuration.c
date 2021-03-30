@@ -87,7 +87,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     initialDownlinkBWP =  scc!=NULL ? scc->downlinkConfigCommon->initialDownlinkBWP : &scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
     initialUplinkBWP = scc!=NULL ? scc->uplinkConfigCommon->initialUplinkBWP : &scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
-    bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
+    bwp_Common = bwp_id>0 ? mac->DLbwp[bwp_id-1]->bwp_Common : NULL;
   }
 
   NR_SearchSpace_t *ss;
