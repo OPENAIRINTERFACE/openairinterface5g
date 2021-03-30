@@ -59,12 +59,18 @@ void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
   unsigned char mac[16];
   size_t maclen;
 
+  /* see 33.401 B.2.3 for the input to 128-EIA2
+   * (which is identical to 128-NIA2, see 33.501 D.3.1.3) */
   compute_t(t, count, bearer, direction);
 
   CMAC_Update(ctx, t, 8);
   CMAC_Update(ctx, buffer, length);
   CMAC_Final(ctx, mac, &maclen);
 
+  /* AES CMAC (RFC 4493) outputs 128 bits but NR PDCP PDUs have a MAC-I of
+   * 32 bits (see 38.323 6.2). RFC 4493 2.1 says to truncate most significant
+   * bit first (so seems to say 33.401 B.2.3)
+   */
   memcpy(out, mac, 4);
 }
 
