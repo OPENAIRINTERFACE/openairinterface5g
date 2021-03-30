@@ -234,7 +234,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -1692,9 +1692,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
-    printf("============================================\n");
+    LOG_I(PHY,"============================================\n");
     LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
-    printf("============================================\n");
+    LOG_I(PHY,"============================================\n");
   }
 
 #ifdef NR_PDCCH_SCHED

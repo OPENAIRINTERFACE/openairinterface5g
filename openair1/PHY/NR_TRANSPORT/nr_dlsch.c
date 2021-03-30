@@ -521,7 +521,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
     }
     else {
-      LOG_W(PHY,"beam index for PDSCH allocation already taken\n");
+      LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
   }// dlsch loop
 

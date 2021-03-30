@@ -663,7 +663,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
-                      NR_RA_t *ra) {
+                      NR_RA_t *ra,
+                      int16_t *tdd_beam_association) {
 
     // msg3 is schedulend in mixed slot in the following TDD period
 
