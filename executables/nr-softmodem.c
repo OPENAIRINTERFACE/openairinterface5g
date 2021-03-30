@@ -341,7 +341,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
 
-  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0 && get_softmodem_params()->sa==0)) {
+  if (AMF_MODE_ENABLED) {
     if (gnb_nb > 0) {
       /*
       if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
@@ -700,8 +700,8 @@ int main( int argc, char **argv )
   }
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
-  AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
-  NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+  AMF_MODE_ENABLED = get_softmodem_params()->sa;
+  NGAP_CONF_MODE   = get_softmodem_params()->sa;
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
