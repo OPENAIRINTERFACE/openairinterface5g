@@ -72,7 +72,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
-  uint8_t ssb_index, n_hf;
+  uint8_t ssb_index, ssb_per_slot=0, n_hf;
   uint16_t ssb_start_symbol, rel_slot;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
   uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
@@ -94,11 +94,12 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
   if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
 
-    for (int i=0; i<2; i++)  {  // max two SSB per frame
+    for (int i=0; i<2; i++)  {  // max two SSB per slot
       
       ssb_index = i + SSB_Table[rel_slot]; // computing the ssb_index
 
       if ((ssb_index<64) && ((fp->L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
+	ssb_per_slot++;
         fp->ssb_index = ssb_index;
         int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
 	ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
@@ -130,6 +131,16 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 			 ssb_start_symbol,
 			 n_hf, frame, cfg, fp);
 
+	// SSB beamforming is handled at PHY
+	// currently our PHY does not support switching more than once a slot. 
+	if (ssb_per_slot>1) {
+	  LOG_W(PHY,"beamforming currently not supported for more than one SSB per slot\n");
+	}
+	else if (ssb_per_slot==1) {
+	  LOG_D(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
+	  for (int j=0;j<fp->symbols_per_slot;j++) 
+	    gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
+	}	
       }
     }
   }
@@ -155,9 +166,10 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
-  // clear the transmit data array for the current subframe
+  // clear the transmit data array and beam index for the current slot
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
     memset(&gNB->common_vars.txdataF[aa][txdataF_offset],0,fp->samples_per_slot_wCP*sizeof(int32_t));
+    memset(&gNB->common_vars.beam_id[aa][slot*fp->symbols_per_slot],255,fp->symbols_per_slot*sizeof(uint8_t));
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
@@ -677,7 +689,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     }
   }
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) dump_pusch_stats(gNB);
+  if ((frame_rx&127) == 0 && slot_rx==19) {
+    dump_pusch_stats(gNB);
+    LOG_I(PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
+  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
