@@ -885,7 +885,7 @@ uint16_t nr_dci_false_detection(uint64_t *dci,
 
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
   polar_encoder_fast(dci, (void*)encoder_output, rnti, 1, polar_param);
-  uint8_t *enout_p = (int16_t*)encoder_output;
+  uint8_t *enout_p = (uint8_t*)encoder_output;
   uint16_t x = 0;
 
   for (int i=0; i<encoded_length/8; i++) {
@@ -948,8 +948,9 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
           LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
                 proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);
           uint16_t mb = nr_dci_false_detection(dci_estimation,tmp_e,currentPtrDCI,L*108,n_rnti);
-          if (mb > 10) {
-            LOG_W(PHY,"DCI false positive. Dropping DCI index %d. Mismatched bits: %d/%d\n",j,mb,L*108);
+          ue->dci_thres = (ue->dci_thres + mb) / 2;
+          if (mb > (ue->dci_thres+10)) {
+            LOG_W(PHY,"DCI false positive. Dropping DCI index %d. Mismatched bits: %d/%d. Current DCI threshold: %d\n",j,mb,L*108,ue->dci_thres);
             continue;
           }
           else {
