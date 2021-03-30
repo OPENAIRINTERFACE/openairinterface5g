@@ -231,6 +231,14 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           sub_frame_t current_slot,
                           uint8_t Msg3_tda_id);
 
+void nr_ue_sib1_scheduler(module_id_t module_idP,
+                          uint16_t ssb_start_symbol,
+                          uint16_t frame,
+                          uint8_t ssb_subcarrier_offset,
+                          uint32_t ssb_index,
+                          uint16_t ssb_start_subcarrier,
+                          frequency_range_t frequency_range);
+
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
 @param CC_id Index to a component carrier

@@ -148,27 +148,19 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint32_t band;
   uint16_t ssb_start_symbol;
 
-  if (get_softmodem_params()->sa == 1) {
+  if ((get_softmodem_params()->sa == 1) && (mac->sib1_received == 0)) {
     scs_ssb = get_softmodem_params()->numerology;
     band = mac->nr_band;
     ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
-    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
 
-    get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
-                                          frame,
-                                          mac->mib,
-                                          nr_slots_per_frame[scs_ssb],
-                                          ssb_subcarrier_offset,
-                                          ssb_start_symbol,
-                                          scs_ssb,
-                                          frequency_range,
-                                          ssb_index,
-                                          ssb_offset_point_a);
+    nr_ue_sib1_scheduler(module_id,
+                         ssb_start_symbol,
+                         frame,
+                         ssb_subcarrier_offset,
+                         ssb_index,
+                         ssb_start_subcarrier,
+                         frequency_range);
 
-
-    mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
-    mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
-    mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
   }
   else {
     NR_ServingCellConfigCommon_t *scc = mac->scc;

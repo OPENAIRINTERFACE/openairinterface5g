@@ -1439,7 +1439,9 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
                     ssb_list.tx_ssb[ssb_idx].nb_mapped_ro++;
                     AssertFatal(MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN > ssb_list.tx_ssb[ssb_idx].nb_mapped_ro,"Too many mapped ROs (%d) to a single SSB\n", ssb_list.tx_ssb[ssb_idx].nb_mapped_ro);
 
-                    LOG_D(MAC,"Mapped ssb_idx %u to RO slot-symbol %u-%u, %u-%u-%u/%u\n", ssb_idx, ro_p->slot, ro_p->start_symbol, slot, ro_in_time, ro_in_freq, prach_conf_period_p->prach_occasion_slot_map[frame][slot].nb_of_prach_occasion_in_freq);
+                    LOG_D(MAC,"Mapped ssb_idx %u to RO slot-symbol %u-%u, %u-%u-%u/%u\n",
+                          ssb_idx, ro_p->slot, ro_p->start_symbol, slot, ro_in_time, ro_in_freq,
+                          prach_conf_period_p->prach_occasion_slot_map[frame][slot].nb_of_prach_occasion_in_freq);
                     LOG_D(MAC,"Nb mapped ROs for this ssb idx: in the association period only %u\n", ssb_list.tx_ssb[ssb_idx].nb_mapped_ro);
 
                     // If all the required SSBs are mapped to this RO, exit the loop of SSBs
@@ -1508,11 +1510,15 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
                     ro_p->nb_mapped_ssb = 1;
                     ssb_list.tx_ssb[ssb_idx].mapped_ro[ssb_list.tx_ssb[ssb_idx].nb_mapped_ro] = ro_p;
                     ssb_list.tx_ssb[ssb_idx].nb_mapped_ro++;
-                    AssertFatal(MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN > ssb_list.tx_ssb[ssb_idx].nb_mapped_ro,"Too many mapped ROs (%d) to a single SSB\n", ssb_list.tx_ssb[ssb_idx].nb_mapped_ro);
+                    AssertFatal(MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN > ssb_list.tx_ssb[ssb_idx].nb_mapped_ro,"Too many mapped ROs (%d) to a single SSB\n",
+                                ssb_list.tx_ssb[ssb_idx].nb_mapped_ro);
                     nb_mapped_ro_in_association_period++;
 
-                    LOG_D(MAC,"Mapped ssb_idx %u to RO slot-symbol %u-%u, %u-%u-%u/%u\n", ssb_idx, ro_p->slot, ro_p->start_symbol, slot, ro_in_time, ro_in_freq, prach_conf_period_p->prach_occasion_slot_map[frame][slot].nb_of_prach_occasion_in_freq);
-                    LOG_D(MAC,"Nb mapped ROs for this ssb idx: in the association period only %u / total %u\n", ssb_list.tx_ssb[ssb_idx].nb_mapped_ro, nb_mapped_ro_in_association_period);
+                    LOG_D(MAC,"Mapped ssb_idx %u to RO slot-symbol %u-%u, %u-%u-%u/%u\n",
+                          ssb_idx, ro_p->slot, ro_p->start_symbol, slot, ro_in_time, ro_in_freq,
+                          prach_conf_period_p->prach_occasion_slot_map[frame][slot].nb_of_prach_occasion_in_freq);
+                    LOG_D(MAC,"Nb mapped ROs for this ssb idx: in the association period only %u / total %u\n",
+                          ssb_list.tx_ssb[ssb_idx].nb_mapped_ro, nb_mapped_ro_in_association_period);
 
                     // Exit the loop if this SSB has been mapped to all the required ROs
                     // WIP: Assuming that ssb_rach_ratio equals the maximum nb of times a given ssb_idx is mapped within an association period:
@@ -1655,6 +1661,7 @@ void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired){
   LOG_D(MAC,"Map SSB to RO done\n");
 }
 
+
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:
@@ -1791,6 +1798,39 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
     } // is_nr_prach_slot
   } // if is_nr_UL_slot
 }
+
+
+// This function schedules the reception of SIB1 after initial sync and before going to real time state
+void nr_ue_sib1_scheduler(module_id_t module_idP,
+                          uint16_t ssb_start_symbol,
+                          uint16_t frame,
+                          uint8_t ssb_subcarrier_offset,
+                          uint32_t ssb_index,
+                          uint16_t ssb_start_subcarrier,
+                          frequency_range_t frequency_range) {
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+
+  uint8_t scs_ssb = get_softmodem_params()->numerology;
+  uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
+
+  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
+                                        frame,
+                                        mac->mib,
+                                        nr_slots_per_frame[scs_ssb],
+                                        ssb_subcarrier_offset,
+                                        ssb_start_symbol,
+                                        scs_ssb,
+                                        frequency_range,
+                                        ssb_index,
+                                        ssb_offset_point_a);
+
+    mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
+    mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
+    mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
+
+}
+
 
 uint8_t
 nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
