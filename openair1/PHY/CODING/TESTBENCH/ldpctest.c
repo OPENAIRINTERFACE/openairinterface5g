@@ -144,7 +144,7 @@ int test_ldpc(short No_iteration,
   t_nrLDPC_procBuf nrLDPC_procBuf;
   t_nrLDPC_procBuf* p_nrLDPC_procBuf = &nrLDPC_procBuf;
     
-  t_nrLDPC_time_stats decoder_profiler;
+  t_nrLDPC_time_stats decoder_profiler = {0};
   t_nrLDPC_time_stats* p_decoder_profiler =&decoder_profiler ;
 
   int32_t n_iter = 0;

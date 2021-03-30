@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-FR1-TM1</htmlTabRef>
-	<htmlTabName>FR1</htmlTabName>
+	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
+	<htmlTabName>NSA FULL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  010000

@@ -238,43 +238,6 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        // reconfigure for potentially different bandwidth
-        switch(UE->frame_parms.N_RB_DL) {
-          case 6:
-            openair0_cfg[UE->rf_map.card].sample_rate =1.92e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =.96e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =.96e6;
-            //            openair0_cfg[0].rx_gain[0] -= 12;
-            break;
-
-          case 25:
-            openair0_cfg[UE->rf_map.card].sample_rate =7.68e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =2.5e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =2.5e6;
-            //            openair0_cfg[0].rx_gain[0] -= 6;
-            break;
-
-          case 50:
-            openair0_cfg[UE->rf_map.card].sample_rate =15.36e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =5.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =5.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 3;
-            break;
-
-          case 100:
-            openair0_cfg[UE->rf_map.card].sample_rate=30.72e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=10.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=10.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 0;
-            break;
-
-          case 66:
-            openair0_cfg[UE->rf_map.card].sample_rate=122.88e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=100.e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=100.e6;
-            break;
-        }
-
         if (UE->mode != loop_through_memory) {
           UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
@@ -765,13 +728,13 @@ void *UE_thread(void *arg) {
 
     if (flags || IS_SOFTMODEM_RFSIM)
       AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-					       writeTimestamp,
-					       txp,
-					       writeBlockSize,
-					       UE->frame_parms.nb_antennas_tx,
-					       flags),"");
-    
+                   UE->rfdevice.trx_write_func(&UE->rfdevice,
+                       writeTimestamp,
+                       txp,
+                       writeBlockSize,
+                       UE->frame_parms.nb_antennas_tx,
+                       flags),"");
+
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
 
