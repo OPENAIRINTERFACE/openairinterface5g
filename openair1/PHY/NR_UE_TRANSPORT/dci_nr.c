@@ -879,7 +879,7 @@ void nr_pdcch_unscrambling(int16_t *z,
  */
 uint16_t nr_dci_false_detection(uint64_t *dci,
                             int16_t *soft_in,
-                            t_nrPolar_params *polar_param,
+                            const t_nrPolar_params *polar_param,
                             int encoded_length,
                             int rnti) {
 
