@@ -487,11 +487,7 @@ int process_command(char *buf) {
   
   bufbck=strdup(buf);
   rt=CMDSTATUS_NOTFOUND;
-<<<<<<< HEAD
   j = sscanf(buf,"%19s %19s %m[^\t\n]",modulename,cmd,&cmdb);
-=======
-  j = sscanf(buf,"%19s %19s %2048[^\t\n]",modulename,cmd,cmdb);
->>>>>>> start implementing access to nrUE cpu measurments via telnet server, as ith lte enb
 
   if (telnetparams.telnetdbg > 0)
     printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
