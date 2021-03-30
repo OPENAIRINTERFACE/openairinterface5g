@@ -189,7 +189,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
   //apply the OFDM symbol rotation here
-  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[0][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
+  for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
+	  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
+  }
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
@@ -349,7 +351,6 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   int timing_advance_update, cqi;
   int sync_pos;
-  uint16_t mu = gNB->frame_parms.numerology_index;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
 
@@ -357,18 +358,10 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   //  pdu->data                              = gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->b;
   sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
-  timing_advance_update                  = sync_pos * (1 << mu);                    // scale by the used scs numerology
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-  switch (gNB->frame_parms.N_RB_DL) {
-    case 106: timing_advance_update /= 16; break;
-    case 217: timing_advance_update /= 32; break;
-    case 245: timing_advance_update /= 32; break;
-    case 273: timing_advance_update /= 32; break;
-    case 66:  timing_advance_update /= 12; break;
-    case 32:  timing_advance_update /= 12; break;
-    default: AssertFatal(0==1,"No case defined for PRB %d to calculate timing_advance_update\n",gNB->frame_parms.N_RB_DL);
-  }
+  uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
+  timing_advance_update = sync_pos / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
@@ -499,15 +492,12 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   unsigned char aa;
 
   for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
-    // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
-
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
       nr_slot_fep_ul(&gNB->frame_parms,
                      gNB->common_vars.rxdata[aa],
                      gNB->common_vars.rxdataF[aa],
                      symbol,
                      slot_rx,
-                     0,
                      0);
     }
   }

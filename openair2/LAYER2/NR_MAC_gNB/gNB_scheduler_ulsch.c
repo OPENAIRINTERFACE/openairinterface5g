@@ -137,10 +137,10 @@ void nr_process_mac_pdu(
 
         case UL_SCH_LCID_S_BSR:
         case UL_SCH_LCID_S_TRUNCATED_BSR:
-        	//38.321 section 6.1.3.1
-        	//fixed length
-        	mac_ce_len =1;
-        	/* Extract short BSR value */
+               //38.321 section 6.1.3.1
+               //fixed length
+               mac_ce_len =1;
+               /* Extract short BSR value */
                ce_ptr = &pdu_ptr[mac_subheader_len];
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
@@ -182,7 +182,7 @@ void nr_process_mac_pdu(
                        NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]];
                }
 
-        	break;
+               break;
 
         case UL_SCH_LCID_C_RNTI:
         	//38.321 section 6.1.3.2
@@ -1064,18 +1064,16 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* PUSCH PTRS */
     if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
-      // TODO to be fixed from RRC config
-      uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
-      pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
-      pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+      bool valid_ptrs_setup = false;
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
-      pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
-
-      pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      valid_ptrs_setup = set_ul_ptrs_values(ps->NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup,
+                                            pusch_pdu->rb_size, pusch_pdu->mcs_index, pusch_pdu->mcs_table,
+                                            &pusch_pdu->pusch_ptrs.ptrs_freq_density,&pusch_pdu->pusch_ptrs.ptrs_time_density,
+                                            &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_pdu->pusch_ptrs.num_ptrs_ports,
+                                            &pusch_pdu->pusch_ptrs.ul_ptrs_power, pusch_pdu->nr_of_symbols);
+      if (valid_ptrs_setup==true) {
+        pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      }
     }
     else{
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS

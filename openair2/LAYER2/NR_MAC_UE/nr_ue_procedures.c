@@ -610,7 +610,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       }
 
     }
-
     break;
   }
 
@@ -1047,6 +1046,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                             &dlsch_config_pdu_1_1->PTRSReOffset, dlsch_config_pdu_1_1->number_symbols);
       if(valid_ptrs_setup==true) {
         dlsch_config_pdu_1_1->pduBitmap |= 0x1;
+        LOG_D(MAC, "DL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", dlsch_config_pdu_1_1->PTRSTimeDensity, dlsch_config_pdu_1_1->PTRSFreqDensity);
       }
     }
 
@@ -1773,7 +1773,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
   frame_t frameP         = dl_info->frame;
   int slot               = dl_info->slot;
   uint8_t *pduP          = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
-  uint16_t pdu_len       = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
+  int32_t pdu_len        = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
   uint8_t gNB_index      = dl_info->gNB_index;
   uint8_t CC_id          = dl_info->cc_id;
   uint8_t done           = 0;
@@ -1784,7 +1784,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     return;
   }
 
-  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, dl_info->rx_ind->number_pdus);
+  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
 
     while (!done && pdu_len > 0){
         mac_ce_len = 0x0000;
@@ -1988,7 +1988,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         if (pdu_len < 0)
-          LOG_E(MAC, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", pdu_len);
+          LOG_E(MAC, "[UE %d][%d.%d] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", module_idP, frameP, slot, pdu_len);
     }
 }
 

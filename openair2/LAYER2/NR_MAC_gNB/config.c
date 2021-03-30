@@ -54,7 +54,7 @@ extern RAN_CONTEXT_t RC;
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
 
-void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
@@ -278,7 +278,8 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     num_ssb += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
   } 
 
-  cfg->carrier_config.num_rx_ant.value = cfg->carrier_config.num_tx_ant.value;
+  cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
+  AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
   LOG_I(MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
@@ -313,12 +314,11 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
 
 }
 
-
-
 extern uint16_t sl_ahead;
-int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
-			   int ssb_SubcarrierOffset,
+int rrc_mac_config_req_gNB(module_id_t Mod_idP,
+                           int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
+                           int pusch_AntennaPorts,
                            int pusch_tgt_snrx10,
                            int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
@@ -365,7 +365,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     config_common(Mod_idP,
                   ssb_SubcarrierOffset,
-                  pdsch_AntennaPorts, 
+                  pdsch_AntennaPorts,
+                  pusch_AntennaPorts,
 		  scc);
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   

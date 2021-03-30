@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-FR1-TM1</htmlTabRef>
-	<htmlTabName>FR1</htmlTabName>
+	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
+	<htmlTabName>NSA FULL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  010000
@@ -31,14 +31,17 @@
  010001
  000001
  050000
+ 050001
  000001
  060000
  060001
  000001
+ 070000
+ 070001
  010002
  000001
- 070001
- 070000
+ 080001
+ 080000
  010003
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -96,6 +99,13 @@
 		<ping_packetloss_threshold>50</ping_packetloss_threshold>
 	</testCase>
 
+	<testCase id="050001">
+		<class>Ping</class>
+		<desc>Ping: 100pings in 20sec</desc>
+		<ping_args>-c 100 -i 0.2</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
 
 	<testCase id="060000">
 		<class>Iperf</class>
@@ -113,7 +123,26 @@
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
+
 	<testCase id="070000">
+		<class>Iperf</class>
+		<desc>iperf (DL/20Mbps/UDP)(20 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 20M -t 20 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="070001">
+		<class>Iperf</class>
+		<desc>iperf (UL/3Mbps/UDP)(20 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 3M -t 20 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+
+
+	<testCase id="080000">
 		<class>Terminate_eNB</class>
 		<desc>Terminate eNB</desc>
 		<eNB_instance>0</eNB_instance>
@@ -121,7 +150,7 @@
 		<air_interface>lte</air_interface>
 	</testCase>
 
-	<testCase id="070001">
+	<testCase id="080001">
 		<class>Terminate_eNB</class>
 		<desc>Terminate gNB</desc>
 		<eNB_instance>1</eNB_instance>
