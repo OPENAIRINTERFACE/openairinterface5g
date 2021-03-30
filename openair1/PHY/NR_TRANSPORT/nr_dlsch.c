@@ -426,9 +426,9 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
     ///Layer Precoding and Antenna port mapping
     // tx_layers 1-8 are mapped on antenna ports 1000-1007
-    // The precoding info is supported by nfapi such as numPRGs, prgSize, and PMIdx
-    // The same precoding matrix is applied on prgSize RBs, Thus
-    //        pmi = PMIdx[rbidx/prgSize], rbidx =0,...,rbSize-1
+    // The precoding info is supported by nfapi such as num_prgs, prg_size, prgs_list and pm_idx
+    // The same precoding matrix is applied on prg_size RBs, Thus
+    //        pmi = prgs_list[rbidx/prg_size].pm_idx, rbidx =0,...,rbSize-1
     // The Precoding matrix:
     // The Codebook Type I and Type II are not supported yet.
     // We adopt the precoding matrices of PUSCH for 4 layers.
@@ -440,8 +440,8 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
         for (int rb=0; rb<rel15->rbSize; rb++) {
           //get pmi info
           uint8_t pmi;
-          if (rel15->precodingAndBeamforming.prgSize > 0)
-            pmi = rel15->precodingAndBeamforming.PMIdx[(int)rb/rel15->precodingAndBeamforming.prgSize];
+          if (rel15->precodingAndBeamforming.prg_size > 0)
+            pmi = rel15->precodingAndBeamforming.prgs_list[(int)rb/rel15->precodingAndBeamforming.prg_size].pm_idx;
           else
             pmi = 0;//no precoding
 
@@ -507,7 +507,25 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     }// port loop
 
     dlsch->slot_tx[slot]=0;
+
+    // TODO: handle precoding
+    // this maps the layers onto antenna ports
+    
+    // handle beamforming ID
+    // each antenna port is assigned a beam_index
+    // since PHY can only handle BF on slot basis we set the whole slot
+
+    // first check if this slot has not already been allocated to another beam
+    if (gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot]==255) {
+      for (int j=0;j<frame_parms->symbols_per_slot;j++) 
+	gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
+    }
+    else {
+      LOG_W(PHY,"beam index for PDSCH allocation already taken\n");
+    }
   }// dlsch loop
+
+  
   return 0;
 }
 

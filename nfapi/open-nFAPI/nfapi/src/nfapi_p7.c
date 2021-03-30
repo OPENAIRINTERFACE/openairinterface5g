@@ -4313,7 +4313,7 @@ static uint8_t unpack_dl_tti_request_body_value(uint8_t **ppReadPackedMsg, uint8
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)msg;
 
-	if(!(pull16(ppReadPackedMsg, &value->PDUSize, end) &&
+	if(!(pull32(ppReadPackedMsg, &value->PDUSize, end) &&
 	 	 pull16(ppReadPackedMsg, &value->PDUType, end) ))
 		  return 0;
 
