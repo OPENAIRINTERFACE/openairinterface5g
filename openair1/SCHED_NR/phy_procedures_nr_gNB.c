@@ -93,7 +93,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
   nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	
+
   if (cfg->carrier_config.num_tx_ant.value <= 4)
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   else
@@ -105,6 +105,13 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
     bch[1] = (ssb_pdu.ssb_pdu_rel15.bchPayload >> 8) & 0xff;
     bch[2] = (ssb_pdu.ssb_pdu_rel15.bchPayload >> 16) & 0xff;
     T(T_GNB_PHY_MIB, T_INT(0) /* module ID */, T_INT(frame), T_INT(slot), T_BUFFER(bch, 3));
+  }
+
+  // Beam_id is currently used only for FR2
+  if (fp->freq_range==nr_FR2){
+    LOG_D(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
+    for (int j=0;j<fp->symbols_per_slot;j++) 
+      gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
   }
 
   nr_generate_pbch(&gNB->pbch,
@@ -133,9 +140,10 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
-  // clear the transmit data array for the current subframe
+  // clear the transmit data array and beam index for the current slot
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
     memset(&gNB->common_vars.txdataF[aa][txdataF_offset],0,fp->samples_per_slot_wCP*sizeof(int32_t));
+    memset(&gNB->common_vars.beam_id[aa][slot*fp->symbols_per_slot],255,fp->symbols_per_slot*sizeof(uint8_t));
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
@@ -655,7 +663,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     }
   }
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) dump_pusch_stats(gNB);
+  if ((frame_rx&127) == 0 && slot_rx==19) {
+    dump_pusch_stats(gNB);
+    LOG_I(PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
+  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));

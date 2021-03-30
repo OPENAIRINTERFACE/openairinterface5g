@@ -292,7 +292,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
-  //PDSCH DMRS init (gNB offset = 0)
+  ue->scramblingID_pdcch = fp->Nid_cell;
+  nr_gold_pdcch(ue,fp->Nid_cell);
+
+  //PDSCH DMRS init (eNB offset = 0)
   ue->nr_gold_pdsch[0] = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   uint32_t ****pdsch_dmrs = ue->nr_gold_pdsch[0];
 
@@ -310,6 +313,12 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       }
     }
   }
+
+  // initializing the scrambling IDs for PDSCH DMRS
+  for (int i=0; i<2; i++)
+    ue->scramblingID[i]=fp->Nid_cell;
+
+  nr_gold_pdsch(ue,ue->scramblingID);
 
   // DLSCH
   for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {

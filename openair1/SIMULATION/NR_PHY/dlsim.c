@@ -832,7 +832,7 @@ int main(int argc, char **argv)
   init_nr_ue_transport(UE,0);
 
   nr_gold_pbch(UE);
-  nr_gold_pdcch(UE,0,2);
+  nr_gold_pdcch(UE,0);
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
