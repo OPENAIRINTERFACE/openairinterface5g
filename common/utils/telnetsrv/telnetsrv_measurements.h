@@ -49,6 +49,9 @@ typedef struct cpumeasurdef {
   char statname[TELNET_MAXMEASURNAME_LEN];
   time_stats_t *astatptr;
   unsigned int statemask;
+  uint8_t  num_occur1;
+  uint8_t  num_occur2;
+  uint8_t  num_occur3;
 } telnet_cpumeasurdef_t;
 
 typedef struct ltemeasurdef {

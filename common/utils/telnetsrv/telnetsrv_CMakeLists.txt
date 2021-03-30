@@ -8,7 +8,7 @@ set(TELNETSRV_SOURCE
     )
     
 add_library(telnetsrv MODULE ${TELNETSRV_SOURCE} )
-target_link_libraries(telnetsrv PRIVATE history)
+target_link_libraries(telnetsrv PRIVATE history ncurses form )
 
 foreach(TELNETLIB enb gnb 4gUE 5gUE)
     set(TELNETLIB_SRCS "")

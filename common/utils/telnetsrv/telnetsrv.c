@@ -51,6 +51,7 @@
 #include <dlfcn.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <form.h>
 #include "common/utils/load_module_shlib.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/threadPool/thread-pool.h"
@@ -62,34 +63,27 @@
 #include "telnetsrv_proccmd.h"
 static char *telnet_defstatmod[] = {"softmodem","phy","loader","measur"};
 static telnetsrv_params_t telnetparams;
-#define TELNETSRV_LISTENADDR 0
-#define TELNETSRV_LISTENPORT 1
-#define TELNETSRV_PRIORITY   2
-#define TELNETSRV_DEBUG      3
-#define TELNETSRV_LOOPC      4
-#define TELNETSRV_LOOPD      5
-#define TELNETSRV_HISFILE    6
-#define TELNETSRV_HISSIZE    7
-#define TELNETSRV_PHYBSIZE   8
-#define TELNETSRV_STATICMOD  9
-#define TELNETSRV_SHRMOD     10
+
+#define TELNETSRV_OPTNAME_STATICMOD   "staticmod"
+#define TELNETSRV_OPTNAME_SHRMOD      "shrmod"
 
 paramdef_t telnetoptions[] = {
-  /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-  /*                                            configuration parameters for telnet utility                                                                             */
-  /*   optname                     helpstr                paramflags           XXXptr                               defXXXval               type                 numelt */
-  /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-  {"listenaddr",    "<listen ip address>\n",         0,                 uptr:&telnetparams.listenaddr,        defstrval:"0.0.0.0",            TYPE_IPV4ADDR,  0 },
-  {"listenport",    "<local port>\n",                0,                 uptr:&(telnetparams.listenport),      defuintval:9090,                TYPE_UINT,      0 },
-  {"priority",      "<scheduling policy (0-99)\n",   0,                 iptr:&telnetparams.priority,          defuintval:0,                   TYPE_INT,       0 },
-  {"debug",         "<debug level>\n",               0,                 uptr:NULL,                            defuintval:0,                   TYPE_UINT,      0 },
-  {"loopcount",     "<loop command iterations>\n",   0,                 uptr:&(telnetparams.loopcount),       defuintval:10,                  TYPE_UINT,      0 },
-  {"loopdelay",     "<loop command delay (ms)>\n",   0,                 uptr:&(telnetparams.loopdelay),       defuintval:5000,                TYPE_UINT,      0 },
-  {"histfile",      "<history file name>\n",         PARAMFLAG_NOFREE,  strptr:&(telnetparams.histfile),      defstrval:"oaitelnet.history",  TYPE_STRING,    0 },
-  {"histsize",      "<history sizes>\n",             0,                 iptr:&(telnetparams.histsize),        defuintval:50,                  TYPE_INT,       0 },
-  {"phypbsize",     "<phy dump buff size (bytes)>\n",0,                 uptr:&(telnetparams.phyprntbuff_size),defuintval:65000,               TYPE_UINT,      0 },
-  {"staticmod",     "<static modules selection>\n",  0,                 strlistptr:NULL,                      defstrlistval:telnet_defstatmod,TYPE_STRINGLIST,(sizeof(telnet_defstatmod)/sizeof(char *))},
-  {"shrmod",        "<dynamic modules selection>\n", 0,                 strlistptr:NULL,                      defstrlistval:NULL,TYPE_STRINGLIST,0 }
+  /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+  /*                                            configuration parameters for telnet utility                                                                                      */
+  /*   optname                              helpstr                paramflags           XXXptr                               defXXXval               type                 numelt */
+  /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+  {"listenaddr",                   "<listen ip address>\n",         0,                 uptr:&telnetparams.listenaddr,        defstrval:"0.0.0.0",            TYPE_IPV4ADDR,  0 },
+  {"listenport",                   "<local port>\n",                0,                 uptr:&(telnetparams.listenport),      defuintval:9090,                TYPE_UINT,      0 },
+  {"listenstdin",                  "enable input from stdin\n",     PARAMFLAG_BOOL,    uptr:&(telnetparams.listenstdin),     defuintval:0,                   TYPE_UINT,      0 },
+  {"priority",                     "<scheduling policy (0-99)\n",   0,                 iptr:&telnetparams.priority,          defuintval:0,                   TYPE_INT,       0 },
+  {"debug",                        "<debug level>\n",               0,                 uptr:NULL,                            defuintval:0,                   TYPE_UINT,      0 },
+  {"loopcount",                    "<loop command iterations>\n",   0,                 uptr:&(telnetparams.loopcount),       defuintval:10,                  TYPE_UINT,      0 },
+  {"loopdelay",                    "<loop command delay (ms)>\n",   0,                 uptr:&(telnetparams.loopdelay),       defuintval:5000,                TYPE_UINT,      0 },
+  {"histfile",                     "<history file name>\n",         PARAMFLAG_NOFREE,  strptr:&(telnetparams.histfile),      defstrval:"oaitelnet.history",  TYPE_STRING,    0 },
+  {"histsize",                     "<history sizes>\n",             0,                 iptr:&(telnetparams.histsize),        defuintval:50,                  TYPE_INT,       0 },
+  {"phypbsize",                    "<phy dump buff size (bytes)>\n",0,                 uptr:&(telnetparams.phyprntbuff_size),defuintval:65000,               TYPE_UINT,      0 },
+  {TELNETSRV_OPTNAME_STATICMOD,    "<static modules selection>\n",  0,                 strlistptr:NULL,                      defstrlistval:telnet_defstatmod,TYPE_STRINGLIST,(sizeof(telnet_defstatmod)/sizeof(char *))},
+  {TELNETSRV_OPTNAME_SHRMOD,       "<dynamic modules selection>\n", 0,                 strlistptr:NULL,                      defstrlistval:NULL,TYPE_STRINGLIST,0 }
 };
 
 int get_phybsize(void) {
@@ -493,7 +487,11 @@ int process_command(char *buf) {
   
   bufbck=strdup(buf);
   rt=CMDSTATUS_NOTFOUND;
+<<<<<<< HEAD
   j = sscanf(buf,"%19s %19s %m[^\t\n]",modulename,cmd,&cmdb);
+=======
+  j = sscanf(buf,"%19s %19s %2048[^\t\n]",modulename,cmd,cmdb);
+>>>>>>> start implementing access to nrUE cpu measurments via telnet server, as ith lte enb
 
   if (telnetparams.telnetdbg > 0)
     printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
@@ -682,6 +680,117 @@ void run_telnetsrv(void) {
   return;
 }
 
+void run_telnetclt(void) {
+  int sock;
+  struct sockaddr_in name;
+  pthread_setname_np(pthread_self(), "telnetclt");
+  set_sched(pthread_self(),0,telnetparams.priority);
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+//  FIELD *field[4];
+  if (sock < 0)
+    fprintf(stderr,"[TELNETSRV] Error %s on socket call\n",strerror(errno));
+  char prompt[sizeof(TELNET_PROMPT_PREFIX)+10];
+  sprintf(prompt,"%s_%s> ",TELNET_PROMPT_PREFIX,get_softmodem_function(NULL));
+  name.sin_family = AF_INET;
+  struct in_addr addr;
+  inet_aton("127.0.0.1", &addr) ;
+  name.sin_addr.s_addr = addr.s_addr;   
+  name.sin_port = htons((unsigned short)(telnetparams.listenport));
+  if(connect(sock, (void *) &name, sizeof(name)))
+    fprintf(stderr,"[TELNETSRV] Error %s on connect call\n",strerror(errno));
+
+
+//  (void) initscr();      /* initialize the curses library */
+//  keypad(stdscr, TRUE);  /* enable keyboard mapping */
+//  (void) nonl();         /* tell curses not to do NL->CR/NL on output */
+//  (void) cbreak();       /* take input chars one at a time, no wait for \n */
+//  (void) echo();         /* echo input - in color */
+//  WINDOW *inputw = newwin(10, 132, 0, 0);
+//  int row,col;
+//  getmaxyx(stdscr,row,col);
+//  field[0] = new_field((row-2)/2, col, 0, 0, 0, 0);
+//	field[1] = new_field((row-2)/2, col, (row-2)/2, 0, 0, 0);
+//	field[2] = new_field(1, col, row-2, 0, 0, 0);
+//	field[3] = NULL;
+
+	/* Set field options */
+//	field_opts_off(field[0], O_ACTIVE);
+//	field_opts_off(field[1], O_ACTIVE);
+//	set_field_back(field[0], A_UNDERLINE); 	/* Print a line for the option 	*/
+//	field_opts_off(field[0], O_AUTOSKIP);  	/* Don't go to next field when this */
+						/* Field is filled up 		*/
+//	set_field_back(field[1], A_UNDERLINE); 
+//	field_opts_off(field[1], O_AUTOSKIP);
+
+	/* Create the form and post it */
+//	FORM  *my_form = new_form(field);
+//	post_form(my_form);
+//	refresh(); 
+  
+  
+//  echo();
+ 
+  struct timeval ts;
+  ts.tv_sec = 1; // 1 second
+  ts.tv_usec = 0;
+  while (1) {
+      // select setup
+      fd_set fds;   
+      FD_ZERO(&fds);
+      FD_SET(sock, &fds);
+      FD_SET(STDIN_FILENO , &fds);     
+      // wait for data
+      int nready = select(sock + 1, &fds, (fd_set *) 0, (fd_set *) 0, &ts);
+//      mvprintw(row-2,0,"select: %i \n",nready);
+      if (nready < 0) {
+          perror("select. Error");
+          break;                                                                                                                                   
+      }
+      else if (nready == 0) {
+          ts.tv_sec = 1; // 1 second
+          ts.tv_usec = 0;
+      }
+      else if ( FD_ISSET(sock, &fds)) {
+          int rv; 
+          char inbuf[TELNET_MAX_MSGLENGTH*2];
+          memset(inbuf,0,sizeof(inbuf)); 
+          rv = recv(sock , inbuf , sizeof(inbuf)-1 , 0);
+          if (rv  > 0) {
+				 printf("%s",inbuf);
+			  }
+          else if (rv == 0) {
+              printf("Connection closed by the remote end\n\r");
+              break;
+          }
+          else {
+              perror("recv error");
+              break;            
+          }
+      }       
+      else if (FD_ISSET(STDIN_FILENO , &fds)) {
+		char *inbuf=NULL;  
+      	size_t inlen=0; 
+        inlen = getline( &inbuf,&inlen, stdin);
+//        mvprintw(row-1,0,inbuf);
+        if ( inlen > 0 ) {
+      	  if ( send(sock, inbuf,inlen, 0) < 0) 
+              break;
+          }
+        free(inbuf);
+//        refresh();  
+      }
+  }
+/*  nocbreak();
+  unpost_form(my_form);
+  free_form(my_form);
+  free_field(field[0]);
+  free_field(field[1]); 
+  free_field(field[2]); 
+  endwin();*/
+  close(sock);
+  return;
+} /* run_telnetclt */
+
 void poll_telnetcmdq(void *qid, void *arg) {
 	notifiedFIFO_elt_t *msg = pollNotifiedFIFO((notifiedFIFO_t *)qid);
 	
@@ -720,10 +829,10 @@ void exec_moduleinit(char *modname) {
 
 int add_embeddedmodules(void) {
   int ret=0;
-
-  for(int i=0; i<telnetoptions[TELNETSRV_STATICMOD].numelt; i++) {
+  int pindex = config_paramidx_fromname(telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t), TELNETSRV_OPTNAME_STATICMOD); 
+  for(int i=0; i<telnetoptions[pindex].numelt; i++) {
     ret++;
-    exec_moduleinit(telnetoptions[TELNETSRV_STATICMOD].strlistptr[i]);
+    exec_moduleinit(telnetoptions[pindex].strlistptr[i]);
   }
 
   return ret;
@@ -733,16 +842,16 @@ int add_sharedmodules(void) {
   char initfunc[TELNET_CMD_MAXSIZE+9];
   void (*fptr)(void);
   int ret=0;
-
-  for(int i=0; i<telnetoptions[TELNETSRV_SHRMOD].numelt; i++) {
-    sprintf(initfunc,"add_%s_cmds",telnetoptions[TELNETSRV_SHRMOD].strlistptr[i]);
+  int pindex = config_paramidx_fromname(telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t), TELNETSRV_OPTNAME_SHRMOD); 
+  for(int i=0; i<telnetoptions[pindex].numelt; i++) {
+    sprintf(initfunc,"add_%s_cmds",telnetoptions[pindex].strlistptr[i]);
     fptr = dlsym(RTLD_DEFAULT,initfunc);
 
     if ( fptr != NULL) {
       fptr();
       ret++;
     } else {
-      fprintf(stderr,"[TELNETSRV] couldn't find %s for module %s \n",initfunc,telnetoptions[TELNETSRV_STATICMOD].strlistptr[i]);
+      fprintf(stderr,"[TELNETSRV] couldn't find %s for module %s \n",initfunc,telnetoptions[pindex].strlistptr[i]);
     }
   }
 
@@ -767,6 +876,12 @@ int telnetsrv_autoinit(void) {
 
   add_telnetcmd("telnet", telnet_vardef, telnet_cmdarray);
   add_embeddedmodules();
+  if ( telnetparams.listenstdin ) {
+    if(pthread_create(&telnetparams.telnetclt_pthread,NULL, (void *(*)(void *))run_telnetclt, NULL) != 0) {
+      fprintf(stderr,"[TELNETSRV] Error %s on pthread_create f() run_telnetclt \n",strerror(errno));
+    return -1;
+    }
+  }  
   return 0;
 }
 

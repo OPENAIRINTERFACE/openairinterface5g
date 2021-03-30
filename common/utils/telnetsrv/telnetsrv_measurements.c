@@ -66,9 +66,10 @@ void measurcmd_display_groups(telnet_printfunc_t prnt,telnet_measurgroupdef_t *m
 /* cpu measurements functions                         */
 void measurcmd_display_cpumeasures(telnet_printfunc_t prnt, telnet_cpumeasurdef_t  *cpumeasure, int cpumeasure_size) {
   for (int i=0; i<cpumeasure_size; i++) {
-    prnt("%02d %*s:  %15.3f us; %15d %s",i,TELNET_MAXMEASURNAME_LEN-1,(cpumeasure+i)->statname,
-         ((cpumeasure+i)->astatptr->trials!=0)?(((cpumeasure+i)->astatptr->diff)/((cpumeasure+i)->astatptr->trials))/cpufreq/1000:0,
-         (cpumeasure+i)->astatptr->trials, ((i%2)==1)?"|\n":"  | " );
+    for (int o1=0;o1<(cpumeasure+i)->num_occur1;o1++)
+      prnt("%02d %*s[%i]:  %15.3f us; %15d %s",i,TELNET_MAXMEASURNAME_LEN-1,(cpumeasure+i)->statname,o1,
+           ((cpumeasure+i+o1)->astatptr->trials!=0)?(((cpumeasure+i+o1)->astatptr->diff)/((cpumeasure+i+o1)->astatptr->trials))/cpufreq/1000:0,
+           (cpumeasure+i+o1)->astatptr->trials, ((i%2)==1)?"|\n":"  | " );
   }
 
   prnt("\n\n");
