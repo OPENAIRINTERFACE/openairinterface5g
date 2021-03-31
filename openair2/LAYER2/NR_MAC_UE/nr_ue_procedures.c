@@ -237,85 +237,15 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
 						      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-						      uint8_t time_domain_ind
-						      ){
+						      uint8_t time_domain_ind,
+						      bool use_default){
+
   int dmrs_typeA_pos = mac->scc->dmrs_TypeA_Position;
 //  uint8_t k_offset=0;
   uint8_t sliv_S=0;
   uint8_t sliv_L=0;
-  uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?12:11}, // row index 1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?7:6},   // row index 4
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?5:4},   // row index 5
-    {0,(dmrs_typeA_pos == 0)?9:10,(dmrs_typeA_pos == 0)?4:4},   // row index 6
-    {0,(dmrs_typeA_pos == 0)?4:6, (dmrs_typeA_pos == 0)?4:4},   // row index 7
-    {0,5,7},  // row index 8
-    {0,5,2},  // row index 9
-    {0,9,2},  // row index 10
-    {0,12,2}, // row index 11
-    {0,1,13}, // row index 12
-    {0,1,6},  // row index 13
-    {0,2,4},  // row index 14
-    {0,4,7},  // row index 15
-    {0,8,4}   // row index 16
-  };
-  /*uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?6:5},   // row index 1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?7:6},   // row index 4
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?5:4},   // row index 5
-    {0,(dmrs_typeA_pos == 0)?6:8, (dmrs_typeA_pos == 0)?4:2},   // row index 6
-    {0,(dmrs_typeA_pos == 0)?4:6, (dmrs_typeA_pos == 0)?4:4},   // row index 7
-    {0,5,6},  // row index 8
-    {0,5,2},  // row index 9
-    {0,9,2},  // row index 10
-    {0,10,2}, // row index 11
-    {0,1,11}, // row index 12
-    {0,1,6},  // row index 13
-    {0,2,4},  // row index 14
-    {0,4,6},  // row index 15
-    {0,8,4}   // row index 16
-    };*/
-  /*uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {1,2,2},  // row index 6
-    {1,4,2},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
-    {1,2,4},  // row index 15
-    {0,0,0}   // row index 16
-    };*/
-  /*uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {0,0,0},  // row index 6
-    {0,0,0},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
-    {0,0,6},  // row index 15
-    {0,2,6}   // row index 16
-    };*/
   uint8_t mu_pusch = 1;
+
   // definition table j Table 6.1.2.1.1-4
   uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
   uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
@@ -364,7 +294,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
     else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
       pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    if (pdsch_TimeDomainAllocationList) {
+    if (pdsch_TimeDomainAllocationList && use_default==false) {
 
       if (time_domain_ind >= pdsch_TimeDomainAllocationList->list.count) {
         LOG_E(MAC, "time_domain_ind %d >= pdsch->TimeDomainAllocationList->list.count %d\n",
@@ -387,8 +317,15 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     else {// Default configuration from tables
 //      k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
-      sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][1];
-      sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][2];
+
+      if(dmrs_typeA_pos == 0) {
+        sliv_S = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[time_domain_ind][1];
+        sliv_L = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[time_domain_ind][2];
+      } else {
+        sliv_S = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[time_domain_ind][1];
+        sliv_L = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[time_domain_ind][2];
+      }
+
       // k_offset = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -413,7 +350,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
     }
     	
-    if (pusch_TimeDomainAllocationList) {
+    if (pusch_TimeDomainAllocationList && use_default==false) {
       if (time_domain_ind >= pusch_TimeDomainAllocationList->list.count) {
         LOG_E(MAC, "time_domain_ind %d >= pusch->TimeDomainAllocationList->list.count %d\n",
               time_domain_ind, pusch_TimeDomainAllocationList->list.count);
@@ -430,8 +367,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     else {
 //      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
-      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][1];
-      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][2];
+      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
+      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
       // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -678,7 +615,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val,rnti==SI_RNTI) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
@@ -845,7 +782,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val,false) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }

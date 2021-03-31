@@ -316,11 +316,15 @@ void schedule_control_sib1(module_id_t module_id,
   const uint16_t bwpSize = gNB_mac->type0_PDCCH_CSS_config.num_rbs;
   int rbStart = gNB_mac->type0_PDCCH_CSS_config.cset_start_rb;
 
-  // Calculate number of symbols
-  struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-  const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
-  int startSymbolIndex, nrOfSymbols;
-  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  int startSymbolIndex = 0;
+  int nrOfSymbols = 0;
+  if(gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position == 0) {
+    startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[gNB_mac->sched_ctrlCommon->time_domain_allocation][1];
+    nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[gNB_mac->sched_ctrlCommon->time_domain_allocation][2];
+  } else {
+    startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[gNB_mac->sched_ctrlCommon->time_domain_allocation][1];
+    nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[gNB_mac->sched_ctrlCommon->time_domain_allocation][2];
+  }
 
   if (nrOfSymbols == 2) {
     gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData = 1;
@@ -345,7 +349,6 @@ void schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
 
-  LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
   LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
   LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
   LOG_D(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
@@ -526,11 +529,15 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     // Configure sched_ctrlCommon for SIB1
     schedule_control_sib1(module_idP, CC_id, time_domain_allocation, mcsTableIdx, mcs, candidate_idx, sib1_sdu_length);
 
-    // Calculate number of symbols
-    int startSymbolIndex, nrOfSymbols;
-    struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    const int startSymbolAndLength = tdaList->list.array[gNB_mac->sched_ctrlCommon->time_domain_allocation]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+    int startSymbolIndex = 0;
+    int nrOfSymbols = 0;
+    if(gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position == 0) {
+      startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[gNB_mac->sched_ctrlCommon->time_domain_allocation][1];
+      nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[gNB_mac->sched_ctrlCommon->time_domain_allocation][2];
+    } else {
+      startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[gNB_mac->sched_ctrlCommon->time_domain_allocation][1];
+      nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[gNB_mac->sched_ctrlCommon->time_domain_allocation][2];
+    }
 
     // Calculate number of PRB_DMRS
     uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
