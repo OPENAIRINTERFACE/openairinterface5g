@@ -77,25 +77,28 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
   int stroff=0;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     stroff = sprintf(output,"UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
-    LOG_I(NR_MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
-      UE_id,
-      UE_info->rnti[UE_id],
-      num++,
-      UE_info->num_UEs,
-      UE_info->UE_sched_ctrl[UE_id].ph,
-      UE_info->UE_sched_ctrl[UE_id].pcmax);
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+    const NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
+    LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
+          UE_id,
+          UE_info->rnti[UE_id],
+          num++,
+          UE_info->num_UEs,
+          sched_ctrl->ph,
+          sched_ctrl->pcmax,
+          avg_rsrp,
+          stats->num_rsrp_meas);
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, BLER %.5f MCS %d\n",
           UE_id,
           stats->dlsch_rounds[0], stats->dlsch_rounds[1],
           stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
-          avg_rsrp, stats->num_rsrp_meas);
-    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
-      UE_id,
-      stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-      stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
-      avg_rsrp, stats->num_rsrp_meas);
+          sched_ctrl->dl_bler_stats.bler, sched_ctrl->dl_bler_stats.mcs);
+    LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, BLER %.5f MCS %d\n",
+          UE_id,
+          stats->dlsch_rounds[0], stats->dlsch_rounds[1],
+          stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
+          sched_ctrl->dl_bler_stats.bler, sched_ctrl->dl_bler_stats.mcs);
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
     stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);

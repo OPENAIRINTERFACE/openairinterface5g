@@ -697,6 +697,10 @@ void RCconfig_nr_macrlc() {
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       } 
       RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
+      RC.nrmac[j]->dl_bler_target_upper = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_BLER_TARGET_UPPER_IDX].dblptr);
+      RC.nrmac[j]->dl_bler_target_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_BLER_TARGET_LOWER_IDX].dblptr);
+      RC.nrmac[j]->dl_rd2_bler_threshold = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_RD2_BLER_THRESHOLD_IDX].dblptr);
+      RC.nrmac[j]->dl_max_mcs = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_MAX_MCS_IDX].u8ptr);
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
     LOG_E(PHY,"No %s configuration found\n", CONFIG_STRING_MACRLC_LIST);
