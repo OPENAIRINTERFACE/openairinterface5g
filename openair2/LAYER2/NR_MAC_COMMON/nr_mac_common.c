@@ -3028,18 +3028,20 @@ int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type
 int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol) {
 
   int l0;
-  int ld = NrOfSymbols;
+  int ld = NrOfSymbols+startSymbol;
   if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
   else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
   else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
   if (pdsch_Config == NULL) { // Initial BWP
-    return(1<<l0);
+    if (ld <= 7) return(1<<l0);
+    else if (ld <= 9) 	  return(1<<l0 | 1<<7);
+    else if (ld <= 12)   return(1<<l0 | 1<<6 | 1<<9);
+    else if (ld <= 14)   return(1<<l0 | 1<<7 | 1<<11);
   }
   else {
     if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
 	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
       // Relative to start of slot
-      ld += startSymbol;
       NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
       AssertFatal(NrOfSymbols>1 && NrOfSymbols < 15,"Illegal NrOfSymbols %d\n",NrOfSymbols);
       int pos2=0;
