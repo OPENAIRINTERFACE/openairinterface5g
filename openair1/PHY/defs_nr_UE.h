@@ -142,6 +142,7 @@ typedef struct {
   uint32_t rsrp[7];
   float rsrp_filtered[7]; // after layer 3 filtering
   float rsrq_filtered[7];
+  short rsrp_dBm[7];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];
