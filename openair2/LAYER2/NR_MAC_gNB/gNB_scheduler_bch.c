@@ -293,7 +293,6 @@ void schedule_control_sib1(module_id_t module_id,
     fill_default_coresetZero(gNB_mac->sched_ctrlCommon->coreset,servingcellconfigcommon);
     fill_default_initialDownlinkBWP(gNB_mac->sched_ctrlCommon->active_bwp,servingcellconfigcommon);
   }
-  gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
 
   gNB_mac->sched_ctrlCommon->time_domain_allocation = time_domain_allocation;
   gNB_mac->sched_ctrlCommon->mcsTableIdx = mcsTableIdx;
@@ -334,7 +333,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   // Calculate number of PRB_DMRS
   uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
-  uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex);
+  uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex);
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
   int rbSize = 0;
@@ -421,7 +420,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->nrOfLayers = 1;
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 1;
-  pdsch_pdu_rel15->dmrsConfigType = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+  pdsch_pdu_rel15->dmrsConfigType = 0;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
   pdsch_pdu_rel15->numDmrsCdmGrpsNoData = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData;
@@ -436,7 +435,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
-  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols, pdsch_pdu_rel15->StartSymbolIndex);
+  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols, pdsch_pdu_rel15->StartSymbolIndex);
 
   LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
@@ -541,7 +540,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
     // Calculate number of PRB_DMRS
     uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
-    uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex);
+    uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex);
     uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
     const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->mcs, gNB_mac->sched_ctrlCommon->mcsTableIdx),
