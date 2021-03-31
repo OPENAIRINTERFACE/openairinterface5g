@@ -499,7 +499,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->rnti,
             i);
 
-      return;
     }
   }
 }
