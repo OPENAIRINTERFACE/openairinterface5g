@@ -225,6 +225,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 	  printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
 		 ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
+
             dci_idx++;
           }
 

@@ -587,15 +587,17 @@ void RCconfig_NR_L1(void) {
         RC.nb_nr_CC = (int *)malloc((1+RC.nb_nr_inst)*sizeof(int));
         RC.nb_nr_CC[0]=1;
 
-        RC.nb_nr_inst =1; // DJP - feptx_prec uses num_gNB but phy_init_RU uses nb_nr_inst
-
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_inst=1 this is because phy_init_RU() uses that to index and not RC.num_gNB - why the 2 similar variables?\n", __FUNCTION__);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_CC[0]=%d for init_gNB_afterRU()\n", __FUNCTION__, RC.nb_nr_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_macrlc_inst:%d because used by mac_top_init_gNB()\n", __FUNCTION__, RC.nb_nr_macrlc_inst);
 
         mac_top_init_gNB();
 
-        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
+        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr,
+                               RC.gNB[j]->eth_params_n.remote_portc,
+                               RC.gNB[j]->eth_params_n.my_addr,
+                               RC.gNB[j]->eth_params_n.my_portd,
+                               RC.gNB[j]->eth_params_n.remote_portd);
       }else { // other midhaul
       } 
     }// for (j = 0; j < RC.nb_nr_L1_inst; j++)
@@ -1365,7 +1367,7 @@ void NRRCConfig(void) {
 
 	// Get num MACRLC instances
   config_getlist( &MACRLCParamList,NULL,0, NULL);
-  RC.nb_macrlc_inst  = MACRLCParamList.numelt;
+  RC.nb_nr_macrlc_inst  = MACRLCParamList.numelt;
   // Get num L1 instances
   config_getlist( &L1ParamList,NULL,0, NULL);
   RC.nb_nr_L1_inst = L1ParamList.numelt;

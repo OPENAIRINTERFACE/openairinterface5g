@@ -85,8 +85,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
-#include "f1ap_cu_task.h"
-#include "f1ap_du_task.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
@@ -413,24 +411,6 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  if(gnb_nb > 0) {
-    if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-      printf("####### node is CU \n");
-      if (itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL) < 0) {
-        LOG_E(F1AP, "Create task for F1AP CU failed\n");
-        return -1;
-      }
-    }
-
-    if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-      printf("####### node is DU \n");
-      if (itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL) < 0) {
-        LOG_E(F1AP, "Create task for F1AP DU failed\n");
-        return -1;
-      }
-    }
-  }
-
   return 0;
 }
 
@@ -694,7 +674,6 @@ void init_pdcp(void) {
 int main( int argc, char **argv )
 {
   int ru_id, CC_id = 0;
-  int node_type = ngran_gNB;
 
   start_background_system();
 
@@ -763,27 +742,19 @@ if(!IS_SOFTMODEM_NOS1)
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  if (RC.nb_nr_inst > 0)  {
-    nr_read_config_and_init();
-  } else {
-    printf("No ITTI, Initializing L1\n");
-    RCconfig_NR_L1();
-  }
 
-  if (RC.nb_nr_inst > 0)  {
+  if(IS_SOFTMODEM_NOS1)
     init_pdcp();
+
+  if (RC.nb_nr_L1_inst > 0)
+    RCconfig_NR_L1();
 
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
 
-    for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
-      MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-      NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
-      LOG_I(GNB_APP, "Sending configuration message to NR_RRC task\n");
-      itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-    }
-    node_type = RC.nrrrc[0]->node_type;
-  }
+
+
+  
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
   /*
@@ -864,7 +835,7 @@ if(!IS_SOFTMODEM_NOS1)
     wait_nfapi_init("main?");
   }
 
-  if (NODE_IS_DU(node_type) || (node_type == ngran_gNB)) {
+  if (RC.nb_nr_L1_inst > 0) {
     printf("wait RUs\n");
     wait_RUs();
     printf("ALL RUs READY!\n");
@@ -941,7 +912,7 @@ if(!IS_SOFTMODEM_NOS1)
   // cleanup
   stop_gNB(NB_gNB_INST);
 
-  if (NODE_IS_DU(node_type) || (node_type == ngran_gNB)) {
+  if (RC.nb_nr_L1_inst > 0) {
     stop_RU(NB_RU);
   }
 

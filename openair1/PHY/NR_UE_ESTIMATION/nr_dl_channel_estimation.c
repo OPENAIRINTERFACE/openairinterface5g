@@ -512,6 +512,13 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   fr = filt16a_r1;
 
 
+  // checking if re-initialization of scrambling IDs is needed (should be done here but scrambling ID for PDCCH is not taken from RRC)
+/*  if (( != ue->scramblingID_pdcch){
+    ue->scramblingID_pdcch=;
+    nr_gold_pdsch(ue,ue->scramblingID_pdcch);
+  }*/
+
+
   // generate pilot
   int pilot[nb_rb_coreset * 3] __attribute__((aligned(16))); 
   nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns][symbol], &pilot[0],2000,nb_rb_coreset);
@@ -694,6 +701,14 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
   uint8_t config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   int8_t delta = get_delta(p, config_type);
+
+  // checking if re-initialization of scrambling IDs is needed
+  if ((ue->dmrs_DownlinkConfig.scramblingID0 != ue->scramblingID[0]) || (ue->dmrs_DownlinkConfig.scramblingID1 != ue->scramblingID[1])){
+    ue->scramblingID[0]=ue->dmrs_DownlinkConfig.scramblingID0;
+    ue->scramblingID[1]=ue->dmrs_DownlinkConfig.scramblingID1;
+    nr_gold_pdsch(ue,ue->scramblingID);
+  }
+
   nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol][0], &pilot[0],1000+p,0,nb_rb_pdsch+rb_offset);
 
   if (config_type == pdsch_dmrs_type1){

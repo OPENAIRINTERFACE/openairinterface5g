@@ -108,8 +108,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
           harq->d[r] = NULL;
         }
       }
-      free16(harq, sizeof(NR_DL_gNB_HARQ_t));
-      harq = NULL;
     }
   }
 
