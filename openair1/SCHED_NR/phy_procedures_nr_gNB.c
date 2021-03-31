@@ -446,7 +446,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 	      (pucch->frame == frame_rx) &&
 	      (pucch->slot == slot_rx) ) {
             gNB->ulmask_symb = symbol;
-            nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+            nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
             if ((symbol>=pucch_pdu->start_symbol_index) &&
                 (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
               for (rb=0; rb<pucch_pdu->prb_size; rb++) {
