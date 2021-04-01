@@ -73,6 +73,8 @@ void compute_nr_prach_seq(uint8_t short_sequence,
                           uint8_t rootSequenceIndex,
                           uint32_t X_u[64][839]);
 
+void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map);
+
 void init_nr_prach_tables(int N_ZC);
 
 /**@}*/

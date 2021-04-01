@@ -54,7 +54,7 @@ extern RAN_CONTEXT_t RC;
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
 
-void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
@@ -244,6 +244,9 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
+  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
+  cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
+  cfg->num_tlv++;
 
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -380,6 +383,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
+                  ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
 		  scc);
@@ -393,17 +397,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         printf("Waiting for PHY_config_req\n");
       }
     }
-  
+
+    RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
     RC.nrmac[Mod_idP]->pusch_target_snrx10 = pusch_tgt_snrx10;
     RC.nrmac[Mod_idP]->pucch_target_snrx10 = pucch_tgt_snrx10;
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
     phycfg.CC_id  = 0;
     phycfg.cfg    = &RC.nrmac[Mod_idP]->config[0];
-
-    phycfg.cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
-    phycfg.cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
-    phycfg.cfg->num_tlv++;
 
     if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
 
