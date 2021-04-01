@@ -1683,8 +1683,7 @@ channel_desc_t *find_channel_desc_fromname( char *modelname ) {
 
 void free_channel_desc_scm(channel_desc_t *ch) {
   // Must be made cleanly, a lot of leaks...
-  defined_channels[ch->chan_idx]=NULL;
-
+  if (max_chan != 0) defined_channels[ch->chan_idx]=NULL;
   if(ch->free_flags&CHANMODEL_FREE_AMPS)
     free(ch->amps);
 
