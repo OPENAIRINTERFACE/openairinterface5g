@@ -967,7 +967,8 @@ if(!IS_SOFTMODEM_NOS1)
    * threads have been stopped (they partially use the same memory) */
   for (int inst = 0; inst < NB_gNB_INST; inst++) {
       //free_transport(RC.gNB[inst]);
-      phy_free_nr_gNB(RC.gNB[inst]);
+      if (RC.gNB[inst])
+          phy_free_nr_gNB(RC.gNB[inst]);
   }
 
   for (int inst = 0; inst < NB_RU; inst++) {
