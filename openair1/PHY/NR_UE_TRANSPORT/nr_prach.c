@@ -130,6 +130,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
     #endif
 
     not_found = 1;
+    nr_fill_du(N_ZC,prach_root_sequence_map);
     preamble_index0 = preamble_index;
     // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
     // preamble index and find the corresponding cyclic shift
