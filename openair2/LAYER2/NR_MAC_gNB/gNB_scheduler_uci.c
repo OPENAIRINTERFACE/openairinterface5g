@@ -1012,12 +1012,6 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_01->ul_cqi,
-                                30);
-  sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
-
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
@@ -1036,8 +1030,17 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   }
 
   // check scheduling request result, confidence_level == 0 is good
-  if (uci_01->pduBitmap & 0x1) {
-    sched_ctrl->SR |= uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0;
+  if (uci_01->pduBitmap & 0x1 && uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0 && uci_01->ul_cqi >= 148) {
+    // SR detected with SNR >= 10dB
+    sched_ctrl->SR |= true;
+    LOG_D(MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
+  }
+
+  // tpc (power control) only if we received AckNack or positive SR. For a
+  // negative SR, the UE won't have sent anything, and the SNR is not valid
+  if (((uci_01->pduBitmap >> 1) & 0x1) || sched_ctrl->SR) {
+    sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
+    sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
   }
 }
 
