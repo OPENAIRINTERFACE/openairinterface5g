@@ -444,19 +444,19 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
   *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
 
   // we can't schedule msg2 before sl_ahead since prach
   int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
   if ((eff_slot-rach_slot)<=sl_ahead) {
     *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+    *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
   }
   if (FR==nr_FR2) {
     int num_tdd_period = *msg2_slot/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
       *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-      *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+      *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
       num_tdd_period = *msg2_slot/tdd_period_slot;
     }
     if(tdd_beam_association[num_tdd_period] == -1)
@@ -692,7 +692,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
     if (nr_slots_per_frame[mu]>temp_slot)
       ra->Msg3_frame = current_frame;
     else
-      ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
+      ra->Msg3_frame = (current_frame + (temp_slot/nr_slots_per_frame[mu]))%1024;
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
