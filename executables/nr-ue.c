@@ -700,7 +700,7 @@ void *UE_thread(void *arg) {
     // use previous timing_advance value to compute writeTimestamp
     writeTimestamp = timestamp+
       UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX
-      - RX_NB_TH) - firstSymSamp - openair0_cfg[0].tx_sample_advance -
+      - NR_RX_NB_TH) - firstSymSamp - openair0_cfg[0].tx_sample_advance -
       UE->N_TA_offset - timing_advance;
 
     // but use current UE->timing_advance value to compute writeBlockSize
