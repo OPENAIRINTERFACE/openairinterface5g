@@ -391,6 +391,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if ((xrtmag_dB<(11+dB_fixed(no_corr))) || (dB_fixed(av_corr)<(13+gNB->measurements.n0_power_tot_dB))) //TODO  these are temporary threshold based on measurments with the phone
       no_conf=true;
   }
+  gNB->bad_pucch += no_conf;
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0

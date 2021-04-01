@@ -250,13 +250,14 @@ void rx_func(void *param) {
     L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
 
     //apply the rx signal rotation here
-    apply_nr_rotation_ul(&gNB->frame_parms,
-			 gNB->common_vars.rxdataF[0],
-			 slot_rx,
-			 0,
-			 gNB->frame_parms.Ncp==EXTENDED?12:14,
-			 gNB->frame_parms.ofdm_symbol_size);
-    
+    for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+      apply_nr_rotation_ul(&gNB->frame_parms,
+                           gNB->common_vars.rxdataF[aa],
+                           slot_rx,
+                           0,
+                           gNB->frame_parms.Ncp==EXTENDED?12:14,
+                           gNB->frame_parms.ofdm_symbol_size);
+    }
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 
@@ -468,17 +469,16 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 
   if (RC.gNB == NULL) {
     RC.gNB = (PHY_VARS_gNB **) malloc((1+RC.nb_nr_L1_inst)*sizeof(PHY_VARS_gNB *));
-    for (inst=0; inst<RC.nb_nr_L1_inst; inst++) {
-      RC.gNB[inst] = (PHY_VARS_gNB *) malloc(sizeof(PHY_VARS_gNB));
-      memset((void*)RC.gNB[inst],0,sizeof(PHY_VARS_gNB));
-    }
+    LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
   }
-
-  LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
 
   for (inst=0; inst<RC.nb_nr_L1_inst; inst++) {
 
-    LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
+    if (RC.gNB[inst] == NULL) {
+      RC.gNB[inst] = (PHY_VARS_gNB *) malloc(sizeof(PHY_VARS_gNB));
+      memset((void*)RC.gNB[inst],0,sizeof(PHY_VARS_gNB));
+      LOG_I(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
+    }
     gNB                     = RC.gNB[inst];
     gNB->abstraction_flag   = 0;
     gNB->single_thread_flag = single_thread_flag;
@@ -508,7 +508,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
   }
   
 
-  LOG_I(PHY,"[nr-softmodem.c] gNB structure allocated\n");
+  LOG_I(PHY,"[nr-gnb.c] gNB structure allocated\n");
 }
 
 

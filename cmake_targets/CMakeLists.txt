@@ -832,7 +832,7 @@ add_library(F1AP
 
 # Hardware dependant options
 ###################################
-add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
+add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
@@ -925,6 +925,9 @@ set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidd
 
 # Benetel 4G library
 ######################################################################
+
+
+include_directories ("/usr/include/dpdk")
 
 set(HWLIB_BENETEL_4G_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/benetel.c
@@ -1970,6 +1973,7 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_sdu.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_timer_thread.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
   )
 
@@ -3320,7 +3324,7 @@ add_executable(nr_dlsim
   )   
 target_link_libraries(nr_dlsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 
@@ -3339,7 +3343,7 @@ add_executable(nr_prachsim
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl)
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
@@ -3372,7 +3376,7 @@ add_executable(nr_ulsim
   )
 target_link_libraries(nr_ulsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)
 

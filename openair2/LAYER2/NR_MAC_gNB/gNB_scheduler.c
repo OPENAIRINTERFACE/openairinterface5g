@@ -301,6 +301,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
+  if (slot>64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
   return (bitmap >> slot) & 0x01;
 }
 
@@ -357,6 +358,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   }
 
+  if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
+    // re-initialization of tdd_beam_association at beginning of frame (only for FR2)
+    for (int i=0; i<nb_periods_per_frame; i++)
+      gNB->tdd_beam_association[i] = -1;
+  }
+
   int num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
 
   const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
@@ -410,7 +417,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   // This schedules MIB
-  schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
+  schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing],nb_periods_per_frame);
 
   // This schedules SIB1
   if ( get_softmodem_params()->sa == 1 )

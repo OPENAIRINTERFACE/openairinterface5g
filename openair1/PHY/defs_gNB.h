@@ -145,8 +145,10 @@ typedef struct {
 typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
-  /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
+  /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
   int32_t *txdataF[NR_MAX_NB_LAYERS];
+  /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
+  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
   /// Modulated symbols buffer
   int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
@@ -392,8 +394,12 @@ typedef struct {
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
-  /// - third index: sample [0..]
+  /// - third index: sample [0..samples_per_frame_woCP]
   int32_t **txdataF;
+  /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
+  /// - first index: antenna port
+  /// - second index: beam_id [0.. symbols_per_frame[
+  uint8_t **beam_id;  
   int32_t *debugBuff;
   int32_t debugBuff_sample_offset;
 } NR_gNB_COMMON;
@@ -799,6 +805,7 @@ typedef struct PHY_VARS_gNB_s {
   int prach_energy_counter;
 
   int pucch0_thres;
+  uint64_t bad_pucch;
   /*
   time_stats_t phy_proc;
   */
