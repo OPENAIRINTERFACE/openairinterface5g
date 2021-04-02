@@ -33,6 +33,7 @@
 #ifndef COMMON_LIB_H
 #define COMMON_LIB_H
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <openair1/PHY/TOOLS/tools_defs.h>
 #include "record_player.h"

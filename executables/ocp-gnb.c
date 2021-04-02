@@ -61,8 +61,6 @@ uint32_t do_forms=0;
 unsigned int mmapped_dma=0;
 int8_t threequarter_fs=0;
 
-uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 20;
 int chain_offset=0;
 uint16_t sl_ahead=6;
 uint16_t sf_ahead=6;
@@ -122,7 +120,6 @@ int restart_L1L2(module_id_t gnb_id) {
 }
 
 static int wait_for_sync = 0;
-static char *itti_dump_file = NULL;
 static double snr_dB=20;
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};

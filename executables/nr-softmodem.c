@@ -114,7 +114,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;

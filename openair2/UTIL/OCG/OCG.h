@@ -667,7 +667,6 @@ typedef struct {
   unsigned char omv_enabled; // openair mobility visulizer
   unsigned char opp_enabled; // openair performance profiler
   unsigned char oeh_enabled; // openair event handler, with CLI this could provide a remote event management
-  char *itti_dump_file;
   unsigned char vcd_enabled;
   char *vcd_file;
   unsigned char eMBMS_active_state;

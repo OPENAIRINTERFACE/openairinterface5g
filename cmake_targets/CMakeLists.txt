@@ -2797,6 +2797,7 @@ add_library(rfsimulator MODULE
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/apply_channelmod.c
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/new_channel_sim.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
 target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})
 
@@ -3180,6 +3181,17 @@ target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
   pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES} ${T_LIB}
   )
+
+add_executable(rftest 
+  ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_test.c
+  ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
+)
+target_link_libraries(rftest minimal_lib PHY_NR_COMMON pthread dl m forms ${T_LIB} )
 
 add_executable(polartest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
