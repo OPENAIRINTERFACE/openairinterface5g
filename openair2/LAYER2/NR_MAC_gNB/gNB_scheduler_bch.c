@@ -211,6 +211,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         scs,
                                                         FR1,
                                                         i_ssb,
+                                                        ssb_frame_periodicity,
                                                         offset_pointa);
                   gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
@@ -237,6 +238,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         scs,
                                                         FR1,
                                                         i_ssb,
+                                                        ssb_frame_periodicity,
                                                         offset_pointa);
                   gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
@@ -263,6 +265,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
                                                         scs,
                                                         FR2,
                                                         i_ssb,
+                                                        ssb_frame_periodicity,
                                                         offset_pointa);
                   gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
@@ -315,8 +318,8 @@ void schedule_control_sib1(module_id_t module_id,
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
     gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
-    fill_default_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space);
-    fill_default_coresetZero(gNB_mac->sched_ctrlCommon->coreset,servingcellconfigcommon);
+    fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config);
+    fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
     fill_default_initialDownlinkBWP(gNB_mac->sched_ctrlCommon->active_bwp,servingcellconfigcommon);
   }
   gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;

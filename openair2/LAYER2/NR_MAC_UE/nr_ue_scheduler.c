@@ -771,8 +771,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 // 3. TODO: Perform PHR procedures
 NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info){
 
-  uint32_t search_space_mask = 0;
-
   if (dl_info){
 
     module_id_t mod_id    = dl_info->module_id;
@@ -782,65 +780,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     slot_t rx_slot        = dl_info->slot;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
-    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     nr_scheduled_response_t scheduled_response;
     nr_dcireq_t dcireq;
 
-    // check type0 from 38.213 13 if we have no CellGroupConfig
-    // TODO: implementation to be completed
-    if (mac->scg == NULL) {
-
-      if(dl_info->ssb_index != -1){
-
-        if(mac->type0_pdcch_ss_mux_pattern == 1){
-          //  38.213 chapter 13
-          if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_0) && !(rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-          if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_1) && (rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-        }
-        if(mac->type0_pdcch_ss_mux_pattern == 2){
-          //  38.213 Table 13-13, 13-14
-          if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-        }
-        if(mac->type0_pdcch_ss_mux_pattern == 3){
-          //  38.213 Table 13-15
-          if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-        }
-      } // ssb_index != -1
-
-      // Type0 PDCCH search space
-      if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
-        mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
-
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
-        dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-
-        /*
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;        //      to be set
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;       //      to be set
-
-        LOG_I(MAC,"nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);
-        */
-        dl_config->number_pdus = dl_config->number_pdus + 1;
-
-        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
-        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
-          mac->if_module->scheduled_response(&scheduled_response);
-      }
-    } else { // we have an scg
+    if(mac->scg != NULL){ // we have an scg
 
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
@@ -854,20 +797,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         mac->if_module->scheduled_response(&scheduled_response);
       }
-
-      /*
-        if(search_space_mask & type0a_pdcch){
-        }
-        
-        if(search_space_mask & type1_pdcch){
-        }
-
-        if(search_space_mask & type2_pdcch){
-        }
-
-        if(search_space_mask & type3_pdcch){
-        }
-      */
     }
   } else if (ul_info) {
 
@@ -1823,19 +1752,18 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                                         scs_ssb,
                                         frequency_range,
                                         ssb_index,
+                                        1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                         ssb_offset_point_a);
 
-    mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
-    mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
-    mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
+  fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
+  fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
 
 }
 
 
-uint8_t
-nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-           sub_frame_t subframe, uint8_t eNB_index,
-           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
+uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+                      sub_frame_t subframe, uint8_t eNB_index,
+                      uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
   uint8_t total_rlc_pdu_header_len = 0;
   int16_t buflen_remain = 0;
   uint8_t lcid = 0;

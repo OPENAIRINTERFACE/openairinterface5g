@@ -1075,6 +1075,79 @@ void find_aggregation_candidates(uint8_t *aggregation_level,
     *aggregation_level = 16;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
   }
+  // n8 does not correspont to a value of 8 but 7, the following corrects this
+  if(*nr_of_candidates == 7)
+    *nr_of_candidates = 8;
+}
+
+
+void set_monitoring_periodicity_offset(NR_SearchSpace_t *ss,
+                                       uint16_t period,
+                                       uint16_t offset) {
+
+  switch(period) {
+    case 1:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+      break;
+    case 2:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl2 = offset;
+      break;
+    case 4:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl4 = offset;
+      break;
+    case 5:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl5 = offset;
+      break;
+    case 8:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl8 = offset;
+      break;
+    case 10:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl10 = offset;
+      break;
+    case 16:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl16 = offset;
+      break;
+    case 20:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl20 = offset;
+      break;
+    case 40:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl40 = offset;
+      break;
+    case 80:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl80 = offset;
+      break;
+    case 160:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl160 = offset;
+      break;
+    case 320:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl320 = offset;
+      break;
+    case 640:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl640 = offset;
+      break;
+    case 1280:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl1280 = offset;
+      break;
+    case 2560:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl2560 = offset;      break;
+  default:
+    AssertFatal(1==0,"Invalid monitoring slot periodicity value\n");
+    break;
+  }
 }
 
 
@@ -3043,6 +3116,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            NR_SubcarrierSpacing_t scs_ssb,
                                            frequency_range_t frequency_range,
                                            uint32_t ssb_index,
+                                           uint32_t ssb_period,
                                            uint32_t ssb_offset_point_a) {
 
   NR_SubcarrierSpacing_t scs_pdcch;
@@ -3255,6 +3329,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }
     //  38.213 chapter 13: over two consecutive slots
     type0_PDCCH_CSS_config->search_space_duration = 2;
+    // two frames
+    type0_PDCCH_CSS_config->search_space_frame_period = nr_slots_per_frame[scs_ssb]<<1;
   }
 
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR2){
@@ -3271,6 +3347,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }
     //  38.213 chapter 13: over two consecutive slots
     type0_PDCCH_CSS_config->search_space_duration = 2;
+    // two frames
+    type0_PDCCH_CSS_config->search_space_frame_period = nr_slots_per_frame[scs_ssb]<<1;
   }
 
   /// MUX PATTERN 2
@@ -3336,6 +3414,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }else{ ; }
     //  38.213 chapter 13: over one slot
     type0_PDCCH_CSS_config->search_space_duration = 1;
+    // SSB periodicity in slots
+    type0_PDCCH_CSS_config->search_space_frame_period = ssb_period*nr_slots_per_frame[scs_ssb];
   }
 
   /// MUX PATTERN 3
@@ -3364,6 +3444,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }else{ ; }
     //  38.213 chapter 13: over one slot
     type0_PDCCH_CSS_config->search_space_duration = 1;
+    // SSB periodicity in slots
+    type0_PDCCH_CSS_config->search_space_frame_period = ssb_period*nr_slots_per_frame[scs_ssb];
   }
 
   AssertFatal(type0_PDCCH_CSS_config->number_of_search_space_per_slot!=UINT_MAX,"");
@@ -3386,6 +3468,101 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
 }
+
+
+void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
+
+  int32_t duration;
+  coreset0->controlResourceSetId = 0;
+
+  AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
+
+  duration = type0_PDCCH_CSS_config->num_symbols;
+
+  // Not to be used for ControlResourceSetZero
+  coreset0->frequencyDomainResources.buf = NULL;
+
+  coreset0->duration = duration;
+  coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
+  coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved));
+  coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+  coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = NULL; // -> use cell_id
+  coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+
+  coreset0->tci_StatesPDCCH_ToAddList = NULL;
+  coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
+  coreset0->tci_PresentInDCI = NULL;
+  coreset0->pdcch_DMRS_ScramblingID = NULL;
+
+}
+
+void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
+
+  if(ss0->controlResourceSetId == NULL) ss0->controlResourceSetId=calloc(1,sizeof(*ss0->controlResourceSetId));
+  if(ss0->monitoringSymbolsWithinSlot == NULL) ss0->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss0->monitoringSymbolsWithinSlot));
+  if(ss0->monitoringSymbolsWithinSlot->buf == NULL) ss0->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  if(ss0->nrofCandidates == NULL) ss0->nrofCandidates = calloc(1,sizeof(*ss0->nrofCandidates));
+  if(ss0->searchSpaceType == NULL) ss0->searchSpaceType = calloc(1,sizeof(*ss0->searchSpaceType));
+  if(ss0->searchSpaceType->choice.common == NULL) ss0->searchSpaceType->choice.common=calloc(1,sizeof(*ss0->searchSpaceType->choice.common));
+  if(ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL)
+    ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+
+  uint32_t duration,periodicity,offset;
+  uint16_t symbols,n_cces;
+
+  AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
+
+  n_cces = (type0_PDCCH_CSS_config->num_symbols*type0_PDCCH_CSS_config->num_rbs)/6;
+  symbols = (1-(1<<type0_PDCCH_CSS_config->num_symbols))<<type0_PDCCH_CSS_config->first_symbol_index;
+  duration = type0_PDCCH_CSS_config->search_space_duration;
+  periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
+  if (type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1)
+    offset = type0_PDCCH_CSS_config->n_0;
+  else
+    offset = type0_PDCCH_CSS_config->n_c;
+
+  ss0->searchSpaceId = 0;
+  *ss0->controlResourceSetId = 0;
+  ss0->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss0->monitoringSlotPeriodicityAndOffset));
+  set_monitoring_periodicity_offset(ss0,periodicity,offset);
+  if (duration==1)
+    ss0->duration = NULL;
+  else{
+    ss0->duration = calloc(1,sizeof(*ss0->duration));
+    *ss0->duration = duration;
+  }
+
+  ss0->monitoringSymbolsWithinSlot->size = 2;
+  ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
+  ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
+  ss0->monitoringSymbolsWithinSlot->buf[0] = 0;
+  for (int i=0; i<8; i++) {
+    ss0->monitoringSymbolsWithinSlot->buf[1] |= ((symbols>>(i+8))&0x01)<<(7-i);
+    ss0->monitoringSymbolsWithinSlot->buf[0] |= ((symbols>>i)&0x01)<<(7-i);
+  }
+
+  // values according to TS38.213 Section 10.1 Table 10.1-1
+  ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  switch(n_cces){
+    case 4:
+      ss0->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
+      break;
+    case 8:
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n2;
+      break;
+    case 16:
+      ss0->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n1;
+      break;
+  default:
+    AssertFatal(1==0,"Invalid number of CCEs %d for SS0\n",n_cces);
+  }
+
+  ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
+}
+
+
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
 bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
