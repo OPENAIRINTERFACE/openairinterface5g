@@ -995,7 +995,7 @@ int main(int argc, char **argv)
         if (run_initial_sync)
           nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[0].ssb_pdu);
         else
-          phy_procedures_gNB_TX(gNB,frame,slot,0);
+          phy_procedures_gNB_TX(gNB,frame,slot,1);
             
         int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
         

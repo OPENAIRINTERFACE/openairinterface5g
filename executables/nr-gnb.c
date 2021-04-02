@@ -323,18 +323,22 @@ static void *process_stats_thread(void *param) {
 
   PHY_VARS_gNB *gNB  = (PHY_VARS_gNB *)param;
 
+  reset_meas(&gNB->phy_proc_tx);
   reset_meas(&gNB->dlsch_encoding_stats);
-  reset_meas(&gNB->dlsch_scrambling_stats);
-  reset_meas(&gNB->dlsch_modulation_stats);
+  reset_meas(&gNB->phy_proc_rx);
+  reset_meas(&gNB->rx_pusch_stats);
+  reset_meas(&gNB->ulsch_decoding_stats);
 
   wait_sync("process_stats_thread");
 
   while(!oai_exit)
   {
     sleep(1);
-    print_meas(&gNB->dlsch_encoding_stats, "pdsch_encoding", NULL, NULL);
-    print_meas(&gNB->dlsch_scrambling_stats, "pdsch_scrambling", NULL, NULL);
-    print_meas(&gNB->dlsch_modulation_stats, "pdsch_modulation", NULL, NULL);
+    print_meas(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL);
+    print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
+    print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
+    print_meas(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL);
+    print_meas(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL);
   }
   return(NULL);
 }
