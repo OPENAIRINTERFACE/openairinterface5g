@@ -3473,14 +3473,40 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
   int32_t duration;
+
+  if (coreset0 == NULL)
+    coreset0 = calloc(1,sizeof(*coreset0));
+
   coreset0->controlResourceSetId = 0;
 
   AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
 
   duration = type0_PDCCH_CSS_config->num_symbols;
 
-  // Not to be used for ControlResourceSetZero
-  coreset0->frequencyDomainResources.buf = NULL;
+  if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
+
+  switch(type0_PDCCH_CSS_config->num_rbs){
+    case 24:
+      coreset0->frequencyDomainResources.buf[0] = 0xf0;
+      coreset0->frequencyDomainResources.buf[1] = 0;
+      break;
+    case 48:
+      coreset0->frequencyDomainResources.buf[0] = 0xff;
+      coreset0->frequencyDomainResources.buf[1] = 0;
+      break;
+    case 96:
+      coreset0->frequencyDomainResources.buf[0] = 0xff;
+      coreset0->frequencyDomainResources.buf[1] = 0xff;
+      break;
+  default:
+    AssertFatal(1==0,"Invalid number of PRBs %d for Coreset0\n",type0_PDCCH_CSS_config->num_rbs);
+  }
+  coreset0->frequencyDomainResources.buf[2] = 0;
+  coreset0->frequencyDomainResources.buf[3] = 0;
+  coreset0->frequencyDomainResources.buf[4] = 0;
+  coreset0->frequencyDomainResources.buf[5] = 0;
+  coreset0->frequencyDomainResources.size = 6;
+  coreset0->frequencyDomainResources.bits_unused = 3;
 
   coreset0->duration = duration;
   coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
@@ -3499,6 +3525,7 @@ void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_conf
 
 void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
+  if(ss0 == NULL) ss0=calloc(1,sizeof(*ss0));
   if(ss0->controlResourceSetId == NULL) ss0->controlResourceSetId=calloc(1,sizeof(*ss0->controlResourceSetId));
   if(ss0->monitoringSymbolsWithinSlot == NULL) ss0->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss0->monitoringSymbolsWithinSlot));
   if(ss0->monitoringSymbolsWithinSlot->buf == NULL) ss0->monitoringSymbolsWithinSlot->buf = calloc(1,2);
