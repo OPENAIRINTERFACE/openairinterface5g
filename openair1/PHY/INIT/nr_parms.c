@@ -27,12 +27,9 @@
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
 
-int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
-{
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp,uint8_t i_ssb) {
 
   int mu = fp->numerology_index;
-  uint8_t half_frame_index = fp->half_frame_bit;
-  uint8_t i_ssb = fp->ssb_index;
   int symbol = 0;
   uint8_t n, n_temp;
   nr_ssb_type_e type = fp->ssb_type;
@@ -68,9 +65,6 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
      default:
        AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
   }
-
-  if (half_frame_index)
-    symbol += (5 * fp->symbols_per_slot * fp->slots_per_subframe);
 
   return symbol;
 }
