@@ -51,7 +51,7 @@
 
 #define MBMS_NFAPI_SCHEDULER
 
-nfapi_ue_release_request_body_t release_rntis;
+extern nfapi_ue_release_request_body_t release_rntis;
 
 int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint16_t UE_id,uint8_t harq_pid, uint8_t bw_factor) {
   uint32_t Nre,sumKr,MPR_x100,Kr,r;

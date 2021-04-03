@@ -65,6 +65,7 @@ extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
 uint16_t sl_ahead = 0;
+msc_interface_t msc_interface;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 

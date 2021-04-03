@@ -3058,6 +3058,7 @@ add_executable(nr-softmodem
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api_to_fix.c
   )
 
 target_link_libraries (nr-softmodem

@@ -73,7 +73,6 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 extern int sync_var;
-char uecap_xer_in;
 
 extern void init_eNB_afterRU(void);
 extern void init_UE_stub(int nb_inst,int,int);

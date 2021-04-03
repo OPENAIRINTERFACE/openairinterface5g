@@ -468,7 +468,6 @@ double N_RB2channel_bandwidth(uint16_t N_RB);
 */
 //look-up table for the sine (cosine) function
 #define ResolSinCos 100
-uint16_t LUTSin[ResolSinCos+1];
 void InitSinLUT( void );
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 

@@ -44,7 +44,6 @@ FD_stats_form        *form_stats=NULL,*form_stats_l2=NULL;
 char                 title[255];
 unsigned char        scope_enb_num_ue = 2;
 static pthread_t     forms_thread; //xforms
-int                  otg_enabled=0;
 
 void reset_stats(FL_OBJECT *button, long arg) {
   int i,j,k;
@@ -131,7 +130,7 @@ int enbscope_autoinit(void) {
       sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
       fl_show_form (form_enb[CC_id][UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-      if (otg_enabled) {
+      if (0) {
         fl_set_button(form_enb[CC_id][UE_id]->button_0,1);
         fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic ON");
       } else {

@@ -63,7 +63,7 @@
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
@@ -83,6 +83,10 @@ uint16_t sf_ahead=4 ;
 uint16_t sl_ahead=0;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+msc_interface_t msc_interface;
+
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }

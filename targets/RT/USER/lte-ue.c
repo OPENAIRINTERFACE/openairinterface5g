@@ -95,6 +95,7 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
 
+int	tx_req_num_elems;
 extern uint16_t sf_ahead;
 //extern int tx_req_UE_MAC1();
 

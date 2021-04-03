@@ -58,7 +58,7 @@
 
 #define   INDEX_SB_LESS_32            (4)    /* index of dftsizes array for which subcarrier number is less than 36 */
 
-const uint16_t ul_allocated_re[SRS_SB_CONF]     /* number of uplink allocated resource elements */
+EXTERN const uint16_t ul_allocated_re[SRS_SB_CONF]     /* number of uplink allocated resource elements */
 /* this table is derivated from TS 38.211 Table 6.4.1.4.3-1: SRS bandwidth configuration which gives m_SRS_b then all possible values of sequence length is */
 /* M_sc_b_SRS = m_SRS_b * N_SC_RB/K_TC with K_TC = 2 or K_TC = 4  as specified in TS 38.211 6.4.1.4.3 */
 #ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
@@ -82,7 +82,7 @@ m_SRS_b    224   116,  240   256   264   272   144   152   160   168   176   184
 ;
 
 /* table of largest prime number lower than uplink allocated resource elements "ul_allocated_re" */
-const uint16_t ref_ul_primes[SRS_SB_CONF]
+EXTERN const uint16_t ref_ul_primes[SRS_SB_CONF]
 #ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 = {
 /*           6,   12,   18,   24,   30,   36,   48,   60,   72,   84,   96,  108,  120,  132,  144,  156,  168,  180,  192,  204,  216,  228,  240,  */
@@ -101,10 +101,10 @@ const uint16_t ref_ul_primes[SRS_SB_CONF]
 ;
 
 /* Low-PAPR base sequence; see TS 38.211 clause 5.2.2 */
-int16_t  *rv_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][SRS_SB_CONF];
+EXTERN int16_t  *rv_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][SRS_SB_CONF];
 
 /* 38.211 table Table 5.2.2.2-1: Definition of phi(n) for M_ZC = 6 */
-const char phi_M_ZC_6[6*U_GROUP_NUMBER]
+EXTERN const char phi_M_ZC_6[6*U_GROUP_NUMBER]
 #ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 = {
 /*        0   1   2   3   4   5  */
@@ -141,47 +141,9 @@ const char phi_M_ZC_6[6*U_GROUP_NUMBER]
 }
 #endif
 ;
-/* Table 5.2.2.2-2: Definition of phi ( n ) for M ZC = 12  */
-const char phi_M_ZC_12[12*U_GROUP_NUMBER]
-#ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
-= {
-/*        0   1   2   3   4   5   6   7   8   9  10  11  */
-/* 0  */  1, -1,  3,  1,  1, -1, -1, -1,  1,  3, -3,  1,
-/* 1  */ -1, -1, -1, -1,  1, -3, -1,  3,  3, -1, -3,  1,
-/* 2  */ -3,  1, -3, -3, -3,  3, -3, -1,  1,  1,  1, -3,
-/* 3  */ -3,  3,  1,  3, -3,  1,  1,  1,  1,  3, -3,  3,
-/* 4  */ -3,  1,  3, -1, -1, -3, -3, -1, -1,  3,  1, -3,
-/* 5  */ -1,  1,  1, -1,  1,  3,  3, -1, -1, -3,  1, -3,
-/* 6  */ -3, -3, -1,  3,  3,  3, -3,  3, -3,  1, -1, -3,
-/* 7  */ -3,  3, -3,  3,  3, -3, -1, -1,  3,  3,  1, -3,
-/* 8  */ -3, -1, -3, -1, -1, -3,  3,  3, -1, -1,  1, -3,
-/* 9  */ -3,  3,  3,  3, -1, -3, -3, -1, -3,  1,  3, -3,
-/* 10 */  1,  3, -3,  1,  3,  3,  3,  1, -1,  1, -1,  3,
-/* 11 */ -1, -3,  3, -1, -3, -3, -3, -1,  1, -1,  1, -3,
-/* 12 */  3,  1,  3,  1,  3, -3, -1,  1,  3,  1, -1, -3,
-/* 13 */ -3, -3,  3,  3,  3, -3, -1,  1, -3,  3,  1, -3,
-/* 14 */ -3, -1,  1, -3,  1,  3,  3,  3, -1, -3,  3,  3,
-/* 15 */ -3, -3,  3,  1, -3, -3, -3, -1,  3, -1,  1,  3,
-/* 16 */ -1,  1,  3, -3,  1, -1,  1, -1, -1, -3,  1, -1,
-/* 17 */ -3, -1, -1,  1,  3,  1,  1, -1,  1, -1, -3,  1,
-/* 18 */ -3, -1,  3, -3, -3, -1, -3,  1, -1, -3,  3,  3,
-/* 19 */ -3, -3,  3, -3, -1,  3,  3,  3, -1, -3,  1, -3,
-/* 20 */ -3,  1, -1, -1,  3,  3, -3, -1, -1, -3, -1, -3,
-/* 21 */ -3,  1,  3,  3, -1, -1, -3,  3,  3, -3,  3, -3,
-/* 22 */ -3, -1, -1, -3, -3, -1, -3,  3,  1,  3, -1, -3,
-/* 23 */ -3, -1,  3,  1, -3, -1, -3,  3,  1,  3,  3,  1,
-/* 24 */ -3,  3,  3,  1, -3,  3, -1,  1,  3, -3,  3, -3,
-/* 25 */  3, -1, -3,  3, -3, -1,  3,  3,  3, -3, -1, -3,
-/* 26 */  1, -1,  3, -1, -1, -1, -3, -1,  1,  1,  1, -3,
-/* 27 */ -3,  3,  1, -3,  1,  3, -1, -1,  1,  3,  3,  3,
-/* 28 */ -3,  3, -3,  3, -3, -3,  3, -1, -1,  1,  3, -3,
-/* 29 */ -3,  3,  1, -1,  3,  3, -3,  1, -1,  1, -1,  1,
-}
-#endif
-;
 
 /* Table 5.2.2.2-3: Definition of phi (n ) for M_ZC = 18 */
-const char phi_M_ZC_18[18*U_GROUP_NUMBER]
+EXTERN const char phi_M_ZC_18[18*U_GROUP_NUMBER]
 #ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 = {
 /*          0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17 */
@@ -220,7 +182,7 @@ const char phi_M_ZC_18[18*U_GROUP_NUMBER]
 ;
 
 /* Table 5.2.2.2-4: Definition of phi (n ) for M_ZC = 24 */
-const char phi_M_ZC_24[24*U_GROUP_NUMBER]
+EXTERN const char phi_M_ZC_24[24*U_GROUP_NUMBER]
 #ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 = {
 /*          0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23 */
@@ -260,10 +222,10 @@ const char phi_M_ZC_24[24*U_GROUP_NUMBER]
 /************** FUNCTION ******************************************/
 
 
-int16_t *base_sequence_36_or_larger(unsigned int M_ZC, unsigned int u, unsigned int v, unsigned int scaling, unsigned int if_dmrs_seq);
+EXTERN int16_t *base_sequence_36_or_larger(unsigned int M_ZC, unsigned int u, unsigned int v, unsigned int scaling, unsigned int if_dmrs_seq);
 
 
-int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned int scaling);
+EXTERN int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned int scaling);
 /*!
 \brief This function generate the sounding reference symbol (SRS) for the uplink.
 @param tables of srs
@@ -278,7 +240,7 @@ void free_ul_reference_signal_sequences(void);
 #define MAX_INDEX_DMRS_UL_ALLOCATED_REs 53
 
 
-const uint16_t dmrs_ul_allocated_res[MAX_INDEX_DMRS_UL_ALLOCATED_REs]     
+EXTERN const uint16_t dmrs_ul_allocated_res[MAX_INDEX_DMRS_UL_ALLOCATED_REs]     
 /* Number of possible DMRS REs based on PRBs allocated for PUSCH. Array has values until 273 RBs (100Mhz BW)
    Number of PUSCH RBs allocated should be able to be expressed as 2topowerofn*3topowerofn*5tothepowerofn
    According to 3GPP spec 38.211 section 6.3.1.4
@@ -307,7 +269,7 @@ const uint16_t dmrs_ul_allocated_res[MAX_INDEX_DMRS_UL_ALLOCATED_REs]
 /* Table of largest prime number N_ZC < possible DMRS REs M_ZC, this array has values until 100Mhz
    According to 3GPP spec 38.211 section 5.2.2.1
    Table used in calculating DMRS low papr type1 sequence for transform precoding                              */
-const uint16_t dmrs_ref_ul_primes[MAX_INDEX_DMRS_UL_ALLOCATED_REs]
+EXTERN const uint16_t dmrs_ref_ul_primes[MAX_INDEX_DMRS_UL_ALLOCATED_REs]
 #ifdef INIT_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 = {
 /*DMRS REs              6,    12,   18,   24,    30,    36,    48,   54,   60,   72,   90,   96,    */
@@ -331,8 +293,8 @@ const uint16_t dmrs_ref_ul_primes[MAX_INDEX_DMRS_UL_ALLOCATED_REs]
 ;
 
 /// PUSCH DMRS for transform precoding
-int16_t  *gNB_dmrs_lowpaprtype1_sequence[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
-int16_t  *dmrs_lowpaprtype1_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
+EXTERN int16_t  *gNB_dmrs_lowpaprtype1_sequence[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
+EXTERN int16_t  *dmrs_lowpaprtype1_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
 int16_t  get_index_for_dmrs_lowpapr_seq(int16_t num_dmrs_res);
 void     generate_lowpapr_typ1_refsig_sequences(unsigned int scaling);
 void     free_gnb_lowpapr_sequences(void);

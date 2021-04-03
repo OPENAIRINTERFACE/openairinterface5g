@@ -35,6 +35,7 @@
 #include <sched.h>
 
 #include "rt_wrapper.h"
+#include <common/utils/msc/msc.h>
 
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -101,6 +102,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+
+msc_interface_t msc_interface;
 
 
 uint16_t sf_ahead=4;

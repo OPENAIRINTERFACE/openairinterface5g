@@ -72,6 +72,7 @@
 #include "nr_nas_msg_sim.h"
 #endif
 
+NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
 static const char  nr_nas_attach_req_imsi[] = {
   0x07, 0x41,

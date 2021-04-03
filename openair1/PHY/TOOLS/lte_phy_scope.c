@@ -27,7 +27,6 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 #define TPUT_WINDOW_LENGTH 100
-int otg_enabled;
 
 FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 
@@ -57,11 +56,9 @@ static void ia_receiver_on_off( FL_OBJECT *button, long arg) {
 static void dl_traffic_on_off( FL_OBJECT *button, long arg) {
   if (fl_get_button(button)) {
     fl_set_object_label(button, "DL Traffic ON");
-    otg_enabled = 1;
     fl_set_object_color(button, FL_GREEN, FL_GREEN);
   } else {
     fl_set_object_label(button, "DL Traffic OFF");
-    otg_enabled = 0;
     fl_set_object_color(button, FL_RED, FL_RED);
   }
 }
@@ -131,7 +128,6 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void ) {
   fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 20, 600, 240, 40, "" );
   fl_set_object_lalign(fdui->button_0, FL_ALIGN_CENTER );
   fl_set_button(fdui->button_0,0);
-  otg_enabled = 0;
   fl_set_object_label(fdui->button_0, "DL Traffic OFF");
   fl_set_object_color(fdui->button_0, FL_RED, FL_RED);
   fl_set_object_callback(fdui->button_0, dl_traffic_on_off, 0 );

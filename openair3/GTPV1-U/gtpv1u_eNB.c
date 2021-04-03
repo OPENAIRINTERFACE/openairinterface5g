@@ -51,6 +51,7 @@
 #include "gtpv1u_eNB_defs.h"
 #include "gtpv1u_eNB_task.h"
 #include "rrc_eNB_GTPV1U.h"
+#include <common/utils/msc/msc.h>
 
 #undef GTP_DUMP_SOCKET
 

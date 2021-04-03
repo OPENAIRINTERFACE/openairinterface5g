@@ -41,8 +41,8 @@
 #define MAX_IF_MODULES 100
 //#define UL_HARQ_PRINT
 
-NR_IF_Module_t *if_inst[MAX_IF_MODULES];
-NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
+static NR_IF_Module_t *nr_if_inst[MAX_IF_MODULES];
+static NR_Sched_Rsp_t NR_Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
 extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
@@ -178,8 +178,8 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 #endif
   module_id_t      module_id   = UL_info->module_id;
   int              CC_id       = UL_info->CC_id;
-  NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
-  NR_IF_Module_t   *ifi        = if_inst[module_id];
+  NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];
+  NR_IF_Module_t   *ifi        = nr_if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
@@ -253,17 +253,17 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {
   AssertFatal(Mod_id<MAX_MODULES,"Asking for Module %d > %d\n",Mod_id,MAX_IF_MODULES);
   LOG_I(PHY,"Installing callbacks for IF_Module - UL_indication\n");
 
-  if (if_inst[Mod_id]==NULL) {
-    if_inst[Mod_id] = (NR_IF_Module_t*)malloc(sizeof(NR_IF_Module_t));
-    memset((void*)if_inst[Mod_id],0,sizeof(NR_IF_Module_t));
+  if (nr_if_inst[Mod_id]==NULL) {
+    nr_if_inst[Mod_id] = (NR_IF_Module_t*)malloc(sizeof(NR_IF_Module_t));
+    memset((void*)nr_if_inst[Mod_id],0,sizeof(NR_IF_Module_t));
 
-    LOG_I(MAC,"Allocating shared L1/L2 interface structure for instance %d @ %p\n",Mod_id,if_inst[Mod_id]);
+    LOG_I(MAC,"Allocating shared L1/L2 interface structure for instance %d @ %p\n",Mod_id,nr_if_inst[Mod_id]);
 
-    if_inst[Mod_id]->CC_mask=0;
-    if_inst[Mod_id]->NR_UL_indication = NR_UL_indication;
-    AssertFatal(pthread_mutex_init(&if_inst[Mod_id]->if_mutex,NULL)==0,
-                "allocation of if_inst[%d]->if_mutex fails\n",Mod_id);
+    nr_if_inst[Mod_id]->CC_mask=0;
+    nr_if_inst[Mod_id]->NR_UL_indication = NR_UL_indication;
+    AssertFatal(pthread_mutex_init(&nr_if_inst[Mod_id]->if_mutex,NULL)==0,
+                "allocation of nr_if_inst[%d]->if_mutex fails\n",Mod_id);
   }
 
-  return if_inst[Mod_id];
+  return nr_if_inst[Mod_id];
 }

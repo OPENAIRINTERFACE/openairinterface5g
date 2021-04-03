@@ -57,7 +57,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/threadPool/thread-pool.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
@@ -81,6 +81,9 @@ uint16_t sl_ahead=0;
 double cpuf;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+msc_interface_t msc_interface;
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 

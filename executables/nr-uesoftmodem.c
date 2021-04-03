@@ -88,6 +88,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 
 extern const char *duplex_mode[];
+msc_interface_t msc_interface;
+THREAD_STRUCT thread_struct;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;

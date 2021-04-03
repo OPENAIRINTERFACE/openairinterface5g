@@ -83,6 +83,8 @@ get_distribution_release() {
 check_supported_distribution() {
     case $(get_distribution_release) in
         "ubuntu20.04") return 0 ;;
+        "ubuntu20.10") return 0 ;;
+        "ubuntu21.04") return 0 ;;
     esac
     return 1
 }
@@ -329,6 +331,7 @@ check_install_ubuntu_packages() {
 	$SUDO apt install -y software-properties-common
 	case "$(get_distribution_release)" in
             "ubuntu20.04")
+            "ubuntu21.04")
 		specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
 		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
 		LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
@@ -345,7 +348,6 @@ check_install_ubuntu_packages() {
               openvpn \
               pkg-config \
               python3-dev  \
-              python-pexpect \
               sshfs \
               swig  \
               tshark \
@@ -358,7 +360,6 @@ check_install_ubuntu_packages() {
               iperf3 \
               android-tools-adb \
               wvdial \
-              python-numpy \
               sshpass \
               nscd \
               bc \
@@ -379,7 +380,6 @@ check_install_ubuntu_packages() {
 	      git \
 	      graphviz \
 	      gtkwave \
-	      guile-2.0-dev  \
 	      iperf \
 	      iptables \
 	      libxtables-dev \
@@ -419,7 +419,8 @@ check_install_ubuntu_packages() {
 	      libxpm-dev \
               libboost-all-dev \
 	      nettle-dev \
-	      nettle-bin
+	      nettle-bin \
+              libreadline-dev
     fi
     
     $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
