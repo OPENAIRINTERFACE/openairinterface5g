@@ -225,7 +225,7 @@ long nr_get_Pcmax(module_id_t mod_id){
     delta_MPR_c = 0.5;
   }
 
-  if (mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){
+  if (mac->cg && mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){
     if (*mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1->powerBoostPi2BPSK == 1){
       // TbD: assuming power class 3 capable UE operating in TDD bands n40, n41, n77, n78, and n79 with Pi/2 BPSK modulation
       delta_P_powerclass = -3;

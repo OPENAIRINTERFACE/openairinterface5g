@@ -276,14 +276,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     }
 
     if (get_softmodem_params()->usim_test==0) {
-      LOG_D(PHY, "Generating PUCCH\n");
       pucch_procedures_ue_nr(ue,
                              gNB_id,
                              proc,
                              FALSE);
     }
 
-    LOG_D(PHY, "Sending Uplink data \n");
     nr_ue_pusch_common_procedures(ue,
                                   slot_tx,
                                   &ue->frame_parms,1);
@@ -2065,9 +2063,9 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   } else {
 
-    LOG_I(PHY, "In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
-    nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
 
+    nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
+    LOG_I(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
   }
 
   if (nr_prach == GENERATE_PREAMBLE) {

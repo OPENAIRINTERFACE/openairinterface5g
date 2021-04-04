@@ -1026,12 +1026,12 @@ int get_format0(uint8_t index,
   return format;
 }
 
-int64_t *get_prach_config_info(uint32_t pointa,
+int64_t *get_prach_config_info(int fr2_flag,
                                uint8_t index,
                                uint8_t unpaired) {
   int64_t *prach_config_info_p;
 
-  if (pointa > 2016666) { //FR2
+  if (fr2_flag > 0) { //FR2
     prach_config_info_p = table_6_3_3_2_4_prachConfig_Index[index];
   }
   else { // FR1
@@ -2328,7 +2328,7 @@ uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
     }
   }
 
-  if (rnti_type != NR_RNTI_RA) {
+  if (rnti_type != NR_RNTI_RA && rnti_type != NR_RNTI_TC) {
     if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
       if (pusch_config->transformPrecoder != NULL) {
         return *pusch_config->transformPrecoder;

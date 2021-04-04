@@ -113,7 +113,7 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPreco
 
 int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
-int64_t *get_prach_config_info(uint32_t pointa,
+int64_t *get_prach_config_info(int fr2_flag,
                                uint8_t index,
                                uint8_t unpaired);
 

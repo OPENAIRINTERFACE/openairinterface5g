@@ -476,10 +476,6 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   }
     
-
-
-
-
 }
 
 /** \brief This function performs some configuration routines according to clause 12 "Bandwidth part operation" 3GPP TS 38.213 version 16.3.0 Release 16
@@ -709,6 +705,14 @@ int nr_rrc_mac_config_req_ue(
       mac->scc_SIB=sccP;
       LOG_I(MAC,"Keeping ServingCellConfigCommonSIB\n");
       config_common_ue(mac,module_id,cc_idP);
+      int num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0) num_slots_ul++;
+      LOG_I(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
+      mac->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
+      // Setup the SSB to Rach Occasions mapping according to the config
+      build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
+      mac->if_module->phy_config_request(&mac->phy_config);
+      mac->common_configuration_complete = 1;
     }
     if(scell_group_config != NULL ){
       mac->cg = cell_group_config;
@@ -726,7 +730,7 @@ int nr_rrc_mac_config_req_ue(
       }
 
       // Setup the SSB to Rach Occasions mapping according to the config
-      build_ssb_to_ro_map(mac->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
+      build_ssb_to_ro_map(mac);
     }
     else if (cell_group_config != NULL ){
       mac->cg = cell_group_config;
