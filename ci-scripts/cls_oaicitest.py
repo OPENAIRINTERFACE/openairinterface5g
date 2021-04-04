@@ -1450,7 +1450,7 @@ class OaiCiTest():
 		statusQueue.put(message)
 		lock.release()
 
-	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, InfraUE):
+	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, Module_UE):
 		try:
 			SSH = sshconnection.SSHConnection()
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
@@ -1498,8 +1498,6 @@ class OaiCiTest():
 					#cat is executed on EPC
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				else: #launch from Module
-					Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					cmd = 'ping -I ' + UE_IPAddress + ' ' + self.ping_args + ' ' +  EPC.IPAddress  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
 					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
@@ -1734,7 +1732,7 @@ class OaiCiTest():
 				device_id = self.UEDevices[i]
 			else:
 				device_id = ""
-			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,InfraUE,))
+			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2184,13 +2182,12 @@ class OaiCiTest():
 			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 
 
-	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, InfraUE):
+	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE):
 		SSH = sshconnection.SSHConnection()
 		iperf_time = self.Iperf_ComputeTime()	
 		if self.iperf_direction=="DL":
 			logging.debug("Iperf for Module in DL mode detected")
 			#server side UE
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
@@ -2210,31 +2207,30 @@ class OaiCiTest():
 
 		elif self.iperf_direction=="UL":
 			logging.debug("Iperf for Module in UL mode detected")
-			#server side UE
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			SSH.open(Module_UE.UEHostIPAddr, Module_UE.UEHostUserName, Module_UE.UEHostPassWord)
-			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			#server side EPC
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			logging.debug(cmd)
-			#client side EPC
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			#client side UE
+			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			cmd = 'echo $USER; nohup iperf -B ' + UE_IPAddress + ' ' + '-c ' + EPC.IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
 			logging.debug(cmd)			
 
 			#copy the 2 resulting files locally
-			SSH.copyin(Module_UE.UEHostIPAddr, Module_UE.UEHostUserName, Module_UE.UEHostPassWord, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+			SSH.copyin(Module_UE.HostIPAddress, Module_UE.UEHostUsername, Module_UE.UEHostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			#send for analysis
-			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)				
+			filename='iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,0)				
 		else :
 			logging.debug("Incorrect or missing IPERF direction in XML")
 
 		SSH.close()
 		return
 
-	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, InfraUE):
+	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
 		try:
 			SSH = sshconnection.SSHConnection()
 			# Single-UE profile -- iperf only on one UE
@@ -2626,9 +2622,9 @@ class OaiCiTest():
 			device_id = self.UEDevices[i]
         #special quick and dirty treatment for modules, iperf to be restructured
 		if self.ue_id!="":
-			p = Process(target = self.Iperf_Module ,args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, InfraUE,))
+			p = Process(target = self.Iperf_Module ,args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, Module_UE,))
 		else:
-			p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, InfraUE,))
+			p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, ))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
