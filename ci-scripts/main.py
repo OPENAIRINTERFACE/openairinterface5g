@@ -387,8 +387,18 @@ with open(yaml_file,'r') as f:
     xml_class_list = yaml.load(f,Loader=yaml.FullLoader)
 
 
+
+#loading UE infrastructure from yaml
+ue_infra_file='ci_ueinfra.yaml'
+if (os.path.isfile(ue_infra_file)):
+	yaml_file=ue_infra_file
+elif (os.path.isfile('ci-scripts/'+ue_infra_file)):
+	yaml_file='ci-scripts/'+ue_infra_file
+else:
+	logging.error("UE infrastructure yaml file cannot be found")
+	sys.exit("UE infrastructure file cannot be found")
 InfraUE=cls_ci_ueinfra.InfraUE() #initialize UE infrastructure class
-InfraUE.Get_UE_Infra("ci_ueinfra.yaml") #read the UE infra, filename is hardcoded and unique for the moment but should be passed as parameter from the test suite
+InfraUE.Get_UE_Infra(yaml_file) #read the UE infra, filename is hardcoded and unique for the moment but should be passed as parameter from the test suite
 
 
 

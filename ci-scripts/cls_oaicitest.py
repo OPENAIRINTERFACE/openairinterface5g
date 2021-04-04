@@ -1712,6 +1712,7 @@ class OaiCiTest():
 			return
 
 		if self.ue_id=="":
+			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra['dummy']) #RH, temporary, we need a dummy Module_UE object to pass to Ping_common
 			ueIpStatus = self.GetAllUEIPAddresses()
 			if (ueIpStatus < 0):
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)

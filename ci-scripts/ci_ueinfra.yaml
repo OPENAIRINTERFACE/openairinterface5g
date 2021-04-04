@@ -9,15 +9,8 @@ idefix:
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
-dummy1:
-  ID: dummy1
-  Kind : simcom
-  State : disabled
-  Process : quectel-cm 
-  HostIPAddress : 192.168.18.187
-  HostUsername : oaicicd
-  HostPassword : oaicicd
-  HostSourceCodePath : none
+dummy:
+  ID: dummy
 dummy2:  
   ID: dummy2
   Kind : cots
