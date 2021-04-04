@@ -2622,6 +2622,7 @@ class OaiCiTest():
 			device_id = self.UEDevices[i]
         #special quick and dirty treatment for modules, iperf to be restructured
 		if self.ue_id!="":
+			device_id = Module_UE.ID + "-" + Module_UE.Kind
 			p = Process(target = self.Iperf_Module ,args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, Module_UE,))
 		else:
 			p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, ))
