@@ -1731,7 +1731,7 @@ class OaiCiTest():
 			if self.ue_id=="":
 				device_id = self.UEDevices[i]
 			else:
-				device_id = ""
+				device_id = Module_UE.ID + "-" + Module_UE.Kind 
 			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,))
 			p.daemon = True
 			p.start()
