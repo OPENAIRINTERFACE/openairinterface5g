@@ -1731,6 +1731,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
 // This function schedules the reception of SIB1 after initial sync and before going to real time state
 void nr_ue_sib1_scheduler(module_id_t module_idP,
+                          int cc_id,
                           uint16_t ssb_start_symbol,
                           uint16_t frame,
                           uint8_t ssb_subcarrier_offset,
@@ -1739,6 +1740,8 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                           frequency_range_t frequency_range) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  nr_scheduled_response_t scheduled_response;
+  int frame_s,slot_s;
 
   uint8_t scs_ssb = get_softmodem_params()->numerology;
   uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
@@ -1755,8 +1758,36 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                                         1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                         ssb_offset_point_a);
 
+  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
+
   fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
   fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
+
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+  rel15->num_dci_options = 1;
+  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+  fill_dci_search_candidates(mac->search_space_zero, rel15);
+
+  if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
+    // same frame as ssb
+    if ((mac->type0_PDCCH_CSS_config.frame & 0x1) == mac->type0_PDCCH_CSS_config.sfn_c)
+      frame_s = 0;
+    else
+      frame_s = 1;
+    slot_s = mac->type0_PDCCH_CSS_config.n_0;
+  }
+  else{
+    frame_s = 0; // same frame as ssb
+    slot_s = mac->type0_PDCCH_CSS_config.n_c;
+  }
+
+  LOG_I(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
+  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+    mac->if_module->scheduled_response(&scheduled_response);
 
 }
 

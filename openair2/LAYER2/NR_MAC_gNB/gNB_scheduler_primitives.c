@@ -171,9 +171,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      uint16_t Y,
                      int m,
                      int nr_of_candidates) {
-  // uncomment these when we allocate for common search space
-  //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
-  //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   int coreset_id = coreset->controlResourceSetId;
 

@@ -105,7 +105,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_I(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  frequency_range_t frequency_range;
+  mac->physCellId = cell_id;
   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
@@ -121,11 +121,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   frame = frame << 4;
   frame = frame | frame_number_4lsb;
   if(ssb_length == 64){
-    frequency_range = FR2;
+    mac->frequency_range = FR2;
     for (int i=0; i<3; i++)
       ssb_index += (((extra_bits>>(7-i))&0x01)<<(3+i));
   }else{
-    frequency_range = FR1;
+    mac->frequency_range = FR1;
     if(ssb_subcarrier_offset_msb){
       ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
     }
@@ -154,12 +154,13 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
 
     nr_ue_sib1_scheduler(module_id,
+                         cc_id,
                          ssb_start_symbol,
                          frame,
                          ssb_subcarrier_offset,
                          ssb_index,
                          ssb_start_subcarrier,
-                         frequency_range);
+                         mac->frequency_range);
 
   }
   else {

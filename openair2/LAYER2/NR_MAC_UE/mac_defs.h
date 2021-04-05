@@ -311,6 +311,7 @@ typedef struct {
   NR_CellGroupConfig_t            *scg;
   int                             servCellIndex;
   NR_CSI_ReportConfig_t           *csirc;
+  long                            physCellId;
   ////  MAC config
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
@@ -377,7 +378,7 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
-
+  frequency_range_t frequency_range;
   uint16_t nr_band;
 
 } NR_UE_MAC_INST_t;
