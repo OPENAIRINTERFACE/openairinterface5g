@@ -3,7 +3,8 @@ idefix:
   State : enabled
   Kind : quectel
   Process : quectel-CM
-  WakeupScript : ci_qtel.py
+  WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
+  DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
   UENetwork : wwan0
   HostIPAddress : 192.168.18.188
   HostUsername : oaicicd
