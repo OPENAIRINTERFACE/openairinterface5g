@@ -6557,10 +6557,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
               (int)DRB_configList->list.array[i]->drb_Identity,
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
         /* For pre-ci tests */
-        LOG_I(RRC, "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE %u, reconfiguring DRB %d/LCID %d\n",
+        LOG_I(RRC, "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete, reconfiguring DRB %d/LCID %d\n",
               ctxt_pP->module_id,
               ctxt_pP->frame,
-              oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid],
               (int)DRB_configList->list.array[i]->drb_Identity,
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 
@@ -6585,7 +6584,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                     "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
                     ctxt_pP->module_id, ctxt_pP->module_id,
                     (long int)((ue_context_pP->local_uid * LTE_maxDRB) + DRB_configList->list.array[i]->drb_Identity));
-              ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
+              ue_module_id = 0; // Was oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
               rb_conf_ipv4(0, //add
                            ue_module_id,  //cx
                            ctxt_pP->module_id,    //inst

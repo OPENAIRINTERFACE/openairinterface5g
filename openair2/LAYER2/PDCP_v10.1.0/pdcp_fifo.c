@@ -375,7 +375,6 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
     protocol_ctxt_t                ctxt;
     hash_key_t                     key       = HASHTABLE_NOT_A_KEY_VALUE;
     hashtable_rc_t                 h_rc;
-    module_id_t                    ue_id     = 0;
     pdcp_t                        *pdcp_p    = NULL;
     static unsigned char pdcp_read_state_g =0;
     rb_id_t          rab_id  = 0;
@@ -469,30 +468,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
             } else  { // rb_id =0, thus interpreated as broadcast and transported as multiple unicast
               // is a broadcast packet, we have to send this packet on all default RABS of all connected UEs
               //#warning CODE TO BE REVIEWED, ONLY WORK FOR SIMPLE TOPOLOGY CASES
-              for (ue_id = 0; ue_id < NB_UE_INST; ue_id++) {
-                if (oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id] != NOT_A_RNTI) {
-                  ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id];
-                  LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
-                        ctxt.frame,
-                        pdcp_read_header_g.inst,
-                        pdcp_read_header_g.rb_id,
-                        pdcp_read_header_g.data_size,
-                        ctxt.module_id,
-                        ctxt.rnti,
-                        DEFAULT_RAB_ID);
-                  pdcp_data_req (
-                    &ctxt,
-                    SRB_FLAG_NO,
-                    DEFAULT_RAB_ID,
-                    RLC_MUI_UNDEFINED,
-                    RLC_SDU_CONFIRM_NO,
-                    pdcp_read_header_g.data_size,
-                    (unsigned char *)NLMSG_DATA(nas_nlh_rx),
-                    PDCP_TRANSMISSION_MODE_DATA
-                    ,NULL, NULL
-                  );
-                }
-              }
+              // never finished code, dropped
             }
           } else { // ctxt.enb_flag => UE
             if (NFAPI_MODE == NFAPI_UE_STUB_PNF) {

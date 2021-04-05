@@ -153,7 +153,7 @@ int check_ref_locked(usrp_state_t *s,size_t mboard) {
 }
 
 static int sync_to_gps(openair0_device *device) {
-  uhd::set_thread_priority_safe();
+  //uhd::set_thread_priority_safe();
   //std::string args;
   //Set up program options
   //po::options_description desc("Allowed options");
@@ -589,7 +589,7 @@ void *trx_usrp_write_thread(void * arg){
 
 int trx_usrp_write_init(openair0_device *device){
 
-  uhd::set_thread_priority_safe(1.0);
+  //uhd::set_thread_priority_safe(1.0);
   openair0_thread_t *write_thread = &device->write_thread;
   printf("initializing tx write thread\n");
 
@@ -940,7 +940,7 @@ extern "C" {
 
 
     // hotfix! to be checked later
-    uhd::set_thread_priority_safe(1.0);
+    //uhd::set_thread_priority_safe(1.0);
     // Initialize USRP device
     int vers=0,subvers=0,subsubvers=0;
     int bw_gain_adjust=0;

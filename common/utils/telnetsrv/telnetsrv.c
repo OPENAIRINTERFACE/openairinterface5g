@@ -702,7 +702,7 @@ void poll_telnetcmdq(void *qid, void *arg) {
 */
 void exec_moduleinit(char *modname) {
   void (*fptr)(void);
-  char initfunc[TELNET_CMD_MAXSIZE+9];
+  char initfunc[TELNET_CMD_MAXSIZE+10];
 
   if (strlen(modname) > TELNET_CMD_MAXSIZE) {
     fprintf(stderr,"[TELNETSRV] module %s not loaded, name exceeds the %i size limit\n",

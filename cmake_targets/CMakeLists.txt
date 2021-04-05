@@ -338,11 +338,11 @@ endif ()
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} --sanitize=address -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -O0 --sanitize=address -DMALLOC_CHECK_=3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -O0 -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3 -O2 -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
 

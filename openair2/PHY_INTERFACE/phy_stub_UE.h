@@ -18,6 +18,7 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 
 //below 2 difinitions move to phy_stub_UE.c to add initialization when difinition.
+extern int	tx_req_num_elems;
 extern UL_IND_t *UL_INFO;
 extern nfapi_tx_request_pdu_t* tx_request_pdu_list;
 // New
@@ -27,7 +28,6 @@ extern nfapi_dl_config_request_t* dl_config_req;
 extern nfapi_ul_config_request_t* ul_config_req;
 extern nfapi_hi_dci0_request_t* hi_dci0_req;
 
-extern int	tx_req_num_elems;
 
 //below 2 difinitions move to lte-ue.c to add initialization when difinition.
 //int next_ra_frame;
