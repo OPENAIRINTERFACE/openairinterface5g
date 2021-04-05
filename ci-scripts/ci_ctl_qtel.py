@@ -35,7 +35,7 @@ class qtel_ctl:
     def __init__(self, usb_port_at):
         self.QUECTEL_USB_PORT_AT = usb_port_at #'/dev/ttyUSB2'
         self.modem = serial.Serial(self.QUECTEL_USB_PORT_AT, timeout=1)
-        self.cmd_dict= {"wup": self.wup;"detach":self.detach}
+        self.cmd_dict= {"wup": self.wup,"detach":self.detach}
 
     def __set_modem_state(self,ser,state):
 	    self.__send_command(ser,"AT+CFUN={}\r".format(state))
@@ -47,12 +47,12 @@ class qtel_ctl:
 
 
     def wup(self):
-        self.__set_modem_state(modem,0)
+        self.__set_modem_state(self.modem,0)
         time.sleep(3)
-        self.__set_modem_state(modem,1)
+        self.__set_modem_state(self.modem,1)
 
     def detach(self):
-        self.__set_modem_state(modem,0)
+        self.__set_modem_state(self.modem,0)
 
 
 
