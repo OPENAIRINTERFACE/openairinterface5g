@@ -32,10 +32,13 @@ import serial
 
 
 class qtel_ctl:
+	#---------------
+	#private methods
+	#---------------
     def __init__(self, usb_port_at):
-        self.QUECTEL_USB_PORT_AT = usb_port_at #'/dev/ttyUSB2'
+        self.QUECTEL_USB_PORT_AT = usb_port_at #ex : '/dev/ttyUSB2'
         self.modem = serial.Serial(self.QUECTEL_USB_PORT_AT, timeout=1)
-        self.cmd_dict= {"wup": self.wup,"detach":self.detach}
+        self.cmd_dict= {"wup": self.wup,"detach":self.detach}#dictionary of function pointers
 
     def __set_modem_state(self,ser,state):
 	    self.__send_command(ser,"AT+CFUN={}\r".format(state))
@@ -45,19 +48,24 @@ class qtel_ctl:
             ser.flushInput()
         ser.write(com.encode())
 
-
-    def wup(self):
+	#--------------
+	#public methods
+	#--------------
+    def wup(self):#sending AT+CFUN=0, then AT+CFUN=1
         self.__set_modem_state(self.modem,0)
         time.sleep(3)
         self.__set_modem_state(self.modem,1)
 
-    def detach(self):
+    def detach(self):#sending AT+CFUN=0
         self.__set_modem_state(self.modem,0)
 
 
 
 
 if __name__ == "__main__":
+	#argv[1] : usb port
+	#argv[2] : qtel command (see function pointers dict "wup", "detach" etc ...)
     command = sys.argv[2]
     Module=qtel_ctl(sys.argv[1])
+	#calling the function to be applied
     Module.cmd_dict[command]()
