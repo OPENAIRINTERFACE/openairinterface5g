@@ -126,7 +126,7 @@ void tx_func(void *param) {
   syncMsg->slot_tx = slot_tx;
   syncMsg->timestamp_tx = info->timestamp_tx;
   syncMsg->ru = gNB->RU_list[0];
-  res->key = slot_tx;
+  res->key = 1000+slot_tx;
   pushTpool(gNB->threadPool, res);
 }
 
@@ -275,7 +275,7 @@ void rx_func(void *param) {
     syncMsg->frame_tx = frame_tx;
     syncMsg->slot_tx = slot_tx;
     syncMsg->timestamp_tx = info->timestamp_tx;
-    res->key = slot_tx;
+    res->key = 2000+slot_tx;
     pushTpool(gNB->threadPool, res);
   }
     
