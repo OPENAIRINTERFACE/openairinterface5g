@@ -30,7 +30,7 @@
 * \warning
 */
 
-#include <LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
+
 #include "nr_dci.h"
 #include "nr_dlsch.h"
 #include "nr_sch_dmrs.h"

@@ -528,7 +528,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       if(no_sig) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
-        nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
+        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
       } else {
 
@@ -538,6 +538,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 "expected TC_RNTI %04x to match current RNTI %04x\n",
                 ra->rnti,
                 current_rnti);
+
+          if( (frameP==ra->Msg3_frame) && (slotP==ra->Msg3_slot) ) {
+            LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
+            nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+            nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+          }
+
           continue;
         }
 
@@ -563,7 +570,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         if(ra->cfra) {
 
           LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
-          nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
+          nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           UE_info->active[UE_id] = true;
 
@@ -599,7 +606,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         continue;
 
       LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
-      nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
+      nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
       nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
     }
   }

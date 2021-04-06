@@ -1295,7 +1295,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       rrc->carrier.ssb_SubcarrierOffset,
 			       rrc->carrier.pdsch_AntennaPorts,
 			       rrc->carrier.pusch_AntennaPorts,
-			       (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			       NULL,
 			       0,
 			       ue_context_p->ue_context.rnti,
 			       ue_context_p->ue_context.masterCellGroup

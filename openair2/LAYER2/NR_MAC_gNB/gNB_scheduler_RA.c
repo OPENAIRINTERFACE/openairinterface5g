@@ -444,19 +444,19 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
   *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+  *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
 
   // we can't schedule msg2 before sl_ahead since prach
   int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
   if ((eff_slot-rach_slot)<=sl_ahead) {
     *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+    *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
   }
   if (FR==nr_FR2) {
     int num_tdd_period = *msg2_slot/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
       *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-      *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
+      *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
       num_tdd_period = *msg2_slot/tdd_period_slot;
     }
     if(tdd_beam_association[num_tdd_period] == -1)
@@ -692,7 +692,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
     if (nr_slots_per_frame[mu]>temp_slot)
       ra->Msg3_frame = current_frame;
     else
-      ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
+      ra->Msg3_frame = (current_frame + (temp_slot/nr_slots_per_frame[mu]))%1024;
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
@@ -875,7 +875,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       fill_default_coresetZero(nr_mac->sched_ctrlCommon->coreset,cc->ServingCellConfigCommon);
       fill_default_initialDownlinkBWP(nr_mac->sched_ctrlCommon->active_bwp,cc->ServingCellConfigCommon);
     }
-    nr_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
 
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -1018,7 +1017,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
     pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(nr_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
                                                     startSymbolIndex);
@@ -1174,7 +1173,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
-    uint16_t dlDmrsSymbPos = fill_dmrs_mask(nr_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+    uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                             nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                             nrOfSymbols,
                                             startSymbolIndex);

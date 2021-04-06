@@ -37,6 +37,8 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include <executables/softmodem-common.h>
 
+extern uint32_t N_RB_DL;
+
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                          int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
@@ -695,7 +697,7 @@ int nr_rrc_mac_config_req_ue(
       mac->phy_config.CC_id = cc_idP;
       mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
       mac->phy_config.config_req.tdd_table.tdd_period_in_slots=5<<get_softmodem_params()->numerology;
-      mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (106-20)>>1;
+      mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
     }
     AssertFatal(scell_group_config == NULL || cell_group_config == NULL,
 		"both scell_group_config and cell_group_config cannot be non-NULL\n");

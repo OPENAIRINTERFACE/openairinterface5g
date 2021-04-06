@@ -84,6 +84,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
+            dlsch0->rnti_type = _RA_RNTI_;
+            dlsch0->harq_processes[dlsch0->current_harq_pid]->status = ACTIVE;
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];

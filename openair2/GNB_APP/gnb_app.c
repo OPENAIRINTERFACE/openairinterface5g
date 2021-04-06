@@ -203,7 +203,7 @@ void *gNB_app_task(void *args_p)
         LOG_E(F1AP, "Create task for F1AP CU failed\n");
         AssertFatal(1==0,"exiting");
      }
-
+    pdcp_layer_init_for_CU();
   }
 
   if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {

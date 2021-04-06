@@ -1762,7 +1762,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
   }
 }
 
-void nr_mac_remove_ra_rnti_ue(module_id_t mod_id, rnti_t rnti) {
+void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
   // Hack to remove UE in the phy (following the same procedure as in function mac_remove_nr_ue)
   if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
   if (rnti_to_remove_count == 10) exit(1);

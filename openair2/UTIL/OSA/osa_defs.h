@@ -48,7 +48,8 @@ typedef enum {
   NAS_INT_ALG = 0x02,
   RRC_ENC_ALG = 0x03,
   RRC_INT_ALG = 0x04,
-  UP_ENC_ALG  = 0x05
+  UP_ENC_ALG  = 0x05,
+  UP_INT_ALG  = 0x06
 } algorithm_type_dist_t;
 
 //int derive_keNB(const uint8_t kasme[32], const uint32_t nas_count, uint8_t **keNB);

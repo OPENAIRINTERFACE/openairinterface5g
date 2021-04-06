@@ -85,7 +85,12 @@ typedef struct nr_pdcp_entity_t {
                  unsigned char *buffer, int length,
                  int bearer, int count, int direction);
   void (*free_security)(void *security_context);
-  /* security algorithms need to know uplink/downlink information
+  void *integrity_context;
+  void (*integrity)(void *integrity_context, unsigned char *out,
+                 unsigned char *buffer, int length,
+                 int bearer, int count, int direction);
+  void (*free_integrity)(void *integrity_context);
+  /* security/integrity algorithms need to know uplink/downlink information
    * which is reverse for gnb and ue, so we need to know if this
    * pdcp entity is for a gnb or an ue
    */
