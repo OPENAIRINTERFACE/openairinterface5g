@@ -1390,7 +1390,7 @@ void *ru_thread( void *param ) {
     syncMsg->frame_tx = proc->frame_tx;
     syncMsg->slot_tx = proc->tti_tx;
     syncMsg->timestamp_tx = proc->timestamp_tx;
-    res->key = proc->tti_rx;
+    res->key = 3000+proc->tti_rx;
     pushTpool(gNB->threadPool, res);
 
   }
