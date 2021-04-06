@@ -107,7 +107,7 @@ void print_meas(time_stats_t *ts,
                 name,
                 (ts->diff/ts->trials/cpu_freq_GHz/1000.0),
                 ts->trials,
-                ts->max);
+                ts->max/cpu_freq_GHz/1000.0);
       } else {
         fprintf(stderr, "%25s:  %15.3f ms (%5.2f%%); %15.3f us (%5.2f%%); %15d;\n",
                 name,
