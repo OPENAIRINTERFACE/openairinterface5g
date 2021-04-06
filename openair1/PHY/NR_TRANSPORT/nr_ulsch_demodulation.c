@@ -345,7 +345,9 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
     n = 0;
     k_prime = 0;
-    rxF_ext_index = ul_ch0_ext_index = ul_ch0_index = 0; /* In RX Antenna(aarx) loop, Reset the index */
+    rxF_ext_index = 0;
+    ul_ch0_ext_index = 0;
+    ul_ch0_index = 0;
 
     if (is_dmrs_symbol == 0) {
       //
@@ -407,7 +409,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb, ch_amp;
-  unsigned char aatx,aarx;
+  unsigned char aarx;
   __m128i *ul_ch128, ch_amp128;
 
   // Determine scaling amplitude based the symbol
@@ -425,8 +427,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-  for (aatx=0; aatx < frame_parms->nb_antenna_ports_gNB; aatx++) {
-    for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+  for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
       ul_ch128 = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*(off+(nb_rb*NR_NB_SC_PER_RB))];
 
@@ -455,7 +456,6 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
         }
       }
     }
-  }
 #endif
 }
 
@@ -472,6 +472,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 
   short rb;
   unsigned char aatx, aarx;
+  char nb_antennas_ue_tx = 1;
   __m128i *ul_ch128, avg128U;
 
   int16_t x = factor2(len);
@@ -483,7 +484,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-  for (aatx = 0; aatx < frame_parms->nb_antennas_tx; aatx++)
+  for (aatx = 0; aatx < nb_antennas_ue_tx; aatx++)
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128U = _mm_setzero_si128();
@@ -624,11 +625,12 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   unsigned short rb;
   unsigned char aatx,aarx;
+  char nb_antennas_ue_tx = 1;
   __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
   QAM_amp128b = _mm_setzero_si128();
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
+  for (aatx=0; aatx<nb_antennas_ue_tx; aatx++) {
 
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
@@ -1164,6 +1166,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs;
   int avg[4];
+  char nb_antennas_ue_tx = 1;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
 
@@ -1214,6 +1217,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 bwp_start_subcarrier,
                                 rel15_ul);
 
+    nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
+
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
                                                                         rel15_ul->rb_size*12);
@@ -1263,7 +1268,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
       avgs = 0;
 
-      for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+      for (aatx=0;aatx<nb_antennas_ue_tx;aatx++)
         for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
           avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
@@ -1281,7 +1286,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                                   gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                                   gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                                  (frame_parms->nb_antennas_tx>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
+                                  (nb_antennas_ue_tx>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
                                   frame_parms,
                                   symbol,
                                   dmrs_symbol_flag,

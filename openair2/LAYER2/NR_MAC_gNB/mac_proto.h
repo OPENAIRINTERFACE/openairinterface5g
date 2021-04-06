@@ -43,12 +43,14 @@ void mac_top_init_gNB(void);
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
+                   int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
-int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
-			   int ssb_SubcarrierOffset,
+int rrc_mac_config_req_gNB(module_id_t Mod_idP,
+                           int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
+                           int pusch_AntennaPorts,
                            int pusch_tgt_snrx10,
                            int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
@@ -85,7 +87,11 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot);
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
+void schedule_nr_mib(module_id_t module_idP,
+                     frame_t frameP,
+                     sub_frame_t subframeP,
+                     uint8_t slots_per_frame,
+                     int nb_periods_per_frame);
 
 /// uplink scheduler
 void nr_schedule_ulsch(module_id_t module_id,
@@ -126,7 +132,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_subframe,
                       frame_t current_frame,
-                      NR_RA_t *ra);
+                      NR_RA_t *ra,
+                      int16_t *tdd_beam_association);
 
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB
@@ -263,7 +270,6 @@ NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
 NR_SearchSpace_t *get_searchspace(
     NR_BWP_Downlink_t *bwp,
     NR_SearchSpace__searchSpaceType_PR target_ss);
-
 
 long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 

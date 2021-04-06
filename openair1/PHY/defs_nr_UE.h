@@ -142,6 +142,7 @@ typedef struct {
   uint32_t rsrp[7];
   float rsrp_filtered[7]; // after layer 3 filtering
   float rsrq_filtered[7];
+  short rsrp_dBm[7];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];
@@ -187,7 +188,7 @@ typedef struct {
   //! estimated rssi (dBm)
   short          rx_rssi_dBm[NUMBER_OF_CONNECTED_gNB_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][2];
+  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][4][4];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation_dB[NUMBER_OF_CONNECTED_gNB_MAX][2];
 
@@ -332,12 +333,10 @@ typedef struct {
   int32_t **dl_ch_magb1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
   int32_t **dl_ch_magr0;
-  /// \brief Cross-correlation of two gNB signals.
-  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// \brief Cross-correlation Matrix of the gNB Tx channel signals.
+  /// - first index: aatx*n_rx+aarx for all aatx=[0..n_tx[ and aarx=[0..nb_rx[
   /// - second index: symbol [0..]
-  int32_t **rho;
-  /// never used... always send dl_ch_rho_ext instead...
-  int32_t **rho_i;
+  int32_t ***rho;
   /// \brief Pointers to llr vectors (2 TBs).
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)
@@ -847,7 +846,6 @@ typedef struct {
 
   // Scrambling IDs used in PDSCH DMRS
   uint16_t scramblingID[2];
-
 
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];

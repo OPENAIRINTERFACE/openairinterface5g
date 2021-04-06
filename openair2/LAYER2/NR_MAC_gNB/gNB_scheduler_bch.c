@@ -106,6 +106,7 @@ void schedule_ssb(frame_t frame, sub_frame_t slot,
                   nfapi_nr_dl_tti_request_body_t *dl_req,
                   int i_ssb, uint8_t scoffset, uint16_t offset_pointa, uint32_t payload) {
 
+  uint8_t beam_index = 0;
   nfapi_nr_dl_tti_request_pdu_t  *dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_config_pdu->PDUType      = NFAPI_NR_DL_TTI_SSB_PDU_TYPE;
@@ -127,27 +128,31 @@ void schedule_ssb(frame_t frame, sub_frame_t slot,
   dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = offset_pointa;
   dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
   dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = payload;
+  dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.num_prgs=1;
+  dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.prg_size=275; //1 PRG of max size for analogue beamforming
+  dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.dig_bf_interfaces=1;
+  dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.prgs_list[0].pm_idx = 0;
+  dl_config_pdu->ssb_pdu.ssb_pdu_rel15.precoding_and_beamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = beam_index;
   dl_req->nPDUs++;
 
   LOG_D(MAC,"Scheduling ssb %d at frame %d and slot %d\n",i_ssb,frame,slot);
 
 }
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, uint8_t slots_per_frame){
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, uint8_t slots_per_frame, int nb_periods_per_frame){
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
   nfapi_nr_dl_tti_request_body_t *dl_req;
   NR_MIB_t *mib = RC.nrrrc[module_idP]->carrier.mib.message.choice.mib;
-
+  uint8_t num_tdd_period,num_ssb;
   int mib_sdu_length;
   int CC_id;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     cc = &gNB->common_channels[CC_id];
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-
     dl_tti_request = &gNB->DL_req[CC_id];
     dl_req = &dl_tti_request->dl_tti_request_body;
 
@@ -156,7 +161,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
 
       mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]);
 
-      LOG_I(MAC,
+      LOG_D(MAC,
             "[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
             module_idP,
             frameP,
@@ -248,6 +253,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
           break;
         case 3:
           // long bitmap FR2 max 64 SSBs
+          num_ssb = 0;
           for (int i_ssb=0; i_ssb<63; i_ssb++) {
             if ((longBitmap->buf[i_ssb/8]>>(7-i_ssb))&0x01) {
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
@@ -255,6 +261,10 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
               if ((ssb_start_symbol/14) == rel_slot){
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                num_tdd_period = rel_slot/(slots_per_frame/nb_periods_per_frame);
+                gNB->tdd_beam_association[num_tdd_period]=i_ssb;
+                num_ssb++;
+                AssertFatal(num_ssb<2,"beamforming currently not supported for more than one SSB per slot\n");
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
@@ -280,7 +290,6 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
     }
   }
 }
-
 
 
 void schedule_nr_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
