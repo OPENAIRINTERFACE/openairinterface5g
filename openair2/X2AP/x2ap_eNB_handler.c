@@ -690,9 +690,11 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
   // need a FSM to handle all cases
   if ((ie->value.choice.Cause.present == X2AP_Cause_PR_misc) &&
       (ie->value.choice.Cause.choice.misc == X2AP_CauseMisc_unspecified)) {
-    X2AP_WARN("Received X2 setup failure for eNB ... eNB is not ready\n");
+    X2AP_ERROR("Received X2 setup failure for eNB ... eNB is not ready\n");
+    exit(1);
   } else {
     X2AP_ERROR("Received x2 setup failure for eNB... please check your parameters\n");
+    exit(1);
   }
 
   x2ap_eNB_data->state = X2AP_ENB_STATE_WAITING;
