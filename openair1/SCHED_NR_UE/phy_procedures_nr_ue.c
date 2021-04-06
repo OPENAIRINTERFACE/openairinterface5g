@@ -1731,18 +1731,18 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     dci_cnt = 0;
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
 
-    // note: this only works if RBs for PDCCH are contigous!
-    LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-          fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
+      // note: this only works if RBs for PDCCH are contigous!
+      LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
+            fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
 
-    if (coreset_nb_rb > 0)
-      nr_pdcch_channel_estimation(ue,
-                                  proc,
-                                  0,
-                                  nr_slot_rx,
-                                  l,
-                                  fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
-                                  coreset_nb_rb);
+      if (coreset_nb_rb > 0)
+        nr_pdcch_channel_estimation(ue,
+                                    proc,
+                                    0,
+                                    nr_slot_rx,
+                                    l,
+                                    fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
+                                    coreset_nb_rb);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE

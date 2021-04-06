@@ -635,6 +635,9 @@ typedef struct {
   uint8_t agregationLevel;
   int nb_search_space;
   fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  // frame and slot for sib1 in initial sync
+  uint16_t sfn;
+  uint16_t slot;
   /*
 #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
@@ -844,6 +847,7 @@ typedef struct {
 
   // Scrambling IDs used in PDSCH DMRS
   uint16_t scramblingID[2];
+
 
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];

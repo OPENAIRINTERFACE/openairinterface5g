@@ -36,8 +36,7 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
-//#include "SCHED/defs.h"
-//#include "SCHED/extern.h"
+#include "SCHED_NR_UE/defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "common_lib.h"
@@ -46,6 +45,7 @@
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 extern openair0_config_t openair0_cfg[];
 //static  nfapi_nr_config_request_t config_t;
@@ -478,9 +478,36 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames, i
 #endif
 
   }
-  // if stand alone and sync on ssb
-  if (sa==1 && ret==0) {
 
+  // if stand alone and sync on ssb do sib1 detection as part of initial sync
+  if (sa==1 && ret==0) {
+    NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
+    uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
+
+    int coreset_nb_rb=0;
+    int coreset_start_rb=0;
+
+    if (pdcch_vars->nb_search_space > 0)
+      get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
+
+    for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+      nr_slot_fep_init_sync(ue,
+                            proc,
+                            l, // the UE PHY has no notion of the symbols to be monitored in the search space
+                            pdcch_vars->slot,
+                            pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
+
+      if (coreset_nb_rb > 0)
+        nr_pdcch_channel_estimation(ue,
+                                    proc,
+                                    0,
+                                    pdcch_vars->slot,
+                                    l,
+                                    fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12,
+                                    coreset_nb_rb);
+
+    }
+    int  dci_cnt = nr_ue_pdcch_procedures(0, ue, proc); //gNB_id set to 0
   }
 
   //  exit_fun("debug exit");
