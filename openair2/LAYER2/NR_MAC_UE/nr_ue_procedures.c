@@ -1786,7 +1786,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 mac_subheader_len = 2;
               }
 
-              if ( pdu_len >= mac_sdu_len ) {
+              if ( pdu_len >= (mac_subheader_len + mac_sdu_len) ) {
 
                 LOG_D(NR_MAC,"DL_SCH_LCID_CCCH with payload len %d\n", mac_sdu_len);
 
