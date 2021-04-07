@@ -1377,6 +1377,16 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        pdsch_pdu_rel15->BWPSize,
                        nr_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
+    // Add padding header and zero rest out if there is space left
+    if (mac_pdu_length < harq->tb_size) {
+      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[mac_pdu_length];
+      padding->R = 0;
+      padding->LCID = DL_SCH_LCID_PADDING;
+      for(int k = mac_pdu_length+1; k<harq->tb_size; k++) {
+        buf[k] = 0;
+      }
+    }
+
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     memcpy(tx_req->TLVs[0].value.direct, harq->tb, sizeof(uint8_t) * harq->tb_size);
