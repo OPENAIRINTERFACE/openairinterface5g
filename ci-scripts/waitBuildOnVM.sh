@@ -73,6 +73,9 @@ function wait_on_vm_build {
     echo "############################################################"
     echo "Waiting build process to end on VM ($VM_NAME)"
     echo "############################################################"
+    # Since the last VM was cppcheck and is removed
+    # we are going too fast in wait and the build_oai is not yet started
+    sleep 120
 
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
@@ -90,7 +93,7 @@ function wait_on_vm_build {
 }
 
 function check_on_vm_build {
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return
