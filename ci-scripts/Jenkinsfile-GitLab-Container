@@ -152,6 +152,25 @@ pipeline {
             }
           }
         }
+        stage ("CppCheck Analysis") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-cppcheck', 'CppCheck Analysis')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-cppcheck')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
   }

@@ -81,55 +81,55 @@ class StaticCodeAnalysis():
 		self.eNBSourceCodePath = ''
 
 	def CppCheckAnalysis(self, HTML):
-#		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
-#			HELP.GenericHelp(CONST.Version)
-#			sys.exit('Insufficient Parameter')
-#		lIpAddr = self.eNBIPAddress
-#		lUserName = self.eNBUserName
-#		lPassWord = self.eNBPassword
-#		lSourcePath = self.eNBSourceCodePath
-#
-#		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-#			HELP.GenericHelp(CONST.Version)
-#			sys.exit('Insufficient Parameter')
-#		logging.debug('Building on server: ' + lIpAddr)
-#		mySSH = SSH.SSHConnection()
-#		mySSH.open(lIpAddr, lUserName, lPassWord)
-#
-#		self.testCase_id = HTML.testCase_id
-#
-#		# on RedHat/CentOS .git extension is mandatory
-#		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-#		if result is not None:
-#			full_ran_repo_name = self.ranRepository
-#		else:
-#			full_ran_repo_name = self.ranRepository + '.git'
-#		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
-#		mySSH.command('cd ' + lSourcePath, '\$', 5)
-#		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-#		# Raphael: here add a check if git clone or git fetch went smoothly
-#		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-#		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
-#
-#		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
-#		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
-#		# if the commit ID is provided use it to point to it
-#		if self.ranCommitID != '':
-#			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
-#
-#		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
-#		mySSH.command('docker build --tag oai-cppcheck:xenial --file ci-scripts/docker/Dockerfile.cppcheck.xenial . > cmake_targets/log/cppcheck-xenial.txt 2>&1', '\$', 600)
-#		mySSH.command('sed -e "s@xenial@bionic@" ci-scripts/docker/Dockerfile.cppcheck.xenial > ci-scripts/docker/Dockerfile.cppcheck.bionic', '\$', 6)
-#		mySSH.command('docker build --tag oai-cppcheck:bionic --file ci-scripts/docker/Dockerfile.cppcheck.bionic . > cmake_targets/log/cppcheck-bionic.txt 2>&1', '\$', 600)
-#		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
-#
-#		# Analyzing the logs
-#		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-#		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-#		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-#		mySSH.close()
-#
-#		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '/*', '.')
+		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		lIpAddr = self.eNBIPAddress
+		lUserName = self.eNBUserName
+		lPassWord = self.eNBPassword
+		lSourcePath = self.eNBSourceCodePath
+
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('Building on server: ' + lIpAddr)
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+
+		self.testCase_id = HTML.testCase_id
+
+		# on RedHat/CentOS .git extension is mandatory
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
+		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
+		mySSH.command('cd ' + lSourcePath, '\$', 5)
+		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		# Raphael: here add a check if git clone or git fetch went smoothly
+		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
+
+		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
+		# if the commit ID is provided use it to point to it
+		if self.ranCommitID != '':
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+
+		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
+		mySSH.command('docker build --tag oai-cppcheck:xenial --file ci-scripts/docker/Dockerfile.cppcheck.xenial . > cmake_targets/log/cppcheck-xenial.txt 2>&1', '\$', 600)
+		mySSH.command('sed -e "s@xenial@bionic@" ci-scripts/docker/Dockerfile.cppcheck.xenial > ci-scripts/docker/Dockerfile.cppcheck.bionic', '\$', 6)
+		mySSH.command('docker build --tag oai-cppcheck:bionic --file ci-scripts/docker/Dockerfile.cppcheck.bionic . > cmake_targets/log/cppcheck-bionic.txt 2>&1', '\$', 600)
+		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
+
+		# Analyzing the logs
+		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
+		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
+		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
+		mySSH.close()
+
+		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '/*', '.')
 		CCR = CppCheckResults()
 		vId = 0
 		for variant in CCR.variants:
