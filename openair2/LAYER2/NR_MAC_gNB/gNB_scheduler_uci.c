@@ -160,282 +160,262 @@ uint8_t number_of_bits_set (uint8_t buf,uint8_t * max_ri){
 }
 
 
-//!TODO : same function can be written to handle csi_resources
-void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP){
-  uint8_t csi_report_id = 0;
-  uint8_t csi_resourceidx =0;
-  uint8_t csi_ssb_idx =0;
-  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
-  NR_CSI_ResourceConfigId_t csi_ResourceConfigId;
+void compute_rsrp_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
+                         uint8_t nb_resources,
+                         nr_csi_report_t *csi_report){
 
-  for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
-    struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
-		nr_csi_report_t *csi_report = &UE_info->csi_report_template[UE_id][csi_report_id];
-    csi_ResourceConfigId=csi_reportconfig->resourcesForChannelMeasurement;
-    reportQuantity_type = csi_reportconfig->reportQuantity.present;
-    csi_report->reportQuantity_type = reportQuantity_type;
+  if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled == csi_reportconfig->groupBasedBeamReporting.present) {
+    if (NULL != csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
+      csi_report->CSI_report_bitlen.nb_ssbri_cri = *(csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+    else
+      /*! From Spec 38.331
+       * nrofReportedRS
+       * The number (N) of measured RS resources to be reported per report setting in a non-group-based report. N <= N_max, where N_max is either 2 or 4 depending on UE
+       * capability. FFS: The signaling mechanism for the gNB to select a subset of N beams for the UE to measure and report.
+       * When the field is absent the UE applies the value 1
+       */
+      csi_report->CSI_report_bitlen.nb_ssbri_cri= 1;
+  } else
+    csi_report->CSI_report_bitlen.nb_ssbri_cri= 2;
 
-    for ( csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
-      struct NR_CSI_ResourceConfig *csi_resourceconfig = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx];
-      if ( csi_resourceconfig->csi_ResourceConfigId != csi_ResourceConfigId)
-        continue;
-      else {
-        uint8_t nb_ssb_resources =0;
-        //Finding the CSI_RS or SSB Resources
-        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type || 
-            NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type) {
-
-          if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled == csi_reportconfig->groupBasedBeamReporting.present) {
-            if (NULL != csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
-              csi_report->CSI_report_bitlen.nb_ssbri_cri = *(csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
-            else
-		/*! From Spec 38.331
-		 * nrofReportedRS
-		 * The number (N) of measured RS resources to be reported per report setting in a non-group-based report. N <= N_max, where N_max is either 2 or 4 depending on UE
-		 * capability. FFS: The signaling mechanism for the gNB to select a subset of N beams for the UE to measure and report.  
-		 * When the field is absent the UE applies the value 1
-		 */
-              csi_report->CSI_report_bitlen.nb_ssbri_cri= 1;
-          }else 
-	    csi_report->CSI_report_bitlen.nb_ssbri_cri= 2;
-
-          if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == csi_report->reportQuantity_type) {
-            for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
-              if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceSetId ==
-                  *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
- 
-                ///We can configure only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
-                nb_ssb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
-                csi_report->SSB_Index_list = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.array;
-                csi_report->CSI_Index_list = NULL;
-                break;
-              }
-            }
-          } else /*if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type)*/{
-            for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
-              if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_ResourceSetId ==
-                  *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
-
-                ///For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1 for spec 38.212
-                nb_ssb_resources=  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_RS_Resources.list.count;
-                csi_report->CSI_Index_list = csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_RS_Resources.list.array;
-                csi_report->SSB_Index_list = NULL;
-                break;
-              }
-            }
-         }
-
-         if (nb_ssb_resources) {
-           csi_report->CSI_report_bitlen.cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
-           csi_report->CSI_report_bitlen.rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP 
-           csi_report->CSI_report_bitlen.diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
-         } else { 
-            csi_report->CSI_report_bitlen.cri_ssbri_bitlen =0;
-            csi_report->CSI_report_bitlen.rsrp_bitlen = 0;  
-            csi_report->CSI_report_bitlen.diff_rsrp_bitlen =0; 
-         }
-
-        LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d\n",
-               csi_report->CSI_report_bitlen.cri_ssbri_bitlen,
-               csi_report->CSI_report_bitlen.rsrp_bitlen,
-               csi_report->CSI_report_bitlen.diff_rsrp_bitlen);
-        }
-
-        uint8_t ri_restriction;
-        uint8_t ri_bitlen;
-        uint8_t nb_allowed_ri;
-        uint8_t max_ri;
-
-        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI==reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI==reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI==reportQuantity_type||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1==reportQuantity_type){
-
-          for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
-            if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_ResourceSetId ==
-                *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
-              ///For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1 for spec 38.212
-              nb_ssb_resources=  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_RS_Resources.list.count;
-              csi_report->CSI_Index_list = csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_RS_Resources.list.array;
-              csi_report->SSB_Index_list = NULL;
-            }
-            break;
-          }
-          csi_report->csi_meas_bitlen.cri_bitlen=ceil(log2 (nb_ssb_resources));
-
-          if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
-
-            switch (RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value) {
-              case 1:;
-                csi_report->csi_meas_bitlen.ri_bitlen=0;
-                break;
-              case 2:
-		/*  From Spec 38.212 
-		 *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
-		 *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
-		 *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
-		 *  5.2.2.2.1 [6, TS 38.214].
-		 *
-		 *  But from Current RRC ASN structures nrofCQIsPerReport is not present. Present a dummy variable is present so using it to
-		 *  calculate RI for antennas equal or more than two.
-		 * */
-                 AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
-
-                 ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
-
-                 /* Replace dummy with the nrofCQIsPerReport from the CSIreport 
-                 config when equalent ASN structure present */
-                if (0==*(csi_reportconfig->dummy)){
-                  nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0), &max_ri);
-                  ri_bitlen = ceil(log2(nb_allowed_ri));
-                }
-                else{
-                  nb_allowed_ri = number_of_bits_set(ri_restriction, &max_ri);
-                  ri_bitlen = ceil(log2(nb_allowed_ri));
-                }
-                ri_bitlen = ri_bitlen<1?ri_bitlen:1; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel 
-                csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
-                break;
-              case 4:
-                AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
-
-                ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
-
-                /* Replace dummy with the nrofCQIsPerReport from the CSIreport 
-                config when equalent ASN structure present */
-                if (0==*(csi_reportconfig->dummy)){
-                  nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0), &max_ri);
-                  ri_bitlen = ceil(log2(nb_allowed_ri));
-                }
-                else{
-                  nb_allowed_ri = number_of_bits_set(ri_restriction,&max_ri);
-                  ri_bitlen = ceil(log2(nb_allowed_ri));
-                }
-                ri_bitlen = ri_bitlen<2?ri_bitlen:2; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel 
-                csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
-                break;
-              case 6:
-              case 8:
-                AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
-		 
-                ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
-
-                /* Replace dummy with the nrofCQIsPerReport from the CSIreport 
-                config when equalent ASN structure present */
-                if (0==*(csi_reportconfig->dummy)){
-                  nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0),&max_ri);
-                  ri_bitlen = ceil(log2(nb_allowed_ri));
-                }
-                else{
-                  nb_allowed_ri = number_of_bits_set(ri_restriction, &max_ri);
-                  ri_bitlen = ceil(log2(nb_allowed_ri));
-                }
-                csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
-                break;
-              default:
-                AssertFatal(RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value>8,"Number of antennas %d are out of range", RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value);
-            }
-          }
-          csi_report->csi_meas_bitlen.li_bitlen=0;
-          csi_report->csi_meas_bitlen.cqi_bitlen=0;
-          csi_report->csi_meas_bitlen.pmi_x1_bitlen=0;
-          csi_report->csi_meas_bitlen.pmi_x2_bitlen=0;
-        }
-
-        if( NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI==reportQuantity_type ){
-          if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
-
-            switch (RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value) {
-              case 1:;
-                csi_report->csi_meas_bitlen.li_bitlen=0;
-                break;
-              case 2:
-              case 4:
-              case 6:
-              case 8:
-		/*  From Spec 38.212 
-		 *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
-		 *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
-		 *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
-		 *  5.2.2.2.1 [6, TS 38.214].
-		 *
-		 *  But from Current RRC ASN structures nrofCQIsPerReport is not present. Present a dummy variable is present so using it to
-		 *  calculate RI for antennas equal or more than two.
-		 * */
-		 //! TODO: The bit length of LI is as follows LI = log2(RI), Need to confirm wheather we should consider maximum RI can be reported from ri_restricted
-		 //        or we should consider reported RI. If we need to consider reported RI for calculating LI bit length then we need to modify the code.
-                csi_report->csi_meas_bitlen.li_bitlen=ceil(log2(max_ri))<2?ceil(log2(max_ri)):2;
-                break;
-              default:
-                AssertFatal(RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value>8,"Number of antennas %d are out of range", RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value);
-            }
-          }
-        }
-
-        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI==reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI==reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI==reportQuantity_type){
-
-          switch (RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value){
-            case 1:
-            case 2:
-            case 4:
-            case 6:
-            case 8:
-	        /*  From Spec 38.212 
-		 *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
-		 *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
-		 *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
-		 *  5.2.2.2.1 [6, TS 38.214].
-		 *
-		 *  But from Current RRC ASN structures nrofCQIsPerReport is not present. Present a dummy variable is present so using it to
-		 *  calculate RI for antennas equal or more than two.
-		 * */
-		 
-              if (max_ri > 4 && max_ri < 8){
-                if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
-                  if (NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI==csi_reportconfig->reportFreqConfiguration->cqi_FormatIndicator)
-                    csi_report->csi_meas_bitlen.cqi_bitlen = 8;
-                  else 
-                    csi_report->csi_meas_bitlen.cqi_bitlen = 4;
-                }
-              }else{ //This condition will work even for type1-multipanel.
-                if (NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI==csi_reportconfig->reportFreqConfiguration->cqi_FormatIndicator)
-                  csi_report->csi_meas_bitlen.cqi_bitlen = 4;
-                else 
-                  csi_report->csi_meas_bitlen.cqi_bitlen = 2;
-              }
-              break;
-            default:
-              AssertFatal(RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value>8,"Number of antennas %d are out of range", RC.nrmac[Mod_idP]->config[0].carrier_config.num_tx_ant.value);
-          }
-        }
-        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI == reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI==reportQuantity_type){
-          if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
-            switch (csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present){
-              case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two:
-                if (max_ri ==1)
-                  csi_report->csi_meas_bitlen.pmi_x1_bitlen = 2;
-                else if (max_ri ==2)
-                  csi_report->csi_meas_bitlen.pmi_x1_bitlen = 1;
-                break;
-              default:
-                AssertFatal(csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present!=
-                            NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two,
-                            "Not handled Yet %d", csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present);
-		break;
-            }
-          }
-        }
-        break;
-      }
-    }
+  if (nb_resources) {
+    csi_report->CSI_report_bitlen.cri_ssbri_bitlen =ceil(log2 (nb_resources));
+    csi_report->CSI_report_bitlen.rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
+    csi_report->CSI_report_bitlen.diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
+  } else {
+    csi_report->CSI_report_bitlen.cri_ssbri_bitlen =0;
+    csi_report->CSI_report_bitlen.rsrp_bitlen = 0;
+    csi_report->CSI_report_bitlen.diff_rsrp_bitlen =0;
   }
 }
 
+
+uint8_t compute_ri_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
+                          nr_csi_report_t *csi_report){
+
+  struct NR_CodebookConfig *codebookConfig = csi_reportconfig->codebookConfig;
+  uint8_t nb_allowed_ri, ri_restriction,ri_bitlen;
+  uint8_t  max_ri = 0;
+
+  if (codebookConfig == NULL) {
+    csi_report->csi_meas_bitlen.ri_bitlen=0;
+    return max_ri;
+  }
+
+  // codebook type1 single panel
+  if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==codebookConfig->codebookType.choice.type1->subType.present){
+    struct NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel *type1single = codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel;
+    if (type1single->nrOfAntennaPorts.present == NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two){
+      // two antenna ports case
+      /*  From Spec 38.212
+       *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
+       *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
+       *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
+       *  5.2.2.2.1 [6, TS 38.214].
+       *
+       *  But from Current RRC ASN structures nrofCQIsPerReport is not present. Present a dummy variable is present so using it to
+       *  calculate RI for antennas equal or more than two.
+       * */
+      AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
+
+      ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
+
+      /* Replace dummy with the nrofCQIsPerReport from the CSIreport
+         config when equalent ASN structure present */
+      if (0==*(csi_reportconfig->dummy)){
+        nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0), &max_ri);
+        ri_bitlen = ceil(log2(nb_allowed_ri));
+      }
+      else{
+        nb_allowed_ri = number_of_bits_set(ri_restriction, &max_ri);
+        ri_bitlen = ceil(log2(nb_allowed_ri));
+      }
+      ri_bitlen = ri_bitlen<1?ri_bitlen:1; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel
+      csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
+    }
+    if (type1single->nrOfAntennaPorts.present == NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_moreThanTwo){
+      if (type1single->nrOfAntennaPorts.choice.moreThanTwo->n1_n2.present ==
+          NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_two_one_TypeI_SinglePanel_Restriction) {
+        // 4 ports
+        AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
+
+        ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
+
+        /* Replace dummy with the nrofCQIsPerReport from the CSIreport
+           config when equalent ASN structure present*/
+        if (0==*(csi_reportconfig->dummy)){
+          nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0), &max_ri);
+          ri_bitlen = ceil(log2(nb_allowed_ri));
+        }
+        else{
+          nb_allowed_ri = number_of_bits_set(ri_restriction,&max_ri);
+          ri_bitlen = ceil(log2(nb_allowed_ri));
+        }
+        ri_bitlen = ri_bitlen<2?ri_bitlen:2; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel
+        csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
+      }
+      else {
+        // more than 4 ports
+        AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
+
+        ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
+
+        /* Replace dummy with the nrofCQIsPerReport from the CSIreport
+           config when equalent ASN structure present */
+        if (0==*(csi_reportconfig->dummy)){
+          nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0),&max_ri);
+          ri_bitlen = ceil(log2(nb_allowed_ri));
+        }
+        else{
+          nb_allowed_ri = number_of_bits_set(ri_restriction, &max_ri);
+          ri_bitlen = ceil(log2(nb_allowed_ri));
+        }
+        csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
+      }
+    }
+    return max_ri;
+  }
+  else
+    AssertFatal(1==0,"Other configurations not yet implemented\n");
+}
+
+void compute_li_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
+                       uint8_t max_ri,
+                       nr_csi_report_t *csi_report){
+
+  struct NR_CodebookConfig *codebookConfig = csi_reportconfig->codebookConfig;
+  if (codebookConfig == NULL) {
+    csi_report->csi_meas_bitlen.li_bitlen=0;
+    return;
+  }
+  // codebook type1 single panel
+  if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==codebookConfig->codebookType.choice.type1->subType.present){
+    /* From Spec 38.212
+     *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
+     *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
+     *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
+     *  5.2.2.2.1 [6, TS 38.214].
+     *
+     *  But from Current RRC ASN structures nrofCQIsPerReport is not present. Present a dummy variable is present so using it to
+     *  calculate RI for antennas equal or more than two.
+     */
+     //! TODO: The bit length of LI is as follows LI = log2(RI), Need to confirm wheather we should consider maximum RI can be reported from ri_restricted
+     //        or we should consider reported RI. If we need to consider reported RI for calculating LI bit length then we need to modify the code.
+     csi_report->csi_meas_bitlen.li_bitlen=ceil(log2(max_ri))<2?ceil(log2(max_ri)):2;
+  }
+  else
+    AssertFatal(1==0,"Other configurations not yet implemented\n");
+}
+
+
+void compute_cqi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
+                        uint8_t max_ri,
+                        nr_csi_report_t *csi_report){
+
+  struct NR_CodebookConfig *codebookConfig = csi_reportconfig->codebookConfig;
+  struct NR_CSI_ReportConfig__reportFreqConfiguration *freq_config = csi_reportconfig->reportFreqConfiguration;
+
+  if (*freq_config->cqi_FormatIndicator == NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI) {
+    csi_report->csi_meas_bitlen.cqi_bitlen = 4;
+    if(codebookConfig != NULL) {
+      if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel == codebookConfig->codebookType.choice.type1->subType.present){
+        struct NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel *type1single = codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel;
+        if (type1single->nrOfAntennaPorts.present == NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_moreThanTwo) {
+          if (type1single->nrOfAntennaPorts.choice.moreThanTwo->n1_n2.present >
+              NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_two_one_TypeI_SinglePanel_Restriction) {
+            // more than 4 antenna ports
+            if (max_ri > 4)
+              csi_report->csi_meas_bitlen.cqi_bitlen += 4; // CQI for second TB
+          }
+        }
+      }
+    }
+  }
+  else
+    AssertFatal(1==0,"Sub-band CQI reporting not yet supported");
+}
+
+//!TODO : same function can be written to handle csi_resources
+void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP){
+  uint8_t csi_report_id = 0;
+  uint8_t nb_resources = 0;
+  uint8_t max_ri = 0;
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  NR_CSI_ResourceConfigId_t csi_ResourceConfigId;
+  struct NR_CSI_ResourceConfig *csi_resourceconfig;
+
+  // for each CSI measurement report configuration (list of CSI-ReportConfig)
+  for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
+    struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+    // MAC structure for CSI measurement reports (per UE and per report)
+    nr_csi_report_t *csi_report = &UE_info->csi_report_template[UE_id][csi_report_id];
+    // csi-ResourceConfigId of a CSI-ResourceConfig included in the configuration
+    // (either CSI-RS or SSB)
+    csi_ResourceConfigId = csi_reportconfig->resourcesForChannelMeasurement;
+    // looking for CSI-ResourceConfig
+    int found_resource = 0;
+    int csi_resourceidx = 0;
+    while (found_resource == 0 && csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count) {
+      csi_resourceconfig = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx];
+      if ( csi_resourceconfig->csi_ResourceConfigId == csi_ResourceConfigId)
+        found_resource = 1;
+      csi_resourceidx++;
+    }
+    AssertFatal(found_resource==1,"Not able to found any CSI-ResourceConfig with csi-ResourceConfigId %ld\n",
+                csi_ResourceConfigId);
+
+    long resourceType = csi_resourceconfig->resourceType;
+
+    reportQuantity_type = csi_reportconfig->reportQuantity.present;
+    csi_report->reportQuantity_type = reportQuantity_type;
+
+    // setting the CSI or SSB index list
+    if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == csi_report->reportQuantity_type) {
+      for (int csi_idx = 0; csi_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_idx++) {
+        if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceSetId ==
+            *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
+          //We can configure only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
+          nb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceList.list.count;
+          csi_report->SSB_Index_list = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceList.list.array;
+          csi_report->CSI_Index_list = NULL;
+          break;
+        }
+      }
+    }
+    else {
+      if (resourceType == NR_CSI_ResourceConfig__resourceType_periodic) {
+        for (int csi_idx = 0; csi_idx < csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; csi_idx++) {
+          if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_ResourceSetId ==
+              *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
+            //For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1 for spec 38.212
+            nb_resources=  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_RS_Resources.list.count;
+            csi_report->CSI_Index_list = csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_RS_Resources.list.array;
+            csi_report->SSB_Index_list = NULL;
+            break;
+          }
+        }
+      }
+      else AssertFatal(1==0,"Only periodic resource configuration currently supported\n");
+    }
+
+    // computation of bit length depending on the report type
+    switch(reportQuantity_type){
+      case (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP):
+        compute_rsrp_bitlen(csi_reportconfig, nb_resources, csi_report);
+        break;
+      case (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP):
+        compute_rsrp_bitlen(csi_reportconfig, nb_resources, csi_report);
+        break;
+      case (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI):
+        csi_report->csi_meas_bitlen.cri_bitlen=ceil(log2(nb_resources));
+        max_ri = compute_ri_bitlen(csi_reportconfig, csi_report);
+        compute_cqi_bitlen(csi_reportconfig, max_ri, csi_report);
+        break;
+    default:
+      AssertFatal(1==0,"Not yet supported CSI report quantity type");
+    }
+  }
+}
 
 
 uint16_t nr_get_csi_bitlen(int Mod_idP,
