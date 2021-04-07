@@ -52,22 +52,15 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 }
 
 void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
-                   unsigned short n_idDMRS,
-                   unsigned short length_dmrs)
+                   unsigned short nid)
 {
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
-  unsigned int nid;
   uint8_t reset;
-
-  if (n_idDMRS)
-    nid = n_idDMRS;
-  else
-    nid = ue->frame_parms.Nid_cell;
 
   for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
-    for (l=0; l<length_dmrs; l++) {
+    for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
 
       reset = 1;
       x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
@@ -82,11 +75,10 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
 }
 
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
-                   unsigned char ns,
                    unsigned short *n_idDMRS)
 {
   unsigned char l;
-  unsigned int n,x1,x2,x2tmp0;
+  unsigned int n,x1,x2,x2tmp0,ns;
   int nscid;
   unsigned int nid;
   uint8_t reset;
@@ -95,23 +87,21 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
   //unsigned short lbar = 0;
 
   for (nscid=0; nscid<2; nscid++) {
-    if (n_idDMRS)
+    for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
+
       nid = n_idDMRS[nscid];
-    else
-      nid = ue->frame_parms.Nid_cell;
 
-    //printf("gold pdsch nid %d lbar %d\n",nid,lbar);
+      for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
 
-    for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
+        reset = 1;
+        x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
+        x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
+        LOG_D(PHY,"UE DMRS slot %d, symb %d, x2 %x, nscid %d\n",ns,l,x2,nscid);
 
-      reset = 1;
-      x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
-      x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
-      LOG_D(PHY,"UE DMRS slot %d, symb %d, x2 %x, nscid %d\n",ns,l,x2,nscid);
-
-      for (n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-        ue->nr_gold_pdsch[0][ns][l][nscid][n] = lte_gold_generic(&x1, &x2, reset);
-        reset = 0;
+        for (n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
+          ue->nr_gold_pdsch[0][ns][l][nscid][n] = lte_gold_generic(&x1, &x2, reset);
+          reset = 0;
+        }
       }
     }
   }

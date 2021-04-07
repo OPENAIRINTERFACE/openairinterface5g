@@ -224,6 +224,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,
                          rrc->carrier.pdsch_AntennaPorts,
+                         rrc->carrier.pusch_AntennaPorts,
                          rrc->carrier.pusch_TargetSNRx10,
                          rrc->carrier.pucch_TargetSNRx10,
                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
@@ -309,6 +310,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
+  rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
   rrc->carrier.pusch_TargetSNRx10 = configuration->pusch_TargetSNRx10;
   rrc->carrier.pucch_TargetSNRx10 = configuration->pucch_TargetSNRx10;
   /// System Information INIT
@@ -462,6 +464,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   rrc_mac_config_req_gNB(rrc_instance_p->module_id,
                          rrc_instance_p->carrier.ssb_SubcarrierOffset,
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
+                         rrc_instance_p->carrier.pusch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_TargetSNRx10,
                          rrc_instance_p->carrier.pucch_TargetSNRx10,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,

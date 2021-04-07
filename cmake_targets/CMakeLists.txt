@@ -335,6 +335,11 @@ else (CUDA_FOUND)
     )
 endif ()
 
+if (SANITIZE_ADDRESS)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif ()
+
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
@@ -1994,6 +1999,7 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_sdu.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_timer_thread.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
   )
 
@@ -3376,7 +3382,7 @@ add_executable(nr_dlsim
   )   
 target_link_libraries(nr_dlsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 
@@ -3395,7 +3401,7 @@ add_executable(nr_prachsim
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl)
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
@@ -3428,7 +3434,7 @@ add_executable(nr_ulsim
   )
 target_link_libraries(nr_ulsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)
 

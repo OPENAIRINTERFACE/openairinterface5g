@@ -137,10 +137,10 @@ void nr_process_mac_pdu(
 
         case UL_SCH_LCID_S_BSR:
         case UL_SCH_LCID_S_TRUNCATED_BSR:
-        	//38.321 section 6.1.3.1
-        	//fixed length
-        	mac_ce_len =1;
-        	/* Extract short BSR value */
+               //38.321 section 6.1.3.1
+               //fixed length
+               mac_ce_len =1;
+               /* Extract short BSR value */
                ce_ptr = &pdu_ptr[mac_subheader_len];
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
@@ -182,7 +182,7 @@ void nr_process_mac_pdu(
                        NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]];
                }
 
-        	break;
+               break;
 
         case UL_SCH_LCID_C_RNTI:
         	//38.321 section 6.1.3.2

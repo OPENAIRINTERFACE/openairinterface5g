@@ -54,7 +54,7 @@ extern RAN_CONTEXT_t RC;
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
 
-void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
@@ -240,6 +240,9 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
+  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
+  cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
+  cfg->num_tlv++;
 
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -264,18 +267,32 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 
   cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
   cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
-  cfg->num_tlv++;
+  cfg->num_tlv+=2;
 
   cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
   AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 13, "pdsch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
+
   int num_ssb=0;
   for (int i=0;i<32;i++) {
-    num_ssb += (cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1;
-    num_ssb += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
+    cfg->ssb_table.ssb_beam_id_list[i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
+    if ((cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>(31-i))&1) {
+      cfg->ssb_table.ssb_beam_id_list[i].beam_id.value = num_ssb;
+      num_ssb++;
+    }
+    cfg->num_tlv++;
+  }
+  for (int i=0;i<32;i++) {
+    cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
+    if ((cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>(31-i))&1) {
+      cfg->ssb_table.ssb_beam_id_list[32+i].beam_id.value = num_ssb;
+      num_ssb++;
+    }
+    cfg->num_tlv++;
   } 
 
-  cfg->carrier_config.num_rx_ant.value = cfg->carrier_config.num_tx_ant.value;
+  cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
+  AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
   LOG_I(MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
@@ -295,25 +312,28 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
   if(cfg->cell_config.frame_duplex_type.value == TDD){
     LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
-    int return_tdd = set_tdd_config_nr(cfg,
-		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
+    int periods_per_frame = set_tdd_config_nr(cfg,
+                                              scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
+                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
-    if (return_tdd != 0)
+    if (periods_per_frame < 0)
       LOG_E(MAC,"TDD configuration can not be done\n");
-    else 
-      LOG_I(MAC,"TDD has been properly configurated\n");    
+    else {
+      LOG_I(MAC,"TDD has been properly configurated\n");
+      RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
+    }
   }
 
 }
 
 extern uint16_t sl_ahead;
-int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
-			   int ssb_SubcarrierOffset,
+int rrc_mac_config_req_gNB(module_id_t Mod_idP,
+                           int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
+                           int pusch_AntennaPorts,
                            int pusch_tgt_snrx10,
                            int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
@@ -359,7 +379,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
-                  pdsch_AntennaPorts, 
+                  ssb_SubcarrierOffset,
+                  pdsch_AntennaPorts,
+                  pusch_AntennaPorts,
 		  scc);
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
@@ -371,17 +393,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         printf("Waiting for PHY_config_req\n");
       }
     }
-  
+
+    RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
     RC.nrmac[Mod_idP]->pusch_target_snrx10 = pusch_tgt_snrx10;
     RC.nrmac[Mod_idP]->pucch_target_snrx10 = pucch_tgt_snrx10;
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
     phycfg.CC_id  = 0;
     phycfg.cfg    = &RC.nrmac[Mod_idP]->config[0];
-
-    phycfg.cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
-    phycfg.cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
-    phycfg.cfg->num_tlv++;
 
     if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
 
