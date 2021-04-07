@@ -77,9 +77,9 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   // generate pilot
   nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
-  int re_offset = ssb_offset;
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
+    int re_offset = ssb_offset;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
 
@@ -277,9 +277,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   // generate pilot
   nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
-  int re_offset = ssb_offset;
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
+    int re_offset = ssb_offset;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
@@ -295,7 +295,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     printf("rxF addr %p\n", rxF);
     printf("dl_ch addr %p\n",dl_ch);
 #endif
-    //if ((ue->frame_parms.N_RB_DL&1)==0) {
 
     // Treat first 2 pilots specially (left edge)
     ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -452,21 +451,19 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     }
 
     if( dmrss == 2) // update time statistics for last PBCH symbol
-      {
-	// do ifft of channel estimate
-	for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
-	  for (p=0; p<ue->frame_parms.nb_antenna_ports_gNB; p++) {
-	    if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
-	      {
-		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, proc->thread_id, symbol, ch_offset);
-		idft(idftsizeidx,
-		     (int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][ch_offset],
-		     (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p<<1)+aarx],1);
-	      }
-	  }
-      }
-
-    //}
+    {
+      // do ifft of channel estimate
+      for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
+        for (p=0; p<ue->frame_parms.nb_antenna_ports_gNB; p++) {
+          if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p*ue->frame_parms.nb_antennas_rx)+aarx])
+          {
+            LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, proc->thread_id, symbol, ch_offset);
+            idft(idftsizeidx,
+                 (int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p*ue->frame_parms.nb_antennas_rx)+aarx][ch_offset],
+                 (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p*ue->frame_parms.nb_antennas_rx)+aarx],1);
+          }
+        }
+    }
 
   }
   return(0);
@@ -510,6 +507,13 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   fl = filt16a_l1;
   fm = filt16a_m1;
   fr = filt16a_r1;
+
+
+  // checking if re-initialization of scrambling IDs is needed (should be done here but scrambling ID for PDCCH is not taken from RRC)
+/*  if (( != ue->scramblingID_pdcch){
+    ue->scramblingID_pdcch=;
+    nr_gold_pdsch(ue,ue->scramblingID_pdcch);
+  }*/
 
 
   // generate pilot
@@ -672,7 +676,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   if (ue->high_speed_flag == 0)
-    ch_offset     = ue->frame_parms.ofdm_symbol_size ;
+    ch_offset     = ue->frame_parms.ofdm_symbol_size;
   else
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -690,11 +694,19 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12 - BWPStart;
   uint8_t config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   int8_t delta = get_delta(p, config_type);
-  nushift = delta;
-  ue->frame_parms.nushift = nushift;
-  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol][0], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
 
-  if (config_type == pdsch_dmrs_type1 && ue->fd_lin_interpolation == 1){
+  // checking if re-initialization of scrambling IDs is needed
+  if ((ue->dmrs_DownlinkConfig.scramblingID0 != ue->scramblingID[0]) || (ue->dmrs_DownlinkConfig.scramblingID1 != ue->scramblingID[1])){
+    ue->scramblingID[0]=ue->dmrs_DownlinkConfig.scramblingID0;
+    ue->scramblingID[1]=ue->dmrs_DownlinkConfig.scramblingID1;
+    nr_gold_pdsch(ue,ue->scramblingID);
+  }
+
+  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol][0], &pilot[0],1000+p,0,nb_rb_pdsch+rb_offset);
+
+  if (config_type == pdsch_dmrs_type1){
+    nushift = (p>>1)&1;
+    if (p<4) ue->frame_parms.nushift = nushift;
     switch (delta) {
 
     case 0://port 0,1
@@ -732,7 +744,9 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       return -1;
       break;
     }
-  } else if (ue->fd_lin_interpolation == 1) {//pdsch_dmrs_type2
+  } else {//pdsch_dmrs_type2
+    nushift = delta;
+    if (p<6) ue->frame_parms.nushift = nushift;
     switch (delta) {
     case 0://port 0,1
       fl = filt8_l2;//left interpolation Filter should be fml

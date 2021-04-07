@@ -755,17 +755,25 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     if (fp->freq_range==nr_FR2) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
+      // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
       int beam=0;
-      //if (slot==0) beam = 11; //3 for boresight & 8 to enable
+      if (slot%10==0) {
+	if (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8) {
+	  beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
+	}
+      }
       /*
-      if (slot==0 || slot==40) beam=0&8;
-      if (slot==10 || slot==50) beam=1&8;
-      if (slot==20 || slot==60) beam=2&8;
-      if (slot==30 || slot==70) beam=3&8;
+      if (slot==0 || slot==40) beam=0|8;
+      if (slot==10 || slot==50) beam=1|8;
+      if (slot==20 || slot==60) beam=2|8;
+      if (slot==30 || slot==70) beam=3|8;
       */
       flags |= beam<<8;
-    }
 
+      LOG_D(HW,"slot %d, beam %d\n",slot,ru->common.beam_id[0][slot*fp->symbols_per_slot]);
+
+    }
+    
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags ); 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
@@ -1721,11 +1729,9 @@ void set_function_spec_param(RU_t *ru) {
         ru->nr_start_if          = NULL;                    // no if interface
         ru->rfdevice.host_type   = RAU_HOST;
 
-	// FK this here looks messed up. The following lines should be part of the  if (ru->function == gNodeB_3GPP), shouldn't they?
-
-	ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-	ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-	ru->start_rf               = start_rf;                            // need to start the local RF interface
+	ru->fh_south_in            = rx_rf;                 // local synchronous RF RX
+	ru->fh_south_out           = tx_rf;                 // local synchronous RF TX
+	ru->start_rf               = start_rf;              // need to start the local RF interface
 	ru->stop_rf                = stop_rf;
 	ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
 	printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);

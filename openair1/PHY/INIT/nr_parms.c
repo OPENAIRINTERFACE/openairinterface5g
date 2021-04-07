@@ -27,12 +27,9 @@
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
 
-int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
-{
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp,uint8_t i_ssb) {
 
   int mu = fp->numerology_index;
-  uint8_t half_frame_index = fp->half_frame_bit;
-  uint8_t i_ssb = fp->ssb_index;
   int symbol = 0;
   uint8_t n, n_temp;
   nr_ssb_type_e type = fp->ssb_type;
@@ -68,9 +65,6 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
      default:
        AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
   }
-
-  if (half_frame_index)
-    symbol += (5 * fp->symbols_per_slot * fp->slots_per_subframe);
 
   return symbol;
 }
@@ -204,9 +198,9 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
-  fp->nb_antenna_ports_gNB = cfg->carrier_config.num_tx_ant.value;// It corresponds to pdsch_AntennaPorts
+  fp->nb_antenna_ports_gNB = 1;                                   // It corresponds to the number of common antenna ports
   fp->nb_antennas_rx = cfg->carrier_config.num_rx_ant.value;      // It denotes the number of rx antennas at gNB
-  fp->nb_antennas_tx = 1;                                         // It corresponds to the number of UE Tx antennas
+  fp->nb_antennas_tx = cfg->carrier_config.num_tx_ant.value;      // It corresponds to pdsch_AntennaPorts
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
@@ -253,6 +247,11 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   uint8_t tdd_cfg           = 3;
   uint8_t Nid_cell          = 0;
   int     Ncp               = NORMAL;
+
+  if(fp->nb_antennas_rx == 0)
+    fp->nb_antennas_rx = 1;
+  if(fp->nb_antennas_tx == 0)
+    fp->nb_antennas_tx = 1;
 
   // default values until overwritten by RRCConnectionReconfiguration
   fp->nb_antenna_ports_gNB = nb_ant_ports_gNB;
