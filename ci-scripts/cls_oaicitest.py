@@ -2580,20 +2580,14 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 			return
-		ueIpStatus = self.GetAllUEIPAddresses()
-		if (ueIpStatus < 0):
-			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
-			return
 
-
-		if self.ue_id=="":
+		if self.ue_id=="":#is not a module, follow legacy code
 			ueIpStatus = self.GetAllUEIPAddresses()
 			if (ueIpStatus < 0):
 				HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				return
-		else: 
+		else: #is a module
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.GetModuleIPAddress()
 			if Module_UE.UEIPAddress not in self.UEIPAddresses:
