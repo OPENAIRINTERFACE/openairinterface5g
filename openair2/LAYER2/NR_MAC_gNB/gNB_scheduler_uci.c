@@ -378,70 +378,16 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
     reportQuantity_type = csi_reportconfig->reportQuantity.present;
     csi_report->reportQuantity_type = reportQuantity_type;
 
-    for ( csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
-      struct NR_CSI_ResourceConfig *csi_resourceconfig = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx];
-      if ( csi_resourceconfig->csi_ResourceConfigId != csi_ResourceConfigId)
-        continue;
-      else {
-        uint8_t nb_ssb_resources =0;
-        //Finding the CSI_RS or SSB Resources
-        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type ||
-            NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type) {
-
-          if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled == csi_reportconfig->groupBasedBeamReporting.present) {
-            if (NULL != csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
-              csi_report->CSI_report_bitlen.nb_ssbri_cri = *(csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
-            else
-		/*! From Spec 38.331
-		 * nrofReportedRS
-		 * The number (N) of measured RS resources to be reported per report setting in a non-group-based report. N <= N_max, where N_max is either 2 or 4 depending on UE
-		 * capability. FFS: The signaling mechanism for the gNB to select a subset of N beams for the UE to measure and report.
-		 * When the field is absent the UE applies the value 1
-		 */
-              csi_report->CSI_report_bitlen.nb_ssbri_cri= 1;
-          }else
-	    csi_report->CSI_report_bitlen.nb_ssbri_cri= 2;
-
-          if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == csi_report->reportQuantity_type) {
-            for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
-              if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceSetId ==
-                  *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
-
-                ///We can configure only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
-                nb_ssb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
-                csi_report->SSB_Index_list = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.array;
-                csi_report->CSI_Index_list = NULL;
-								break;
-              }
-            }
-          } else /*if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type)*/{
-            for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
-              if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_ResourceSetId ==
-                  *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
-
-                ///For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1 for spec 38.212
-                nb_ssb_resources=  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_RS_Resources.list.count;
-                csi_report->CSI_Index_list = csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_ssb_idx]->nzp_CSI_RS_Resources.list.array;
-                csi_report->SSB_Index_list = NULL;
-                break;
-              }
-            }
-         }
-
-         if (nb_ssb_resources) {
-           csi_report->CSI_report_bitlen.cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
-           csi_report->CSI_report_bitlen.rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
-           csi_report->CSI_report_bitlen.diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
-         } else {
-            csi_report->CSI_report_bitlen.cri_ssbri_bitlen =0;
-            csi_report->CSI_report_bitlen.rsrp_bitlen = 0;
-            csi_report->CSI_report_bitlen.diff_rsrp_bitlen =0;
-         }
-
-        LOG_I (NR_MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d\n",
-               csi_report->CSI_report_bitlen.cri_ssbri_bitlen,
-               csi_report->CSI_report_bitlen.rsrp_bitlen,
-               csi_report->CSI_report_bitlen.diff_rsrp_bitlen);
+    // setting the CSI or SSB index list
+    if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == csi_report->reportQuantity_type) {
+      for (int csi_idx = 0; csi_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_idx++) {
+        if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceSetId ==
+            *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
+          //We can configure only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
+          nb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceList.list.count;
+          csi_report->SSB_Index_list = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceList.list.array;
+          csi_report->CSI_Index_list = NULL;
+          break;
         }
       }
     }
@@ -1061,8 +1007,6 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
         default:
           AssertFatal(1==0, "Invalid or not supported CSI measurement report\n");
       }
-      UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
-      LOG_D(NR_MAC,"csi_payload size = %d, rsrp_id = %d\n",payload_size, sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
     }
   }
 }
