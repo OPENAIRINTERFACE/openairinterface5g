@@ -432,6 +432,7 @@ void pf_dl(module_id_t module_id,
            int max_num_ue) {
 
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_ServingCellConfigCommon_t *scc=RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -440,8 +441,12 @@ void pf_dl(module_id_t module_id,
   /* Loop UE_info->list to check retransmission */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
-    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+    sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, 
+					       sched_ctrl->active_bwp ? 
+					       NR_SearchSpace__searchSpaceType_PR_ue_Specific:
+					       NR_SearchSpace__searchSpaceType_PR_common);
+    sched_ctrl->coreset = get_coreset(scc,sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+    if (sched_ctrl->coreset == NULL) sched_ctrl->coreset = RC.nrmac[module_id]->sched_ctrlCommon->coreset;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
     const rnti_t rnti = UE_info->rnti[UE_id];
@@ -632,6 +637,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
 
   if (UE_info->num_UEs == 0)
     return;
@@ -642,7 +648,10 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   /* Get bwpSize from the first UE */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp ?
+				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
+				    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 
+				    MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
@@ -896,7 +905,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
-    const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+    const int n_dl_bwp = UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
       AssertFatal(n_dl_bwp == 1,
           "downlinkBWP_ToAddModList has %d BWP!\n",
           n_dl_bwp);
@@ -941,7 +950,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int rnti_type = NR_RNTI_C;
 
     fill_dci_pdu_rel15(scc,
-                       UE_info->secondaryCellGroup[UE_id],
+                       UE_info->CellGroup[UE_id],
                        dci_pdu,
                        &dci_payload,
                        dci_format,

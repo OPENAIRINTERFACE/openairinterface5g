@@ -228,6 +228,7 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
 
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_ServingCellConfigCommon_t *scc,
+			NR_CellGroupConfig_t *CellGroup,
 			NR_BWP_Uplink_t *bwp,
                         uint16_t rnti,
                         uint8_t pucch_resource,
@@ -246,7 +247,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_BWP_Downlink_t *bwp);
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
-                        const NR_CellGroupConfig_t *secondaryCellGroup,
+                        const NR_CellGroupConfig_t *CellGroup,
                         nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int dci_formats,
@@ -254,22 +255,23 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int N_RB,
                         int bwp_id);
 
-void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
+void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
 
 /* find coreset within the search space */
-NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
+NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
+				     NR_BWP_Downlink_t *bwp,
                                      NR_SearchSpace_t *ss,
-                                     int ss_type);
+                                     NR_SearchSpace__searchSpaceType_PR ss_type);
 
 /* find a search space within a BWP */
-NR_SearchSpace_t *get_searchspace(
-    NR_BWP_Downlink_t *bwp,
-    NR_SearchSpace__searchSpaceType_PR target_ss);
+NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
+				  NR_BWP_Downlink_t *bwp,
+				  NR_SearchSpace__searchSpaceType_PR target_ss);
 
-long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
+long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
 void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                           const NR_BWP_Uplink_t *ubwp,
@@ -314,7 +316,7 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup);
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 

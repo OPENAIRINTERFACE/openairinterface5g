@@ -2520,6 +2520,7 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
   NR_PUSCH_Config_t *pusch_Config = NULL;
   NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
+    AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
     bwp=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
     ubwp=cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
     pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
