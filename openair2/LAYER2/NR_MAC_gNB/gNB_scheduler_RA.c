@@ -1377,7 +1377,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = sched_ctrl->sched_pucch->timing_indicator;
 
     LOG_D(NR_MAC,
-          "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
+          "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d pucchres %d harqtiming %d\n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
           pdsch_pdu_rel15->rbSize,
@@ -1385,7 +1385,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
           dci_payload.mcs,
-          dci_payload.tb_scaling);
+          dci_payload.tb_scaling,
+	  dci_payload.pucch_resource_indicator,
+	  dci_payload.pdsch_to_harq_feedback_timing_indicator.val);
 
     LOG_D(NR_MAC,
           "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",

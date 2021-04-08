@@ -383,8 +383,12 @@ bool allocate_retransmission(module_id_t module_id,
                              int current_harq_pid){
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  NR_BWP_t *genericParameters = sched_ctrl->active_bwp ? 
+    &sched_ctrl->active_bwp->bwp_Common->genericParameters :
+    &RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
 
