@@ -368,6 +368,12 @@ void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink
 
   // setting initial ssb start subcarrier to have SSBs at BW center
   frame_parms->ssb_start_subcarrier = ((frame_parms->N_RB_DL>>1)-10)*12;
+
+  if(frame_parms->nb_antennas_rx == 0)
+    frame_parms->nb_antennas_rx = 1;
+  if(frame_parms->nb_antennas_tx == 0)
+    frame_parms->nb_antennas_tx = 1;
+
 }
 
 
