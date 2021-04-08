@@ -1237,6 +1237,8 @@ bool nr_acknack_scheduling(int mod_id,
   // Find the right timing_indicator value.
   int i = 0;
   while (i < 8) {
+    LOG_I(MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
+	  i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
     if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
       break;
     ++i;
@@ -1253,7 +1255,7 @@ bool nr_acknack_scheduling(int mod_id,
   }
   pucch->timing_indicator = i; // index in the list of timing indicators
 
-  LOG_I(MAC,"2. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
+  LOG_D(MAC,"2. DL slot %d, UL_ACK %d (index %d)\n",slot,pucch->ul_slot,i);
 
   pucch->dai_c++;
   const int pucch_res = pucch_index_used[pucch->ul_slot];

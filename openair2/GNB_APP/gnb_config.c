@@ -297,6 +297,10 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
     free(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing);
     scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing=NULL;
   }
+
+  // check pucch_ResourceConfig
+  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceConfig < 2,
+	      "pucch_ResourceConfig should be 0 or 1 for now\n");
 }
 
 /* Function to allocate dedicated serving cell config strutures */
