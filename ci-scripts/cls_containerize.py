@@ -83,6 +83,7 @@ class Containerize():
 		self.flexranCtrlDeployed = False
 		self.flexranCtrlIpAddress = ''
 		self.cli = ''
+		self.cliBuildOptions = ''
 		self.dockerfileprefix = ''
 		self.host = ''
 		self.allImagesSize = {}
@@ -124,9 +125,11 @@ class Containerize():
 		if self.host == 'Ubuntu':
 			self.cli = 'docker'
 			self.dockerfileprefix = '.ubuntu18'
+			self.cliBuildOptions = '--no-cache'
 		elif self.host == 'Red Hat':
 			self.cli = 'sudo podman'
 			self.dockerfileprefix = '.rhel8.2'
+			self.cliBuildOptions = '--no-cache --disable-compression'
 
 		imageNames = []
 		result = re.search('eNB', self.imageKind)
@@ -201,7 +204,7 @@ class Containerize():
 
 		# Build the shared image only on Push Events (not on Merge Requests)
 		if (not self.ranAllowMerge):
-			mySSH.command(self.cli + ' build --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
 		# First verify if the shared image was properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + sharedTag, '\$', 5)
@@ -249,7 +252,7 @@ class Containerize():
 			# the archived Dockerfiles have "ran-build:latest" as base image
 			# we need to update them with proper tag
 			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + sharedTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
-			mySSH.command(self.cli + ' build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
