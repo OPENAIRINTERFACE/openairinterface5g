@@ -1,0 +1,123 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for RHEL8
+#
+#---------------------------------------------------------------------
+
+FROM localhost/ran-build:develop AS phy-sim-build
+
+RUN rm -Rf /oai-ran
+WORKDIR /oai-ran
+COPY . .
+
+#run build_oai to build the target image
+RUN /bin/sh oaienv && \ 
+    cd cmake_targets && \
+    mkdir -p log && \
+    ./build_oai --phy_simulators --ninja --verbose-ci
+
+
+#start from scratch for target executable
+FROM registry.access.redhat.com/ubi8/ubi:latest as oai-physim
+
+RUN yum update -y && \
+    yum install -y --enablerepo="ubi-8-codeready-builder" \
+        lksctp-tools \
+        nettle \
+        atlas \
+        hostname \
+        sudo \
+        procps-ng \
+        net-tools \
+        iputils \
+        bc \
+        iproute \
+        libyaml && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
+
+WORKDIR /opt/oai-physim/targets/bin
+COPY --from=phy-sim-build /oai-ran/targets/bin/dlsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_dlsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_prachsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_ulschsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/polartest.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/ulsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/ldpctest.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_dlschsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_pbchsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_pucchsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/nr_ulsim.Rel15 .
+COPY --from=phy-sim-build /oai-ran/targets/bin/smallblocktest.Rel15 .
+
+WORKDIR /usr/local/lib/
+COPY --from=phy-sim-build /oai-ran/targets/bin/libcoding.so .
+COPY --from=phy-sim-build /lib64/liblapacke.so.3 .
+COPY --from=phy-sim-build /lib64/libX11.so.6 .
+COPY --from=phy-sim-build /lib64/libXpm.so.4 .
+COPY --from=phy-sim-build /lib64/libxcb.so.1 .
+COPY --from=phy-sim-build /lib64/libXau.so.6 .
+COPY --from=phy-sim-build /lib64/libforms.so.2 .
+COPY --from=phy-sim-build /lib64/libblas.so.3 .
+COPY --from=phy-sim-build /lib64/liblapack.so.3 .
+COPY --from=phy-sim-build /lib64/libexslt.so.0 .
+COPY --from=phy-sim-build /lib64/libxslt.so.1 .
+COPY --from=phy-sim-build /oai-ran/cmake_targets/phy_simulators/build/libdfts.so .
+COPY --from=phy-sim-build /oai-ran/cmake_targets/phy_simulators/build/libSIMU.so .
+COPY --from=phy-sim-build /oai-ran/cmake_targets/phy_simulators/build/libldpc.so .
+COPY --from=phy-sim-build /oai-ran/cmake_targets/phy_simulators/build/libldpc_orig.so .
+
+RUN ldconfig
+
+#debug
+#RUN ldd /opt/oai-physim/targets/bin/dlsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_dlsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_prachsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_ulschsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/polartest.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/ulsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/ldpctest.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_dlschsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_pbchsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_pucchsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/nr_ulsim.Rel15
+#RUN ldd /opt/oai-physim/targets/bin/smallblocktest.Rel15
+
+# Copy some executables
+WORKDIR /usr/bin/
+
+COPY --from=phy-sim-build /usr/bin/killall .
+COPY --from=phy-sim-build /usr/bin/xmlstarlet .
+COPY --from=phy-sim-build /usr/bin/svn .
+
+# Copy the relevant configuration files for phySim
+WORKDIR /opt/oai-physim/
+
+COPY --from=phy-sim-build /oai-ran/cmake_targets/autotests/run_exec_autotests.bash /opt/oai-physim/cmake_targets/autotests/
+COPY --from=phy-sim-build /oai-ran/cmake_targets/autotests/test_case_list.xml /opt/oai-physim/cmake_targets/autotests/
+COPY --from=phy-sim-build /oai-ran/cmake_targets/autotests/tools/free_mem.bash /opt/oai-physim/cmake_targets/autotests/tools/
+COPY --from=phy-sim-build /oai-ran/cmake_targets/tools/build_helper /opt/oai-physim/cmake_targets/tools/
+COPY --from=phy-sim-build /oai-ran/cmake_targets/tools/test_helper /opt/oai-physim/cmake_targets/tools/
+
+#CMD ["sleep", "infinity"]

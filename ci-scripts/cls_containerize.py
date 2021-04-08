@@ -147,6 +147,8 @@ class Containerize():
 					imageNames.append(('oai-gnb', 'gNB'))
 					imageNames.append(('oai-lte-ue', 'lteUE'))
 					imageNames.append(('oai-nr-ue', 'nrUE'))
+					if self.host == 'Red Hat':
+						imageNames.append(('oai-physim', 'phySim'))
 		if len(imageNames) == 0:
 			imageNames.append(('oai-enb', 'eNB'))
 		
