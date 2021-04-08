@@ -1724,6 +1724,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 {
   int UE_id;
   int i;
+  int cc_id;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
@@ -1759,6 +1760,20 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
     rnti_to_remove_count++;
     if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
+  }
+
+  /* clear RA process(es?) associated to the UE */
+  for (cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
+    NR_COMMON_channels_t *cc = &RC.nrmac[mod_id]->common_channels[cc_id];
+    for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+      if (cc->ra[i].rnti == rnti) {
+        LOG_D(MAC, "free RA process %d for rnti %d\n", i, rnti);
+        /* is it enough? */
+        cc->ra[i].cfra  = false;
+        cc->ra[i].rnti  = 0;
+        cc->ra[i].crnti = 0;
+      }
+    }
   }
 }
 
