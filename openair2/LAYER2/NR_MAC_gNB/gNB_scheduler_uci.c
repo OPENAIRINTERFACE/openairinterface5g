@@ -1142,6 +1142,7 @@ bool nr_acknack_scheduling(int mod_id,
     }
   }
 
+  LOG_I(MAC,"1. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
@@ -1251,6 +1252,8 @@ bool nr_acknack_scheduling(int mod_id,
     return false;
   }
   pucch->timing_indicator = i; // index in the list of timing indicators
+
+  LOG_I(MAC,"2. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
 
   pucch->dai_c++;
   const int pucch_res = pucch_index_used[pucch->ul_slot];
