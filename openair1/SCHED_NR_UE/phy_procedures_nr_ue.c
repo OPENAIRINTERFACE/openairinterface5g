@@ -114,7 +114,6 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
     dl_ind->dci_ind = NULL;
 
   }
-
 }
 
 void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
