@@ -24,6 +24,7 @@
 #endif
 #include "asn1_utils.h"
 #include "nr_pdcp_ue_manager.h"
+#include "nr_pdcp_timer_thread.h"
 #include "NR_RadioBearerConfig.h"
 #include "NR_RLC-BearerConfig.h"
 #include "NR_RLC-Config.h"
@@ -41,6 +42,11 @@
   } while (0)
 
 static nr_pdcp_ue_manager_t *nr_pdcp_ue_manager;
+
+/* TODO: handle time a bit more properly */
+static uint64_t nr_pdcp_current_time;
+static int      nr_pdcp_current_time_last_frame;
+static int      nr_pdcp_current_time_last_subframe;
 
 /* necessary globals for OAI, not used internally */
 hash_table_t  *pdcp_coll_p;
@@ -340,6 +346,8 @@ void pdcp_layer_init(void)
 
   nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
   init_nr_rlc_data_req_queue();
+
+  nr_pdcp_init_timer_thread(nr_pdcp_ue_manager);
 }
 
 #include "nfapi/oai_integration/vendor_ext.h"
@@ -592,7 +600,11 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
   TODO;
 }
 
-static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
+static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
+                       int ciphering_algorithm,
+                       int integrity_algorithm,
+                       unsigned char *ciphering_key,
+                       unsigned char *integrity_key)
 {
   nr_pdcp_entity_t *pdcp_drb;
   nr_pdcp_ue_t *ue;
@@ -622,8 +634,11 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity_drb_am(drb_id, deliver_sdu_drb, ue, deliver_pdu_drb, ue,
-                                         sn_size_dl, t_reordering, discard_timer);
+    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,
+                                  deliver_sdu_drb, ue, deliver_pdu_drb, ue,
+                                  sn_size_dl, t_reordering, discard_timer,
+                                  ciphering_algorithm, integrity_algorithm,
+                                  ciphering_key, integrity_key);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -631,16 +646,23 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-static void add_drb(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_Config_t *rlc_Config)
+static void add_drb(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
+                    NR_RLC_Config_t *rlc_Config,
+                    int ciphering_algorithm,
+                    int integrity_algorithm,
+                    unsigned char *ciphering_key,
+                    unsigned char *integrity_key)
 {
   switch (rlc_Config->present) {
   case NR_RLC_Config_PR_am:
-    add_drb_am(rnti, s);
+    add_drb_am(is_gnb, rnti, s, ciphering_algorithm, integrity_algorithm,
+               ciphering_key, integrity_key);
     break;
   case NR_RLC_Config_PR_um_Bi_Directional:
     //add_drb_um(rnti, s);
     /* hack */
-    add_drb_am(rnti, s);
+    add_drb_am(is_gnb, rnti, s, ciphering_algorithm, integrity_algorithm,
+               ciphering_key, integrity_key);
     break;
   default:
     LOG_E(PDCP, "%s:%d:%s: fatal: unhandled DRB type\n",
@@ -658,7 +680,8 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   const uint8_t                   security_modeP,
   uint8_t                  *const kRRCenc,
   uint8_t                  *const kRRCint,
-  uint8_t                  *const kUPenc
+  uint8_t                  *const kUPenc,
+  uint8_t                  *const kUPint
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
@@ -677,7 +700,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //srb2add_list == NULL ||
       //drb2add_list != NULL ||
       drb2release_list != NULL ||
-      security_modeP != 255 ||
+      //security_modeP != 255 ||
       //kRRCenc != NULL ||
       //kRRCint != NULL ||
       //kUPenc != NULL ||
@@ -694,7 +717,10 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
 
   if (drb2add_list != NULL) {
     for (i = 0; i < drb2add_list->list.count; i++) {
-      add_drb(rnti, drb2add_list->list.array[i], rlc_bearer2add_list->list.array[i]->rlc_Config);
+      add_drb(ctxt_pP->enb_flag, rnti, drb2add_list->list.array[i],
+              rlc_bearer2add_list->list.array[i]->rlc_Config,
+              security_modeP & 0x0f, (security_modeP >> 4) & 0x0f,
+              kUPenc, kUPint);
     }
   }
 
@@ -706,6 +732,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   free(kRRCenc);
   free(kRRCint);
   free(kUPenc);
+  free(kUPint);
 
   return 0;
 }
@@ -750,7 +777,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
   drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
   drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
   drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
-  *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_ms30;
+  *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_infinity;
   drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
   *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len12bits;
   drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
@@ -801,6 +828,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     rbconfig->drb_ToAddModList ,
     rbconfig->drb_ToReleaseList,
     0xff,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -956,4 +984,15 @@ void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req)
 void
 pdcp_mbms_run ( const protocol_ctxt_t *const  ctxt_pP){
   /* nothing to do */
+}
+
+void nr_pdcp_tick(int frame, int subframe)
+{
+  if (frame != nr_pdcp_current_time_last_frame ||
+      subframe != nr_pdcp_current_time_last_subframe) {
+    nr_pdcp_current_time_last_frame = frame;
+    nr_pdcp_current_time_last_subframe = subframe;
+    nr_pdcp_current_time++;
+    nr_pdcp_wakeup_timer_thread(nr_pdcp_current_time);
+  }
 }

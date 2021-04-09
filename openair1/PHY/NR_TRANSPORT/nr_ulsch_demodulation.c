@@ -16,10 +16,10 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i idft_in128[1][1200], idft_out128[1][1200];
+  __m128i idft_in128[1][3240], idft_out128[1][3240];
   __m128i norm128;
 #elif defined(__arm__)
-  int16x8_t idft_in128[1][1200], idft_out128[1][1200];
+  int16x8_t idft_in128[1][3240], idft_out128[1][3240];
   int16x8_t norm128;
 #endif
   int16_t *idft_in0 = (int16_t*)idft_in128[0], *idft_out0 = (int16_t*)idft_out128[0];
@@ -28,19 +28,18 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 
   LOG_T(PHY,"Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
-  // conjugate input
-  for (i = 0; i < (Msc_PUSCH>>2); i++) {
+  if ((Msc_PUSCH % 1536) > 0) {
+    // conjugate input
+    for (i = 0; i < (Msc_PUSCH>>2); i++) {
 #if defined(__x86_64__)||defined(__i386__)
-    *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
+      *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
 #elif defined(__arm__)
-    *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
 #endif
+    }
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      ((uint32_t*)idft_in0)[ip+0] = z[i];
   }
-
-  for (i=0,ip=0; i<Msc_PUSCH; i++, ip+=4) {
-    ((int32_t*)idft_in0)[ip+0] = z[i];
-  }
-
 
   switch (Msc_PUSCH) {
     case 12:
@@ -194,25 +193,102 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
       dft(DFT_1200,idft_in0, idft_out0, 1);
       break;
 
+    case 1296:
+      dft(DFT_1296,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1440:
+      dft(DFT_1440,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1500:
+      dft(DFT_1500,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1536:
+      //dft(DFT_1536,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      idft(IDFT_1536,(int16_t*)z, (int16_t*)z, 1);
+      break;
+
+    case 1620:
+      dft(DFT_1620,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1728:
+      dft(DFT_1728,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1800:
+      dft(DFT_1800,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1920:
+      dft(DFT_1920,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 1944:
+      dft(DFT_1944,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2160:
+      dft(DFT_2160,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2304:
+      dft(DFT_2304,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2400:
+      dft(DFT_2400,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2592:
+      dft(DFT_2592,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2700:
+      dft(DFT_2700,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2880:
+      dft(DFT_2880,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 2916:
+      dft(DFT_2916,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 3000:
+      dft(DFT_3000,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
+    case 3072:
+      //dft(DFT_3072,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      idft(IDFT_3072,(int16_t*)z, (int16_t*)z, 1);
+      break;
+
+    case 3240:
+      dft(DFT_3240,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      break;
+
     default:
       // should not be reached
       LOG_E( PHY, "Unsupported Msc_PUSCH value of %"PRIu16"\n", Msc_PUSCH );
       return;
   }
 
+  if ((Msc_PUSCH % 1536) > 0) {
+    for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
+      z[i] = ((uint32_t*)idft_out0)[ip];
 
-
-  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
-    z[i] = ((int32_t*)idft_out0)[ip];
-  }
-
-  // conjugate output
-  for (i = 0; i < (Msc_PUSCH>>2); i++) {
+    // conjugate output
+    for (i = 0; i < (Msc_PUSCH>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-    ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
+      ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
 #elif defined(__arm__)
-    *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
 #endif
+    }
   }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -221,6 +297,7 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 #endif
 
 }
+
 
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
@@ -268,6 +345,9 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
     n = 0;
     k_prime = 0;
+    rxF_ext_index = 0;
+    ul_ch0_ext_index = 0;
+    ul_ch0_index = 0;
 
     if (is_dmrs_symbol == 0) {
       //
@@ -329,7 +409,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb, ch_amp;
-  unsigned char aatx,aarx;
+  unsigned char aarx;
   __m128i *ul_ch128, ch_amp128;
 
   // Determine scaling amplitude based the symbol
@@ -347,8 +427,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-  for (aatx=0; aatx < frame_parms->nb_antenna_ports_gNB; aatx++) {
-    for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+  for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
       ul_ch128 = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*(off+(nb_rb*NR_NB_SC_PER_RB))];
 
@@ -377,7 +456,6 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
         }
       }
     }
-  }
 #endif
 }
 
@@ -394,6 +472,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 
   short rb;
   unsigned char aatx, aarx;
+  char nb_antennas_ue_tx = 1;
   __m128i *ul_ch128, avg128U;
 
   int16_t x = factor2(len);
@@ -405,7 +484,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-  for (aatx = 0; aatx < frame_parms->nb_antennas_tx; aatx++)
+  for (aatx = 0; aatx < nb_antennas_ue_tx; aatx++)
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128U = _mm_setzero_si128();
@@ -546,11 +625,12 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   unsigned short rb;
   unsigned char aatx,aarx;
+  char nb_antennas_ue_tx = 1;
   __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
   QAM_amp128b = _mm_setzero_si128();
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
+  for (aatx=0; aatx<nb_antennas_ue_tx; aatx++) {
 
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
@@ -1086,6 +1166,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs;
   int avg[4];
+  char nb_antennas_ue_tx = 1;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
 
@@ -1136,6 +1217,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 bwp_start_subcarrier,
                                 rel15_ul);
 
+    nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
+
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
                                                                         rel15_ul->rb_size*12);
@@ -1185,7 +1268,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
       avgs = 0;
 
-      for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+      for (aatx=0;aatx<nb_antennas_ue_tx;aatx++)
         for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
           avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
@@ -1203,7 +1286,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                                   gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                                   gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                                  (frame_parms->nb_antennas_tx>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
+                                  (nb_antennas_ue_tx>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
                                   frame_parms,
                                   symbol,
                                   dmrs_symbol_flag,

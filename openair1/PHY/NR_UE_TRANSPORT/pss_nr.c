@@ -213,7 +213,7 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   }
 
   for (int n=0; n < LENGTH_PSS_NR; n++) {
-	int m = (n + 43*N_ID_2)%(LENGTH_PSS_NR);
+    int m = (n + 43*N_ID_2)%(LENGTH_PSS_NR);
     d_pss[n] = 1 - 2*x[m];
   }
 

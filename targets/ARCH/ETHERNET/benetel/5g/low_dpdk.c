@@ -68,7 +68,8 @@ void *benetel_start_dpdk(char *ifname, shared_buffers *buffers, char *dpdk_main_
 
   bs->buffers = buffers;
 
-  bs->expected_benetel_frame = 255;
+  bs->expected_benetel_frame[0] = 255;
+  bs->expected_benetel_frame[1] = 255;
 
   bs->dpdk_main_command_line = dpdk_main_command_line;
 

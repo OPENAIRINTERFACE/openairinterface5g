@@ -536,6 +536,14 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
     return -1;
   }
 
+  if((x2ap_eNB_data->state == X2AP_ENB_STATE_CONNECTED) ||
+     (x2ap_eNB_data->state == X2AP_ENB_STATE_READY))
+  
+  {
+    X2AP_ERROR("Received Unexpexted X2 Setup Response Message\n");
+    return -1;
+  }
+
   X2AP_DEBUG("Received a new X2 setup response\n");
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupResponse_IEs_t, ie, x2SetupResponse,
@@ -662,6 +670,14 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
     return -1;
   }
 
+  if((x2ap_eNB_data->state == X2AP_ENB_STATE_CONNECTED) ||
+     (x2ap_eNB_data->state == X2AP_ENB_STATE_READY))
+  
+  {
+    X2AP_ERROR("Received Unexpexted X2 Setup Failure Message\n");
+    return -1;
+  }
+
   X2AP_DEBUG("Received a new X2 setup failure\n");
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupFailure_IEs_t, ie, x2SetupFailure,
@@ -674,9 +690,11 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
   // need a FSM to handle all cases
   if ((ie->value.choice.Cause.present == X2AP_Cause_PR_misc) &&
       (ie->value.choice.Cause.choice.misc == X2AP_CauseMisc_unspecified)) {
-    X2AP_WARN("Received X2 setup failure for eNB ... eNB is not ready\n");
+    X2AP_ERROR("Received X2 setup failure for eNB ... eNB is not ready\n");
+    exit(1);
   } else {
     X2AP_ERROR("Received x2 setup failure for eNB... please check your parameters\n");
+    exit(1);
   }
 
   x2ap_eNB_data->state = X2AP_ENB_STATE_WAITING;
@@ -730,6 +748,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }
 
@@ -750,7 +769,11 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
                                                //measResultListEUTRA.list.array[ncell_index]->physCellId;
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
                              X2AP_ProtocolIE_ID_id_GUMMEI_ID, true);
-
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
+    return -1;
+  }
   TBCD_TO_MCC_MNC(&ie->value.choice.ECGI.pLMN_Identity, X2AP_HANDOVER_REQ(msg).ue_gummei.mcc,
                   X2AP_HANDOVER_REQ(msg).ue_gummei.mnc, X2AP_HANDOVER_REQ(msg).ue_gummei.mnc_len);
   OCTET_STRING_TO_INT8(&ie->value.choice.GUMMEI.mME_Code, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_code);
@@ -761,6 +784,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }
 
@@ -872,6 +896,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }
 
@@ -882,6 +907,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }
 
@@ -912,6 +938,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n", __FILE__, __LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }else{
     if (ie->value.choice.E_RABs_Admitted_List.list.count > 0) {
@@ -958,6 +985,12 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
                              X2AP_ProtocolIE_ID_id_TargeteNBtoSource_eNBTransparentContainer, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
+    return -1;
+  }
 
   X2AP_TargeteNBtoSource_eNBTransparentContainer_t *c = &ie->value.choice.TargeteNBtoSource_eNBTransparentContainer;
 
@@ -1012,6 +1045,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }
 
@@ -1022,6 +1056,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
 
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return -1;
   }
 

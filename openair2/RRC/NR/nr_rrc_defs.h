@@ -127,7 +127,7 @@ typedef enum UE_STATE_NR_e {
 #define MAX_MEAS_ID                                   6
 
 #define PAYLOAD_SIZE_MAX                              1024
-#define RRC_BUF_SIZE                                  255
+#define RRC_BUF_SIZE                                  8192
 #define UNDEF_SECURITY_MODE                           0xff
 #define NO_SECURITY_MODE                              0x20
 
@@ -431,6 +431,7 @@ typedef struct {
   NR_BCCH_BCH_Message_t                     mib;
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
+  int pusch_AntennaPorts;
   int pusch_TargetSNRx10;
   int pucch_TargetSNRx10;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
@@ -447,6 +448,15 @@ typedef struct {
 //---------------------------------------------------
 
 
+typedef struct {
+  /* nea0 = 0, nea1 = 1, ... */
+  int ciphering_algorithms[4];
+  int ciphering_algorithms_count;
+
+  /* nia0 = 0, nia1 = 1, ... */
+  int integrity_algorithms[4];
+  int integrity_algorithms_count;
+} nr_security_configuration_t;
 
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
@@ -479,6 +489,8 @@ typedef struct gNB_RRC_INST_s {
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
 
+  // security configuration (preferred algorithms)
+  nr_security_configuration_t security;
 } gNB_RRC_INST;
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error

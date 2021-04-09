@@ -61,7 +61,7 @@ static telnetshell_vardef_t channelmod_vardef[] = {
 static double snr_dB=25;
 static double sinr_dB=0;
 static unsigned int max_chan;
-static channel_desc_t**  defined_channels;
+static channel_desc_t **defined_channels;
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
                        uint8_t nb_rx,
@@ -1185,11 +1185,11 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                         1);
       break;
 
-    case Rayleigh1:
+    case Rayleigh1://MIMO Test uses Rayleigh1
       nb_taps = 1;
       Td = 0;
       channel_length = 1;
-      ricean_factor = 1;
+      ricean_factor = 0.0;
       aoa = .03;
       maxDoppler = 0;
       fill_channel_desc(chan_desc,nb_tx,
@@ -1632,7 +1632,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
      
 void free_channel_desc_scm(channel_desc_t *ch) {
   // Must be made cleanly, a lot of leaks...
-  defined_channels[ch->chan_idx]=NULL; 
+  if (max_chan != 0) defined_channels[ch->chan_idx]=NULL;
   if(ch->free_flags&CHANMODEL_FREE_AMPS)
     free(ch->amps);
   for (int i = 0; i<ch->nb_tx*ch->nb_rx; i++) { 

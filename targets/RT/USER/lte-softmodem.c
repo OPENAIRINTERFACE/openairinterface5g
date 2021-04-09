@@ -582,6 +582,7 @@ int main ( int argc, char **argv )
   if (RC.nb_inst > 0) {
     /* Start the agent. If it is turned off in the configuration, it won't start */
     for (i = 0; i < RC.nb_inst; i++) {
+      if(NFAPI_MODE != NFAPI_MODE_PNF)
       flexran_agent_start(i);
     }
     

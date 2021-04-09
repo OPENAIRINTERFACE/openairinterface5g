@@ -158,7 +158,6 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     if ((reg % reg_bundle_size_L) == 0) r++;
   }
 
-
   // Get cce_list indices by reg_idx in ascending order
   int f_bundle_j_list_id = 0;
   int f_bundle_j_list_ord[NR_MAX_PDCCH_AGG_LEVEL] = {};
@@ -174,7 +173,6 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
       }
     }
   }
-
 
   for(int reg=0; reg<((coreset_nbr_rb*coreset_time_dur)); reg++) {
 
@@ -404,11 +402,12 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
     c_rb = 0;
     for (int rb=0;rb<coreset_nbr_rb;rb++,c_rb++) {
       c_rb_by6 = c_rb/6;
+
       // skip zeros in frequency domain bitmap
       while ((coreset_freq_dom[c_rb_by6>>3] & (1<<(7-(c_rb_by6&7)))) == 0) {
-	  c_rb+=6;
-	  c_rb_by6 = c_rb/6;
-	}
+        c_rb+=6;
+        c_rb_by6 = c_rb/6;
+      }
 
       LOG_DDD("c_rb=%d\n",c_rb);
       rxF=NULL;

@@ -11,6 +11,7 @@
 
 #include "stddef.h"
 #include "nfapi_interface.h"
+#include "nfapi_nr_interface.h"
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
@@ -24,25 +25,7 @@
 #define NFAPI_MAX_NUM_CB 8
 
 // Extension to the generic structures for single tlv values
-typedef struct {
-	nfapi_tl_t tl;
-	int32_t value;
-} nfapi_int32_tlv_t;
 
-typedef struct {
-	nfapi_tl_t tl;
-	uint32_t value;
-} nfapi_uint32_tlv_t;
-
-typedef struct {
-	nfapi_tl_t tl;
-	int64_t value;
-} nfapi_int64_tlv_t;
-
-typedef struct {
-	nfapi_tl_t tl;
-	uint64_t value;
-} nfapi_uint64_tlv_t;
 
 typedef enum {
   NFAPI_NR_DMRS_TYPE1=0,
@@ -76,35 +59,42 @@ typedef enum {
   NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST=   0X05,
   NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION=0X06,
   NFAPI_NR_PHY_MSG_TYPE_ERROR_INDICATION=0X07,
+  NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE=0X010D,
+  NFAPI_NR_PHY_MSG_TYPE_STOP_RESPONSE=0X010F,
   //RESERVED 0X08 ~ 0X7F
   NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST= 0X80,
   NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST= 0X81,
   NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION=0X82,
   NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST= 0X83,
-  NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST=0X54,
+  NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST=0X84, // CHANGED TO 0X84
   NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION=0X85,
   NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION= 0X86,
   NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION= 0X87,
   NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION= 0X88,
-  NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89
+  NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89,
   //RESERVED 0X8a ~ 0xff
+  NFAPI_NR_PHY_MSG_TYPE_PNF_PARAM_REQUEST = 0x0100,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_PARAM_RESPONSE = 0x0101,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_CONFIG_REQUEST= 0x0102,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_CONFIG_RESPONSE= 0x0103,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_START_REQUEST= 0x0104,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_START_RESPONSE= 0x0105,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_REQUEST= 0x0106,
+	NFAPI_NR_PHY_MSG_TYPE_PNF_STOP_RESPONSE= 0x0107,
+
+  NFAPI_NR_PHY_MSG_TYPE_UL_NODE_SYNC = 0x0180,
+	NFAPI_NR_PHY_MSG_TYPE_DL_NODE_SYNC,
+	NFAPI_NR_PHY_MSG_TYPE_TIMING_INFO
 } nfapi_nr_phy_msg_type_e;
 
 // SCF222_5G-FAPI_PHY_SPI_Specificayion.pdf Section 3.3
 
 //3.3.1 PARAM
 
+
+
 //same with nfapi_param_request_t
-typedef struct {
-	nfapi_p4_p5_message_header_t header;
-	nfapi_vendor_extension_tlv_t vendor_extension;
-} nfapi_nr_param_request_t;
 
-typedef enum {
-  NFAPI_NR_PARAM_MSG_OK = 0, 
-	NFAPI_NR_PARAM_MSG_INVALID_STATE
-
-} nfapi_nr_param_errors_e;
 
 /*typedef struct {
   nfapi_nr_param_errors_e error_code;
@@ -278,12 +268,6 @@ typedef struct
 //-------------------------------------------//
 //3.3.2 CONFIG
 
-
-typedef enum {
-  NFAPI_NR_CONFIG_MSG_OK = 0,
-  NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
-} nfapi_nr_config_errors_e;
-
 /*typedef struct {
 	nfapi_nr_config_errors_e error_code;
   uint8_t number_of_invalid_tlvs_that_can_only_be_configured_in_idle;
@@ -373,7 +357,7 @@ typedef struct
 //table 3-23
 typedef struct 
 {
-  nfapi_uint32_tlv_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  nfapi_int32_tlv_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
   nfapi_uint8_tlv_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
   nfapi_uint8_tlv_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
 
@@ -414,13 +398,13 @@ typedef struct
 {
   nfapi_uint32_tlv_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
 
-} nfapi_nr_ssb_mask_size_2_t;
+} nfapi_nr_ssb_mask_list_t;
 
 typedef struct 
 {
-  nfapi_uint8_tlv_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+  nfapi_uint8_tlv_t beam_id;//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
 
-} nfapi_nr_ssb_mask_size_64_t;
+} nfapi_nr_ssb_beam_id_list_t;
 
 typedef struct 
 {
@@ -429,8 +413,8 @@ typedef struct
   nfapi_uint8_tlv_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
   nfapi_uint8_tlv_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
   nfapi_uint32_tlv_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
-  nfapi_nr_ssb_mask_size_2_t ssb_mask_list[2];
-  nfapi_nr_ssb_mask_size_64_t* ssb_beam_id_list;//64
+  nfapi_nr_ssb_mask_list_t ssb_mask_list[2];
+  nfapi_nr_ssb_beam_id_list_t ssb_beam_id_list[64];
   nfapi_uint8_tlv_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
   nfapi_uint8_tlv_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
 
@@ -465,9 +449,108 @@ typedef struct
 
 } nfapi_nr_measurement_config_t;
 
+// ERROR enums
+typedef enum {    // Table 2-22
+  NFAPI_NR_PARAM_MSG_OK = 0, 
+	NFAPI_NR_PARAM_MSG_INVALID_STATE
+} nfapi_nr_param_errors_e;
+
+typedef enum {    // Table 2-25
+  NFAPI_NR_CONFIG_MSG_OK = 0,
+  NFAPI_NR_CONFIG_MSG_INVALID_STATE, //The CONFIG.request was received when the PHY was not in the IDLE state or the CONFIGURED state.
+  NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
+} nfapi_nr_config_errors_e;
+
+typedef enum {    // Table 2-27
+  NFAPI_NR_START_MSG_OK = 0,       
+	NFAPI_NR_START_MSG_INVALID_STATE
+} nfapi_nr_start_errors_e;
+
+//PNF P5 NR 
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_param_request_t;
 
 typedef struct {
-  uint8_t num_tlv;
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_pnf_param_general_t pnf_param_general;
+	nfapi_pnf_phy_t pnf_phy;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_param_response_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint8_t num_tlvs;
+	nfapi_pnf_phy_rf_config_t pnf_phy_rf_config;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_config_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_config_response_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_start_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_start_response_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_stop_request_t;
+
+typedef struct {
+	nfapi_p4_p5_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_pnf_stop_response_t;
+
+
+/* PARAM.REQUEST */
+typedef struct {
+  nfapi_p4_p5_message_header_t  header;
+	nfapi_vendor_extension_tlv_t  vendor_extension;
+} nfapi_nr_param_request_scf_t;
+
+/* PARAM.RESPONSE */
+typedef struct {
+  nfapi_p4_p5_message_header_t  header;
+  uint8_t       error_code;
+  
+  uint8_t                       num_tlv;
+  nfapi_vendor_extension_tlv_t  vendor_extension;
+
+  nfapi_nr_cell_param_t         cell_param;
+  nfapi_nr_carrier_param_t      carrier_param;
+  nfapi_nr_pdcch_param_t        pdcch_param;
+  nfapi_nr_pucch_param_t        pucch_param;
+  nfapi_nr_pdsch_param_t        pdsch_param;
+  nfapi_nr_pusch_param_t        pusch_param;
+  nfapi_nr_prach_param_t        prach_param;
+  nfapi_nr_measurement_param_t  measurement_param;
+  nfapi_nr_nfapi_t              nfapi_config;
+} nfapi_nr_param_response_scf_t;
+
+//------------------------------//
+//3.3.2 CONFIG
+
+/* CONFIG.REQUEST */
+typedef struct {
+  nfapi_p4_p5_message_header_t  header;
+
+  uint8_t                       num_tlv;
+  nfapi_vendor_extension_tlv_t  vendor_extension;
+
   nfapi_nr_carrier_config_t     carrier_config;
   nfapi_nr_cell_config_t        cell_config;
   nfapi_nr_ssb_config_t         ssb_config;
@@ -475,8 +558,18 @@ typedef struct {
   nfapi_nr_ssb_table_t          ssb_table;
   nfapi_nr_tdd_table_t          tdd_table;
   nfapi_nr_measurement_config_t measurement_config;
+  nfapi_nr_nfapi_t              nfapi_config;
 } nfapi_nr_config_request_scf_t;
 
+
+/* CONFIG.RESPONSE */
+typedef struct {
+  nfapi_p4_p5_message_header_t  header;
+  uint8_t error_code;
+  //uint8_t num_invalid_tlvs;
+  // TODO: add list of invalid/unsupported TLVs (see Table 3.18)
+   nfapi_vendor_extension_tlv_t  vendor_extension;
+} nfapi_nr_config_response_scf_t;
 
 //------------------------------//
 //3.3.3 START
@@ -484,11 +577,13 @@ typedef struct {
 typedef struct {
 	nfapi_p4_p5_message_header_t header;
 	nfapi_vendor_extension_tlv_t vendor_extension;
-} nfapi_nr_start_request_t;
+} nfapi_nr_start_request_scf_t;
 
-typedef enum {
-	NFAPI_NR_START_MSG_INVALID_STATE
-} nfapi_nr_start_errors_e;
+typedef struct {
+  nfapi_p4_p5_message_header_t header;
+  nfapi_nr_start_errors_e error_code;
+  nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_start_response_scf_t;
 
 //3.3.4 STOP
 
@@ -496,6 +591,7 @@ typedef struct {
 	nfapi_p4_p5_message_header_t header;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_stop_request_t;
+
 
 typedef struct {
 	nfapi_p4_p5_message_header_t header;
@@ -580,9 +676,9 @@ typedef struct {
 	uint16_t sfn; //0->1023   
   uint16_t slot;//0->319
   
-} nfapi_nr_slot_indication_t;
+} nfapi_nr_slot_indication_scf_t;
 
-// 3.4.2 
+// 3.4.2
 
 //for pdcch_pdu:
 
@@ -595,11 +691,10 @@ typedef struct
 typedef struct
 {
   uint16_t pm_idx;//Index to precoding matrix (PM) pre-stored at cell configuration. Note: If precoding is not used this parameter should be set to 0. Value: 0->65535.
-  nfapi_nr_dig_bf_interface_t* dig_bf_interface_list;
+  nfapi_nr_dig_bf_interface_t dig_bf_interface_list[255];//max dig_bf_interfaces
 
 }nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t;
 
-/*
 //table 3-43
 typedef struct 
 {
@@ -607,21 +702,10 @@ typedef struct
   uint16_t prg_size;//Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
   //watchout: dig_bf_interfaces here, in table 3-53 it's dig_bf_interface
   uint8_t  dig_bf_interfaces;//Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t* prgs_list;//
+  nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t prgs_list[275];//max prg_size
 
 }nfapi_nr_tx_precoding_and_beamforming_t;
-*/
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nfapi_nr_tx_precoding_and_beamforming_t;
 
 //table 3-37 
 
@@ -657,16 +741,6 @@ typedef struct {
 
 } nfapi_nr_dl_dci_pdu_t;
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nr_beamforming_t;
 
 typedef struct {
   ///Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP,Value: 1->275
@@ -930,7 +1004,7 @@ typedef struct {
 
 typedef struct {
   uint16_t PDUType;
-  uint16_t PDUSize;
+  uint32_t PDUSize;
 
   union {
   nfapi_nr_dl_tti_pdcch_pdu      pdcch_pdu;
@@ -941,6 +1015,7 @@ typedef struct {
 } nfapi_nr_dl_tti_request_pdu_t;
 
 #define NFAPI_NR_MAX_DL_TTI_PDUS 32 
+
 typedef struct {
   /// Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
   uint8_t nPDUs;
@@ -954,11 +1029,28 @@ typedef struct {
   uint8_t PduIdx[256][12];
 } nfapi_nr_dl_tti_request_body_t;
 
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	uint32_t t1;
+	int32_t delta_sfn_slot;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_dl_node_sync_t;
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	uint32_t t1;
+	uint32_t t2;
+	uint32_t t3;	
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_ul_node_sync_t;
+
+
 typedef struct {
   nfapi_p7_message_header_t header;
   /// System Frame Number (0-1023)
   uint16_t SFN;
-  /// Slot number (0-319)
+  /// Slot number (0-19)
   uint16_t Slot;
   nfapi_nr_dl_tti_request_body_t dl_tti_request_body;
   nfapi_vendor_extension_tlv_t vendor_extension;
@@ -973,7 +1065,7 @@ typedef struct
   nfapi_nr_dl_tti_ssb_pdu_t* ssb_pdu;
 } nfapi_nr_dl_pdu_configuration_t;
 */
-  /*
+ /* 
 typedef struct 
 {
   uint16_t pdu_type;//0: PDCCH PDU 1: PDSCH PDU 2: CSI-RS PDU 3: SSB PDU, 
@@ -1272,6 +1364,7 @@ typedef struct
 } nfapi_nr_ul_tti_request_number_of_groups_t;
 
 typedef struct {
+  nfapi_p7_message_header_t header;
   uint16_t SFN; //0->1023   
   uint16_t Slot;//0->319
   uint8_t n_pdus;//Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
@@ -1318,6 +1411,7 @@ typedef struct {
 } nfapi_nr_ul_dci_request_pdus_t;
 
 typedef struct {
+  nfapi_p7_message_header_t header;
   uint16_t SFN;
   uint16_t Slot;
   uint8_t  numPdus;
@@ -1363,6 +1457,7 @@ typedef struct
 #define NFAPI_NR_MAX_TX_REQUEST_PDUS 16
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t SFN;
   uint16_t Slot;
   uint16_t Number_of_PDUs;

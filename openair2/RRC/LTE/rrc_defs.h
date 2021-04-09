@@ -67,6 +67,8 @@
 
 #define MAX_NUM_NEIGH_CELLs 6 /* maximum neighbouring cells number */
 
+#define MAX_NUM_GNB_CELLs 1   /* maximum gNB cells number */
+
 #define UE_STATE_NOTIFICATION_INTERVAL      50
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -327,7 +329,7 @@ typedef enum SL_TRIGGER_e {
 #define MAX_MEAS_ID 6
 
 #define PAYLOAD_SIZE_MAX 1024
-#define RRC_BUF_SIZE 255
+#define RRC_BUF_SIZE 8192
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20
 
@@ -546,6 +548,13 @@ typedef struct rrc_gummei_s {
   uint16_t mme_group_id;
 } rrc_gummei_t;
 
+typedef struct {
+  uint16_t ciphering_algorithms;
+  uint16_t integrity_algorithms;
+  uint16_t sk_counter;
+  uint8_t  kgNB[32];
+} lte_rrc_nr_security_t;
+
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
   LTE_SCellToAddMod_r10_t            sCell_config[2];
@@ -614,6 +623,9 @@ typedef struct eNB_RRC_UE_s {
   rrc_gummei_t                       ue_gummei;
 
   security_capabilities_t            security_capabilities;
+
+  /* security capabilities and settings for an UE in ENDC mode */
+  lte_rrc_nr_security_t              nr_security;
 
   int                                next_hop_chain_count;
 
@@ -794,8 +806,13 @@ typedef struct eNB_RRC_INST_s {
   int num_neigh_cells_cc[MAX_NUM_CCs];
   uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
+  // gNB cells connected to this eNB
+  int num_gnb_cells;
+  int num_gnb_cells_cc[MAX_NUM_GNB_CELLs];
+  uint32_t gnb_cells_id[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
+
   // Nr scc freq band and SSB absolute frequency
-  uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+  uint32_t nr_gnb_freq_band[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
   int nr_scg_ssb_freq;
 
   // other RAN parameters

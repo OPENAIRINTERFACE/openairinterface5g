@@ -39,6 +39,8 @@
 #include "executables/thread-common.h"
 #include "common/utils/LOG/log.h"
 #include "softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
+
 
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
@@ -46,6 +48,7 @@ char *worker_config=NULL;
 msc_interface_t msc_interface;
 int usrp_tx_thread = 0;
 
+uint8_t nfapi_mode=0;
 
 static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
 static struct timespec start;
@@ -145,6 +148,7 @@ void get_common_options(uint32_t execmask) {
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
+  nfapi_setmode(nfapi_mode);
 }
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
   struct rusage usage;

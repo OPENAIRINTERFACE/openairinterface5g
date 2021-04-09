@@ -1284,7 +1284,7 @@ rrc_eNB_generate_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -1334,7 +1334,7 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0];
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -4427,69 +4427,11 @@ static int encode_CG_ConfigInfo(
   struct NR_RadioBearerConfig *rb_config = NULL;
   asn_enc_rval_t enc_rval;
   int RRC_OK = 1;
-  int index = 0;
   char temp_buff[ASN_MAX_ENCODE_SIZE];
   NR_UE_CapabilityRAT_ContainerList_t *ue_cap_rat_container_list = NULL;
   NR_UE_CapabilityRAT_Container_t *ue_cap_rat_container_MRDC = NULL;
   NR_UE_CapabilityRAT_Container_t *ue_cap_rat_container_nr = NULL;
   int RAT_Container_count = 0;
-  rb_config = calloc(1,sizeof(struct NR_RadioBearerConfig));
-  AssertFatal(rb_config != NULL,"failed to allocate memory for rb_config");
-
-  if(ue_context_pP->ue_context.DRB_configList->list.count != 0) {
-    rb_config->drb_ToAddModList = calloc(1,sizeof(struct NR_DRB_ToAddModList ));
-    AssertFatal(rb_config->drb_ToAddModList != NULL,"failed to allocated memory for drbtoaddmodlist");
-    rb_config->drb_ToAddModList->list.count = NUMBEROF_DRBS_TOBE_ADDED;
-    rb_config->drb_ToAddModList->list.array
-      = calloc(NUMBEROF_DRBS_TOBE_ADDED, sizeof(struct NR_DRB_ToAddMod *));
-    AssertFatal( rb_config->drb_ToAddModList->list.array != NULL,
-                 "falied to allocate memory for list.array");
-
-    for(index = 0; index < NUMBEROF_DRBS_TOBE_ADDED; index++) {
-      rb_config->drb_ToAddModList->list.array[index]
-        = calloc(1,sizeof(struct NR_DRB_ToAddMod));
-      AssertFatal(rb_config->drb_ToAddModList->list.array[index] != NULL,
-                  "failed to allocate memory for drb_toaddmod");
-      rb_config->drb_ToAddModList->list.array[index]->drb_Identity
-        = ue_context_pP->ue_context.DRB_configList->list.array[index]->drb_Identity;
-
-      if(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity) {
-        rb_config->drb_ToAddModList->list.array[index]->cnAssociation
-          = calloc(1,sizeof(struct NR_DRB_ToAddMod__cnAssociation));
-        AssertFatal(rb_config->drb_ToAddModList->list.array[index]->cnAssociation != NULL,
-                    "failed to allocate memory cnAssociation");
-        rb_config->drb_ToAddModList->list.array[index]->cnAssociation->present
-          = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-        rb_config->drb_ToAddModList->list.array[index]->cnAssociation->choice.eps_BearerIdentity
-          = *(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity);
-      }
-
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config = calloc(1,sizeof(struct NR_PDCP_Config));
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb = calloc(1,sizeof(struct NR_PDCP_Config__drb));
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->discardTimer = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->discardTimer
-        = *(ue_context_pP->ue_context.DRB_configList->list.array[index]->pdcp_Config->discardTimer);
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeUL
-        = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeDL
-        = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->headerCompression.present
-        = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
-      rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->t_Reordering = calloc(1,sizeof(long));
-      *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->t_Reordering
-        = NR_PDCP_Config__t_Reordering_ms0;
-    }
-
-    rb_config->securityConfig = calloc(1,sizeof(struct NR_SecurityConfig ));
-    rb_config->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(struct NR_SecurityAlgorithmConfig));
-    rb_config->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
-    rb_config->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
-    rb_config->securityConfig->keyToUse = calloc(1,sizeof(long));
-    *rb_config->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
-  }
 
   cg_configinfo = calloc(1,sizeof(struct NR_CG_ConfigInfo));
   AssertFatal(cg_configinfo != NULL,"failed to allocate memory for cg_configinfo");
@@ -4549,15 +4491,6 @@ static int encode_CG_ConfigInfo(
                          (const char *)temp_buff, (enc_rval.encoded+7)>>3);
   }
 
-  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config
-    = calloc(1,sizeof(OCTET_STRING_t));
-  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
-              mcg_RB_Config != NULL, "failed to allocate memory for mcg_rb_config");
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig,NULL,(void *)rb_config,temp_buff,ASN_MAX_ENCODE_SIZE);
-  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-              enc_rval.failed_type->name, enc_rval.encoded);
-  OCTET_STRING_fromBuf(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config,
-                       (const char *)temp_buff, (enc_rval.encoded+7)>>3);
   // this xer_fprint can be enabled for additional debugging messages
   // xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void *)cg_configinfo);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_ConfigInfo,NULL,(void *)cg_configinfo,
@@ -4666,11 +4599,20 @@ rrc_eNB_process_MeasurementReport(
 
         msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ);
         memset(&(X2AP_ENDC_SGNB_ADDITION_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_addition_req_t));
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.encryption_algorithms = ue_context_pP->ue_context.nr_security.ciphering_algorithms;
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.integrity_algorithms = ue_context_pP->ue_context.nr_security.integrity_algorithms;
+
+        memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).kgnb, ue_context_pP->ue_context.nr_security.kgNB, 32);
+
         memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
+
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
@@ -7647,8 +7589,8 @@ is_en_dc_supported(
 )
 //-----------------------------------------------------------------------------
 {
-  /* to be refined - check that the eNB is connected to a gNB, check that
-   * the bands supported by the UE include the band of the gNB
+  /* to be refined - check that the bands supported by the UE include
+   * the band of the gNB
    */
 #define NCE nonCriticalExtension
   return c != NULL
@@ -8348,8 +8290,13 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.UE_Capability = 0;
         }
 
-        if (dec_rval.code == RC_OK)
-          ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
+        if (dec_rval.code == RC_OK) {
+          /* do NR only if at least one gNB connected */
+          if (RC.rrc[ctxt_pP->module_id]->num_gnb_cells != 0)
+            ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
+          else
+            ue_context_p->ue_context.does_nr = 0;
+        }
 
         if (EPC_MODE_ENABLED) {
           rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
@@ -9088,22 +9035,22 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 }
 
 void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m) {
-  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
-    LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+  if (RC.rrc[mod_id]->num_gnb_cells >= MAX_NUM_GNB_CELLs) {
+    LOG_E(RRC, "Error: number of gNB cells is exceeded\n");
     return;
   }
 
   if (m->num_cc > MAX_NUM_CCs) {
-    LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+    LOG_E(RRC, "Error: number of gNB cells carriers is exceeded \n");
     return;
   }
 
-  RC.rrc[mod_id]->num_neigh_cells++;
-  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+  RC.rrc[mod_id]->num_gnb_cells++;
+  RC.rrc[mod_id]->num_gnb_cells_cc[RC.rrc[mod_id]->num_gnb_cells-1] = m->num_cc;
 
   for (int i=0; i<m->num_cc; i++) {
-    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
-    RC.rrc[mod_id]->nr_neigh_freq_band[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->servedNrCell_band[i];
+    RC.rrc[mod_id]->gnb_cells_id[RC.rrc[mod_id]->num_gnb_cells-1][i] = m->Nid_cell[i];
+    RC.rrc[mod_id]->nr_gnb_freq_band[RC.rrc[mod_id]->num_gnb_cells-1][i] = m->servedNrCell_band[i];
   }
 
 }

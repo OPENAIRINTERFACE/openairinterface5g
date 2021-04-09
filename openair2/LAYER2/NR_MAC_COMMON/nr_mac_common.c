@@ -31,9 +31,17 @@
  */
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "common/utils/nr/nr_common.h"
 #include <limits.h>
 
 #define reserved 0xffff
+
+// start symbols for SSB types A,B,C,D,E
+uint16_t symbol_ssb_AC[8]={2,8,16,22,30,36,44,50};
+uint16_t symbol_ssb_BD[64]={4,8,16,20,32,36,44,48,60,64,72,76,88,92,100,104,144,148,156,160,172,176,184,188,200,204,212,216,228,232,240,244,284,288,
+                            296,300,312,316,324,328,340,344,352,356,368,372,380,384,424,428,436,440,452,456,464,468,480,484,492,496,508,512,520,524};
+uint16_t symbol_ssb_E[64]={8,12,16,20,32,36,40,44,64,68,72,76,88,92,96,100,120,124,128,132,144,148,152,156,176,180,184,188,200,204,208,212,288,292,
+                           296,300,312,316,320,324,344,348,352,356,368,372,376,380,400,404,408,412,424,428,432,436,456,460,464,468,480,484,488,492};
 
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
@@ -1220,6 +1228,11 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
     else { // FDD
       x = table_6_3_3_2_2_prachConfig_Index[index][2];
       s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+      for(int i = 0; i < 64 ; i++) {
+        if ( (s_map >> i) & 0x01) {
+          (*N_RA_sfn)++;
+        }
+      }
       *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6];
       if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
         *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1396,19 +1409,17 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n",
-                  frame,
-                  slot,
-                  index,
-                  table_6_3_3_2_3_prachConfig_Index[index][6],
-                  pointa,
-                  mu,
-                  unpaired,
-                  *start_symbol,
-                  *N_t_slot,
-                  *N_dur,
-                  *N_RA_slot,
-                  *RA_sfn_index);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n", frame,
+              slot,
+              index, table_6_3_3_2_3_prachConfig_Index[index][6],
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur,
+              *N_RA_slot,
+              *RA_sfn_index);
           }
           return 1;
         }
@@ -1428,6 +1439,11 @@ int get_nr_prach_info_from_index(uint8_t index,
           if (mu == 1) {
             if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+          }
+          for(int i = 0; i <= subframe ; i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+            }
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1567,79 +1583,6 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   }
 }
 
-// Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
-// Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
-// Notes:
-// - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
-// - Frequencies are expressed in KHz
-// - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
-nr_bandentry_t nr_bandtable[] = {
-  {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
-  {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
-  {3,   1710000, 1785000, 1805000, 1880000, 20, 361000, 100},
-  {5,    824000,  849000,  869000,  894000, 20, 173800, 100},
-  {7,   2500000, 2570000, 2620000, 2690000, 20, 524000, 100},
-  {8,    880000,  915000,  925000,  960000, 20, 185000, 100},
-  {12,   698000,  716000,  729000,  746000, 20, 145800, 100},
-  {14,   788000,  798000,  758000,  768000, 20, 151600, 100},
-  {18,   815000,  830000,  860000,  875000, 20, 172000, 100},
-  {20,   832000,  862000,  791000,  821000, 20, 158200, 100},
-  {25,  1850000, 1915000, 1930000, 1995000, 20, 386000, 100},
-  {26,   814000,  849000,  859000,  894000, 20, 171800, 100},
-  {28,   703000,  758000,  758000,  813000, 20, 151600, 100},
-  {29,      000,     000,  717000,  728000, 20, 143400, 100},
-  {30,  2305000, 2315000, 2350000, 2360000, 20, 470000, 100},
-  {34,  2010000, 2025000, 2010000, 2025000, 20, 402000, 100},
-  {38,  2570000, 2620000, 2570000, 2630000, 20, 514000, 100},
-  {39,  1880000, 1920000, 1880000, 1920000, 20, 376000, 100},
-  {40,  2300000, 2400000, 2300000, 2400000, 20, 460000, 100},
-  {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
-  {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
-  {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
-  {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
-  {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
-  {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
-  {65,  1920000, 2010000, 2110000, 2200000, 20, 422000, 100},
-  {66,  1710000, 1780000, 2110000, 2200000, 20, 422000, 100},
-  {70,  1695000, 1710000, 1995000, 2020000, 20, 399000, 100},
-  {71,   663000,  698000,  617000,  652000, 20, 123400, 100},
-  {74,  1427000, 1470000, 1475000, 1518000, 20, 295000, 100},
-  {75,      000,     000, 1432000, 1517000, 20, 286400, 100},
-  {76,      000,     000, 1427000, 1432000, 20, 285400, 100},
-  {77,  3300000, 4200000, 3300000, 4200000,  1, 620000,  15},
-  {77,  3300000, 4200000, 3300000, 4200000,  2, 620000,  30},
-  {78,  3300000, 3800000, 3300000, 3800000,  1, 620000,  15},
-  {78,  3300000, 3800000, 3300000, 3800000,  2, 620000,  30},
-  {79,  4400010, 5000000, 4400010, 5000000,  1, 693334,  15},
-  {79,  4400010, 5000000, 4400010, 5000000,  2, 693334,  30},
-  {80,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {81,   880000,  915000,     000,     000, 20, 176000, 100},
-  {82,   832000,  862000,     000,     000, 20, 166400, 100},
-  {83,   703000,  748000,     000,     000, 20, 140600, 100},
-  {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
-  {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {89,   824000,  849000,     000,     000, 20, 342000, 100},
-  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
-  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
-  {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
-  {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
-  {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
-  {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
-  {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
-  {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
-  {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
-  {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
-  {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
-  {258,24250080,27500000,24250080,27500000,  2,2016667, 120},
-  {260,37000020,40000000,37000020,40000000,  1,2229166,  60},
-  {260,37000080,40000000,37000080,40000000,  2,2229167, 120},
-  {261,27500040,28350000,27500040,28350000,  1,2070833,  60},
-  {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
-};
-
-
 // TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
 // The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
 // When l' = l0, it is represented by 1
@@ -1680,11 +1623,9 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 {1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
 };
 
-#define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
-
 // Returns the corresponding row index of the NR table
-int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
-
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
+{
   int i, j;
   int scs_khz = 15 << scs_index;
   int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
@@ -1695,8 +1636,8 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
       AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
   }
 
-  AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
+  for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
 
   // selection of correct Deltaf raster according to SCS
   if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
@@ -1705,35 +1646,33 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
-
 }
 
 // Computes the duplex spacing (either positive or negative) in KHz
-void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
-
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
+{
   int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
 
-  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+  LOG_I(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
+  return delta_duplex;
 }
 
-void get_frame_type(uint16_t current_band,
-                    uint8_t scs_index,
-                    lte_frame_type_t *current_type){
+lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+{
+  lte_frame_type_t current_type;
+  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
 
-  int32_t current_offset;
-  get_delta_duplex(current_band, scs_index, &current_offset);
-
-  current_offset *= 1000;
-  if (current_offset == 0)
-    *current_type = TDD;
+  if (delta_duplex == 0)
+    current_type = TDD;
   else
-    *current_type = FDD;
+    current_type = FDD;
 
-  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
 
+  return current_type;
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1911,7 +1850,6 @@ uint64_t from_nrarfcn(int nr_bandP,
   int deltaFglobal = 5;
   uint32_t N_REF_Offs = 0;
   uint64_t F_REF_Offs_khz = 0;
-  int32_t delta_duplex;
   uint64_t N_OFFs, frequency, freq_min;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
@@ -1926,7 +1864,7 @@ uint64_t from_nrarfcn(int nr_bandP,
     F_REF_Offs_khz = 24250080;
   }
 
-  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
+  int32_t delta_duplex = get_delta_duplex(nr_bandP, scs_index);
 
   if (delta_duplex <= 0){ // DL band >= UL band
     if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
@@ -2342,7 +2280,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
     mcs4 = 28;
 
   if (I_mcs < mcs1) {
-    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    LOG_D(PHY, "PUSH PT-RS is not present.\n");
     return -1;
   } else if (I_mcs >= mcs1 && I_mcs < mcs2)
     return 2;
@@ -2372,7 +2310,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
   if (N_RB < nrb0) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    LOG_D(PHY,"PUSH PT-RS is not present.\n");
     return -1;
   } else if (N_RB >= nrb0 && N_RB < nrb1)
     return 2;
@@ -2836,11 +2774,15 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
   else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type_t frame_type) {
 
   int period,period1,period2=0;
 
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+  // Note: condition on frame_type
+  // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
+  if (scc->tdd_UL_DL_ConfigurationCommon == NULL || frame_type == FDD) {
+    return(1);
+  }
 
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
       scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
@@ -3064,59 +3006,67 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
     valid = false;
     return valid;
   }
-  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+
+  /* Moved below check from scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
   return valid;
 }
-uint32_t get_ssb_slot(uint32_t ssb_index){
-  //  this function now only support f <= 3GHz
-  return ssb_index & 0x3 ;
 
-  //  return first_symbol(case, freq, ssb_index) / 14
+uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb) {
+
+  switch (scs) {
+    case NR_SubcarrierSpacing_kHz15:
+      return symbol_ssb_AC[i_ssb];  //type A
+    case NR_SubcarrierSpacing_kHz30:
+      if (band == 5 || band == 66)
+        return symbol_ssb_BD[i_ssb];  //type B
+      else
+        return symbol_ssb_AC[i_ssb];  //type C
+    case NR_SubcarrierSpacing_kHz120:
+      return symbol_ssb_BD[i_ssb];  //type D
+    case NR_SubcarrierSpacing_kHz240:
+      return symbol_ssb_E[i_ssb];
+    default:
+      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",scs);
+  }
 }
 
-int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                                          NR_MIB_t *mib,
-                                          uint8_t extra_bits,
-                                          uint32_t ssb_length,
-                                          uint32_t ssb_index,
-                                          uint32_t ssb_offset_point_a) {
+void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                           frame_t frameP,
+                                           NR_MIB_t *mib,
+                                           uint8_t num_slot_per_frame,
+                                           uint8_t ssb_subcarrier_offset,
+                                           uint16_t ssb_start_symbol,
+                                           NR_SubcarrierSpacing_t scs_ssb,
+                                           frequency_range_t frequency_range,
+                                           uint32_t ssb_index,
+                                           uint32_t ssb_offset_point_a) {
 
-  //  deafult for testing
-  subcarrier_spacing_t scs_ssb = scs_30kHz;
-  channel_bandwidth_t min_channel_bw = bw_10MHz;
-  frequency_range_t frequency_range = FR1;
-  const uint32_t num_slot_per_frame = 20;
+  NR_SubcarrierSpacing_t scs_pdcch;
 
-  type0_PDCCH_CSS_config->ssb_length = ssb_length;
+  channel_bandwidth_t min_channel_bw = bw_10MHz; // TODO remove hardcoding and implement Table 5.3.5-1 in 38.104
+
+  if (frequency_range == FR2) {
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz60;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz120;
+  }
+  else {
+    frequency_range = FR1;
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz15;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz30;
+  }
+
   type0_PDCCH_CSS_config->ssb_index = ssb_index;
-  type0_PDCCH_CSS_config->frame = (mib->systemFrameNumber.buf[0] >> mib->systemFrameNumber.bits_unused);
+  type0_PDCCH_CSS_config->frame = frameP;
 
-  uint16_t frame_number_4lsb = 0;
-  for (int i=0; i<4; i++) {
-    frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  }
-
-  uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
-  uint8_t ssb_subcarrier_offset = (uint8_t)mib->ssb_SubcarrierOffset;
-
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame << 4;
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame | frame_number_4lsb;
-
-  if(type0_PDCCH_CSS_config->ssb_length == 64){
-    type0_PDCCH_CSS_config->ssb_index = type0_PDCCH_CSS_config->ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
-  }else{
-    if(ssb_subcarrier_offset_msb){
-      ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
-    }
-  }
-
-  //  assume carrier frequency < 6GHz
-  subcarrier_spacing_t scs_pdcch;
-  if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
-    scs_pdcch = scs_15kHz;
-  }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
-    scs_pdcch = scs_30kHz;
-  }
+  uint8_t ssb_slot = ssb_start_symbol/14;
 
   uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
   uint32_t index_4msb = (mib->pdcch_ConfigSIB1.controlResourceSetZero);
@@ -3127,8 +3077,8 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   type0_PDCCH_CSS_config->rb_offset = -1;
 
   //  type0-pdcch coreset
-  switch( (scs_ssb << 5) | scs_pdcch ){
-    case (scs_15kHz << 5) | scs_15kHz :
+  switch( (scs_ssb << 3) | scs_pdcch ){
+    case (NR_SubcarrierSpacing_kHz15 << 5) | NR_SubcarrierSpacing_kHz15:
       AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
@@ -3136,7 +3086,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_1_c4[index_4msb];
       break;
 
-    case (scs_15kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz15 << 3) | NR_SubcarrierSpacing_kHz30:
       AssertFatal(index_4msb < 14, "38.213 Table 13-2 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_2_c2[index_4msb];
@@ -3144,7 +3094,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_2_c4[index_4msb];
       break;
 
-    case (scs_30kHz << 5) | scs_15kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz15:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         AssertFatal(index_4msb < 9, "38.213 Table 13-3 4 MSB out of range\n");
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3161,7 +3111,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
       break;
 
-    case (scs_30kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz30:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
         type0_PDCCH_CSS_config->num_rbs     = table_38213_13_4_c2[index_4msb];
@@ -3177,7 +3127,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }else{ ; }
       break;
 
-    case (scs_120kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
       if(index_4msb & 0x7){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3194,7 +3144,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_120kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3211,7 +3161,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_240kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 4, "38.213 Table 13-9 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_9_c2[index_4msb];
@@ -3219,7 +3169,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_9_c4[index_4msb];
       break;
 
-    case (scs_240kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3290,7 +3240,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
-    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    uint32_t temp = (uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
     type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
     if((temp/num_slot_per_frame) & 0x1){
       type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
@@ -3326,12 +3276,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   /// MUX PATTERN 2
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 2){
 
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz60)){
       //  38.213 Table 13-13
       AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3348,12 +3298,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
         default: break;
       }
 
-    }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
+    }else if((scs_ssb == NR_SubcarrierSpacing_kHz240) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-14
       AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x7){    //  ssb_index(i) mod 8
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3369,11 +3319,11 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
           break;
         case 4:
           type0_PDCCH_CSS_config->first_symbol_index = 12;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 5:
           type0_PDCCH_CSS_config->first_symbol_index = 13;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 6:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3390,12 +3340,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
   /// MUX PATTERN 3
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 3){
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_120kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-15
       AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 4;
@@ -3432,8 +3382,83 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
-  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
-  return 0;
 }
+
+/* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 6.2.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 6.2.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.count < 3) {
+    *L_ptrs = 0;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[1],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  
+  *reOffset  = *ul_ptrs_config->transformPrecoderDisabled->resourceElementOffset;
+  *maxNumPorts = ul_ptrs_config->transformPrecoderDisabled->maxNrofPorts;
+  *ulPower = ul_ptrs_config->transformPrecoderDisabled->ptrs_Power;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 6.2.3.1-1 and Table 6.2.3.1-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PUSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PUSCH with allocation duration of 2 symbols as defined in Clause 6.4.1.2.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+
+  /* Moved below check from nr_ue_scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
+  return valid;
+}
+

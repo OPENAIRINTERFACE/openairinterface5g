@@ -390,6 +390,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if ((xrtmag_dB<(11+dB_fixed(no_corr))) || (dB_fixed(av_corr)<(13+gNB->measurements.n0_power_tot_dB))) //TODO  these are temporary threshold based on measurments with the phone
       no_conf=true;
   }
+  gNB->bad_pucch += no_conf;
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
@@ -1604,7 +1605,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   re_offset = (12*pucch_pdu->prb_start) + (12*pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
   // estimate CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset],12*pucch_pdu->prb_size)) - (10*gNB->measurements.n0_power_tot_dB);
-  int cqi;
+  int cqi,bit_left;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
   else cqi=(640+SNRtimes10)/5;
@@ -1628,7 +1629,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       uci_pdu->harq.harq_payload[i] = decodedPayload[0] & 255;
       decodedPayload[0]>>=8;
     }
-    uci_pdu->harq.harq_payload[i] = decodedPayload[0] & ((1<<(pucch_pdu->bit_len_harq&7))-1);
+    bit_left = pucch_pdu->bit_len_harq-((harq_bytes-1)<<3);
+    uci_pdu->harq.harq_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
     decodedPayload[0] >>= pucch_pdu->bit_len_harq;
   }
   
@@ -1642,6 +1644,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   // csi
   if (pucch_pdu->bit_len_csi_part1>0) {
     uci_pdu->pduBitmap|=4;
+    uci_pdu->csi_part1.csi_part1_bit_len=pucch_pdu->bit_len_csi_part1;
     int csi_part1_bytes=pucch_pdu->bit_len_csi_part1>>3;
     if ((pucch_pdu->bit_len_csi_part1&7) > 0) csi_part1_bytes++;
     uci_pdu->csi_part1.csi_part1_payload = (uint8_t*)malloc(csi_part1_bytes);
@@ -1651,7 +1654,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & 255;
       decodedPayload[0]>>=8;
     }
-    uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<(pucch_pdu->bit_len_csi_part1&7))-1);
+    bit_left = pucch_pdu->bit_len_csi_part1-((csi_part1_bytes-1)<<3);
+    uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
     decodedPayload[0] >>= pucch_pdu->bit_len_csi_part1;
   }
   

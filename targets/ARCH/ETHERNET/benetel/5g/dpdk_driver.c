@@ -243,21 +243,22 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 	}
 
 
-	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4 && ANT_NUM == 0x00) {
+	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4) {
           int subframe = SUBFRAME >> 4;
           int slot = ((SUBFRAME & 0x0f) << 2) | ((SYMBOL >> 6) & 0x03);
           p.frame = FRAME;
           p.slot = subframe * 2 + slot;
           p.symbol = SYMBOL & 0x3f;
-          p.antenna = 0;
+          p.antenna = ANT_NUM;
           memcpy(p.iq, IQ_ptr, 5088);
           store_ul(bs, &p);
      //     if (p.symbol==0) printf("store ul f.sl.sy %d.%d.%d\n", p.frame, p.slot, p.symbol);
         }
 
-	// U-PLANE UL ANT_0 PROCESSING
-	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4 && ANT_NUM == 0x00 && dl_start == 1)
+	// U-PLANE UL PROCESSING
+	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4 && dl_start == 1)
 	{
+                int a        = ANT_NUM & 0x01;
                 int frame    = FRAME;
                 int subframe = SUBFRAME >> 4;
                 int slot     = ((SUBFRAME & 0x0f) << 2) | ((SYMBOL >> 6) & 0x03);
@@ -282,66 +283,44 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
                   }
                 }
 
-		ANT_NUM = 0x00;
-
 		// Mask the symbol bits from UL packet received and apply the shift.
 		SYMBOL = ((SYMBOL & 0b00111111) + 10) % 14;
 
-		ANT_NUM = 0x00;
+                ANT_NUM = a;
 		SUBFRAME = sf;
 
+                if (a == 1)
+                  slot_id_ctrl++;
+
 		// Slot id control for DL
-		if(slot_id_ctrl > 13){
-			SYMBOL = SYMBOL | 0b01000000;
+		if (slot_id_ctrl > 13) {
+                  SYMBOL = SYMBOL | 0b01000000;
+
+                  if (a == 1) {
+                    if (slot_id_ctrl > 27) {
+                      slot_id_ctrl = 0;
+                      sf = sf + 0x10;
+
+                      if (sf > 0x90){
+                        sf = 0;
+                      }
+                    }
+                  }
 		}
 
-                /* antenna 0 - send actual DL data (if available) */
+                /* send actual DL data (if available) */
                 oai_slot = tx_subframe * 2 + tx_slot;
                 lock_dl_buffer(bs->buffers, oai_slot);
-                if (!(bs->buffers->dl_busy[oai_slot] & (1 << tx_symbol))) {
-                  printf("%s: warning, DL underflow (sl.symbol %d.%d)\n", __FUNCTION__,
-                         oai_slot, tx_symbol);
+                if (!(bs->buffers->dl_busy[a][oai_slot] & (1 << tx_symbol))) {
+                  //printf("%s: warning, DL underflow (antenna %d sl.symbol %d.%d)\n", __FUNCTION__,a, oai_slot, tx_symbol);
                   memset(IQ_ptr, 0, 1272 * 4);
                 } else {
-                  memcpy(IQ_ptr, bs->buffers->dl[oai_slot] + tx_symbol * 1272*4,
+                  memcpy(IQ_ptr, bs->buffers->dl[a][oai_slot] + tx_symbol * 1272*4,
                          1272*4);
                 }
-//printf("DL buffer f sf slot symbol %d %d %d %d (sf %d)\n", tx_frame, tx_subframe, tx_slot, tx_symbol, (int)sf);
-                bs->buffers->dl_busy[oai_slot] &= ~(1 << tx_symbol);
+	        //printf("DL buffer f sf slot symbol %d %d %d %d (sf %d)\n", tx_frame, tx_subframe, tx_slot, tx_symbol, (int)sf);
+                bs->buffers->dl_busy[a][oai_slot] &= ~(1 << tx_symbol);
                 unlock_dl_buffer(bs->buffers, oai_slot);
-
-		// fill DL Data for ant 0 with 0 value
-//		memset(IQ_ptr, 0, 5088);
-	}
-
-	// U-PLANE UL ANT_1 PROCESSING
-	if(PAYLOAD_1 == 0x13 && PAYLOAD_2 == 0xe4 && ANT_NUM == 0x01 && dl_start == 1)
-	{
-
-		// Mask the symbol bits from UL packet received and apply the shift.
-		SYMBOL = ((SYMBOL & 0b00111111) +10) % 14;
-
-		ANT_NUM = 0x01;
-		SUBFRAME = sf;
-
-		slot_id_ctrl++;
-
-		// Slot id control for DL
-		if(slot_id_ctrl > 13){
-			SYMBOL = SYMBOL | 0b01000000;
-
-			if(slot_id_ctrl > 27){
-				slot_id_ctrl = 0;
-				sf = sf + 0x10;
-
-				if (sf >0x90){
-					sf = 0;
-				}
-			}
-		}
-
-		// fill DL Data for ant 1 with 0 value
-		memset(IQ_ptr, 0, 5088);
 	}
 
 	// U-PLANE PRACH PROCESSING

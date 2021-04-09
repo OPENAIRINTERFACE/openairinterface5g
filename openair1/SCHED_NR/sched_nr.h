@@ -40,7 +40,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx, int slot_tx, int do_
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
 void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot);
-void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
+void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu);
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa);

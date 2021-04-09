@@ -39,9 +39,9 @@
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
-void get_frame_type(uint16_t nr_bandP, uint8_t scs_index, lte_frame_type_t *current_type);
+lte_frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
 
-void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex);
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index);
 
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
@@ -51,7 +51,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 
 int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slotP, lte_frame_type_t frame_type);
 
 uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
                      const NR_CellGroupConfig_t *secondaryCellGroup,
@@ -81,7 +81,7 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint8_t *N_dur,
                                  uint16_t *RA_sfn_index,
                                  uint8_t *N_RA_slot,
-																 uint8_t *config_period);
+                                 uint8_t *config_period);
 
 int get_nr_prach_occasion_info_from_index(uint8_t index,
                                  uint32_t pointa,
@@ -126,12 +126,18 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
-int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                                          NR_MIB_t *mib,
-                                          uint8_t extra_bits,
-                                          uint32_t ssb_length,
-                                          uint32_t ssb_index,
-                                          uint32_t ssb_offset_point_a);
+void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                           frame_t frameP,
+                                           NR_MIB_t *mib,
+                                           uint8_t num_slot_per_frame,
+                                           uint8_t ssb_subcarrier_offset,
+                                           uint16_t ssb_start_symbol,
+                                           NR_SubcarrierSpacing_t scs_ssb,
+                                           frequency_range_t frequency_range,
+                                           uint32_t ssb_index,
+                                           uint32_t ssb_offset_point_a);
+
+uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb);
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
@@ -141,6 +147,11 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t *nERatio,uint8_t *reOffset,
                         uint8_t NrOfSymbols);
 
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols);
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16

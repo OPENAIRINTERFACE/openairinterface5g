@@ -92,17 +92,17 @@ typedef enum {
 
 
 typedef struct {
-  /// \brief Holds the transmit data in the frequency domain.
+  /// \brief Holds the transmit data in the frequency domain (1 frame).
   /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  /// - second index: ? [0..samples_per_frame[
   int32_t **txdata;
-  /// \brief holds the transmit data after beamforming in the frequency domain.
+  /// \brief holds the transmit data after beamforming in the frequency domain (1 slot).
   /// - first index: tx antenna [0..nb_antennas_tx[
-  /// - second index: sample [0..]
+  /// - second index: sample [0..samples_per_slot_woCP]
   int32_t **txdataF_BF;
-  /// \brief holds the transmit data before beamforming in the frequency domain.
-  /// - first index: tx antenna [0..nb_antennas_tx[
-  /// - second index: sample [0..]
+  /// \brief holds the transmit data before beamforming in the frequency domain (1 frame).
+  /// - first index: tx antenna [0..nb_antenna_ports[
+  /// - second index: sample [0..samples_per_frame_woCP]
   int32_t **txdataF;
   /// \brief holds the transmit data before beamforming for epdcch/mpdcch
   /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
@@ -128,6 +128,10 @@ typedef struct {
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs;
+  /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
+  /// - first index: antenna port
+  /// - second index: beam_id [0.. symbols_per_frame[
+  uint8_t **beam_id;
 } RU_COMMON;
 
 
@@ -741,4 +745,10 @@ typedef struct RRU_config_s {
   MBSFN_config_t MBSFN_config[8];
 } RRU_config_t;
 
+typedef struct processingData_RU {
+  int frame_tx;
+  int slot_tx;
+  openair0_timestamp timestamp_tx;
+  RU_t *ru;
+} processingData_RU_t;
 #endif //__PHY_DEFS_RU__H__
