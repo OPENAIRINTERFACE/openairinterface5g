@@ -146,7 +146,6 @@ int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
 int            numerology = 0;
-int        usrp_tx_thread = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
 
