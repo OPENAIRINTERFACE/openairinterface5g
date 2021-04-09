@@ -568,17 +568,20 @@ function report_build {
 
     echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
 
-    sca_summary_table_header ./archives/cppcheck/cppcheck.xml "OAI Static Code Analysis with CPPCHECK"
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory is freed twice" doubleFree
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Resource leak" resourceLeak
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Possible null pointer dereference" nullPointer
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Array access  out of bounds" arrayIndexOutOfBounds
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Buffer is accessed out of bounds" bufferAccessOutOfBounds
-    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
-    sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
+    if [ -f ./archives/cppcheck/cppcheck.xml ]
+    then
+        sca_summary_table_header ./archives/cppcheck/cppcheck.xml "OAI Static Code Analysis with CPPCHECK"
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory is freed twice" doubleFree
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Resource leak" resourceLeak
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Possible null pointer dereference" nullPointer
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Array access  out of bounds" arrayIndexOutOfBounds
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Buffer is accessed out of bounds" bufferAccessOutOfBounds
+        sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
+        sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
+    fi
 
 #    summary_table_header "OAI Build: 4G LTE eNB -- USRP option" ./archives/enb_usrp
 #    summary_table_row "LTE SoftModem - Release 15" ./archives/enb_usrp/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_usrp_row1.html

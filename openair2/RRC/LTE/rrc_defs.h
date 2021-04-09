@@ -67,6 +67,8 @@
 
 #define MAX_NUM_NEIGH_CELLs 6 /* maximum neighbouring cells number */
 
+#define MAX_NUM_GNB_CELLs 1   /* maximum gNB cells number */
+
 #define UE_STATE_NOTIFICATION_INTERVAL      50
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -804,8 +806,13 @@ typedef struct eNB_RRC_INST_s {
   int num_neigh_cells_cc[MAX_NUM_CCs];
   uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
+  // gNB cells connected to this eNB
+  int num_gnb_cells;
+  int num_gnb_cells_cc[MAX_NUM_GNB_CELLs];
+  uint32_t gnb_cells_id[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
+
   // Nr scc freq band and SSB absolute frequency
-  uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+  uint32_t nr_gnb_freq_band[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
   int nr_scg_ssb_freq;
 
   // other RAN parameters

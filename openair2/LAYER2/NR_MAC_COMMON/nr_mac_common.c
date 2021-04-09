@@ -36,6 +36,13 @@
 
 #define reserved 0xffff
 
+// start symbols for SSB types A,B,C,D,E
+uint16_t symbol_ssb_AC[8]={2,8,16,22,30,36,44,50};
+uint16_t symbol_ssb_BD[64]={4,8,16,20,32,36,44,48,60,64,72,76,88,92,100,104,144,148,156,160,172,176,184,188,200,204,212,216,228,232,240,244,284,288,
+                            296,300,312,316,324,328,340,344,352,356,368,372,380,384,424,428,436,440,452,456,464,468,480,484,492,496,508,512,520,524};
+uint16_t symbol_ssb_E[64]={8,12,16,20,32,36,40,44,64,68,72,76,88,92,96,100,120,124,128,132,144,148,152,156,176,180,184,188,200,204,208,212,288,292,
+                           296,300,312,316,320,324,344,348,352,356,368,372,376,380,400,404,408,412,424,428,432,436,456,460,464,468,480,484,488,492};
+
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 // Table 6.3.3.1-5 (38.211) NCS for preamble formats with delta_f_RA = 1.25 KHz
@@ -3008,56 +3015,58 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   return valid;
 }
 
-uint32_t get_ssb_slot(uint32_t ssb_index){
-  //  this function now only support f <= 3GHz
-  return ssb_index & 0x3 ;
+uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb) {
 
-  //  return first_symbol(case, freq, ssb_index) / 14
+  switch (scs) {
+    case NR_SubcarrierSpacing_kHz15:
+      return symbol_ssb_AC[i_ssb];  //type A
+    case NR_SubcarrierSpacing_kHz30:
+      if (band == 5 || band == 66)
+        return symbol_ssb_BD[i_ssb];  //type B
+      else
+        return symbol_ssb_AC[i_ssb];  //type C
+    case NR_SubcarrierSpacing_kHz120:
+      return symbol_ssb_BD[i_ssb];  //type D
+    case NR_SubcarrierSpacing_kHz240:
+      return symbol_ssb_E[i_ssb];
+    default:
+      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",scs);
+  }
 }
 
-int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                                          NR_MIB_t *mib,
-                                          uint8_t extra_bits,
-                                          uint32_t ssb_length,
-                                          uint32_t ssb_index,
-                                          uint32_t ssb_offset_point_a) {
+void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                           frame_t frameP,
+                                           NR_MIB_t *mib,
+                                           uint8_t num_slot_per_frame,
+                                           uint8_t ssb_subcarrier_offset,
+                                           uint16_t ssb_start_symbol,
+                                           NR_SubcarrierSpacing_t scs_ssb,
+                                           frequency_range_t frequency_range,
+                                           uint32_t ssb_index,
+                                           uint32_t ssb_offset_point_a) {
 
-  //  deafult for testing
-  subcarrier_spacing_t scs_ssb = scs_30kHz;
-  channel_bandwidth_t min_channel_bw = bw_10MHz;
-  frequency_range_t frequency_range = FR1;
-  const uint32_t num_slot_per_frame = 20;
+  NR_SubcarrierSpacing_t scs_pdcch;
 
-  type0_PDCCH_CSS_config->ssb_length = ssb_length;
+  channel_bandwidth_t min_channel_bw = bw_10MHz; // TODO remove hardcoding and implement Table 5.3.5-1 in 38.104
+
+  if (frequency_range == FR2) {
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz60;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz120;
+  }
+  else {
+    frequency_range = FR1;
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz15;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz30;
+  }
+
   type0_PDCCH_CSS_config->ssb_index = ssb_index;
-  type0_PDCCH_CSS_config->frame = (mib->systemFrameNumber.buf[0] >> mib->systemFrameNumber.bits_unused);
+  type0_PDCCH_CSS_config->frame = frameP;
 
-  uint16_t frame_number_4lsb = 0;
-  for (int i=0; i<4; i++) {
-    frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  }
-
-  uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
-  uint8_t ssb_subcarrier_offset = (uint8_t)mib->ssb_SubcarrierOffset;
-
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame << 4;
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame | frame_number_4lsb;
-
-  if(type0_PDCCH_CSS_config->ssb_length == 64){
-    type0_PDCCH_CSS_config->ssb_index = type0_PDCCH_CSS_config->ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
-  }else{
-    if(ssb_subcarrier_offset_msb){
-      ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
-    }
-  }
-
-  //  assume carrier frequency < 6GHz
-  subcarrier_spacing_t scs_pdcch;
-  if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
-    scs_pdcch = scs_15kHz;
-  }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
-    scs_pdcch = scs_30kHz;
-  }
+  uint8_t ssb_slot = ssb_start_symbol/14;
 
   uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
   uint32_t index_4msb = (mib->pdcch_ConfigSIB1.controlResourceSetZero);
@@ -3068,8 +3077,8 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   type0_PDCCH_CSS_config->rb_offset = -1;
 
   //  type0-pdcch coreset
-  switch( (scs_ssb << 5) | scs_pdcch ){
-    case (scs_15kHz << 5) | scs_15kHz :
+  switch( (scs_ssb << 3) | scs_pdcch ){
+    case (NR_SubcarrierSpacing_kHz15 << 5) | NR_SubcarrierSpacing_kHz15:
       AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
@@ -3077,7 +3086,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_1_c4[index_4msb];
       break;
 
-    case (scs_15kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz15 << 3) | NR_SubcarrierSpacing_kHz30:
       AssertFatal(index_4msb < 14, "38.213 Table 13-2 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_2_c2[index_4msb];
@@ -3085,7 +3094,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_2_c4[index_4msb];
       break;
 
-    case (scs_30kHz << 5) | scs_15kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz15:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         AssertFatal(index_4msb < 9, "38.213 Table 13-3 4 MSB out of range\n");
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3102,7 +3111,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
       break;
 
-    case (scs_30kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz30:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
         type0_PDCCH_CSS_config->num_rbs     = table_38213_13_4_c2[index_4msb];
@@ -3118,7 +3127,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }else{ ; }
       break;
 
-    case (scs_120kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
       if(index_4msb & 0x7){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3135,7 +3144,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_120kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3152,7 +3161,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_240kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 4, "38.213 Table 13-9 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_9_c2[index_4msb];
@@ -3160,7 +3169,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_9_c4[index_4msb];
       break;
 
-    case (scs_240kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3231,7 +3240,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
-    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    uint32_t temp = (uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
     type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
     if((temp/num_slot_per_frame) & 0x1){
       type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
@@ -3267,12 +3276,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   /// MUX PATTERN 2
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 2){
 
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz60)){
       //  38.213 Table 13-13
       AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3289,12 +3298,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
         default: break;
       }
 
-    }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
+    }else if((scs_ssb == NR_SubcarrierSpacing_kHz240) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-14
       AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x7){    //  ssb_index(i) mod 8
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3310,11 +3319,11 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
           break;
         case 4:
           type0_PDCCH_CSS_config->first_symbol_index = 12;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 5:
           type0_PDCCH_CSS_config->first_symbol_index = 13;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 6:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3331,12 +3340,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
   /// MUX PATTERN 3
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 3){
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_120kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-15
       AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 4;
@@ -3373,10 +3382,9 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
-  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
-  return 0;
 }
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */

@@ -1330,7 +1330,8 @@
                                     (Test3: 30kHz SCS, 273 PRBs, Prach format A2),
 				    (Test4: 30kHz SCS, 106 PRBs, Prach format 0),
                                     (Test5: 120kHz SCS, 32 PRBs, Prach format A2),
-                                    (Test6: 120kHz SCS, 66 PRBs, Prach format A2)</desc>
+                                    (Test6: 120kHz SCS, 66 PRBs, Prach format A2),
+                                    (Test7: 120kHz SCS, 66 PRBs, High Speed Enabled)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators -c </compile_prog_args>
@@ -1342,8 +1343,9 @@
                       -a -s -30 -n 100 -p 63 -R 273
 		      -a -s -30 -n 100 -p 63 -R 106 -c 4
 		      -a -s -30 -n 100 -p 32 -R 32 -m 3 -c52 
-		      -a -s -30 -n 100 -p 32 -R 66 -m 3 -c52</main_exec_args>
-      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4 nr_prachsim.test5 nr_prachsim.test6</tags>
+		      -a -s -30 -n 100 -p 32 -R 66 -m 3 -c52
+          -a -s -30 -n 100 -R 66 -m 3 -c52 -H</main_exec_args>
+      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4 nr_prachsim.test5 nr_prachsim.test6 nr_prachsim.test7</tags>
       <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

@@ -780,7 +780,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       }
     } else { // This is the high-speed case
       new_dft = 0;
-
+      nr_fill_du(N_ZC,prach_root_sequence_map);
       // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
       // preamble index and find the corresponding cyclic shift
       // Check if all shifts for that root have been processed
@@ -788,7 +788,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
         not_found = 1;
         new_dft   = 1;
         preamble_index0 -= numshift;
-        (preamble_offset==0 && numshift==0) ? (preamble_offset) : (preamble_offset++);
+        //(preamble_offset==0 && numshift==0) ? (preamble_offset) : (preamble_offset++);
 
         while (not_found == 1) {
           // current root depending on rootSequenceIndex
