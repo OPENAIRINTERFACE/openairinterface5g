@@ -845,7 +845,8 @@ typedef struct PHY_VARS_gNB_s {
   tpool_t *threadPool;
   int nbDecode;
   uint8_t pusch_proc_threads;
-
+  int number_of_nr_dlsch_max;
+  int number_of_nr_ulsch_max;
 } PHY_VARS_gNB;
 
 typedef struct LDPCDecode_s {

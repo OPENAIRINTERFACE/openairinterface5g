@@ -9096,9 +9096,9 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
             fprintf(fd,"NR_pci %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15);
             if(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
-              fprintf(fd,"NR_rsrp %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15,RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0])/10.0);
+              fprintf(fd,"NR_rsrp %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15,RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0])/10.0);
             if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15) 
-              fprintf(fd,"NR_rsrq %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15,RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0])/10.0);
+              fprintf(fd,"NR_rsrq %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15,RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0])/10.0);
             if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) 
               fprintf(fd,"NR_ssb_index %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15);
            }
