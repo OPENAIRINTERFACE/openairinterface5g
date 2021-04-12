@@ -490,7 +490,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     int coreset_start_rb=0;
 
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
-      uint8_t nb_symb_pdcch = pdcch_vars->pdcch_config[n_ss].coreset.duration : 0;
+      uint8_t nb_symb_pdcch = pdcch_vars->pdcch_config[n_ss].coreset.duration;
       get_coreset_rballoc(pdcch_vars->pdcch_config[n_ss].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
 
       for (uint16_t l=0; l<nb_symb_pdcch; l++) {
@@ -549,6 +549,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         break;
       }
     }
+exit(1);
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
