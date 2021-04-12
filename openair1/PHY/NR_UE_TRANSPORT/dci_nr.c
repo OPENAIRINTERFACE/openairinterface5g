@@ -716,6 +716,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     rel15 = &pdcch_vars->pdcch_config[i];
     int n_rb,rb_offset;
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+    LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
+	  rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
     for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
       LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
@@ -916,7 +918,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                           currentPtrDCI);
 
         n_rnti = rel15->rnti;
-
+	LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d)\n", proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length);
         if (crc == n_rnti) {
           LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
                 proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);

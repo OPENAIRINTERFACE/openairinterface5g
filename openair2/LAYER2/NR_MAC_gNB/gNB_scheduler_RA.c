@@ -1098,6 +1098,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        pdsch_pdu_rel15->BWPSize,
                        nr_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
+
+
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
@@ -1172,7 +1174,27 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->is_waiting = true;
     ra->harq_pid = current_harq_pid;
 
-    nr_acknack_scheduling(module_idP, UE_id, frameP, slotP);
+    // get CCEindex, needed also for PUCCH and then later for PDCCH
+    uint8_t aggregation_level;
+    uint8_t nr_of_candidates;
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+    int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
+    if (CCEIndex < 0) {
+      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      return;
+    }
+
+    int n_rb=0;
+    for (int i=0;i<6;i++)
+      for (int j=0;j<8;j++) {
+	n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
+      }
+    n_rb*=6;
+    const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
+    const delta_PRI=0;
+    int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
+
+    nr_acknack_scheduling(module_idP, UE_id, frameP, slotP,r_pucch);
     harq->feedback_slot = sched_ctrl->sched_pucch->ul_slot;
 
     // Bytes to be transmitted
@@ -1186,7 +1208,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
     mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
 
-    LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n",mac_sdu_length,sizeof(NR_MAC_SUBHEADER_SHORT),mac_pdu_length);
+    LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n",
+	  mac_sdu_length,
+	  (int)sizeof(NR_MAC_SUBHEADER_SHORT),
+	  mac_pdu_length);
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
     const int startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
@@ -1254,14 +1279,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       return;
     }
 
-    uint8_t aggregation_level;
-    uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
-    int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
-    if (CCEIndex < 0) {
-      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
-      return;
-    }
 
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
@@ -1373,7 +1390,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.ndi = harq->ndi;
     dci_payload.dai[0].val = (sched_ctrl->sched_pucch->dai_c-1)&3;
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
-    dci_payload.pucch_resource_indicator = sched_ctrl->sched_pucch->resource_indicator;
+    dci_payload.pucch_resource_indicator = delta_PRI; // This is delta_PRI from 9.2.1 in 38.213
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = sched_ctrl->sched_pucch->timing_indicator;
 
     LOG_D(NR_MAC,
@@ -1406,6 +1423,16 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_RNTI_TC,
                        pdsch_pdu_rel15->BWPSize,
                        bwp_Id);
+
+    // Add padding header and zero rest out if there is space left
+    if (mac_pdu_length < harq->tb_size) {
+      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[mac_pdu_length];
+      padding->R = 0;
+      padding->LCID = DL_SCH_LCID_PADDING;
+      for(int k = mac_pdu_length+1; k<harq->tb_size; k++) {
+        buf[k] = 0;
+      }
+    }
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
@@ -1460,6 +1487,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
       LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
       UE_info->active[UE_id] = true;
+      UE_info->Msg4_ACKed[UE_id] = true;
     }
     else
     {

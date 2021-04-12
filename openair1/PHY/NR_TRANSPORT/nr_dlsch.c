@@ -162,6 +162,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint32_t encoded_length = nb_re*Qm;
     int16_t mod_dmrs[14][n_dmrs<<1] __attribute__ ((aligned(16)));
 
+
     /* PTRS */
     uint16_t beta_ptrs = 1;
     uint8_t ptrs_symbol = 0;

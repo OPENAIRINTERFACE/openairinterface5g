@@ -664,11 +664,14 @@ void pf_ul(module_id_t module_id,
 
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+
+    if (UE_info->Msg4_ACKed[UE_id] != true) continue;
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp ?
+    int rbStart = 0; /*NRRIV2PRBOFFSET(sched_ctrl->active_bwp ?
 				  sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
 				  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 
-				  MAX_BWP_SIZE);
+				  MAX_BWP_SIZE);*/
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp?
 				      sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth:
 				      scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 
@@ -691,8 +694,8 @@ void pf_ul(module_id_t module_id,
     sched_ctrl->coreset = get_coreset(scc,sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     if (sched_ctrl->coreset == NULL) sched_ctrl->coreset = RC.nrmac[module_id]->sched_ctrlCommon->coreset;
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-    const uint8_t num_dmrs_cdm_grps_no_data = 1;
+    const int dci_format = sched_ctrl->active_bwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
+    const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? 1 : 2;
     NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
@@ -728,8 +731,8 @@ void pf_ul(module_id_t module_id,
 
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + sched_pusch->rbSize >= bwpSize) {
-        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
-              UE_id, UE_info->rnti[UE_id]);
+        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, sched_pusch->rbSize %d, bwpSize %d)\n",
+              UE_id, UE_info->rnti[UE_id],rbStart,sched_pusch->rbSize,bwpSize);
         return;
       }
       sched_pusch->rbStart = rbStart;
@@ -763,7 +766,7 @@ void pf_ul(module_id_t module_id,
       /* if no data, pre-allocate 5RB */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE) {
-        LOG_D(MAC, "%4d.%2d no free CCE for UL DCI UE %04x (BSR 0)\n", frame, slot, UE_info->rnti[UE_id]);
+        LOG_I(MAC, "%4d.%2d no free CCE for UL DCI UE %04x (BSR 0)\n", frame, slot, UE_info->rnti[UE_id]);
         continue;
       }
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -773,8 +776,8 @@ void pf_ul(module_id_t module_id,
 
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + min_rb >= bwpSize) {
-        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
-              UE_id, UE_info->rnti[UE_id]);
+        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
+              UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
         return;
       }
       sched_pusch->rbStart = rbStart;
@@ -847,16 +850,17 @@ void pf_ul(module_id_t module_id,
       return;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters:&scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;  
+    int rbStart = 0; /*NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);*/
+    const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
 
 
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
     sched_pusch->rbStart = rbStart;
     if (rbStart + min_rb >= bwpSize) {
-      LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
-            UE_id, UE_info->rnti[UE_id]);
+      LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
+	    UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
       return;
     }
 
@@ -1009,6 +1013,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
      * every TTI are pre-populated by the preprocessor and used below */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+    LOG_D(MAC,"UE %x : sched_pusch->rbSize %d\n",UE_info->rnti[UE_id],sched_pusch->rbSize);
     if (sched_pusch->rbSize <= 0)
       continue;
 
@@ -1105,9 +1110,10 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->handle = 0; //not yet used
 
     /* FAPI: BWP */
-    pusch_pdu->bwp_size  = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pusch_pdu->subcarrier_spacing = sched_ctrl->active_ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters:&scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;  
+    pusch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    pusch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
     pusch_pdu->cyclic_prefix = 0;
 
     /* FAPI: PUSCH information always included */
@@ -1116,7 +1122,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
     pusch_pdu->transform_precoding = ps->transform_precoding;
-    if (ps->pusch_Config->dataScramblingIdentityPUSCH)
+    if (ps->pusch_Config &&
+	ps->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
@@ -1126,10 +1133,10 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->ul_dmrs_symb_pos = ps->ul_dmrs_symb_pos;
     pusch_pdu->dmrs_config_type = ps->dmrs_config_type;
     if (pusch_pdu->transform_precoding) { // transform precoding disabled
-      long *scramblingid;
-      if (pusch_pdu->scid == 0)
+      long *scramblingid=NULL;
+      if (ps->NR_DMRS_UplinkConfig && pusch_pdu->scid == 0)
         scramblingid = ps->NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
-      else
+      else if (ps->NR_DMRS_UplinkConfig)
         scramblingid = ps->NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
       if (scramblingid == NULL)
         pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
@@ -1138,9 +1145,9 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     else {
       pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
-      if (ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      if (ps->NR_DMRS_UplinkConfig && ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
         pusch_pdu->pusch_identity = *ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
-      else
+      else if (ps->NR_DMRS_UplinkConfig)
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
@@ -1148,13 +1155,11 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->dmrs_ports = 1;
 
     /* FAPI: Pusch Allocation in frequency domain */
-    AssertFatal(ps->pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
-                "Only frequency resource allocation type 1 is currently supported\n");
     pusch_pdu->resource_alloc = 1; //type 1
     pusch_pdu->rb_start = sched_pusch->rbStart;
     pusch_pdu->rb_size = sched_pusch->rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
-    if (ps->pusch_Config->frequencyHopping==NULL)
+    if (ps->pusch_Config==NULL || ps->pusch_Config->frequencyHopping==NULL)
       pusch_pdu->frequency_hopping = 0;
     else
       pusch_pdu->frequency_hopping = 1;
@@ -1178,8 +1183,8 @@ void nr_schedule_ulsch(module_id_t module_id,
       pusch_pdu->dfts_ofdm.low_papr_group_number = pusch_pdu->pusch_identity % 30;
 
       // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
-      if ((ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
-            (ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping == NULL))
+      if ((ps->NR_DMRS_UplinkConfig==NULL) || ((ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
+					       (ps->NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping == NULL)))
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;
       else
         AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
@@ -1190,7 +1195,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     /*-----------------------------------------------------------------------------*/
 
     /* PUSCH PTRS */
-    if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
+    if (ps->NR_DMRS_UplinkConfig && ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
       bool valid_ptrs_setup = false;
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       valid_ptrs_setup = set_ul_ptrs_values(ps->NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup,
@@ -1208,8 +1213,10 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* look up the PDCCH PDU for this BWP and CORESET. If it does not exist,
      * create it */
-    const int bwpid = sched_ctrl->active_bwp->bwp_Id;
-    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
+    const int bwpid = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
+    NR_SearchSpace_t *ss = sched_ctrl->active_bwp ? sched_ctrl->search_space: RC.nrmac[module_id]->sched_ctrlCommon->search_space;
+    NR_ControlResourceSet_t *coreset = sched_ctrl->active_bwp? sched_ctrl->coreset: RC.nrmac[module_id]->sched_ctrlCommon->coreset;
+    const int coresetid = coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_bwp_coreset[bwpid][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
@@ -1218,7 +1225,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu, sched_ctrl->search_space, sched_ctrl->coreset, scc, sched_ctrl->active_bwp);
+      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, sched_ctrl->active_bwp);
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
 
@@ -1228,9 +1235,9 @@ void nr_schedule_ulsch(module_id_t module_id,
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
     pdcch_pdu->numDlDci++;
     dci_pdu->RNTI = rnti;
-    if (sched_ctrl->coreset->pdcch_DMRS_ScramblingID &&
-        sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
-      dci_pdu->ScramblingId = *sched_ctrl->coreset->pdcch_DMRS_ScramblingID;
+    if (coreset->pdcch_DMRS_ScramblingID &&
+        ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+      dci_pdu->ScramblingId = *coreset->pdcch_DMRS_ScramblingID;
       dci_pdu->ScramblingRNTI = rnti;
     } else {
       dci_pdu->ScramblingId = *scc->physCellId;
@@ -1249,15 +1256,16 @@ void nr_schedule_ulsch(module_id_t module_id,
 	CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
 	CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
       n_ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-    else n_ubwp=1;
+
     config_uldci(sched_ctrl->active_ubwp,
+		 scc,
                  pusch_pdu,
                  &uldci_payload,
                  ps->dci_format,
                  ps->time_domain_allocation,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
                  n_ubwp,
-                 sched_ctrl->active_bwp->bwp_Id);
+                 bwpid);
     fill_dci_pdu_rel15(scc,
                        CellGroup,
                        dci_pdu,
@@ -1265,7 +1273,7 @@ void nr_schedule_ulsch(module_id_t module_id,
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,
-                       sched_ctrl->active_bwp->bwp_Id);
+                       bwpid);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));
   }

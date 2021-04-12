@@ -236,7 +236,6 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   /* update current context */
 
-  if (!mac->cg) return(TRUE);
 
   int subframe_number = proc->nr_slot_rx / ue->frame_parms.slots_per_subframe;
   nb_pucch_format_4_in_subframes[subframe_number] = 0; /* reset pucch format 4 counter at current rx position */
@@ -248,7 +247,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
 
-  LOG_D(PHY, "PUCCH: %d.%d dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, dl_harq_pid, pucch_resource_indicator);
+  LOG_D(PHY, "PUCCH: %d.%d bwp_id %d dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, bwp_id,dl_harq_pid, pucch_resource_indicator);
 
   /* Part - I
    * Collect feedback that should be transmitted at this nr_slot_tx :
@@ -283,61 +282,68 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
-  
-  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-  
-  uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
 
-  //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
-	  if (report_slot_csi == proc->nr_slot_tx)
-		csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
-	  else
-	    csi_status = 0;
-  //}
-
-  O_CSI = cqi_status + ri_status + csi_status;
-
-  /* Part - II */
-  /* if payload is empty or only negative SR -> no pucch transmission */
-
-  if(O_ACK == 0) {
-    N_UCI = O_SR + O_CSI;
-    if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
-      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
-      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
-      return (FALSE);
-    }
-    else {
-      /* a resource set and a resource should be find according to payload size */
-      pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
-      if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
-        pucch_resource_indicator = 0;
-        pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0]; /* get the first resource of the set */
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig&&
+      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
+    NR_CSI_MeasConfig_t *csi_MeasConfig = mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+    
+    uint16_t report_slot_csi =csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+    
+    //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+    if (report_slot_csi == proc->nr_slot_tx)
+      csi_status = get_csi_nr(mac, ue, gNB_id, &csi_payload);
+    else
+      csi_status = 0;
+    //}
+    
+    O_CSI = cqi_status + ri_status + csi_status;
+    
+    /* Part - II */
+    /* if payload is empty or only negative SR -> no pucch transmission */
+    
+    if(O_ACK == 0) {
+      N_UCI = O_SR + O_CSI;
+      if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
+	NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+	LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+	return (FALSE);
       }
       else {
-        LOG_W(PHY,"PUCCH no resource set found for CSI at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-        O_CSI = 0;
-        csi_payload = 0;
-      }
-
-      if (O_CSI == 0) {
-        /* only SR has to be send */
-        /* in this case there is no DCI related to PUCCH parameters so pucch resource should be get from sr configuration */
-        /* TS 38.213 9.2.4 UE procedure for reporting SR */
-        pucch_resource_set = 0; /* force it to a valid value */
-        if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id] != NULL) {
-         pucch_resource_id = ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id]->resource;
-        }
-        else {
-         LOG_E(PHY,"PUCCH No scheduling request configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-         return(FALSE);
-        }
+	/* a resource set and a resource should be find according to payload size */
+	pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
+	if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
+	  pucch_resource_indicator = 0;
+	  pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0]; /* get the first resource of the set */
+	}
+	else {
+	  LOG_W(PHY,"PUCCH no resource set found for CSI at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+	  O_CSI = 0;
+	  csi_payload = 0;
+	}
+	
+	if (O_CSI == 0) {
+	  /* only SR has to be send */
+	  /* in this case there is no DCI related to PUCCH parameters so pucch resource should be get from sr configuration */
+	  /* TS 38.213 9.2.4 UE procedure for reporting SR */
+	  pucch_resource_set = 0; /* force it to a valid value */
+	  if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id] != NULL) {
+	    pucch_resource_id = ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id]->resource;
+	  }
+	  else {
+	    LOG_E(PHY,"PUCCH No scheduling request configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+	    return(FALSE);
+	  }
+	}
       }
     }
   }
-  else {
-    N_UCI = O_SR + O_ACK + O_CSI;
-  }
+
+  
+  N_UCI = O_SR + O_ACK + O_CSI;    
+  if (N_UCI ==0) return(TRUE);
 
   /* Part - III */
   /* Choice PUCCH format and its related parameters */
@@ -345,8 +351,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   uint8_t  starting_symbol_index=0;
   uint8_t nb_symbols_total = 0;
   uint8_t  nb_symbols = 0;
-  uint16_t starting_prb = 0;;  /* it can be considered as first  hop on case of pucch hopping */
-  uint16_t second_hop = 0;     /* second part for pucch for hopping */
+  uint16_t startingPRB = 0;;  /* it can be considered as first  hop on case of pucch hopping */
+  uint16_t secondHopPRB = 0;     /* second part for pucch for hopping */
   uint8_t  nb_of_prbs = 0;
   int m_0 = 0;                 /* format 0 only */
   int m_CS = 0;                /* for all format except for format 0 */
@@ -363,29 +369,32 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /* use of initial pucch configuration provided by system information 1 */
     /***********************************************************************/
     if (initial_pucch_id != NB_INITIAL_PUCCH_RESOURCE) {
+      LOG_I(MAC,"Selecting INITIAL PUCCH Resource\n");
       format = initial_pucch_resource[initial_pucch_id].format;
       starting_symbol_index = initial_pucch_resource[initial_pucch_id].startingSymbolIndex;
       nb_symbols_total = initial_pucch_resource[initial_pucch_id].nrofSymbols;
 
       int N_CS = initial_pucch_resource[initial_pucch_id].nb_CS_indexes;
       /* see TS 38213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
+      int BWPsize =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
+			      MAX_BWP_SIZE);
       int RB_BWP_offset;
       if (initial_pucch_id == 15) {
-        RB_BWP_offset = ue->systemInformationBlockType1_nr.N_BWP_SIZE/4;
+        RB_BWP_offset =BWPsize/4;
       }
       else
       {
         RB_BWP_offset = initial_pucch_resource[initial_pucch_id].PRB_offset;
       }
       if (initial_pucch_id/8 == 0) {
-        starting_prb = RB_BWP_offset + (initial_pucch_id/N_CS);
-        second_hop = ue->systemInformationBlockType1_nr.N_BWP_SIZE - 1 - RB_BWP_offset - (initial_pucch_id/N_CS);
+        startingPRB = RB_BWP_offset + (initial_pucch_id/N_CS);
+        secondHopPRB = BWPsize - 1 - RB_BWP_offset - (initial_pucch_id/N_CS);
         m_0 = initial_pucch_resource[initial_pucch_id].initial_CS_indexes[initial_pucch_id%N_CS];
       }
       else if (initial_pucch_id/8 == 1)
       {
-        starting_prb = RB_BWP_offset + (initial_pucch_id/N_CS);
-        second_hop = ue->systemInformationBlockType1_nr.N_BWP_SIZE - 1 - RB_BWP_offset - ((initial_pucch_id - 8)/N_CS);
+        startingPRB = RB_BWP_offset + (initial_pucch_id/N_CS);
+        secondHopPRB = BWPsize - 1 - RB_BWP_offset - ((initial_pucch_id - 8)/N_CS);
         m_0 =  initial_pucch_resource[initial_pucch_id].initial_CS_indexes[(initial_pucch_id - 8)%N_CS];
       }
       if ((ue->UE_mode[gNB_id] != PUSCH) && (O_ACK > 1)) {
@@ -412,8 +421,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       format = pucch_resource->format.present;
       nb_symbols_total = get_nb_symbols_pucch(pucch_resource, format);
       starting_symbol_index = get_starting_symb_idx(pucch_resource, format);
-      starting_prb = pucch_resource->startingPRB;
-      second_hop = starting_prb;
+      startingPRB   = pucch_resource->startingPRB;
+      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? pucch_resource->secondHopPRB : startingPRB;
       if (format==pucch_format1_nr)
         time_domain_occ = pucch_resource->format.choice.format1->timeDomainOCC;
       if (format==pucch_format4_nr) {
@@ -454,7 +463,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int O_CRC = 0;
 
   nb_symbols = nb_symbols_total; /* by default, it can be reduced due to symbols reserved for dmrs */
-  pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[pucch_resource_id];
+  pucch_resource = format>1 ? 
+    mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[pucch_resource_id]:
+    0;
 
   switch(format) {
     case pucch_format0_nr:
@@ -602,8 +613,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols total: %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
                              format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
 
-  NR_TST_PHY_PRINTF("PUCCH ( starting_prb : %d ) ( second_hop : %d ) ( m_0 : %d ) ( m_CS : %d ) ( time_domain_occ %d ) (occ_length : %d ) ( occ_Index : %d ) \n",
-                             starting_prb,         second_hop,         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
+  NR_TST_PHY_PRINTF("PUCCH ( startingPRB : %d ) ( secondHopPRB : %d ) ( m_0 : %d ) ( m_CS : %d ) ( time_domain_occ %d ) (occ_length : %d ) ( occ_Index : %d ) \n",
+                             startingPRB,         secondHopPRB,         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
 
   /* Part - IV */
   /* Generate PUCCH signal according to its format and parameters */
@@ -632,17 +643,27 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   switch(format) {
     case pucch_format0_nr:
     {
+      int pucch_GroupHopping = mac->ULbwp[bwp_id-1] ?
+	mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping:
+	mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->pucch_GroupHopping;
+      int hoppingId = mac->ULbwp[bwp_id-1] ?
+	mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0]:
+	(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->hoppingId?
+	 mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->hoppingId[0]:
+	 mac->physCellId);
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
-                         &ue->frame_parms,
-                         mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,
-                         mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0],
-                         tx_amp,
-                         nr_slot_tx,
-                         (uint8_t)m_0,
-                         (uint8_t)m_CS,
-                         nb_symbols_total,
-                         starting_symbol_index,
-                         starting_prb);
+			 &ue->frame_parms,
+			 pucch_GroupHopping,
+			 hoppingId,
+			 tx_amp,
+			 nr_slot_tx,
+			 (uint8_t)m_0,
+			 (uint8_t)m_CS,
+			 nb_symbols_total,
+			 starting_symbol_index,
+			 startingPRB,
+			 secondHopPRB
+			 );
       break;
     }
     case pucch_format1_nr:
@@ -656,8 +677,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          (uint8_t)m_0,
                          nb_symbols_total,
                          starting_symbol_index,
-                         starting_prb,
-                         second_hop,
+                         startingPRB,
+                         secondHopPRB,
                          (uint8_t)time_domain_occ,
                          (uint8_t)N_UCI);
       break;
@@ -677,7 +698,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
-                         starting_prb,
+                         startingPRB,
                          (uint8_t)N_UCI);
       break;
     }
@@ -696,8 +717,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                            nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
-                           starting_prb,
-                           second_hop,
+                           startingPRB,
+                           secondHopPRB,
                            (uint8_t)N_UCI,
                            (uint8_t)occ_length,
                            (uint8_t)occ_Index);
@@ -753,9 +774,13 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-  if (mac->DLbwp[0] == NULL) return 0;
 
-  if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
+
+  if (mac->DLbwp[0] &&
+      mac->DLbwp[0]->bwp_Dedicated &&
+      mac->DLbwp[0]->bwp_Dedicated->pdsch_Config &&
+      mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup &&
+      mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
     two_transport_blocks = TRUE;
     number_of_code_word = 2;
   }
@@ -832,7 +857,9 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
    U_DAI_c = number_harq_feedback/number_of_code_word;
    N_m_c_rx = number_harq_feedback;
    int N_SPS_c = 0; /* FFS TODO_NR multicells and SPS are not supported at the moment */
-   if (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH == NULL) {
+   if (mac->cg != NULL && 
+       mac->cg->physicalCellGroupConfig != NULL && 
+       mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL) {
      int N_TB_max_DL = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
      *n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
      NR_TST_PHY_PRINTF("PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", *n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
@@ -945,12 +972,19 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
   //*resource_set_id = MAX_NB_OF_PUCCH_RESOURCE_SETS;
   //*resource_id = MAX_NB_OF_PUCCH_RESOURCES;
 
-  if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[0] == NULL) {
+  if (bwp_id == 0 ||
+      (mac->ULbwp[bwp_id-1] &&
+       mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+       mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
+       mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup &&
+       mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList &&
+       mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[0] == NULL)
+      ){
 
     /* No resource set has been already configured so pucch_configCommon from Sib1 should be used in this case */
 
     if (ue->UE_mode[gNB_id] != PUSCH) {
-      *initial_pucch_id = mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon[0];
+      *initial_pucch_id = *mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
       if (*initial_pucch_id >= NB_INITIAL_PUCCH_RESOURCE) {
         LOG_E(PHY,"PUCCH Invalid initial resource index : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         *initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;

@@ -304,6 +304,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
+  int r_pucch;
 } NR_sched_pucch_t;
 
 /* this struct is a helper: as long as the TDA and DCI format remain the same
@@ -585,6 +586,7 @@ typedef struct {
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
+  bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,

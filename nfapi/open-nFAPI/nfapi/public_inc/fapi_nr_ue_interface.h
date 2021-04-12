@@ -111,8 +111,8 @@ typedef struct {
   uint8_t ssb_index;
   uint8_t ssb_length;
   uint16_t cell_id;
-
-} fapi_nr_mib_pdu_t;
+  uint16_t ssb_start_subcarrier;
+} fapi_nr_ssb_pdu_t;
 
 typedef struct {
   uint32_t pdu_length;
@@ -124,7 +124,7 @@ typedef struct {
   uint8_t pdu_type;
   union {
     fapi_nr_pdsch_pdu_t pdsch_pdu;
-    fapi_nr_mib_pdu_t mib_pdu;
+    fapi_nr_ssb_pdu_t ssb_pdu;
     fapi_nr_sib_pdu_t sib_pdu;
   };
 } fapi_nr_rx_indication_body_t;

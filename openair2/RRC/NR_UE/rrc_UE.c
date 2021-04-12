@@ -1258,11 +1258,19 @@ nr_rrc_ue_process_masterCellGroup(
 )
 //-----------------------------------------------------------------------------
 {
-  NR_CellGroupConfig_t *cellGroupConfig = (NR_CellGroupConfig_t *)masterCellGroup;
+  NR_CellGroupConfig_t *cellGroupConfig=NULL;
+  uper_decode(NULL,
+	      &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+	      (void **)&cellGroupConfig,
+	      (uint8_t *)masterCellGroup->buf,
+	      masterCellGroup->size, 0, 0);
+  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
   if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
     //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
     //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
+    // NSA procedures
   }
+ 
 
   if( cellGroupConfig->rlc_BearerToReleaseList != NULL){
     //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
@@ -1287,6 +1295,8 @@ nr_rrc_ue_process_masterCellGroup(
     } else {
       NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
     }
+    LOG_I(RRC,"Sending CellGroupConfig to MAC\n");
+    nr_rrc_mac_config_req_ue(ctxt_pP->module_id,0,0,NULL,NULL,cellGroupConfig,NULL);
     //TODO (configure the SpCell as specified in 5.3.5.5.7)
   }
 

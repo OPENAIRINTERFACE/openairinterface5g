@@ -333,7 +333,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot,-1);
   if (!alloc) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",

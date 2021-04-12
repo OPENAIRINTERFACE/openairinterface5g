@@ -78,7 +78,8 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
                      pucch->resource_indicator,
                      pucch->csi_bits,
                      pucch->dai_c,
-                     pucch->sr_flag);
+                     pucch->sr_flag,
+		     pucch->r_pucch);
 }
 
 #define MIN_RSRP_VALUE -141
@@ -1077,7 +1078,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 bool nr_acknack_scheduling(int mod_id,
                            int UE_id,
                            frame_t frame,
-                           sub_frame_t slot)
+                           sub_frame_t slot,
+			   int r_pucch)
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -1105,6 +1107,7 @@ bool nr_acknack_scheduling(int mod_id,
    *   resources by index, and not by their ID! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
+  pucch->r_pucch=r_pucch;
   AssertFatal(pucch->csi_bits == 0,
               "%s(): csi_bits %d in sched_pucch[0]\n",
               __func__,
@@ -1125,8 +1128,9 @@ bool nr_acknack_scheduling(int mod_id,
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     pucch->ul_slot = (s + 1) % n_slots_frame;
     // we assume that only two indices over the array sched_pucch exist
-    const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
+    NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
     // skip the CSI PUCCH if it is present and if in the next frame/slot
+    csi_pucch->r_pucch=-1;
     if (csi_pucch->csi_bits > 0
         && csi_pucch->frame == pucch->frame
         && csi_pucch->ul_slot == pucch->ul_slot) {
@@ -1179,7 +1183,7 @@ bool nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot,pucch->r_pucch);
     }
 
     pucch->timing_indicator = i;
@@ -1190,16 +1194,26 @@ bool nr_acknack_scheduling(int mod_id,
 
   /* we need to find a new PUCCH occasion */
 
-  NR_PUCCH_Config_t *pucch_Config;
+  NR_PUCCH_Config_t *pucch_Config=NULL;
   int bwp_Id=0;
   if (sched_ctrl->active_ubwp) { 
     pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
     bwp_Id= sched_ctrl->active_ubwp->bwp_Id;
   }
-  else pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
-  DevAssert(pucch_Config->resourceToAddModList->list.count > 0);
-  DevAssert(pucch_Config->resourceSetToAddModList->list.count > 0);
-  const int n_res = pucch_Config->resourceSetToAddModList->list.array[0]->resourceList.list.count;
+  else if (RC.nrmac[mod_id]->UE_info.CellGroup[UE_id] &&
+	   RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig &&
+	   RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
+	   RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+	   RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+	   RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup)
+    pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  if (pucch_Config) {
+    DevAssert(pucch_Config->resourceToAddModList->list.count > 0);
+    DevAssert(pucch_Config->resourceSetToAddModList->list.count > 0);
+  }
+  int n_res = (pucch_Config) ? 
+    pucch_Config->resourceSetToAddModList->list.array[0]->resourceList.list.count : 
+    nr_get_default_pucch_res(*scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon);
   int *pucch_index_used = RC.nrmac[mod_id]->pucch_index_used[bwp_Id];
 
   /* if time information is outdated (e.g., last PUCCH occasion in last frame),
@@ -1258,7 +1272,7 @@ bool nr_acknack_scheduling(int mod_id,
   LOG_D(MAC,"2. DL slot %d, UL_ACK %d (index %d)\n",slot,pucch->ul_slot,i);
 
   pucch->dai_c++;
-  const int pucch_res = pucch_index_used[pucch->ul_slot];
+  const int pucch_res = r_pucch<0 ? pucch_index_used[pucch->ul_slot] : r_pucch;
   pucch->resource_indicator = pucch_res;
   pucch_index_used[pucch->ul_slot] += 1;
   AssertFatal(pucch_index_used[pucch->ul_slot] <= n_res,

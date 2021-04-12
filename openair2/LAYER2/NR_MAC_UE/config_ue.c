@@ -735,10 +735,11 @@ int nr_rrc_mac_config_req_ue(
       build_ssb_to_ro_map(mac);
     }
     else if (cell_group_config != NULL ){
+      LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
-      mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
-      config_control_ue(mac);
-      config_common_ue(mac,module_id,cc_idP);
+      mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+      //      config_control_ue(mac);
+      //      config_common_ue(mac,module_id,cc_idP);
       /*      
       if(mac_cell_group_configP != NULL){
 	if(mac_cell_group_configP->drx_Config != NULL ){

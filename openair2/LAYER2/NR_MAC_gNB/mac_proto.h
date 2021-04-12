@@ -178,6 +178,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
+		  const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
@@ -200,7 +201,8 @@ void nr_csi_meas_reporting(int Mod_idP,
 bool nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
-                           sub_frame_t slotP);
+                           sub_frame_t slotP,
+			   int r_pucch);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -234,7 +236,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
                         uint16_t O_ack,
-                        uint8_t O_sr);
+                        uint8_t O_sr,
+			int r_pucch);
 
 void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
@@ -338,6 +341,8 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t Qm,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
+
+int nr_get_default_pucch_res(int pucch_ResourceCommon);
 
 void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
 
