@@ -249,7 +249,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
@@ -313,7 +313,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 	      number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	      pusch_pdu->qam_mod_order,
 	      pusch_pdu->nrOfLayers);
-  LOG_I(PHY,"rb_size %d, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
+  LOG_D(PHY,"rb_size %d, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
 	pusch_pdu->rb_size,
 	number_symbols,
 	nb_re_dmrs,

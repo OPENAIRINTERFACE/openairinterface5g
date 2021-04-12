@@ -104,7 +104,7 @@ void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
 			       int frame, int slot,
 			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu) {
 
-  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, pdcch_pdu->pdcch_pdu_rel15.numDlDci);
+  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, pdcch_pdu->pdcch_pdu_rel15.numDlDci);
 
   // copy dci configuration into gNB structure
   //  gNB->pdcch_pdu = pdcch_pdu;
@@ -119,7 +119,7 @@ void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
 			       int frame, int slot,
 			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu) {
 
-  LOG_I(PHY,"Frame %d, Slot %d: UL DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci);
+  LOG_D(PHY,"Frame %d, Slot %d: UL DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci);
 
   // copy dci configuration into gNB structure
   //  gNB->ul_dci_pdu = ul_dci_request_pdu;
