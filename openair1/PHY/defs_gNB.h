@@ -138,8 +138,10 @@ typedef struct {
 typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
-  /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
+  /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
   int32_t *txdataF[NR_MAX_NB_LAYERS];
+  /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
+  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
   /// Modulated symbols buffer
   int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
@@ -180,7 +182,10 @@ typedef struct {
   int16_t sqrt_rho_b;
 } NR_gNB_DLSCH_t;
 
-
+typedef struct {
+  bool active;
+  nfapi_nr_dl_tti_ssb_pdu ssb_pdu;
+} NR_gNB_SSB_t;
 
 typedef struct {
   int frame;
@@ -385,8 +390,12 @@ typedef struct {
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
-  /// - third index: sample [0..]
+  /// - third index: sample [0..samples_per_frame_woCP]
   int32_t **txdataF;
+  /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
+  /// - first index: antenna port
+  /// - second index: beam_id [0.. symbols_per_frame[
+  uint8_t **beam_id;  
   int32_t *debugBuff;
   int32_t debugBuff_sample_offset;
 } NR_gNB_COMMON;
@@ -705,10 +714,10 @@ typedef struct PHY_VARS_gNB_s {
   
   //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
-  nfapi_nr_dl_tti_ssb_pdu      ssb_pdu;
 
   uint16_t num_pdsch_rnti[80];
-  NR_gNB_PBCH         pbch;
+  NR_gNB_SSB_t       ssb[64];
+  NR_gNB_PBCH        pbch;
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
@@ -791,6 +800,7 @@ typedef struct PHY_VARS_gNB_s {
   int prach_energy_counter;
 
   int pucch0_thres;
+  uint64_t bad_pucch;
   /*
   time_stats_t phy_proc;
   */

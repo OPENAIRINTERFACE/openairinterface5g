@@ -48,9 +48,9 @@ void multipath_tv_channel(channel_desc_t *desc,
   printf("[TV CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d max_doppler %g\n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
          desc->max_Doppler);
 #endif
-  tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex));
-  rx = (double complex **)malloc(desc->nb_rx*sizeof(double complex));
-  H_t= (double complex ** *) malloc(desc->nb_tx*desc->nb_rx*sizeof(double complex **));
+  tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex *));
+  rx = (double complex **)malloc(desc->nb_rx*sizeof(double complex *));
+  H_t= (double complex ***) malloc(desc->nb_tx*desc->nb_rx*sizeof(double complex **));
   //  tv_H_t = (double complex *) malloc(length*sizeof(double complex));
   rx_temp= (double complex *) calloc(length,sizeof(double complex));
 
@@ -63,10 +63,10 @@ void multipath_tv_channel(channel_desc_t *desc,
   }
 
   for(i=0; i<desc->nb_tx*desc->nb_rx; i++) {
-    H_t[i] = (double complex **) malloc(length*sizeof(double complex *));
+    H_t[i] = (double complex **)malloc(desc->nb_taps*sizeof(double complex *));
 
-    for(j=0; j<length; j++) {
-      H_t[i][j] = (double complex *) calloc (desc->nb_taps,sizeof(double complex));
+    for(j=0; j<desc->nb_taps; j++) {
+      H_t[i][j] = (double complex *)calloc(length,sizeof(double complex));
     }
   }
 
@@ -116,7 +116,7 @@ void multipath_tv_channel(channel_desc_t *desc,
   free(rx);
 
   for(i=0; i<desc->nb_rx*desc->nb_tx; i++) {
-    for(j=0; j<length; j++) {
+    for(j=0; j<desc->nb_taps; j++) {
       free(H_t[i][j]);
     }
 
@@ -131,14 +131,29 @@ void multipath_tv_channel(channel_desc_t *desc,
 void tv_channel(channel_desc_t *desc,double complex ***H,uint32_t length){
 
   int i,j,p,l,k;
-  double *alpha,*phi_rad,pi=acos(-1),*w_Hz;
+  double *alpha,***phi_rad,pi=acos(-1),***w_Hz;
   alpha = (double *)calloc(desc->nb_paths,sizeof(double));
-  phi_rad = (double *)calloc(desc->nb_paths,sizeof(double));
-  w_Hz = (double *)calloc(desc->nb_paths,sizeof(double));
+  phi_rad = (double ***)malloc(desc->nb_rx*desc->nb_tx*sizeof(double **));
+  w_Hz = (double ***)malloc(desc->nb_rx*desc->nb_tx*sizeof(double **));
 
-  for(i=0; i<desc->nb_paths; i++) {
-    w_Hz[i]=desc->max_Doppler*cos(frand_a_b(0,2*pi));
-    phi_rad[i]=frand_a_b(0,2*pi);
+  for(i=0; i<desc->nb_tx*desc->nb_rx; i++) {
+    phi_rad[i]   = (double **) malloc(desc->nb_taps*sizeof(double *));
+    w_Hz[i]      = (double **) malloc(desc->nb_taps*sizeof(double *));
+    for(j=0; j<desc->nb_taps; j++) {
+      phi_rad[i][j]   = (double *) malloc(desc->nb_paths*sizeof(double));
+      w_Hz[i][j]      = (double *) malloc(desc->nb_paths*sizeof(double));
+    }
+  }
+
+  for(i=0; i<desc->nb_tx*desc->nb_rx; i++) {
+    for (j = 0; j<desc->nb_taps; j++) {
+      for(k=0; k<desc->nb_paths; k++) {
+        w_Hz[i][j][k] = desc->max_Doppler*cos(frand_a_b(0,2*M_PI));
+        phi_rad[i][j][k] = frand_a_b(0,2*M_PI);
+        //printf("w_hz[%d][%d][%d]=f_d*cos(theta) = %f\n",i,j,k,w_Hz[i][j][k]);
+        //printf("phi_rad[%d][%d][%d] = %f\n",i,j,k,phi_rad[i][j][k]);
+        }
+    }
   }
 
   if(desc->ricean_factor == 1) {
@@ -153,44 +168,34 @@ void tv_channel(channel_desc_t *desc,double complex ***H,uint32_t length){
     }
   }
 
-  /*
-  // This is the code when we only consider a SISO case
-  for(i=0;i<length;i++)
-  {
-  for(j=0;j<desc->nb_taps;j++)
-     {
-    for(p=0;p<desc->nb_paths;p++)
-       {
-         H[i][j] += sqrt(desc->amps[j]/2)*alpha[p]*cexp(-I*(2*pi*w_Hz[p]*i*(1/(desc->sampling_rate*1e6))+phi_rad[p]));
-       }
-       }
-   }
-  for(j=0;j<desc->nb_paths;j++)
-   {
-  phi_rad[j] = fmod(2*pi*w_Hz[j]*(length-1)*(1/desc->sampling_rate)+phi_rad[j],2*pi);
-   }
-  */
-
-  // if MIMO
+  // SISO or MIMO
   for (i=0; i<desc->nb_rx; i++) {
     for(j=0; j<desc->nb_tx; j++) {
-      for(k=0; k<length; k++) {
-        for(l=0; l<desc->nb_taps; l++) {
-          H[i+(j*desc->nb_rx)][k][l] = 0;
-
+      for(k=0; k<desc->nb_taps; k++) {
+        for(l=0; l<length; l++) {
           for(p=0; p<desc->nb_paths; p++) {
-            H[i+(j*desc->nb_rx)][k][l] += sqrt(desc->amps[l]/2)*alpha[p]*cexp(I*(2*pi*w_Hz[p]*k*(1/(desc->sampling_rate*1e6))+phi_rad[p]));
+            H[i+(j*desc->nb_rx)][k][l] += sqrt(desc->amps[k])*alpha[p]*cexp(I*(2*pi*w_Hz[i+(j*desc->nb_rx)][k][p]*l*(1/(desc->sampling_rate*1e6))+phi_rad[i+(j*desc->nb_rx)][k][p]));
           }
         }
-      }
-
-      for(j=0; j<desc->nb_paths; j++) {
-        phi_rad[j] = fmod(2*pi*w_Hz[j]*(length-1)*(1/desc->sampling_rate)+phi_rad[j],2*pi);
+        //printf("H[tx%d][rx%d][k%d] = %f+j%f \n",j,i,k,creal(H[i+(j*desc->nb_rx)][k][0]),cimag(H[i+(j*desc->nb_rx)][k][0]));
       }
     }
   }
-
+  //accumlate the phase
+  /*for(k=0; k<desc->nb_taps; k++) {
+   * for(j=0; j<desc->nb_paths; j++) {
+   * desc->random_phase[k][j] = fmod(2*pi*w_Hz[k][j]*(length-1)*(1/(desc->sampling_rate*1e6))+phi_rad[k][j],2*pi);
+   * }
+   * }*/
   free(alpha);
+  for(i=0; i<desc->nb_rx*desc->nb_tx; i++) {
+    for (j=0; j<desc->nb_taps; j++) {
+      free(w_Hz[i][j]);
+      free(phi_rad[i][j]);
+    }
+    free(w_Hz[i]);
+    free(phi_rad[i]);
+  }
   free(w_Hz);
   free(phi_rad);
 }
@@ -203,7 +208,7 @@ void tv_conv(double complex **h, double complex *x, double complex *y, uint32_t 
   for(i=0; i<((int)nb_samples-dd); i++) {
     for(j=0; j<nb_taps; j++) {
       if(i>j)
-        y[i+dd] += creal(h[i][j])*creal(x[i-j])-cimag(h[i][j])*cimag(x[i-j]) + I*(creal(h[i][j])*cimag(x[i-j])+cimag(h[i][j])*creal(x[i-j]));
+        y[i+dd] += creal(h[j][i])*creal(x[i-j])-cimag(h[j][i])*cimag(x[i-j]) + I*(creal(h[j][i])*cimag(x[i-j])+cimag(h[j][i])*creal(x[i-j]));
     }
   }
 }

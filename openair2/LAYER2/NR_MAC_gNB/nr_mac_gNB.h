@@ -611,6 +611,8 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_target_snrx10;
   /// Pucch target SNR
   int                             pucch_target_snrx10;
+  /// Subcarrier Offset
+  int                             ssb_SubcarrierOffset;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
@@ -664,11 +666,12 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
+  /// list of allocated beams per period
+  int16_t *tdd_beam_association;
   /// PUCCH: keep track of the resources has already been used by saving the
   /// highest index not yet been used in a given slot. Dynamically allocated
   /// so we can have it for every slot as a function of the numerology
   int *pucch_index_used[MAX_NUM_BWP];
-
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
   /// UL preprocessor for differentiated scheduling
@@ -676,7 +679,7 @@ typedef struct gNB_MAC_INST_s {
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
   NR_CellGroupConfig_t *secondaryCellGroupCommon;
-  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
 } gNB_MAC_INST;
 

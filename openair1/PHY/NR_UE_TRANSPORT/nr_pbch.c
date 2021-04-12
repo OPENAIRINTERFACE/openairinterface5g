@@ -60,16 +60,15 @@ uint16_t nr_pbch_extract(int **rxdataF,
   uint8_t i,j,aarx;
   int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
   int nushiftmod4 = frame_parms->nushift;
-  unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
-
- // if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
- rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
 
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
               symbol);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    unsigned int rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
+    rx_offset = (rx_offset)%(frame_parms->ofdm_symbol_size);
+
     rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
     rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
 #ifdef DEBUG_PBCH
@@ -590,7 +589,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
       frame_parms->ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
-  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms,i_ssb);
+  if (frame_parms->half_frame_bit)
+    ue->symbol_offset += (frame_parms->slots_per_frame>>1)*frame_parms->symbols_per_slot;
 
   uint8_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)

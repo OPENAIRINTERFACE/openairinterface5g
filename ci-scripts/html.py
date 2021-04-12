@@ -479,3 +479,88 @@ class HTMLManagement():
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.close()
 
+	def CreateHtmlTestRowCppCheckResults(self, CCR):
+		if (self.htmlFooterCreated or (not self.htmlHeaderCreated)):
+			return
+		self.htmlFile = open('test_results.html', 'a')
+		vId = 0
+		for version in CCR.versions:
+			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> Results for cppcheck v ' + version + ' </b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> NB ERRORS</b></td>\n')
+			if CCR.nbErrors[vId] == 0:
+				myColor = 'lightgreen'
+			elif CCR.nbErrors[vId] < 20:
+				myColor = 'orange'
+			else:
+				myColor = 'lightcoral'
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + ' bgcolor = "' + myColor + '"><b>' + str(CCR.nbErrors[vId]) + '</b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> NB WARNINGS</b></td>\n')
+			if CCR.nbWarnings[vId] == 0:
+				myColor = 'lightgreen'
+			elif CCR.nbWarnings[vId] < 20:
+				myColor = 'orange'
+			else:
+				myColor = 'lightcoral'
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + ' bgcolor = "' + myColor + '"><b>' + str(CCR.nbWarnings[vId]) + '</b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '> ----------------- </td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Memory leak</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbMemLeaks[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Possible null pointer deference</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbNullPtrs[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Uninitialized variable</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbUninitVars[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Undefined behaviour shifting</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbTooManyBitsShift[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Signed integer overflow</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbIntegerOverflow[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '> </td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Printf formatting issues</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbInvalidPrintf[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Modulo result is predetermined</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbModuloAlways[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Opposite Condition -> dead code</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbOppoInnerCondition[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Wrong Scanf Nb Args</b></td>\n')
+			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbWrongScanfArg[vId]) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+			vId += 1
+            
+		self.htmlFile.close()
