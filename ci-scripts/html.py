@@ -562,5 +562,22 @@ class HTMLManagement():
 			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbWrongScanfArg[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			vId += 1
+
+	def CreateHtmlTestRowPhySimTestResult(self, testResult):
+		if (self.htmlFooterCreated or (not self.htmlHeaderCreated)):
+			return
+		self.htmlFile = open('test_results.html', 'a')
+		# Tab header
+		self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+		self.htmlFile.write('        <th colspan="2">Test Description</th>\n')
+		self.htmlFile.write('        <th>Result</th>\n')
+		self.htmlFile.write('      </tr>\n')
+		for key, value in testResult.items():
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + key  + ' </td>\n')
+			if value == 'PASS':
+				self.htmlFile.write('        <td bgcolor = "green" >' + value  + '</td>\n')
+			else:
+				self.htmlFile.write('        <td bgcolor = "red" >' + value  + '</td>\n')	
             
 		self.htmlFile.close()
