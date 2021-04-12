@@ -490,7 +490,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   RA_config_t *ra = &mac->ra;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   uint8_t is_Msg3 = 0;
-  printf("%p\n",mac->scg);
+
   uint16_t n_RB_DLBWP = (mac->scg) ?
       NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) :
       mac->type0_PDCCH_CSS_config.num_rbs;

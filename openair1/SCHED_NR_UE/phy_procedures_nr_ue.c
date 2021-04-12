@@ -477,13 +477,17 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc)
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss)
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   unsigned int dci_cnt=0;
   fapi_nr_dci_indication_t dci_ind = {0};
   nr_downlink_indication_t dl_indication;
+
+  NR_UE_PDCCH *pdcch_vars = ue->pdcch_vars[proc->thread_id][gNB_id];
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &pdcch_vars->pdcch_config[n_ss];
 
   /*
   //  unsigned int dci_cnt=0, i;  //removed for nr_ue_pdcch_procedures and added in the loop for nb_coreset_active
@@ -669,18 +673,18 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   */
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
-  nr_rx_pdcch(ue, proc);
+  nr_rx_pdcch(ue, proc, rel15);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
   
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
-  printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with (nb_searchspace_active=%d)\n",
-	 pdcch_vars->nb_search_space);
+  printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure for search space %d)\n",
+	 n_ss);
 #endif
 
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, &dci_ind);
+  dci_cnt = nr_dci_decoding_procedure(ue, proc, &dci_ind, rel15);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
   LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
@@ -1708,10 +1712,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 proc,
                 l,
                 nr_slot_rx);
+  }
 
-    dci_cnt = 0;
-    for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
-
+  dci_cnt = 0;
+  for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+    for (uint16_t l=0; l<nb_symb_pdcch; l++) {
       // note: this only works if RBs for PDCCH are contigous!
       LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
             fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
@@ -1728,9 +1733,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
 #endif
-
-      dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
     }
+    dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc, n_ss);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
 

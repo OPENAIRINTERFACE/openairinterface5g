@@ -418,7 +418,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc);
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss);
 
 
 #endif
