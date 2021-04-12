@@ -563,6 +563,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp)
 {
+  int sps = 0;
+
   if (bwp) { // This is not the InitialBWP
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -571,8 +573,18 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
     // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+    sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+  }
+  else { // this is for InitialBWP
+    pdcch_pdu->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->SubcarrierSpacing = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+    pdcch_pdu->CyclicPrefix = (scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix==NULL) ? 0 : *scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix;
 
+    // first symbol
+    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
+    sps = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+  }
     AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
     
@@ -617,10 +629,6 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
-  }
-  else { // this is for InitialBWP
-    AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
-  }
 }
 
 

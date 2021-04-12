@@ -883,7 +883,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     NR_BWP_Downlink_t *bwp =  ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-    NR_ControlResourceSet_t *coreset = get_coreset(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1], ss, 0);
+    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0);
 
     long BWPStart = 0;
     if (get_softmodem_params()->sa) {
@@ -1134,7 +1134,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     NR_BWP_Downlink_t *bwp =  ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-    NR_ControlResourceSet_t *coreset = get_coreset(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1], ss, 0);
+    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0);
 
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
