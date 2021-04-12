@@ -215,7 +215,7 @@ static void UE_synch(void *arg) {
       double rx_gain_off = 0;
       nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
-      if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa) == 0) {
+      if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);

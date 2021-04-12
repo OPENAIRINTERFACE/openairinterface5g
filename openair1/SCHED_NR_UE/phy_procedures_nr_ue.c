@@ -872,7 +872,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 
 void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        UE_nr_rxtx_proc_t *proc,
-       int eNB_id,
+       int gNB_id,
        PDSCH_t pdsch,
        NR_UE_DLSCH_t *dlsch0,
        NR_UE_DLSCH_t *dlsch1,
@@ -892,7 +892,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   fapi_nr_rx_indication_t rx_ind;
   uint16_t number_pdus = 1;
   // params for UL time alignment procedure
-  NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[eNB_id];
+  NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[gNB_id];
 
   uint8_t is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   uint16_t nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
@@ -929,7 +929,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     case RA_PDSCH:
     case P_PDSCH:
     case PDSCH:
-      pdsch_vars = ue->pdsch_vars[proc->thread_id][eNB_id];
+      pdsch_vars = ue->pdsch_vars[proc->thread_id][gNB_id];
       break;
     case PMCH:
     case PDSCH1:
@@ -947,8 +947,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       *dlsch_errors=0;
 
     if (pdsch == RA_PDSCH) {
-      if (ue->prach_resources[eNB_id]!=NULL)
-	      dlsch0->rnti = ue->prach_resources[eNB_id]->ra_RNTI;
+      if (ue->prach_resources[gNB_id]!=NULL)
+	      dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
       else {
 	      LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
 	      //mac_xface->macphy_exit("prach_resources is NULL");
@@ -989,7 +989,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_I(PHY,"start ldpc decode for CW 0 for AbsSubframe %d.%d / %d  --> Nl %d \n", frame_rx, nr_slot_rx, harq_pid, dlsch0->harq_processes[harq_pid]->Nl);
       LOG_I(PHY,"start ldpc decode for CW 0 for AbsSubframe %d.%d / %d  --> G  %d \n", frame_rx, nr_slot_rx, harq_pid, dlsch0->harq_processes[harq_pid]->G);
       LOG_I(PHY,"start ldpc decode for CW 0 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, nr_slot_rx, harq_pid, dlsch0->Kmimo);
-      LOG_I(PHY,"start ldpc decode for CW 0 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, nr_slot_rx, harq_pid, ue->pdcch_vars[proc->thread_id][eNB_id]->num_pdcch_symbols);
+      LOG_I(PHY,"start ldpc decode for CW 0 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, nr_slot_rx, harq_pid, ue->pdcch_vars[proc->thread_id][gNB_id]->num_pdcch_symbols);
 #endif
 
 #if UE_TIMING_TRACE
@@ -1000,7 +1000,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     {
     ret = nr_dlsch_decoding_mthread(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   pdsch_vars->llr[0],
 			   &ue->frame_parms,
 			   dlsch0,
@@ -1017,7 +1017,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     {
     ret = nr_dlsch_decoding(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   pdsch_vars->llr[0],
 			   &ue->frame_parms,
 			   dlsch0,
@@ -1057,15 +1057,15 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                                        dlsch1->harq_processes[harq_pid]->Qm,
 							 dlsch1->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
-          start_meas(&ue->dlsch_unscrambling_stats);
+        start_meas(&ue->dlsch_unscrambling_stats);
 #endif
-          nr_dlsch_unscrambling(pdsch_vars->llr[1],
-                                dlsch1->harq_processes[harq_pid]->G,
-                                0,
-                                ue->frame_parms.Nid_cell,
-                                dlsch1->rnti);
+        nr_dlsch_unscrambling(pdsch_vars->llr[1],
+                              dlsch1->harq_processes[harq_pid]->G,
+                              0,
+                              ue->frame_parms.Nid_cell,
+                              dlsch1->rnti);
 #if UE_TIMING_TRACE
-          stop_meas(&ue->dlsch_unscrambling_stats);
+        stop_meas(&ue->dlsch_unscrambling_stats);
 #endif
 
 #if 0
@@ -1075,69 +1075,66 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           LOG_I(PHY,"start ldpc decode for CW 1 for AbsSubframe %d.%d / %d  --> Nl %d \n", frame_rx, nr_slot_rx, harq_pid, dlsch1->harq_processes[harq_pid]->Nl);
           LOG_I(PHY,"start ldpc decode for CW 1 for AbsSubframe %d.%d / %d  --> G  %d \n", frame_rx, nr_slot_rx, harq_pid, dlsch1->harq_processes[harq_pid]->G);
           LOG_I(PHY,"start ldpc decode for CW 1 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, nr_slot_rx, harq_pid, dlsch1->Kmimo);
-          LOG_I(PHY,"start ldpc decode for CW 1 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, nr_slot_rx, harq_pid, ue->pdcch_vars[proc->thread_id][eNB_id]->num_pdcch_symbols);
+          LOG_I(PHY,"start ldpc decode for CW 1 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, nr_slot_rx, harq_pid, ue->pdcch_vars[proc->thread_id][gNB_id]->num_pdcch_symbols);
 #endif
 
 #if UE_TIMING_TRACE
-          start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+        start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #endif
 
-  if(dlsch_parallel)
-    {
-    ret1 = nr_dlsch_decoding_mthread(ue,
-                                     proc,
-                                     eNB_id,
-                                     pdsch_vars->llr[1],
-                                     &ue->frame_parms,
-                                     dlsch1,
-                                     dlsch1->harq_processes[harq_pid],
-                                     frame_rx,
-                                     nb_symb_sch,
-				     nr_slot_rx,
-                                     harq_pid,
-                                     pdsch==PDSCH?1:0,
-                                     dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+        if(dlsch_parallel) {
+          ret1 = nr_dlsch_decoding_mthread(ue,
+                                           proc,
+                                           gNB_id,
+                                           pdsch_vars->llr[1],
+                                           &ue->frame_parms,
+                                           dlsch1,
+                                           dlsch1->harq_processes[harq_pid],
+                                           frame_rx,
+                                           nb_symb_sch,
+                                           nr_slot_rx,
+                                           harq_pid,
+                                           pdsch==PDSCH?1:0,
+                                           dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
           LOG_T(PHY,"CW dlsch decoding is parallelized, ret1 = %d\n", ret1);
-    }
-    else
-    {
-    ret1 = nr_dlsch_decoding(ue,
-			     proc,
-			     eNB_id,
-                             pdsch_vars->llr[1],
-                             &ue->frame_parms,
-                             dlsch1,
-                             dlsch1->harq_processes[harq_pid],
-                             frame_rx,
-                             nb_symb_sch,
-                             nr_slot_rx,
-                             harq_pid,
-                             pdsch==PDSCH?1:0,//proc->decoder_switch,
-                             dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
-    LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
-    }
+        }
+        else {
+          ret1 = nr_dlsch_decoding(ue,
+                                   proc,
+                                   gNB_id,
+                                   pdsch_vars->llr[1],
+                                   &ue->frame_parms,
+                                   dlsch1,
+                                   dlsch1->harq_processes[harq_pid],
+                                   frame_rx,
+                                   nb_symb_sch,
+                                   nr_slot_rx,
+                                   harq_pid,
+                                   pdsch==PDSCH?1:0,//proc->decoder_switch,
+                                   dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+          LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
+        }
 
 #if UE_TIMING_TRACE
-          stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+        stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #if DISABLE_LOG_X
-          printf(" --> Unscrambling for CW1 %5.3f\n",
-                  (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-          printf("AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
-                  frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
+        printf(" --> Unscrambling for CW1 %5.3f\n",
+               (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+        printf("AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
+               frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 #else
-          LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
-                  (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-          LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
-                  frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
+        LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
+              (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+        LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
+              frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 #endif
 
 #endif
-          LOG_I(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
-                  frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
+        LOG_I(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
+              frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 
         LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
       }
-
       LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------  \n", frame_rx, nr_slot_rx);
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch0: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS);
 
@@ -1145,18 +1142,18 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         switch (pdsch) {
           case RA_PDSCH:
-            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
-            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, eNB_id, ue, dlsch0, number_pdus);
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, number_pdus);
 
-            ue->UE_mode[eNB_id] = RA_RESPONSE;
+            ue->UE_mode[gNB_id] = RA_RESPONSE;
             break;
           case PDSCH:
-            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
-            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, eNB_id, ue, dlsch0, number_pdus);
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, number_pdus);
             break;
           case SI_PDSCH:
-            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
-            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, eNB_id, ue, dlsch0, number_pdus);
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, number_pdus);
             break;
           default:
             break;
