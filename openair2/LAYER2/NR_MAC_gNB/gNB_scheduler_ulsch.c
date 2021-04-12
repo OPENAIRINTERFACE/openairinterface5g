@@ -476,6 +476,7 @@ void handle_nr_ul_harq(module_id_t mod_id,
 
     remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
     sched_ctrl->ul_harq_processes[harq_pid].round++;
+    sched_ctrl->ul_harq_processes[harq_pid].is_waiting = false;
     add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
     harq_pid = sched_ctrl->feedback_ul_harq.head;
   }
