@@ -1794,7 +1794,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
         frame_s = 0; // same frame as ssb
         slot_s = mac->type0_PDCCH_CSS_config.n_c;
       }
-      LOG_I(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+      LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
       fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
     }
   }

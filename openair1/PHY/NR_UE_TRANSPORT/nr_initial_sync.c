@@ -498,7 +498,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
                               pdcch_vars->slot,
-                              pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
+                              is*fp->samples_per_frame+pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
 
         if (coreset_nb_rb > 0)
           nr_pdcch_channel_estimation(ue,
@@ -549,7 +549,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         break;
       }
     }
-exit(1);
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);

@@ -1141,7 +1141,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch0: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS);
 
       if(ret<dlsch0->max_ldpc_iterations+1){
-
         switch (pdsch) {
           case RA_PDSCH:
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
