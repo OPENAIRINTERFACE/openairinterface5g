@@ -120,19 +120,19 @@ class PhySim:
 				logging.debug('oai-physim size is unknown')
 
 		# logging to OC cluster
-		mySSH.command('oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
+		mySSH.command(f'oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
 		print(mySSH.getBefore())
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
-		mySSH.command('oc project {self.OCWorkspace}', '\$', 6)
-		if (mySSH.getBefore().count('Already on project "{self.OCWorkspace}"')) == 0 or (mySSH.getBefore().count('Now using project "{self.OCWorkspace}"')) == 0:
-			logging.error('\u001B[1m Unable to access OC project {self.OCWorkspace}\u001B[0m')
+		mySSH.command(f'oc project {self.OCWorkspace}', '\$', 6)
+		if (mySSH.getBefore().count(f'Already on project "{self.OCWorkspace}"')) == 0 or (mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"')) == 0:
+			logging.error(f'\u001B[1m Unable to access OC project {self.OCWorkspace}\u001B[0m')
 			sys.exit(-1)
 		else:
-			logging.debug('\u001B[1m   Now using project {self.OCWorkspace}\u001B[0m')
+			logging.debug(f'\u001B[1m   Now using project {self.OCWorkspace}\u001B[0m')
         
 		# Using helm charts deployment
 		mySSH.command('helm install physim ./charts/physims/', '\$', 6)
@@ -157,7 +157,7 @@ class PhySim:
 			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
 			if result is not None:
 				podName1 = result.group()
-				mySSH.command('oc logs {podName1}', '\$', 6)
+				mySSH.command(f'oc logs {podName1}', '\$', 6)
 				if mySSH.getBefore().count('Finished') != 0:
 					isFinished = True
 			count += 1
@@ -166,7 +166,7 @@ class PhySim:
         
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
-			mySSH.command('oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 6)
+			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 6)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p physim_test_log_' + self.testCase_id, '\$', 5)
 		mySSH.command('mv log/* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
