@@ -482,7 +482,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }
 
-    if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->sa == 1) {
+    if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
       // read in files for RRCReconfiguration and RBconfig
       FILE *fd;
       char filename[1024];
@@ -1289,11 +1289,15 @@ nr_rrc_ue_process_masterCellGroup(
   }
 
   if( cellGroupConfig->spCellConfig != NULL){
-    if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
+    if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config &&
+	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
       memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig,cellGroupConfig->spCellConfig,
              sizeof(struct NR_SpCellConfig));
     } else {
-      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
+      if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config)
+	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
+      else 
+	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
     }
     LOG_I(RRC,"Sending CellGroupConfig to MAC\n");
     nr_rrc_mac_config_req_ue(ctxt_pP->module_id,0,0,NULL,NULL,cellGroupConfig,NULL);
