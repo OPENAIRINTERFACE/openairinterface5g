@@ -262,7 +262,7 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM):
             PHYSIM.OCUserName = matchReg.group(1)
         elif re.match('^\-\-OCPassword=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-OCPassword=(.+)$', myArgv, re.IGNORECASE)
-            PHYSIM.OCPassWord = matchReg.group(1)
+            PHYSIM.OCPassword = matchReg.group(1)
         elif re.match('^\-\-OCWorkspace=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-OCWorkspace=(.+)$', myArgv, re.IGNORECASE)
             PHYSIM.OCWorkspace = matchReg.group(1)

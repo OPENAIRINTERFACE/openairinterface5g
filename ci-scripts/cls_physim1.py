@@ -69,8 +69,11 @@ class PhySim:
 		lUserName = self.eNBUserName
 		lPassWord = self.eNBPassword
 		lSourcePath = self.eNBSourceCodePath
+		ocUserName = self.OCUserName
+		ocPassword = self.OCPassword
+		ocWorkspace = self.OCWorkspace
 
-		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '' or ocUserName == '' or ocPassword == '' or ocWorkspace == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('Building on server: ' + lIpAddr)
@@ -120,19 +123,19 @@ class PhySim:
 				logging.debug('oai-physim size is unknown')
 
 		# logging to OC cluster
-		mySSH.command(f'oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
+		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword}', '\$', 6)
 		print(mySSH.getBefore())
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
-		mySSH.command(f'oc project {self.OCWorkspace}', '\$', 6)
-		if (mySSH.getBefore().count(f'Already on project "{self.OCWorkspace}"')) == 0 or (mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"')) == 0:
-			logging.error(f'\u001B[1m Unable to access OC project {self.OCWorkspace}\u001B[0m')
+		mySSH.command(f'oc project {ocWorkspace}', '\$', 6)
+		if mySSH.getBefore().count(f'Already on project "{ocWorkspace}"') == 0 or mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"') == 0:
+			logging.error(f'\u001B[1m Unable to access OC project {ocWorkspace}\u001B[0m')
 			sys.exit(-1)
 		else:
-			logging.debug(f'\u001B[1m   Now using project {self.OCWorkspace}\u001B[0m')
+			logging.debug(f'\u001B[1m   Now using project {ocWorkspace}\u001B[0m')
         
 		# Using helm charts deployment
 		mySSH.command('helm install physim ./charts/physims/', '\$', 6)
