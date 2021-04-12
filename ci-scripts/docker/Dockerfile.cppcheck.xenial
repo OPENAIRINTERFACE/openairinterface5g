@@ -1,0 +1,31 @@
+FROM ubuntu:xenial AS oai-cppcheck
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+       build-essential \
+       vim \
+       cppcheck
+
+WORKDIR /oai-ran
+COPY . .
+
+WORKDIR /oai-ran/common/utils/T
+RUN make
+
+WORKDIR /oai-ran
+RUN mkdir -p cmake_targets/log && \
+    cppcheck --enable=warning --force --xml --xml-version=2 \
+        -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c \
+        --suppressions-list=ci-scripts/cppcheck_suppressions.list \
+        -I common/utils \
+        -I openair3/NAS/COMMON/UTIL \
+        -j`nproc` . 2> cmake_targets/log/cppcheck.xml 1> cmake_targets/log/cppcheck_build.txt
+
+RUN egrep -c 'severity="error' cmake_targets/log/cppcheck.xml
+
+RUN egrep -c 'severity="warning' cmake_targets/log/cppcheck.xml
+
+RUN cat cmake_targets/log/cppcheck.xml
