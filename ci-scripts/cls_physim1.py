@@ -32,9 +32,12 @@
 # Import
 #-----------------------------------------------------------
 import logging
-import sshconnection
+import sshconnection as SSH
 import html
 import os
+import re
+import time
+import sys
 import constants as CONST
 import helpreadme as HELP
 
@@ -98,6 +101,7 @@ class PhySim:
 		mySSH.command("sudo podman image inspect --format='Size = {{.Size}} bytes' oai-physim:ci-temp", '\$', 60)
 		if mySSH.getBefore().count('no such image') != 0:
 			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
+			sys.exit(-1)
 		else:
 			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 			if result is not None:
@@ -117,13 +121,15 @@ class PhySim:
 
 		# logging to OC cluster
 		mySSH.command('oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
-		if mySSH.getBefore().count('Login successful') == 0:
+		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
 		mySSH.command('oc project {self.OCWorkspace}', '\$', 6)
 		if (mySSH.getBefore().count('Already on project "{self.OCWorkspace}"')) == 0 or (mySSH.getBefore().count('Now using project "{self.OCWorkspace}"')) == 0:
 			logging.error('\u001B[1m Unable to access OC project {self.OCWorkspace}\u001B[0m')
+			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Now using project {self.OCWorkspace}\u001B[0m')
         
@@ -131,6 +137,7 @@ class PhySim:
 		mySSH.command('helm install physim ./charts/physims/', '\$', 6)
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
 			logging.error('\u001B[1m Deploying PhySim Failed using helm chart\u001B[0m')
+			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Deployed PhySim Successfully using helm chart\u001B[0m')
 		isRunning = False
