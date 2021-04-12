@@ -43,9 +43,9 @@ class PhySim:
 		self.eNBIpAddr = ""
 		self.eNBUserName = ""
 		self.eNBPassword = ""
-        self.OCUserName = ""
-        self.OCPassword = ""
-        self.OCWorkspace = ""
+		self.OCUserName = ""
+		self.OCPassword = ""
+		self.OCWorkspace = ""
 		self.eNBSourceCodePath = ""
 		self.ranRepository = ""
 		self.ranBranch = ""
@@ -96,10 +96,10 @@ class PhySim:
 			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
 
 		mySSH.command("sudo podman image inspect --format='Size = {{.Size}} bytes' oai-physim:ci-temp", '\$', 60)
-        if mySSH.getBefore().count('no such image') != 0:
+		if mySSH.getBefore().count('no such image') != 0:
 			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
-        else:
-            result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+		else:
+			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 			if result is not None:
 				imageSize = float(result.group('size'))
 				imageSize = imageSize / 1000
@@ -115,46 +115,46 @@ class PhySim:
 			else:
 				logging.debug('oai-physim size is unknown')
 
-        # logging to OC cluster
-        mySSH.command('oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
-        if mySSH.getBefore().count('Login successful') == 0:
-            logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
-        else:
-            logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
-        mySSH.command('oc project {self.OCWorkspace}', '\$', 6)
-        if (mySSH.getBefore().count('Already on project "{self.OCWorkspace}"')) == 0 or (mySSH.getBefore().count('Now using project "{self.OCWorkspace}"')) == 0:
-            logging.error('\u001B[1m Unable to access OC project {self.OCWorkspace}\u001B[0m')
-        else:
-            logging.debug('\u001B[1m   Now using project {self.OCWorkspace}\u001B[0m')
+		# logging to OC cluster
+		mySSH.command('oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
+		if mySSH.getBefore().count('Login successful') == 0:
+			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+		else:
+			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
+		mySSH.command('oc project {self.OCWorkspace}', '\$', 6)
+		if (mySSH.getBefore().count('Already on project "{self.OCWorkspace}"')) == 0 or (mySSH.getBefore().count('Now using project "{self.OCWorkspace}"')) == 0:
+			logging.error('\u001B[1m Unable to access OC project {self.OCWorkspace}\u001B[0m')
+		else:
+			logging.debug('\u001B[1m   Now using project {self.OCWorkspace}\u001B[0m')
         
-        # Using helm charts deployment
-        mySSH.command('helm install physim ./charts/physims/', '\$', 6)
-        if mySSH.getBefore().count('STATUS: deployed') == 0:
-            logging.error('\u001B[1m Deploying PhySim Failed using helm chart\u001B[0m')
-        else:
-            logging.debug('\u001B[1m   Deployed PhySim Successfully using helm chart\u001B[0m')
-        isRunning = False
-        while(isRunning == False):
-            mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
-            if mySSH.getBefore().count('Running') == 12
-                logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
-                isRunning = True
-                podNames = re.findall('oai[\S\d\w]+', mySSH.getBefore())
+		# Using helm charts deployment
+		mySSH.command('helm install physim ./charts/physims/', '\$', 6)
+		if mySSH.getBefore().count('STATUS: deployed') == 0:
+			logging.error('\u001B[1m Deploying PhySim Failed using helm chart\u001B[0m')
+		else:
+			logging.debug('\u001B[1m   Deployed PhySim Successfully using helm chart\u001B[0m')
+		isRunning = False
+		while(isRunning == False):
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
+			if mySSH.getBefore().count('Running') == 12:
+				logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
+				isRunning = True
+				podNames = re.findall('oai[\S\d\w]+', mySSH.getBefore())
 		# Waiting to complete the running test
-        count = 0
-        isFinished = False
-        while(count < 25 or isFinished == False):
-            time.sleep(60)
-            mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
-            result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
-            if result is not None:
-                podName1 = result.group()
-                mySSH.command('oc logs {podName1}', '\$', 6)
-                if mySSH.getBefore().count('Finished') != 0:
-                    isFinished = True
-            count += 1
-        if isFinished:
-            logging.debug('\u001B[1m PhySim test is Complete\u001B[0m')
+		count = 0
+		isFinished = False
+		while(count < 25 or isFinished == False):
+			time.sleep(60)
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
+			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
+			if result is not None:
+				podName1 = result.group()
+				mySSH.command('oc logs {podName1}', '\$', 6)
+				if mySSH.getBefore().count('Finished') != 0:
+					isFinished = True
+			count += 1
+		if isFinished:
+			logging.debug('\u001B[1m PhySim test is Complete\u001B[0m')
         
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
@@ -164,8 +164,8 @@ class PhySim:
 		mySSH.command('mv log/* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
 		# UnDeploy the physical simulator pods
 		mySSH.command('helm uninstall physim', '\$', 10)
-		if mySSH.getBefore().count('release "physim" uninstalled') != 0
-            logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
+		if mySSH.getBefore().count('release "physim" uninstalled') != 0:
+			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
 		else:
 			logging.debug('\u001B[1m Failed to UnDeploy PhySim on OC Cluster\u001B[0m')
 		mySSH.close()
