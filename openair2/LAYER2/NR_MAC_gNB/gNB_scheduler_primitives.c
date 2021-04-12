@@ -128,17 +128,18 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
                                      NR_SearchSpace__searchSpaceType_PR ss_type) {
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) { // common search space
-    NR_ControlResourceSet_t *coreset = bwp?
-      bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet:
-      scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-    if (coreset_id == 0) return(NULL);
+    NR_ControlResourceSet_t *coreset;
+    if (bwp) coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    else if (scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet)
+      coreset = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    else coreset = NULL;
 
-    AssertFatal(coreset_id == coreset->controlResourceSetId,
-                "ID of common ss coreset does not correspond to id set in the "
-                "search space\n");
+    if (coreset) AssertFatal(coreset_id == coreset->controlResourceSetId,
+			     "ID of common ss coreset does not correspond to id set in the "
+			     "search space\n");
     return coreset;
   } else {
-    AssertFatal(bwp!=NULL,"bwp is null here, we have to check for a dedicated configuration for initialBWP in CellGroup, todo\n");
+    //    AssertFatal(bwp!=NULL,"bwp is null here, we have to check for a dedicated configuration for initialBWP in CellGroup, todo\n");
     const int n = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
 
     for (int i = 0; i < n; i++) {
@@ -1785,6 +1786,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 {
   int UE_id;
   int i;
+  int cc_id;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
@@ -1820,6 +1822,20 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
     rnti_to_remove_count++;
     if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
+  }
+
+  /* clear RA process(es?) associated to the UE */
+  for (cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
+    NR_COMMON_channels_t *cc = &RC.nrmac[mod_id]->common_channels[cc_id];
+    for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+      if (cc->ra[i].rnti == rnti) {
+        LOG_D(MAC, "free RA process %d for rnti %d\n", i, rnti);
+        /* is it enough? */
+        cc->ra[i].cfra  = false;
+        cc->ra[i].rnti  = 0;
+        cc->ra[i].crnti = 0;
+      }
+    }
   }
 }
 

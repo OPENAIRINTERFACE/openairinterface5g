@@ -1842,18 +1842,27 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 mac_subheader_len = 2;
               }
 
-              if ( pdu_len >= (mac_subheader_len + mac_sdu_len) ) {
+              // Check if it is a valid CCCH message, we get all 00's messages very often
+              int i = 0;
+              for(i=0; i<(mac_subheader_len+mac_sdu_len); i++) {
+                if(pduP[i] != 0) {
+                  break;
+                }
+              }
+              if (i == (mac_subheader_len+mac_sdu_len)) {
+                LOG_D(NR_MAC, "%s() Invalid CCCH message!, pdu_len: %d\n", __func__, pdu_len);
+                done = 1;
+                break;
+              }
 
-                LOG_D(NR_MAC,"DL_SCH_LCID_CCCH with payload len %d\n", mac_sdu_len);
-
-                LOG_D(NR_MAC,"RRCSetup received at nr_ue_process_mac_pdu with payload len %d: \n", mac_sdu_len);
+              if ( mac_sdu_len > 0 ) {
+                LOG_D(NR_MAC,"DL_SCH_LCID_CCCH (e.g. RRCSetup) with payload len %d\n", mac_sdu_len);
                 for (int i = 0; i < mac_subheader_len; i++) {
                   LOG_D(NR_MAC, "MAC header %d: 0x%x\n", i, pduP[i]);
                 }
                 for (int i = 0; i < mac_sdu_len; i++) {
                   LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[mac_subheader_len + i]);
                 }
-
                 nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pduP+mac_subheader_len, mac_sdu_len);
               }
               break;

@@ -266,9 +266,16 @@ void nr_process_mac_pdu(
             mac_sdu_len = 8;
 
             // Check if it is a valid CCCH1 message, we get all 00's messages very often
-            if (pdu_len != 9) {
+            int i = 0;
+            for(i=0; i<(mac_subheader_len+mac_sdu_len); i++) {
+              if(pdu_ptr[i] != 0) {
+                break;
+              }
+            }
+            if (i == (mac_subheader_len+mac_sdu_len)) {
               LOG_D(NR_MAC, "%s() Invalid CCCH1 message!, pdu_len: %d\n", __func__, pdu_len);
-              return;
+              done = 1;
+              break;
             }
           } else {
             // fixed length of 6 bytes
