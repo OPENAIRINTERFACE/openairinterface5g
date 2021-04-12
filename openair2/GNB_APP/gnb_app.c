@@ -82,38 +82,27 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      if (NODE_IS_DU(RC.nrrrc[gnb_id]->node_type)) { // F1AP registration
-        // configure F1AP here for F1C
-        LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-        msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_SETUP_REQ);
-        RCconfig_NR_DU_F1(msg_p, gnb_id);
-
-        LOG_I(GNB_APP,"[gNB %d] gNB_app_register via F1AP for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
-        itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-        // configure GTPu here for F1U
-      } else {
-        if(NGAP_CONF_MODE){
-          ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
+      if(NGAP_CONF_MODE){
+        ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
           
-          // note:  there is an implicit relationship between the data structure and the message name 
-          msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
+        // note:  there is an implicit relationship between the data structure and the message name
+        msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
 
-          RCconfig_NR_NG(msg_p, gnb_id);
+        RCconfig_NR_NG(msg_p, gnb_id);
 
-          ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
+        ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
 
-          LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
+        LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
 
-          itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-        }
-        if (gnb_id == 0) RCconfig_nr_gtpu();
+        itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
       }
-
-      LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
-
-      register_gnb_pending++;
+      if (gnb_id == 0) RCconfig_nr_gtpu();
     }
-  }
+
+    LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
+
+    register_gnb_pending++;
+    }
 
   return register_gnb_pending;
 }
@@ -197,6 +186,14 @@ void *gNB_app_task(void *args_p)
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
   }
 
+  /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
+     * can originate from the DU. */
+  if (AMF_MODE_ENABLED && !NODE_IS_DU(RC.nrrrc[0]->node_type) && !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    /* Try to register each gNB */
+    //registered_gnb = 0;
+    __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
+  }
+
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
 
      if (itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL) < 0) {
@@ -219,7 +216,7 @@ void *gNB_app_task(void *args_p)
     
     itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);
   }
-  
+
   do {
     // Wait for a message
     itti_receive_msg (TASK_GNB_APP, &msg_p);
