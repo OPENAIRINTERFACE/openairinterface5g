@@ -1251,7 +1251,7 @@ bool nr_acknack_scheduling(int mod_id,
   // Find the right timing_indicator value.
   int i = 0;
   while (i < 8) {
-    LOG_I(MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
+    LOG_D(MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
 	  i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
     if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
       break;

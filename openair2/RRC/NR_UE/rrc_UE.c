@@ -555,41 +555,38 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     const uint8_t     buffer_len ){
     int i;
     NR_BCCH_BCH_Message_t *bcch_message = NULL;
-    NR_MIB_t *mib = NR_UE_rrc_inst[module_id].mib;
+    
 
-    if(mib != NULL){
-        SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)mib, 1 );
+    if (NR_UE_rrc_inst[module_id].mib != NULL)
+      SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+    else LOG_I(NR_RRC,"Configuring MAC for first MIB reception\n");
+
+    asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                   &asn_DEF_NR_BCCH_BCH_Message,
+                                                   (void **)&bcch_message,
+                                                   (const void *)bufferP,
+                                                   buffer_len );
+      
+    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+       LOG_I(NR_RRC,"NR_BCCH_BCH decode error\n");
+       // free the memory
+       SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+       return -1;
     }
     else {
-      
-      //for(i=0; i<buffer_len; ++i){
-      //    printf("[RRC] MIB PDU : %d\n", bufferP[i]);
-      //}
-      
-      asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-						      &asn_DEF_NR_BCCH_BCH_Message,
-						      (void **)&bcch_message,
-						      (const void *)bufferP,
-						      buffer_len );
-      
-      if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-	LOG_I(NR_RRC,"NR_BCCH_BCH decode error\n");
-	// free the memory
-	SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-	return -1;
-      }
-      else {
 	//  link to rrc instance
-	mib = bcch_message->message.choice.mib;
+       SEQUENCE_free( &asn_DEF_NR_MIB, (void *)NR_UE_rrc_inst[module_id].mib, 1 );
+       NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
 	//memcpy( (void *)mib,
 	//    (void *)&bcch_message->message.choice.mib,
 	//    sizeof(NR_MIB_t) );
-	LOG_I(NR_RRC,"Configuring MAC for first MIB reception\n");
-	nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
+       
+       nr_rrc_mac_config_req_ue( 0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
       }
-    }    
+        
     return 0;
 }
+
 
 const char  siWindowLength[10][5] = {"5s", "10s", "20s", "40s", "80s", "160s", "320s", "640s", "1280s","ERR"};// {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
 const short siWindowLength_int[9] = {5,10,20,40,80,160,320,640,1280};//{1,2,5,10,15,20,40,80};

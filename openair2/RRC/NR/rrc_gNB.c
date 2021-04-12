@@ -488,20 +488,12 @@ rrc_gNB_generate_RRCSetup(
       /* init timers */
       //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 
-      nr_rrc_data_req(ctxt_pP,
-		      DCCH,
-		      rrc_gNB_mui++,
-		      SDU_CONFIRM_NO,
-		      ue_p->Srb0.Tx_buffer.payload_size,
-		      (uint8_t *)ue_p->Srb0.Tx_buffer.Payload,
-		      PDCP_TRANSMISSION_MODE_CONTROL);
-
       // configure MAC
       rrc_mac_config_req_gNB(rrc->module_id,
 			     rrc->carrier.ssb_SubcarrierOffset,
 			     rrc->carrier.pdsch_AntennaPorts,
 			     rrc->carrier.pusch_AntennaPorts,
-			     (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			     NULL,
 			     0,
 			     ue_context_pP->ue_context.rnti,
 			     ue_context_pP->ue_context.masterCellGroup
@@ -527,11 +519,11 @@ rrc_gNB_generate_RRCSetup(
 				  NULL);
 #endif
     }
+    break;
+
+    default:
+      LOG_W(NR_RRC, "Unknown node type %d\n", rrc->node_type);
       break;
-
-    default :
-        LOG_W(NR_RRC, "Unknown node type %d\n", rrc->node_type);
-
   }
 }
 

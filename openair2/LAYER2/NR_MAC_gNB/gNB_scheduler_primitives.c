@@ -1698,16 +1698,17 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
 {
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
-  LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
+  LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
         rntiP,
         UE_info->num_UEs);
   dump_nr_list(&UE_info->list);
 
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_info->active[i])
+    if (UE_info->active[i]) {
+      LOG_I(NR_MAC,"UE %x is active, skipping\n",rntiP);
       continue;
-
+    }
     int UE_id = i;
     UE_info->num_UEs++;
     UE_info->active[UE_id] = true;
