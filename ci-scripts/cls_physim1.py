@@ -121,6 +121,7 @@ class PhySim:
 
 		# logging to OC cluster
 		mySSH.command('oc login -u {self.OCUserName} -p {self.OCPassword}', '\$', 6)
+		print(mySSH.getBefore())
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			sys.exit(-1)
