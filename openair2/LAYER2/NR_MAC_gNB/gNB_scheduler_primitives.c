@@ -178,7 +178,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   int coreset_id = coreset->controlResourceSetId;
 
   int *cce_list;
-  if(bwp->bwp_Id == 0) {
+  if( bwp==NULL || bwp->bwp_Id == 0 ) {
     cce_list = nr_mac->cce_list[1][0];
   } else {
     cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
