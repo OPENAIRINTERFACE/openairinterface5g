@@ -87,7 +87,7 @@ function create_vm {
     echo "VM_CPU              = $VM_CPU"
     echo "VM_DISK             = $VM_DISK GBytes"
 
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return

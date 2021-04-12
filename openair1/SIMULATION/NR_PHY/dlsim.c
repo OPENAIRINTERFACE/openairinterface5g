@@ -173,6 +173,7 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 }
 
 void config_common(int Mod_idP,
+                   int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
@@ -702,7 +703,7 @@ int main(int argc, char **argv)
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
   prepare_scc(rrc.carrier.servingcellconfigcommon);
-  uint64_t ssb_bitmap;
+  uint64_t ssb_bitmap = 1;
   fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
   ssb_bitmap = 1;// Enable only first SSB with index ssb_indx=0
   fix_scc(scc,ssb_bitmap);
@@ -884,7 +885,8 @@ int main(int argc, char **argv)
   // generate signal
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
   gNB->pbch_configured = 1;
-  gNB->ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
+  gNB->ssb[0].ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
+  gNB->ssb[0].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = 0;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
@@ -1010,7 +1012,7 @@ int main(int argc, char **argv)
           printf("[DLSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
         }
         if (run_initial_sync)
-          nr_common_signal_procedures(gNB,frame,slot);
+          nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[0].ssb_pdu);
         else
           phy_procedures_gNB_TX(gNB,frame,slot,0);
             
