@@ -392,7 +392,7 @@ class OaiCiTest():
 				Module_UE.GetModuleIPAddress()
 				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
 				self.UEIPAddresses.append(Module_UE.UEIPAddress)
-		logging.debug(self.UEIPAddresses)
+		logging.debug('UEs IP addresses : '+ self.UEIPAddresses)
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -957,31 +957,32 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def AttachUE(self,HTML,RAN,EPC,COTS_UE):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		check_eNB = True
-		check_OAI_UE = False
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
-			return
-		multi_jobs = []
-		status_queue = SimpleQueue()
-		lock = Lock()
-		nb_ue_to_connect = 0
-		for device_id in self.UEDevices:
-			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
-				self.UEDevicesStatus[nb_ue_to_connect] = CONST.UE_STATUS_ATTACHING
-				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,COTS_UE,))
-				p.daemon = True
-				p.start()
-				multi_jobs.append(p)
-			nb_ue_to_connect = nb_ue_to_connect + 1
-		for job in multi_jobs:
-			job.join()
+	def AttachUE(self,HTML,RAN,EPC,COTS_UE,InfraUE):
+		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
+			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+				HELP.GenericHelp(CONST.Version)
+				sys.exit('Insufficient Parameter')
+			check_eNB = True
+			check_OAI_UE = False
+			pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
+			if (pStatus < 0):
+				HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
+				return
+			multi_jobs = []
+			status_queue = SimpleQueue()
+			lock = Lock()
+			nb_ue_to_connect = 0
+			for device_id in self.UEDevices:
+				if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
+					self.UEDevicesStatus[nb_ue_to_connect] = CONST.UE_STATUS_ATTACHING
+					p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,COTS_UE,))
+					p.daemon = True
+					p.start()
+					multi_jobs.append(p)
+				nb_ue_to_connect = nb_ue_to_connect + 1
+			for job in multi_jobs:
+				job.join()
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
@@ -1039,36 +1040,44 @@ class OaiCiTest():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def DetachUE(self,HTML,RAN,EPC,COTS_UE):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		check_eNB = True
-		check_OAI_UE = False
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
-			return
-		multi_jobs = []
-		cnt = 0
-		for device_id in self.UEDevices:
-			self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHING
-			p = Process(target = self.DetachUE_common, args = (device_id,cnt,COTS_UE,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			cnt += 1
-		for job in multi_jobs:
-			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
-		if result is not None:
-			logging.debug('Waiting 5 seconds to fill up record file')
-			time.sleep(5)
-		cnt = 0
-		while cnt < len(self.UEDevices):
-			self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHED
-			cnt += 1
+		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
+			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+				HELP.GenericHelp(CONST.Version)
+				sys.exit('Insufficient Parameter')
+			check_eNB = True
+			check_OAI_UE = False
+			pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
+			if (pStatus < 0):
+				HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
+				return
+			multi_jobs = []
+			cnt = 0
+			for device_id in self.UEDevices:
+				self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHING
+				p = Process(target = self.DetachUE_common, args = (device_id,cnt,COTS_UE,))
+				p.daemon = True
+				p.start()
+				multi_jobs.append(p)
+				cnt += 1
+			for job in multi_jobs:
+				job.join()
+			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+			result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
+			if result is not None:
+				logging.debug('Waiting 5 seconds to fill up record file')
+				time.sleep(5)
+			cnt = 0
+			while cnt < len(self.UEDevices):
+				self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHED
+				cnt += 1
+		else:#if an ID is specified, it is a module from the yaml infrastructure file
+			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			is_module=Module_UE.CheckIsModule()
+			if is_module:
+				Module_UE.Detach()
+				Module_UE.GetModuleIPAddress()
+				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)			
 
 	def RebootUE_common(self, device_id):
 		try:

@@ -78,6 +78,7 @@ class Module_UE:
 			logging.debug(self.Process + " process NOT found")
 			return False 
 
+	#Wakeup/Detach can probably be improved with encapsulation of the command such def Command(self, command)
 	#this method wakes up the module by calling the specified python script 
 	def WakeUp(self):
 		mySSH = sshconnection.SSHConnection()
@@ -85,6 +86,15 @@ class Module_UE:
 		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.WakeupScript + ' ','\$',5)
 		time.sleep(5)
 		logging.debug("Module wake-up")
+		mySSH.close()
+
+	#this method detaches the module by calling the specified python script 
+	def Detach(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.DetachScript + ' ','\$',5)
+		time.sleep(5)
+		logging.debug("Module detach")
 		mySSH.close()
 
 	#this method retrieves the Module IP address (not the Host IP address) 

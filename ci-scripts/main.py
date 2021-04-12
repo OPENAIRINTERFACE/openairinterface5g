@@ -200,6 +200,12 @@ def GetParametersFromXML(action):
 		else:
 			CiTestObj.ue_id = ue_id
 
+	elif action == 'Detach_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
 
 	elif action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
