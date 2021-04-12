@@ -131,7 +131,7 @@ class PhySim:
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
 		mySSH.command(f'oc project {ocWorkspace}', '\$', 6)
-		if mySSH.getBefore().count(f'Already on project "{ocWorkspace}"') == 0 or mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"') == 0:
+		if mySSH.getBefore().count(f'Already on project "{ocWorkspace}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"') == 0:
 			logging.error(f'\u001B[1m Unable to access OC project {ocWorkspace}\u001B[0m')
 			sys.exit(-1)
 		else:
