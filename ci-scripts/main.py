@@ -38,10 +38,10 @@ import helpreadme as HELP
 import constants as CONST
 
 
-import cls_oaicitest		#main class for OAI CI test framework
-import cls_physim           #class PhySim for physical simulators build and test
-import cls_cots_ue			#class CotsUe for Airplane mode control
-import cls_containerize     #class Containerize for all container-based operations on RAN/UE objects
+import cls_oaicitest            #main class for OAI CI test framework
+import cls_physim               #class PhySim for physical simulators build and test
+import cls_cots_ue              #class CotsUe for Airplane mode control
+import cls_containerize         #class Containerize for all container-based operations on RAN/UE objects
 import cls_static_code_analysis #class for static code analysis
 
 
