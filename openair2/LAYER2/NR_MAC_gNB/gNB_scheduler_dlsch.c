@@ -806,6 +806,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->qamModOrder[0] = Qm;
     pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
     pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
+    AssertFatal(harq->round<4,"%d",harq->round);
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
     pdsch_pdu->TBSize[0] = TBS;
 

@@ -569,7 +569,9 @@ static void handle_dl_harq(module_id_t mod_id,
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
+  } else {
+    harq->round++;
+    if (harq->round == MAX_HARQ_ROUNDS) {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
@@ -578,7 +580,7 @@ static void handle_dl_harq(module_id_t mod_id,
     LOG_D(MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
-    harq->round++;
+    }
   }
 }
 

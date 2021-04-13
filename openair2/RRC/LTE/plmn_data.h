@@ -2296,7 +2296,6 @@ static const plmn_data_t plmn_data[] = {
   648   4     Econet Wireless   Econet  Operational
 
   */
-
 };
 
 

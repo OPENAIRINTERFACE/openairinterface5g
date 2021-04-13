@@ -679,7 +679,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (frame_parms->N_RB_DL != 100) {
       fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
     } else {
-      LOG_D(HW,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+      LOG_D(PHY,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
@@ -693,7 +693,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (frame_parms->N_RB_DL != 100) {
       fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
     } else {
-      LOG_D(HW,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
+      LOG_D(PHY,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 
@@ -709,7 +709,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (frame_parms->N_RB_DL != 100) {
       fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
     } else {
-      LOG_D(HW,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
+      LOG_D(PHY,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
     }
   }
 

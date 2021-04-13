@@ -183,7 +183,7 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 
 {
   PHY_VARS_UE *ue = (PHY_VARS_UE *)calloc(1,sizeof(PHY_VARS_UE));
-
+  AssertFatal(ue,"");
   if (frame_parms!=(LTE_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }

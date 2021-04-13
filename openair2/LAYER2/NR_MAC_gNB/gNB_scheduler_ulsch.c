@@ -346,7 +346,9 @@ void handle_nr_ul_harq(module_id_t mod_id,
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
+  } else {
+    harq->round++;
+    if (harq->round == MAX_HARQ_ROUNDS) {
     harq->ndi ^= 1;
     harq->round = 0;
     LOG_D(MAC,
@@ -356,12 +358,12 @@ void handle_nr_ul_harq(module_id_t mod_id,
     UE_info->mac_stats[UE_id].ulsch_errors++;
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
   } else {
-    harq->round++;
     LOG_D(MAC,
           "Ulharq id %d crc failed for RNTI %04x\n",
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    }
   }
 }
 

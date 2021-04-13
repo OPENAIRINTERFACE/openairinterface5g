@@ -43,36 +43,36 @@ static struct complex16 *primary_synch2_time __attribute__((aligned(32)));
 
 static void doIdft(int size, short *in, short *out) {
   switch (size) {
-    case 6:
+  case 6:
       idft(IDFT_128,in,out,1);
-      break;
+    break;
 
-    case 25:
+  case 25:
       idft(IDFT_512,in,out,1);
-      break;
+    break;
 
-    case 50:
+  case 50:
       idft(IDFT_1024,in,out,1);
-      break;
-
-    case 75:
+    break;
+    
+  case 75:
       idft(IDFT_1536,in,out,1);
-      break;
+    break;
 
-    case 100:
+  case 100:
       idft(IDFT_2048,in,out,1);
-      break;
+    break;
 
-    default:
+  default:
       LOG_E(PHY,"Unsupported N_RB_DL %d\n",size);
       abort();
-      break;
+    break;
+    }
   }
-}
 
 static void copyPrimary( struct complex16 *out, struct complex16 *in, int ofdmSize) {
   int k=ofdmSize-36;
-
+    
   for (int i=0; i<72; i++) {
     out[k].r = in[i].r>>1;  //we need to shift input to avoid overflow in fft
     out[k].i = in[i].i>>1;
@@ -83,7 +83,7 @@ static void copyPrimary( struct complex16 *out, struct complex16 *in, int ofdmSi
       k-=ofdmSize;
     }
   }
-}
+  }
 
 int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *common_vars
   struct complex16 syncF_tmp[2048]__attribute__((aligned(32)))= {0};
@@ -102,7 +102,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
   copyPrimary( syncF_tmp, (struct complex16 *) primary_synch2, frame_parms->ofdm_symbol_size);
   doIdft(frame_parms->N_RB_DL, (short *)syncF_tmp,(short *)primary_synch2_time);
 
-  if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)) {
+  if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){
     LOG_M("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
     LOG_M("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
     LOG_M("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
@@ -135,7 +135,7 @@ void lte_sync_time_free(void) {
 
 
 static inline int abs32(int x) {
-  return (((int)((short *)&x)[0])*((int)((short *)&x)[0]) + ((int)((short *)&x)[1])*((int)((short *)&x)[1]));
+  return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
 }
 
 static inline double absF(struct complexd x) {

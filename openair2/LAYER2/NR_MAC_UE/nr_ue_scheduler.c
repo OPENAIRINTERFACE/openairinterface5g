@@ -981,7 +981,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
   struct NR_PUSCH_TimeDomainResourceAllocationList *pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   // k2 as per 3GPP TS 38.214 version 15.9.0 Release 15 ch 6.1.2.1.1
   // PUSCH time domain resource allocation is higher layer configured from uschTimeDomainAllocationList in either pusch-ConfigCommon
-  uint8_t k2;
+  int k2;
 
   if (is_Msg3) {
     k2 = *pusch_TimeDomainAllocationList->list.array[tda_id]->k2;

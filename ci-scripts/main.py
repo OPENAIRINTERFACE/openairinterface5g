@@ -42,6 +42,7 @@ import cls_oaicitest		#main class for OAI CI test framework
 import cls_physim           #class PhySim for physical simulators build and test
 import cls_cots_ue			#class CotsUe for Airplane mode control
 import cls_containerize     #class Containerize for all container-based operations on RAN/UE objects
+import cls_static_code_analysis #class for static code analysis
 
 
 import sshconnection 
@@ -378,6 +379,7 @@ EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
+SCA = cls_static_code_analysis.StaticCodeAnalysis()
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
 
@@ -388,7 +390,7 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 #-----------------------------------------------------------
 
 import args_parse
-py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP)
+py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA)
 
 
 
@@ -741,6 +743,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CONTAINERS.DeployObject(HTML, EPC)
 				elif action == 'Undeploy_Object':
 					CONTAINERS.UndeployObject(HTML, RAN)
+				elif action == 'Cppcheck_Analysis':
+					SCA.CppCheckAnalysis(HTML)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if not RAN.prematureExit:

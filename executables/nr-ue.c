@@ -332,6 +332,14 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
+
+      /* send tick to RLC and PDCP every ms */
+      if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
+        void nr_rlc_tick(int frame, int subframe);
+        void nr_pdcp_tick(int frame, int subframe);
+        nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+        nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+      }
     }
   }
 

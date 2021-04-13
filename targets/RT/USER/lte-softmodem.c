@@ -732,7 +732,7 @@ int main ( int argc, char **argv )
   fflush(stderr);
   // end of CI modifications
   //getchar();
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
      load_softscope("enb",NULL);
   itti_wait_tasks_end();
   oai_exit=1;
@@ -740,7 +740,7 @@ int main ( int argc, char **argv )
   // stop threads
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
-    if(IS_SOFTMODEM_DOFORMS)
+    if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 
     LOG_I(ENB_APP,"stopping MODEM threads\n");

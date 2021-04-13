@@ -200,10 +200,14 @@ void start_background_system(void) {
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;
   int ret;
-  AssertFatal(0==(ret=pthread_attr_init(&attr)),"ret: %d, errno: %d\n",ret, errno);
-  AssertFatal(0==(ret=pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)),"ret: %d, errno: %d\n",ret, errno);
-  AssertFatal(0==(ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED)),"ret: %d, errno: %d\n",ret, errno);
-  AssertFatal(0==(ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI)),"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_init(&attr);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_FIFO)) {
     LOG_E(TMR,"Prio not possible: %d, min is %d, max: %d, forced in the range\n", 
               priority, 
@@ -217,8 +221,10 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   AssertFatal(priority<=sched_get_priority_max(SCHED_OAI),"");
   struct sched_param sparam={0};
   sparam.sched_priority = priority;
-  AssertFatal(0==(ret=pthread_attr_setschedparam(&attr, &sparam)),"ret: %d, errno: %d\n",ret, errno);
-  AssertFatal(0==(ret=pthread_create(t, &attr, func, param)),"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setschedparam(&attr, &sparam);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_create(t, &attr, func, param);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
 
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
