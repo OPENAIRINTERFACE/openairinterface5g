@@ -717,7 +717,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Attach_UE':
 					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':

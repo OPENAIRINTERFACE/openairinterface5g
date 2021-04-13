@@ -56,7 +56,8 @@ class Module_UE:
 		for k, v in Module.items():
 			setattr(self, k, v)
 		self.UEIPAddress = ""
-		
+		#dictionary linking command names and related module scripts
+		self.cmd_dict= {"wup": self.WakeupScript,"detach":self.DetachScript}#dictionary of function scripts		
 
 
 
@@ -65,56 +66,72 @@ class Module_UE:
 #-----------------$
 
 	#this method checks if the specified Process is running on the server hosting the module
-	def CheckIsModule(self):
+	#if not it will be started
+	def CheckCMProcess(self):
 		HOST=self.HostIPAddress
-		COMMAND="ps aux | grep " + self.Process + " | grep -v grep "
+		COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 		logging.debug(COMMAND)
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
 		if len(result)!=0:
-			logging.debug(self.Process + " process found")
+			logging.debug(self.Process['Name'] + " process found")
 			return True 
-		else:
-			logging.debug(self.Process + " process NOT found")
-			return False 
+		else:#start process and check again  
+			logging.debug(self.Process['Name'] + " process NOT found")
+			#starting the process
+			logging.debug('Starting ' + self.Process['Name'])
+			mySSH = sshconnection.SSHConnection()
+			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+			mySSH.command('echo ' + self.HostPassword + ' | sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
+			mySSH.close()
+			#checking the process
+			HOST=self.HostIPAddress
+			COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
+			logging.debug(COMMAND)
+			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			result = ssh.stdout.readlines()
+			if len(result)!=0:
+				logging.debug(self.Process['Name'] + " process found")
+				return True
+			else:
+				logging.debug(self.Process['Name'] + " process NOT found")
+				return False 
 
-	#Wakeup/Detach can probably be improved with encapsulation of the command such def Command(self, command)
-	#this method wakes up the module by calling the specified python script 
-	def WakeUp(self):
+	#Generic command function, using function pointers dictionary
+	def Command(self,cmd):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.WakeupScript + ' ','\$',5)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.cmd_dict[cmd],'\$',5)
 		time.sleep(5)
-		logging.debug("Module wake-up")
+		logging.debug("Module "+ cmd)
 		mySSH.close()
 
-	#this method detaches the module by calling the specified python script 
-	def Detach(self):
-		mySSH = sshconnection.SSHConnection()
-		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.DetachScript + ' ','\$',5)
-		time.sleep(5)
-		logging.debug("Module detach")
-		mySSH.close()
 
 	#this method retrieves the Module IP address (not the Host IP address) 
 	def GetModuleIPAddress(self):
 		HOST=self.HostIPAddress
-		COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
-		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		response = ssh.stdout.readlines()
-		if len(response)!=0:
+		response= []
+		tentative = 10
+		while (len(response)==0) and (tentative>0):
+			COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
+			logging.debug(COMMAND)
+			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			response = ssh.stdout.readlines()
+			tentative-=1
+			time.sleep(10)
+		if (tentative==0) and (len(response)==0):
+			logging.debug('\u001B[1;37;41m Module IP Address Not Found! Time expired \u001B[0m')
+			return -1
+		else: #check response
 			result = re.search('inet (?P<moduleipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', response[0].decode("utf-8") )
 			if result is not None: 
 				if result.group('moduleipaddress') is not None: 
 					self.UEIPAddress = result.group('moduleipaddress')
 					logging.debug('\u001B[1mUE Module IP Address is ' + self.UEIPAddress + '\u001B[0m')
+					return 0
 				else:
 					logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
-			else:
-				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
-		else:
-			logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
+					return -1
 
 
 
