@@ -175,7 +175,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   int coreset_id = coreset->controlResourceSetId;
 
   int *cce_list;
-  if(bwp->bwp_Id == 0) {
+  if(bwp == NULL || bwp->bwp_Id == 0) {
     cce_list = nr_mac->cce_list[1][0];
   } else {
     cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -554,70 +554,75 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
         dci_pdu_rel15->rv);
 }
 
-void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp)
 {
-  if (bwp) { // This is not the InitialBWP
+  int sps;
+  if (bwp) { // This is not for SIB1
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
 
-    // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
-
-    AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
-    AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
-    
-    // for SPS=14 8 MSBs in positions 13 downto 6
-    uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) |
-      (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-
-    for (int i=0; i<sps; i++) {
-      if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
-	pdcch_pdu->StartSymbolIndex=i;
-	break;
-      }
-    }
-
-    pdcch_pdu->DurationSymbols  = coreset->duration;
-    
-    for (int i=0;i<6;i++)
-      pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
-
-    
-    //cce-REG-MappingType
-    pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
-      NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
-
-    if (pdcch_pdu->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-      pdcch_pdu->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
-      pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
-      AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
-      pdcch_pdu->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
-    }
-    else {
-      pdcch_pdu->RegBundleSize = 0;
-      pdcch_pdu->InterleaverSize = 0;
-      pdcch_pdu->ShiftIndex = 0;
-    }
-
-    if(coreset->controlResourceSetId == 0) {
-      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
-    } else{
-      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
-    }
-
-    //precoderGranularity
-    pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
+    sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
   }
-  else { // this is for InitialBWP
-    AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
+  else {
+    pdcch_pdu->BWPSize = gNB_mac->type0_PDCCH_CSS_config->num_rbs;
+    pdcch_pdu->BWPStart = gNB_mac->type0_PDCCH_CSS_config->cset_start_rb;
+    pdcch_pdu->SubcarrierSpacing = gNB_mac->type0_PDCCH_CSS_config->scs_pdcch;
+    pdcch_pdu->CyclicPrefix = 0;
+    sps = 14;
   }
+
+  AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
+  AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
+    
+  // for SPS=14 8 MSBs in positions 13 downto 6
+  uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) |
+                                         (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+
+  for (int i=0; i<sps; i++) {
+    if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
+      pdcch_pdu->StartSymbolIndex=i;
+      break;
+    }
+  }
+
+  pdcch_pdu->DurationSymbols  = coreset->duration;
+    
+  for (int i=0;i<6;i++)
+    pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
+
+    
+  //cce-REG-MappingType
+  pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
+                                 NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
+
+  if (pdcch_pdu->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+    pdcch_pdu->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
+    pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
+    AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
+    pdcch_pdu->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
+  }
+  else {
+    pdcch_pdu->RegBundleSize = 0;
+    pdcch_pdu->InterleaverSize = 0;
+    pdcch_pdu->ShiftIndex = 0;
+  }
+
+  if(coreset->controlResourceSetId == 0) {
+    pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+  } else{
+    pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+  }
+
+  //precoderGranularity
+  pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
 }
 
 

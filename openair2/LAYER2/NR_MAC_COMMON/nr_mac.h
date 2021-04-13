@@ -38,6 +38,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "NR_SubcarrierSpacing.h"
+
 #define TABLE_38213_13_1_NUM_INDEXES 15
 #define TABLE_38213_13_2_NUM_INDEXES 14
 #define TABLE_38213_13_3_NUM_INDEXES 9
@@ -456,6 +458,7 @@ typedef struct Type0_PDCCH_CSS_config_s {
   uint32_t ssb_length;
   uint32_t ssb_index;
   uint32_t cset_start_rb;
+  NR_SubcarrierSpacing_t scs_pdcch;
   bool active;
 } NR_Type0_PDCCH_CSS_config_t;
 

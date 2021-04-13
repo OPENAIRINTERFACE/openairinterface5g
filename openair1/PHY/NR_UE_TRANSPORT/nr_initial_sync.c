@@ -484,6 +484,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
   // if stand alone and sync on ssb do sib1 detection as part of initial sync
   if (sa==1 && ret==0) {
+    bool dec = false;
     NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
     int gnb_id = 0; //FIXME
     int coreset_nb_rb=0;
@@ -534,20 +535,22 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                            ue->dlsch_SI[gnb_id],
                                            NULL);
           if (ret >= 0)
-            nr_ue_dlsch_procedures(ue,
-                                   proc,
-                                   gnb_id,
-                                   SI_PDSCH,
-                                   ue->dlsch_SI[gnb_id],
-                                   NULL,
-                                   &ue->dlsch_SI_errors[gnb_id],
-                                   dlsch_parallel);
+            dec = nr_ue_dlsch_procedures(ue,
+                                         proc,
+                                         gnb_id,
+                                         SI_PDSCH,
+                                         ue->dlsch_SI[gnb_id],
+                                         NULL,
+                                         &ue->dlsch_SI_errors[gnb_id],
+                                         dlsch_parallel);
 
           // deactivate dlsch once dlsch proc is done
           ue->dlsch_SI[gnb_id]->active = 0;
         }
       }
     }
+    if (dec == false) // sib1 not decoded
+      ret = -1;
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);

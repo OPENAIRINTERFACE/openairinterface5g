@@ -319,7 +319,6 @@ void schedule_control_sib1(module_id_t module_id,
                            int num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
-  NR_ServingCellConfigCommon_t *servingcellconfigcommon = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   int ret;
 
@@ -327,14 +326,12 @@ void schedule_control_sib1(module_id_t module_id,
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
-    gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
     for (int i=0; i<3; i++){ // loop over possible aggregation levels
       ret = fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config,4<<i);
       if (ret == 1) break;
     }
     AssertFatal(ret==1,"No aggregation level for type0_PDCCH_CSS found\n");
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
-    fill_default_initialDownlinkBWP(gNB_mac->sched_ctrlCommon->active_bwp,servingcellconfigcommon);
   }
   gNB_mac->sched_ctrlCommon->time_domain_allocation = time_domain_allocation;
   gNB_mac->sched_ctrlCommon->mcsTableIdx = mcsTableIdx;
@@ -345,7 +342,7 @@ void schedule_control_sib1(module_id_t module_id,
   find_aggregation_candidates(&gNB_mac->sched_ctrlCommon->aggregation_level, &nr_of_candidates, gNB_mac->sched_ctrlCommon->search_space);
 
   gNB_mac->sched_ctrlCommon->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                                          gNB_mac->sched_ctrlCommon->active_bwp,
+                                                          NULL,
                                                           gNB_mac->sched_ctrlCommon->coreset,
                                                           gNB_mac->sched_ctrlCommon->aggregation_level,
                                                           0,
@@ -414,7 +411,6 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   NR_COMMON_channels_t *cc = gNB_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_CellGroupConfig_t *secondaryCellGroup = gNB_mac->secondaryCellGroupCommon;
-  NR_BWP_Downlink_t *bwp = gNB_mac->sched_ctrlCommon->active_bwp;
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -422,15 +418,12 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  nr_configure_pdcch(pdcch_pdu_rel15,
+  nr_configure_pdcch(gNB_mac,
+                     pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->search_space,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
-                     bwp);
-
-  // TODO: This assignment should be done in function nr_configure_pdcch()
-  pdcch_pdu_rel15->BWPSize = gNB_mac->type0_PDCCH_CSS_config->num_rbs;
-  pdcch_pdu_rel15->BWPStart = gNB_mac->type0_PDCCH_CSS_config->cset_start_rb;
+                     NULL);
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -448,12 +441,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->BWPSize  = type0_PDCCH_CSS_config->num_rbs;
   pdsch_pdu_rel15->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
 
-  pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-  if (bwp->bwp_Common->genericParameters.cyclicPrefix) {
-    pdsch_pdu_rel15->CyclicPrefix = *bwp->bwp_Common->genericParameters.cyclicPrefix;
-  } else {
-    pdsch_pdu_rel15->CyclicPrefix = 0;
-  }
+  pdsch_pdu_rel15->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
+  pdsch_pdu_rel15->CyclicPrefix = 0;
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
   pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->mcs,0);
@@ -465,7 +454,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->nrOfLayers = 1;
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 1;
-  pdsch_pdu_rel15->dmrsConfigType = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+  pdsch_pdu_rel15->dmrsConfigType = 0;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
   pdsch_pdu_rel15->numDmrsCdmGrpsNoData = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData;
@@ -499,7 +488,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dci_pdu_rel15_t dci_payload;
   memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
 
-  dci_payload.bwp_indicator.val = gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id;
+  dci_payload.bwp_indicator.val = 0;
 
   // frequency domain assignment
   dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(
@@ -527,7 +516,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      dci_format,
                      rnti_type,
                      pdsch_pdu_rel15->BWPSize,
-                     gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
+                     0);
 
   LOG_D(MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
   LOG_D(MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);

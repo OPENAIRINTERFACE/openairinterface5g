@@ -872,18 +872,18 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
   return 0;
 }
 
-void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
-       UE_nr_rxtx_proc_t *proc,
-       int gNB_id,
-       PDSCH_t pdsch,
-       NR_UE_DLSCH_t *dlsch0,
-       NR_UE_DLSCH_t *dlsch1,
-       int *dlsch_errors,
-       uint8_t dlsch_parallel) {
+bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            int gNB_id,
+                            PDSCH_t pdsch,
+                            NR_UE_DLSCH_t *dlsch0,
+                            NR_UE_DLSCH_t *dlsch1,
+                            int *dlsch_errors,
+                            uint8_t dlsch_parallel) {
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
-
+  bool dec = false;
   int harq_pid = dlsch0->current_harq_pid;
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
@@ -937,11 +937,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     case PDSCH1:
       LOG_E(PHY,"Illegal PDSCH %d for ue_pdsch_procedures\n",pdsch);
       pdsch_vars = NULL;
-      return;
+      return false;
       break;
     default:
       pdsch_vars = NULL;
-      return;
+      return false;
       break;
 
     }
@@ -950,17 +950,17 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     if (pdsch == RA_PDSCH) {
       if (ue->prach_resources[gNB_id]!=NULL)
-	      dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
+        dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
       else {
-	      LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
-	      //mac_xface->macphy_exit("prach_resources is NULL");
-	      return;
+        LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
+        //mac_xface->macphy_exit("prach_resources is NULL");
+        return false;
       }
     }
 
     // exit dlsch procedures as there are no active dlsch
     if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE)
-      return;
+      return false;
 
     // start ldpc decode for CW 0
     dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
@@ -1141,6 +1141,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch0: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS);
 
       if(ret<dlsch0->max_ldpc_iterations+1){
+        dec = true;
         switch (pdsch) {
           case RA_PDSCH:
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
@@ -1248,10 +1249,12 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           }
           // reset TA flag
           ul_time_alignment->apply_ta = 0;
-          LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n", frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
+          LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n",
+                frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
         }
       }
   }
+  return dec;
 }
 
 

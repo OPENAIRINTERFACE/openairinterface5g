@@ -3286,7 +3286,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     else
       scs_pdcch = NR_SubcarrierSpacing_kHz30;
   }
-
+  type0_PDCCH_CSS_config->scs_pdcch = scs_pdcch;
   type0_PDCCH_CSS_config->ssb_index = ssb_index;
   type0_PDCCH_CSS_config->frame = frameP;
 
