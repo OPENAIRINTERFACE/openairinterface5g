@@ -324,7 +324,6 @@ void processSlotRX(void *arg) {
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_slot_rx);
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
-  bool isTxRunning = true;
   uint8_t gNB_id = 0;
 
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
@@ -340,7 +339,7 @@ void processSlotRX(void *arg) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, get_nrUE_params()->nr_dlsch_parallel);
+    phy_procedures_nrUE_RX(UE, proc, gNB_id, get_nrUE_params()->nr_dlsch_parallel, &rxtxD->txFifo);
     LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
@@ -352,15 +351,9 @@ void processSlotRX(void *arg) {
     }
 
     // Wait for PUSCH processing to finish
-    while (isTxRunning) {
-      notifiedFIFO_elt_t *res;
-      res = pullTpool(UE->txFifo,&(get_nrUE_params()->Tpool));
-      if (res->key == proc->nr_slot_tx) {
-        isTxRunning = false;
-        res->key = TX_JOB_ID;
-      }
-      pushNotifiedFIFO(UE->txFifo, res);
-    }
+    notifiedFIFO_elt_t *res;
+    res = pullTpool(&rxtxD->txFifo,&(get_nrUE_params()->Tpool));
+    delNotifiedFIFO_elt(res);
 
   } else {
     processSlotTX(rxtxD);
@@ -514,10 +507,6 @@ void *UE_thread(void *arg) {
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
 
-  notifiedFIFO_t txFifo;
-  UE->txFifo = &txFifo;
-  initNotifiedFIFO(&txFifo);
-
   int nbSlotProcessing=0;
   int thread_idx=0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
@@ -528,8 +517,10 @@ void *UE_thread(void *arg) {
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
   for (int i=0; i<NR_RX_NB_TH+1; i++) {// NR_RX_NB_TH working + 1 we are making to be pushed
-    pushNotifiedFIFO_nothreadSafe(&freeBlocks, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX));
-    pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), TX_JOB_ID,&txFifo,processSlotTX));
+    notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX);
+    nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
+    initNotifiedFIFO(&curMsg->txFifo);
+    pushNotifiedFIFO_nothreadSafe(&freeBlocks, newElt);
   }
 
   while (!oai_exit) {

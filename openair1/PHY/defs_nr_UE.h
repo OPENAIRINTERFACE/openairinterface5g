@@ -1073,7 +1073,6 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
-  notifiedFIFO_t *txFifo;
   
   int dl_stats[5];
 
@@ -1085,6 +1084,7 @@ typedef struct {
 typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
+  notifiedFIFO_t txFifo;
 }  nr_rxtx_thread_data_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

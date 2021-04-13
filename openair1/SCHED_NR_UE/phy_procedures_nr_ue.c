@@ -1600,7 +1600,8 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           uint8_t dlsch_parallel
+                           uint8_t dlsch_parallel,
+                           notifiedFIFO_t *txFifo
                            )
 {                                         
   int frame_rx = proc->frame_rx;
@@ -1759,13 +1760,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif //NR_PDCCH_SCHED
   
   // Start PUSCH processing here. It runs in parallel with PDSCH processing
-  notifiedFIFO_elt_t *res;
-  res = pullTpool(ue->txFifo,&(get_nrUE_params()->Tpool));
-  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(res);
+  notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), proc->nr_slot_tx,txFifo,processSlotTX);
+  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
   curMsg->proc = *proc;
   curMsg->UE = ue;
-  res->key = proc->nr_slot_tx;
-  pushTpool(&(get_nrUE_params()->Tpool), res);
+  pushTpool(&(get_nrUE_params()->Tpool), newElt);
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
