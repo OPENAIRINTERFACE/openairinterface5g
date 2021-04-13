@@ -1023,16 +1023,24 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     sched_ctrl->sched_pusch.frame = sched_frame;
   }
 
-  /* Change vrb_map_UL to rballoc_mask */
+  /* Change vrb_map_UL to rballoc_mask: check which symbols per RB (in
+   * vrb_map_UL) overlap with the "default" tda and exclude those RBs.
+   * Calculate largest contiguous RBs */
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
+    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
   int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
-    while (vrb_map_UL[i] == 1)
+    while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
       i++;
     st = i;
-    while (vrb_map_UL[i] == 0)
+    while ((vrb_map_UL[i] & symb) == 0 && i < bwpSize)
       i++;
     if (i - st > len) {
       len = i - st;

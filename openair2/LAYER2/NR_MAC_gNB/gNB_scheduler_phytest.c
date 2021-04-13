@@ -426,13 +426,26 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
+  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+  const uint8_t num_dmrs_cdm_grps_no_data = 1;
+  /* we want to avoid a lengthy deduction of DMRS and other parameters in
+   * every TTI if we can save it, so check whether dci_format, TDA, or
+   * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+  NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
+  if (ps->time_domain_allocation != tda
+      || ps->dci_format != dci_format
+      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+
   uint16_t rbStart = 0;
   uint16_t rbSize = target_ul_bw;
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+  const uint16_t symb = ((1 << ps->nrOfSymbols) - 1) << ps->startSymbolIndex;
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
-    if (vrb_map_UL[i]) {
+    if ((vrb_map_UL[i] & symb) != 0) {
       LOG_E(MAC,
             "%s(): %4d.%2d RB %d is already reserved, cannot schedule UE\n",
             __func__,
@@ -465,18 +478,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
     return false;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
-
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-  const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  /* we want to avoid a lengthy deduction of DMRS and other parameters in
-   * every TTI if we can save it, so check whether dci_format, TDA, or
-   * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-  NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
-  if (ps->time_domain_allocation != tda
-      || ps->dci_format != dci_format
-      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
   const int mcs = target_ul_mcs;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
