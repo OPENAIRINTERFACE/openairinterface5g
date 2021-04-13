@@ -1145,7 +1145,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           case RA_PDSCH:
             nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
             nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, number_pdus);
-
             ue->UE_mode[gNB_id] = RA_RESPONSE;
             break;
           case PDSCH:

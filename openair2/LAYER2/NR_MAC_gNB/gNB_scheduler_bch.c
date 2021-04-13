@@ -336,8 +336,6 @@ void schedule_control_sib1(module_id_t module_id,
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
     fill_default_initialDownlinkBWP(gNB_mac->sched_ctrlCommon->active_bwp,servingcellconfigcommon);
   }
-  gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
-
   gNB_mac->sched_ctrlCommon->time_domain_allocation = time_domain_allocation;
   gNB_mac->sched_ctrlCommon->mcsTableIdx = mcsTableIdx;
   gNB_mac->sched_ctrlCommon->mcs = mcs;
@@ -377,7 +375,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   // Calculate number of PRB_DMRS
   uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
-  uint16_t dlDmrsSymbPos = fill_dmrs_mask(gNB_mac->sched_ctrlCommon->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+  uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                           gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                           nrOfSymbols, startSymbolIndex);
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
@@ -482,7 +480,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
 
-  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols, pdsch_pdu_rel15->StartSymbolIndex);
+  pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, pdsch_pdu_rel15->NrOfSymbols, pdsch_pdu_rel15->StartSymbolIndex);
 
   LOG_D(MAC,"dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 

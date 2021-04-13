@@ -524,7 +524,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                   proc,
                                   m,
                                   pdcch_vars->slot,  // same slot and offset as pdcch
-                                  pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
+                                  is*fp->samples_per_frame+pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
           }
 
           int ret = nr_ue_pdsch_procedures(ue,
@@ -546,7 +546,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
           // deactivate dlsch once dlsch proc is done
           ue->dlsch_SI[gnb_id]->active = 0;
         }
-        break;
       }
     }
   }
