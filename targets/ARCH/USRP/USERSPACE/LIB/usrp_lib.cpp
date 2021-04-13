@@ -1337,18 +1337,18 @@ extern "C" {
   if(is_equal(s->sample_rate, (double)7.68e6))
     s->tx_forward_nsamps = 50;
 
-    recplay_state_t *recPlay=device->recplay_state;
+  recplay_state_t *recPlay=device->recplay_state;
 
-    if (recPlay != NULL) { // record mode
-      recPlay->maxSizeBytes=openair0_cfg[0].recplay_conf->u_sf_max *
+  if (recPlay != NULL) { // record mode
+    recPlay->maxSizeBytes=openair0_cfg[0].recplay_conf->u_sf_max *
                             (sizeof(iqrec_t)+BELL_LABS_IQ_BYTES_PER_SF);
-      recPlay->ms_sample = (iqrec_t *) malloc(recPlay->maxSizeBytes);
-      recPlay->currentPtr= (uint8_t *)recPlay->ms_sample;
+    recPlay->ms_sample = (iqrec_t *) malloc(recPlay->maxSizeBytes);
+    recPlay->currentPtr= (uint8_t *)recPlay->ms_sample;
 
-      if (recPlay->ms_sample == NULL) {
-        std::cerr<< "Memory allocation failed for subframe record or replay mode." << std::endl;
-        exit(-1);
-      }
+    if (recPlay->ms_sample == NULL) {
+      std::cerr<< "Memory allocation failed for subframe record or replay mode." << std::endl;
+      exit(-1);
+    }
   }
   return 0;
 }
