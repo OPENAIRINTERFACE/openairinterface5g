@@ -490,6 +490,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     NR_BWP_UplinkDedicated_t *ibwp = mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
     NR_PUSCH_Config_t *pusch_Config = ibwp->pusch_Config->choice.setup;
     int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
+    int mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
+
 
     // active BWP start
     int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -526,6 +528,9 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
     pusch_config_pdu->start_symbol_index = StartSymbolIndex;
     pusch_config_pdu->nr_of_symbols = NrOfSymbols;
+
+    l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, pusch_dmrs_pos2, pusch_len1);
+    LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
 
     #ifdef DEBUG_MSG3
     LOG_D(MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);

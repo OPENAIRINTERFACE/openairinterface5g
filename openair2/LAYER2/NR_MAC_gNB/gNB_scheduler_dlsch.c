@@ -582,12 +582,15 @@ void pf_dl(module_id_t module_id,
         sched_ctrl->time_domain_allocation,
         &startSymbol,
         &nrOfSymbols);
+
+    int mappingtype = sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[sched_ctrl->time_domain_allocation]->mappingType;
     const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
     const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
         sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
         scc->dmrs_TypeA_Position,
         nrOfSymbols,
-        startSymbol);
+        startSymbol,
+        mappingtype);
 
     int rbSize = 0;
     uint32_t TBS = 0;
@@ -697,6 +700,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int startSymbolAndLength =
       tdaList->list.array[sched_ctrl->time_domain_allocation]->startSymbolAndLength;
+    int mappingtype = tdaList->list.array[sched_ctrl->time_domain_allocation]->mappingType;
     int startSymbolIndex, nrOfSymbols;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
@@ -705,7 +709,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                                                RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
                                                nrOfSymbols,
-                                               startSymbolIndex);
+                                               startSymbolIndex,
+                                               mappingtype);
     const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
     const int nrOfLayers = 1;
     const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
@@ -828,7 +833,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
         fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                        scc->dmrs_TypeA_Position,
                        nrOfSymbols,
-                       startSymbolIndex);
+                       startSymbolIndex,
+                       mappingtype);
     pdsch_pdu->dmrsConfigType = dmrsConfigType;
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
