@@ -589,7 +589,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
       //    (void *)&bcch_message->message.choice.mib,
       //    sizeof(NR_MIB_t) );
       
-      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL);
+      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL);
     }
     
     return 0;
@@ -1198,12 +1198,16 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
             // FIXME: improve condition for the RA trigger
             // Check for on-demand not broadcasted SI
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
-            if( nr_rrc_get_state(module_id) == RRC_STATE_IDLE_NR ) {
+            if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
-              // TODO: remove flag after full RA procedures implemented
-              get_softmodem_params()->do_ra = 1;
+	      LOG_I(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
+	      nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
             }
-            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+	    // take ServingCellConfigCommon and configure L1/L2
+	    NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
+	    nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL);
+	    nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
           }

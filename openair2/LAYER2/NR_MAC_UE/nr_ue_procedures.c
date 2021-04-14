@@ -143,6 +143,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;
+  mac->ssb_subcarrier_offset = ssb_subcarrier_offset;
 
   uint8_t scs_ssb;
   uint32_t band;

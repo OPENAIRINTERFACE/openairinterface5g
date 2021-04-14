@@ -1179,12 +1179,12 @@ int get_format0(uint8_t index,
   return format;
 }
 
-int64_t *get_prach_config_info(uint32_t pointa,
+int64_t *get_prach_config_info(frequency_range_t freq_range,
                                uint8_t index,
                                uint8_t unpaired) {
   int64_t *prach_config_info_p;
 
-  if (pointa > 2016666) { //FR2
+  if (freq_range == FR2) { //FR2
     prach_config_info_p = table_6_3_3_2_4_prachConfig_Index[index];
   }
   else { // FR1

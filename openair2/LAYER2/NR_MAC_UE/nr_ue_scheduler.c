@@ -982,7 +982,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 }
 
 // Build the list of all the valid RACH occasions in the maximum association pattern period according to the PRACH config
-static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
+static void build_ro_list(NR_UE_MAC_INST_t *mac) {
 
   int x,y; // PRACH Configuration Index table variables used to compute the valid frame numbers
   int y2;  // PRACH Configuration Index table additional variable used to compute the valid frame numbers
@@ -1000,7 +1000,6 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
   int nb_fdm;
 
   uint8_t config_index, mu;
-  uint32_t pointa;
   int msg1_FDM;
 
   uint8_t prach_conf_period_idx;
@@ -1008,18 +1007,21 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
   uint8_t prach_conf_period_frame_idx;
   int64_t *prach_config_info_p;
 
-  NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+  NR_RACH_ConfigCommon_t *setup = (mac->scc) ?
+    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
+    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
   if (setup->msg1_SubcarrierSpacing)
+    //L139
     mu = *setup->msg1_SubcarrierSpacing;
   else
-    mu = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    //L839 I don't think this is supported by UE looking at the code below
+    AssertFatal(1==0,"Long PRACH not supported\n");
 
-  pointa = frequencyInfoDL->absoluteFrequencyPointA;
   msg1_FDM = rach_ConfigGeneric->msg1_FDM;
 
   switch (msg1_FDM){
@@ -1037,12 +1039,14 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
   // ==============================
   // WIP: For now assume no rejected PRACH occasions because of conflict with SSB or TDD_UL_DL_ConfigurationCommon schedule
 
+  int unpaired = mac->phy_config.config_req.cell_config.frame_duplex_type;
+
+  prach_config_info_p = get_prach_config_info(mac->frequency_range, config_index, unpaired);
+
   // Identify the proper PRACH Configuration Index table according to the operating frequency
-  LOG_D(MAC,"Pointa %u, mu = %u, PRACH config index  = %u, unpaired = %u\n", pointa, mu, config_index, unpaired);
+  LOG_D(MAC,"mu = %u, PRACH config index  = %u, unpaired = %u\n", mu, config_index, unpaired);
 
-  prach_config_info_p = get_prach_config_info(pointa, config_index, unpaired);
-
-  if (pointa > 2016666) { //FR2
+  if (mac->frequency_range == FR2) { //FR2
 
     x = prach_config_info_p[2];
     y = prach_config_info_p[3];
@@ -1160,7 +1164,7 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
 }
 
 // Build the list of all the valid/transmitted SSBs according to the config
-static void build_ssb_list(NR_ServingCellConfigCommon_t *scc) {
+static void build_ssb_list(NR_UE_MAC_INST_t *mac) {
 
   // Create the list of transmitted SSBs
   // ===================================
@@ -1168,68 +1172,91 @@ static void build_ssb_list(NR_ServingCellConfigCommon_t *scc) {
   uint64_t ssb_positionsInBurst;
   uint8_t ssb_idx = 0;
 
-  switch (scc->ssb_PositionsInBurst->present) {
-    case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap:
-      ssb_bitmap = &scc->ssb_PositionsInBurst->choice.shortBitmap;
+  if (mac->scc) {
+    NR_ServingCellConfigCommon_t *scc = mac->scc;
+    switch (scc->ssb_PositionsInBurst->present) {
+      case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap:
+        ssb_bitmap = &scc->ssb_PositionsInBurst->choice.shortBitmap;
 
-      ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
-      LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
+        ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
+        LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
 
-      for (uint8_t bit_nb=3; bit_nb<=3; bit_nb--) {
-        // If SSB is transmitted
-        if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-          ssb_list.nb_tx_ssb++;
-          ssb_list.tx_ssb[ssb_idx].transmitted = true;
-          LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
+        for (uint8_t bit_nb=3; bit_nb<=3; bit_nb--) {
+          // If SSB is transmitted
+          if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
+            ssb_list.nb_tx_ssb++;
+            ssb_list.tx_ssb[ssb_idx].transmitted = true;
+            LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
+          }
+          ssb_idx++;
         }
-        ssb_idx++;
-      }
-      break;
-    case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap:
-      ssb_bitmap = &scc->ssb_PositionsInBurst->choice.mediumBitmap;
+        break;
+      case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap:
+        ssb_bitmap = &scc->ssb_PositionsInBurst->choice.mediumBitmap;
 
-      ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
-      LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
+        ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
+        LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
 
-      for (uint8_t bit_nb=7; bit_nb<=7; bit_nb--) {
-        // If SSB is transmitted
-        if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-          ssb_list.nb_tx_ssb++;
-          ssb_list.tx_ssb[ssb_idx].transmitted = true;
-          LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
+        for (uint8_t bit_nb=7; bit_nb<=7; bit_nb--) {
+          // If SSB is transmitted
+          if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
+            ssb_list.nb_tx_ssb++;
+            ssb_list.tx_ssb[ssb_idx].transmitted = true;
+            LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
+          }
+          ssb_idx++;
         }
-        ssb_idx++;
-      }
-      break;
-    case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap:
-      ssb_bitmap = &scc->ssb_PositionsInBurst->choice.longBitmap;
+        break;
+      case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap:
+        ssb_bitmap = &scc->ssb_PositionsInBurst->choice.longBitmap;
 
-      ssb_positionsInBurst = BIT_STRING_to_uint64(ssb_bitmap);
-      LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
+        ssb_positionsInBurst = BIT_STRING_to_uint64(ssb_bitmap);
+        LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
 
-      for (uint8_t bit_nb=63; bit_nb<=63; bit_nb--) {
-        // If SSB is transmitted
-        if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-          ssb_list.nb_tx_ssb++;
-          ssb_list.tx_ssb[ssb_idx].transmitted = true;
-          LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
+        for (uint8_t bit_nb=63; bit_nb<=63; bit_nb--) {
+          // If SSB is transmitted
+          if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
+            ssb_list.nb_tx_ssb++;
+            ssb_list.tx_ssb[ssb_idx].transmitted = true;
+            LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
+          }
+          ssb_idx++;
         }
-        ssb_idx++;
+        break;
+      default:
+        AssertFatal(false,"ssb_PositionsInBurst not present\n");
+        break;
+    }
+  } else { // This is configuration from SIB1
+
+    AssertFatal(mac->scc_SIB->ssb_PositionsInBurst.groupPresence == NULL, "Handle case for >8 SSBs\n");
+    ssb_bitmap = &mac->scc_SIB->ssb_PositionsInBurst.inOneGroup;
+
+    ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
+    LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
+
+    for (uint8_t bit_nb=7; bit_nb<=7; bit_nb--) {
+      // If SSB is transmitted
+      if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
+	ssb_list.nb_tx_ssb++;
+	ssb_list.tx_ssb[ssb_idx].transmitted = true;
+	LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
       }
-      break;
-    default:
-      AssertFatal(false,"ssb_PositionsInBurst not present\n");
-      break;
+      ssb_idx++;
+    }
   }
 }
 
 // Map the transmitted SSBs to the ROs and create the association pattern according to the config
-static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
+static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac) {
 
   // Map SSBs to PRACH occasions
   // ===========================
   // WIP: Assumption: No PRACH occasion is rejected because of a conflict with SSBs or TDD_UL_DL_ConfigurationCommon schedule
-  NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *setup = (mac->scc) ? 
+    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
+    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+
   NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
 
   boolean_t multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
@@ -1290,8 +1317,11 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
   else {
     required_nb_of_prach_occasion = ssb_list.nb_tx_ssb * ssb_rach_ratio;
   }
-
-  required_nb_of_prach_conf_period = ((required_nb_of_prach_occasion-1) + prach_assoc_pattern.prach_conf_period_list[0].nb_of_prach_occasion) / prach_assoc_pattern.prach_conf_period_list[0].nb_of_prach_occasion;
+  AssertFatal(prach_assoc_pattern.prach_conf_period_list[0].nb_of_prach_occasion>0,
+              "prach_assoc_pattern.prach_conf_period_list[0].nb_of_prach_occasion shouldn't be 0 (ssb_list.nb_tx_ssb %d, ssb_rach_ratio %d\n",
+              ssb_list.nb_tx_ssb,ssb_rach_ratio);
+  required_nb_of_prach_conf_period = ((required_nb_of_prach_occasion-1) + prach_assoc_pattern.prach_conf_period_list[0].nb_of_prach_occasion) /
+                                     prach_assoc_pattern.prach_conf_period_list[0].nb_of_prach_occasion;
 
   if (required_nb_of_prach_conf_period == 1) {
     prach_assoc_pattern.prach_association_period_list[0].nb_of_prach_conf_period = 1;
@@ -1578,7 +1608,7 @@ static int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx,
 }
 
 // Build the SSB to RO mapping upon RRC configuration update
-void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired){
+void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac) {
 
   // Clear all the lists and maps
   memset(&prach_assoc_pattern, 0, sizeof(prach_association_pattern_t));
@@ -1586,15 +1616,15 @@ void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired){
 
   // Build the list of all the valid RACH occasions in the maximum association pattern period according to the PRACH config
   LOG_D(MAC,"Build RO list\n");
-  build_ro_list(scc, unpaired);
+  build_ro_list(mac);
 
   // Build the list of all the valid/transmitted SSBs according to the config
   LOG_D(MAC,"Build SSB list\n");
-  build_ssb_list(scc);
+  build_ssb_list(mac);
 
   // Map the transmitted SSBs to the ROs and create the association pattern according to the config
   LOG_D(MAC,"Map SSB to RO\n");
-  map_ssb_to_ro(scc);
+  map_ssb_to_ro(mac);
   LOG_D(MAC,"Map SSB to RO done\n");
 }
 

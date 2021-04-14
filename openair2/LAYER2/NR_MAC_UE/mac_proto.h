@@ -83,7 +83,7 @@ int nr_rrc_mac_config_req_ue(
     int                             cc_idP,
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
-    //NR_ServingCellConfigCommon_t    *sccP,
+    NR_ServingCellConfigCommonSIB_t *sccP,
     NR_CellGroupConfig_t            *cell_group_config);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
@@ -313,7 +313,7 @@ void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
                      uint8_t *nb_dmrs_re_per_rb,
                      uint16_t *number_dmrs_symbols);
 
-void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
+void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
 void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format);
 
