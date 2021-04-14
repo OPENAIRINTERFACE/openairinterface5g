@@ -138,7 +138,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->rx_deliv = count;
   }
 
-  if (entity->t_reordering_start != 0 && entity->rx_deliv > entity->rx_reord) {
+  if (entity->t_reordering_start != 0 && entity->rx_deliv >= entity->rx_reord) {
     /* stop and reset t-Reordering */
     entity->t_reordering_start = 0;
   }
