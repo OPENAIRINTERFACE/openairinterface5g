@@ -101,19 +101,6 @@
 }
 
 /* from openair1/PHY/defs_nr_UE.h */
-
-
-
-
-//    {"ue_front_end_stat[RX_NB_TH]",       &(UE->
-//    {"ue_front_end_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME]",       &(UE->
-//    {"pdcch_procedures_stat[RX_NB_TH]",       &(UE->
-//    {"pdsch_procedures_stat[RX_NB_TH]",       &(UE->
-//    {"pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME]",       &(UE->
-//    {"dlsch_procedures_stat[RX_NB_TH]",       &(UE->
-//    {"dlsch_decoding_stats[2]",       &(UE->
-//    {"dlsch_llr_stats_parallelization[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME]",       &(UE->
-
 #define CPU_PHYNRUE_MEASURE \
 { \
     {"phy_proc",          &(UE->phy_proc[0]),0,RX_NB_TH},\
@@ -156,5 +143,13 @@
     {"dlsch_modulation_SIC_stats",       &(UE->dlsch_modulation_SIC_stats),0,1},\
     {"dlsch...ping_unit_SIC_stats",       &(UE->dlsch_llr_stripping_unit_SIC_stats),0,1},\
     {"dlsch_unscrambling_SIC_stats",       &(UE->dlsch_unscrambling_SIC_stats),0,1},\
+    {"ue_front_end_stat",       &(UE->ue_front_end_stat[0]),0,RX_NB_TH},\
+    {"ue_front_end_per_slot_stat",      &(UE->ue_front_end_per_slot_stat[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
+    {"pdcch_procedures_stat",       &(UE->pdcch_procedures_stat[0]),0,RX_NB_TH},\
+    {"pdsch_procedures_stat",       &(UE->pdsch_procedures_stat[0]),0,RX_NB_TH},\
+    {"pdsch_procedures_per_slot_stat",  &(UE->pdsch_procedures_per_slot_stat[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
+    {"dlsch_procedures_stat",       &(UE->dlsch_procedures_stat[0]),0,RX_NB_TH},\
+    {"dlsch_decoding_stats",       &(UE->dlsch_decoding_stats[0]),0,RX_NB_TH},\
+    {"dlsch_llr_stats_para", &(UE->dlsch_llr_stats_parallelization[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
 }
 #endif
