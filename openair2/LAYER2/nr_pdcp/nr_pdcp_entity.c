@@ -217,6 +217,10 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
 {
   uint32_t count;
 
+  /* if t_reordering is set to "infinity" (seen as -1) then do nothing */
+  if (entity->t_reordering == -1)
+    return;
+
   if (entity->t_reordering_start == 0
       || entity->t_current <= entity->t_reordering_start + entity->t_reordering)
     return;
