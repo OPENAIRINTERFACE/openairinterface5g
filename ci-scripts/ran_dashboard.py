@@ -92,14 +92,17 @@ class gDashboard:
             date_time_obj = datetime.strptime(date_time_str, '%Y-%m-%dT%H:%M:%S.%fZ')
     
             milestone1=milestone2=milestone3=milestone4=""
-            if self.d[x]['milestone']['title']=="REVIEW_CAN_START":
-                milestone1="X"
-            elif self.d[x]['milestone']['title']=="REVIEW_IN_PROGRESS":
-                milestone2="X"
-            elif self.d[x]['milestone']['title']=="REVIEW_COMPLETED_AND_APPROVED":
-                milestone3="X"
-            elif self.d[x]['milestone']['title']=="OK_TO_BE_MERGED": 
-                milestone4="X"      
+            if self.d[x]['milestone']!=None:
+                if self.d[x]['milestone']['title']=="REVIEW_CAN_START":
+                    milestone1="X"
+                elif self.d[x]['milestone']['title']=="REVIEW_IN_PROGRESS":
+                    milestone2="X"
+                elif self.d[x]['milestone']['title']=="REVIEW_COMPLETED_AND_APPROVED":
+                    milestone3="X"
+                elif self.d[x]['milestone']['title']=="OK_TO_BE_MERGED": 
+                    milestone4="X" 
+                else:
+                    pass
             else:
                 pass
 
