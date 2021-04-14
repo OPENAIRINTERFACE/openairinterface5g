@@ -328,7 +328,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
-    if(IS_SOFTMODEM_NOS1){
+    if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa){
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);

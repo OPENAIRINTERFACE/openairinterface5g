@@ -614,7 +614,7 @@ srb_found:
     
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
+    enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
   }
   else {
     MessageDef  *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
@@ -696,10 +696,12 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
 
   while (1) {
     itti_poll_msg(ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
-    if (msg_p == NULL)
-      break;
+    if (msg_p == NULL){
+     break;
+    }
     switch (ITTI_MSG_ID(msg_p)) {
     case RRC_DCCH_DATA_REQ:
+      LOG_I(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
       PROTOCOL_CTXT_SET_BY_MODULE_ID(
           &ctxt,
           RRC_DCCH_DATA_REQ(msg_p).module_id,
@@ -1068,6 +1070,54 @@ void pdcp_config_set_security(
   }
 }
 
+
+static boolean_t pdcp_data_req_srb(
+  protocol_ctxt_t  *ctxt_pP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer)
+{
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
+  nr_pdcp_ue_t *ue;
+  nr_pdcp_entity_t *rb;
+  int rnti = ctxt_pP->rnti;
+
+  if (ctxt_pP->module_id != 0 ||
+      //ctxt_pP->enb_flag != 1 ||
+      ctxt_pP->instance != 0 ||
+      ctxt_pP->eNB_index != 0 /*||
+      ctxt_pP->configured != 1 ||
+      ctxt_pP->brOption != 0*/) {
+    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  if (rb_id < 1 || rb_id > 3)
+    rb = NULL;
+  else
+    rb = ue->srb[rb_id - 1];
+
+  if (rb == NULL) {
+    LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
+          __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+    nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+    return 0;
+  }
+
+  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  return 1;
+}
+
+
 static boolean_t pdcp_data_req_drb(
   protocol_ctxt_t  *ctxt_pP,
   const rb_id_t rb_id,
@@ -1128,9 +1178,14 @@ boolean_t pdcp_data_req(
 #endif
   )
 {
-  if (srb_flagP) { TODO; }
-  return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
+  if (srb_flagP) {
+   return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
                            sdu_buffer);
+  }
+  else{
+    return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
+                           sdu_buffer);
+  }
 }
 
 void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind)
