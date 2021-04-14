@@ -1329,7 +1329,7 @@ extern "C" {
   if(is_equal(s->sample_rate, (double)7.68e6))
     s->tx_forward_nsamps = 50;
   
-  
+		   
   if (device->recplay_state != NULL) { // record mode
     device->recplay_state->ms_sample = (iqrec_t *) malloc(openair0_cfg[0].recplay_conf->u_sf_max * sizeof(iqrec_t));
   

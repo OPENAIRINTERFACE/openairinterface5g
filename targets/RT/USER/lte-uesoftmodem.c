@@ -169,7 +169,6 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
-int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;

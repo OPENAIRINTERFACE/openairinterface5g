@@ -78,8 +78,6 @@ extern int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
 extern int nas_sock_mbms_fd;
 
-
-
 extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
