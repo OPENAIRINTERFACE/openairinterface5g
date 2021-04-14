@@ -923,8 +923,8 @@ int trx_usrp_reset_stats(openair0_device *device) {
 
 extern "C" {
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
-    LOG_D(HW, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
-    LOG_D(HW, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
+    LOG_I(HW, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
+    LOG_I(HW, "openair0_cfg[0].clock_source == '%d' (internal = %d, external = %d)\n", openair0_cfg[0].clock_source,internal,external);
     usrp_state_t *s ;
 
     if ( device->priv == NULL) {
@@ -1015,15 +1015,15 @@ extern "C" {
     if (args.find("clock_source")==std::string::npos) {
 	if (openair0_cfg[0].clock_source == internal) {
 	  s->usrp->set_clock_source("internal");
-	  LOG_D(HW,"Setting clock source to internal\n");
+	  LOG_I(HW,"Setting clock source to internal\n");
 	}
 	else if (openair0_cfg[0].clock_source == external ) {
 	  s->usrp->set_clock_source("external");
-	  LOG_D(HW,"Setting clock source to external\n");
+	  LOG_I(HW,"Setting clock source to external\n");
 	}
 	else if (openair0_cfg[0].clock_source==gpsdo) {
 	  s->usrp->set_clock_source("gpsdo");
-	  LOG_D(HW,"Setting clock source to gpsdo\n");
+	  LOG_I(HW,"Setting clock source to gpsdo\n");
 	}
 	else {
 	  LOG_W(HW,"Clock source set neither in usrp_args nor on command line, using default!\n");
@@ -1038,15 +1038,15 @@ extern "C" {
     if (args.find("time_source")==std::string::npos) {
 	if (openair0_cfg[0].time_source == internal) {
 	  s->usrp->set_time_source("internal");
-	  LOG_D(HW,"Setting time source to internal\n");
+	  LOG_I(HW,"Setting time source to internal\n");
 	}
 	else if (openair0_cfg[0].time_source == external ) {
 	  s->usrp->set_time_source("external");
-	  LOG_D(HW,"Setting time source to external\n");
+	  LOG_I(HW,"Setting time source to external\n");
 	}
 	else if (openair0_cfg[0].time_source==gpsdo) {
 	  s->usrp->set_time_source("gpsdo");
-	  LOG_D(HW,"Setting time source to gpsdo\n");
+	  LOG_I(HW,"Setting time source to gpsdo\n");
 	}
 	else {
 	  LOG_W(HW,"Time source set neither in usrp_args nor on command line, using default!\n");

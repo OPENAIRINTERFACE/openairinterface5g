@@ -452,7 +452,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
+    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -1110,7 +1110,8 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
     future_ul_tti_req->n_pdus += 1;
 
-    LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
+    LOG_I(MAC, "%4d.%2d Scheduling UE specific PUSCH for sched %d.%d, ul_tto_req %d.%d\n", frame, slot,
+    sched_pusch->frame,sched_pusch->slot,future_ul_tti_req->SFN,future_ul_tti_req->Slot);
 
     pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
     pusch_pdu->rnti = rnti;

@@ -1286,16 +1286,18 @@ bool nr_acknack_scheduling(int mod_id,
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
-  const NR_PUCCH_Resource_t *resource =
-      pucch_Config->resourceToAddModList->list.array[pucch_res];
-  DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
-  if (resource->format.choice.format0->initialCyclicShift == 0) {
-    uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
-    const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
-    AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
-                "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
-                symb, resource->startingPRB, pucch->ul_slot);
-    vrb_map_UL[resource->startingPRB] |= symb;
+  if (pucch_Config) {
+    const NR_PUCCH_Resource_t *resource =
+        pucch_Config->resourceToAddModList->list.array[pucch_res];
+    DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
+    if (resource->format.choice.format0->initialCyclicShift == 0) {
+      uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
+      const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
+      AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
+                  "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
+                  symb, resource->startingPRB, pucch->ul_slot);
+      vrb_map_UL[resource->startingPRB] |= symb;
+    }
   }
   return true;
 }

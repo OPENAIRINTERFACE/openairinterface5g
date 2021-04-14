@@ -249,7 +249,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;

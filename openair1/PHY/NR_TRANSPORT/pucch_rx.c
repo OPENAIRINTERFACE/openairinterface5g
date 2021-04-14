@@ -224,7 +224,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   // x_n contains the sequence r_u_v_alpha_delta(n)
 
   int n,i,l;
-  int prb_offset[2] = {pucch_pdu->prb_start, pucch_pdu->prb_start};
+  int prb_offset[2] = {pucch_pdu->bwp_start+pucch_pdu->prb_start, pucch_pdu->bwp_start+pucch_pdu->prb_start};
 
   nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,0,slot,&u[0],&v[0]); // calculating u and v value first hop
   LOG_I(PHY,"pucch0: u %d, v %d\n",u[0],v[0]);
@@ -233,7 +233,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   if (pucch_pdu->freq_hop_flag == 1) {
     nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,1,slot,&u[1],&v[1]); // calculating u and v value second hop
     LOG_I(PHY,"pucch0 second hop: u %d, v %d\n",u[1],v[1]);
-    prb_offset[1] = pucch_pdu->second_hop_prb;
+    prb_offset[1] = pucch_pdu->bwp_start+pucch_pdu->second_hop_prb;
   }
 
   AssertFatal(pucch_pdu->nr_of_symbols < 3,"nr_of_symbols %d not allowed\n",pucch_pdu->nr_of_symbols);
