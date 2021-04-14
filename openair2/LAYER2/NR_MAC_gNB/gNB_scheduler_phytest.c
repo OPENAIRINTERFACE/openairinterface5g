@@ -426,8 +426,12 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
-    if (vrb_map_UL[i]) {
+    if ((vrb_map_UL[i] & symb) != 0) {
       LOG_E(MAC,
             "%s(): %4d.%2d RB %d is already reserved, cannot schedule UE\n",
             __func__,
