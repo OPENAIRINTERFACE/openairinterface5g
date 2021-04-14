@@ -199,9 +199,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_srb_bearer2add_list,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_drb_bearer2add_list);
-
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     const module_id_t module_id,
@@ -2029,27 +2027,27 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
      derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
 		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
      // Refresh SRBs
-     // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-     //                             radioBearerConfig->srb_ToAddModList,
-     //                             NULL,
-     //                             NULL,
-     //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-     //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-     //                             kRRCenc,
-     //                             kRRCint,
-     //                             NULL,
-     //                             NULL,
-     //                             NULL,
-     //                             NULL,
-     //                             NULL);
+      nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                  radioBearerConfig->srb_ToAddModList,
+                                  NULL,
+                                  NULL,
+                                  NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                  (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                  kRRCenc,
+                                  kRRCint,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
      // Refresh SRBs
-     // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-     //                             radioBearerConfig->srb_ToAddModList,
-     //                             NULL,
-     //                             NULL,
-     //                             NULL,
-     //                             NULL
-     //                             );
+      nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                  radioBearerConfig->srb_ToAddModList,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
+                                  );
 
      for (cnt = 0; cnt < radioBearerConfig->srb_ToAddModList->list.count; cnt++) {
        SRB_id = radioBearerConfig->srb_ToAddModList->list.array[cnt]->srb_Identity;

@@ -673,7 +673,7 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig_t *
   logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
 
   /* TODO: accept other values? */
-  if (logical_channel_group != 1) {
+  if (logical_channel_group != 0) {
     LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }

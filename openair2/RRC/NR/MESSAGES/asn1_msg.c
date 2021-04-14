@@ -1063,7 +1063,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   rlc_BearerConfig->servedRadioBearer->present                     = NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
   rlc_BearerConfig->servedRadioBearer->choice.srb_Identity         = 1;
   rlc_BearerConfig->reestablishRLC                                 = NULL;
-  if (0) {
+  //if (0) {
     rlc_Config = calloc(1, sizeof(NR_RLC_Config_t));
     rlc_Config->present                                              = NR_RLC_Config_PR_am;
     rlc_Config->choice.am                                            = calloc(1, sizeof(*rlc_Config->choice.am));
@@ -1077,11 +1077,11 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
     rlc_Config->choice.am->ul_AM_RLC.pollPDU                         = NR_PollPDU_infinity;
     rlc_Config->choice.am->ul_AM_RLC.pollByte                        = NR_PollByte_infinity;
     rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
-  } 
+  //}
   rlc_BearerConfig->rlc_Config                                     = rlc_Config;
   
   
-  if (0) {
+  //if (0) {
     logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
     logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
     logicalChannelConfig->ul_SpecificParameters->priority            = 1;
@@ -1089,7 +1089,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
     logicalChannelGroup                                              = CALLOC(1, sizeof(long));
     *logicalChannelGroup                                             = 0;
     logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
-  }
+  //}
   rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
   
   ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);

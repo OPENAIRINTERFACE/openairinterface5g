@@ -390,10 +390,10 @@ void init_pdcp(void) {
   }
   pdcp_layer_init();
   nr_DRB_preconfiguration();*/
+  pdcp_layer_init();
   pdcp_module_init(pdcp_initmask);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  LOG_I(PDCP, "Before getting out from init_pdcp() \n");
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB
@@ -448,7 +448,7 @@ int main( int argc, char **argv ) {
   RC.nrrrc[0]->node_type = ngran_gNB;
 
   init_NR_UE(1,rrc_config_path);
-  if(IS_SOFTMODEM_NOS1)
+  if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
 	  init_pdcp();
 
   NB_UE_INST=1;
