@@ -55,7 +55,7 @@ extern uint16_t sl_ahead;
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
   if (UL_info->rach_ind.number_of_pdus>0) {
-    LOG_I(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
+    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
     int npdus = UL_info->rach_ind.number_of_pdus;
     for(int i = 0; i < npdus; i++) {
       UL_info->rach_ind.number_of_pdus--;

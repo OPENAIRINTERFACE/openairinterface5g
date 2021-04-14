@@ -186,14 +186,14 @@ int main(int argc, char *argv[]) {
     serviceSock=client_start(argv[2],atoi(argv[3]));
   }
 
-  uint64_t typeStamp=ENB_MAGICDL_FDD;
+  uint64_t typeStamp=ENB_MAGICDL;
   boolean_t raw=false;
 
   if ( argc == 5 ) {
     raw=true;
 
     if (strcmp(argv[4],"UL") == 0 )
-      typeStamp=UE_MAGICDL_FDD;
+      typeStamp=UE_MAGICDL;
   }
 
   samplesBlockHeader_t header;

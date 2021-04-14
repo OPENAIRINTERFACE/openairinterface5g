@@ -125,6 +125,152 @@ const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f
 
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
 
+// for PDSCH from TS 38.214 subclause 5.1.2.1.1
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][3]={
+    {0,2,12},   // row index 1
+    {0,2,10},   // row index 2
+    {0,2,9},    // row index 3
+    {0,2,7},    // row index 4
+    {0,2,5},    // row index 5
+    {0,9,4},    // row index 6
+    {0,4,4},    // row index 7
+    {0,5,7},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,12,2},   // row index 11
+    {0,1,13},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,7},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][3]={
+    {0,3,11},   // row index 1
+    {0,3,9},    // row index 2
+    {0,3,8},    // row index 3
+    {0,3,6},    // row index 4
+    {0,3,4},    // row index 5
+    {0,10,4},   // row index 6
+    {0,6,4},    // row index 7
+    {0,5,7},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,12,2},   // row index 11
+    {0,1,13},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,7},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][3]={
+    {0,2,6},    // row index 1
+    {0,2,10},   // row index 2
+    {0,2,9},    // row index 3
+    {0,2,7},    // row index 4
+    {0,2,5},    // row index 5
+    {0,6,4},    // row index 6
+    {0,4,4},    // row index 7
+    {0,5,6},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,10,2},   // row index 11
+    {0,1,11},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,6},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][3]={
+    {0,3,5},    // row index 1
+    {0,3,9},    // row index 2
+    {0,3,8},    // row index 3
+    {0,3,6},    // row index 4
+    {0,3,4},    // row index 5
+    {0,8,2},    // row index 6
+    {0,6,4},    // row index 7
+    {0,5,6},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,10,2},   // row index 11
+    {0,1,11},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,6},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][3]={
+    {0,2,2},    // row index 1
+    {0,4,2},    // row index 2
+    {0,6,2},    // row index 3
+    {0,8,2},    // row index 4
+    {0,10,2},   // row index 5
+    {1,2,2},    // row index 6
+    {1,4,2},    // row index 7
+    {0,2,4},    // row index 8
+    {0,4,4},    // row index 9
+    {0,6,4},    // row index 10
+    {0,8,4},    // row index 11
+    {0,10,4},   // row index 12
+    {0,2,7},    // row index 13
+    {0,2,12},   // row index 14
+    {1,2,4},    // row index 15
+    {0,0,0}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][3]={
+    {0,2,2},    // row index 1
+    {0,4,2},    // row index 2
+    {0,6,2},    // row index 3
+    {0,8,2},    // row index 4
+    {0,10,2},   // row index 5
+    {1,2,2},    // row index 6
+    {1,4,2},    // row index 7
+    {0,2,4},    // row index 8
+    {0,4,4},    // row index 9
+    {0,6,4},    // row index 10
+    {0,8,4},    // row index 11
+    {0,10,4},   // row index 12
+    {0,2,7},    // row index 13
+    {0,3,11},   // row index 14
+    {1,2,4},    // row index 15
+    {0,0,0}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][3]={
+    {0,2,2},  // row index 1
+    {0,4,2},  // row index 2
+    {0,6,2},  // row index 3
+    {0,8,2},  // row index 4
+    {0,10,2}, // row index 5
+    {0,0,0},  // row index 6
+    {0,0,0},  // row index 7
+    {0,2,4},  // row index 8
+    {0,4,4},  // row index 9
+    {0,6,4},  // row index 10
+    {0,8,4},  // row index 11
+    {0,10,4}, // row index 12
+    {0,2,7},  // row index 13
+    {0,2,12},  // row index 14
+    {0,0,6},  // row index 15
+    {0,2,6}   // row index 16
+};
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][3]={
+    {0,2,2},  // row index 1
+    {0,4,2},  // row index 2
+    {0,6,2},  // row index 3
+    {0,8,2},  // row index 4
+    {0,10,2}, // row index 5
+    {0,0,0},  // row index 6
+    {0,0,0},  // row index 7
+    {0,2,4},  // row index 8
+    {0,4,4},  // row index 9
+    {0,6,4},  // row index 10
+    {0,8,4},  // row index 11
+    {0,10,4}, // row index 12
+    {0,2,7},  // row index 13
+    {0,3,11},  // row index 14
+    {0,0,6},  // row index 15
+    {0,2,6}   // row index 16
+};
+
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 const char *duplex_mode[]={"FDD","TDD"};
 
@@ -2166,8 +2312,8 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
   return(num_dmrs);
 }
 /* returns the total DMRS symbols in a slot*/
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols){
-  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols));
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols,startSymbol));
 }
 
 // Table 5.1.2.2.1-1 38.214
@@ -2771,7 +2917,7 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
   if (slot_in_period < slots1) return(slot_in_period <= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);
 }
 
 int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type_t frame_type) {
@@ -2803,24 +2949,28 @@ int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
   if (slot_in_period < slots1) return(slot_in_period >= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);
 }
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols) {
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol) {
 
   int l0;
+  int ld = NrOfSymbols+startSymbol;
   if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
   else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
   else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
   if (pdsch_Config == NULL) { // Initial BWP
-    return(1<<l0);
+    if (ld <= 7) return(1<<l0);
+    else if (ld <= 9) 	  return(1<<l0 | 1<<7);
+    else if (ld <= 12)   return(1<<l0 | 1<<6 | 1<<9);
+    else if (ld <= 14)   return(1<<l0 | 1<<7 | 1<<11);
   }
   else {
     if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
 	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
       // Relative to start of slot
       NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-      AssertFatal(NrOfSymbols>1 && NrOfSymbols < 15,"Illegal NrOfSymbols %d\n",NrOfSymbols);
+      AssertFatal(ld>1 && ld < 15,"Illegal l_d %d\n",ld);
       int pos2=0;
       if (dmrs_config->maxLength == NULL) {
 	// this is Table 7.4.1.1.2-3: PDSCH DM-RS positions l for single-symbol DM-RS
@@ -2829,7 +2979,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	  return(1<<l0);
 	
 	
-	switch (NrOfSymbols) {
+	switch (ld) {
 	case 2 :
 	case 3 :
 	case 4 :
@@ -2870,10 +3020,10 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
       }
       else {
 	// Table 7.4.1.1.2-4: PDSCH DM-RS positions l for double-symbol DM-RS.
-	AssertFatal(NrOfSymbols>3,"Illegal NrOfSymbols %d for len2 DMRS\n",NrOfSymbols);
-	if (NrOfSymbols < 10) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
+	AssertFatal(ld>3,"Illegal l_d %d for len2 DMRS\n",ld);
+	if (ld < 10) return(1<<l0);
+	if (ld < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
+	if (ld < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
         if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);

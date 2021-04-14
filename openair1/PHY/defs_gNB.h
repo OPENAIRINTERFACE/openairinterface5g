@@ -664,6 +664,7 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
 
+#define MAX_NUM_NR_PRACH_PREAMBLES 64
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
 #define MAX_UL_PDUS_PER_SLOT 8

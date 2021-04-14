@@ -234,7 +234,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -771,6 +771,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     uint16_t pdsch_nb_rb    = dlsch0_harq->nb_rb;
     uint16_t s0             = dlsch0_harq->start_symbol;
     uint16_t s1             = dlsch0_harq->nb_symbols;
+    bool is_SI              = dlsch0->rnti_type == _SI_RNTI_;
 
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
@@ -780,6 +781,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
           nr_pdsch_channel_estimation(ue,
                                       proc,
                                       0 /*eNB_id*/,
+                                      is_SI,
                                       nr_slot_rx,
                                       aatx /*p*/,
                                       m,
@@ -1690,9 +1692,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
-    printf("============================================\n");
+    LOG_I(PHY,"============================================\n");
     LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
-    printf("============================================\n");
+    LOG_I(PHY,"============================================\n");
   }
 
 #ifdef NR_PDCCH_SCHED
@@ -2068,7 +2070,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   }
 
-  if (nr_prach == 1) {
+  if (nr_prach == GENERATE_PREAMBLE) {
 
     if (ue->mac_enabled == 1) {
       int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
@@ -2114,18 +2116,15 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     if (ue->mac_enabled == 1)
       nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
-  } else if (nr_prach == 2) {
-
+  } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
+    LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);
+    ue->UE_mode[gNB_id] = RA_WAIT_CR;
+  } else if (nr_prach == RA_SUCCEEDED) {
     LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-
     ue->UE_mode[gNB_id] = PUSCH;
-
-  } else if(nr_prach == 3){
-
+  } else if(nr_prach == RA_FAILED){
     LOG_D(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-
     ue->UE_mode[gNB_id] = PRACH;
-
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);

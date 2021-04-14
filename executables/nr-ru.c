@@ -1350,6 +1350,10 @@ void *ru_thread( void *param ) {
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
+
+	T(T_GNB_PHY_PRACH_INPUT_SIGNAL, T_INT(proc->frame_rx), T_INT(proc->tti_rx), T_INT(0),
+	  T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
+
 	N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
 	/*
 	get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,

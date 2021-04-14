@@ -425,8 +425,10 @@ static void pucchEnergy (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   }
   */
 }
+
 static void pucchIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
 }
+
 static void puschThroughtput (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   // PUSCH Throughput
   /*
@@ -543,17 +545,16 @@ static void copyRxdataF(int32_t *data, int slot,  void *scopeData) {
          data,
          scope->gNB->frame_parms.samples_per_slot_wCP);
 }
+
 void gNBinitScope(scopeParms_t *p) {
-  p->gNB->scopeData=malloc(sizeof(scopeData_t));
-  AssertFatal(p->gNB->scopeData,"");
+  AssertFatal(p->gNB->scopeData=malloc(sizeof(scopeData_t)),"");
   scopeData_t *scope=(scopeData_t *) p->gNB->scopeData;
   scope->argc=p->argc;
   scope->argv=p->argv;
   scope->ru=p->ru;
   scope->gNB=p->gNB;
   scope->slotFunc=copyRxdataF;
-  scope->rxdataF=(int32_t *) calloc(p->gNB->frame_parms.samples_per_frame_wCP*sizeof(int32_t),1);
-  AssertFatal(scope->rxdataF,"");
+  AssertFatal(scope->rxdataF=(int32_t *) calloc(p->gNB->frame_parms.samples_per_frame_wCP*sizeof(int32_t),1),"");
   pthread_t forms_thread;
   threadCreate(&forms_thread, scope_thread_gNB, p->gNB->scopeData, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
