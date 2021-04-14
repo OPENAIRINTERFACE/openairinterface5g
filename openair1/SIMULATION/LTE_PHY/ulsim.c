@@ -737,7 +737,7 @@ int main(int argc, char **argv) {
                                 30e-9,
                                 forgetting_factor,
                                 delay,
-                                0);
+                                0, 0);
   // set Doppler
   UE2eNB->max_Doppler = maxDoppler;
 

@@ -663,7 +663,7 @@ int main(int argc, char **argv){
                                 DS_TDL,
                                 0.0,
                                 delay,
-                                0);
+                                0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");

@@ -179,8 +179,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_f_abs = (float *) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
   llr = (float *) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
   bit = malloc(coded_bits_per_codeword*sizeof(float));
-
-  rxsig_t = (int16_t**) phy_vars_enb->RU_list[0]->common.rxdata;
+  rxsig_t = (int16_t **) phy_vars_enb->RU_list[0]->common.rxdata;
   chest_t = (int16_t **) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates;
   chest_f = (int16_t **) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates;
   pusch_llr = (int16_t *) phy_vars_enb->pusch_vars[UE_id]->llr;
