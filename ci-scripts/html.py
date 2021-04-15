@@ -599,7 +599,14 @@ class HTMLManagement():
 			self.htmlFile.write('        <th colspan="2">Test Description</th>\n')
 			self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>Result</th>\n')
 			self.htmlFile.write('      </tr>\n')
+			y = ''
 			for key, value in testResult.items():
+				x = key.split(".")
+				if x[0] != y:
+					self.htmlFile.write('      <tr bgcolor = "lightgreen" >\n')
+					self.htmlFile.write('        <td style="text-align: center;" colspan=' + str(5+self.htmlUEConnected) + '><b>"' + x[0] + '" series </b></td>\n')
+					self.htmlFile.write('      </tr>\n')
+					y = x[0]
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + key  + ' </td>\n')
 				self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + value[0]  + '</td>\n')

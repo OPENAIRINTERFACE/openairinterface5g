@@ -240,6 +240,7 @@ class PhySim:
 							ret2 = re.search('T[^\n]*', str(line))
 							if ret2 is not None:
 								ret3 = ret2.group()
+								ret3 = ret3.replace("[00m", "")
 					if re.search('execution 015', str(line)):
 						self.testCount[0] += 1
 						testName = line.split()
