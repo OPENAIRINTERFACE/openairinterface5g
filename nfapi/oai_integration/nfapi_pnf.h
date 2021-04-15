@@ -21,6 +21,7 @@
 
 #if !defined(NFAPI_PNF_H__)
 #define NFAPI_PNF_H__
+extern nfapi_ue_release_request_body_t release_rntis;
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
 void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);

@@ -49,8 +49,6 @@ typedef struct
    /*To Be Extended*/
 }rrc_meas_stats;
 
-/* RRC CMI statistics */
-rrc_meas_stats * meas_stats;
 
 
 /* FLEXRAN AGENT-RRC Interface */

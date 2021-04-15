@@ -120,8 +120,7 @@ EXTERN int64_t *pss_corr_ue[NUMBER_PSS_SEQUENCE]
 ;
 
 /* profiling structure */
-EXTERN double cpuf;
-time_stats_t generic_time[TIME_LAST];
+EXTERN time_stats_t generic_time[TIME_LAST];
 
 #ifndef DEFINE_HEADER_ONLY
 

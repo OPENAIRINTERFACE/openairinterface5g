@@ -56,7 +56,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
        (((1+(Nid_cell<<1))*(1 + (((frame_parms->Ncp==0)?4:3)*l) + (7*(1+ns))))<<10); //cinit
       //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
-      x1 = 1+ (1<<31);
+      x1 = 1+ (1U<<31);
       x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
       // skip first 50 double words (1600 bits)
@@ -103,7 +103,7 @@ void lte_gold_ue_spec(uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_
         //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
         //n = 0
         //      printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
-        x1 = 1+ (1<<31);
+        x1 = 1+ (1U<<31);
         x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
         // skip first 50 double words (1600 bits)
@@ -143,7 +143,7 @@ void lte_gold_ue_spec_port5(uint32_t lte_gold_uespec_port5_table[20][38],uint16_
     //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
     //n = 0
     //printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
-    x1 = 1+ (1<<31);
+    x1 = 1+ (1U<<31);
     x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
     //skip first 50 double words (1600 bits)

@@ -65,17 +65,8 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   // Fixme: not sure when it is "volts" so dB is 20*log10(...) or "power", so dB is 10*log10(...)
   const double pathLossLinear = pow(10,channelDesc->path_loss_dB/20.0);
   // Energy in one sample to calibrate input noise
-  //Fixme: modified the N0W computation, not understand the origin value
-  const double KT=1.38e-23*290; //Boltzman*temperature
-  // sampling rate is linked to acquisition band (the input pass band filter)
-  const double noise_figure_watt = KT*channelDesc->sampling_rate;
-  // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
-  // the parameter "-s" is declared as SNR, but the input power is not well defined
-  // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
-  const double rxGain= 132.24 - channelmod_get_snr_dB();
-  // sqrt(4*noise_figure_watt) is the thermal noise factor (volts)
-  // fixme: the last constant is pure trial results to make decent noise
-  const double noise_per_sample = sqrt(4*noise_figure_watt) * pow(10,rxGain/20) *10;
+  // the normalized OAI value seems to be 256 as average amplitude (numerical amplification = 1)
+  const double noise_per_sample = pow(10,channelDesc->noise_power_dB/10.0) * 256;
   // Fixme: we don't fill the offset length samples at begining ?
   // anyway, in today code, channel_offset=0
   const int dd = abs(channelDesc->channel_offset);

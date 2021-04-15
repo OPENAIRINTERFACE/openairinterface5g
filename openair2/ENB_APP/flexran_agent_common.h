@@ -70,7 +70,6 @@ typedef struct {
   pthread_mutex_t *mutex;
 } stats_updates_context_t;
 
-stats_updates_context_t stats_context[NUM_MAX_ENB];
 
 /**********************************
  * FlexRAN protocol messages helper 

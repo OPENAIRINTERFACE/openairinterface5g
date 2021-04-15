@@ -326,7 +326,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 #endif
 
   uint8_t is_dmrs_re;
-  start_re = (frame_parms->first_carrier_offset + (pusch_pdu->rb_start * NR_NB_SC_PER_RB))%frame_parms->ofdm_symbol_size;
+  start_re = (frame_parms->first_carrier_offset + (pusch_pdu->rb_start + pusch_pdu->bwp_start) * NR_NB_SC_PER_RB)%frame_parms->ofdm_symbol_size;
   nb_re_pusch = NR_NB_SC_PER_RB * pusch_pdu->rb_size;
 #ifdef __AVX2__
   int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
@@ -1178,7 +1178,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   }
 
 
-  bwp_start_subcarrier = (rel15_ul->rb_start*NR_NB_SC_PER_RB + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
+  bwp_start_subcarrier = ((rel15_ul->rb_start + rel15_ul->bwp_start)*NR_NB_SC_PER_RB + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
 
   dmrs_symbol_flag = ((rel15_ul->ul_dmrs_symb_pos)>>symbol)&0x01;
 

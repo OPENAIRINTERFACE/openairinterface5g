@@ -31,9 +31,11 @@
  */
 
 //#include "mac_defs.h"
+#include <NR_MAC_gNB/mac_proto.h>
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "executables/softmodem-common.h"
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                          int mu,
@@ -309,8 +311,11 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
     else
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
-
-    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
+    if (get_softmodem_params()->sa) {
+      cfg->prach_config.num_prach_fd_occasions_list[i].k1 = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) + scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart + (get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing, scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing ) * i);
+    } else {
+      cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart + (get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing, scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing ) * i);
+    }
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
     cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, mac->frame_type, frequency_range);
     //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
@@ -528,11 +533,13 @@ int nr_rrc_mac_config_req_ue(
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
       config_control_ue(mac);
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
-        ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-	config_common_ue(mac,module_id,cc_idP);
-	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
+        if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
+          ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+        }
+        mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+        config_common_ue(mac,module_id,cc_idP);
+        mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
+        LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
 
       // Setup the SSB to Rach Occasions mapping according to the config

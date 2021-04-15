@@ -834,7 +834,7 @@ int main(int argc, char **argv) {
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                    forgetting_factor,
                                    rx_sample_offset,
-                                   0);
+                                   0, 0);
 
   if(num_rounds>1) {
     for(n=1; n<4; n++)
@@ -845,7 +845,7 @@ int main(int argc, char **argv) {
                                        N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                        forgetting_factor,
                                        rx_sample_offset,
-                                       0);
+                                       0, 0);
   }
 
   if (eNB2UE[0]==NULL) {
