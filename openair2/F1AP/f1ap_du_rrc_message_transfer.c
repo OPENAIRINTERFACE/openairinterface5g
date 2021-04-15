@@ -67,6 +67,14 @@ extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
 
+extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+                                                   const NR_SRB_ToAddModList_t   * const srb2add_listP,
+                                                   const NR_DRB_ToAddModList_t   * const drb2add_listP,
+                                                   const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+                                                   const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_srb_bearer2add_list,
+                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_drb_bearer2add_list);
+
 uint8_t du_ccch_flag = 1;
 
 int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
@@ -799,8 +807,9 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             rnti_t          rntiP,
                                             const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP,
-					    const uint8_t   *sdu2P,
-					    sdu_size_t      sdu2_lenP) {
+                                            const uint8_t   *sdu2P,
+					                                  sdu_size_t      sdu2_lenP) {
+
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
@@ -875,9 +884,9 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     ie->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCContainer;
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
-    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer, 
-			 sdu2P,
-			 sdu2_lenP);
+    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer,
+                         (char *)sdu2P,
+                         sdu2_lenP);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }    
 
@@ -1247,7 +1256,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 								     RC.nrrrc[ctxt.module_id],
 								     ctxt.rnti);
 
-  gNB_RRC_INST *rrc = &RC.nrrrc[ctxt.module_id];
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   if (srb_id == 0) {
     NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
@@ -1302,7 +1311,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       );
         // rrc_rlc_config_asn1_req
 	nr_rrc_rlc_config_asn1_req(&ctxt,
-				   ue_context_p->ue_context.SRB_configList, 
+				   ue_context_p->ue_context.SRB_configList,
 				   NULL,
 				   NULL,
 				   NULL,

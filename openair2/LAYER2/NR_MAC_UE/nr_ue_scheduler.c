@@ -734,7 +734,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 			       (*dci_format == NR_UL_DCI_FORMAT_0_1) ? pusch_dmrs_pos0 : pusch_dmrs_pos2, pusch_len1);
     if ((mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_disabled))
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
-    else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_enabled)
+    else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_enabled))
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
     
     // Num PRB Overhead from PUSCH-ServingCellConfig
@@ -1673,7 +1673,7 @@ static int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx,
   ssb_info_p = &ssb_list.tx_ssb[ssb_idx];
   LOG_D(MAC,"checking for prach : ssb_info_p->nb_mapped_ro %d\n",ssb_info_p->nb_mapped_ro);
   for (uint8_t n_mapped_ro=0; n_mapped_ro<ssb_info_p->nb_mapped_ro; n_mapped_ro++) {
-    LOG_D(MAC,"%d.%d: mapped_ro[%d]->frame.slot %d.%d, prach_assoc_pattern.nb_of_frame %d\n",slot,ssb_info_p->mapped_ro[n_mapped_ro]->frame,ssb_info_p->mapped_ro[n_mapped_ro]->slot,prach_assoc_pattern.nb_of_frame);
+    LOG_D(MAC,"%d.%d: mapped_ro[%d]->frame.slot %d.%d, prach_assoc_pattern.nb_of_frame %d\n",slot,frame,n_mapped_ro,ssb_info_p->mapped_ro[n_mapped_ro]->frame,ssb_info_p->mapped_ro[n_mapped_ro]->slot,prach_assoc_pattern.nb_of_frame);
     if ((slot == ssb_info_p->mapped_ro[n_mapped_ro]->slot) &&
         (ssb_info_p->mapped_ro[n_mapped_ro]->frame == (frame % prach_assoc_pattern.nb_of_frame))) {
 

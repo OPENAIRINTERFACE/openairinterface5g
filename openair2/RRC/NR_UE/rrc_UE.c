@@ -552,7 +552,6 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     const uint8_t     gNB_index,
     uint8_t           *const bufferP,
     const uint8_t     buffer_len ){
-    int i;
     NR_BCCH_BCH_Message_t *bcch_message = NULL;
     
 

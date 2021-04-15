@@ -41,6 +41,7 @@
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include <openair1/PHY/impl_defs_nr.h>
+#include <nr/nr_common.h>
 
 #ifndef NO_RAT_NR
 
@@ -434,7 +435,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     pucch_resource_indicator = ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
 
-  LOG_D(PHY, "PUCCH: %d.%d bwp_id %d dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, bwp_id,dl_harq_pid, pucch_resource_indicator);
+  LOG_D(PHY, "PUCCH: %d.%d bwp_id %ld dl_harq_pid = %d, pucch_resource_indicator = %d\n", frame_tx, nr_slot_tx, bwp_id,dl_harq_pid, pucch_resource_indicator);
 
   /* Part - I
    * Collect feedback that should be transmitted at this nr_slot_tx :
@@ -609,7 +610,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       nb_symbols_total = get_nb_symbols_pucch(pucch_resource, format);
       starting_symbol_index = get_starting_symb_idx(pucch_resource, format);
       startingPRB   = pucch_resource->startingPRB;
-      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? pucch_resource->secondHopPRB : startingPRB;
+      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? *pucch_resource->secondHopPRB : startingPRB;
       if (format==pucch_format1_nr)
         time_domain_occ = pucch_resource->format.choice.format1->timeDomainOCC;
       if (format==pucch_format4_nr) {

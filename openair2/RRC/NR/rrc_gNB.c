@@ -391,7 +391,6 @@ rrc_gNB_generate_RRCSetup(
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
-  NR_SRB_ToAddModList_t        **SRB_configList = NULL;
   MessageDef                    *message_p;
 
   // T(T_GNB_RRC_SETUP,
@@ -536,7 +535,6 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "generate RRCSetup for RRCReestablishmentRequest \n");
-  NR_SRB_ToAddModList_t        **SRB_configList = NULL;
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST                 *rrc_instance_p = RC.nrrrc[ctxt_pP->module_id];
   NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
@@ -544,7 +542,6 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  SRB_configList = &ue_p->SRB_configList;
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
