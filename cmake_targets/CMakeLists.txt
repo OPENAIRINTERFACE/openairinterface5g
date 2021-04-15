@@ -794,6 +794,7 @@ add_dependencies(X2AP_ENB X2AP_LIB rrc_flag x2_flag)
 
 # F1AP
 ##############
+set (F1AP_RELEASE R16)
 add_list1_option(F1AP_RELEASE R16 "F1AP ASN.1 grammar version" R16)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
 if (${F1AP_RELEASE} STREQUAL "R16")
