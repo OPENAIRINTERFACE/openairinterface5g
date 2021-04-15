@@ -897,13 +897,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     if(ra->ra_ss) {
       ss = ra->ra_ss;
     } else {
-      if (nr_mac->sched_ctrlCommon == NULL){
-        nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
-      }
-      if(nr_mac->sched_ctrlCommon->search_space == NULL)
-        AssertFatal(1==0,"This seach space should have been already filled in SIB1\n");
-      else
-        ss = nr_mac->sched_ctrlCommon->search_space;
+      AssertFatal(1==0,"RA SS missing\n");
     }
 
     NR_BWP_Downlink_t *bwp = NULL;
@@ -1169,13 +1163,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     if(ra->ra_ss) {
       ss = ra->ra_ss;
     } else {
-      if (nr_mac->sched_ctrlCommon == NULL){
-        nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
-      }
-      if(nr_mac->sched_ctrlCommon->search_space == NULL)
-        AssertFatal(1==0,"This seach space should have been already filled in SIB1\n");
-      else
-        ss = nr_mac->sched_ctrlCommon->search_space;
+      AssertFatal(1==0,"RA SS missing\n");
     }
 
     NR_BWP_Downlink_t *bwp =  ra->CellGroup ? ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1] : NULL;

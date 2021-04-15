@@ -861,12 +861,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     else {
       // this is for Msg2/Msg4
       if (mac->ra.ra_state >= WAIT_RAR) {
-        NR_SearchSpace_t *ss0 = mac->search_space_zero;
         fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
         rel15->num_dci_options = 1;
         rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
         config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , -1);
-        fill_dci_search_candidates(ss0, rel15);
+        fill_dci_search_candidates(mac->ra.ss, rel15);
         dl_config->number_pdus = 1;
         LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
         fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);

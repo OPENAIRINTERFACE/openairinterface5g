@@ -79,6 +79,29 @@ void init_RA(module_id_t mod_id,
   prach_resources->POWER_OFFSET_2STEP_RA = 0;
   prach_resources->RA_SCALING_FACTOR_BI = 1;
 
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList;
+  NR_SearchSpaceId_t ss_id = 0;
+  NR_SearchSpace_t *ss = NULL;
+  if(mac->scc) {
+    commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+    ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+  }
+  else {
+    if(mac->scc_SIB) {
+      commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    }
+    else
+      AssertFatal(1==0,"Both scc and scc_SIB are null\n");
+  }
+  AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
+  // Common searchspace list
+  for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
+    ss = commonSearchSpaceList->list.array[i];
+    if (ss->searchSpaceId == ss_id)
+          ra->ss = ss;
+  }
+
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
       LOG_I(MAC, "Initialization of 2-step contention-free random access procedure\n");
@@ -682,8 +705,8 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
   AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   long scs = (mac->scc) ? 
-    &mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing : 
-    &mac->scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing :
+    mac->scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
  
   ra_ResponseWindow = rach_ConfigGeneric->ra_ResponseWindow;
 

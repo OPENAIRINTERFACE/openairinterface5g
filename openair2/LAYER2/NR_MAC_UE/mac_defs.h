@@ -300,6 +300,8 @@ typedef struct {
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
+  /// RA SearchSpace
+  NR_SearchSpace_t *ss;
 } RA_config_t;
 
 typedef struct {
