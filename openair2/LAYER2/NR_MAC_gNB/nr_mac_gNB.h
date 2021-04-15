@@ -80,6 +80,7 @@
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
 
+
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
 typedef struct {
@@ -160,8 +161,8 @@ typedef struct {
   NR_SearchSpace_t *ra_ss;
   // Beam index
   uint8_t beam_id;
-  /// secondaryCellGroup for UE in NSA that is to come
-  NR_CellGroupConfig_t *secondaryCellGroup;
+  /// CellGroup for UE that is to come (NSA is non-null, null for SA)
+  NR_CellGroupConfig_t *CellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
   /// NSA: the UEs C-RNTI to use
@@ -303,6 +304,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
+  int r_pucch;
 } NR_sched_pucch_t;
 
 /* this struct is a helper: as long as the TDA and DCI format remain the same
@@ -577,13 +579,14 @@ typedef struct {
 
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
-  NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+  NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
   int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
+  bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -678,7 +681,6 @@ typedef struct gNB_MAC_INST_s {
   nr_pp_impl_ul pre_processor_ul;
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
-  NR_CellGroupConfig_t *secondaryCellGroupCommon;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
 } gNB_MAC_INST;

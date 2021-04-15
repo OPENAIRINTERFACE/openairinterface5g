@@ -338,12 +338,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
-                           int pusch_tgt_snrx10,
-                           int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int add_ue,
 			   uint32_t rnti,
-			   NR_CellGroupConfig_t *secondaryCellGroup){
+			   NR_CellGroupConfig_t *CellGroup){
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -397,10 +395,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         printf("Waiting for PHY_config_req\n");
       }
     }
-
     RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
-    RC.nrmac[Mod_idP]->pusch_target_snrx10 = pusch_tgt_snrx10;
-    RC.nrmac[Mod_idP]->pucch_target_snrx10 = pucch_tgt_snrx10;
+
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
     phycfg.CC_id  = 0;
@@ -410,16 +406,25 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     find_SSB_and_RO_available(Mod_idP);
 
+    if (get_softmodem_params()->sa > 0) {
+      NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
+      for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
+	cc->ra[n].cfra = false;
+	cc->ra[n].rnti = 0;
+	cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+	cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
+	for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+	  cc->ra[n].preambles.preamble_list[i] = i;
+      }
+    }
   }
   
-  if (secondaryCellGroup) {
-
-    RC.nrmac[Mod_idP]->secondaryCellGroupCommon = secondaryCellGroup;
+  if (CellGroup) {
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
-      const int UE_id = add_new_nr_ue(Mod_idP, rnti, secondaryCellGroup);
-      LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
+      const int UE_id = add_new_nr_ue(Mod_idP, rnti, CellGroup);
+      LOG_I(PHY,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       const int CC_id = 0;
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[CC_id];
@@ -433,12 +438,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         return -1;
       }	
       NR_RA_t *ra = &cc->ra[ra_index];
-      ra->secondaryCellGroup = secondaryCellGroup;
-      if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
-        if (secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
+      ra->CellGroup = CellGroup;
+      if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync &&
+	  CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
+        if (CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
           ra->cfra = true;
           ra->rnti = rnti;
-          struct NR_CFRA *cfra = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+          struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
           uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
           ra->preambles.num_preambles = num_preamble;
           ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
@@ -461,11 +467,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
           ra->preambles.preamble_list[i] = i;
       }
-      LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);
-    } else { // secondaryCellGroup has been updated
+      LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
+    } else { // CellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
-      UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
-      LOG_I(PHY,"Modified UE_id %d/%x with secondaryCellGroup\n",UE_id,rnti);
+      UE_info->CellGroup[UE_id] = CellGroup;
+      LOG_I(PHY,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

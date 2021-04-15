@@ -51,6 +51,8 @@ uint32_t nr_compute_tbs(uint16_t Qm,
   uint32_t Ninfo, Np_info, C;
   uint8_t n, scale;
 
+  LOG_D(MAC,"nb_symb_sch %d, nb_dmrs_prb %d, nb_rb_oh %d\n",nb_symb_sch,nb_dmrs_prb,nb_rb_oh);
+
   nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
   nb_re = min(156, nbp_re) * nb_rb;
   scale = (R>1024)?11:10;

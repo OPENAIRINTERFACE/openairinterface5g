@@ -263,6 +263,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   if (slot != 1)
     return;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int UE_id = 0;
   const int CC_id = 0;
   AssertFatal(UE_info->active[UE_id],
@@ -310,12 +311,12 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
+  sched_ctrl->coreset = get_coreset(scc,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
@@ -332,7 +333,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot,-1);
   if (!alloc) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -355,10 +356,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->rbStart = rbStart;
   sched_ctrl->rbSize = rbSize;
   sched_ctrl->time_domain_allocation = 2;
-  if (!UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
+  if (!UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
     sched_ctrl->mcsTableIdx = 0;
   else {
-    if (*UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table == 0)
+    if (*UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table == 0)
       sched_ctrl->mcsTableIdx = 1;
     else
       sched_ctrl->mcsTableIdx = 2;
@@ -403,7 +404,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
-  int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
+  int K2 = get_K2(scc,sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
@@ -436,12 +437,12 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->sched_pusch.frame = sched_frame;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
+  sched_ctrl->coreset = get_coreset(scc,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];

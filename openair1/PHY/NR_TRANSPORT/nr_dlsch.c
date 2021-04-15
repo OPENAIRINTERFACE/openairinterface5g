@@ -82,11 +82,12 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 
   s=lte_gold_generic(&x1, &x2, 1);
 
+
 #if defined(__AVX2__)
   for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
     in32=_mm256_movemask_epi8(_mm256_slli_epi16(((__m256i*)in)[i],7));
     out[i]=(in32^s);
-    //    printf("in[%d] %x => %x\n",i,in32,out[i]);
+    //printf("in[%d] %x => %x\n",i,in32,out[i]);
     s=lte_gold_generic(&x1, &x2, 0);
   }
 #elif defined(__SSE4__)
@@ -160,6 +161,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
     int16_t mod_dmrs[14][n_dmrs<<1] __attribute__ ((aligned(16)));
+
 
     /* PTRS */
     uint16_t beta_ptrs = 1;
