@@ -45,7 +45,7 @@
     { CALIBRXBYP_OPT,            CONFIG_HLP_CALUERB,    0,                iptr:&rx_input_level_dBm,           defintval:0,           TYPE_INT,   0}, \
     { DBGPRACH_OPT,              CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0}, \
     { NOL2CONNECT_OPT,           CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0}, \
-    {CALIBPRACH_OPT,             CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0}, \
+    { CALIBPRACH_OPT,            CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                          defuintval:1,          TYPE_INT,   0}, \
     { DUMPFRAME_OPT,             CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,                    defintval:0,           TYPE_INT,   0}, \
     {"ue-rxgain",                CONFIG_HLP_UERXG,       0,               dblptr:&(rx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,0}, \
     {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,               dblptr:&rx_gain_off,                defdblval:0,           TYPE_DOUBLE,0}, \

@@ -30,6 +30,8 @@
 #define PROTO_AGENT_H_
 #include "ENB_APP/enb_config.h" // for enb properties
 #include "proto_agent_common.h"
+#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "RRC/NR/nr_rrc_defs.h"
 
 
 void *proto_agent_receive(void *args);

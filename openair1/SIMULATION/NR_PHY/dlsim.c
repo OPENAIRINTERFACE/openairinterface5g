@@ -87,12 +87,15 @@ uint64_t downlink_frequency[MAX_NUM_CCs][4];
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
 {
   return 0;
 }

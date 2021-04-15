@@ -711,9 +711,10 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   uint8_t log2_maxh, aarx;
   int32_t avgs;
   int32_t avgP[4];
-
   int n_rb,rb_offset;
   get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+  LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
+        rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
   for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
     LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
@@ -740,6 +741,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
       avgs = cmax(avgs, avgP[aarx]);
 
     log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
+
 #ifdef UE_DEBUG_TRACE
     LOG_D(PHY,"slot %d: pdcch log2_maxh = %d (%d,%d)\n",slot,log2_maxh,avgP[0],avgs);
 #endif

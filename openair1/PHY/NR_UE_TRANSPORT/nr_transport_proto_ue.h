@@ -1748,6 +1748,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
 
+void dump_nrdlsch(PHY_VARS_NR_UE *ue,uint8_t gNB_id,uint8_t nr_slot_rx,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid);
+
 void *dlsch_thread(void *arg);
 /**@}*/
 #endif

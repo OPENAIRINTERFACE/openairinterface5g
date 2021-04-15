@@ -89,7 +89,7 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 
 #include "T.h"
@@ -1344,12 +1344,17 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-
+      if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData) 
+         ((scopeData_t*)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
       // Do PRACH RU processing
 
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
+
+	T(T_GNB_PHY_PRACH_INPUT_SIGNAL, T_INT(proc->frame_rx), T_INT(proc->tti_rx), T_INT(0),
+	  T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
+
 	N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
 	/*
 	get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,
@@ -1943,37 +1948,39 @@ void RCconfig_RU(void)
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = internal;
-          LOG_D(PHY, "RU clock source set as internal\n");
+          LOG_I(PHY, "RU clock source set as internal\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = external;
-          LOG_D(PHY, "RU clock source set as external\n");
+          LOG_I(PHY, "RU clock source set as external\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = gpsdo;
-          LOG_D(PHY, "RU clock source set as gpsdo\n");
+          LOG_I(PHY, "RU clock source set as gpsdo\n");
         } else {
           LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
       }
       else {
-        RC.ru[j]->openair0_cfg.clock_source = unset;
+        LOG_I(PHY,"Setting clock source to internal\n");
+        RC.ru[j]->openair0_cfg.clock_source = internal;
       }
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_TME_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "internal") == 0) {
           RC.ru[j]->openair0_cfg.time_source = internal;
-          LOG_D(PHY, "RU time source set as internal\n");
+          LOG_I(PHY, "RU time source set as internal\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "external") == 0) {
           RC.ru[j]->openair0_cfg.time_source = external;
-          LOG_D(PHY, "RU time source set as external\n");
+          LOG_I(PHY, "RU time source set as external\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "gpsdo") == 0) {
           RC.ru[j]->openair0_cfg.time_source = gpsdo;
-          LOG_D(PHY, "RU time source set as gpsdo\n");
+          LOG_I(PHY, "RU time source set as gpsdo\n");
         } else {
           LOG_E(PHY, "Erroneous RU time source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
       }
       else {
-	RC.ru[j]->openair0_cfg.time_source = unset;
+        LOG_I(PHY,"Setting time source to internal\n");
+	RC.ru[j]->openair0_cfg.time_source = internal;
       }
       
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {

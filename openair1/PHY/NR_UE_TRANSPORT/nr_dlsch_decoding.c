@@ -590,6 +590,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       else {
         LOG_D(PHY,"CRC NOT OK\n\033[0m");
         ret = 1 + dlsch->max_ldpc_iterations;
+	dump_nrdlsch(phy_vars_ue,0,nr_slot_rx,&E,0,0);
+	exit(-1);
       }
 
 
@@ -692,8 +694,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
               harq_process->F>>3,
               (void *)(uint64_t)(harq_process->c[r]) );
       if (frame%100 == 0){
-          LOG_D (PHY, "Printing 10 first payload bytes at frame: %d ", frame);
-          for (int i = 0; i <10 ; i++){ //Kr_bytes
+          LOG_D (PHY, "Printing 60 first payload bytes at frame: %d ", frame);
+          for (int i = 0; i <60 ; i++){ //Kr_bytes
             LOG_D(PHY, "[%d] : %x ", i, harq_process->b[i]);
           }
         }
@@ -703,6 +705,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_OUT);
 
   dlsch->last_iteration_cnt = ret;
+  //  log_dump(PHY, harq_process->b, 60, LOG_DUMP_CHAR,"nrue pdsch rx frame %d %d: ", frame, nr_slot_rx );
 
   return(ret);
 }
@@ -1123,7 +1126,6 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
         ret = 2;
       }
       else {
-        LOG_D(PHY,"CRC NOK\n");
         ret = 1+dlsch->max_ldpc_iterations;
       }
 

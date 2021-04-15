@@ -392,7 +392,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   else
     ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
 
-  memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
+  memset(RC.nrmac[module_idP]->cce_list[0][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
   NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])

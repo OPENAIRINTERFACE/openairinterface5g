@@ -84,6 +84,7 @@ extern "C"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
+#define CONFIG_HLP_BAND          "band index\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
@@ -107,6 +108,7 @@ extern "C"
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
 #define CHAIN_OFFSET        softmodem_params.chain_offset
 #define NUMEROLOGY          softmodem_params.numerology
+#define BAND                softmodem_params.band
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
 #define TIMING_SOURCE       softmodem_params.timing_source
@@ -135,6 +137,7 @@ extern "C"
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
     {"numerology" ,          CONFIG_HLP_NUMEROLOGY,   PARAMFLAG_BOOL, iptr:&NUMEROLOGY,                   defintval:0,           TYPE_INT,    0},                     \
+    {"band" ,                CONFIG_HLP_BAND,         PARAMFLAG_BOOL, iptr:&BAND,                         defintval:78,          TYPE_INT,    0},                     \
     {"emulate-rf" ,          CONFIG_HLP_EMULATE_RF,   PARAMFLAG_BOOL, iptr:&EMULATE_RF,                   defintval:0,           TYPE_INT,    0},                     \
     {"parallel-config",      CONFIG_HLP_PARALLEL_CMD, 0,              strptr:(char **)&parallel_config,   defstrval:NULL,        TYPE_STRING, 0},                     \
     {"worker-config",        CONFIG_HLP_WORKER_CMD,   0,              strptr:(char **)&worker_config,     defstrval:NULL,        TYPE_STRING, 0},                     \
@@ -188,7 +191,7 @@ extern "C"
 #define SOFTMODEM_RFSIM_BIT           (1<<10)
 #define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
-#define SOFTMODEM_DOFORMS_BIT         (1<<15)
+#define SOFTMODEM_DOSCOPE_BIT         (1<<15)
 #define SOFTMODEM_RECPLAY_BIT         (1<<16)
 #define SOFTMODEM_ENB_BIT             (1<<20)
 #define SOFTMODEM_GNB_BIT             (1<<21)
@@ -204,7 +207,7 @@ extern "C"
 #define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
 #define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
-#define IS_SOFTMODEM_DOFORMS         ( get_softmodem_optmask() & SOFTMODEM_DOFORMS_BIT)
+#define IS_SOFTMODEM_DOSCOPE         ( get_softmodem_optmask() & SOFTMODEM_DOSCOPE_BIT)
 #define IS_SOFTMODEM_IQPLAYER        ( get_softmodem_optmask() & SOFTMODEM_RECPLAY_BIT)
 #define IS_SOFTMODEM_ENB_BIT         ( get_softmodem_optmask() & SOFTMODEM_ENB_BIT)
 #define IS_SOFTMODEM_GNB_BIT         ( get_softmodem_optmask() & SOFTMODEM_GNB_BIT)
@@ -226,6 +229,7 @@ typedef struct {
   int            single_thread_flag; //eNodeB only
   int            chain_offset;
   int            numerology;
+  int            band;
   unsigned int   start_msc;
   uint32_t       clock_source;
   uint32_t       timing_source;

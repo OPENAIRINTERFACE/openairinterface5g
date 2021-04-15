@@ -234,7 +234,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -276,14 +276,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     }
 
     if (get_softmodem_params()->usim_test==0) {
-      LOG_D(PHY, "Generating PUCCH\n");
       pucch_procedures_ue_nr(ue,
                              gNB_id,
                              proc,
                              FALSE);
     }
 
-    LOG_D(PHY, "Sending Uplink data \n");
     nr_ue_pusch_common_procedures(ue,
                                   slot_tx,
                                   &ue->frame_parms,1);
@@ -293,7 +291,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) {
     nr_ue_prach_procedures(ue, proc, gNB_id);
   }
-  LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
+  LOG_D(PHY,"****** end TX-Chain (%s) for AbsSubframe %d.%d ******\n", nr_mode_string[ue->UE_mode[gNB_id]],frame_tx, slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -1694,9 +1692,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
-    printf("============================================\n");
+    LOG_I(PHY,"============================================\n");
     LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
-    printf("============================================\n");
+    LOG_I(PHY,"============================================\n");
   }
 
 #ifdef NR_PDCCH_SCHED
@@ -2067,19 +2065,19 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   } else {
 
-    LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
-    nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
 
+    nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
+    LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
   }
 
-  if (nr_prach == 1) {
+  if (nr_prach == GENERATE_PREAMBLE) {
 
     if (ue->mac_enabled == 1) {
       int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
       int16_t ra_preamble_rx_power = (int16_t)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
       ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
-      LOG_I(PHY,"DEBUG [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
+      LOG_D(PHY,"DEBUG [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
         mod_id,
         frame_tx,
         nr_slot_tx,
@@ -2118,18 +2116,15 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     if (ue->mac_enabled == 1)
       nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
-  } else if (nr_prach == 2) {
-
+  } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
+    LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);
+    ue->UE_mode[gNB_id] = RA_WAIT_CR;
+  } else if (nr_prach == RA_SUCCEEDED) {
     LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-
     ue->UE_mode[gNB_id] = PUSCH;
-
-  } else if(nr_prach == 3){
-
+  } else if(nr_prach == RA_FAILED){
     LOG_D(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-
     ue->UE_mode[gNB_id] = PRACH;
-
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);

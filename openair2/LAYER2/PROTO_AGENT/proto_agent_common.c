@@ -365,17 +365,23 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   if (!pdcp_pdu_p) goto error;
 
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
-  result = rlc_data_req(&ctxt_pP
-                        ,srb_flagP
-                        ,flag_MBMS
-                        ,rb_idP
-                        ,muiP
-                        ,confirmP
-                        ,pdcp_pdu_size
-                        ,pdcp_pdu_p
-                        ,NULL
-                        ,NULL
-                       );
+  // result = rlc_data_req(&ctxt_pP
+  //                       ,srb_flagP
+  //                       ,flag_MBMS
+  //                       ,rb_idP
+  //                       ,muiP
+  //                       ,confirmP
+  //                       ,pdcp_pdu_size
+  //                       ,pdcp_pdu_p
+  //                       ,NULL
+  //                       ,NULL
+  //                      );
+  LOG_D(PROTO_AGENT, "proto_agent received pdcp_data_req \n");
+  // for (int i = 0; i < pdcp_pdu_size; i++)
+  //   printf(" %2.2x", (unsigned char)pdcp_pdu_p->data[i]);
+  // printf("\n");
+  du_rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+  result = 1;
   return result;
 error:
 
@@ -522,6 +528,8 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   ctxt_pP.rnti = ctxt->fsp_rnti;
   ctxt_pP.frame = ctxt->fsp_frame;
   ctxt_pP.subframe = ctxt->fsp_subframe;
+  ctxt_pP.configured = 1;
+  ctxt_pP.brOption = 0;
   ctxt_pP.eNB_index = ctxt->fsp_enb_index;
   srb_flagP = rlc_data->fsp_srb_flag;
   flag_MBMS = rlc_data->fsp_mbms_flag;

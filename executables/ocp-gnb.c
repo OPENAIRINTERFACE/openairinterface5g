@@ -996,7 +996,7 @@ int main( int argc, char **argv ) {
                  (void *)NULL, "time_meas", -1, OAI_PRIORITY_RT_LOW);
   }
 
-  if(IS_SOFTMODEM_DOFORMS) {
+  if(IS_SOFTMODEM_DOSCOPE) {
     scopeParms_t tmp= {&argc, argv, &ru, RC.gNB[0]};
     load_softscope("nr",&tmp);
   }

@@ -57,7 +57,8 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
 			uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
-                        uint16_t startingPRB);
+                        uint16_t startingPRB,
+			uint16_t secondHopPRB);
 void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,

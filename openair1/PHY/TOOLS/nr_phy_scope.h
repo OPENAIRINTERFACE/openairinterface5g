@@ -33,13 +33,7 @@
 //#include "PHY/impl_defs_top.h"
 #include "PHY/defs_nr_UE.h"
 
-typedef struct {
-  int *argc;
-  char **argv;
-  RU_t *ru;
-  PHY_VARS_gNB *gNB;
-} scopeParms_t;
-
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 extern RAN_CONTEXT_t RC;
 #endif
