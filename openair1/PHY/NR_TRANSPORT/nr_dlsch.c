@@ -159,7 +159,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
-    int16_t mod_dmrs[14][n_dmrs<<1] __attribute__ ((aligned(16)));
+    int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
     uint16_t beta_ptrs = 1;
@@ -264,24 +264,6 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	printf("\n");
       }
 #endif
-    
-    /// DMRS QPSK modulation
-    // TODO: performance improvement, we can skip the modulation of DMRS symbols outside the bandwidth part
-    for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
-      if (rel15->dlDmrsSymbPos & (1 << l)) {
-        nr_modulation(pdsch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs[l]); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-
-#ifdef DEBUG_DLSCH
-        printf("DMRS modulation (symbol %d, %d symbols, type %d):\n", l, n_dmrs, dmrs_Type);
-        for (int i=0; i<n_dmrs>>4; i++) {
-          for (int j=0; j<8; j++) {
-            printf("%d %d\t", mod_dmrs[l][((i<<3)+j)<<1], mod_dmrs[l][(((i<<3)+j)<<1)+1]);
-          }
-          printf("\n");
-        }
-#endif
-      }
-    }
 
     /// Resource mapping
     
@@ -349,6 +331,21 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
           }
         }
 
+        /// DMRS QPSK modulation
+        if (rel15->dlDmrsSymbPos & (1 << l)) {
+          nr_modulation(pdsch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+
+#ifdef DEBUG_DLSCH
+          printf("DMRS modulation (symbol %d, %d symbols, type %d):\n", l, n_dmrs, dmrs_Type);
+          for (int i=0; i<n_dmrs>>4; i++) {
+            for (int j=0; j<8; j++) {
+              printf("%d %d\t", mod_dmrs[((i<<3)+j)<<1], mod_dmrs[(((i<<3)+j)<<1)+1]);
+            }
+            printf("\n");
+          }
+#endif
+        }
+
         /* calculate if current symbol is PTRS symbols */
         ptrs_idx = 0;
 
@@ -379,8 +376,8 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
           /* Map DMRS Symbol */
           if ( ( dmrs_symbol_map & (1 << l) ) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_Type))%(frame_parms->ofdm_symbol_size)))) {
-            txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) +     (2*txdataF_offset)] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[l][dmrs_idx<<1]) >> 15;
-            txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+            txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) +     (2*txdataF_offset)] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
+            txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
             printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
                    dmrs_idx, l, k, k_prime, n, txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
