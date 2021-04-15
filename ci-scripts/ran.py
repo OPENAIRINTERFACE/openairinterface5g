@@ -694,6 +694,8 @@ class RANManagement():
 		NSA_RAPROC_PUSCH_check = 0
 		#dlsch and ulsch statistics (dictionary)
 		dlsch_ulsch_stats = {}
+		#real time statistics (dictionary)
+		real_time_stats ={}
 		#count "L1 thread not ready" msg 	
 		L1_thread_not_ready_cnt = 0
 		#count "problem receiving samples" msg
@@ -863,6 +865,17 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+			#real time statistics
+			#same method as above
+			keys = {'feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding'}   
+    		for k in keys:
+      		result = re.search(k, line)     
+      		if result is not None:
+				#remove 1- all useless char before relevant info  2- trailing char
+          		tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
+          		real_time_stats[k]=tmp.group(1)
+
+
 			#count "L1 thread not ready" msg
 			result = re.search('\[PHY\]\s+L1_thread isn\'t ready', str(line))
 			if result is not None:
@@ -918,6 +931,14 @@ class RANManagement():
 				for key in dlsch_ulsch_stats: #for each dictionary key
 					statMsg += dlsch_ulsch_stats[key] + '\n' 
 					logging.debug(dlsch_ulsch_stats[key])
+				htmleNBFailureMsg += statMsg
+
+			#real time statistics statistics
+			if len(real_time_stats)!=0: #check if dictionary is not empty
+				statMsg=''
+				for key in real_time_stats: #for each dictionary key
+					statMsg += real_time_stats[key] + '\n' 
+					logging.debug(real_time_stats[key])
 				htmleNBFailureMsg += statMsg
 
 		if uciStatMsgCount > 0:
