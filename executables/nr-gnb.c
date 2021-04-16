@@ -230,6 +230,7 @@ void rx_func(void *param) {
 
   // Call the scheduler
 
+  start_meas(&gNB->ul_indication_stats);
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -237,6 +238,7 @@ void rx_func(void *param) {
   gNB->UL_INFO.CC_id     = gNB->CC_id;
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  stop_meas(&gNB->ul_indication_stats);
   
   // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
@@ -326,6 +328,7 @@ static void *process_stats_thread(void *param) {
   reset_meas(&gNB->phy_proc_tx);
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
+  reset_meas(&gNB->ul_indication_stats);
   reset_meas(&gNB->rx_pusch_stats);
   reset_meas(&gNB->ulsch_decoding_stats);
 
@@ -337,6 +340,7 @@ static void *process_stats_thread(void *param) {
     print_meas(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL);
     print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
     print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
+    print_meas(&gNB->ul_indication_stats, "UL Indication", NULL, NULL);
     print_meas(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL);
     print_meas(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL);
   }
