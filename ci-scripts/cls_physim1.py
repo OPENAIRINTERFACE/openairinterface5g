@@ -196,13 +196,15 @@ class PhySim:
 		# Waiting to complete the running test
 		count = 0
 		isFinished = False
-		while(count < 26 and isFinished == False):
-			time.sleep(60)
+		while(count < 24 and isFinished == False):
+			time.sleep(58)
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim | grep dlsim', '\$', 6)
+			time.sleep(2)
 			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
 			if result is not None:
 				podName1 = result.group()
-				mySSH.command(f'oc logs {podName1} 2>&1 | tail -n 1', '\$', 6)
+				mySSH.command(f'oc logs --tail=1 {podName1} 2>&1', '\$', 6)
+				time.sleep(1)
 				if mySSH.getBefore().count('Finished') != 0:
 					isFinished = True
 			count += 1
@@ -220,7 +222,6 @@ class PhySim:
 		while(isFinished1 == False):
 			time.sleep(10)
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
-			logging.debug(mySSH.getBefore())
 			if re.search('No resources found', mySSH.getBefore()):
 				isFinished1 = True
 		if isFinished1 == True:
