@@ -566,11 +566,11 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
     message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, NR_RRC_DCCH_DATA_IND);
     AssertFatal(message_p != NULL, "OUT OF MEMORY");
     NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
-    NR_RRC_DCCH_DATA_IND(message_p).sdu_p = (uint8_t*)buf;
+    NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
     NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
     NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
     
-    itti_send_msg_to_task(TASK_RRC_GNB, INSTANCE_DEFAULT, message_p);
+    itti_send_msg_to_task(TASK_RRC_GNB, 0, message_p);
   }
 }
 
