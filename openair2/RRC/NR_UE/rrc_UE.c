@@ -1189,7 +1189,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
-	      LOG_I(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
+	      LOG_I(NR_RRC,"Setting state to NR_RRC_SI_RECEIVED\n");
 	      nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
             }
 	    // take ServingCellConfigCommon and configure L1/L2

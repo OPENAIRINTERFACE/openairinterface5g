@@ -365,9 +365,6 @@ typedef struct {
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
 
-  /// Flag for SIB1
-  uint8_t sib1_received;
-
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
 
