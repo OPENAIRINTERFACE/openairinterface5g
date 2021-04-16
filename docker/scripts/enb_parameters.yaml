@@ -159,6 +159,8 @@
       env: "@ENB_S1U_IP_ADDRESS@"
     - key: ENB_IPV4_ADDRESS_FOR_X2C
       env: "@ENB_X2_IP_ADDRESS@"
+    - key: rrc_inactivity_threshold
+      env: "@RRC_INACTIVITY_THRESHOLD@"
     - key: FLEXRAN_ENABLED
       env: "@FLEXRAN_ENABLED@"
     - key: FLEXRAN_INTERFACE_NAME
