@@ -108,6 +108,7 @@ class PhySim:
 		mySSH.command("sudo podman image inspect --format='Size = {{.Size}} bytes' oai-physim:temp", '\$', 60)
 		if mySSH.getBefore().count('no such image') != 0:
 			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
+			mySSH.close()
 			sys.exit(-1)
 		else:
 			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
@@ -130,12 +131,14 @@ class PhySim:
 		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword}', '\$', 6)
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+			mySSH.close()
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
 		mySSH.command(f'oc project {ocWorkspace}', '\$', 6)
 		if mySSH.getBefore().count(f'Already on project "{ocWorkspace}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"') == 0:
 			logging.error(f'\u001B[1m Unable to access OC project {ocWorkspace}\u001B[0m')
+			mySSH.close()
 			sys.exit(-1)
 		else:
 			logging.debug(f'\u001B[1m   Now using project {ocWorkspace}\u001B[0m')
@@ -144,13 +147,22 @@ class PhySim:
 		mySSH.command('oc whoami -t | sudo podman login -u ' + ocUserName + ' --password-stdin https://default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/ --tls-verify=false', '\$', 6)
 		if mySSH.getBefore().count('Login Succeeded!') == 0:
 			logging.error('\u001B[1m Podman Login to OC Cluster Registry Failed\u001B[0m')
+			mySSH.close()
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
+		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml', '\$', 6)
+		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
+			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocWorkspace}\u001B[0m')
+			mySSH.close()
+			sys.exit(-1)
+		else:
+			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocWorkspace}\u001B[0m')
 		mySSH.command(f'sudo podman tag oai-physim:temp default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:temp', '\$', 6)
 		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:temp --tls-verify=false', '\$', 6)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
+			mySSH.close()
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m Image "oai-physim" push to OC Cluster Registry Successfully\u001B[0m')
@@ -160,6 +172,7 @@ class PhySim:
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
 			logging.error('\u001B[1m Deploying PhySim Failed using helm chart on OC Cluster\u001B[0m')
 			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
+			mySSH.close()
 			self.AnalyzeLogFile_phySim(HTML)
 			sys.exit(-1)
 		else:
@@ -183,13 +196,13 @@ class PhySim:
 		# Waiting to complete the running test
 		count = 0
 		isFinished = False
-		while(count < 25 and isFinished == False):
+		while(count < 26 and isFinished == False):
 			time.sleep(60)
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
 			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
 			if result is not None:
 				podName1 = result.group()
-				mySSH.command(f'oc logs {podName1}', '\$', 6)
+				mySSH.command(f'oc logs {podName1} | tail -n 5', '\$', 6)
 				if mySSH.getBefore().count('Finished') != 0:
 					isFinished = True
 			count += 1
@@ -202,10 +215,15 @@ class PhySim:
 
 		# UnDeploy the physical simulator pods
 		mySSH.command('helm uninstall physim | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
-		if mySSH.getBefore().count('release "physim" uninstalled') != 0:
+		isFinished1 = False
+		while(isFinished1 == False):
+			time.sleep(10)
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
+			logging.debug(mySSH.getBefore())
+			if re.search('No resources found', mySSH.getBefore()):
+				isFinished1 = True
+		if isFinished1 == True:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
-		else:
-			logging.debug('\u001B[1m Failed to UnDeploy PhySim on OC Cluster\u001B[0m')
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)
