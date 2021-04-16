@@ -198,11 +198,11 @@ class PhySim:
 		isFinished = False
 		while(count < 26 and isFinished == False):
 			time.sleep(60)
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim | grep dlsim', '\$', 6)
 			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
 			if result is not None:
 				podName1 = result.group()
-				mySSH.command(f'oc logs {podName1} | tail -n 5', '\$', 6)
+				mySSH.command(f'oc logs {podName1} 2>&1 | tail -n 1', '\$', 6)
 				if mySSH.getBefore().count('Finished') != 0:
 					isFinished = True
 			count += 1
@@ -212,6 +212,7 @@ class PhySim:
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
 			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 6)
+		time.sleep(30)
 
 		# UnDeploy the physical simulator pods
 		mySSH.command('helm uninstall physim | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
