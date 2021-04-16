@@ -53,7 +53,7 @@ class PhySim:
 		self.ranRepository = ""
 		self.ranBranch = ""
 		self.ranCommitID= ""
-		self.ranAllowMerge= ""
+		self.ranAllowMerge= False
 		self.ranTargetBranch= ""
 		self.testResult = {}
 		self.testCount = [0,0,0]
@@ -103,9 +103,12 @@ class PhySim:
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
 			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
-
+		if self.ranAllowMerge:
+			imageTag = "ci-temp"
+		else:
+			imageTag = "develop"
 		# Check if image is exist on the Red Hat server, before pushing it to OC cluster
-		mySSH.command("sudo podman image inspect --format='Size = {{.Size}} bytes' oai-physim:temp", '\$', 60)
+		mySSH.command("sudo podman image inspect --format='Size = {{.Size}} bytes' oai-physim:" + imageTag, '\$', 60)
 		if mySSH.getBefore().count('no such image') != 0:
 			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
 			mySSH.close()
@@ -158,8 +161,8 @@ class PhySim:
 			sys.exit(-1)
 		else:
 			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocWorkspace}\u001B[0m')
-		mySSH.command(f'sudo podman tag oai-physim:temp default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:temp', '\$', 6)
-		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:temp --tls-verify=false', '\$', 6)
+		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag}', '\$', 6)
+		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag} --tls-verify=false', '\$', 6)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
 			mySSH.close()
@@ -198,7 +201,7 @@ class PhySim:
 		isFinished = False
 		while(count < 24 and isFinished == False):
 			time.sleep(58)
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim | grep dlsim', '\$', 6)
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
 			time.sleep(2)
 			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
 			if result is not None:
@@ -226,6 +229,9 @@ class PhySim:
 				isFinished1 = True
 		if isFinished1 == True:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
+		mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag}', '\$', 6)
+		mySSH.command('oc delete is oai-physim', '\$', 6)
+		logging.debug('\u001B[1m Deleted the Image and ImageStream\u001B[0m')
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)
