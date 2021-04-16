@@ -44,6 +44,11 @@ struct complex {
   double y;
 };
 
+struct complexd {
+  double r;
+  double i;
+};
+
 struct complexf {
   float r;
   float i;

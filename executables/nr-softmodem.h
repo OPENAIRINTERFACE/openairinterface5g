@@ -18,11 +18,9 @@
 /*   optname                helpstr                 paramflags        XXXptr                              defXXXval                   type         numelt               */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_GNB {  \
-    {"mmapped-dma",           CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,   uptr:&mmapped_dma,                  defintval:0,                   TYPE_INT,    0},        \
     {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,   iptr:&single_thread_flag,           defintval:1,                   TYPE_INT,    0},        \
     {"A" ,                    CONFIG_HLP_TADV,        0,                uptr:&timing_advance,               defintval:0,                   TYPE_UINT,   0},        \
     {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,             defintval:0,                   TYPE_INT8,   0},        \
-    {"K" ,                    CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE, strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",    TYPE_STRING, 0},        \
     {"m" ,                    CONFIG_HLP_DLMCS_PHYTEST,0,               uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"t" ,                    CONFIG_HLP_ULMCS_PHYTEST,0,               uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"M" ,                    CONFIG_HLP_DLBW_PHYTEST,0,                uptr:&target_dl_bw,                 defintval:0,                   TYPE_UINT,   0},        \

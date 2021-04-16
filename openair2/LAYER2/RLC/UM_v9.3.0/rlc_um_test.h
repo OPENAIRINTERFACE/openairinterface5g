@@ -21,8 +21,6 @@
 
 #    ifndef __RLC_UM_TEST_H__
 #        define __RLC_UM_TEST_H__
-rlc_um_entity_t       um_tx;
-rlc_um_entity_t       um_rx;
 
 void rlc_um_v9_3_0_test_windows_5(void);
 void rlc_um_v9_3_0_test_windows_10(void);

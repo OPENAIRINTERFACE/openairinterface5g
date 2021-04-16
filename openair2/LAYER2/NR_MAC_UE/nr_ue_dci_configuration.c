@@ -85,7 +85,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   } else {
     ss = mac->search_space_zero;
     coreset = mac->coreset0;
-    rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+    if(rnti_type == NR_RNTI_SI) {
+      rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+    } else {
+      rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0;
+    }
   }
 
   rel15->coreset.duration = coreset->duration;
@@ -141,7 +145,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
     rel15->rnti = ra->ra_rnti;
     rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE); //NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+    if (get_softmodem_params()->sa) {
+      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    } else { // NSA mode is not using the Initial BWP
+      rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    }
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
     rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
     break;
@@ -150,6 +158,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     case NR_RNTI_CS:
     break;
     case NR_RNTI_TC:
+      // we use the initial DL BWP
+      sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = ra->t_crnti;
+      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+      rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
     break;
     case NR_RNTI_SP_CSI:
     break;
@@ -242,14 +258,22 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
           if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
             switch(ra->ra_state){
               case WAIT_RAR:
-              LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space\n");
-              rel15->num_dci_options = 1;
-              rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-              config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id);
-              fill_dci_search_candidates(ss, rel15);
-              break;
+                LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space (RA-Msg2)\n");
+                rel15->num_dci_options = 1;
+                rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+                if (get_softmodem_params()->sa) {
+                  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, -1);
+                } else {
+                  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id);
+                }
+                fill_dci_search_candidates(ss, rel15);
+                break;
               case WAIT_CONTENTION_RESOLUTION:
-              LOG_E(MAC, "In %s: CB-RA not implemented yet. Should not have fallen in this case.\n", __FUNCTION__);
+                LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space (RA-Msg4)\n");
+                rel15->num_dci_options = 1;
+                rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+                config_dci_pdu(mac, rel15, dl_config, NR_RNTI_TC, -1);
+                fill_dci_search_candidates(ss, rel15);
               break;
               default:
               break;

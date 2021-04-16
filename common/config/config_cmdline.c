@@ -255,7 +255,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
         if ( ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgpath) == 0))  || /* short option, one "-" */
              ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 )) || /* long option beginning with "--" */
              ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgoptions[n].optname) == 0) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ||
-             ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
+             ((strlen(oneargv) > 2) && (strcmp(oneargv + 2, cfgoptions[n].optname) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
           char *valptr=NULL;
           int ret;
           config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;

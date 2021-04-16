@@ -146,17 +146,11 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
   
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   NR_ServingCellConfigCommon_t *scc = mac->scc;
-  int8_t receivedTargerPower, delta_preamble;
-  long preambleReceivedTargetPower = 0;
+  int8_t receivedTargerPower;
+  int8_t delta_preamble;
 
-  if (prach_resources->RA_TYPE == RA_4STEP){
-    NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-    preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
-  } else if (prach_resources->RA_TYPE == RA_2STEP){
-    // msgA-PreambleReceivedTargetPower
-    LOG_E(MAC, "In %s:%d: missing implementation for 2-step RA...\n", __FUNCTION__, __LINE__);
-  }
-
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  long preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
   delta_preamble = nr_get_DELTA_PREAMBLE(mod_id, CC_id, prach_resources->prach_format);
 
   receivedTargerPower = preambleReceivedTargetPower + delta_preamble + (prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP + prach_resources->POWER_OFFSET_2STEP_RA;

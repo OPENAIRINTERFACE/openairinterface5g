@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
                                 0.0,
                                 0,
-                                0);
+                                0, 0);
 
   if (UE2eNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");

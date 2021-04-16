@@ -708,7 +708,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                 0,
                                 0,
-                                0);
+                                0, 0);
   L1_rxtx_proc_t *proc_rxtx = (subframe == 0)? &eNB->proc.L1_proc: &eNB->proc.L1_proc_tx;
   eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,N_RB_DL,0);
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);

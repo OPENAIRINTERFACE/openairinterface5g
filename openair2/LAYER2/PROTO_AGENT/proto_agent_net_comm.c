@@ -30,7 +30,7 @@
 #include "common/utils/LOG/log.h"
 
 proto_agent_channel_t *proto_channel[NUMBER_OF_eNB_MAX][ENB_AGENT_MAX];
-proto_agent_channel_instance_t channel_instance;
+static proto_agent_channel_instance_t channel_instance;
 int proto_agent_channel_id = 0;
 
 int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel, proto_agent_id_t agent_id) {
