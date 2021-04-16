@@ -228,18 +228,6 @@ void rx_func(void *param) {
   rnti_to_remove_count = 0;
   if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
-  // Call the scheduler
-
-  start_meas(&gNB->ul_indication_stats);
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
-  gNB->UL_INFO.frame     = frame_rx;
-  gNB->UL_INFO.slot      = slot_rx;
-  gNB->UL_INFO.module_id = gNB->Mod_id;
-  gNB->UL_INFO.CC_id     = gNB->CC_id;
-  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-  stop_meas(&gNB->ul_indication_stats);
-  
   // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
@@ -266,6 +254,18 @@ void rx_func(void *param) {
   stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
+  // Call the scheduler
+
+  start_meas(&gNB->ul_indication_stats);
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  gNB->UL_INFO.frame     = frame_rx;
+  gNB->UL_INFO.slot      = slot_rx;
+  gNB->UL_INFO.module_id = gNB->Mod_id;
+  gNB->UL_INFO.CC_id     = gNB->CC_id;
+  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  stop_meas(&gNB->ul_indication_stats);
+  
   notifiedFIFO_elt_t *res; 
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
