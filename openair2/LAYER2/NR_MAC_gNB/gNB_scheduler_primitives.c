@@ -564,7 +564,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
       AssertFatal(0, "Valid UL formats are 0_0 and 0_1\n");
   }
 
-  LOG_D(MAC,
+  LOG_I(NR_MAC,
         "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
         __func__,
         dci_pdu_rel15->frequency_domain_assignment.val,
@@ -736,7 +736,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 	n_set = pucch_Config->resourceSetToAddModList->list.count; 
 	AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
 	
-	LOG_D(MAC, "UCI n_set= %d\n", n_set);
+	LOG_D(NR_MAC, "UCI n_set= %d\n", n_set);
 	
 	N2 = 2;
 	// procedure to select pucch resource id from resource sets according to 
@@ -995,7 +995,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos = fsize;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos));
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",
             dci_pdu_rel15->frequency_domain_assignment.val,
             fsize,
@@ -1005,7 +1005,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // Time domain assignment
       pos += 4;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val & 0xf) << (dci_size - pos));
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->time_domain_assignment.val,
             dci_size - pos,
@@ -1013,7 +1013,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // VRB to PRB mapping
       pos++;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val & 0x1) << (dci_size - pos);
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->vrb_to_prb_mapping.val,
             dci_size - pos,
@@ -1022,13 +1022,13 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       pos += 5;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs & 0x1f) << (dci_size - pos);
 #ifdef DEBUG_FILL_DCI
-      LOG_I(MAC, "mcs %d  (5 bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, dci_size - pos, *dci_pdu);
+      LOG_I(NR_MAC, "mcs %d  (5 bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, dci_size - pos, *dci_pdu);
 #endif
       // TB scaling
       pos += 2;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->tb_scaling & 0x3) << (dci_size - pos);
 #ifdef DEBUG_FILL_DCI
-      LOG_I(MAC, "tb_scaling %d  (2 bits)=> %d (0x%lx)\n", dci_pdu_rel15->tb_scaling, dci_size - pos, *dci_pdu);
+      LOG_I(NR_MAC, "tb_scaling %d  (2 bits)=> %d (0x%lx)\n", dci_pdu_rel15->tb_scaling, dci_size - pos, *dci_pdu);
 #endif
       break;
 
@@ -1036,7 +1036,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // indicating a DL DCI format 1bit
       pos++;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",
             dci_pdu_rel15->format_indicator,
             1,
@@ -1047,7 +1047,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos += fsize;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos));
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->frequency_domain_assignment.val,
             fsize,
@@ -1077,7 +1077,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
         // Time domain assignment 4bit
         pos += 4;
         *dci_pdu |= ((dci_pdu_rel15->time_domain_assignment.val & 0xf) << (dci_size - pos));
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "Time domain assignment %d (%d bits)=> %d (0x%lx)\n",
               dci_pdu_rel15->time_domain_assignment.val,
               4,
@@ -1086,7 +1086,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
         // VRB to PRB mapping  1bit
         pos++;
         *dci_pdu |= (dci_pdu_rel15->vrb_to_prb_mapping.val & 1) << (dci_size - pos);
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "VRB to PRB %d (%d bits)=> %d (0x%lx)\n",
               dci_pdu_rel15->vrb_to_prb_mapping.val,
               1,
@@ -1095,31 +1095,31 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
         // MCS 5bit  //bit over 32, so dci_pdu ++
         pos += 5;
         *dci_pdu |= (dci_pdu_rel15->mcs & 0x1f) << (dci_size - pos);
-        LOG_D(MAC, "MCS %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, 5, dci_size - pos, *dci_pdu);
+        LOG_D(NR_MAC, "MCS %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, 5, dci_size - pos, *dci_pdu);
         // New data indicator 1bit
         pos++;
         *dci_pdu |= (dci_pdu_rel15->ndi & 1) << (dci_size - pos);
-        LOG_D(MAC, "NDI %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->ndi, 1, dci_size - pos, *dci_pdu);
+        LOG_D(NR_MAC, "NDI %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->ndi, 1, dci_size - pos, *dci_pdu);
         // Redundancy version  2bit
         pos += 2;
         *dci_pdu |= (dci_pdu_rel15->rv & 0x3) << (dci_size - pos);
-        LOG_D(MAC, "RV %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->rv, 2, dci_size - pos, *dci_pdu);
+        LOG_D(NR_MAC, "RV %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->rv, 2, dci_size - pos, *dci_pdu);
         // HARQ process number  4bit
         pos += 4;
         *dci_pdu |= ((dci_pdu_rel15->harq_pid & 0xf) << (dci_size - pos));
-        LOG_D(MAC, "HARQ_PID %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->harq_pid, 4, dci_size - pos, *dci_pdu);
+        LOG_D(NR_MAC, "HARQ_PID %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->harq_pid, 4, dci_size - pos, *dci_pdu);
         // Downlink assignment index  2bit
         pos += 2;
         *dci_pdu |= ((dci_pdu_rel15->dai[0].val & 3) << (dci_size - pos));
-        LOG_D(MAC, "DAI %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->dai[0].val, 2, dci_size - pos, *dci_pdu);
+        LOG_D(NR_MAC, "DAI %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->dai[0].val, 2, dci_size - pos, *dci_pdu);
         // TPC command for scheduled PUCCH  2bit
         pos += 2;
         *dci_pdu |= ((dci_pdu_rel15->tpc & 3) << (dci_size - pos));
-        LOG_D(MAC, "TPC %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->tpc, 2, dci_size - pos, *dci_pdu);
+        LOG_D(NR_MAC, "TPC %d (%d bits)=> %d (0x%lx)\n", dci_pdu_rel15->tpc, 2, dci_size - pos, *dci_pdu);
         // PUCCH resource indicator  3bit
         pos += 3;
         *dci_pdu |= ((dci_pdu_rel15->pucch_resource_indicator & 0x7) << (dci_size - pos));
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "PUCCH RI %d (%d bits)=> %d (0x%lx)\n",
               dci_pdu_rel15->pucch_resource_indicator,
               3,
@@ -1128,7 +1128,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
         // PDSCH-to-HARQ_feedback timing indicator 3bit
         pos += 3;
         *dci_pdu |= ((dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val & 0x7) << (dci_size - pos));
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",
               dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val,
               3,
@@ -1487,7 +1487,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     pos += 1;
     *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization.val & 0x1) << (dci_size - pos);
   }
-  LOG_D(MAC, "DCI has %d bits and the payload is %lx\n", dci_size, *dci_pdu);
+  LOG_D(NR_MAC, "DCI has %d bits and the payload is %lx\n", dci_size, *dci_pdu);
 }
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg) {
@@ -1526,7 +1526,7 @@ int extract_length(int startSymbolAndLength) {
 void dump_nr_list(NR_list_t *listP)
 {
   for (int j = listP->head; j >= 0; j = listP->next[j])
-    LOG_T(MAC, "NR list node %d => %d\n", j, listP->next[j]);
+    LOG_T(NR_MAC, "NR list node %d => %d\n", j, listP->next[j]);
 }
 
 /*
@@ -1662,7 +1662,7 @@ int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
   RA_t *ra = (RA_t *) &RC.nrmac[mod_idP]->common_channels[CC_idP].ra[0];
 
   for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
-    LOG_D(MAC, "Checking RA_id %d for %x : state %d\n",
+    LOG_D(NR_MAC, "Checking RA_id %d for %x : state %d\n",
           RA_id,
           rntiP,
           ra[RA_id].state);
@@ -1764,7 +1764,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_I(MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_I(NR_MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);
@@ -1773,7 +1773,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
   }
 
   // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
-  LOG_E(MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
+  LOG_E(NR_MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
   dump_nr_list(&UE_info->list);
   return -1;
 }
@@ -1811,7 +1811,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     destroy_nr_list(&sched_ctrl->available_ul_harq);
     destroy_nr_list(&sched_ctrl->feedback_ul_harq);
     destroy_nr_list(&sched_ctrl->retrans_ul_harq);
-    LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
+    LOG_I(NR_MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
           mod_id,
           UE_id,
           rnti);
@@ -1830,7 +1830,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     NR_COMMON_channels_t *cc = &RC.nrmac[mod_id]->common_channels[cc_id];
     for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
       if (cc->ra[i].rnti == rnti) {
-        LOG_D(MAC, "free RA process %d for rnti %d\n", i, rnti);
+        LOG_D(NR_MAC, "free RA process %d for rnti %d\n", i, rnti);
         /* is it enough? */
         cc->ra[i].cfra  = false;
         cc->ra[i].rnti  = 0;

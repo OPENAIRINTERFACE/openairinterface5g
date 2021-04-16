@@ -1113,7 +1113,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 
   cellGroupConfig->physicalCellGroupConfig                                  = physicalCellGroupConfig;
   
-  cellGroupConfig->spCellConfig                                             = malloc(sizeof(*cellGroupConfig->spCellConfig));
+  cellGroupConfig->spCellConfig                                             = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
   
   fill_initial_SpCellConfig(rnti,cellGroupConfig->spCellConfig,scc);
   

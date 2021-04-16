@@ -236,7 +236,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   /* update current context */
 
-
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+    AssertFatal(1==0,"0 > %d.%d csi_MeasConfig is not null\n",frame_tx,nr_slot_tx);
   int subframe_number = proc->nr_slot_rx / ue->frame_parms.slots_per_subframe;
   nb_pucch_format_4_in_subframes[subframe_number] = 0; /* reset pucch format 4 counter at current rx position */
 
@@ -341,9 +345,21 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
   }
 
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+    AssertFatal(1==0,"6 > %d.%d csi_MeasConfig is not null\n",frame_tx,nr_slot_tx);
+
   
   N_UCI = O_SR + O_ACK + O_CSI;    
   if (N_UCI ==0) return(TRUE);
+
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+    AssertFatal(1==0,"5 > %d.%d csi_MeasConfig is not null\n",frame_tx,nr_slot_tx);
 
   /* Part - III */
   /* Choice PUCCH format and its related parameters */
@@ -363,7 +379,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_Index = 0;
 
   NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
-
+  int BWPsize,BWPstart;
   if (select_pucch_resource(ue, mac, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
     /* use of initial pucch configuration provided by system information 1 */
@@ -376,8 +392,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       int N_CS = initial_pucch_resource[initial_pucch_id].nb_CS_indexes;
       /* see TS 38213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
-      int BWPsize =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
+      BWPsize  =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
 			      MAX_BWP_SIZE);
+      BWPstart =  NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
+				     MAX_BWP_SIZE);
       int RB_BWP_offset;
       if (initial_pucch_id == 15) {
         RB_BWP_offset =BWPsize/4;
@@ -403,6 +421,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
         LOG_W(PHY,"PUCCH ue is not expected to generate more than one HARQ-ACK at AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
       }
       NR_TST_PHY_PRINTF("PUCCH common configuration with index %d \n", initial_pucch_id);
+      startingPRB += BWPstart;
+      secondHopPRB += BWPstart;
     }
     /* use dedicated pucch resource configuration */
     /**********************************************/
@@ -421,8 +441,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       format = pucch_resource->format.present;
       nb_symbols_total = get_nb_symbols_pucch(pucch_resource, format);
       starting_symbol_index = get_starting_symb_idx(pucch_resource, format);
-      startingPRB   = pucch_resource->startingPRB;
-      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? pucch_resource->secondHopPRB : startingPRB;
+      startingPRB   = BWPstart + pucch_resource->startingPRB;
+      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? (BWPstart+pucch_resource->secondHopPRB) : startingPRB;
       if (format==pucch_format1_nr)
         time_domain_occ = pucch_resource->format.choice.format1->timeDomainOCC;
       if (format==pucch_format4_nr) {
@@ -614,7 +634,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                              format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
 
   NR_TST_PHY_PRINTF("PUCCH ( startingPRB : %d ) ( secondHopPRB : %d ) ( m_0 : %d ) ( m_CS : %d ) ( time_domain_occ %d ) (occ_length : %d ) ( occ_Index : %d ) \n",
-                             startingPRB,         secondHopPRB,         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
+		    startingPRB (absolute),         secondHopPRB (absolute),         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
 
   /* Part - IV */
   /* Generate PUCCH signal according to its format and parameters */

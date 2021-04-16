@@ -862,13 +862,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->refPoint = 0; // Point A
 
     // DMRS
-    pdsch_pdu->dlDmrsSymbPos =
-        fill_dmrs_mask(bwp && bwp->bwp_Dedicated && 
-		       bwp->bwp_Dedicated->pdsch_Config && 
-		       bwp->bwp_Dedicated->pdsch_Config->choice.setup ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL,
-                       scc->dmrs_TypeA_Position,
-                       nrOfSymbols,
-                       startSymbolIndex);
+    NR_PDSCH_Config_t *pdsch_Config=NULL;
+    if (bwp && 
+        bwp->bwp_Dedicated && 
+        bwp->bwp_Dedicated->pdsch_Config && 
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup)
+      pdsch_Config =  bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+
+    pdsch_pdu->dlDmrsSymbPos = fill_dmrs_mask(pdsch_Config,
+                                              scc->dmrs_TypeA_Position,
+                                              nrOfSymbols,
+                                              startSymbolIndex);
     pdsch_pdu->dmrsConfigType = dmrsConfigType;
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
@@ -887,7 +891,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     /* Check and validate PTRS values */
     struct NR_SetupRelease_PTRS_DownlinkConfig *phaseTrackingRS =
-      bwp ? bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS : NULL;
+      pdsch_Config ? pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS : NULL;
     if (phaseTrackingRS) {
       bool valid_ptrs_setup = set_dl_ptrs_values(phaseTrackingRS->choice.setup,
                                                  pdsch_pdu->rbSize,

@@ -228,10 +228,10 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
       return -1;
     }
 
-    LOG_D(MAC,"riv = %i\n", riv);
-    LOG_D(MAC,"n_RB_DLBWP = %i\n", n_RB_DLBWP);
-    LOG_D(MAC,"number_rbs = %i\n", dlsch_config_pdu->number_rbs);
-    LOG_D(MAC,"start_rb = %i\n", dlsch_config_pdu->start_rb);
+    LOG_D(MAC,"DLSCH riv = %i\n", riv);
+    LOG_D(MAC,"DLSCH n_RB_DLBWP = %i\n", n_RB_DLBWP);
+    LOG_D(MAC,"DLSCH number_rbs = %i\n", dlsch_config_pdu->number_rbs);
+    LOG_D(MAC,"DLSCH start_rb = %i\n", dlsch_config_pdu->start_rb);
 
   }
   if(pusch_config_pdu != NULL){
@@ -254,7 +254,10 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
       LOG_W(MAC, "Frequency domain assignment values are invalid! #RBs: %d, Start RB: %d, n_RB_ULBWP: %d \n",pusch_config_pdu->rb_size, pusch_config_pdu->rb_start, n_RB_ULBWP);
       return -1;
     }
-
+    LOG_D(MAC,"ULSCH riv = %i\n", riv);
+    LOG_D(MAC,"ULSCH n_RB_DLBWP = %i\n", n_RB_ULBWP);
+    LOG_D(MAC,"ULSCH number_rbs = %i\n", pusch_config_pdu->rb_size);
+    LOG_D(MAC,"ULSCH start_rb = %i\n", pusch_config_pdu->rb_start);
   }
   return 0;
 }
@@ -396,6 +399,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
         return -1;
       }
       
+      LOG_D(NR_MAC,"Filling Time-Domain Allocation from pusch_TimeDomainAllocationList\n");
       int startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[time_domain_ind]->startSymbolAndLength;
       int S,L;
       SLIV2SL(startSymbolAndLength,&S,&L);
@@ -403,6 +407,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->nr_of_symbols=L;
     }
     else {
+      LOG_D(NR_MAC,"Filling Time-Domain Allocation from tables\n");
 //      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
       sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
       sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
@@ -412,6 +417,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->nr_of_symbols = sliv_L;
       pusch_config_pdu->start_symbol_index = sliv_S;
     }
+    LOG_D(NR_MAC,"start_symbol = %i\n", pusch_config_pdu->start_symbol_index);
+    LOG_D(NR_MAC,"number_symbols = %i\n", pusch_config_pdu->nr_of_symbols);
+
   }
   return 0;
 }
@@ -483,6 +491,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         return -1;
       }
 
+      AssertFatal(ul_config->number_pdus<FAPI_NR_UL_CONFIG_LIST_NUM, "ul_config->number_pdus %d out of bounds\n",ul_config->number_pdus);
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
 
       fill_ul_config(ul_config, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
