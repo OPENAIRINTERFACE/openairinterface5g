@@ -514,6 +514,7 @@ void nr_csi_meas_reporting(int Mod_idP,
                   && curr_pucch->dai_c == 0,
                   "PUCCH not free at index 2 for UE %04x\n",
                   UE_info->rnti[UE_id]);
+      curr_pucch->r_pucch = -1;
       curr_pucch->frame = frame;
       curr_pucch->ul_slot = sched_slot;
       curr_pucch->resource_indicator = res_index;
