@@ -37,6 +37,10 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --UE --ninja -w USRP --verbose-ci
 
+RUN apt-get install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_parameters.yaml
+
 # debug
 #RUN ldconfig -v
 #RUN ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15
@@ -76,6 +80,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/oai-lte-ue/bin
 COPY --from=lte-ue-build /oai-ran/targets/bin/lte-uesoftmodem.Rel15 .
+COPY --from=lte-ue-build /oai-ran/docker/scripts/lte_ue_entrypoint.sh entrypoint.sh
 COPY --from=lte-ue-build /oai-ran/targets/bin/conf2uedata .
 COPY --from=lte-ue-build /oai-ran/targets/bin/nvram .
 COPY --from=lte-ue-build /oai-ran/targets/bin/usim .
@@ -114,12 +119,10 @@ RUN ldconfig
 #RUN ldd /usr/local/lib/libSIMU.so
 #RUN ldd /usr/local/lib/libdfts.so
 
-# Copy the relevant configuration files for eNB
+# Copy the relevant configuration files for UE
 WORKDIR /opt/oai-lte-ue/etc
-COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* ./
-COPY --from=lte-ue-build /oai-ran/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf ./ue_usim.conf
+COPY --from=lte-ue-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-lte-ue
-#CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]
-#ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15"]
+ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]

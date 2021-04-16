@@ -37,6 +37,10 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --UE --ninja -w USRP --verbose-ci
 
+RUN yum install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_parameters.yaml
+
 # debug
 #RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15
 #RUN ls -lst /oai-ran/targets/bin
@@ -116,7 +120,6 @@ RUN ldconfig
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-lte-ue/etc
 COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
-COPY --from=lte-ue-build /oai-ran/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf ./ue_usim.conf
 
 WORKDIR /opt/oai-lte-ue
 #CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]

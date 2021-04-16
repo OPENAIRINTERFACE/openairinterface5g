@@ -204,7 +204,7 @@
       env: "@F1_CU_IP_ADDRESS@"
       
   - filePrefix: "rcc.band7.tm1.nfapi"
-    outputfilename: "rcc.if4p5.enb.fdd.conf"
+    outputfilename: "rcc.nfapi.fdd.conf"
     config:
     - key: Active_eNBs
       env: "@ENB_NAME@"
