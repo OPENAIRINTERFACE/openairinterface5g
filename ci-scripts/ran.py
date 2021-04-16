@@ -695,9 +695,7 @@ class RANManagement():
 		#dlsch and ulsch statistics (dictionary)
 		dlsch_ulsch_stats = {}
 		#real time statistics (dictionary)
-		real_time_stats ={}
-		#count "L1 thread not ready" msg 	
-		L1_thread_not_ready_cnt = 0
+		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
 	
@@ -868,18 +866,12 @@ class RANManagement():
 			#real time statistics
 			#same method as above
 			keys = {'feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding'}   
-    		for k in keys:
-      		result = re.search(k, line)     
-      		if result is not None:
-				#remove 1- all useless char before relevant info  2- trailing char
-          		tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
-          		real_time_stats[k]=tmp.group(1)
-
-
-			#count "L1 thread not ready" msg
-			result = re.search('\[PHY\]\s+L1_thread isn\'t ready', str(line))
-			if result is not None:
-				L1_thread_not_ready_cnt += 1	
+			for k in keys:
+				result = re.search(k, line)     
+				if result is not None:
+					#remove 1- all useless char before relevant info  2- trailing char
+					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
+					real_time_stats[k]=tmp.group(1)
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
@@ -910,13 +902,8 @@ class RANManagement():
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
 				htmlMsg = statMsg+'\n'
 			else:
-				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL or not relevant'
 				htmlMsg = statMsg+'\n'
-			logging.debug(statMsg)
-			htmleNBFailureMsg += htmlMsg
-			#L1 thread not ready log
-			statMsg = '[PHY] L1 thread is not ready msg count =  '+str(L1_thread_not_ready_cnt)
-			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
 			#problem receiving samples log
