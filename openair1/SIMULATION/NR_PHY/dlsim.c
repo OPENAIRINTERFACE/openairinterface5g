@@ -277,7 +277,7 @@ int main(int argc, char **argv)
   //float psnr;
   float eff_tp_check = 0.7;
   uint8_t snrRun;
-  uint32_t TBS;
+  uint32_t TBS = 0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
