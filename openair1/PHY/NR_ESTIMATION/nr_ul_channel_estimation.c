@@ -605,7 +605,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ul_ch += 24;
       }
     }
-#ifdef DEBUG_PDSCH
+#ifdef DEBUG_PUSCH
     ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
     for(uint16_t idxP=0; idxP<ceil((float)nb_rb_pusch*12/8); idxP++) {
       for(uint8_t idxI=0; idxI<16; idxI += 2) {

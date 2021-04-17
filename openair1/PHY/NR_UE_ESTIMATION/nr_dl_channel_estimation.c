@@ -786,14 +786,14 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
-    pil   = (int16_t *)&pilot[rb_offset*((config_type==pdsch_dmrs_type1) ? 6:4)];
+    pil   = (int16_t *)&pilot[rb_offset*((config_type == pdsch_dmrs_type1) ? 6:4)];
     k     = k % ue->frame_parms.ofdm_symbol_size;
     re_offset = k;
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+re_offset+nushift)];
     dl_ch = (int16_t *)&dl_ch_estimates[p*ue->frame_parms.nb_antennas_rx+aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
-    if (ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
+    if (ue->high_speed_flag == 0) // multiply previous channel estimate by ch_est_alpha
       multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          1,ue->frame_parms.ofdm_symbol_size);
@@ -848,18 +848,12 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          dl_ch,
                                          8);
                                          
-      //for (int i= 0; i<16; i++)
-      //printf("dl_ch addr %p %d\n", dl_ch+i, *(dl_ch+i));
-      
       pil += 2;
       re_offset = (re_offset+2) % ue->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       dl_ch += 8;
 
       for (pilot_cnt=3; pilot_cnt<(6*nb_rb_pdsch-3); pilot_cnt += 2) {
-    	//if ((pilot_cnt%6)==0)
-	//dl_ch += 4;
-	//printf("re_offset %d\n",re_offset);
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -941,7 +935,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 	uint16_t idxDC = 2*(ue->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
 	uint16_t idxPil = idxDC/2;
 	re_offset = k;
-	pil = (int16_t *)&pilot[rb_offset*((config_type==pdsch_dmrs_type1) ? 6:4)];
+	pil = (int16_t *)&pilot[rb_offset*((config_type == pdsch_dmrs_type1) ? 6:4)];
 	pil += (idxPil-2);
 	dl_ch += (idxDC-4);
 	dl_ch = memset(dl_ch, 0, sizeof(int16_t)*10);
@@ -951,7 +945,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 	ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
       
 	// for proper allignment of SIMD vectors
-	if((ue->frame_parms.N_RB_DL&1)==0) {
+	if((ue->frame_parms.N_RB_DL&1) == 0) {
         
 	  multadd_real_vector_complex_scalar(fdcl,
 					     ch,
@@ -987,7 +981,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 					     8);
 	}
       }
-    } else if (config_type==pdsch_dmrs_type2 && ue->fd_lin_interpolation == 1){ //pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
+    } else if (config_type == pdsch_dmrs_type2 && ue->fd_lin_interpolation == 1){ //pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
 
       // Treat first 4 pilots specially (left edge)
       ch_l[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -1150,7 +1144,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch_l[1]= dl_ch[1] ;
 
         // for proper allignment of SIMD vectors
-        if((ue->frame_parms.N_RB_DL&1)==0) {
+        if((ue->frame_parms.N_RB_DL&1) == 0) {
           dl_ch -= 20;
           //Interpolate fdcrl1 with ch_r
           multadd_real_vector_complex_scalar(filt8_dcrl1,
