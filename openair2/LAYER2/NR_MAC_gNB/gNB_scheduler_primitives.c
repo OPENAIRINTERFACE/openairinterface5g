@@ -564,7 +564,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
       AssertFatal(0, "Valid UL formats are 0_0 and 0_1\n");
   }
 
-  LOG_I(NR_MAC,
+  LOG_D(NR_MAC,
         "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
         __func__,
         dci_pdu_rel15->frequency_domain_assignment.val,
@@ -1035,7 +1035,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     case NR_RNTI_C:
       // indicating a DL DCI format 1bit
       pos++;
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      *dci_pdu |= ((uint64_t)1) << (dci_size - pos);
       LOG_D(NR_MAC,
             "Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",
             dci_pdu_rel15->format_indicator,
@@ -1192,7 +1192,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     case NR_RNTI_TC:
       pos = 1;
       // indicating a DL DCI format 1bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
+      *dci_pdu |= ((uint64_t)1) << (dci_size - pos++);
       // Freq domain assignment 0-16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       for (int i = 0; i < fsize; i++)

@@ -557,21 +557,25 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   
  srb_found:
   {
-    uint8_t *rrc_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_RRC_GNB,
-					size);
-    MessageDef  *message_p;
+       uint8_t *rrc_buffer_p = entity->is_gnb ? 
+					itti_malloc(TASK_PDCP_ENB, TASK_RRC_GNB, size):
+                                        itti_malloc(TASK_PDCP_UE, TASK_RRC_NRUE, size);
+       MessageDef  *message_p;
 
-    AssertFatal(rrc_buffer_p != NULL, "OUT OF MEMORY");
-    memcpy(rrc_buffer_p, buf, size);
-    message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, NR_RRC_DCCH_DATA_IND);
-    AssertFatal(message_p != NULL, "OUT OF MEMORY");
-    NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
-    NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
-    NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
-    NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
+       AssertFatal(rrc_buffer_p != NULL, "OUT OF MEMORY");
+       memcpy(rrc_buffer_p, buf, size);
+       message_p = entity->is_gnb ? 
+                            itti_alloc_new_message(TASK_PDCP_ENB, 0, NR_RRC_DCCH_DATA_IND):
+                            itti_alloc_new_message(TASK_PDCP_UE, 0, NR_RRC_DCCH_DATA_IND);
+
+       AssertFatal(message_p != NULL, "OUT OF MEMORY");
+       NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
+       NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
+       NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
+       NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
     
-    itti_send_msg_to_task(TASK_RRC_GNB, 0, message_p);
-  }
+       itti_send_msg_to_task(entity->is_gnb ? TASK_RRC_GNB : TASK_RRC_NRUE, 0, message_p);
+    }
 }
 
 static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,

@@ -616,7 +616,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-    NR_PDSCH_Config_t *pdsch_config= (mac->cg) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+    NR_PDSCH_Config_t *pdsch_config= (mac->DLbwp[0]) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
     uint16_t BWPSize = 0;
 
     if(rnti == SI_RNTI) {
@@ -647,11 +647,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
           dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
           pdsch_config = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
         }
-      } else {
+      } else if (mac->DLbwp[0]) {
         dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
         pdsch_config = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
+      } else if (mac->scc_SIB) {
+        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+        pdsch_config = NULL;
+
       }
       BWPSize = n_RB_DLBWP;
     }
@@ -721,7 +727,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_0->pucch_resource_id = dci->pucch_resource_indicator;
     // Sanity check for pucch_resource_indicator value received to check for false DCI.
     valid = 0;
-    if (mac->cg) {
+    if (mac->ULbwp[0] &&
+	mac->ULbwp[0]->bwp_Dedicated &&
+	mac->ULbwp[0]->bwp_Dedicated->pucch_Config &&
+	mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup&&
+	mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList) {
       pucch_res_set_cnt = mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.count;
       for (int id = 0; id < pucch_res_set_cnt; id++) {
 	if (dlsch_config_pdu_1_0->pucch_resource_id < mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
@@ -729,12 +739,27 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	  break;
 	}
       }
-      
-      if (!valid) {
+    }
+    else if (mac->cg &&
+             mac->cg->spCellConfig &&
+             mac->cg->spCellConfig->spCellConfigDedicated &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList){
+      pucch_res_set_cnt = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList->list.count;
+      for (int id = 0; id < pucch_res_set_cnt; id++) {
+        if (dlsch_config_pdu_1_0->pucch_resource_id < mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
+          valid = 1;
+          break;
+        }
+      }
+    } else valid=1;
+    if (!valid) {
 	LOG_W(MAC, "[%d.%d] pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_0->pucch_resource_id);
 	return -1;
       }
-    }
 
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
     dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = 1+dci->pdsch_to_harq_feedback_timing_indicator.val;
