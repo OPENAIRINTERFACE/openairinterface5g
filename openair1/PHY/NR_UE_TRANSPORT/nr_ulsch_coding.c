@@ -273,13 +273,13 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   harq_process->first_tx=0;
 ///////////////////////// a---->| add CRC |---->b /////////////////////////
 ///////////
-    
+   /* 
     int i;
     printf("ulsch (tx): \n");
     for (i=0;i<(A>>3);i++)
       printf("%02x.",harq_process->a[i]);
     printf("\n");
-    
+   */ 
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
@@ -413,7 +413,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
 ///////////
 ///////////////////////////////////////////////////////////////////////////////
-    LOG_I(PHY,"setting ndi to %d from pusch_data\n",harq_process->pusch_pdu.pusch_data.new_data_indicator);
+    LOG_D(PHY,"setting ndi to %d from pusch_data\n",harq_process->pusch_pdu.pusch_data.new_data_indicator);
     harq_process->ndi = harq_process->pusch_pdu.pusch_data.new_data_indicator;
   }
   F = harq_process->F;

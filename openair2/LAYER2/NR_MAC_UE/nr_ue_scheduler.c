@@ -956,7 +956,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     // AND if a UL grant (UL DCI or Msg3) has been received (as indicated by num_pdus)
     if (ul_config && (ul_info->slot_tx == ul_config->slot && ul_info->frame_tx == ul_config->sfn) && ul_config->number_pdus > 0){
 
-      LOG_I(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
+      LOG_D(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
 
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
       uint8_t data_existing = 0;
