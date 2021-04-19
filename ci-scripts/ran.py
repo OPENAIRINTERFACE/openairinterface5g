@@ -927,6 +927,10 @@ class RANManagement():
 					statMsg += real_time_stats[key] + '\n' 
 					logging.debug(real_time_stats[key])
 				htmleNBFailureMsg += statMsg
+			else:
+				statMsg = 'No real time stats found in the log file\n'
+				logging.debug('No real time stats found in the log file')
+				htmleNBFailureMsg += statMsg
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
