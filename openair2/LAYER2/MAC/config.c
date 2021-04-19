@@ -337,7 +337,8 @@ config_sib2(int Mod_idP,
             LTE_ARFCN_ValueEUTRA_t *ul_CArrierFreqP,
             long *ul_BandwidthP,
             LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmissionP,
-            struct LTE_MBSFN_SubframeConfigList  *mbsfn_SubframeConfigListP) {
+            struct LTE_MBSFN_SubframeConfigList  *mbsfn_SubframeConfigListP,
+            int dl_Bandwidth) {
   nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
   cfg->subframe_config.pb.value               = radioResourceConfigCommonP->pdsch_ConfigCommon.p_b;
   cfg->subframe_config.pb.tl.tag = NFAPI_SUBFRAME_CONFIG_PB_TAG;
@@ -345,7 +346,7 @@ config_sib2(int Mod_idP,
   cfg->rf_config.reference_signal_power.value = radioResourceConfigCommonP->pdsch_ConfigCommon.referenceSignalPower;
   cfg->rf_config.reference_signal_power.tl.tag = NFAPI_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG;
   cfg->num_tlv++;
-  cfg->nfapi_config.max_transmit_power.value  = cfg->rf_config.reference_signal_power.value + power_off_dB[cfg->rf_config.dl_channel_bandwidth.value];
+  cfg->nfapi_config.max_transmit_power.value  = cfg->rf_config.reference_signal_power.value + power_off_dB[dl_Bandwidth];
   cfg->nfapi_config.max_transmit_power.tl.tag = NFAPI_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG;
   cfg->num_tlv++;
   cfg->prach_config.configuration_index.value                 = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
@@ -870,7 +871,8 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
                 radioResourceConfigCommon_BR,
                 NULL, ul_Bandwidth, additionalSpectrumEmission,
-                mbsfn_SubframeConfigList);
+                mbsfn_SubframeConfigList,
+                mib->message.dl_Bandwidth);
   } // mib != NULL
 
   if (mobilityControlInfo !=NULL) {

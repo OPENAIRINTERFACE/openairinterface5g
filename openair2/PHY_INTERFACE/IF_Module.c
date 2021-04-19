@@ -7,8 +7,8 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #define MAX_IF_MODULES 100
 
-IF_Module_t *if_inst[MAX_IF_MODULES];
-Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
+static IF_Module_t *if_inst[MAX_IF_MODULES];
+static Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
 
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);

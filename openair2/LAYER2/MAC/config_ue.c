@@ -85,10 +85,6 @@ void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index) {
   ue_init_mac(module_idP);  //This will hopefully do the rest of the MAC reset procedure
 }
 
-int32_t **rxdata;
-int32_t **txdata;
-
-
 int
 rrc_mac_config_req_ue(module_id_t Mod_idP,
                       int CC_idP,

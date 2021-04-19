@@ -88,6 +88,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 
 extern const char *duplex_mode[];
+msc_interface_t msc_interface;
+THREAD_STRUCT thread_struct;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;
@@ -145,7 +147,7 @@ int          chain_offset = 0;
 int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
-int        usrp_tx_thread = 0;
+int            numerology = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
 
@@ -177,6 +179,23 @@ struct timespec clock_difftime(struct timespec start, struct timespec end) {
 
 void print_difftimes(void) {
   LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+}
+
+int create_tasks_nrue(uint32_t ue_nb) {
+  LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
+  itti_wait_ready(1);
+
+  if (ue_nb > 0) {
+    LOG_I(NR_RRC,"create TASK_RRC_NRUE \n");
+    if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for RRC UE failed\n");
+      return -1;
+    }
+
+  }
+
+  itti_wait_ready(0);
+  return 0;
 }
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
@@ -470,7 +489,7 @@ int main( int argc, char **argv ) {
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
  
-  if(IS_SOFTMODEM_DOFORMS) { 
+  if(IS_SOFTMODEM_DOSCOPE) { 
     load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
 
@@ -480,6 +499,12 @@ int main( int argc, char **argv ) {
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
+  if (create_tasks_nrue(1) < 0) {
+    printf("cannot create ITTI tasks\n");
+    exit(-1); // need a softer mode
+  }
+
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
   sleep(20);

@@ -87,8 +87,6 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint8_t nfapi_mode = 0; // Default to monolithic mode
-uint32_t target_dl_mcs = 28;
-uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0;
 
@@ -120,7 +118,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -148,7 +145,6 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 double cpuf;

@@ -54,6 +54,7 @@ extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
 
 extern uint16_t sf_ahead;
 
+static eth_params_t         stub_eth_params;
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 

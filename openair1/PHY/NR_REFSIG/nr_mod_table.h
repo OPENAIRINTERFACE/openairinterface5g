@@ -29,16 +29,16 @@
 #define NR_MOD_TABLE_QAM64_OFFSET 23
 #define NR_MOD_TABLE_QAM256_OFFSET 87
 
-short nr_qpsk_mod_table[8];
+extern short nr_qpsk_mod_table[8];
 
-int32_t nr_16qam_mod_table[16];
+extern int32_t nr_16qam_mod_table[16];
 #if defined(__SSE2__)
-__m128i nr_qpsk_byte_mod_table[2048];
+extern __m128i nr_qpsk_byte_mod_table[2048];
 #endif
 
-int64_t nr_16qam_byte_mod_table[1024];
+extern int64_t nr_16qam_byte_mod_table[1024];
 
-int64_t nr_64qam_mod_table[4096];
+extern int64_t nr_64qam_mod_table[4096];
 
-int32_t nr_256qam_mod_table[512];
+extern int32_t nr_256qam_mod_table[512];
 #endif

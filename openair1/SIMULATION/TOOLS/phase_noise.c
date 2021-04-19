@@ -26,6 +26,7 @@
 #include  "sim.h"
 
 
+static uint16_t LUTSin[ResolSinCos+1];
 /* linear phase noise model */
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm)
 {
