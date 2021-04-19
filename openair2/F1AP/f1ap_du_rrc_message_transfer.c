@@ -1269,6 +1269,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     switch (dl_ccch_msg->message.choice.c1->present) {
 
       case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
+
         LOG_I(F1AP, "Received PR_NOTHING on DL-CCCH-Message\n");
         break;
 

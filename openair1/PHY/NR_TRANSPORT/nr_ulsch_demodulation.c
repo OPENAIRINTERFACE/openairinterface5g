@@ -1222,6 +1222,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
                                                                         rel15_ul->rb_size*12);
+      LOG_D(PHY,"ulsch_power[%d] symbol %d %f (%p)\n",aarx,symbol,dB_fixed_times10( gNB->pusch_vars[ulsch_id]->ulsch_power[aarx])/10.0,
+            &gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size]);
       if (gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]==1) return (1);
     }
 

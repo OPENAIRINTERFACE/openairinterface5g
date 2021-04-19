@@ -1323,6 +1323,14 @@ static void rrc_ue_generate_RRCSetupComplete(
   uint8_t size;
   const char *nas_msg;
   int   nas_msg_length;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+    AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
+
  if (AMF_MODE_ENABLED) {
 #if defined(ITTI_SIM) || defined(RFSIM_NAS)
     as_nas_info_t initialNasMsg;
@@ -1343,6 +1351,9 @@ static void rrc_ue_generate_RRCSetupComplete(
   LOG_D(NR_RRC,
        "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCSetupComplete to gNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
        ctxt_pP->frame, ctxt_pP->module_id+NB_RN_INST, size, gNB_index, nr_rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
+
+  for (int i=0;i<size;i++) printf("%02x ",buffer[i]);
+  printf("\n");
    // ctxt_pP_local.rnti = ctxt_pP->rnti;
   rrc_data_req_ue(
       ctxt_pP,

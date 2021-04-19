@@ -49,7 +49,8 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     return;
   }
 
-  if (!(buffer[0] & 0x80)) {
+  if (entity->type != NR_PDCP_SRB &&
+      !(buffer[0] & 0x80)) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }

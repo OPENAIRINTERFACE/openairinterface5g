@@ -502,7 +502,7 @@ rrc_gNB_generate_RRCSetup(
 				 NULL,
 				 NULL,
 				 NULL,
-				 NULL,
+				 ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList,
 				 NULL);
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
 				  ue_context_pP->ue_context.SRB_configList,
@@ -515,7 +515,7 @@ rrc_gNB_generate_RRCSetup(
 				  NULL,
 				  NULL,
 				  NULL,
-				  NULL);
+                                  ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
 #endif
     }
     break;
@@ -1949,6 +1949,8 @@ rrc_gNB_decode_dcch(
 
   LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Decoding UL-DCCH Message\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+  for (int i=0;i<sdu_sizeP;i++) printf("%02x ",Rx_sdu[i]);
+  printf("\n");
   dec_rval = uper_decode(
                   NULL,
                   &asn_DEF_NR_UL_DCCH_Message,
@@ -2636,6 +2638,8 @@ void *rrc_gnb_task(void *args_p) {
                             NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_p,
                             NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
+        result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), NR_RRC_DCCH_DATA_IND(msg_p).sdu_p);
+
         break;
 
       case NGAP_DOWNLINK_NAS:

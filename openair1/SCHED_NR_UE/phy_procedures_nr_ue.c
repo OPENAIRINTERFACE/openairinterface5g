@@ -77,7 +77,7 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "intertask_interface.h"
 #include "T.h"
 
-char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
+char nr_mode_string[NUM_UE_MODE][20] = {"NOT SYNCHED","PRACH","RAR","RA_WAIT_CR", "PUSCH", "RESYNCH"};
 
 const uint8_t nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 

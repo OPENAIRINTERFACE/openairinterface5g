@@ -1294,12 +1294,13 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
                 NGAP_REGISTER_GNB_REQ (msg_p).amf_ip_address[j].ipv4 = 1;
                 NGAP_REGISTER_GNB_REQ (msg_p).amf_ip_address[j].ipv6 = 1;
               }
+/* not in configuration yet ...
 
               if (NGParamList.paramarray[l][GNB_AMF_BROADCAST_PLMN_INDEX].iptr)
                 NGAP_REGISTER_GNB_REQ(msg_p).broadcast_plmn_num[l] = NGParamList.paramarray[l][GNB_AMF_BROADCAST_PLMN_INDEX].numelt;
               else
                 NGAP_REGISTER_GNB_REQ(msg_p).broadcast_plmn_num[l] = 0;
-
+*/
               AssertFatal(NGAP_REGISTER_GNB_REQ(msg_p).broadcast_plmn_num[l] <= NGAP_REGISTER_GNB_REQ(msg_p).num_plmn,
                           "List of broadcast PLMN to be sent to AMF can not be longer than actual "
                           "PLMN list (max %d, but is %d)\n",
