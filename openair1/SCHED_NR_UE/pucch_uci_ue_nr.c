@@ -654,7 +654,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       nb_symbols_total = get_nb_symbols_pucch(pucch_resource, format);
       starting_symbol_index = get_starting_symb_idx(pucch_resource, format);
       startingPRB   = BWPstart + pucch_resource->startingPRB;
-      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? (BWPstart+pucch_resource->secondHopPRB) : startingPRB;
+      secondHopPRB = pucch_resource->intraSlotFrequencyHopping ? (BWPstart + *pucch_resource->secondHopPRB) : startingPRB;
       if (format==pucch_format1_nr)
         time_domain_occ = pucch_resource->format.choice.format1->timeDomainOCC;
       if (format==pucch_format4_nr) {
