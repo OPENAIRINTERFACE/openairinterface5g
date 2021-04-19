@@ -383,7 +383,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   // estimate UL_CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]) - (10*gNB->measurements.n0_power_dB[0]);
 
-  LOG_D(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f)\n", SNRtimes10/10,dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0])/10.0);
+  LOG_D(PHY, "Estimated SNR for PUSCH is = %d dB (ulsch_power %f)\n", SNRtimes10/10,dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0])/10.0);
 
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
