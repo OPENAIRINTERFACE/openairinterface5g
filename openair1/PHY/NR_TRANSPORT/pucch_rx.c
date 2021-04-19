@@ -247,7 +247,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   x_im[1] = table_5_2_2_2_2_Im[u[1]];
 
   int16_t xr[2][24]  __attribute__((aligned(32)));
-  int32_t xrtmag=0;
+  int64_t xrtmag=0;
   uint8_t maxpos=0;
   uint8_t index=0;
   memset((void*)xr[0],0,24*sizeof(int16_t));
@@ -272,10 +272,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
     }
   }
-  int32_t corr_re[2],corr_im[2],temp,no_corr=0;
-  int32_t av_corr=0;
+  int32_t corr_re[2],corr_im[2],no_corr=0;
   int seq_index;
-
+  int64_t temp,av_corr=0;
   for(i=0;i<nr_sequences;i++){
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
       corr_re[l]=0;corr_im[l]=0;
@@ -292,15 +291,15 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       }
     }
 
-#ifdef DEBUG_NR_PUCCH_RX
-    printf("PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10(corr_re[0]*corr_re[0] + corr_im[0]*corr_im[0]));
-    if (l>1) printf("PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10(corr_re[1]*corr_re[1] + corr_im[1]*corr_im[1]));
-#endif
+//#ifdef DEBUG_NR_PUCCH_RX
+    LOG_I(PHY,"PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10((double)corr_re[0]*corr_re[0] + (double)corr_im[0]*corr_im[0]));
+    if (l>1) LOG_I(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10((double)corr_re[1]*corr_re[1] + (double)corr_im[1]*corr_im[1]));
+//#endif
     if (pucch_pdu->freq_hop_flag == 0 && l==1) // non-coherent correlation
-      temp=corr_re[0]*corr_re[0] + corr_im[0]*corr_im[0];
+      temp=(int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0];
     else if (pucch_pdu->freq_hop_flag == 0 && l==2) {
-      int32_t corr_re2 = corr_re[0]+corr_re[1];
-      int32_t corr_im2 = corr_im[0]+corr_im[1];
+      int64_t corr_re2 = (int64_t)corr_re[0]+corr_re[1];
+      int64_t corr_im2 = (int64_t)corr_im[0]+corr_im[1];
       // coherent combining of 2 symbols and then complex modulus for single-frequency case
       temp=corr_re2*corr_re2 + corr_im2*corr_im2;
     }
@@ -319,7 +318,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     no_corr=(av_corr-xrtmag)/(nr_sequences-1)/l;
   av_corr/=nr_sequences/l;
 
-  uint8_t xrtmag_dB = dB_fixed(xrtmag);
+  uint8_t xrtmag_dB = dB_fixed64(xrtmag);
  
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
