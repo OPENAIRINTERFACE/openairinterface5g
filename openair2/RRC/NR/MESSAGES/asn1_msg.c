@@ -1151,7 +1151,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 
   physicalCellGroupConfig                                                   = calloc(1,sizeof(*physicalCellGroupConfig));
   physicalCellGroupConfig->p_NR_FR1                                         = calloc(1,sizeof(*physicalCellGroupConfig->p_NR_FR1));
-  physicalCellGroupConfig->p_NR_FR1                                         = 20;
+  *physicalCellGroupConfig->p_NR_FR1                                         = 20;
   physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook                          = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
   cellGroupConfig->physicalCellGroupConfig                                  = physicalCellGroupConfig;
   
