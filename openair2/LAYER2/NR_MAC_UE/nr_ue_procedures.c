@@ -1186,7 +1186,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type) {
     case NR_RNTI_RA:
       // check BWP id
-      if (mac->cg) N_RB=NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
       // Freq domain assignment
@@ -1224,10 +1224,6 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       break;
 
     case NR_RNTI_C:
-
-      // check BWP id
-      if (mac->cg) N_RB=NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
       //Identifier for DCI formats
       pos++;
@@ -1423,8 +1419,8 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     case NR_RNTI_TC:
 
       // check BWP id
-      if (mac->cg)  N_RB=NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      else          N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
       // indicating a DL DCI format 1bit
       pos++;
