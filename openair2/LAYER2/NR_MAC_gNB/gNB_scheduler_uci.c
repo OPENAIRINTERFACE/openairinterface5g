@@ -1148,7 +1148,7 @@ bool nr_acknack_scheduling(int mod_id,
     }
   }
 
-  LOG_I(MAC,"1. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
+  LOG_D(MAC,"1. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
