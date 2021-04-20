@@ -369,14 +369,6 @@ void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink
   frame_parms->get_samples_slot_timestamp = &get_samples_slot_timestamp;
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
 
-  // setting initial ssb start subcarrier to have SSBs at BW center
-  frame_parms->ssb_start_subcarrier = ((frame_parms->N_RB_DL>>1)-10)*12;
-
-  if(frame_parms->nb_antennas_rx == 0)
-    frame_parms->nb_antennas_rx = 1;
-  if(frame_parms->nb_antennas_tx == 0)
-    frame_parms->nb_antennas_tx = 1;
-
 }
 
 

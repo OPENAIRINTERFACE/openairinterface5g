@@ -276,7 +276,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
   UE->mode = normal_txrx;
 
-  config_process_cmdline( cmdline_params,numparams,NULL);
+  config_get(cmdline_params,numparams,NULL);
 
   int pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRX_OPT);
   if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue;

@@ -686,7 +686,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
 
-  LOG_I(MAC,"ra->generate_nr_prach %d ra->ra_state %d (GENERATE_IDLE %d)\n",ra->generate_nr_prach,ra->ra_state,GENERATE_IDLE);
+  LOG_D(MAC,"ra->generate_nr_prach %d ra->ra_state %d (GENERATE_IDLE %d)\n",ra->generate_nr_prach,ra->ra_state,GENERATE_IDLE);
   if(ra->generate_nr_prach != GENERATE_IDLE) {
     return ra->generate_nr_prach;
   } else {

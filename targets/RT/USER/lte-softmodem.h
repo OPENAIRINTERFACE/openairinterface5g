@@ -78,6 +78,7 @@
 #define CONFIG_HLP_UESCAN        "set UE to scan around carrier\n"
 #define CONFIG_HLP_EMULIFACE     "Set the interface name for the multicast transport for emulation mode (e.g. eth0, lo, etc.)  \n"
 #define CONFIG_HLP_PRB           "Set the PRB, valid values: 6, 25, 50, 100  \n"
+#define CONFIG_HLP_SSC           "Set the start subcarrier \n"
 #define CONFIG_HLP_DLSHIFT       "dynamic shift for LLR compuation for TM3/4 (default 0)\n"
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
