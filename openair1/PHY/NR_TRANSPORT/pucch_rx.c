@@ -305,7 +305,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     }
     else if (pucch_pdu->freq_hop_flag == 1)
       // full non-coherent combining of 2 symbols for frequency-hopping case
-      temp = corr_re[0]*corr_re[0] + corr_im[0]*corr_im[0] + corr_re[1]*corr_re[1] + corr_im[1]*corr_im[1];
+      temp = (int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0] + (int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1];
     else AssertFatal(1==0,"shouldn't happen\n");
 
     av_corr+=temp;
@@ -363,8 +363,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_I(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
-          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
+    LOG_I(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d\n",
+          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
@@ -378,8 +378,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
-          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
+    LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d\n",
+          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
