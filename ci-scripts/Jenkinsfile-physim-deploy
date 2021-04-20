@@ -31,6 +31,9 @@ def buildStageStatus = true
 // Name of the test stage
 def testStageName = params.pipelineTestStageName
 
+// Name of the resource
+def ciEpcResource = params.epcResource
+
 // Global Parameters. Normally they should be populated when the master job
 // triggers the slave job with parameters
 def eNB_Repository
@@ -53,7 +56,7 @@ pipeline {
     disableConcurrentBuilds()
     timestamps()
     ansiColor('xterm')
-    //lock(cn_ci_resource)
+    lock(ciEpcResource)
   }
 
   stages {

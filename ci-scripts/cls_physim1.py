@@ -162,7 +162,7 @@ class PhySim:
 		else:
 			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocWorkspace}\u001B[0m')
 		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag}', '\$', 6)
-		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag} --tls-verify=false', '\$', 6)
+		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag} --tls-verify=false', '\$', 30)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
 			mySSH.close()
