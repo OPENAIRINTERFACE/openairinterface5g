@@ -171,6 +171,7 @@ class PhySim:
 			logging.debug('\u001B[1m Image "oai-physim" push to OC Cluster Registry Successfully\u001B[0m')
 
 		# Using helm charts deployment
+		mySSH.command(f'sed -i -e "s#TAG#{imageTag}#g" ./charts/physims/values.yaml', '\$', 6)
 		mySSH.command('helm install physim ./charts/physims/ | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
 			logging.error('\u001B[1m Deploying PhySim Failed using helm chart on OC Cluster\u001B[0m')
