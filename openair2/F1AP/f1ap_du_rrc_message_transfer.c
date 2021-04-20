@@ -1247,7 +1247,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 								     RC.nrrrc[ctxt.module_id],
 								     ctxt.rnti);
 
-  gNB_RRC_INST *rrc = &RC.nrrrc[ctxt.module_id];
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   if (srb_id == 0) {
     NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
@@ -1260,6 +1260,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     switch (dl_ccch_msg->message.choice.c1->present) {
 
       case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
+
         LOG_I(F1AP, "Received PR_NOTHING on DL-CCCH-Message\n");
         break;
 

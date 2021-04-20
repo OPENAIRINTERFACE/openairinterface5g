@@ -67,7 +67,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
                                                             *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
   cfg->carrier_config.dl_bandwidth.tl.tag   = NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG; //temporary
   cfg->num_tlv++;
-  LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->carrier_config.dl_bandwidth.value);
+  LOG_I(NR_MAC,"%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->carrier_config.dl_bandwidth.value);
 
   cfg->carrier_config.dl_frequency.value = from_nrarfcn(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
                                                         *scc->ssbSubcarrierSpacing,
@@ -95,7 +95,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
                                                                 *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0]);
   cfg->carrier_config.uplink_bandwidth.tl.tag   = NFAPI_NR_CONFIG_UPLINK_BANDWIDTH_TAG; //temporary
   cfg->num_tlv++;
-  LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->carrier_config.uplink_bandwidth.value);
+  LOG_I(NR_MAC,"%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->carrier_config.uplink_bandwidth.value);
 
   int UL_pointA;
   if (scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA == NULL)
@@ -298,7 +298,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
   AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
-  LOG_I(MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
+  LOG_I(NR_MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
@@ -315,7 +315,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     cfg->tdd_table.tdd_period.value = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   }
   if(cfg->cell_config.frame_duplex_type.value == TDD){
-    LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
+    LOG_I(NR_MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
     int periods_per_frame = set_tdd_config_nr(cfg,
                                               scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                               scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
@@ -324,9 +324,9 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
                                               scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
     if (periods_per_frame < 0)
-      LOG_E(MAC,"TDD configuration can not be done\n");
+      LOG_E(NR_MAC,"TDD configuration can not be done\n");
     else {
-      LOG_I(MAC,"TDD has been properly configurated\n");
+      LOG_I(NR_MAC,"TDD has been properly configurated\n");
       RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
     }
   }
@@ -378,14 +378,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   i);
     }
 
-    LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
+    LOG_I(NR_MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
                   ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
 		  scc);
-    LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
+    LOG_E(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
     if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
@@ -434,7 +434,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         if((cc->ra[ra_index].state == RA_IDLE) && (!cc->ra[ra_index].cfra)) break;
       }
       if (ra_index == NR_NB_RA_PROC_MAX) {
-        LOG_E(MAC, "%s() %s:%d RA processes are not available for CFRA RNTI :%x\n", __FUNCTION__, __FILE__, __LINE__, rnti);
+        LOG_E(NR_MAC, "%s() %s:%d RA processes are not available for CFRA RNTI :%x\n", __FUNCTION__, __FILE__, __LINE__, rnti);
         return -1;
       }	
       NR_RA_t *ra = &cc->ra[ra_index];
@@ -467,11 +467,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
           ra->preambles.preamble_list[i] = i;
       }
-      LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
+      LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
       UE_info->CellGroup[UE_id] = CellGroup;
-      LOG_I(PHY,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
+      LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
