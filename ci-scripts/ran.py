@@ -857,7 +857,7 @@ class RANManagement():
 			#keys below are the markers we are loooking for, loop over this keys list
 			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
 			#eventually we record and print only the last occurence 
-			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+			keys = {'UE ID','dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled', 'scheduling timing stats'}
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
