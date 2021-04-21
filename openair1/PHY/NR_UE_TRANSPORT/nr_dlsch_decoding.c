@@ -360,9 +360,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
-  // Fix for harq round when pucch fails
-  harq_process->round = nr_rv_round_map_ue[harq_process->rvidx];
-
   // HARQ stats
   phy_vars_ue->dl_stats[harq_process->round]++;
     
@@ -434,6 +431,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   nb_rb = harq_process->nb_rb;
 
+  // Fix for harq round when pucch fails
+  harq_process->round = nr_rv_round_map_ue[harq_process->rvidx];
 
   harq_process->trials[harq_process->round]++;
 
