@@ -1707,7 +1707,8 @@ do_NR_DLInformationTransfer(
     encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
     AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
                 "DLInformationTransfer", encoded);
-    LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    LOG_I(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
     return encoded;
 }
 

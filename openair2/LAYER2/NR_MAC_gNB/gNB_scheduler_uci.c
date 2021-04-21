@@ -972,7 +972,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                 uci_01->ul_cqi,
                                 30);
-
+  LOG_I(NR_MAC,"pucch tpc %d\n",sched_ctrl->tpc1);
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
