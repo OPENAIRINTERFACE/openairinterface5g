@@ -822,9 +822,8 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
 
-  const uint16_t l_prime_mask = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1);
-  pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol_index;
-  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , DMRS_MASK:%x, ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, l_prime_mask, pusch_pdu->ul_dmrs_symb_pos);
+  pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);
+  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
 
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.

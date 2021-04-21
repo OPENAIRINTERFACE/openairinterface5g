@@ -270,11 +270,12 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                  : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition);
   const pusch_maxLength_t pusch_maxLength =
       ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
-  const uint16_t l_prime_mask = get_l_prime(ps->nrOfSymbols,
+  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
                                             ps->mapping_type,
                                             additional_pos,
-                                            pusch_maxLength);
-  ps->ul_dmrs_symb_pos = l_prime_mask << ps->startSymbolIndex;
+                                            pusch_maxLength,
+                                            ps->startSymbolIndex,
+                                            scc->dmrs_TypeA_Position);
   uint8_t num_dmrs_symb = 0;
   for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
     num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;

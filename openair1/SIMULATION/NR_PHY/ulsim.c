@@ -808,7 +808,7 @@ int main(int argc, char **argv)
   }
 
   uint8_t  length_dmrs         = pusch_len1;
-  uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs);
+  uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
@@ -994,7 +994,7 @@ int main(int argc, char **argv)
       pusch_pdu->transform_precoding = transform_precoding;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = 1;
-      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol;
+      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
       pusch_pdu->dmrs_config_type = dmrs_config_type;
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
@@ -1057,7 +1057,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
       ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
-      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask << start_symbol;
+      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;

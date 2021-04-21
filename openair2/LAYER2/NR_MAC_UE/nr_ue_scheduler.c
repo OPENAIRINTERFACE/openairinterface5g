@@ -469,7 +469,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int NrOfSymbols;
   uint8_t nb_dmrs_re_per_rb;
 
-  uint16_t        l_prime_mask = 1;
+  uint16_t        l_prime_mask = 0;
   uint16_t number_dmrs_symbols = 0;
   int                N_PRB_oh  = 0;
 
@@ -481,6 +481,9 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   pusch_config_pdu->pdu_bit_map      = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_config_pdu->nrOfLayers       = 1;
   pusch_config_pdu->rnti             = rnti;
+
+  pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos2;
+  pusch_maxLength_t dmrslength = pusch_len1;
 
   if (rar_grant) {
 
@@ -529,7 +532,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->start_symbol_index = StartSymbolIndex;
     pusch_config_pdu->nr_of_symbols = NrOfSymbols;
 
-    l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, pusch_dmrs_pos2, pusch_len1);
+    l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, add_pos, dmrslength, StartSymbolIndex, scc->dmrs_TypeA_Position);
     LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
 
     #ifdef DEBUG_MSG3
@@ -612,17 +615,25 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     }
 
+    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+    if (pusch_Config->pusch_TimeDomainAllocationList) {
+      pusch_TimeDomainAllocationList = pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
+    }
+    else if (mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+      pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+    }
+
+    int mappingtype = pusch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+
+    NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;
+    NR_DMRS_ulconfig = (mappingtype == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA)
+                ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
 
     if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
 
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-
-      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;
-      if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
-        NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
-      else
-        NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
 
       uint32_t n_RS_Id = 0;
       if (NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
@@ -692,8 +703,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->absolute_delta_PUSCH = 4;
     }
 
+    if (NR_DMRS_ulconfig != NULL) {
+      add_pos = (NR_DMRS_ulconfig->dmrs_AdditionalPosition == NULL) ? 2 : *NR_DMRS_ulconfig->dmrs_AdditionalPosition;
+      dmrslength = NR_DMRS_ulconfig->maxLength == NULL ? pusch_len1 : pusch_len2;
+    }
+
     /* DMRS */
-    l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+    l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, mappingtype, add_pos, dmrslength, pusch_config_pdu->start_symbol_index, scc->dmrs_TypeA_Position);
     if (pusch_config_pdu->transform_precoding == transform_precoder_disabled)
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
 
@@ -731,7 +747,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->nr_of_symbols,
     rnti_types[rnti_type]);
 
-  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_config_pdu->start_symbol_index;;
+  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
   pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 
