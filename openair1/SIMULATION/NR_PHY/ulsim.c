@@ -767,7 +767,11 @@ int main(int argc, char **argv)
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
   fapi_nr_tx_request_t tx_req;
-  
+
+  memset(&scheduled_response, 0, sizeof(scheduled_response));
+  memset(&ul_config, 0, sizeof(ul_config));
+  memset(&tx_req, 0, sizeof(tx_req));
+
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
   uint8_t ptrs_mcs3 = 10;
@@ -1130,7 +1134,7 @@ int main(int argc, char **argv)
                                 frame_parms->ofdm_symbol_size/(12*nb_rb));
 
         for (i=0; i<slot_length; i++) {
-          for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          for (int aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
             s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
             s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
           }
