@@ -431,6 +431,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   nb_rb = harq_process->nb_rb;
 
+  // Fix for harq round when pucch fails
+  harq_process->round = nr_rv_round_map_ue[harq_process->rvidx];
+
   harq_process->trials[harq_process->round]++;
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
