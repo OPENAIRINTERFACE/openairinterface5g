@@ -2838,8 +2838,6 @@ add_custom_command (
   )
 
 execute_process (
-  COMMAND make clean
-  COMMAND make -j2
   COMMAND make check_vcd
   WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
 )
