@@ -351,7 +351,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
     AssertFatal(1==0,"6 > %d.%d csi_MeasConfig is not null\n",frame_tx,nr_slot_tx);
 
-  
+
   N_UCI = O_SR + O_ACK + O_CSI;    
   if (N_UCI ==0) return(TRUE);
 
@@ -458,8 +458,12 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 	       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
 	       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
                mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
-               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) 
-         pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+        pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+        BWPsize  =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+        BWPstart =  NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+      }
+
       else AssertFatal(1==0,"no pucch_Config\n");
       pucch_resource = select_resource_by_id(pucch_resource_id, pucch_Config);
       format = pucch_resource->format.present;
@@ -1016,9 +1020,9 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
   //*resource_set_id = MAX_NB_OF_PUCCH_RESOURCE_SETS;
   //*resource_id = MAX_NB_OF_PUCCH_RESOURCES;
 
-  if ((bwp_id ==0 && 
+  if ((bwp_id ==0 &&
        mac->cg == NULL) ||
-      (bwp_id == 0 && 
+      (bwp_id == 0 &&
        mac->cg &&
        mac->cg->spCellConfig &&
        mac->cg->spCellConfig->spCellConfigDedicated &&
@@ -1220,7 +1224,7 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup &&
          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList &&
-         mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) || 
+         mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) ||
         (bwp_id==0 &&
          mac->cg &&
          mac->cg->spCellConfig &&
@@ -1231,7 +1235,7 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL)) {
-      if (uci_size <= 2) { 
+      if (uci_size <= 2) {
         pucch_resource_set_id = 0;
         return (pucch_resource_set_id);
         break;
