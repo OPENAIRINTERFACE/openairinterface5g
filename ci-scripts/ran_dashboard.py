@@ -68,26 +68,23 @@ class gDashboard:
         self.d = json.loads(tmp)
 
 
-    def gBuild(self):
+    def gBuild(self, destinationSheetName):
 
-        #line 1 : get update date
+        #line 1 : update date/time, format dd/mm/YY H:M:S
         now = datetime.now()
-        # dd/mm/YY H:M:S
         dt_string = "Update : " + now.strftime("%d/%m/%Y %H:%M")	
         row =[dt_string]
         self.sheet.insert_row(row, index=1, value_input_option='RAW')
 
-        #line 2 is empty
-        #line 3 is column names
+        #line 2 empty
+        #line 3 is for the column names
         i=3
         row =["MR","Created_at","Author","Title","Assignee", "Reviewer", "CAN START","IN PROGRESS","COMPLETED","OK MERGE","Merge conflicts"]
         self.sheet.insert_row(row, index=i, value_input_option='RAW')
 
-        #line 4 onward, build data lines
+        #line 4 onward, MR data lines
         for x in range(len(self.d)):
-            i=i+1
-            
-            
+            i=i+1                        
             date_time_str = self.d[x]['created_at']
             date_time_obj = datetime.strptime(date_time_str, '%Y-%m-%dT%H:%M:%S.%fZ')
     
@@ -123,22 +120,65 @@ class gDashboard:
             else:
                 conflicts = ""
 
-            #build final row
-            row =[str(self.d[x]['iid']), str(date_time_obj.date()),str(self.d[x]['author']['name']),str(self.d[x]['title']),\
+            #build final row to be inserted, the first column is left empty for now, will be filled afterward with hyperlinks to gitlab MR
+            row =["", str(date_time_obj.date()),str(self.d[x]['author']['name']),str(self.d[x]['title']),\
             assignee, reviewer,\
             milestone1,milestone2,milestone3,milestone4,conflicts]
             
-            #write it to worksheet
+            #insert the row to worksheet
             self.sheet.insert_row(row, index=i, value_input_option='RAW')
+        
+        
+        #add MR hyperlinks in a list of requests to be sent as one update batch; this to save API calls (quotas) 
+        i=3
+        requests=[]
+        for x in range(len(self.d)):              
+            rowIndex=i
+            colIndex=0
+            hyperlink= '\"'+"https://gitlab.eurecom.fr/oai/openairinterface5g/-/merge_requests/"+ str(self.d[x]['iid']) +'\"'
+            text= '\"'+str(self.d[x]['iid'])+'"'
+            requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
+            i=i+1
+        body = {"requests": requests}    
+        self.ss.batch_update(body)        
+            
+
     
+    def addHyperlink(self, hyperlink, text, destinationSheetName, rowIndex, colIndex):
+        sheetId = self.ss.worksheet(destinationSheetName)._properties['sheetId']
+        request =\
+                {
+                "updateCells": {
+                        "rows": [
+                            {
+                            "values": [
+                                {
+                                "userEnteredValue": {
+                                "formulaValue":"=HYPERLINK({},{})".format(hyperlink, text) 
+                                }
+                                }
+                            ]
+                            }
+                        ],
+                        "fields": "userEnteredValue",
+                        "start": {
+                            "sheetId": sheetId,
+                            "rowIndex": rowIndex,
+                            "columnIndex": colIndex
+                        }
+                }
+              }
+        return request
+
+
     
     def gFormat(self,sourceSheetName,destinationSheetName):  # "Formating" , "MR Status"
-    
+        #the requests are appended in a list of requests to be sent as one update batch; this to save API calls (quotas) 
         #copy formating template
         sourceSheetId = self.ss.worksheet(sourceSheetName)._properties['sheetId']
         destinationSheetId = self.ss.worksheet(destinationSheetName)._properties['sheetId']
-        body = {
-            "requests": [
+        requests=[]
+        requests.append(
                 {
                     "copyPaste": {
                         "source": {
@@ -146,45 +186,40 @@ class gDashboard:
                             "startRowIndex": 0,
                             "endRowIndex": 40,
                             "startColumnIndex": 0,
-                            "endColumnIndex": 20
+                            "endColumnIndex": 12
                         },
                         "destination": {
                             "sheetId": destinationSheetId,
                             "startRowIndex": 0,
                             "endRowIndex": 40,
                             "startColumnIndex": 0,
-                            "endColumnIndex": 20
+                            "endColumnIndex": 12
                         },
                         "pasteType": "PASTE_FORMAT"
                     }
                 }
-            ]
-        }
-        self.ss.batch_update(body)    
+        )
+        
 
         #resize columns fit to data, except col 0
         sheetId = self.ss.worksheet(destinationSheetName)._properties['sheetId']
-        body = {
-            "requests": [
+        requests.append(
                 {
                 'autoResizeDimensions': {
                     'dimensions': {
                         'sheetId': sheetId, 
                         'dimension': 'COLUMNS', 
                         'startIndex': 1, 
-                        'endIndex': 20
+                        'endIndex': 12
                         }
                     }
-                }
-            ]   
-        }
-        self.ss.batch_update(body)
+                }   
+        )
 
 
         #resize col 0					
         sheetId = self.ss.worksheet(destinationSheetName)._properties['sheetId']
-        body = {
-            "requests": [
+        requests.append(
                 {
                     "updateDimensionProperties": {
                         "range": {
@@ -199,15 +234,12 @@ class gDashboard:
                         "fields": "pixelSize"
                     }
                 }
-            ]
-        }
-        self.ss.batch_update(body)
+        )
 
 
         #resize milestones to be cleaner
         sheetId = self.ss.worksheet(destinationSheetName)._properties['sheetId']
-        body = {
-            "requests": [
+        requests.append(
                 {
                     "updateDimensionProperties": {
                         "range": {
@@ -222,17 +254,20 @@ class gDashboard:
                         "fields": "pixelSize"
                     }
                 }
-            ]
-        }
+        )
+    
+        body = {"requests": requests}    
         self.ss.batch_update(body)
   
+
 
 def main():
     my_gDashboard=gDashboard("/home/oaicicd/remi/creds.json", 'OAI RAN Dashboard', 'MR Status')
     cmd="""curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100" """ 
     my_gDashboard.fetchData(cmd)
-    my_gDashboard.gBuild()
+    my_gDashboard.gBuild("MR Status")
     my_gDashboard.gFormat("Formating" , "MR Status")
+
       
         
 if __name__ == "__main__":
