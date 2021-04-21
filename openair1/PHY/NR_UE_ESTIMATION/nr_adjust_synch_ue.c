@@ -82,7 +82,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   //max_pos_fil = max_pos;
 
-      diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
+      diff = max_pos_fil; // - (frame_parms->nb_prefix_samples>>3);
 
       if (frame_parms->freq_range==nr_FR2) 
 		sync_offset = 2;
