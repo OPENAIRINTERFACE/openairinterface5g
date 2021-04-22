@@ -25,11 +25,11 @@
 	<htmlTabName>Physical Simulators Check</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
- 0102001
+ 010201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="0102001">
+	<testCase id="010201">
 		<class>Deploy_Run_PhySim</class>
 		<desc>Deploy and run physical simulator on openshift</desc>
 	</testCase>
