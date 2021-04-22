@@ -63,7 +63,7 @@
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
@@ -83,16 +83,23 @@ uint16_t sf_ahead=4 ;
 uint16_t sl_ahead=0;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+msc_interface_t msc_interface;
+
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
 {
   return 0;
 }
@@ -173,6 +180,7 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 }
 
 void config_common(int Mod_idP,
+                   int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
@@ -679,7 +687,7 @@ int main(int argc, char **argv)
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
   prepare_scc(rrc.carrier.servingcellconfigcommon);
-  uint64_t ssb_bitmap;
+  uint64_t ssb_bitmap = 1;
   fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
   ssb_bitmap = 1;// Enable only first SSB with index ssb_indx=0
   fix_scc(scc,ssb_bitmap);
@@ -766,7 +774,7 @@ int main(int argc, char **argv)
 				30e-9,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (gNB2UE==NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -858,7 +866,8 @@ int main(int argc, char **argv)
   // generate signal
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
   gNB->pbch_configured = 1;
-  gNB->ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
+  gNB->ssb[0].ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
+  gNB->ssb[0].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = 0;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
@@ -984,7 +993,7 @@ int main(int argc, char **argv)
           printf("[DLSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
         }
         if (run_initial_sync)
-          nr_common_signal_procedures(gNB,frame,slot);
+          nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[0].ssb_pdu);
         else
           phy_procedures_gNB_TX(gNB,frame,slot,0);
             

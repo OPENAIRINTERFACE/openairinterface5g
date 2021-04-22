@@ -189,7 +189,10 @@ typedef struct {
   int16_t sqrt_rho_b;
 } NR_gNB_DLSCH_t;
 
-
+typedef struct {
+  bool active;
+  nfapi_nr_dl_tti_ssb_pdu ssb_pdu;
+} NR_gNB_SSB_t;
 
 typedef struct {
   int frame;
@@ -668,6 +671,7 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
 
+#define MAX_NUM_NR_PRACH_PREAMBLES 64
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
 #define MAX_UL_PDUS_PER_SLOT 8
@@ -718,10 +722,10 @@ typedef struct PHY_VARS_gNB_s {
   
   //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
-  nfapi_nr_dl_tti_ssb_pdu      ssb_pdu;
 
   uint16_t num_pdsch_rnti[80];
-  NR_gNB_PBCH         pbch;
+  NR_gNB_SSB_t       ssb[64];
+  NR_gNB_PBCH        pbch;
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
@@ -851,7 +855,7 @@ typedef struct PHY_VARS_gNB_s {
   tpool_t *threadPool;
   int nbDecode;
   uint8_t pusch_proc_threads;
-
+  void * scopeData;
 } PHY_VARS_gNB;
 
 typedef struct LDPCDecode_s {

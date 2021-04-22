@@ -431,7 +431,7 @@ uint16_t nr_get_csi_bitlen(int Mod_idP,
       NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP==UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type){
     CSI_report_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
     csi_bitlen+= ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
-                  CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen * 
+                  CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
                   (CSI_report_bitlen->nb_ssbri_cri -1 )));
   } else{
    csi_meas_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
@@ -551,7 +551,9 @@ static void handle_dl_harq(module_id_t mod_id,
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
+  } else {
+    harq->round++;
+    if (harq->round == MAX_HARQ_ROUNDS) {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
@@ -560,7 +562,7 @@ static void handle_dl_harq(module_id_t mod_id,
     LOG_D(MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
-    harq->round++;
+    }
   }
 }
 
@@ -636,7 +638,7 @@ int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_i
 //returns the measured RSRP value (upper limit)
 int get_measured_rsrp(uint8_t index) {
   //if index is invalid returning minimum rsrp -140
-  if((index >= 0 && index <= 15) || index >= 114)
+  if(index <= 15 || index >= 114)
     return MIN_RSRP_VALUE;
 
   return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
@@ -872,7 +874,7 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
     reportQuantity_type = UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
     LOG_D(PHY,"SFN/SF:%d/%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
 
-    if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type || 
+    if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type ||
         NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type) {
       uint8_t csi_ssb_idx = 0;
       uint8_t diff_rsrp_idx = 0;
@@ -904,12 +906,12 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
           reverse_n_bits(payload, cri_ssbri_bitlen);
 
         if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
-          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
+          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
             *(UE_info->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
         else
-          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
+          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
             *(UE_info->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
-	  
+
         *payload >>= cri_ssbri_bitlen;
         LOG_D(PHY,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
       }
@@ -931,7 +933,7 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
     }
   }
 
-  if ( !(reportQuantity_type)) 
+  if ( !(reportQuantity_type))
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
 
 }

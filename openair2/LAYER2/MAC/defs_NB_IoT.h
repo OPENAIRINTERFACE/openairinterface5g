@@ -537,9 +537,6 @@ typedef  struct {
 
 // global variables
 
-nprach_parameters_NB_IoT_t nprach_list[3];
 
-//DLSF Table
-DLSF_INFO_t DLSF_information;
 
 #endif /*__LAYER2_MAC_DEFS_NB_IoT_H__ */

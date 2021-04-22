@@ -42,7 +42,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <linux/sysctl.h>
-#include <sys/sysctl.h>
 
 #include "common_lib.h"
 #include "ethernet_lib.h"

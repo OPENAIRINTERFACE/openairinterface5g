@@ -869,7 +869,6 @@ static void *ru_thread_asynch_rxtx( void *param ) {
   LOG_I(PHY, "devices ok (ru_thread_asynch_rxtx)\n");
 
   while (!oai_exit) {
-    if (oai_exit) break;
 
     if (ru->state != RU_RUN) {
       subframe=0;

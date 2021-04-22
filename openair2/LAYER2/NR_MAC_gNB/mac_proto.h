@@ -41,6 +41,7 @@ void set_cset_offset(uint16_t);
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
+                   int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
@@ -72,6 +73,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
 void schedule_control_sib1(module_id_t module_id,
                            int CC_id,
+                           NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                            int time_domain_allocation,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
@@ -120,7 +122,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP,
                          uint16_t preamble_index, uint8_t freq_index, uint8_t symbol, int16_t timing_offset);
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
@@ -324,6 +326,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
+void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti);
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
@@ -359,7 +363,17 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
+int nr_write_ce_dlsch_pdu(module_id_t module_idP,
+                          const NR_UE_sched_ctrl_t *ue_sched_ctl,
+                          unsigned char *mac_pdu,
+                          unsigned char drx_cmd,
+                          unsigned char *ue_cont_res_id);
+
 void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
+void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
+void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -373,7 +387,7 @@ int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
 
-void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int CC_id);
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, uint16_t symStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.

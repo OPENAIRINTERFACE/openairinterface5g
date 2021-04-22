@@ -3,7 +3,7 @@
 
 #include "PHY/defs_common.h"
 
-THREAD_STRUCT thread_struct;
+extern THREAD_STRUCT thread_struct;
 
 static inline void set_parallel_conf(char *parallel_conf) {
   mapping config[]= {

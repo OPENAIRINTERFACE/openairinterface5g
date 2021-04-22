@@ -61,8 +61,6 @@ uint32_t do_forms=0;
 unsigned int mmapped_dma=0;
 int8_t threequarter_fs=0;
 
-uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 20;
 int chain_offset=0;
 uint16_t sl_ahead=6;
 uint16_t sf_ahead=6;
@@ -70,16 +68,15 @@ uint32_t timing_advance = 0;
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 int config_sync_var=-1;
 pthread_mutex_t nfapi_sync_mutex;
 pthread_cond_t nfapi_sync_cond;
 int nfapi_sync_var=-1;
-uint8_t nfapi_mode = NFAPI_MONOLITHIC; // Default to monolithic mode
 double cpuf;
 
+THREAD_STRUCT thread_struct;
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -95,7 +92,8 @@ time_stats_t nfapi_meas; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
 // not used but needed for link
 openair0_config_t openair0_cfg[MAX_CARDS];
-
+uint16_t slot_ahead=6;
+msc_interface_t msc_interface;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 int flexran_agent_start(mid_t mod_id) {
@@ -122,7 +120,6 @@ int restart_L1L2(module_id_t gnb_id) {
 }
 
 static int wait_for_sync = 0;
-static char *itti_dump_file = NULL;
 static double snr_dB=20;
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
@@ -996,7 +993,7 @@ int main( int argc, char **argv ) {
                  (void *)NULL, "time_meas", -1, OAI_PRIORITY_RT_LOW);
   }
 
-  if(IS_SOFTMODEM_DOFORMS) {
+  if(IS_SOFTMODEM_DOSCOPE) {
     scopeParms_t tmp= {&argc, argv, &ru, RC.gNB[0]};
     load_softscope("nr",&tmp);
   }
