@@ -65,8 +65,9 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                 buffer[2];
     header_size = 3;
   }
-
-  if (entity->has_integrity) {
+  /* SRBs always have MAC-I, even if integrity is not active */
+  if (entity->has_integrity
+      || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
     integrity_size = 0;
@@ -181,7 +182,9 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
     header_size = 3;
   }
 
-  if (entity->has_integrity) {
+/* SRBs always have MAC-I, even if integrity is not active */
+  if (entity->has_integrity
+      || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
     integrity_size = 0;
@@ -194,6 +197,9 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
                       (unsigned char *)buf + header_size + size,
                       (unsigned char *)buf, header_size + size,
                       entity->rb_id, count, entity->is_gnb ? 1 : 0);
+  else if (integrity_size == 4)
+    /* set MAC-I to 0 for SRBs with integrity not active */
+    memset(buf + header_size + size, 0, 4);
 
   if (entity->has_ciphering)
     entity->cipher(entity->security_context,

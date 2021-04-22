@@ -1151,7 +1151,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 
   physicalCellGroupConfig                                                   = calloc(1,sizeof(*physicalCellGroupConfig));
   physicalCellGroupConfig->p_NR_FR1                                         = calloc(1,sizeof(*physicalCellGroupConfig->p_NR_FR1));
-  *physicalCellGroupConfig->p_NR_FR1                                         = 0;
+  *physicalCellGroupConfig->p_NR_FR1                                        = 20;
   physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook                          = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
   cellGroupConfig->physicalCellGroupConfig                                  = physicalCellGroupConfig;
   
@@ -1707,7 +1707,8 @@ do_NR_DLInformationTransfer(
     encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
     AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
                 "DLInformationTransfer", encoded);
-    LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    LOG_I(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
     return encoded;
 }
 

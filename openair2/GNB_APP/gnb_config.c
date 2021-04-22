@@ -597,11 +597,12 @@ void RCconfig_NR_L1(void) {
         RC.gNB[j]                       = (PHY_VARS_gNB *)malloc(sizeof(PHY_VARS_gNB));
         LOG_I(NR_PHY,"RC.gNB[%d] = %p\n",j,RC.gNB[j]);
         memset(RC.gNB[j],0,sizeof(PHY_VARS_gNB));
-	RC.gNB[j]->Mod_id  = j;
+	      RC.gNB[j]->Mod_id  = j;
       }
 
       RC.gNB[j]->pusch_proc_threads = *(L1_ParamList.paramarray[j][L1_PUSCH_PROC_THREADS].uptr);
-
+      RC.gNB[j]->pucch0_thres       = *(L1_ParamList.paramarray[j][L1_PUCCH0_DTX_THRESHOLD].uptr);
+      RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
         //sf_ahead = 2; // Need 4 subframe gap between RX and TX
       }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
@@ -671,6 +672,8 @@ void RCconfig_nr_macrlc() {
 
     for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
       RC.nb_nr_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
+      RC.nrmac[j]->pusch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCHTARGETSNRX10_IDX].iptr);
+      RC.nrmac[j]->pucch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCHTARGETSNRX10_IDX].iptr);
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
   // check number of instances is same as RRC/PDCP
@@ -710,9 +713,6 @@ void RCconfig_nr_macrlc() {
         RC.nrmac[j]->eth_params_s.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
-	RC.nrmac[j]->pusch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCHTARGETPOWX1_IDX].iptr);
-	RC.nrmac[j]->pucch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCHTARGETPOWX1_IDX].iptr);
-        //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.nrmac[j]->eth_params_s.my_portc);
         configure_nr_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);

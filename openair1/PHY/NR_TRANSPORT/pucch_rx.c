@@ -161,6 +161,7 @@ int16_t idft12_im[12][12] = {
 
 
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
@@ -173,9 +174,23 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
 
+
   AssertFatal(pucch_pdu->bit_len_harq > 0 || pucch_pdu->sr_flag > 0,
 	      "Either bit_len_harq (%d) or sr_flag (%d) must be > 0\n",
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
+
+  NR_gNB_UCI_STATS_t *uci_stats=NULL;
+  NR_gNB_UCI_STATS_t *first_uci_stats=NULL;
+  for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++)
+     if (gNB->uci_stats[i].rnti == pucch_pdu->rnti) {
+        uci_stats = &gNB->uci_stats[i];
+        break;
+     } else if (first_uci_stats == NULL && gNB->uci_stats[i].rnti == 0) first_uci_stats = &gNB->uci_stats[i];
+
+  if (uci_stats == NULL) { uci_stats=first_uci_stats; uci_stats->rnti = pucch_pdu->rnti;}
+
+  AssertFatal(uci_stats!=NULL,"No stat index found\n");
+  uci_stats->frame = frame;
 
   if(pucch_pdu->bit_len_harq==0){
     mcs=table1_mcs;
@@ -236,7 +251,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
 
   AssertFatal(pucch_pdu->nr_of_symbols < 3,"nr_of_symbols %d not allowed\n",pucch_pdu->nr_of_symbols);
-  uint32_t re_offset=0;
+  uint32_t re_offset[2]={0,0};
   uint8_t l2;
 
   const int16_t *x_re[2],*x_im[2];
@@ -252,22 +267,23 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   memset((void*)xr[0],0,24*sizeof(int16_t));
   memset((void*)xr[1],0,24*sizeof(int16_t));
   int n2;
+
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
     l2 = l+pucch_pdu->start_symbol_index;
-    re_offset = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
-    if (re_offset>= frame_parms->ofdm_symbol_size) 
-      re_offset-=frame_parms->ofdm_symbol_size;
+    re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
+    if (re_offset[l]>= frame_parms->ofdm_symbol_size)
+      re_offset[l]-=frame_parms->ofdm_symbol_size;
   
-    AssertFatal(re_offset+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
+    AssertFatal(re_offset[l]+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
 
-    int16_t *r=(int16_t*)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset];
+    int16_t *r=(int16_t*)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset[l]];
     n2=0;
     for (n=0;n<12;n++,n2+=2) {
       xr[l][n2]  =(int16_t)(((int32_t)x_re[l][n]*r[n2]+(int32_t)x_im[l][n]*r[n2+1])>>15);
       xr[l][n2+1]=(int16_t)(((int32_t)x_re[l][n]*r[n2+1]-(int32_t)x_im[l][n]*r[n2])>>15);
 #ifdef DEBUG_NR_PUCCH_RX
       printf("x (%d,%d), r%d.%d (%d,%d), xr (%d,%d)\n",
-	     x_re[l][n],x_im[l][n],l2,re_offset,r[n2],r[n2+1],xr[l][n2],xr[l][n2+1]);
+	     x_re[l][n],x_im[l][n],l2,re_offset[l],r[n2],r[n2+1],xr[l][n2],xr[l][n2+1]);
 #endif
     }
   }
@@ -285,8 +301,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
       n2=0;
       for (n=0;n<12;n++,n2+=2) {
-	corr_re[l]+=(xr[l][n2]*idft12_re[seq_index][n]+xr[l][n2+1]*idft12_im[seq_index][n])>>15;
-	corr_im[l]+=(xr[l][n2]*idft12_im[seq_index][n]-xr[l][n2+1]*idft12_re[seq_index][n])>>15;
+	       corr_re[l]+=(xr[l][n2]*idft12_re[seq_index][n]+xr[l][n2+1]*idft12_im[seq_index][n])>>15;
+	       corr_im[l]+=(xr[l][n2]*idft12_im[seq_index][n]-xr[l][n2+1]*idft12_re[seq_index][n])>>15;
       }
     }
 
@@ -311,6 +327,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if (temp>xrtmag) {
       xrtmag=temp;
       maxpos=i;
+      uci_stats->current_pucch0_stat0 = dB_fixed64((int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0]);
+      if (l==2) uci_stats->current_pucch0_stat1 = dB_fixed64((int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1]);
     }
   }
   if(nr_sequences>1)
@@ -327,31 +345,37 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
 
   // estimate CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)) - (10*gNB->measurements.n0_power_tot_dB);
+  int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
+  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset[0]],12)) - (10*max_n0);
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
   else cqi=(640+SNRtimes10)/5;
 
+  uci_stats->pucch0_thres = gNB->pucch0_thres + (10*max_n0);
   bool no_conf=false;
   if (nr_sequences>1) {
-    if ((xrtmag_dB<(11+dB_fixed(no_corr))) || (dB_fixed(av_corr)<(13+gNB->measurements.n0_power_tot_dB))) //TODO  these are temporary threshold based on measurments with the phone
+    if (10*xrtmag_dB < uci_stats->pucch0_thres)
       no_conf=true;
   }
-  gNB->bad_pucch += no_conf;
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
   uci_pdu->rnti = pucch_pdu->rnti;
   uci_pdu->ul_cqi = cqi;
   uci_pdu->timing_advance = 0xffff; // currently not valid
-  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
+  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset[0]],12)));
+
+  uci_stats->pucch0_n00 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[0]];
+  uci_stats->pucch0_n01 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[1]];
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    uci_pdu->sr->sr_confidence_level = (xrtmag_dB<(13+gNB->measurements.n0_power_tot_dB)) ? 1 : 0;
+    uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
+    uci_stats->pucch0_sr_trials++;
     if (xrtmag_dB>(gNB->measurements.n0_power_tot_dB)) {
       uci_pdu->sr->sr_indication = 1;
+      uci_stats->pucch0_positive_SR++;
     } else {
       uci_pdu->sr->sr_indication = 0;
     }
@@ -359,16 +383,19 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   else if (pucch_pdu->bit_len_harq==1) {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
     uci_pdu->harq->num_harq = 1;
-    uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
+    uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d\n",
-          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
+    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d pucch0_thres %d\n",
+          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB,max_n0,uci_stats->pucch0_thres);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
-      uci_pdu->sr->sr_confidence_level = (no_conf) ? 1 : 0;
+      uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
+      uci_stats->pucch0_positive_SR++;
     }
+    uci_stats->pucch01_trials++;
+
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
@@ -1611,4 +1638,34 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     uci_pdu->pduBitmap|=8;
   }
 }
-    
+
+
+void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
+
+   int strpos=0;
+   char output[16384];
+
+   for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++){
+      if (gNB->uci_stats[i].rnti>0) {
+         NR_gNB_UCI_STATS_t *uci_stats = &gNB->uci_stats[i];
+         if (uci_stats->pucch0_sr_trials > 0)
+             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch0_sr_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_sr_thres %d dB, current pucch1_stat0 %d dB, current pucch1_stat1 %d dB, positive SR count %d\n",
+                             i,uci_stats->rnti,uci_stats->pucch0_sr_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_sr_thres,dB_fixed(uci_stats->current_pucch0_sr_stat0),dB_fixed(uci_stats->current_pucch0_sr_stat1),uci_stats->pucch0_positive_SR);
+         if (uci_stats->pucch01_trials > 0)
+            strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
+                            i,uci_stats->rnti,uci_stats->pucch01_trials,uci_stats->pucch0_n01,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch01_DTX);
+
+         if (uci_stats->pucch02_trials > 0)
+             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
+                             i,uci_stats->rnti,uci_stats->pucch02_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch02_DTX);
+
+         if (uci_stats->pucch2_trials > 0)
+           strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
+                           i,uci_stats->rnti,
+                           uci_stats->pucch2_trials,
+                           uci_stats->pucch2_DTX);
+       }
+    }
+    if (fd) fprintf(fd,"%s",output);
+    else    printf("%s",output);
+}

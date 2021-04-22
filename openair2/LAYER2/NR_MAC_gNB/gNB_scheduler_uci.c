@@ -971,10 +971,11 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_01->ul_cqi,
-                                30);
-
+  if (uci_01->harq->harq_confidence_level == 0)
+    sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+                                  uci_01->ul_cqi,
+                                  30);
+  LOG_I(NR_MAC,"pucch tpc %d\n",sched_ctrl->tpc1);
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if (((uci_01->pduBitmap >> 1) & 0x01)) {

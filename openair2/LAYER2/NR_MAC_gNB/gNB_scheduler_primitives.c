@@ -1247,9 +1247,9 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_0:
     switch (rnti_type) {
     case NR_RNTI_C:
-      // indicating a DL DCI format 1bit
+      // indicating a UL DCI format 1bit
       pos=1;
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      //*dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos+=fsize;
@@ -1854,6 +1854,7 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10
 
   int snrx10 = (cqi*5) - 640;
+  LOG_I(NR_MAC,"tpc : target %d, snrx10 %d\n",target,snrx10);
   if (snrx10 > target + incr) return 0; // decrease 1dB
   if (snrx10 < target - incr) return 2; // increase 1dB
   if (snrx10 < target - (3*incr)) return 3; // increase 3dB
