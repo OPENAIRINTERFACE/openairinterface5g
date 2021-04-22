@@ -263,9 +263,9 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM):
         elif re.match('^\-\-OCPassword=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-OCPassword=(.+)$', myArgv, re.IGNORECASE)
             PHYSIM.OCPassword = matchReg.group(1)
-        elif re.match('^\-\-OCWorkspace=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match('^\-\-OCWorkspace=(.+)$', myArgv, re.IGNORECASE)
-            PHYSIM.OCWorkspace = matchReg.group(1)
+        elif re.match('^\-\-OCProjectName=(.+)$', myArgv, re.IGNORECASE):
+            matchReg = re.match('^\-\-OCProjectName=(.+)$', myArgv, re.IGNORECASE)
+            PHYSIM.OCProjectName = matchReg.group(1)
         else:
             HELP.GenericHelp(CONST.Version)
             sys.exit('Invalid Parameter: ' + myArgv)

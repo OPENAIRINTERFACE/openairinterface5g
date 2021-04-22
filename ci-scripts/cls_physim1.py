@@ -48,7 +48,7 @@ class PhySim:
 		self.eNBPassword = ""
 		self.OCUserName = ""
 		self.OCPassword = ""
-		self.OCWorkspace = ""
+		self.OCProjectName = ""
 		self.eNBSourceCodePath = ""
 		self.ranRepository = ""
 		self.ranBranch = ""
@@ -74,9 +74,9 @@ class PhySim:
 		lSourcePath = self.eNBSourceCodePath
 		ocUserName = self.OCUserName
 		ocPassword = self.OCPassword
-		ocWorkspace = self.OCWorkspace
+		ocProjectName = self.OCProjectName
 
-		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '' or ocUserName == '' or ocPassword == '' or ocWorkspace == '':
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '' or ocUserName == '' or ocPassword == '' or ocProjectName == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('Building on server: ' + lIpAddr)
@@ -138,13 +138,13 @@ class PhySim:
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
-		mySSH.command(f'oc project {ocWorkspace}', '\$', 6)
-		if mySSH.getBefore().count(f'Already on project "{ocWorkspace}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCWorkspace}"') == 0:
-			logging.error(f'\u001B[1m Unable to access OC project {ocWorkspace}\u001B[0m')
+		mySSH.command(f'oc project {ocProjectName}', '\$', 6)
+		if mySSH.getBefore().count(f'Already on project "{ocProjectName}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCProjectName}"') == 0:
+			logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
 			mySSH.close()
 			sys.exit(-1)
 		else:
-			logging.debug(f'\u001B[1m   Now using project {ocWorkspace}\u001B[0m')
+			logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
 
 		# Tag the image and push to the OC cluster
 		mySSH.command('oc whoami -t | sudo podman login -u ' + ocUserName + ' --password-stdin https://default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/ --tls-verify=false', '\$', 6)
@@ -156,13 +156,13 @@ class PhySim:
 			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
 		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml', '\$', 6)
 		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
-			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocWorkspace}\u001B[0m')
+			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocProjectName}\u001B[0m')
 			mySSH.close()
 			sys.exit(-1)
 		else:
-			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocWorkspace}\u001B[0m')
-		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag}', '\$', 6)
-		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag} --tls-verify=false', '\$', 30)
+			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocProjectName}\u001B[0m')
+		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag} --tls-verify=false', '\$', 30)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
 			mySSH.close()
@@ -200,18 +200,18 @@ class PhySim:
 		# Waiting to complete the running test
 		count = 0
 		isFinished = False
-		while(count < 24 and isFinished == False):
+		testCompleteCount = 0
+		while(count < 25 and isFinished == False):
 			time.sleep(58)
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
-			time.sleep(2)
-			result = re.search('oai-nr-dlsim[\S\d\w]+', mySSH.getBefore())
-			if result is not None:
-				podName1 = result.group()
-				mySSH.command(f'oc logs --tail=1 {podName1} 2>&1', '\$', 6)
-				time.sleep(1)
+			for podName in podNames:
+				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6)
 				if mySSH.getBefore().count('Finished') != 0:
-					isFinished = True
+					testCompleteCount += 1
+				time.sleep(1)
+			if testCompleteCount == 12:
+				isFinished = True
 			count += 1
+			testCompleteCount = 0
 		if isFinished:
 			logging.debug('\u001B[1m PhySim test is Complete\u001B[0m')
         
@@ -230,7 +230,7 @@ class PhySim:
 				isFinished1 = True
 		if isFinished1 == True:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
-		mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCWorkspace}/oai-physim:{imageTag}', '\$', 6)
+		mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
 		mySSH.command('oc delete is oai-physim', '\$', 6)
 		logging.debug('\u001B[1m Deleted the Image and ImageStream\u001B[0m')
 		mySSH.command('oc logout', '\$', 6)
