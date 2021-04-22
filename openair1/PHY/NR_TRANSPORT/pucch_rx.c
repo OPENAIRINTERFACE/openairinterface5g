@@ -287,9 +287,14 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
     }
   }
-  int32_t corr_re[2],corr_im[2],no_corr=0;
+
+  int32_t corr_re[2];
+  int32_t corr_im[2];
+  //int32_t no_corr = 0;
   int seq_index;
-  int64_t temp,av_corr=0;
+  int64_t temp;
+  int64_t av_corr=0;
+
   for(i=0;i<nr_sequences;i++){
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
       corr_re[l]=0;corr_im[l]=0;
@@ -331,8 +336,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       if (l==2) uci_stats->current_pucch0_stat1 = dB_fixed64((int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1]);
     }
   }
-  if(nr_sequences>1)
-    no_corr=(av_corr-xrtmag)/(nr_sequences-1)/l;
+  //if(nr_sequences>1)
+  //  no_corr=(av_corr-xrtmag)/(nr_sequences-1)/l;
   av_corr/=nr_sequences/l;
 
   uint8_t xrtmag_dB = dB_fixed64(xrtmag);
