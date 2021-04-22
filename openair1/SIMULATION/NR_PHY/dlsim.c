@@ -1080,6 +1080,11 @@ int main(int argc, char **argv)
                              frame_length_complex_samples,
                              0);
 
+        double H_awgn_mimo[4][4] ={{1.0, 0.5, 0.25, 0.125},//rx 0
+                                   {0.5, 1.0, 0.5, 0.25},  //rx 1
+                                   {0.25, 0.5, 1.0, 0.5},  //rx 2
+                                   {0.125, 0.25, 0.5, 1.0}};//rx 3
+
         for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
              i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);
              i++) {
@@ -1090,9 +1095,9 @@ int main(int argc, char **argv)
               // sum up signals from different Tx antennas
               r_re[aa_rx][i] = 0;
               r_im[aa_rx][i] = 0;
-              for (aa=0; aa<n_tx; aa++) {
-                r_re[aa_rx][i] += s_re[aa][i];
-                r_im[aa_rx][i] += s_im[aa][i];
+             for (aa=0; aa<n_tx; aa++) {
+                r_re[aa_rx][i] += s_re[aa][i]*H_awgn_mimo[aa_rx][aa];
+                r_im[aa_rx][i] += s_im[aa][i]*H_awgn_mimo[aa_rx][aa];
               }
             }
             // Add Gaussian noise
