@@ -137,11 +137,20 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 #endif
 }
 
-void dump_pusch_stats(PHY_VARS_gNB *gNB) {
+#define STATSTRLEN 16384
+void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
+  char output[16384];
+  int stroff=0;
+
+  for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++) {
+    for (int aa=0;aa<gNB->frame_parms.nb_antennas_rx;aa++) 
+        stroff+=sprintf(output+stroff,"ULSCH RNTI %x: ulsch_power[%d] %d, ulsch_noise_power[%d] %d\n", 
+                        gNB->ulsch_stats[i].rnti, aa,gNB->ulsch_stats[i].power[aa],aa,gNB->ulsch_stats[i].noise_power[aa]);
+    AssertFatal(stroff<(STATSTRLEN-1000),"Increase STATSTRLEN\n");
+
     if (gNB->ulsch_stats[i].rnti>0) 
-      LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
+      stroff+=sprintf(output+stroff,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
 	    gNB->ulsch_stats[i].rnti,
 	    gNB->ulsch_stats[i].round_trials[0],
 	    (double)gNB->ulsch_stats[i].round_trials[1]/gNB->ulsch_stats[i].round_trials[0],
@@ -154,7 +163,7 @@ void dump_pusch_stats(PHY_VARS_gNB *gNB) {
 	    gNB->ulsch_stats[i].current_RI,
 	    gNB->ulsch_stats[i].total_bytes_rx,
 	    gNB->ulsch_stats[i].total_bytes_tx);
-  
+ } 
 }
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB) {
