@@ -61,6 +61,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   debug_ch_est = fopen("debug_ch_est.txt","w");
 #endif
 
+  //uint16_t Nid_cell = (eNB_offset == 0) ? gNB->frame_parms.Nid_cell : gNB->measurements.adj_cell_id[eNB_offset-1];
+
   uint8_t nushift;
   int **ul_ch_estimates  = gNB->pusch_vars[ul_id]->ul_ch_estimates;
   int **rxdataF = gNB->common_vars.rxdataF;
@@ -128,7 +130,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //------------------generate DMRS------------------//
 
   if (pusch_pdu->transform_precoding == transform_precoder_disabled) {
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   }
   else {  // if transform precoding or SC-FDMA is enabled in Uplink
 

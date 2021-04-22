@@ -36,6 +36,6 @@
 
 #include "rrc_defs.h"
 
-NR_UE_RRC_INST_t *NR_UE_rrc_inst;
+extern NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 
 #endif

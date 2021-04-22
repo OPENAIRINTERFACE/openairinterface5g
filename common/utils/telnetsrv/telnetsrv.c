@@ -461,12 +461,12 @@ int process_command(char *buf) {
   int i,j,k;
   char modulename[TELNET_CMD_MAXSIZE];
   char cmd[TELNET_CMD_MAXSIZE];
-  char cmdb[TELNET_MAX_MSGLENGTH];
+  char *cmdb=NULL;
   char *bufbck;
   int rt;
   memset(modulename,0,sizeof(modulename));
   memset(cmd,0,sizeof(cmd));
-  memset(cmdb,0,sizeof(cmdb));
+  
 
   if (strncasecmp(buf,"ex",2) == 0)
     return CMDSTATUS_EXIT;
@@ -490,12 +490,10 @@ int process_command(char *buf) {
     return CMDSTATUS_FOUND;
   }
 
-  memset(modulename,0,sizeof(modulename));
-  memset(cmd,0,sizeof(cmd));
-  memset(cmdb,0,sizeof(cmdb));
+  
   bufbck=strdup(buf);
   rt=CMDSTATUS_NOTFOUND;
-  j = sscanf(buf,"%19s %19s %19[^\t\n]",modulename,cmd,cmdb);
+  j = sscanf(buf,"%19s %19s %m[^\t\n]",modulename,cmd,&cmdb);
 
   if (telnetparams.telnetdbg > 0)
     printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
@@ -562,7 +560,7 @@ int process_command(char *buf) {
       rt= CMDSTATUS_FOUND;
     } /* loop */
   } /* for i */
-
+  free(cmdb);
   free(bufbck);
   return rt;
 }
@@ -702,7 +700,7 @@ void poll_telnetcmdq(void *qid, void *arg) {
 */
 void exec_moduleinit(char *modname) {
   void (*fptr)(void);
-  char initfunc[TELNET_CMD_MAXSIZE+9];
+  char initfunc[TELNET_CMD_MAXSIZE+10];
 
   if (strlen(modname) > TELNET_CMD_MAXSIZE) {
     fprintf(stderr,"[TELNETSRV] module %s not loaded, name exceeds the %i size limit\n",

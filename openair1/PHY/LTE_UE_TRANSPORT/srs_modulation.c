@@ -170,6 +170,7 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
 
   Msc_RS = msrsb * 6;
   k0 = ( ( (int16_t)(frame_parms->N_RB_UL>>1) - (int16_t)(msrs0>>1) ) * 12 ) + kTC;
+  AssertFatal(msrsb,"divide by 0");
   nb  = (4*n_RRC/msrsb)%Nb;
 
   for (b=0; b<=Bsrs; b++) {

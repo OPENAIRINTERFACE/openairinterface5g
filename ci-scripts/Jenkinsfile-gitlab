@@ -214,14 +214,14 @@ pipeline {
                 }
               }
             }
-        }
+   }
         
         stage ("Variant Builds") {
             parallel {
                 stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
-                            timeout (time: 30, unit: 'MINUTES') {
+                            timeout (time: 45, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -230,7 +230,7 @@ pipeline {
                 stage ("Build 5G gNB-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build gNB-USRP") {
-                            timeout (time: 30, unit: 'MINUTES') {
+                            timeout (time: 45, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -239,7 +239,7 @@ pipeline {
                 stage ("Build 5G NR-UE-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build nr-UE-USRP") {
-                            timeout (time: 30, unit: 'MINUTES') {
+                            timeout (time: 45, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -248,7 +248,7 @@ pipeline {
                 stage ("Build eNB-ethernet") {
                     steps {
                         gitlabCommitStatus(name: "Build eNB-ethernet") {
-                            timeout (time: 30, unit: 'MINUTES') {
+                            timeout (time: 45, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
@@ -259,7 +259,7 @@ pipeline {
                       // This is typically the last one to finish.
                       lock (vmResource) {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
-                            timeout (time: 30, unit: 'MINUTES') {
+                            timeout (time: 45, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }

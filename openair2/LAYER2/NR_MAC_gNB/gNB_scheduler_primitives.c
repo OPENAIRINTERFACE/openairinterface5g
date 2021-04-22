@@ -178,7 +178,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   int coreset_id = coreset->controlResourceSetId;
 
   int *cce_list;
-  if(bwp->bwp_Id == 0) {
+  if( bwp==NULL || bwp->bwp_Id == 0 ) {
     cce_list = nr_mac->cce_list[1][0];
   } else {
     cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -563,6 +563,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp)
 {
+  int sps = 0;
+
   if (bwp) { // This is not the InitialBWP
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -571,8 +573,18 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
     // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+    sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+  }
+  else { // this is for InitialBWP
+    pdcch_pdu->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->SubcarrierSpacing = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+    pdcch_pdu->CyclicPrefix = (scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix==NULL) ? 0 : *scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix;
 
+    // first symbol
+    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
+    sps = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+  }
     AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
     
@@ -617,10 +629,6 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
-  }
-  else { // this is for InitialBWP
-    AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
-  }
 }
 
 
@@ -1134,6 +1142,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       break;
 
     case NR_RNTI_TC:
+      pos = 1;
       // indicating a DL DCI format 1bit
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
       // Freq domain assignment 0-16 bit
@@ -1162,9 +1171,27 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // TPC command for scheduled PUCCH – 2 bits
       for (int i = 0; i < 2; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->tpc >> (1 - i)) & 1) << (dci_size - pos++);
+      // PUCCH resource indicator – 3 bits
+      for (int i = 0; i < 3; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->pucch_resource_indicator >> (2 - i)) & 1) << (dci_size - pos++);
       // PDSCH-to-HARQ_feedback timing indicator – 3 bits
       for (int i = 0; i < 3; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val >> (2 - i)) & 1) << (dci_size - pos++);
+
+      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
+
       break;
     }
     break;
@@ -1682,7 +1709,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_I(MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);
@@ -1738,7 +1765,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
     if (rnti_to_remove_count == 10) exit(1);
     rnti_to_remove[rnti_to_remove_count] = rnti;
-    LOG_W(MAC, "to remove in mac rnti_to_remove[%d]=%d\n", rnti_to_remove_count, rnti);
+    LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
     rnti_to_remove_count++;
     if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
   }
@@ -1756,6 +1783,16 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
       }
     }
   }
+}
+
+void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
+  // Hack to remove UE in the phy (following the same procedure as in function mac_remove_nr_ue)
+  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+  if (rnti_to_remove_count == 10) exit(1);
+  rnti_to_remove[rnti_to_remove_count] = rnti;
+  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
+  rnti_to_remove_count++;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 }
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {

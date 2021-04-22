@@ -324,12 +324,12 @@ typedef enum {
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define GNBNETPARAMS_DESC {  \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NG_AMF,        NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_NG_AMF,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NG_AMF,        NULL,      0,         strptr:NULL,         defstrval:"lo",      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_NG_AMF,          NULL,      0,         strptr:NULL,         defstrval:"127.0.0.1",      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,      0,         strptr:NULL,         defstrval:"lo",      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,      0,         strptr:NULL,         defstrval:"127.0.0.1",      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
-{GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:"127.0.0.1",      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0}      \
 }   
 

@@ -95,6 +95,7 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
 
+int	tx_req_num_elems;
 extern uint16_t sf_ahead;
 //extern int tx_req_UE_MAC1();
 
@@ -181,9 +182,8 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t abstraction_flag)
 
 {
-  PHY_VARS_UE *ue = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
-  memset(ue,0,sizeof(PHY_VARS_UE));
-
+  PHY_VARS_UE *ue = (PHY_VARS_UE *)calloc(1,sizeof(PHY_VARS_UE));
+  AssertFatal(ue,"");
   if (frame_parms!=(LTE_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }

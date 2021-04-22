@@ -89,7 +89,7 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 
 #include "T.h"
@@ -119,7 +119,6 @@ uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
-extern int usrp_tx_thread;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -1344,12 +1343,17 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-
+      if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData) 
+         ((scopeData_t*)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
       // Do PRACH RU processing
 
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
+
+	T(T_GNB_PHY_PRACH_INPUT_SIGNAL, T_INT(proc->frame_rx), T_INT(proc->tti_rx), T_INT(0),
+	  T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
+
 	N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
 	/*
 	get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,

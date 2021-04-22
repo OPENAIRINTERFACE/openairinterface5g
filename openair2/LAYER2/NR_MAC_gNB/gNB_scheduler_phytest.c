@@ -164,7 +164,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
 						    scc->dmrs_TypeA_Position,
-						    NrOfSymbols);
+						    NrOfSymbols,
+                StartSymbolIndex);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");

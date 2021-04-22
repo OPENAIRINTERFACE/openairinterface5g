@@ -667,7 +667,6 @@ typedef struct {
   unsigned char omv_enabled; // openair mobility visulizer
   unsigned char opp_enabled; // openair performance profiler
   unsigned char oeh_enabled; // openair event handler, with CLI this could provide a remote event management
-  char *itti_dump_file;
   unsigned char vcd_enabled;
   char *vcd_file;
   unsigned char eMBMS_active_state;
@@ -717,12 +716,6 @@ typedef struct {
    */
   unsigned char slot_isr;
   int           slot_sfd;
-  rnti_t        eNB_ue_module_id_to_rnti[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];/*!< \brief  used by eNB, this array can be filled:
-       by local virtualization: set directly by UE, or by remote UEs: TODO add signalisation on ethernet emulation link from UE to eNB*/
-
-  module_id_t   eNB_ue_local_uid_to_ue_module_id[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];/*!< \brief  used by eNB, this array can be filled:
-       by local virtualization: set directly by UE, or by remote UEs: TODO add signalisation on ethernet emulation link from UE to eNB*/
-
 } Info;
 /* @}*/
 
