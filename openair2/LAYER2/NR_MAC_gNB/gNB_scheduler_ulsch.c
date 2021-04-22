@@ -695,8 +695,14 @@ void pf_ul(module_id_t module_id,
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     sched_ctrl->sched_pusch.time_domain_allocation = tda;
-    sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, 
-					       sched_ctrl->active_bwp ? 
+    NR_BWP_DownlinkDedicated_t *bwp_Dedicated=NULL;
+    if (sched_ctrl->active_bwp) bwp_Dedicated = sched_ctrl->active_bwp->bwp_Dedicated;
+    else if (UE_info->CellGroup[UE_id] &&
+	     UE_info->CellGroup[UE_id]->spCellConfig &&
+	     UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated) 
+	bwp_Dedicated = UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+    sched_ctrl->search_space = get_searchspace(scc,bwp_Dedicated, 
+					       bwp_Dedicated ? 
 					       NR_SearchSpace__searchSpaceType_PR_ue_Specific:
 					       NR_SearchSpace__searchSpaceType_PR_common);
     sched_ctrl->coreset = get_coreset(scc,sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
