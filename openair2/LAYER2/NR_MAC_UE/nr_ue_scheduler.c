@@ -822,12 +822,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     slot_t rx_slot        = dl_info->slot;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
-  if (mac->cg &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
-    AssertFatal(1==0,"1 > %d.%d csi_MeasConfig is not null\n",rx_frame,rx_slot);
-
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     nr_scheduled_response_t scheduled_response;
     nr_dcireq_t dcireq;
