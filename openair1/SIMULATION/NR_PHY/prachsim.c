@@ -171,6 +171,8 @@ nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
 
+void processSlotTX(void *arg) {}
+
 int main(int argc, char **argv){
 
   char c;

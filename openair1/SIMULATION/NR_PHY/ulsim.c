@@ -190,6 +190,8 @@ typedef struct {
   tpool_t        Tpool;             // thread pool 
 } nrUE_params_t;
 
+void processSlotTX(void *arg) {}
+
 nrUE_params_t nrUE_params;
 
 nrUE_params_t *get_nrUE_params(void) {

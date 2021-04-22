@@ -195,6 +195,8 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+void processSlotTX(void *arg) {}
+
 //nFAPI P7 dummy functions
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
@@ -867,10 +869,6 @@ int main(int argc, char **argv)
   uint32_t errors_scrambling = 0;
 
   initTpool("N", &(nrUE_params.Tpool), false);
-  notifiedFIFO_t txFifo;
-  UE->txFifo = &txFifo;
-  initNotifiedFIFO(&txFifo);
-  pushNotifiedFIFO(&txFifo, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&txFifo,do_nothing));
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
