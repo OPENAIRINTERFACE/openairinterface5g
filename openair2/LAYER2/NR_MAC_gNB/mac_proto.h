@@ -271,8 +271,8 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 
 /* find a search space within a BWP */
 NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
-				  NR_BWP_Downlink_t *bwp,
-				  NR_SearchSpace__searchSpaceType_PR target_ss);
+                                  NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                                  NR_SearchSpace__searchSpaceType_PR target_ss);
 
 long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 

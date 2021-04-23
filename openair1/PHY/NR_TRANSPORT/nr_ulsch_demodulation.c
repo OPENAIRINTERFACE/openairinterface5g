@@ -1218,16 +1218,20 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul);
 
     nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
+    int num_symb =  rel15_ul->nr_of_symbols;
 
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-      gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
-                                                                        rel15_ul->rb_size*12);
-      LOG_D(PHY,"ulsch_power[%d] symbol %d %f (%p)\n",aarx,symbol,dB_fixed_x10( gNB->pusch_vars[ulsch_id]->ulsch_power[aarx])/10.0,
-            &gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size]);
+      if (symbol == rel15_ul->start_symbol_index) {
+          gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]=0;
+          gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]=0;
+      }
+      gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] += signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
+                                                                        rel15_ul->rb_size*12)/num_symb;
       if (gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]==1) return (1);
-      gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]=0;
-      for (int rb=0;rb<rel15_ul->rb_size;rb++)
-         gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]+=gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start+rel15_ul->rb_start+rb]/rel15_ul->rb_size;
+      for (int rb=0;rb<rel15_ul->rb_size;rb++) {
+         printf("aarx %d symbol %d, rb %d => %d\n",aarx,symbol,rb,dB_fixed(gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start+rel15_ul->rb_start+rb]));
+         gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]+=gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start+rel15_ul->rb_start+rb]/rel15_ul->rb_size/num_symb;
+      }
     }     
   }
   stop_meas(&gNB->ulsch_channel_estimation_stats);

@@ -154,16 +154,15 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 }
 
 NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
-				  NR_BWP_Downlink_t *bwp,
+				  NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
 				  NR_SearchSpace__searchSpaceType_PR target_ss) {
 
-
-  const int n = bwp ?
-    bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count:
+  const int n = bwp_Dedicated ?
+    bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count:
     scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
   for (int i=0;i<n;i++) {
-    NR_SearchSpace_t *ss = bwp ?
-      bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i]:
+    NR_SearchSpace_t *ss = bwp_Dedicated ?
+      bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i]:
       scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
@@ -171,7 +170,7 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
       return ss;
     }
   }
-  AssertFatal(0, "Couldn't find an adequate searchspace\n");
+  AssertFatal(0, "Couldn't find an adequate searchspace bwp_Dedicated %p\n",bwp_Dedicated);
 }
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
