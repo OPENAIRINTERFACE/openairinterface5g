@@ -107,7 +107,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   rx_offset += frame_parms->ofdm_symbol_size * symbol;
 
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
-  //rx_offset -= nb_prefix_samples / 8;
+  rx_offset -= nb_prefix_samples / 8;
 
 #ifdef DEBUG_FEP
   //  if (ue->frame <100)
@@ -296,7 +296,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   // offset of n-th OFDM symbol
   rxdata_offset += symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples);
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
-  //rxdata_offset -= nb_prefix_samples / 8;
+  rxdata_offset -= nb_prefix_samples / 8;
 
   int16_t *rxdata_ptr;
 
