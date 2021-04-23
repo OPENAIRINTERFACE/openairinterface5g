@@ -528,21 +528,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
   }
 
-  if (mac->cg &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
-    AssertFatal(1==0,"6 > %d.%d csi_MeasConfig is not null\n",frame_tx,nr_slot_tx);
-
-
   N_UCI = O_SR + O_ACK + O_CSI;    
   if (N_UCI ==0) return(TRUE);
-
-  if (mac->cg &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
-    AssertFatal(1==0,"5 > %d.%d csi_MeasConfig is not null\n",frame_tx,nr_slot_tx);
 
   /* Part - III */
   /* Choice PUCCH format and its related parameters */
