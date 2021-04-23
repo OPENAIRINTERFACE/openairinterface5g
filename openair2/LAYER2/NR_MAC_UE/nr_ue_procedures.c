@@ -1171,10 +1171,11 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_DL_DCI_FORMAT_1_0:
     switch(rnti_type) {
     case NR_RNTI_RA:
-      // check BWP id 
-      if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
+      if(mac->scc_SIB) {
+        N_RB = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      } else {
+        N_RB = get_n_rb(mac, rnti_type);
+      }
       // Freq domain assignment
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos=fsize;
