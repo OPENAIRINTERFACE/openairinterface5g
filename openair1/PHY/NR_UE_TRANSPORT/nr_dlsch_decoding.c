@@ -588,7 +588,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       }
       else {
         LOG_D(PHY,"CRC NOT OK\n\033[0m");
-        ret = 1 + dlsch->max_ldpc_iterations;
       }
 
 
