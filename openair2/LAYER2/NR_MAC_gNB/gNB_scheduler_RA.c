@@ -532,10 +532,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       ra->bwp_id = 0;
       NR_BWP_Downlink_t *bwp=NULL;
       if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated &&
-	  ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
-	bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-	ra->bwp_id = 1;
+          ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+        ra->bwp_id = 1;
+	      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
       }
+
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
       LOG_D(NR_MAC,
