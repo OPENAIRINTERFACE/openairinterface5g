@@ -157,6 +157,19 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
+
+    int16_t *shift_rot;
+    if (symb_offset+symbol == (7 * (1 << frame_parms->numerology_index)))
+      shift_rot = frame_parms->timeshift_symbol_rotation[0];
+    else
+      shift_rot = frame_parms->timeshift_symbol_rotation[1];
+
+    multadd_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+          shift_rot,
+          (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+          1,
+          frame_parms->ofdm_symbol_size,
+          15);
   }
 
 #ifdef DEBUG_FEP

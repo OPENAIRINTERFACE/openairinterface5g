@@ -749,7 +749,6 @@ void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
 {
   const double fd = 15e3*(float)(1<<fp->numerology_index);
   const double Tc=(1/480e3/4096);
-  const double Nu=2048*64*(1/(float)(1<<fp->numerology_index));
   const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
   const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
   double t0;
