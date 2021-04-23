@@ -535,6 +535,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   RC.gNB[Mod_id]->configured     = 1;
 
   init_symbol_rotation(fp);
+  init_timeshift_rotation(fp);
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }

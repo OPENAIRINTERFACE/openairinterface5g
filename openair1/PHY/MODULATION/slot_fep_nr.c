@@ -346,7 +346,7 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 			  
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
 
-  for (int symbol=0;symbol<nsymb;symbol++) {
+  for (int symbol=first_symbol;symbol<nsymb;symbol++) {
     
     uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[1])[symbol + symb_offset];
     ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
@@ -356,5 +356,18 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 		      (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
 		      length,
 		      15);
+
+    int16_t *shift_rot;
+    if (symb_offset+symbol == (7 * (1 << frame_parms->numerology_index)))
+      shift_rot = frame_parms->timeshift_symbol_rotation[0];
+    else
+      shift_rot = frame_parms->timeshift_symbol_rotation[1];
+
+    multadd_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+          shift_rot,
+          (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+          1,
+          length,
+          15);
   }
 }
