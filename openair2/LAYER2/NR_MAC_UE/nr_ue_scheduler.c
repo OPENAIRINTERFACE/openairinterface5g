@@ -1146,7 +1146,7 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
   uint8_t format2 = 0xff;
   int nb_fdm;
 
-  uint8_t config_index, mu=get_softmodem_params()->numerology;
+  uint8_t config_index, mu;
   int msg1_FDM;
 
   uint8_t prach_conf_period_idx;
@@ -1160,6 +1160,14 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
+
+  if (setup->msg1_SubcarrierSpacing) {
+    mu = *setup->msg1_SubcarrierSpacing;
+  } else if(mac->scc) {
+    mu = mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  } else {
+    mu = get_softmodem_params()->numerology;
+  }
 
   msg1_FDM = rach_ConfigGeneric->msg1_FDM;
 
