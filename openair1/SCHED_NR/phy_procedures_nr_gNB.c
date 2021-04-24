@@ -194,6 +194,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+  if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
+
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
   //apply the OFDM symbol rotation here
@@ -549,6 +551,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   int power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset+(47*12)],12*18);
   LOG_D(PHY,"frame %d, slot %d: UL signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
+  start_meas(&gNB->phy_proc_rx);
+
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
@@ -655,7 +659,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  start_meas(&gNB->rx_pusch_stats);
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-            if (no_sig) {
+            if (no_sig && (get_softmodem_params()->phy_test == 0)) {
               LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
               nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
               return;
@@ -673,6 +677,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       }
     }
   }
+  stop_meas(&gNB->phy_proc_rx);
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));

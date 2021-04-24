@@ -597,7 +597,8 @@ int trx_usrp_write_init(openair0_device *device){
   write_thread->end                = 0;
   write_thread->count_write        = 0;
   printf("end of tx write thread\n");
-
+  pthread_mutex_init(&write_thread->mutex_write, NULL);
+  pthread_cond_init(&write_thread->cond_write, NULL);
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
 
   return(0);

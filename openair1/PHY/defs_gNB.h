@@ -854,6 +854,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_segmentation_stats;
 
   time_stats_t rx_pusch_stats;
+  time_stats_t ul_indication_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;
