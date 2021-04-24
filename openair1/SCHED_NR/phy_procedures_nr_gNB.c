@@ -444,14 +444,14 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
         if (pucch) {
           if ((pucch->active == 1) &&
-	      (pucch->frame == frame_rx) &&
-	      (pucch->slot == slot_rx) ) {
+	            (pucch->frame == frame_rx) &&
+	            (pucch->slot == slot_rx) ) {
             gNB->ulmask_symb = symbol;
             nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
             if ((symbol>=pucch_pdu->start_symbol_index) &&
                 (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
               for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-                rb2 = rb+pucch_pdu->prb_start;
+                rb2 = rb+pucch_pdu->prb_start+pucch_pdu->bwp_start;
                 gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
               }
               nb_rb+=pucch_pdu->prb_size;
@@ -479,7 +479,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
               if ((symbol>=symbol_start) &&
                   (symbol<symbol_end)){
                 for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
-                  rb2 = rb+ulsch_harq->ulsch_pdu.rb_start;
+                  rb2 = rb+ulsch_harq->ulsch_pdu.rb_start+ulsch_harq->ulsch_pdu.bwp_start;
                   gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
                 }
                 nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
@@ -537,12 +537,11 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   if (gNB->frame_parms.frame_type == TDD)
     for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
       if (gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {
-	if (num_symb==0) first_symb=symbol_count;
-	num_symb++;
+	      if (num_symb==0) first_symb=symbol_count;
+	      num_symb++;
       }
     }
-  else num_symb=14;
-
+  else num_symb=NR_NUMBER_OF_SYMBOLS_PER_SLOT;
   gNB_I0_measurements(gNB,first_symb,num_symb);
 
   int offset = 10*gNB->frame_parms.ofdm_symbol_size + gNB->frame_parms.first_carrier_offset;
@@ -553,8 +552,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if ((pucch->active == 1) &&
-	  (pucch->frame == frame_rx) &&
-	  (pucch->slot == slot_rx) ) {
+	       (pucch->frame == frame_rx) &&
+	       (pucch->slot == slot_rx) ) {
 
         pucch_decode_done = 1;
 
@@ -578,7 +577,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
           pucch->active = 0;
-	  break;
+	        break;
         case 2:
           num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
           gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
@@ -597,7 +596,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           pucch->active = 0;
           break;
         default:
-	  AssertFatal(1==0,"Only PUCCH formats 0 and 2 are currently supported\n");
+	        AssertFatal(1==0,"Only PUCCH formats 0 and 2 are currently supported\n");
         }
       }
     }
@@ -613,15 +612,18 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
         (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	ulsch_harq = ulsch->harq_processes[harq_pid];
-    	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-    	if ((ulsch_harq->status == NR_ACTIVE) &&
-          (ulsch_harq->frame == frame_rx) &&
-          (ulsch_harq->slot == slot_rx) &&
-          (ulsch_harq->handled == 0)){
+	      ulsch_harq = ulsch->harq_processes[harq_pid];
+    	  AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+    	  if ((ulsch_harq->status == NR_ACTIVE) &&
+            (ulsch_harq->frame == frame_rx) &&
+            (ulsch_harq->slot == slot_rx) &&
+            (ulsch_harq->handled == 0)){
 
           LOG_D(PHY, "PUSCH detection started in frame %d slot %d\n",
                 frame_rx,slot_rx);
+          int num_dmrs=0;
+          for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT; s++)
+             num_dmrs+=(ulsch_harq->ulsch_pdu.ul_dmrs_symb_pos>>s)&1;
 
 #ifdef DEBUG_RXDATA
           NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
@@ -652,16 +654,20 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
           uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
-	  start_meas(&gNB->rx_pusch_stats);
-	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-            if (no_sig) {
-              LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
-              nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
-              return;
-            }
-	  }
-	  stop_meas(&gNB->rx_pusch_stats);
+	        start_meas(&gNB->rx_pusch_stats);
+	        for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+	            no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+              if (no_sig) {
+                LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
+                nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
+                return;
+              }
+	        }
+          for (int aarx=0;aarx<gNB->frame_parms.nb_antennas_rx;aarx++) {
+             gNB->pusch_vars[ULSCH_id]->ulsch_power[aarx]/=num_dmrs;
+             gNB->pusch_vars[ULSCH_id]->ulsch_noise_power[aarx]/=num_dmrs;
+          }
+	        stop_meas(&gNB->rx_pusch_stats);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);

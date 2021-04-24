@@ -628,6 +628,10 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
 }
 
 static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(uint16_t algorithms) {
+
+  return NR_CipheringAlgorithm_nea0;
+
+
   if (algorithms & NGAP_ENCRYPTION_NEA3_MASK) {
     return NR_CipheringAlgorithm_nea3;
   }
@@ -640,10 +644,12 @@ static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(uint16_t algorithms) {
     return NR_CipheringAlgorithm_nea1;
   }
 
-  return NR_CipheringAlgorithm_nea0;
 }
 
 static e_NR_IntegrityProtAlgorithm rrc_gNB_select_integrity(uint16_t algorithms) {
+  
+  return NR_IntegrityProtAlgorithm_nia1;
+
   if (algorithms & NGAP_INTEGRITY_NIA3_MASK) {
     return NR_IntegrityProtAlgorithm_nia3;
   }
@@ -671,7 +677,7 @@ rrc_gNB_process_security(
   /* Save security parameters */
   ue_context_pP->ue_context.security_capabilities = *security_capabilities_pP;
   // translation
-  LOG_D(NR_RRC,
+  LOG_I(NR_RRC,
         "[gNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
         ctxt_pP->module_id,
         ue_context_pP->ue_context.security_capabilities.nRencryption_algorithms,

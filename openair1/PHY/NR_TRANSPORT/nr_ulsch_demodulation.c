@@ -1226,11 +1226,10 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
           gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]=0;
       }
       gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] += signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
-                                                                        rel15_ul->rb_size*12)/num_symb;
+                                                                        rel15_ul->rb_size*12);
       if (gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]==1) return (1);
       for (int rb=0;rb<rel15_ul->rb_size;rb++) {
-         printf("aarx %d symbol %d, rb %d => %d\n",aarx,symbol,rb,dB_fixed(gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start+rel15_ul->rb_start+rb]));
-         gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]+=gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start+rel15_ul->rb_start+rb]/rel15_ul->rb_size/num_symb;
+         gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx]+=gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start+rel15_ul->rb_start+rb]/rel15_ul->rb_size;
       }
     }     
   }
