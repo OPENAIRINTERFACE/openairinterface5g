@@ -204,17 +204,10 @@ void *gNB_app_task(void *args_p)
     configure_nr_rrc(gnb_id);
   }
 
-  for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
-    MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-    NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
-    LOG_I(GNB_APP, "Sending configuration message to NR_RRC task\n");
-    itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-  }
-
   if (RC.nb_nr_inst > 0)  {
     init_pdcp();
-    
   }
+
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
