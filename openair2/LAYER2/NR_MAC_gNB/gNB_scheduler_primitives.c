@@ -723,7 +723,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
   pucch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
   pucch_pdu->cyclic_prefix = (genericParameters->cyclicPrefix==NULL) ? 0 : *genericParameters->cyclicPrefix;
-  if (r_pucch<0){
+  if (r_pucch<0 || bwp){
     // we have either a dedicated BWP or Dedicated PUCCH configuration on InitialBWP
 	pucch_Config = bwp ?
 	  bwp->bwp_Dedicated->pucch_Config->choice.setup:
