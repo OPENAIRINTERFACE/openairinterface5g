@@ -53,6 +53,7 @@
 
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "executables/nr-softmodem.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -91,6 +92,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
         LOG_I(MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
+  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
 }
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
