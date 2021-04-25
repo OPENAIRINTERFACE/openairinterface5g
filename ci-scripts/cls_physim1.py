@@ -58,7 +58,7 @@ class PhySim:
 		self.testResult = {}
 		self.testCount = [0,0,0]
 		self.testSummary = {}
-		self.exitStatus=0
+		self.testStatus = False
 
 #-----------------$
 #PUBLIC Methods$
@@ -236,6 +236,8 @@ class PhySim:
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)
+		if self.testStatus == False:
+			sys.exit(-1)
 
 	def AnalyzeLogFile_phySim(self, HTML):
 		lIpAddr = self.eNBIPAddress
@@ -281,6 +283,8 @@ class PhySim:
 		self.testSummary['Nbtests'] = self.testCount[0]
 		self.testSummary['Nbpass'] =  self.testCount[1]
 		self.testSummary['Nbfail'] =  self.testCount[2]
+		if self.testSummary['Nbfail'] == 0:
+			self.testStatus = True
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
 		logging.info('\u001B[1m Physical Simulator Pass\u001B[0m')
