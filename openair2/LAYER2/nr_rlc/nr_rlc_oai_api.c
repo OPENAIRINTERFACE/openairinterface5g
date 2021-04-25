@@ -940,15 +940,15 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
       if (rlc_bearer2add_list != NULL) {
-      for(j = 0; j < rlc_bearer2add_list->list.count; j++){
-        if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
-          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){  
-            if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
-              add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+        for(j = 0; j < rlc_bearer2add_list->list.count; j++){
+          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
+            if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){
+              if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
+                add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+              }
             }
-          }  
+          }
         }
-      }
       }
 
     }
