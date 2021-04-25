@@ -47,6 +47,7 @@
 #define CONFIG_STRING_L1_REMOTE_N_PORTD                    "remote_n_portd"
 #define CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE            "tr_n_preference"
 #define CONFIG_STRING_L1_PUSCH_PROC_THREADS                "pusch_proc_threads"
+#define CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR               "ofdm_offset_divisor"
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            L1 configuration parameters                                                                             */
@@ -62,7 +63,8 @@
 {CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:3,               TYPE_UINT,     0} \
+{CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:3,               TYPE_UINT,     0}, \
+{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:UINT_MAX,       TYPE_UINT,     0} \
 }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -74,6 +76,7 @@
 #define L1_LOCAL_N_PORTD_IDX                               7
 #define L1_REMOTE_N_PORTD_IDX                              8
 #define L1_PUSCH_PROC_THREADS                              9
+#define L1_OFDM_OFFSET_DIVISOR                             10
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

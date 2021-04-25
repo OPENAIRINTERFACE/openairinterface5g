@@ -616,6 +616,7 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
+  gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   char tp_param[] = "n";

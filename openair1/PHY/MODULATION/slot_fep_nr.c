@@ -107,7 +107,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   rx_offset += frame_parms->ofdm_symbol_size * symbol;
 
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
-  rx_offset -= nb_prefix_samples / 8;
+  rx_offset -= (nb_prefix_samples / frame_parms->ofdm_offset_divisor);
 
 #ifdef DEBUG_FEP
   //  if (ue->frame <100)
@@ -158,11 +158,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		      frame_parms->ofdm_symbol_size,
 		      15);
 
-    int16_t *shift_rot;
-    if (symb_offset+symbol == (7 * (1 << frame_parms->numerology_index)))
-      shift_rot = frame_parms->timeshift_symbol_rotation[0];
-    else
-      shift_rot = frame_parms->timeshift_symbol_rotation[1];
+    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation[0];
 
     multadd_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
           shift_rot,
@@ -309,7 +305,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   // offset of n-th OFDM symbol
   rxdata_offset += symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples);
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
-  rxdata_offset -= nb_prefix_samples / 8;
+  rxdata_offset -= (nb_prefix_samples / frame_parms->ofdm_offset_divisor);
 
   int16_t *rxdata_ptr;
 
@@ -370,11 +366,7 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 		      length,
 		      15);
 
-    int16_t *shift_rot;
-    if (symb_offset+symbol == (7 * (1 << frame_parms->numerology_index)))
-      shift_rot = frame_parms->timeshift_symbol_rotation[0];
-    else
-      shift_rot = frame_parms->timeshift_symbol_rotation[1];
+    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation[0];
 
     multadd_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
           shift_rot,

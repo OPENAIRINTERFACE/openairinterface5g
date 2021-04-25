@@ -45,7 +45,7 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
   NR_gNB_PUSCH *gNB_pusch_vars   = gNB->pusch_vars[UE_id];
   int32_t **ul_ch_estimates_time = gNB_pusch_vars->ul_ch_estimates_time;
   
-  int sync_pos = frame_parms->nb_prefix_samples / 8;
+  int sync_pos = frame_parms->nb_prefix_samples / frame_parms->ofdm_offset_divisor;
 
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     int temp = 0;

@@ -619,6 +619,7 @@ int main(int argc, char **argv)
   memset(RC.gNB[0],0,sizeof(PHY_VARS_gNB));
 
   gNB = RC.gNB[0];
+  gNB->ofdm_offset_divisor = UINT_MAX;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
