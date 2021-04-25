@@ -135,6 +135,7 @@ typedef struct {
   int current_RI;
   int power[NB_ANTENNAS_RX];
   int noise_power[NB_ANTENNAS_RX];
+  int DTX;
 } NR_gNB_SCH_STATS_t;
 
 typedef struct {
@@ -511,6 +512,8 @@ typedef struct {
   int16_t *ul_valid_re_per_slot;
   /// flag to verify if channel level computation is done
   uint8_t cl_done;
+  /// flag to indicate DTX on reception
+  int DTX;
 } NR_gNB_PUSCH;
 
 /// Context data structure for RX/TX portion of slot processing
@@ -830,6 +833,7 @@ typedef struct PHY_VARS_gNB_s {
   int prach_energy_counter;
 
   int pucch0_thres;
+  int pusch_thres;
   int prach_thres;
   uint64_t bad_pucch;
   /*

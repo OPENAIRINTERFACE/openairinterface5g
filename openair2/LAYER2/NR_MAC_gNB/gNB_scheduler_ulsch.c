@@ -236,7 +236,7 @@ void nr_process_mac_pdu(
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_I(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
           mac_rlc_data_ind(module_idP,
               rnti,
               module_idP,
@@ -452,7 +452,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -738,7 +738,7 @@ void pf_ul(module_id_t module_id,
       /* Get previous PSUCH filed info */
       sched_ctrl->sched_pusch = cur_harq->sched_pusch;
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      LOG_I(NR_MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
+      LOG_D(NR_MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
             frame, slot, UE_id, UE_info->rnti[UE_id],
             sched_pusch->frame, sched_pusch->slot,
             sched_pusch->rbSize);
@@ -1075,7 +1075,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       cur_harq->sched_pusch = *sched_pusch;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
     } else {
-      LOG_I(NR_MAC,
+      LOG_D(NR_MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
@@ -1088,7 +1088,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
           frame,
           slot,
@@ -1246,7 +1246,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
 
-    LOG_I(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
+    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
 
     /* Fill PDCCH DL DCI PDU */
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
