@@ -103,6 +103,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
         LOG_I(MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
+  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
 }
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,

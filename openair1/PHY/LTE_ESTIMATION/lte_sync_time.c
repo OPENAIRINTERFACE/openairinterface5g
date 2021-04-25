@@ -86,7 +86,7 @@ static void copyPrimary( struct complex16 *out, struct complex16 *in, int ofdmSi
   }
 
 int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *common_vars
-  struct complex16 syncF_tmp[2048]__attribute__((aligned(32)))= {0};
+  struct complex16 syncF_tmp[2048]__attribute__((aligned(32)))= {{0}};
   int sz=frame_parms->ofdm_symbol_size*sizeof(*primary_synch0_time);
   AssertFatal( NULL != (primary_synch0_time = (struct complex16 *)malloc16(sz)),"");
   bzero(primary_synch0_time,sz);
@@ -153,7 +153,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   // perform a time domain correlation using the oversampled sync sequence
   unsigned int n, ar, s, peak_pos, peak_val, sync_source;
   int result,result2;
-  struct complexd sync_out[3]= {0}, sync_out2[3]= {0};
+  struct complexd sync_out[3]= {{0}}, sync_out2[3]= {{0}};
   int length =   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti>>1;
   peak_val = 0;
   peak_pos = 0;

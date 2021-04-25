@@ -1020,9 +1020,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int feedback_frame = slot == 0 ? (frame - 1 + 1024) % 1024 : frame;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      NR_UE_harq_t *harq = find_harq(mod_id, feedback_frame, feedback_slot, UE_id);
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
       if (!harq)
         break;
       DevAssert(harq->is_waiting);
@@ -1059,9 +1057,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
       const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int feedback_frame = slot == 0 ? (frame - 1 + 1024) % 1024 : frame;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      NR_UE_harq_t *harq = find_harq(mod_id, feedback_frame, feedback_slot, UE_id);
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
       if (!harq)
         break;
       DevAssert(harq->is_waiting);
