@@ -162,6 +162,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
+
+  NR_RLC_BearerConfig_t *RLC_BearerConfig2 = calloc(1,sizeof(*RLC_BearerConfig2));
+  nr_rlc_bearer_init(RLC_BearerConfig2, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
+  nr_drb_config(RLC_BearerConfig2->rlc_Config, NR_RLC_Config_PR_am);
+  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig2->mac_LogicalChannelConfig);
+  *RLC_BearerConfig2->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0; // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
+  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig2);
+
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig = NULL;
@@ -1251,7 +1259,14 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            e_NR_CipheringAlgorithm ciphering_algorithm,
                            e_NR_SecurityConfig__keyToUse key_to_use) {
 
-  rbconfig->srb_ToAddModList = NULL;
+  rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
+  NR_SRB_ToAddMod_t *srb_ToAddMod = calloc(1,sizeof(*srb_ToAddMod));
+  srb_ToAddMod->srb_Identity = rb_id;
+  srb_ToAddMod->reestablishPDCP = NULL;
+  srb_ToAddMod->discardOnPDCP = NULL;
+  srb_ToAddMod->pdcp_Config = NULL;
+  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb_ToAddMod);
+
   rbconfig->srb3_ToRelease = NULL;
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
