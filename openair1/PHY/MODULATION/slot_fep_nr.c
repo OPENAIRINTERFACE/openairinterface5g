@@ -298,12 +298,13 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 
-  unsigned int slot_offset = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
-
   // offset of first OFDM symbol
-  int32_t rxdata_offset = slot_offset + nb_prefix_samples0;
-  // offset of n-th OFDM symbol
-  rxdata_offset += symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples);
+  unsigned int rxdata_offset = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
+  unsigned int abs_symbol = Ns * frame_parms->symbols_per_slot + symbol;
+  for (int idx_symb = Ns*frame_parms->symbols_per_slot; idx_symb <= abs_symbol; idx_symb++)
+    rxdata_offset += (idx_symb%(0x7<<frame_parms->numerology_index)) ? nb_prefix_samples : nb_prefix_samples0;
+  rxdata_offset += frame_parms->ofdm_symbol_size * symbol;
+
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
   rxdata_offset -= (nb_prefix_samples / frame_parms->ofdm_offset_divisor);
 
