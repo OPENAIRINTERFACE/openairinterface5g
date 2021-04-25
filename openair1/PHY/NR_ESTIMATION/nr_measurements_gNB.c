@@ -110,30 +110,28 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
 
   nb_rb = 0;
   n0_power_tot2=0;
-
   for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
     n0_power_tot=0;
     offset0 = (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
     if ((rb_mask[rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
       nb_rb++;
       for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-	measurements->n0_subband_power[aarx][rb]=0;
-	for (int s=first_symb;s<(first_symb+num_symb);s++) {
+	       measurements->n0_subband_power[aarx][rb]=0;
+	       for (int s=first_symb;s<(first_symb+num_symb);s++) {
 
-	  offset = offset0 + (s*frame_parms->ofdm_symbol_size);
-	  ul_ch  = &common_vars->rxdataF[aarx][offset];
-	  len = 12;
-	  if (((frame_parms->N_RB_UL&1) == 1) && 
-	      (rb==(frame_parms->N_RB_UL>>1))) {
-	    len=6;
-	  }
-	  AssertFatal(ul_ch, "RX signal buffer (freq) problem\n");
-	  measurements->n0_subband_power[aarx][rb] += signal_energy_nodc(ul_ch,len);
-	} // symbol
-        measurements->n0_subband_power[aarx][rb]/=num_symb;
-        measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(measurements->n0_subband_power[aarx][rb]);
-        n0_power_tot += measurements->n0_subband_power[aarx][rb];
-
+	          offset = offset0 + (s*frame_parms->ofdm_symbol_size);
+	          ul_ch  = &common_vars->rxdataF[aarx][offset];
+	          len = 12;
+	          if (((frame_parms->N_RB_UL&1) == 1) && 
+	               (rb==(frame_parms->N_RB_UL>>1))) {
+	             len=6;
+	          }
+	          AssertFatal(ul_ch, "RX signal buffer (freq) problem\n");
+	          measurements->n0_subband_power[aarx][rb] += signal_energy_nodc(ul_ch,len);
+	        } // symbol
+          measurements->n0_subband_power[aarx][rb]/=num_symb;
+          measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(measurements->n0_subband_power[aarx][rb]);
+          n0_power_tot += measurements->n0_subband_power[aarx][rb];
       } //antenna
       n0_power_tot/=frame_parms->nb_antennas_rx;
       n0_power_tot2 += n0_power_tot;

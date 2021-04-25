@@ -163,7 +163,8 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 	    gNB->ulsch_stats[i].current_RI,
 	    gNB->ulsch_stats[i].total_bytes_rx,
 	    gNB->ulsch_stats[i].total_bytes_tx);
- } 
+ }
+ fprintf(fd,"%s",output);
 }
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB) {
