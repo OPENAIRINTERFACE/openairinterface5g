@@ -64,7 +64,7 @@
 {CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:3,               TYPE_UINT,     0}, \
-{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:UINT_MAX,       TYPE_UINT,     0} \
+{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:8,       TYPE_UINT,     0} \
 }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
