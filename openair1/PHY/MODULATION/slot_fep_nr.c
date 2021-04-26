@@ -158,7 +158,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		      frame_parms->ofdm_symbol_size,
 		      15);
 
-    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation[1];
+    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
     multadd_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
           shift_rot,
@@ -367,7 +367,7 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 		      length,
 		      15);
 
-    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation[1];
+    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
     multadd_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
           shift_rot,

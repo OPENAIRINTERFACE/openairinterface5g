@@ -331,7 +331,7 @@ struct NR_DL_FRAME_PARMS {
   int16_t symbol_rotation[2][224*2];
   /// sequence used to compensate the phase rotation due to timeshifted OFDM symbols
   /// First dimenstion is for different CP lengths
-  int16_t timeshift_symbol_rotation[2][4096*2] __attribute__ ((aligned (16)));
+  int16_t timeshift_symbol_rotation[4096*2] __attribute__ ((aligned (16)));
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC

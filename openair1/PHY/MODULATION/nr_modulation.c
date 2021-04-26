@@ -747,69 +747,18 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
 void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
 {
-  const double fd = 15e3*(float)(1<<fp->numerology_index);
-  const double Tc=(1/480e3/4096);
-  const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
-  const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
-  double t0;
-  double poff;
-  double exp_re;
-  double exp_im;
-  double f;
-  int16_t *timeshift_symbol_rotation;
-  int i;
-
-  for (i = 0; i < fp->ofdm_symbol_size/2; i++) {
-    timeshift_symbol_rotation = fp->timeshift_symbol_rotation[0];
-    f = fd * i;
-    t0 = Ncp0 / fp->ofdm_offset_divisor;
-    poff = 2 * M_PI * -t0 * Tc * f;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
-    timeshift_symbol_rotation[i*2] = (int16_t)floor(exp_re * 32767);
-    timeshift_symbol_rotation[i*2+1] = (int16_t)floor(exp_im * 32767);
-
-    timeshift_symbol_rotation = fp->timeshift_symbol_rotation[1];
-    t0 = Ncp1 / fp->ofdm_offset_divisor;
-    poff = 2 * M_PI * -t0 * Tc * f;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
-    timeshift_symbol_rotation[i*2] = (int16_t)floor(exp_re * 32767);
-    timeshift_symbol_rotation[i*2+1] = (int16_t)floor(exp_im * 32767);
+  for (int i = 0; i < fp->ofdm_symbol_size; i++) {
+    double poff = -i * 2.0 * M_PI * 144.0 / 2048.0 / fp->ofdm_offset_divisor;
+    double exp_re = cos(poff);
+    double exp_im = sin(-poff);
+    fp->timeshift_symbol_rotation[i*2] = (int16_t)round(exp_re * 32767);
+    fp->timeshift_symbol_rotation[i*2+1] = (int16_t)round(exp_im * 32767);
 
     if (i < 10)
       LOG_I(PHY,"Timeshift symbol rotation %d => (%d,%d) %f\n",i,
-            fp->timeshift_symbol_rotation[0][i*2],
-            fp->timeshift_symbol_rotation[0][i*2+1],
+            fp->timeshift_symbol_rotation[i*2],
+            fp->timeshift_symbol_rotation[i*2+1],
             poff);
-
-  }
-
-  i = 1;
-  for (int j = fp->ofdm_symbol_size-1; j > fp->ofdm_symbol_size/2-1; j--) {
-    timeshift_symbol_rotation = fp->timeshift_symbol_rotation[0];
-    f = -fd * i;
-    t0 = Ncp0 / fp->ofdm_offset_divisor;
-    poff = 2 * M_PI * -t0 * Tc * f;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
-    timeshift_symbol_rotation[j*2] = (int16_t)ceil(exp_re * 32767);
-    timeshift_symbol_rotation[j*2+1] = (int16_t)ceil(exp_im * 32767);
-
-    timeshift_symbol_rotation = fp->timeshift_symbol_rotation[1];
-    t0 = Ncp1 / fp->ofdm_offset_divisor;
-    poff = 2 * M_PI * -t0 * Tc * f;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
-    timeshift_symbol_rotation[j*2] = (int16_t)ceil(exp_re * 32767);
-    timeshift_symbol_rotation[j*2+1] = (int16_t)ceil(exp_im * 32767);
-
-    if (j > fp->ofdm_symbol_size-10-1)
-      LOG_I(PHY,"Timeshift symbol rotation %d => (%d,%d) %f\n",-i,
-            fp->timeshift_symbol_rotation[0][j*2],
-            fp->timeshift_symbol_rotation[0][j*2+1],
-            poff);
-    i++;
   }
 }
 
